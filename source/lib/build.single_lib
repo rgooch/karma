@@ -23,11 +23,13 @@
 #   The postal address is:
 #     Richard Gooch, c/o ATNF, P. O. Box 76, Epping, N.S.W., 2121, Australia.
 
-rm -f master/*.c
-rm -f master/*/*.s
 rm -f *~ >& /dev/null
 rm -f */*~ >& /dev/null
 rm -f */*/*~ >& /dev/null
+
+foreach file (master/*.c)
+    if ( ! -r $file ) rm $file
+end
 
 set arches = (SUNsparc convex rs6000 dec VXMVX linux)
 
@@ -35,20 +37,26 @@ cd packages
 foreach package (*)
     cd $package
     foreach file (*.c)
-	echo -n "$package/$file ..."
 	# See if file includes its prototypes
-	if (`fgrep -c "karma_${package}.h" $file` < "1") then
-	    echo -n "    WARNING: prototype file not included"
+	if ( (`fgrep -c "karma_${package}.h" $file` < "1") && ("$file" != "globals.c") ) then
+	    echo "$package/$file    WARNING: prototype file not included"
 	endif
-	ln -s ../packages/$package/$file ../../master/${package}_$file
-	echo ""
+	if ( ! -r ../../master/${package}_$file) then
+	    echo "$package/$file"
+	    ln -s ../packages/$package/$file ../../master/${package}_$file
+	endif
     end
     foreach arch ($arches)
 	if (-d $arch) then
+	    foreach file (../../master/$arch/*.s)
+		if ( ! -r $file ) rm $file
+	    end
 	    cd $arch
 	    foreach file (*.s)
-		echo "$package/$arch/$file"
-		ln -s ../../packages/$package/$arch/$file ../../../master/$arch/${package}_asm_$file
+		if ( ! -r ../../../master/$arch/${package}_asm_$file) then
+		    echo "$package/$arch/$file"
+		    ln -s ../../packages/$package/$arch/$file ../../../master/$arch/${package}_asm_$file
+		endif
 	    end
 	    cd ..
 	endif

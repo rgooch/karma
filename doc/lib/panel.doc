@@ -127,6 +127,21 @@ $RETURNS
     TRUE on sucess, else FALSE
 $END
 
+$EXPERIMENTAL_FUNC  panel_set_extra_comment_string
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (KControlPanel panel, CONST char *string)
+$SUMMARY            Set the extra comment string for a panel.
+$PURPOSE
+    Set the extra comment string for a panel.
+$PARAMETER          panel :
+    The control panel.
+$PARAMETER          string :
+    The comment string. The contents are copied.
+$RETURNS
+    Nothing.
+$END
+
 $PROTO_FUNC         PANEL_PROTO_decode_func
 $RETURN_TYPE        flag
 $PARAMETER_LIST

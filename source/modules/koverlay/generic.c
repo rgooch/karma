@@ -31,7 +31,10 @@
 
     Written by      Richard Gooch   13-OCT-1996: Copied from  kview/generic.c
 
-    Last updated by Richard Gooch   16-OCT-1996: Renamed to <koverlay>.
+    Updated by      Richard Gooch   16-OCT-1996: Renamed to <koverlay>.
+
+    Last updated by Richard Gooch   6-NOV-1996: Added hostname and port number
+  to title.
 
 
 */
@@ -81,7 +84,10 @@ void setup_comms (Display *display)
 {
     int def_port_number;
     unsigned int server_port_number;
+    char hostname[STRING_LENGTH];
     extern char module_name[STRING_LENGTH + 1];
+    extern char module_version_date[STRING_LENGTH + 1];
+    extern char title_name[STRING_LENGTH];
 
     /*  Get default port number  */
     if ( ( def_port_number = r_get_def_port ( module_name,
@@ -90,10 +96,13 @@ void setup_comms (Display *display)
 	fprintf (stderr, "Could not get default port number\n");
 	return;
     }
+    r_gethostname (hostname, STRING_LENGTH);
     server_port_number = def_port_number;
     if ( !conn_become_server (&server_port_number, CONN_MAX_INSTANCES) )
     {
 	fprintf (stderr, "Module not operating as Karma server\n");
+	sprintf (title_name, "%s v%s @%s", module_name, module_version_date,
+		 hostname);
     }
     else
     {
@@ -102,6 +111,9 @@ void setup_comms (Display *display)
 	dsxfr_register_connection_limits (1, -1);
 	dsxfr_register_read_func ( ( void (*) () ) new_data_on_connection );
 	/*dsxfr_register_close_func (connection_closed);*/
+	sprintf (title_name, "%s v%s @%s:%u",
+		 module_name, module_version_date, hostname,
+		 server_port_number);
     }
     if ( !conn_controlled_by_cm_tool () )
     {
@@ -197,7 +209,7 @@ flag load_image (CONST char *inp_filename,
 						image_red->elem_index,
 						image_green->elem_index,
 						image_blue->elem_index,
-						0, (char **) NULL,
+						0, (CONST char **) NULL,
 						(double *) NULL) )
 		== NULL )
 	    {
@@ -216,7 +228,7 @@ flag load_image (CONST char *inp_filename,
 				       image_red->elem_index,
 				       image_green->elem_index,
 				       image_blue->elem_index,
-				       0, (char **) NULL,
+				       0, (CONST char **) NULL,
 				       (double *) NULL) )
 		 == NULL )
 	    {

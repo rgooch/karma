@@ -78,33 +78,33 @@ FILE *fp;
 
     if ( ( inp_filename = ex_word (p, &p) ) == NULL )
     {
-	(void) fprintf (stderr, "Must supply input and output filenames\n");
+	fprintf (stderr, "Must supply input and output filenames\n");
 	return (TRUE);
     }
     if ( ( out_filename = ex_word (p, &p) ) == NULL )
     {
-	(void) fprintf (stderr, "Must also supply output filename\n");
+	fprintf (stderr, "Must also supply output filename\n");
 	m_free (inp_filename);
 	return (TRUE);
     }
     /*  Read input file  */
     if ( ( inp = ch_open_file (inp_filename, "r") ) == NULL )
     {
-	(void) fprintf (stderr, "Error opening file: \"%s\"\t%s\n",
-			inp_filename, sys_errlist[errno]);
+	fprintf (stderr, "Error opening file: \"%s\"\t%s\n",
+		 inp_filename, sys_errlist[errno]);
 	m_free (inp_filename);
 	m_free (out_filename);
 	return (TRUE);
     }
     if ( ( multi_desc = foreign_ppm_read (inp,
-					  FA_PPM_WRITE_END) )
+					  FA_PPM_READ_END) )
 	== NULL )
     {
-	(void) fprintf (stderr, "Error reading PPM file\n");
+	fprintf (stderr, "Error reading PPM file\n");
     }
-    (void) ch_close (inp);
+    ch_close (inp);
     m_free (inp_filename);
-    (void) dsxfr_put_multi (out_filename, multi_desc);
+    dsxfr_put_multi (out_filename, multi_desc);
     m_free (out_filename);
     ds_dealloc_multi (multi_desc);
     return (TRUE);

@@ -12,6 +12,8 @@
 </td></tr>
 <tr><td><a href=viewimg.html#viewimg_draw_edit_object>viewimg_draw_edit_object</a></td><td>Draw edit object into array associated with viewable image.
 </td></tr>
+<tr><td><a href=viewimg.html#viewimg_header_position_func>viewimg_header_position_func</a></td><td>Position event callback.
+</td></tr>
 <tr><td><a href=viewimg.html#viewimg_init>viewimg_init</a></td><td>Initialise the package for a particular canvas.
 </td></tr>
 <tr><td><a href=viewimg.html#viewimg_create_restr>viewimg_create_restr</a></td><td>Create viewable image from 2D slice with restrictions.
@@ -52,6 +54,10 @@
 </td></tr>
 <tr><td><a href=viewimg.html#viewimg_get_attributes>viewimg_get_attributes</a></td><td>Get the attributes for a viewable image.
 </td></tr>
+<tr><td><a href=viewimg.html#viewimg_set_attributes>viewimg_set_attributes</a></td><td>Set the attributes for a viewable image.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_set_array_attributes>viewimg_set_array_attributes</a></td><td>Set the attributes for an array of viewable images.
+</td></tr>
 <tr><td><a href=viewimg.html#viewimg_partial_refresh>viewimg_partial_refresh</a></td><td>Perform a partial refresh of a canvas.
 </td></tr>
 <tr><td><a href=viewimg.html#viewimg_get_worldcanvas>viewimg_get_worldcanvas</a></td><td>Get the world canvas for a viewable image.
@@ -59,6 +65,8 @@
 <tr><td><a href=viewimg.html#viewimg_statistics_position_func>viewimg_statistics_position_func</a></td><td>Position event callback.
 </td></tr>
 <tr><td><a href=viewimg.html#viewimg_statistics_compute>viewimg_statistics_compute</a></td><td>Compute and display statistics for a subimage.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_track_compute>viewimg_track_compute</a></td><td>Compute track strings.
 </td></tr>
 </table><h4>Prototype Functions</h4><table><tr><td><a href=viewimg.html#VIEWIMG_PROTO_position_func>VIEWIMG_PROTO_position_func</a></td><td>Position event callback.
 </td></tr>
@@ -95,6 +103,44 @@
 <br><li><i>object :</i> 
     The edit object.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=viewimg_header_position_func></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>viewimg_header_position_func</b><i>    (ViewableImage vimage,
+				   double x, double y,
+				   void *value, unsigned int event_code,
+				   void *e_info, void **f_info,
+				   double x_lin, double y_lin,
+				   unsigned int value_type)
+</i><br><p>    This routine is a position event consumer for a world canvas
+    which has a number of ViewableImage objects associated with it.
+<p><b>Parameters:</b><ul><li><i>viewimg :</i> 
+    The active viewable image.
+<br><li><i>x :</i> 
+    The horizontal world co-ordinate of the event.
+<br><li><i>y :</i> 
+    The vertical world co-ordinate of the event.
+    These values will have been transformed by the registered transform
+    function (see <a href=canvas.html#canvas_register_transform_func>canvas_register_transform_func</a>) for the associated
+    world canvas.
+<br><li><i>value :</i> 
+    A pointer to the data value in the viewable image corresponding
+    to the event co-ordinates.
+<br><li><i>event_code :</i> 
+    The arbitrary event code.
+<br><li><i>e_info :</i> 
+    The arbitrary event information.
+<br><li><i>f_info :</i> 
+    The arbitrary function information pointer.
+<br><li><i>x_lin :</i> 
+    The linear horizontal world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+<br><li><i>y_lin :</i> 
+    The linear vertical world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+<br><li><i>value_type :</i> 
+    The type of the data value. This may be K_DCOMPLEX or
+    K_UB_RGB.
+<br></ul><b>Returns:</b>     TRUE if the event was consumed, else FALSE indicating that
+    the event is still to be processed.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=viewimg_init></a> void
  <b>viewimg_init</b><i>    (KWorldCanvas canvas)
 </i><br><p>    This routine will initialise the <a href=viewimg.html#viewimg>viewimg</a> package for a
@@ -114,7 +160,8 @@
 				    unsigned int hdim, unsigned int vdim,
 				    unsigned int elem_index,
 				    unsigned num_restr,
-				    char **restr_names, double *restr_values)
+				    CONST char **restr_names,
+				    CONST double *restr_values)
 </i><br><p>    This routine will create a PseudoColour viewable image object
     from a 2-dimensional slice of a Karma data structure. At a later time, this
     viewable image may be made visible. This routine will not cause the canvas
@@ -275,7 +322,8 @@
 				  unsigned int red_index,
 				  unsigned int green_index,
 				  unsigned int blue_index, unsigned num_restr,
-				  char **restr_names, double *restr_values)
+				  CONST char **restr_names,
+				  CONST double *restr_values)
 </i><br><p>    This routine will create a TrueColour viewable image object from
     a 2-dimensional slice of a Karma data structure. At a later time, this
     viewable image may be made visible. This routine will not cause the canvas
@@ -494,7 +542,7 @@
 <p><b>Parameters:</b><ul><li><i>canvas :</i> 
     The world canvas.
 <br><li><i>... :</i> 
-    The list of parameter attribute-key attribute-value-ptr pairs
+    The list of parameter attribute-key attribute-value pairs
     must follow. This list must be terminated with the VIEWIMG_ATT_END.
     See <a href=viewimg.html#VIEWIMG_CANVAS_ATTRIBUTES>VIEWIMG_CANVAS_ATTRIBUTES</a> for the list of attributes.
 <br></ul><b>Returns:</b>     Nothing.
@@ -506,6 +554,29 @@
     The ViewableImage.
 <br><li><i>... :</i> 
     The list of parameter attribute-key attribute-value-ptr pairs
+    must follow. This list must be terminated with the VIEWIMG_VATT_END. See
+    <a href=viewimg.html#VIEWIMG_VIMAGE_ATTRIBUTES>VIEWIMG_VIMAGE_ATTRIBUTES</a> for the list of attributes.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=viewimg_set_attributes></a> void
+ <b>viewimg_set_attributes</b><i>    (ViewableImage vimage, ...)
+</i><br><p>    Set the attributes for a viewable image.
+<p><b>Parameters:</b><ul><li><i>vimage :</i> 
+    The ViewableImage.
+<br><li><i>... :</i> 
+    The list of parameter attribute-key attribute-value pairs
+    must follow. This list must be terminated with the VIEWIMG_VATT_END. See
+    <a href=viewimg.html#VIEWIMG_VIMAGE_ATTRIBUTES>VIEWIMG_VIMAGE_ATTRIBUTES</a> for the list of attributes.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=viewimg_set_array_attributes></a> void
+ <b>viewimg_set_array_attributes</b><i>    (ViewableImage *vimages, unsigned int len,
+				   ...)
+</i><br><p>    Set the attributes for an array of viewable images.
+<p><b>Parameters:</b><ul><li><i>vimages :</i> 
+    The array of ViewableImage objects.
+<br><li><i>len :</i> 
+    The length of the array.
+<br><li><i>... :</i> 
+    The list of parameter attribute-key attribute-value pairs
     must follow. This list must be terminated with the VIEWIMG_VATT_END. See
     <a href=viewimg.html#VIEWIMG_VIMAGE_ATTRIBUTES>VIEWIMG_VIMAGE_ATTRIBUTES</a> for the list of attributes.
 <br></ul><b>Returns:</b>     Nothing.
@@ -582,6 +653,51 @@
 <br><li><i>ly1 :</i> 
     The second vertical linear world co-ordinate.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=viewimg_track_compute></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>void
+ <b>viewimg_track_compute</b><i>    (ViewableImage vimage,
+			    void *value, unsigned int value_type,
+			    double x, double y,
+			    double x_lin, double y_lin, KwcsAstro ap,
+			    char pix_string[STRING_LENGTH],
+			    char world_string[STRING_LENGTH],
+			    char extra_string[STRING_LENGTH],
+			    unsigned long *x_index, unsigned long *y_index)
+</i><br><p>    Compute track strings.
+<p><b>Parameters:</b><ul><li><i>vimage :</i> 
+    The active ViewableImage object.
+<br><li><i>value :</i> 
+    A pointer to the data value in the viewable image corresponding
+    to the event co-ordinates.
+<br><li><i>value_type :</i> 
+    The type of the data value. This may be K_DCOMPLEX or
+    K_UB_RGB.
+<br><li><i>x :</i> 
+    The horizontal world co-ordinate of the event.
+<br><li><i>y :</i> 
+    The vertical world co-ordinate of the event.
+<br><li><i>x_lin :</i> 
+    The linear horizontal world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+<br><li><i>y_lin :</i> 
+    The linear vertical world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+<br><li><i>ap :</i> 
+    The KwcsAstro object. This may be NULL.
+<br><li><i>pix_string :</i> 
+    The pixel co-ordinates and data value will be written here.
+<br><li><i>world_string :</i> 
+    The world co-ordinates and restriction information will be
+    written here.
+<br><li><i>extra_string :</i> 
+    Extra information is written here. This may be NULL if
+    <em>world_string</em> is also NULL.
+<br><li><i>x_index :</i> 
+    The horizontal data co-ordinate index is written here. This may
+    be NULL
+<br><li><i>y_index :</i> 
+    The vertical data co-ordinate index is written here. This may be
+    NULL
+<br></ul><b>Returns:</b>     Nothing.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=VIEWIMG_PROTO_position_func></a> flag
  <b>VIEWIMG_PROTO_position_func</b><i>    (ViewableImage vimage, double x, double y,
 				  void *value, unsigned int event_code,
@@ -629,19 +745,23 @@
 </td></tr><tr><td>VIEWIMG_ATT_INT_Y            </td><td>flag *    </td><td>flag      </td><td>Force integer vertical zoom-in/zoom-out factor
 </td></tr><tr><td>VIEWIMG_ATT_MAINTAIN_ASPECT  </td><td>flag *    </td><td>flag      </td><td>Maintain data image aspect ratio
 </td></tr><tr><td>VIEWIMG_ATT_ALLOW_TRUNCATION </td><td>flag *    </td><td>flag      </td><td>Allow shrunken images to be truncated.
-</table><p><hr> <a name=VIEWIMG_VIEWIMG_ATTRIBUTES><b>VIEWIMG_VIEWIMG_ATTRIBUTES</b></a><p> <table><tr><td>Name                      </td><td>Get Type       </td><td>Meaning
+</table><p><hr> <a name=VIEWIMG_VIEWIMG_ATTRIBUTES><b>VIEWIMG_VIEWIMG_ATTRIBUTES</b></a><p> <table><tr><td>Name                      </td><td>Get Type       </td><td>Set Type </td><td>Meaning
 </td></tr><tr><td>
-</td></tr><tr><td>VIEWIMG_VATT_END          </td><td>               </td><td>End of varargs list
-</td></tr><tr><td>VIEWIMG_VATT_TRUECOLOUR   </td><td>flag *         </td><td>Image is TrueColour
-</td></tr><tr><td>VIEWIMG_VATT_ARRAY_DESC   </td><td>array_desc **  </td><td>The array descriptor for the image
-</td></tr><tr><td>VIEWIMG_VATT_SLICE        </td><td>char **        </td><td>Start of the image data
-</td></tr><tr><td>VIEWIMG_VATT_HDIM         </td><td>unsigned int * </td><td>The horizontal dimension
-</td></tr><tr><td>VIEWIMG_VATT_VDIM         </td><td>unsigned int * </td><td>The vertical dimension
-</td></tr><tr><td>VIEWIMG_VATT_PSEUDO_INDEX </td><td>unsigned int * </td><td>The PseudoColour element index
-</td></tr><tr><td>VIEWIMG_VATT_RED_INDEX    </td><td>unsigned int * </td><td>The TrueColour red element index
-</td></tr><tr><td>VIEWIMG_VATT_GREEN_INDEX  </td><td>unsigned int * </td><td>The TrueColour green element index
-</td></tr><tr><td>VIEWIMG_VATT_BLUE_INDEX   </td><td>unsigned int * </td><td>The TrueColour blue element index
-</td></tr><tr><td>VIEWIMG_VATT_MULTI_ARRAY  </td><td>multi_array ** </td><td>The multi_array descriptor
+</td></tr><tr><td>VIEWIMG_VATT_END          </td><td>               </td><td>         </td><td>End of varargs list
+</td></tr><tr><td>VIEWIMG_VATT_TRUECOLOUR   </td><td>flag *         </td><td>         </td><td>Image is TrueColour
+</td></tr><tr><td>VIEWIMG_VATT_ARRAY_DESC   </td><td>array_desc **  </td><td>         </td><td>The array descriptor for the image
+</td></tr><tr><td>VIEWIMG_VATT_SLICE        </td><td>char **        </td><td>         </td><td>Start of the image data
+</td></tr><tr><td>VIEWIMG_VATT_HDIM         </td><td>unsigned int * </td><td>         </td><td>The horizontal dimension
+</td></tr><tr><td>VIEWIMG_VATT_VDIM         </td><td>unsigned int * </td><td>         </td><td>The vertical dimension
+</td></tr><tr><td>VIEWIMG_VATT_PSEUDO_INDEX </td><td>unsigned int * </td><td>         </td><td>The PseudoColour element index
+</td></tr><tr><td>VIEWIMG_VATT_RED_INDEX    </td><td>unsigned int * </td><td>         </td><td>The TrueColour red element index
+</td></tr><tr><td>VIEWIMG_VATT_GREEN_INDEX  </td><td>unsigned int * </td><td>         </td><td>The TrueColour green element index
+</td></tr><tr><td>VIEWIMG_VATT_BLUE_INDEX   </td><td>unsigned int * </td><td>         </td><td>The TrueColour blue element index
+</td></tr><tr><td>VIEWIMG_VATT_MULTI_ARRAY  </td><td>multi_array ** </td><td>         </td><td>The multi_array descriptor
+</td></tr><tr><td>VIEWIMG_VATT_DATA_SCALE   </td><td>double *       </td><td>double   </td><td>PsueodoColour data multiplier
+</td></tr><tr><td>VIEWIMG_VATT_DATA_OFFSET  </td><td>double *       </td><td>double   </td><td>PsueodoColour data offset
+</td></tr><tr><td>VIEWIMG_VATT_VALUE_MIN    </td><td>double *       </td><td>double   </td><td>PseudoColour minimum value override
+</td></tr><tr><td>VIEWIMG_VATT_VALUE_MAX    </td><td>double *       </td><td>double   </td><td>PseudoColour maximum value override
 </table><p>
 <hr><a href="../index.html">Back to Karma Home Page</a>
 <hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.ariel.com.au/">Ariel Internet Services</a></address></center></body></html>

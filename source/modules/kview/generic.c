@@ -242,7 +242,7 @@ flag display_file (CONST char *inp_filename,
 						image_red->elem_index,
 						image_green->elem_index,
 						image_blue->elem_index,
-						0, (char **) NULL,
+						0, (CONST char **) NULL,
 						(double *) NULL) )
 		== NULL )
 	    {
@@ -261,7 +261,7 @@ flag display_file (CONST char *inp_filename,
 				       image_red->elem_index,
 				       image_green->elem_index,
 				       image_blue->elem_index,
-				       0, (char **) NULL,
+				       0, (CONST char **) NULL,
 				       (double *) NULL) )
 		 == NULL )
 	    {

@@ -307,7 +307,7 @@ Channel ch_open_file (CONST char *filename, CONST char *type)
     [<ch_test_for_asynchronous>] and [<ch_test_for_io>].
     <filename> The pathname of the file to open. This parameter has the same
     meaning as the first parameter to <<open(2)>>. Filenames of the form
-    "//tcpIP/<hostname>:<port>" indicate a connection to a TCP/IP port on host
+    "//tcpIP/{hostname}:{port}" indicate a connection to a TCP/IP port on host
     <<hostname>> with raw port number <<port>> is requested.
     <type> The mode of the file. See [<CH_FILE_MODES>] for a list of allowable
     modes.

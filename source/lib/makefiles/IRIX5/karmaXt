@@ -1,7 +1,7 @@
 LIB = karmaXt
 
 CFLAGS = -I$(XINCLUDEPATH)
-LDFLAGS = -L$(XLIBPATH) -lkarma -lXt -lXext -lX11
+LDFLAGS = -L$(XLIBPATH) -lkarmaX11 -lkarma -lXt -lXext -lX11
 DEPENDFLAGS = -I$(XINCLUDEPATH)
 
 include $(KARMAROOT)/source/lib/makefiles/$(OS)/GNUmakefile.rules

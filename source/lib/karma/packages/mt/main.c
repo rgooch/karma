@@ -78,10 +78,15 @@
     Updated by      Richard Gooch   29-JUL-1996: Added support for Linux
   through use of <sproc> routine in karmathread library and mutex emulation.
 
-    Last updated by Richard Gooch   26-AUG-1996: Fixed bug in IRIX support
+    Updated by      Richard Gooch   26-AUG-1996: Fixed bug in IRIX support
   where pool lock not deallocated when unthreaded. Fixed bugs where undefined
   threads and synchronisation variables in partial pools were incorrectly
   destroyed. IRIX and Linux threads now reaped.
+
+    Updated by      Richard Gooch   15-NOV-1996: Tolerate old Linux kernels
+  which don't report processor number.
+
+    Last updated by Richard Gooch   26-NOV-1996: Created <mt_num_processors>.
 
 
 */
@@ -251,7 +256,6 @@ STATIC_FUNCTION (flag destroy_callback,
 STATIC_FUNCTION (void exit_callback, () );
 #ifdef OS_Linux
 EXTERN_FUNCTION (pid_t sproc, (void (*func) (void *info), void *info) );
-STATIC_FUNCTION (unsigned int num_cpus, () );
 STATIC_FUNCTION (void sigint_handler, (int sig) );
 #endif
 
@@ -358,34 +362,19 @@ KThreadPool mt_create_pool (void *pool_info)
 	m_abort (function_name, "thread pool");
     }
     pool->magic_number = MAGIC_NUMBER;
-    pool->num_threads = 0;
     pool->info = pool_info;
     pool->thread_info_buffer = NULL;
     pool->thread_info_buf_size = 0;
     pool->thread_info_size = 0;
     /*  Determine number of processors available  */
-#ifdef OS_Solaris
-    pool->num_threads = sysconf (_SC_NPROCESSORS_ONLN);
-#endif
-#ifdef OS_IRIX
-    pool->num_threads = sysconf (_SC_NPROC_ONLN);
-#endif
-#ifdef OS_Linux
-    pool->num_threads = num_cpus ();
-    if (pool->num_threads > 256)
-    {
-	fprintf (stderr, "%s: too many CPUs: %u, limiting to 256\n",
-		 function_name, pool->num_threads);
-	pool->num_threads = 256;
-    }
-#endif
+    pool->num_threads = mt_num_processors ();
     if (max_threads > 0)
     {
 	if (pool->num_threads > max_threads) pool->num_threads = max_threads;
     }
     if (pool->num_threads < 2) pool->num_threads = 0;
     /*  Must create main lock for pool even if number of threads forced to
-	zero.  */
+	zero  */
 #ifdef OS_Solaris
     mutex_init (&pool->lock, USYNC_THREAD, NULL);
 #endif
@@ -403,7 +392,7 @@ KThreadPool mt_create_pool (void *pool_info)
 						 NULL, FALSE, FALSE);
     FUNC_UNLOCK;
     if (pool->num_threads < 2) return (pool);
-    /*  Now we know there are more than one thread, create other
+    /*  Now we know there is more than one thread, create other
 	synchronisation objects and the threads  */
     if ( ( pool->threads = (struct thread_type *)
 	  malloc (sizeof *pool->threads * pool->num_threads) ) == NULL )
@@ -471,7 +460,7 @@ KThreadPool mt_create_pool (void *pool_info)
 	LOCK (pool->threads[count].startlock);
 	if ( ( pool->threads[count].tid = sproc (thread_main, PR_SALL,
 						 pool->threads + count) )
-	    == -1 )
+	     == -1 )
 	{
 	    pool->threads[count].tid = 0;
 	    fprintf (stderr, "Error creating thread\t%s\n",sys_errlist[errno]);
@@ -483,7 +472,7 @@ KThreadPool mt_create_pool (void *pool_info)
     if (r_create_pipe (&pool->pipe_read_fd, &pool->pipe_write_fd) != 0)
     {
 	fprintf (stderr, "Error creating syncronisation pipe\t%s\n",
-			sys_errlist[errno]);
+		 sys_errlist[errno]);
 	exit (RV_SYS_ERROR);
     }
     for (count = 0; count < pool->num_threads; ++count)
@@ -680,6 +669,59 @@ unsigned int mt_num_threads (KThreadPool pool)
     if (pool->num_threads < 2) return (1);
     return (pool->num_threads);
 }   /*  End Function mt_num_threads  */
+
+/*EXPERIMENTAL_FUNCTION*/
+unsigned int mt_num_processors ()
+/*  [SUMMARY] Get the number of processors available on the system.
+    [RETURNS] The number of processors available.
+*/
+{
+#ifdef OS_Linux
+    FILE *fp;
+    char txt[STRING_LENGTH];
+    extern char *sys_errlist[];
+#endif
+    static unsigned int num_cpus = 0;
+
+    if (num_cpus > 0) return (num_cpus);
+    num_cpus = 1;
+#ifdef OS_Solaris
+    num_cpus = sysconf (_SC_NPROCESSORS_ONLN);
+#endif
+#ifdef OS_IRIX
+    num_cpus = sysconf (_SC_NPROC_ONLN);
+#endif
+#ifdef OS_Linux
+    num_cpus = 0;
+    if ( ( fp = fopen ("/proc/cpuinfo", "r") ) == NULL )
+    {
+	fprintf (stderr, "Error opening: \"/proc/cpuinfo\"\t%s\n",
+		 sys_errlist[errno]);
+	exit (RV_SYS_ERROR);
+    }
+    while (fgets (txt, STRING_LENGTH, fp) != NULL)
+    {
+	if (strncmp (txt, "processor", 9) == 0) ++num_cpus;
+    }
+    fclose (fp);
+    if (num_cpus < 1)
+    {
+	/*  Old kernel  */
+	fprintf (stderr,
+		 "\"/proc/cpuinfo\" reports no CPUs! Upgrade your kernel\n");
+	num_cpus = 1;
+	return (1);
+    }
+    if (num_cpus > 256)
+    {
+	fprintf (stderr,
+		 "mt_num_processors: too many CPUs: %u, limiting to 256\n",
+		 num_cpus);
+	num_cpus = 256;
+    }
+#endif
+    return (num_cpus);
+}   /*  End Function mt_num_processors  */
 
 /*PUBLIC_FUNCTION*/
 void mt_launch_job (KThreadPool pool,
@@ -1050,45 +1092,12 @@ static void exit_callback ()
     [RETURNS] Nothing.
 */
 {
-#ifdef OS_IRIX
-    if (getuid () == 465) fprintf (stderr, "exit_callback...\n");
-#endif
     mt_destroy_all_pools (TRUE);
 }   /*  End Function exit_callback  */
 
 
 /*  Linux-specific functions follow  */
 #ifdef OS_Linux
-
-static unsigned int num_cpus ()
-/*  [SUMMARY] Determine number of CPUs available.
-    [RETURNS] The number of CPUs available.
-*/
-{
-    FILE *fp;
-    char txt[STRING_LENGTH];
-    extern char *sys_errlist[];
-    static unsigned int num_cpu = 0;
-
-    if (num_cpu > 0) return (num_cpu);
-    if ( ( fp = fopen ("/proc/cpuinfo", "r") ) == NULL )
-    {
-	fprintf (stderr, "Error opening: \"/proc/cpuinfo\"\t%s\n",
-			sys_errlist[errno]);
-	exit (RV_SYS_ERROR);
-    }
-    while (fgets (txt, STRING_LENGTH, fp) != NULL)
-    {
-	if (strncmp (txt, "processor", 9) == 0) ++num_cpu;
-    }
-    fclose (fp);
-    if (num_cpu < 1)
-    {
-	fprintf (stderr, "\"/proc/cpuinfo\" reports no CPUs!\n");
-	exit (RV_UNDEF_ERROR);
-    }
-    return (num_cpu);
-}   /*  End Function num_cpus  */
 
 static void sigint_handler (int sig)
 {
@@ -1097,7 +1106,7 @@ static void sigint_handler (int sig)
     if ( (long) signal (SIGINT, ( void (*) () ) sigint_handler) == -1 )
     {
 	fprintf (stderr, "Error setting sigINT handler\t%s\n",
-			sys_errlist[errno]);
+		 sys_errlist[errno]);
 	exit (RV_SYS_ERROR);
     }
 }   /*  End Function sigint_handler  */

@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   4-MAY-1996
 
-    Last updated by Richard Gooch   5-MAY-1996
+    Last updated by Richard Gooch   21-NOV-1996
 
 */
 
@@ -64,9 +64,17 @@
  XkwNshowRange             ShowRange            Bool            False
  XkwNshowValue             ShowValue            Bool            True
  XkwNvalueBesideLabel      ValueBesideLabel     Bool            True
+ XkwNscaledFormat          ScaledFormat         String          "%.3e"
+ XkwNscaledUnit            ScaledUnit           String          ""
  XkwNcallbackOnDrag        CallbackOnDrag       Bool            True
 
 */
+
+extern WidgetClass simpleSliderWidgetClass;
+typedef struct _SimpleSliderClassRec	*SimpleSliderWidgetClass;
+typedef struct _SimpleSliderRec	*SimpleSliderWidget;
+
+#define XtIsSimpleSlider(w) XtIsSubclass((w), simpleSliderWidgetClass)
 
 #define XkwNvalueChangeCallback "valueChangeCallback"
 #define XkwNminimum "minimum"
@@ -77,6 +85,8 @@
 #define XkwNshowRange "showRange"
 #define XkwNshowValue "showValue"
 #define XkwNvalueBesideLabel "valueBesideLabel"
+#define XkwNscaledFormat "scaledFormat"
+#define XkwNscaledUnit "scaledUnit"
 #define XkwNcallbackOnDrag "callbackOnDrag"
 #define XtNdecay "decay"
 #define XtNinitialDelay "initialDelay"
@@ -91,14 +101,15 @@
 #define XkwCShowRange "ShowRange"
 #define XkwCShowValue "ShowValue"
 #define XkwCValueBesideLabel "ValueBesideLabel"
+#define XkwCScaledFormat "ScaledFormat"
+#define XkwCScaledUnit "ScaledUnit"
 #define XkwCCallbackOnDrag "CallbackOnDrag"
 #define XtCDecay "Decay"
 #define XtCDelay "Delay"
 #define XtCMinimumDelay "MinimumDelay"
 
-typedef struct _SimpleSliderClassRec	*SimpleSliderWidgetClass;
-typedef struct _SimpleSliderRec	*SimpleSliderWidget;
-
-extern WidgetClass simpleSliderWidgetClass;
+EXTERN_FUNCTION (void XkwSimpleSliderSetScale,
+		 (Widget W, double scale, double offset,
+		  flag show_raw, flag show_scaled) );
 
 #endif /* _SimpleSlider_h */

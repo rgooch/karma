@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   14-OCT-1996: Copied from kshell/kshell.h
 
-    Last updated by Richard Gooch   21-OCT-1996
+    Last updated by Richard Gooch   3-NOV-1996
 
 
 */
@@ -57,7 +57,7 @@ EXTERN_FUNCTION (flag track_aux_canvas_xtmagupd, (ViewableImage vimage,
 EXTERN_FUNCTION (void setup_comms, (Display *display) );
 #endif
 EXTERN_FUNCTION (flag load_image,
-		 (CONST char *filename, iarray *array, KwcsAstro *ap,
+		 (CONST char *filename, iarray *array, KwcsAstro *ap, flag ref,
 		  KWorldCanvas pseudo_canvas, KWorldCanvas mag_pseudo_canvas,
 		  ViewableImage *image, ViewableImage *magnified_image,
 		  double *min, double *max) );

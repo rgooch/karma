@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   15-SEP-1996
 
-    Last updated by Richard Gooch   9-OCT-1996
+    Last updated by Richard Gooch   5-NOV-1996
 
 */
 
@@ -49,19 +49,22 @@
 typedef struct _TracePopupPart
 {
     /*  Public resources  */
-    iarray           array;
     Bool             verbose;
     Visual           *canvasVisual; 
     KWorldCanvas     worldCanvas;
     XtCallbackList   realiseCallback;
     Kcolourmap       karmaColourmap;
     /*  Private resources  */
+    iarray           array;
     KCallbackFunc    iarr_destroy_callback;
     double           array_minimum;
     double           array_maximum;
+    KwcsAstro        ap;
     Pixel            canvas_foreground;
     double           *y_arr;
     unsigned int     buf_len;
+    Widget           track_label0;
+    Widget           track_label1;
     Widget           pswinpopup;
     unsigned int     trace_dim;
     CONST char       *trace;

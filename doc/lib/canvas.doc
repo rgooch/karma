@@ -228,6 +228,8 @@ $NOTE
     This routine DOES NOT cause the canvas to be refreshed. It is highly
     recommended that the canvas is refreshed after this routine, as higher
     level packages may depend on the specification information.
+$NOTE
+    All string values are copied.
 $RETURNS
     TRUE on success, else FALSE.
 $END

@@ -61,8 +61,11 @@
     Updated by      Richard Gooch   28-OCT-1996: Added hostname and port number
   to title.
 
-    Last updated by Richard Gooch   30-OCT-1996: Added warning for no FITS
+    Updated by      Richard Gooch   30-OCT-1996: Added warning for no FITS
   velocity/frequency axis.
+
+    Last updated by Richard Gooch   10-NOV-1996: Made use of new attributes for
+  ViewableImage objects to override the canvas intensity range.
 
 
 */
@@ -220,14 +223,14 @@ flag load_image (CONST char *inp_filename, iarray *image_arr,
 	}
 	return (FALSE);
     }
-    canvas_set_attributes (pseudo_canvas,
-			   CANVAS_ATT_VALUE_MIN, i_min,
-			   CANVAS_ATT_VALUE_MAX, i_max,
-			   CANVAS_ATT_END);
-    canvas_set_attributes (mag_pseudo_canvas,
-			   CANVAS_ATT_VALUE_MIN, i_min,
-			   CANVAS_ATT_VALUE_MAX, i_max,
-			   CANVAS_ATT_END);
+    viewimg_set_attributes (*image,
+			    VIEWIMG_VATT_VALUE_MIN, i_min,
+			    VIEWIMG_VATT_VALUE_MAX, i_max,
+			    VIEWIMG_ATT_END);
+    viewimg_set_attributes (*magnified_image,
+			    VIEWIMG_VATT_VALUE_MIN, i_min,
+			    VIEWIMG_VATT_VALUE_MAX, i_max,
+			    VIEWIMG_ATT_END);
     if (image_mode == IMAGE_MODE_LOADED)
     {
 	if ( !viewimg_make_active (*image) )

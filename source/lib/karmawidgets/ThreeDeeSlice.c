@@ -83,13 +83,22 @@
     Updated by      Richard Gooch   4-JUN-1996: Switched to left-right
   bottom-top co-ordinate specification instead of min-max x and y.
 
-    Last updated by Richard Gooch   21-JUL-1996: Changed to
+    Updated by      Richard Gooch   21-JUL-1996: Changed to
   <canvas_convert_from_canvas_coords>.
+
+    Updated by      Richard Gooch   9-NOV-1996: Added track labels and
+  supported astronomical co-ordinates. Removed XkwNcursorPosition resource.
+  Changed call_data for XkwNcursorCallback callback. Created
+  <XkwThreeDeeSliceSetCursor>.
+
+    Last updated by Richard Gooch   10-NOV-1996: Switched to
+  <viewimg_set_array_attributes>
 
 
 */
 
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 #define X11
 #include <X11/IntrinsicP.h>
@@ -103,12 +112,15 @@
 #include <k_event_codes.h>
 #include <karma_viewimg.h>
 #include <karma_iarray.h>
+#include <karma_wcs.h>
 #include <karma_ds.h>
 #include <karma_xc.h>
 #include <karma_m.h>
+#include <karma_a.h>
 #include <Xkw/ThreeDeeSliceP.h>
 #include <Xkw/Canvas.h>
 #include <Xkw/Value.h>
+
 
 STATIC_FUNCTION (void ThreeDeeSlice__Initialise,
 		 (Widget request, Widget new) );
@@ -134,21 +146,29 @@ STATIC_FUNCTION (void zy_canvas_refresh_func,
 		  struct win_scale_type *win_scale,
 		  Kcolourmap cmap, flag cmap_resize, void **info) );
 STATIC_FUNCTION (void move_cursor,
-		 (ThreeDeeSliceWidget top, Kcoord_3d new_cursor) );
+		 (ThreeDeeSliceWidget top,
+		  struct XkwThreeDeeSliceCursor new_cursor) );
 STATIC_FUNCTION (void refresh_canvas,
-		 (KWorldCanvas canvas, double wx, double wy) );
+		 (KWorldCanvas canvas, double lx, double ly) );
 STATIC_FUNCTION (flag xy_pos_consumer,
-		 (KWorldCanvas canvas, double x, double y,
-		  unsigned int event_code, void *e_info, void **f_info,
-		  double x_lin, double y_lin) );
+		 (ViewableImage vimage, double x, double y,
+		  void *value, unsigned int event_code,
+		  void *e_info, void **f_info, double x_lin, double y_lin,
+		  unsigned int value_type) );
 STATIC_FUNCTION (flag xz_pos_consumer,
-		 (KWorldCanvas canvas, double x, double y,
-		  unsigned int event_code, void *e_info, void **f_info,
-		  double x_lin, double y_lin) );
+		 (ViewableImage vimage, double x, double y,
+		  void *value, unsigned int event_code,
+		  void *e_info, void **f_info, double x_lin, double y_lin,
+		  unsigned int value_type) );
 STATIC_FUNCTION (flag zy_pos_consumer,
-		 (KWorldCanvas canvas, double x, double y,
-		  unsigned int event_code, void *e_info, void **f_info,
-		  double x_lin, double y_lin) );
+		 (ViewableImage vimage, double x, double y,
+		  void *value, unsigned int event_code,
+		  void *e_info, void **f_info, double x_lin, double y_lin,
+		  unsigned int value_type) );
+STATIC_FUNCTION (void fillin_cursor,
+		 (ThreeDeeSliceWidget top,
+		  XkwThreeDeeSliceCallbackData cursor,
+		  unsigned int type, double x, double y, double z) );
 STATIC_FUNCTION (void register_new_cube, (ThreeDeeSliceWidget top, iarray cube,
 					  double min, double max) );
 STATIC_FUNCTION (void iarr_destroy_func,
@@ -178,8 +198,6 @@ static XtResource resources[] =
      offset (verbose), XtRImmediate, False},
     {XkwNcursorCallback, XtCCallback, XtRCallback, sizeof (XtPointer),
      offset (cursorCallback), XtRCallback, (XtPointer) NULL},
-    {XkwNcursorPosition, XkwCCursorPosition, XkwRKcoord_3d, sizeof (Kcoord_3d),
-     offset (cursorPosition), XkwRKcoord_3d, (XtPointer) NULL},
 #undef offset
 };
 
@@ -255,17 +273,15 @@ static void ThreeDeeSlice__Initialise (Widget Request, Widget New)
     Colormap xcmap;
     /*ThreeDeeSliceWidget request = (ThreeDeeSliceWidget) Request;*/
     ThreeDeeSliceWidget new = (ThreeDeeSliceWidget) New;
-    Widget canvas;
-    Widget x_mag_sld, y_mag_sld, z_mag_sld;
+    Widget w, canvas;
     /*static char function_name[] = "ThreeDeeSliceWidget::Initialise";*/
 
     kcmap_get_attributes (new->threeDeeSlice.karmaCmap,
 			  KCMAP_ATT_DPY_HANDLE, &dpy_handle,
 			  NULL);
     xcmap = xc_get_cmap (dpy_handle);
-    new->threeDeeSlice.cursorPosition.x = 0.0;
-    new->threeDeeSlice.cursorPosition.y = 0.0;
-    new->threeDeeSlice.cursorPosition.z = 0.0;
+    m_clear ( (char *) &new->threeDeeSlice.cursor,
+	      sizeof new->threeDeeSlice.cursor );
     new->threeDeeSlice.xy_pixcanvas = NULL;
     new->threeDeeSlice.xz_pixcanvas = NULL;
     new->threeDeeSlice.zy_pixcanvas = NULL;
@@ -280,44 +296,56 @@ static void ThreeDeeSlice__Initialise (Widget Request, Widget New)
     new->threeDeeSlice.y_mag = 1;
     new->threeDeeSlice.z_mag = 1;
     new->threeDeeSlice.iarr_destroy_func = NULL;
-    x_mag_sld = XtVaCreateManagedWidget ("slider", valueWidgetClass, New,
-					 XtNlabel, "X Magnification",
-					 XtNorientation, XtorientHorizontal,
-					 XkwNminimum, 1,
-					 XkwNmaximum, 10,
-					 XkwNmodifier, 1,
-					 XtNvalue, 1,
-					 XkwNvaluePtr,
-					 &new->threeDeeSlice.x_mag,
-					 NULL);
-    XtAddCallback (x_mag_sld, XkwNvalueChangeCallback, redisplay_cbk,
+    new->threeDeeSlice.ap = NULL;
+    w = XtVaCreateManagedWidget ("slider", valueWidgetClass, New,
+				 XtNlabel, "X Magnification",
+				 XtNorientation, XtorientHorizontal,
+				 XkwNminimum, 1,
+				 XkwNmaximum, 10,
+				 XkwNmodifier, 1,
+				 XtNvalue, 1,
+				 XkwNvaluePtr, &new->threeDeeSlice.x_mag,
+				 NULL);
+    XtAddCallback (w, XkwNvalueChangeCallback, redisplay_cbk,
 		   (XtPointer) new);
-    y_mag_sld = XtVaCreateManagedWidget ("slider", valueWidgetClass, New,
-					 XtNlabel, "Y Magnification",
-					 XtNfromVert, x_mag_sld,
-					 XtNorientation, XtorientHorizontal,
-					 XkwNminimum, 1,
-					 XkwNmaximum, 10,
-					 XkwNmodifier, 1,
-					 XtNvalue, 1,
-					 XkwNvaluePtr,
-					 &new->threeDeeSlice.y_mag,
-					 NULL);
-    XtAddCallback (y_mag_sld, XkwNvalueChangeCallback, redisplay_cbk,
+    w = XtVaCreateManagedWidget ("slider", valueWidgetClass, New,
+				 XtNlabel, "Y Magnification",
+				 XtNfromVert, w,
+				 XtNorientation, XtorientHorizontal,
+				 XkwNminimum, 1,
+				 XkwNmaximum, 10,
+				 XkwNmodifier, 1,
+				 XtNvalue, 1,
+				 XkwNvaluePtr, &new->threeDeeSlice.y_mag,
+				 NULL);
+    XtAddCallback (w, XkwNvalueChangeCallback, redisplay_cbk,
 		   (XtPointer) new);
-    z_mag_sld = XtVaCreateManagedWidget ("slider", valueWidgetClass, New,
-					 XtNlabel, "Z Magnification",
-					 XtNfromVert, y_mag_sld,
-					 XtNorientation, XtorientHorizontal,
-					 XkwNminimum, 1,
-					 XkwNmaximum, 10,
-					 XkwNmodifier, 1,
-					 XtNvalue, 1,
-					 XkwNvaluePtr,
-					 &new->threeDeeSlice.z_mag,
-					 NULL);
-    XtAddCallback (z_mag_sld, XkwNvalueChangeCallback, redisplay_cbk,
+    w = XtVaCreateManagedWidget ("slider", valueWidgetClass, New,
+				 XtNlabel, "Z Magnification",
+				 XtNfromVert, w,
+				 XtNorientation, XtorientHorizontal,
+				 XkwNminimum, 1,
+				 XkwNmaximum, 10,
+				 XkwNmodifier, 1,
+				 XtNvalue, 1,
+				 XkwNvaluePtr, &new->threeDeeSlice.z_mag,
+				 NULL);
+    XtAddCallback (w, XkwNvalueChangeCallback, redisplay_cbk,
 		   (XtPointer) new);
+    w = XtVaCreateManagedWidget ("trackLabel0", labelWidgetClass, New,
+				 XtNlabel,
+				 "Track Output                                                   ",
+				 XtNfromVert,  w,
+				 XtNheight, 20,
+				 NULL);
+    new->threeDeeSlice.track_label0 = w;
+    w = XtVaCreateManagedWidget ("trackLabel1", labelWidgetClass, New,
+				 XtNlabel,
+				 "Track Output                                                   ",
+				 XtNfromVert,  w,
+				 XtNheight, 20,
+				 NULL);
+    new->threeDeeSlice.track_label1 = w;
     /*  If screen is less than 700 pixels high, the normal canvas size of
 	512*512 will not fit, so reduce the canvas size a bit. If the virtual
 	screen size is large, but the physical screen size is small, this test
@@ -327,7 +355,7 @@ static void ThreeDeeSlice__Initialise (Widget Request, Widget New)
 	*/
     if (HeightOfScreen ( XtScreen (New) ) < 700) canvas_size = 320;
     canvas = XtVaCreateManagedWidget ("canvas", canvasWidgetClass, New,
-				      XtNfromVert, z_mag_sld,
+				      XtNfromVert, w,
 				      XtNwidth, canvas_size,
 				      XtNheight, canvas_size,
 				      XtNmappedWhenManaged, True,
@@ -343,7 +371,6 @@ static void ThreeDeeSlice__Initialise (Widget Request, Widget New)
 static Boolean ThreeDeeSlice__SetValues (Widget Current, Widget Request,
 					 Widget New)
 {
-    Kcoord_3d new_cursor;
     flag verbose;
     double min, max;
     ThreeDeeSliceWidget current = (ThreeDeeSliceWidget) Current;
@@ -359,6 +386,9 @@ static Boolean ThreeDeeSlice__SetValues (Widget Current, Widget Request,
 	    c_unregister_callback (new->threeDeeSlice.iarr_destroy_func);
 	}
 	new->threeDeeSlice.iarr_destroy_func = NULL;
+	if (new->threeDeeSlice.ap != NULL)
+	    wcs_astro_destroy (new->threeDeeSlice.ap);
+	new->threeDeeSlice.ap = NULL;
 	free_data (new);
 	/*  New cube data  */
 	if (new->threeDeeSlice.cube != NULL)
@@ -374,7 +404,7 @@ static Boolean ThreeDeeSlice__SetValues (Widget Current, Widget Request,
 		if ( !iarray_min_max (new->threeDeeSlice.cube, CONV1_REAL,
 				      &min, &max) )
 		{
-		    (void) fprintf (stderr, "Error computing min-max\n");
+		    fprintf (stderr, "Error computing min-max\n");
 		}
 	    }
 	    else
@@ -382,27 +412,22 @@ static Boolean ThreeDeeSlice__SetValues (Widget Current, Widget Request,
 		min = *new->threeDeeSlice.minPtr;
 		max = *new->threeDeeSlice.maxPtr;
 	    }
-	    if (verbose) (void) fprintf (stderr, "%s: min: %e  max: %e\n",
-					 function_name, min, max);
+	    if (verbose) fprintf (stderr, "%s: min: %e  max: %e\n",
+				  function_name, min, max);
+	    new->threeDeeSlice.ap =
+		wcs_astro_setup (new->threeDeeSlice.cube->top_pack_desc,
+				 *new->threeDeeSlice.cube->top_packet);
 	    register_new_cube (new, new->threeDeeSlice.cube, min, max);
 	}
     }
     new->threeDeeSlice.minPtr = NULL;
     new->threeDeeSlice.maxPtr = NULL;
-    /*  Must undo any change to the cursor position and then pass requested
-	cursor position to <move_cursor>.  */
-    new_cursor = new->threeDeeSlice.cursorPosition;
-    new->threeDeeSlice.cursorPosition = current->threeDeeSlice.cursorPosition;
-    move_cursor (new, new_cursor);
     return False;
 }   /*  End Function SetValues  */
 
-static void realise_cbk (w, client_data, call_data)
+static void realise_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 /*  This is the canvas realise callback.
 */
-Widget w;
-XtPointer client_data;
-XtPointer call_data;
 {
     KPixCanvas parent = (KPixCanvas) call_data;
     ThreeDeeSliceWidget top = (ThreeDeeSliceWidget) client_data;
@@ -418,23 +443,23 @@ XtPointer call_data;
 		   XtNbackground, &gcvalues.background,
 		   NULL);
     kwin_register_refresh_func (parent, parent_refresh_func, top);
-    /*  Create the pixel canvases  */
+    /*  Create the 3 child pixel canvases (for the XY, XZ, and ZY planes)  */
     if ( ( top->threeDeeSlice.xy_pixcanvas =
-	  kwin_create_child (parent, 0, 0, 3, 3, TRUE) ) == NULL )
+	   kwin_create_child (parent, 0, 0, 3, 3, TRUE) ) == NULL )
     {
 	exit (RV_UNDEF_ERROR);
     }
     kwin_register_position_event_func (top->threeDeeSlice.xy_pixcanvas,
 				       dummy_pos_consumer, top);
     if ( ( top->threeDeeSlice.xz_pixcanvas =
-	  kwin_create_child (parent, 0, 0, 3, 3, TRUE) ) == NULL )
+	   kwin_create_child (parent, 0, 0, 3, 3, TRUE) ) == NULL )
     {
 	exit (RV_UNDEF_ERROR);
     }
     kwin_register_position_event_func (top->threeDeeSlice.xz_pixcanvas,
 				       dummy_pos_consumer, top);
     if ( ( top->threeDeeSlice.zy_pixcanvas =
-	  kwin_create_child (parent, 0, 0, 3, 3, TRUE) ) == NULL )
+	   kwin_create_child (parent, 0, 0, 3, 3, TRUE) ) == NULL )
     {
 	exit (RV_UNDEF_ERROR);
     }
@@ -445,103 +470,107 @@ XtPointer call_data;
     if (XAllocNamedColor (XtDisplay (w), xcmap, "Black", &scrn_def,
 			  &exact_def) == 0)
     {
-	(void) fprintf (stderr,
-			"Error allocating black in colourmap\n");
+	fprintf (stderr, "Error allocating black in colourmap\n");
 	exit (RV_UNDEF_ERROR);
     }
     win_scale.min_sat_pixel = scrn_def.pixel;
     if (XAllocNamedColor (XtDisplay (w), xcmap, "White", &scrn_def,
 			  &exact_def) == 0)
     {
-	(void) fprintf (stderr,
-			"Error allocating white in colourmap\n");
+	fprintf (stderr, "Error allocating white in colourmap\n");
 	exit (RV_UNDEF_ERROR);
     }
     win_scale.max_sat_pixel = scrn_def.pixel;
     win_scale.blank_pixel = gcvalues.background;
     /*  Create the main world canvas (with dummy world min and max)  */
-/*
-    win_scale.iscale_func = log_iscale_func;
-*/
     win_scale.z_min = 0.0;
     win_scale.z_max = 255.0;
     /*  XY canvas  */
     if ( ( top->threeDeeSlice.xy_worldcanvas =
-	  canvas_create (top->threeDeeSlice.xy_pixcanvas,
-			 top->threeDeeSlice.karmaCmap, &win_scale) )
-	== NULL )
+	   canvas_create (top->threeDeeSlice.xy_pixcanvas,
+			  top->threeDeeSlice.karmaCmap, &win_scale) )
+	 == NULL )
     {
 	exit (RV_UNDEF_ERROR);
     }
+    canvas_use_astro_transform (top->threeDeeSlice.xy_worldcanvas,
+				&top->threeDeeSlice.ap);
     canvas_set_dressing (top->threeDeeSlice.xy_worldcanvas,
 			 KCD_DISPLAY, TRUE,
 			 KCD_END);
-    canvas_register_position_event_func (top->threeDeeSlice.xy_worldcanvas,
-					 xy_pos_consumer, top);
     viewimg_init (top->threeDeeSlice.xy_worldcanvas);
+    viewimg_register_position_event_func (top->threeDeeSlice.xy_worldcanvas,
+					  xy_pos_consumer, top);
 #ifdef dummy
     viewimg_register_position_event_func (xy_worldcanvas,xy_track_canvas_event,
 					  (void *) xy_worldcanvas);
 #endif
     viewimg_set_canvas_attributes (top->threeDeeSlice.xy_worldcanvas,
 				   VIEWIMG_ATT_AUTO_V, FALSE,
+				   VIEWIMG_ATT_INT_X, FALSE,
+				   VIEWIMG_ATT_INT_Y, FALSE,
 				   VIEWIMG_ATT_END);
     canvas_register_refresh_func (top->threeDeeSlice.xy_worldcanvas,
 				  xy_canvas_refresh_func, top);
     /*  XZ canvas  */
     if ( ( top->threeDeeSlice.xz_worldcanvas =
-	  canvas_create (top->threeDeeSlice.xz_pixcanvas,
-			 top->threeDeeSlice.karmaCmap, &win_scale) )
-	== NULL )
+	   canvas_create (top->threeDeeSlice.xz_pixcanvas,
+			  top->threeDeeSlice.karmaCmap, &win_scale) )
+	 == NULL )
     {
 	exit (RV_UNDEF_ERROR);
     }
+    canvas_use_astro_transform (top->threeDeeSlice.xz_worldcanvas,
+				&top->threeDeeSlice.ap);
     canvas_set_dressing (top->threeDeeSlice.xz_worldcanvas,
 			 KCD_DISPLAY, TRUE,
 			 KCD_END);
-    canvas_register_position_event_func (top->threeDeeSlice.xz_worldcanvas,
-					 xz_pos_consumer, top);
     viewimg_init (top->threeDeeSlice.xz_worldcanvas);
+    viewimg_register_position_event_func (top->threeDeeSlice.xz_worldcanvas,
+					  xz_pos_consumer, top);
 #ifdef dummy
     viewimg_register_position_event_func (xz_worldcanvas,xz_track_canvas_event,
 					  (void *) xz_worldcanvas);
 #endif
     viewimg_set_canvas_attributes (top->threeDeeSlice.xz_worldcanvas,
 				   VIEWIMG_ATT_AUTO_V, FALSE,
+				   VIEWIMG_ATT_INT_X, FALSE,
+				   VIEWIMG_ATT_INT_Y, FALSE,
 				   VIEWIMG_ATT_END);
     canvas_register_refresh_func (top->threeDeeSlice.xz_worldcanvas,
 				  xz_canvas_refresh_func, top);
     /*  ZY canvas  */
     if ( ( top->threeDeeSlice.zy_worldcanvas =
-	  canvas_create (top->threeDeeSlice.zy_pixcanvas,
-			 top->threeDeeSlice.karmaCmap, &win_scale) )
-	== NULL )
+	   canvas_create (top->threeDeeSlice.zy_pixcanvas,
+			  top->threeDeeSlice.karmaCmap, &win_scale) )
+	 == NULL )
     {
 	exit (RV_UNDEF_ERROR);
     }
+    canvas_use_astro_transform (top->threeDeeSlice.zy_worldcanvas,
+				&top->threeDeeSlice.ap);
     canvas_set_dressing (top->threeDeeSlice.zy_worldcanvas,
 			 KCD_DISPLAY, TRUE,
 			 KCD_END);
-    canvas_register_position_event_func (top->threeDeeSlice.zy_worldcanvas,
-					 zy_pos_consumer, top);
     viewimg_init (top->threeDeeSlice.zy_worldcanvas);
+    viewimg_register_position_event_func (top->threeDeeSlice.zy_worldcanvas,
+					  zy_pos_consumer, top);
 #ifdef dummy
     viewimg_register_position_event_func (zy_worldcanvas,zy_track_canvas_event,
 					  (void *) zy_worldcanvas);
 #endif
     viewimg_set_canvas_attributes (top->threeDeeSlice.zy_worldcanvas,
 				   VIEWIMG_ATT_AUTO_V, FALSE,
+				   VIEWIMG_ATT_INT_X, FALSE,
+				   VIEWIMG_ATT_INT_Y, FALSE,
 				   VIEWIMG_ATT_END);
     canvas_register_refresh_func (top->threeDeeSlice.zy_worldcanvas,
 				  zy_canvas_refresh_func, top);
 }   /*  End Function realise_cbk   */
 
-static void redisplay_cbk (w, client_data, call_data)
+static void redisplay_cbk (Widget w, XtPointer client_data,XtPointer call_data)
 /*  This is the redisplay callback.
 */
-Widget w;
-XtPointer client_data;
-XtPointer call_data;
 {
     ThreeDeeSliceWidget top = (ThreeDeeSliceWidget) client_data;
 
@@ -560,19 +589,43 @@ static void parent_refresh_func (KPixCanvas canvas, int width, int height,
     [RETURNS] Nothing.
 */
 {
-    int x_off, y_off;
-    int lengths[3];
+    int x_off, y_off, xlen, ylen, zlen, xpix, ypix, zpix;
+    float factor, tmp;
     ThreeDeeSliceWidget top = (ThreeDeeSliceWidget) *info;
+    static char function_name[] = "ThreeDeeSlice::parent_refresh_func";
 
     if (top->threeDeeSlice.cube == NULL) return;
-    lengths[0] = iarray_dim_length (top->threeDeeSlice.cube,
-				    0) * top->threeDeeSlice.z_mag;
-    lengths[1] = iarray_dim_length (top->threeDeeSlice.cube,
-				    1) * top->threeDeeSlice.y_mag;
-    lengths[2] = iarray_dim_length (top->threeDeeSlice.cube,
-				    2) * top->threeDeeSlice.x_mag;
-    if ( (lengths[2] + lengths[0] + 3 > width) ||
-	(lengths[1] + lengths[0] + 3 > height) ) return;
+    /*  Get lengths of each dimension  */
+    xlen = iarray_dim_length (top->threeDeeSlice.cube, 2);
+    ylen = iarray_dim_length (top->threeDeeSlice.cube, 1);
+    zlen = iarray_dim_length (top->threeDeeSlice.cube, 0);
+    if ( (xlen + zlen + 3 > width) || (ylen + zlen + 3 > height) )
+    {
+	/*  Even when unmagnified the images are too big: scale down  */
+	fprintf (stderr, "%s: images too big for window: subsampling data\n",
+		 function_name);
+	/*  Determine smallest scale factor  */
+	factor = (float) (width - 3) / (float) (xlen + zlen);
+	tmp = (float) (height - 3) / (float) (ylen + zlen);
+	factor = (tmp < factor) ? tmp : factor;
+	xpix = factor * (float) xlen;
+	ypix = factor * (float) ylen;
+	zpix = factor * (float) zlen;
+    }
+    else
+    {
+	/*  Apply the magnifications  */
+	xpix = xlen * top->threeDeeSlice.x_mag;
+	ypix = ylen * top->threeDeeSlice.y_mag;
+	zpix = zlen * top->threeDeeSlice.z_mag;
+    }
+    if ( (xpix + zpix + 3 > width) || (ypix + zpix + 3 > height) )
+    {
+	fprintf (stderr,
+		 "%s: images too big for window: reduce magnification\n",
+		 function_name);
+	return;
+    }
     kwin_set_attributes (top->threeDeeSlice.xy_pixcanvas,
 			 KWIN_ATT_VISIBLE, TRUE,
 			 KWIN_ATT_END);
@@ -582,17 +635,16 @@ static void parent_refresh_func (KPixCanvas canvas, int width, int height,
     kwin_set_attributes (top->threeDeeSlice.zy_pixcanvas,
 			 KWIN_ATT_VISIBLE, TRUE,
 			 KWIN_ATT_END);
-    x_off = ( width - (lengths[2] + lengths[0] + 3) ) / 2;
-    y_off = ( height - (lengths[1] + lengths[0] + 3) ) / 2;
+    x_off = ( width - (xpix + zpix + 3) ) / 2;
+    y_off = ( height - (ypix + zpix + 3) ) / 2;
     kwin_resize (top->threeDeeSlice.xy_pixcanvas, FALSE, x_off, y_off,
-		 lengths[2] + 2, lengths[1] + 2);
+		 xpix + 2, ypix + 2);
     kwin_resize (top->threeDeeSlice.xz_pixcanvas, FALSE,
-		 x_off, y_off + lengths[1] + 1,
-		 lengths[2] + 2, lengths[0] + 2);
+		 x_off, y_off + ypix + 1,
+		 xpix + 2, zpix + 2);
     kwin_resize (top->threeDeeSlice.zy_pixcanvas, FALSE,
-		 x_off + lengths[2] + 1, y_off,
-		 lengths[0] + 2, lengths[1] + 2);
-    
+		 x_off + xpix + 1, y_off,
+		 zpix + 2, ypix + 2);
 }   /*  End Function parent_refresh_func  */
 
 
@@ -616,21 +668,30 @@ static void xy_canvas_refresh_func (KWorldCanvas canvas, int width, int height,
     [RETURNS] Nothing.
 */
 {
+    KPixCanvas pixcanvas;
+    int x_offset, y_offset, x_pixels, y_pixels;
     unsigned long pixel_value;
+    double px, py;
     ThreeDeeSliceWidget top = (ThreeDeeSliceWidget) *info;
 
     if ( !canvas_get_colour (canvas, "red", &pixel_value,
 			     (unsigned short *) NULL, (unsigned short *) NULL,
 			     (unsigned short *) NULL) ) return;
-    canvas_draw_line_p (canvas,
-			win_scale->left_x, top->threeDeeSlice.cursorPosition.y,
-			win_scale->right_x,top->threeDeeSlice.cursorPosition.y,
-			pixel_value);
-    canvas_draw_line_p (canvas,
-			top->threeDeeSlice.cursorPosition.x,
-			win_scale->bottom_y,
-			top->threeDeeSlice.cursorPosition.x, win_scale->top_y,
-			pixel_value);
+    px = top->threeDeeSlice.cursor.linear.x;
+    py = top->threeDeeSlice.cursor.linear.y;
+    canvas_convert_from_canvas_coords (canvas, FALSE, TRUE, 1,
+				       &px, &py, &px, &py);
+    pixcanvas = canvas_get_pixcanvas (canvas);
+    canvas_get_attributes (canvas,
+			   CANVAS_ATT_X_OFFSET, &x_offset,
+			   CANVAS_ATT_Y_OFFSET, &y_offset,
+			   CANVAS_ATT_X_PIXELS, &x_pixels,
+			   CANVAS_ATT_Y_PIXELS, &y_pixels,
+			   CANVAS_ATT_END);
+    kwin_draw_line (pixcanvas, x_offset, py, x_offset + x_pixels - 1, py,
+		    pixel_value);
+    kwin_draw_line (pixcanvas, px, y_offset, px, y_offset + y_pixels - 1,
+		    pixel_value);
 }   /*  End Function xy_canvas_refresh_func  */
 
 static void xz_canvas_refresh_func (KWorldCanvas canvas, int width, int height,
@@ -651,21 +712,30 @@ static void xz_canvas_refresh_func (KWorldCanvas canvas, int width, int height,
     [RETURNS] Nothing.
 */
 {
+    KPixCanvas pixcanvas;
+    int x_offset, y_offset, x_pixels, y_pixels;
     unsigned long pixel_value;
+    double px, py;
     ThreeDeeSliceWidget top = (ThreeDeeSliceWidget) *info;
 
     if ( !canvas_get_colour (canvas, "red", &pixel_value,
 			     (unsigned short *) NULL, (unsigned short *) NULL,
 			     (unsigned short *) NULL) ) return;
-    canvas_draw_line_p (canvas,
-			win_scale->left_x, top->threeDeeSlice.cursorPosition.z,
-			win_scale->right_x,top->threeDeeSlice.cursorPosition.z,
-			pixel_value);
-    canvas_draw_line_p (canvas,
-			top->threeDeeSlice.cursorPosition.x,
-			win_scale->bottom_y,
-			top->threeDeeSlice.cursorPosition.x, win_scale->top_y,
-			pixel_value);
+    px = top->threeDeeSlice.cursor.linear.x;
+    py = top->threeDeeSlice.cursor.linear.z;
+    canvas_convert_from_canvas_coords (canvas, FALSE, TRUE, 1,
+				       &px, &py, &px, &py);
+    pixcanvas = canvas_get_pixcanvas (canvas);
+    canvas_get_attributes (canvas,
+			   CANVAS_ATT_X_OFFSET, &x_offset,
+			   CANVAS_ATT_Y_OFFSET, &y_offset,
+			   CANVAS_ATT_X_PIXELS, &x_pixels,
+			   CANVAS_ATT_Y_PIXELS, &y_pixels,
+			   CANVAS_ATT_END);
+    kwin_draw_line (pixcanvas, x_offset, py, x_offset + x_pixels - 1, py,
+		    pixel_value);
+    kwin_draw_line (pixcanvas, px, y_offset, px, y_offset + y_pixels - 1,
+		    pixel_value);
 }   /*  End Function xz_canvas_refresh_func  */
 
 static void zy_canvas_refresh_func (KWorldCanvas canvas, int width, int height,
@@ -686,120 +756,122 @@ static void zy_canvas_refresh_func (KWorldCanvas canvas, int width, int height,
     [RETURNS] Nothing.
 */
 {
+    KPixCanvas pixcanvas;
+    int x_offset, y_offset, x_pixels, y_pixels;
     unsigned long pixel_value;
+    double px, py;
     ThreeDeeSliceWidget top = (ThreeDeeSliceWidget) *info;
 
     if ( !canvas_get_colour (canvas, "red", &pixel_value,
 			     (unsigned short *) NULL, (unsigned short *) NULL,
 			     (unsigned short *) NULL) ) return;
-    canvas_draw_line_p (canvas,
-			top->threeDeeSlice.cursorPosition.z,
-			win_scale->bottom_y,
-			top->threeDeeSlice.cursorPosition.z, win_scale->top_y,
-			pixel_value);
-    canvas_draw_line_p (canvas,
-			win_scale->left_x, top->threeDeeSlice.cursorPosition.y,
-			win_scale->right_x,top->threeDeeSlice.cursorPosition.y,
-			pixel_value);
+    px = top->threeDeeSlice.cursor.linear.z;
+    py = top->threeDeeSlice.cursor.linear.y;
+    canvas_convert_from_canvas_coords (canvas, FALSE, TRUE, 1,
+				       &px, &py, &px, &py);
+    pixcanvas = canvas_get_pixcanvas (canvas);
+    canvas_get_attributes (canvas,
+			   CANVAS_ATT_X_OFFSET, &x_offset,
+			   CANVAS_ATT_Y_OFFSET, &y_offset,
+			   CANVAS_ATT_X_PIXELS, &x_pixels,
+			   CANVAS_ATT_Y_PIXELS, &y_pixels,
+			   CANVAS_ATT_END);
+    kwin_draw_line (pixcanvas, x_offset, py, x_offset + x_pixels - 1, py,
+		    pixel_value);
+    kwin_draw_line (pixcanvas, px, y_offset, px, y_offset + y_pixels - 1,
+		    pixel_value);
 }   /*  End Function zy_canvas_refresh_func  */
 
 
-/*  Routines which process mouse events follow  */
+/*  Functions which process mouse events follow  */
 
-static void move_cursor (ThreeDeeSliceWidget top, Kcoord_3d new_cursor)
+static void move_cursor (ThreeDeeSliceWidget top,
+			 struct XkwThreeDeeSliceCursor new_cursor)
 /*  [PURPOSE] This routine will move the cursor to a new position, refreshing
     any canvases that require it.
     <top> The ThreeDeeSlice widget.
-    <new_cursor> The new cursor position.
+    <new_cursor> The new cursor position. All values must be defined.
     [RETURNS] Nothing.
 */
 {
-    Kcoord_3d old_cursor;
-    unsigned int old_x_index, old_y_index, old_z_index;
-    unsigned int new_x_index, new_y_index, new_z_index;
-    dim_desc *dim;
+    struct XkwThreeDeeSliceCursor old_cursor;
 
     if (top->threeDeeSlice.cube == NULL) return;
     if (top->threeDeeSlice.xy_frames == NULL) return;
     if (top->threeDeeSlice.xz_frames == NULL) return;
     if (top->threeDeeSlice.zy_frames == NULL) return;
-    /*  A quick test if all new cursor position is the same. Unlikely,
-	considering the vagaries of floating point roundoffs.  */
-    if ( (top->threeDeeSlice.cursorPosition.x == new_cursor.x) &&
-	 (top->threeDeeSlice.cursorPosition.y == new_cursor.y) &&
-	 (top->threeDeeSlice.cursorPosition.z == new_cursor.z) ) return;
-    old_cursor = top->threeDeeSlice.cursorPosition;
-    /*  Get old cursor in index values  */
-    dim = iarray_get_dim_desc (top->threeDeeSlice.cube, 2);
-    old_x_index = ds_get_coord_num (dim, old_cursor.x, SEARCH_BIAS_CLOSEST);
-    new_x_index = ds_get_coord_num (dim, new_cursor.x, SEARCH_BIAS_CLOSEST);
-    dim = iarray_get_dim_desc (top->threeDeeSlice.cube, 1);
-    old_y_index = ds_get_coord_num (dim, old_cursor.y, SEARCH_BIAS_CLOSEST);
-    new_y_index = ds_get_coord_num (dim, new_cursor.y, SEARCH_BIAS_CLOSEST);
-    dim = iarray_get_dim_desc (top->threeDeeSlice.cube, 0);
-    old_z_index = ds_get_coord_num (dim, old_cursor.z, SEARCH_BIAS_CLOSEST);
-    new_z_index = ds_get_coord_num (dim, new_cursor.z, SEARCH_BIAS_CLOSEST);
+    old_cursor = top->threeDeeSlice.cursor;
+    /*  A quick test if new cursor position is the same. Unlikely,
+	considering the vagaries of floating point roundoffs  */
+    if ( (old_cursor.pixel.x == new_cursor.pixel.x) &&
+	 (old_cursor.pixel.y == new_cursor.pixel.y) &&
+	 (old_cursor.pixel.z == new_cursor.pixel.z) ) return;
     /*  Update active cursor position so any refresh will have the right cursor
 	position available.  */
-    top->threeDeeSlice.cursorPosition = new_cursor;
+    top->threeDeeSlice.cursor = new_cursor;
     /*  Refresh parts of the canvases if possible to "undraw" the old crosshair
 	I prefer to do this rather than refreshing the entire canvas because
 	it is much faster to redraw subimages a few pixels thick. This is
 	especially true when the image is not a SHM XImage or cached in a
-	Pixmap.  */
-    if (old_x_index == new_x_index)
+	Pixmap  */
+    if ( (long) old_cursor.pixel.x == (long) new_cursor.pixel.x )
     {
 	/*  No change in X index, which means ZY canvas has the same image, but
-	    the cursor may have moved, so a partial refresh is needed.  */
+	    the cursor may have moved, so a partial refresh is needed  */
 	refresh_canvas (top->threeDeeSlice.zy_worldcanvas,
-			old_cursor.z, old_cursor.y);
+			old_cursor.linear.z, old_cursor.linear.y);
     }
     else
     {
 	/*  X index has changed, so we need a new ZY image  */
-	if ( !viewimg_make_active (top->threeDeeSlice.zy_frames[new_x_index]) )
+	if ( !viewimg_make_active
+	     (top->threeDeeSlice.zy_frames[(long) new_cursor.pixel.x]) )
 	{
-	    (void) fprintf (stderr, "Error making ViewableImage active\n");
+	    fprintf (stderr, "Error making ViewableImage active\n");
 	}
     }
-    if (old_y_index == new_y_index)
+    if ( (long) old_cursor.pixel.y == (long) new_cursor.pixel.y )
     {
 	/*  No change in Y index, which means XZ canvas has the same image, but
-	    the cursor may have moved, so a partial refresh is needed.  */
+	    the cursor may have moved, so a partial refresh is needed  */
 	refresh_canvas (top->threeDeeSlice.xz_worldcanvas,
-			old_cursor.x, old_cursor.z);
+			old_cursor.linear.x, old_cursor.linear.z);
     }
     else
     {
 	/*  Y index has changed, so we need a new XZ image  */
-	if ( !viewimg_make_active (top->threeDeeSlice.xz_frames[new_y_index]) )
+	if ( !viewimg_make_active
+	     (top->threeDeeSlice.xz_frames[(long) new_cursor.pixel.y]) )
 	{
-	    (void) fprintf (stderr, "Error making ViewableImage active\n");
+	    fprintf (stderr, "Error making ViewableImage active\n");
 	}
     }
-    if (old_z_index == new_z_index)
+    if ( (long) old_cursor.pixel.z == (long) new_cursor.pixel.z )
     {
 	/*  No change in Z index, which means XY canvas has the same image, but
-	    the cursor may have moved, so a partial refresh is needed.  */
+	    the cursor may have moved, so a partial refresh is needed  */
 	refresh_canvas (top->threeDeeSlice.xy_worldcanvas,
-			old_cursor.x, old_cursor.y);
+			old_cursor.linear.x, old_cursor.linear.y);
     }
     else
     {
 	/*  Z index has changed, so we need a new XY image  */
-	if ( !viewimg_make_active (top->threeDeeSlice.xy_frames[new_z_index]) )
+	if ( !viewimg_make_active
+	     (top->threeDeeSlice.xy_frames[(long) new_cursor.pixel.z]) )
 	{
-	    (void) fprintf (stderr, "Error making ViewableImage active\n");
+	    fprintf (stderr, "Error making ViewableImage active\n");
 	}
     }
 }   /*  End Function move_cursor  */
 
-static void refresh_canvas (KWorldCanvas canvas, double wx, double wy)
+static void refresh_canvas (KWorldCanvas canvas, double lx, double ly)
 /*  [PURPOSE] This routine will refresh a canvas by "undrawing" the old cursor
     by the use of partial refresh events.
     <canvas> The canvas.
-    <wx> The old horizontal component of the cursor position.
-    <wy> The old vertical component of the cursor position.
+    <wx> The old horizontal component of the cursor position in linear
+    co-ordinates.
+    <wy> The old vertical component of the cursor position in linear
+    co-ordinates.
     [RETURNS] Nothing.
 */
 {
@@ -814,8 +886,8 @@ static void refresh_canvas (KWorldCanvas canvas, double wx, double wy)
 			   CANVAS_ATT_X_PIXELS, &width,
 			   CANVAS_ATT_Y_PIXELS, &height,
 			   CANVAS_ATT_END);
-    canvas_convert_from_canvas_coords (canvas, FALSE, FALSE, 1,
-				       &wx, &wy, &x, &y);
+    canvas_convert_from_canvas_coords (canvas, TRUE, TRUE, 1,
+				       &lx, &ly, &x, &y);
     px = x;
     py = y;
     /*  Area for the horizontal line  */
@@ -837,122 +909,311 @@ static void refresh_canvas (KWorldCanvas canvas, double wx, double wy)
     viewimg_partial_refresh (canvas, 2, areas);
 }   /*  End Function refresh_canvas  */
 
-static flag xy_pos_consumer (KWorldCanvas canvas, double x, double y,
-			     unsigned int event_code, void *e_info,
-			     void **f_info, double x_lin, double y_lin)
-/*  [PURPOSE] This routine is a position event consumer for a world canvas.
-    <canvas> The canvas on which the event occurred.
+static flag xy_pos_consumer (ViewableImage vimage, double x, double y,
+			     void *value, unsigned int event_code,
+			     void *e_info, void **f_info,
+			     double x_lin, double y_lin,
+			     unsigned int value_type)
+/*  [SUMMARY] Position event callback.
+    [PURPOSE] This routine is a position event consumer for a world canvas
+    which has a number of ViewableImage objects associated with it.
+    <viewimg> The active viewable image.
     <x> The horizontal world co-ordinate of the event.
     <y> The vertical world co-ordinate of the event.
-    [NOTE] These values will have been transformed by the registered
-    transform function (see <anvas_register_transform_func>>).
+    These values will have been transformed by the registered transform
+    function (see [<canvas_register_transform_func>]) for the associated
+    world canvas.
+    <value> A pointer to the data value in the viewable image corresponding
+    to the event co-ordinates.
     <event_code> The arbitrary event code.
-    <e_info> A pointer to arbitrary event information.
-    <f_info> A pointer to an arbitrary function information pointer.
-    <x_lin> The horizontal linear world co-ordinate prior to the transform
-    function being called.
-    <y_lin> The vertical linear world co-ordinate prior to the transform
-    function being called.
+    <e_info> The arbitrary event information.
+    <f_info> The arbitrary function information pointer.
+    <x_lin> The linear horizontal world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+    <y_lin> The linear vertical world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+    <value_type> The type of the data value. This may be K_DCOMPLEX or
+    K_UB_RGB.
     [RETURNS] TRUE if the event was consumed, else FALSE indicating that
     the event is still to be processed.
 */
 {
-    Kcoord_3d cursor;
+    struct XkwThreeDeeSliceCursor cursor;
     ThreeDeeSliceWidget top = (ThreeDeeSliceWidget) *f_info;
+    char *ptr;
+    char pix_string[STRING_LENGTH], world_string[STRING_LENGTH];
+    char extra_string[STRING_LENGTH];
+    static char function_name[] = "ThreeDeeSliceWiget::xy_pos_consumer";
 
-    if (event_code == K_CANVAS_EVENT_MIDDLE_MOUSE_CLICK)
+    if (event_code == K_CANVAS_EVENT_POINTER_MOVE)
     {
-	(void) fprintf (stderr, "X: %e  Y: %e  Z: %e\n",
-			x, y, top->threeDeeSlice.cursorPosition.z);
+	viewimg_track_compute (vimage, value, value_type, x, y, x_lin, y_lin,
+			       top->threeDeeSlice.ap, pix_string,
+			       world_string, extra_string, NULL, NULL);
+	/*  Need to fiddle the string  */
+	if ( ( ptr = strchr (pix_string, 'z') ) == NULL )
+	{
+	    fprintf (stderr, "%s: error searching for 'z'\n", function_name);
+	    return (TRUE);
+	}
+	ptr[0] = ' ';
+	ptr[1] = 'z';
+	XtVaSetValues (top->threeDeeSlice.track_label0,
+		       XtNlabel, pix_string,
+		       NULL);
+	XtVaSetValues (top->threeDeeSlice.track_label1,
+		       XtNlabel, world_string,
+		       NULL);
 	return (TRUE);
     }
     if ( (event_code != K_CANVAS_EVENT_LEFT_MOUSE_CLICK) &&
-	(event_code != K_CANVAS_EVENT_LEFT_MOUSE_DRAG) ) return (FALSE);
-    cursor.x = x;
-    cursor.y = y;
-    cursor.z = top->threeDeeSlice.cursorPosition.z;
+	 (event_code != K_CANVAS_EVENT_LEFT_MOUSE_DRAG) ) return (FALSE);
+    fillin_cursor (top, &cursor, XkwThreeDeeSlicePixelCursor,
+		   x_lin, y_lin, top->threeDeeSlice.cursor.linear.z);
     move_cursor (top, cursor);
     XtCallCallbacks ( (Widget) top, XkwNcursorCallback, (XtPointer) &cursor );
     return (TRUE);
 }   /*  End Function xy_pos_consumer  */
 
-static flag xz_pos_consumer (KWorldCanvas canvas, double x, double y,
-			     unsigned int event_code, void *e_info,
-			     void **f_info, double x_lin, double y_lin)
-/*  [PURPOSE] This routine is a position event consumer for a world canvas.
-    <canvas> The canvas on which the event occurred.
+static flag xz_pos_consumer (ViewableImage vimage, double x, double y,
+			     void *value, unsigned int event_code,
+			     void *e_info, void **f_info,
+			     double x_lin, double y_lin,
+			     unsigned int value_type)
+/*  [SUMMARY] Position event callback.
+    [PURPOSE] This routine is a position event consumer for a world canvas
+    which has a number of ViewableImage objects associated with it.
+    <viewimg> The active viewable image.
     <x> The horizontal world co-ordinate of the event.
     <y> The vertical world co-ordinate of the event.
-    [NOTE] These values will have been transformed by the registered
-    transform function (see <anvas_register_transform_func>>).
+    These values will have been transformed by the registered transform
+    function (see [<canvas_register_transform_func>]) for the associated
+    world canvas.
+    <value> A pointer to the data value in the viewable image corresponding
+    to the event co-ordinates.
     <event_code> The arbitrary event code.
-    <e_info> A pointer to arbitrary event information.
-    <f_info> A pointer to an arbitrary function information pointer.
-    <x_lin> The horizontal linear world co-ordinate prior to the transform
-    function being called.
-    <y_lin> The vertical linear world co-ordinate prior to the transform
-    function being called.
+    <e_info> The arbitrary event information.
+    <f_info> The arbitrary function information pointer.
+    <x_lin> The linear horizontal world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+    <y_lin> The linear vertical world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+    <value_type> The type of the data value. This may be K_DCOMPLEX or
+    K_UB_RGB.
     [RETURNS] TRUE if the event was consumed, else FALSE indicating that
     the event is still to be processed.
 */
 {
-    Kcoord_3d cursor;
+    struct XkwThreeDeeSliceCursor cursor;
     ThreeDeeSliceWidget top = (ThreeDeeSliceWidget) *f_info;
+    char *ptr1, *ptr2;
+    char pix_string[STRING_LENGTH], world_string[STRING_LENGTH];
+    char extra_string[STRING_LENGTH];
+    static char function_name[] = "ThreeDeeSliceWiget::xz_pos_consumer";
 
-    if (event_code == K_CANVAS_EVENT_MIDDLE_MOUSE_CLICK)
+    if (event_code == K_CANVAS_EVENT_POINTER_MOVE)
     {
-	(void) fprintf (stderr, "X: %e  Y: %e  Z: %e\n",
-			x, top->threeDeeSlice.cursorPosition.y, y);
+	viewimg_track_compute (vimage, value, value_type, x, y, x_lin, y_lin,
+			       top->threeDeeSlice.ap, pix_string,
+			       world_string, extra_string, NULL, NULL);
+	/*  Need to fiddle the string  */
+	if ( ( ptr1 = strchr (pix_string, 'y') ) == NULL )
+	{
+	    fprintf (stderr, "%s: error searching for 'y'\n", function_name);
+	    return (TRUE);
+	}
+	if ( ( ptr2 = strchr (pix_string, 'z') ) == NULL )
+	{
+	    fprintf (stderr, "%s: error searching for 'z'\n", function_name);
+	    return (TRUE);
+	}
+	*ptr1 = 'z';
+	ptr2[0] = ' ';
+	ptr2[1] = 'y';
+	XtVaSetValues (top->threeDeeSlice.track_label0,
+		       XtNlabel, pix_string,
+		       NULL);
+	XtVaSetValues (top->threeDeeSlice.track_label1,
+		       XtNlabel, world_string,
+		       NULL);
 	return (TRUE);
     }
     if ( (event_code != K_CANVAS_EVENT_LEFT_MOUSE_CLICK) &&
-	(event_code != K_CANVAS_EVENT_LEFT_MOUSE_DRAG) ) return (FALSE);
-    cursor.x = top->threeDeeSlice.cursorPosition.x;
-    cursor.y = top->threeDeeSlice.cursorPosition.y;
-    cursor.z = y;
+	 (event_code != K_CANVAS_EVENT_LEFT_MOUSE_DRAG) ) return (FALSE);
+    fillin_cursor (top, &cursor, XkwThreeDeeSlicePixelCursor,
+		   top->threeDeeSlice.cursor.linear.x,
+		   top->threeDeeSlice.cursor.linear.y, y_lin);
     move_cursor (top, cursor);
     XtCallCallbacks ( (Widget) top, XkwNcursorCallback, (XtPointer) &cursor );
     return (TRUE);
 }   /*  End Function xz_pos_consumer  */
 
-static flag zy_pos_consumer (KWorldCanvas canvas, double x, double y,
-			     unsigned int event_code, void *e_info,
-			     void **f_info, double x_lin, double y_lin)
-/*  [PURPOSE] This routine is a position event consumer for a world canvas.
-    <canvas> The canvas on which the event occurred.
+static flag zy_pos_consumer (ViewableImage vimage, double x, double y,
+			     void *value, unsigned int event_code,
+			     void *e_info, void **f_info,
+			     double x_lin, double y_lin,
+			     unsigned int value_type)
+/*  [SUMMARY] Position event callback.
+    [PURPOSE] This routine is a position event consumer for a world canvas
+    which has a number of ViewableImage objects associated with it.
+    <viewimg> The active viewable image.
     <x> The horizontal world co-ordinate of the event.
     <y> The vertical world co-ordinate of the event.
-    [NOTE] These values will have been transformed by the registered
-    transform function (see <anvas_register_transform_func>>).
+    These values will have been transformed by the registered transform
+    function (see [<canvas_register_transform_func>]) for the associated
+    world canvas.
+    <value> A pointer to the data value in the viewable image corresponding
+    to the event co-ordinates.
     <event_code> The arbitrary event code.
-    <e_info> A pointer to arbitrary event information.
-    <f_info> A pointer to an arbitrary function information pointer.
-    <x_lin> The horizontal linear world co-ordinate prior to the transform
-    function being called.
-    <y_lin> The vertical linear world co-ordinate prior to the transform
-    function being called.
+    <e_info> The arbitrary event information.
+    <f_info> The arbitrary function information pointer.
+    <x_lin> The linear horizontal world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+    <y_lin> The linear vertical world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+    <value_type> The type of the data value. This may be K_DCOMPLEX or
+    K_UB_RGB.
     [RETURNS] TRUE if the event was consumed, else FALSE indicating that
     the event is still to be processed.
 */
 {
-    Kcoord_3d cursor;
+    struct XkwThreeDeeSliceCursor cursor;
     ThreeDeeSliceWidget top = (ThreeDeeSliceWidget) *f_info;
+    char *ptr1, *ptr2;
+    char pix_string[STRING_LENGTH], world_string[STRING_LENGTH];
+    char extra_string[STRING_LENGTH];
+    static char function_name[] = "ThreeDeeSliceWiget::zy_pos_consumer";
 
-    if (event_code == K_CANVAS_EVENT_MIDDLE_MOUSE_CLICK)
+    if (event_code == K_CANVAS_EVENT_POINTER_MOVE)
     {
-	(void) fprintf (stderr, "X: %e  Y: %e  Z: %e\n",
-			top->threeDeeSlice.cursorPosition.x, y, x);
+	viewimg_track_compute (vimage, value, value_type, x, y, x_lin, y_lin,
+			       top->threeDeeSlice.ap, pix_string,
+			       world_string, extra_string, NULL, NULL);
+	/*  Need to fiddle the string  */
+	if ( ( ptr1 = strchr (pix_string, 'x') ) == NULL )
+	{
+	    fprintf (stderr, "%s: error searching for 'x'\n", function_name);
+	    return (TRUE);
+	}
+	if ( ( ptr2 = strchr (pix_string, 'z') ) == NULL )
+	{
+	    fprintf (stderr, "%s: error searching for 'z'\n", function_name);
+	    return (TRUE);
+	}
+	*ptr1 = 'z';
+	ptr2[0] = ' ';
+	ptr2[1] = 'x';
+	XtVaSetValues (top->threeDeeSlice.track_label0,
+		       XtNlabel, pix_string,
+		       NULL);
+	XtVaSetValues (top->threeDeeSlice.track_label1,
+		       XtNlabel, world_string,
+		       NULL);
 	return (TRUE);
     }
     if ( (event_code != K_CANVAS_EVENT_LEFT_MOUSE_CLICK) &&
-	(event_code != K_CANVAS_EVENT_LEFT_MOUSE_DRAG) ) return (FALSE);
-    cursor.x = top->threeDeeSlice.cursorPosition.x;
-    cursor.y = top->threeDeeSlice.cursorPosition.y;
-    cursor.z = x;
+	 (event_code != K_CANVAS_EVENT_LEFT_MOUSE_DRAG) ) return (FALSE);
+    fillin_cursor (top, &cursor, XkwThreeDeeSlicePixelCursor,
+		   top->threeDeeSlice.cursor.linear.x,
+		   top->threeDeeSlice.cursor.linear.y, x_lin);
     move_cursor (top, cursor);
     XtCallCallbacks ( (Widget) top, XkwNcursorCallback, (XtPointer) &cursor );
     return (TRUE);
 }   /*  End Function zy_pos_consumer  */
+
+
+/*  Other functions  */
+
+static void fillin_cursor (ThreeDeeSliceWidget top,
+			   XkwThreeDeeSliceCallbackData cursor,
+			   unsigned int type, double x, double y, double z)
+/*  [SUMMARY] Set the 3D cursor position.
+    <top> The ThreeDeeSlice widget.
+    <cursor> The cursor to fill in.
+    <type> The type of the supplied co-ordinates.
+    <x> The x co-ordinate.
+    <y> The y co-ordinate.
+    <z> The z co-ordinate.
+    [RETURNS] Nothing.
+*/
+{
+    dim_desc *xdim, *ydim, *zdim;
+    static char function_name[] = "ThreeDeeSliceWidget::fillin_cursor";
+
+    xdim = iarray_get_dim_desc (top->threeDeeSlice.cube, 2);
+    ydim = iarray_get_dim_desc (top->threeDeeSlice.cube, 1);
+    zdim = iarray_get_dim_desc (top->threeDeeSlice.cube, 0);
+    switch (type)
+    {
+      case XkwThreeDeeSlicePixelCursor:
+	cursor->pixel.x = x;
+	cursor->pixel.y = y;
+	cursor->pixel.z = z;
+	/*  Convert to linear co-ordinates  */
+	cursor->linear.x = ds_get_coordinate (xdim, cursor->pixel.x);
+	cursor->linear.y = ds_get_coordinate (ydim, cursor->pixel.y);
+	cursor->linear.z = ds_get_coordinate (zdim, cursor->pixel.z);
+	/*  Convert to world co-ordinates  */
+	cursor->world = cursor->linear;
+	if (top->threeDeeSlice.ap != NULL)
+	{
+	    wcs_astro_transform3 (top->threeDeeSlice.ap, 1,
+				  xdim->name, &cursor->world.x, FALSE,
+				  ydim->name, &cursor->world.y, FALSE,
+				  zdim->name, &cursor->world.z, FALSE,
+				  0, NULL, NULL);
+	}
+	break;
+      case XkwThreeDeeSliceLinearCursor:
+	cursor->linear.x = x;
+	cursor->linear.y = y;
+	cursor->linear.z = z;
+	/*  Convert to data pixel indices  */
+	cursor->pixel.x = ds_get_coord_num (xdim, cursor->linear.x,
+					    SEARCH_BIAS_CLOSEST);
+	cursor->pixel.y = ds_get_coord_num (ydim, cursor->linear.y,
+					    SEARCH_BIAS_CLOSEST);
+	cursor->pixel.z = ds_get_coord_num (zdim, cursor->linear.z,
+					    SEARCH_BIAS_CLOSEST);
+	/*  Convert to world co-ordinates  */
+	cursor->world = cursor->linear;
+	if (top->threeDeeSlice.ap != NULL)
+	{
+	    wcs_astro_transform3 (top->threeDeeSlice.ap, 1,
+				  xdim->name, &cursor->world.x, FALSE,
+				  ydim->name, &cursor->world.y, FALSE,
+				  zdim->name, &cursor->world.z, FALSE,
+				  0, NULL, NULL);
+	}
+	break;
+      case XkwThreeDeeSliceWorldCursor:
+	cursor->world.x = x;
+	cursor->world.y = y;
+	cursor->world.z = z;
+	/*  Convert to linear co-ordinates  */
+	cursor->linear = cursor->world;
+	if (top->threeDeeSlice.ap != NULL)
+	{
+	    wcs_astro_transform3 (top->threeDeeSlice.ap, 1,
+				  xdim->name, &cursor->linear.x, TRUE,
+				  ydim->name, &cursor->linear.y, TRUE,
+				  zdim->name, &cursor->linear.z, TRUE,
+				  0, NULL, NULL);
+	}
+	/*  Convert to data pixel indices  */
+	cursor->pixel.x = ds_get_coord_num (xdim, cursor->linear.x,
+					    SEARCH_BIAS_CLOSEST);
+	cursor->pixel.y = ds_get_coord_num (ydim, cursor->linear.y,
+					    SEARCH_BIAS_CLOSEST);
+	cursor->pixel.z = ds_get_coord_num (zdim, cursor->linear.z,
+					    SEARCH_BIAS_CLOSEST);
+	break;
+      default:
+	fprintf (stderr, "Illegal cursor type: %u\n", type);
+	a_prog_bug (function_name);
+	break;
+    }
+}   /*  End Function fillin_cursor  */
 
 static void register_new_cube (ThreeDeeSliceWidget top, iarray cube,
 			       double min, double max)
@@ -964,7 +1225,7 @@ static void register_new_cube (ThreeDeeSliceWidget top, iarray cube,
     [RETURNS] Nothing.
 */
 {
-    double val, dummy;
+    double scale, offset;
 
     canvas_set_attributes (top->threeDeeSlice.xy_worldcanvas,
 			   CANVAS_ATT_VALUE_MIN, min,
@@ -978,6 +1239,7 @@ static void register_new_cube (ThreeDeeSliceWidget top, iarray cube,
 			   CANVAS_ATT_VALUE_MIN, min,
 			   CANVAS_ATT_VALUE_MAX, max,
 			   CANVAS_ATT_END);
+    iarray_get_data_scaling (cube, &scale, &offset);
     /*  Create new ViewableImage objects  */
     if ( ( top->threeDeeSlice.xy_frames =
 	  viewimg_create_sequence (top->threeDeeSlice.xy_worldcanvas,
@@ -985,49 +1247,60 @@ static void register_new_cube (ThreeDeeSliceWidget top, iarray cube,
 				   cube->data, 2, 1, 0, cube->elem_index) )
 	== NULL )
     {
-	(void) fprintf (stderr, "Error creating ViewableImage sequence\n");
+	fprintf (stderr, "Error creating ViewableImage sequence\n");
 	free_data (top);
 	return;
     }
+    viewimg_set_array_attributes (top->threeDeeSlice.xy_frames,
+				  iarray_dim_length (cube, 0),
+				  VIEWIMG_VATT_DATA_SCALE, scale,
+				  VIEWIMG_VATT_DATA_OFFSET, offset,
+				  VIEWIMG_VATT_END);
     if ( ( top->threeDeeSlice.xz_frames =
 	  viewimg_create_sequence (top->threeDeeSlice.xz_worldcanvas,
 				   cube->multi_desc, cube->arr_desc,
 				   cube->data, 2, 0, 1, cube->elem_index) )
 	== NULL )
     {
-	(void) fprintf (stderr, "Error creating ViewableImage sequence\n");
+	fprintf (stderr, "Error creating ViewableImage sequence\n");
 	free_data (top);
 	return;
     }
+    viewimg_set_array_attributes (top->threeDeeSlice.xz_frames,
+				  iarray_dim_length (cube, 1),
+				  VIEWIMG_VATT_DATA_SCALE, scale,
+				  VIEWIMG_VATT_DATA_OFFSET, offset,
+				  VIEWIMG_VATT_END);
     if ( ( top->threeDeeSlice.zy_frames =
 	  viewimg_create_sequence (top->threeDeeSlice.zy_worldcanvas,
 				   cube->multi_desc, cube->arr_desc,
 				   cube->data, 0, 1, 2, cube->elem_index) )
 	== NULL )
     {
-	(void) fprintf (stderr, "Error creating ViewableImage sequence\n");
+	fprintf (stderr, "Error creating ViewableImage sequence\n");
 	free_data (top);
 	return;
     }
-    iarray_get_world_coords (cube, 0, &val, &dummy);
-    top->threeDeeSlice.cursorPosition.z = val;
-    iarray_get_world_coords (cube, 1, &val, &dummy);
-    top->threeDeeSlice.cursorPosition.y = val;
-    iarray_get_world_coords (cube, 2, &val, &dummy);
-    top->threeDeeSlice.cursorPosition.x = val;
+    viewimg_set_array_attributes (top->threeDeeSlice.zy_frames,
+				  iarray_dim_length (cube, 2),
+				  VIEWIMG_VATT_DATA_SCALE, scale,
+				  VIEWIMG_VATT_DATA_OFFSET, offset,
+				  VIEWIMG_VATT_END);
+    fillin_cursor (top, &top->threeDeeSlice.cursor,XkwThreeDeeSlicePixelCursor,
+		   0.0, 0.0, 0.0);
     if ( !viewimg_set_active (top->threeDeeSlice.xy_frames[0], FALSE) )
     {
-	(void) fprintf (stderr, "Error making ViewableImage active\n");
+	fprintf (stderr, "Error making ViewableImage active\n");
 	return;
     }
     if ( !viewimg_set_active (top->threeDeeSlice.xz_frames[0], FALSE) )
     {
-	(void) fprintf (stderr, "Error making ViewableImage active\n");
+	fprintf (stderr, "Error making ViewableImage active\n");
 	return;
     }
     if ( !viewimg_set_active (top->threeDeeSlice.zy_frames[0], FALSE) )
     {
-	(void) fprintf (stderr, "Error making ViewableImage active\n");
+	fprintf (stderr, "Error making ViewableImage active\n");
 	return;
     }
     /*  Now draw the lot  */
@@ -1045,13 +1318,15 @@ static void iarr_destroy_func (iarray arr, ThreeDeeSliceWidget top)
     flag verbose;
 
     verbose = top->threeDeeSlice.verbose;
-    if (verbose) (void) fprintf (stderr,
-				 "ThreeDeeSliceWidget::iarray destroyed\n");
+    if (verbose) fprintf (stderr, "ThreeDeeSliceWidget::iarray destroyed\n");
     /*  Must free the other data first else we will be left with a bunch of
 	ViewableImages floating around.  */
     free_data (top);
     top->threeDeeSlice.cube = NULL;
     top->threeDeeSlice.iarr_destroy_func = NULL;
+    if (top->threeDeeSlice.ap != NULL)
+	wcs_astro_destroy (top->threeDeeSlice.ap);
+    top->threeDeeSlice.ap = NULL;
 }   /*  End Function iarr_destroy_func  */
 
 static flag dummy_pos_consumer (KPixCanvas canvas, int x, int y,
@@ -1158,6 +1433,9 @@ static void free_data (ThreeDeeSliceWidget top)
     }
 }   /*  End Function free_data  */
 
+
+/*  Public functions follow  */
+
 void XkwThreeDeeSlicePrecompute (Widget w, XtPointer client_data,
 				 XtPointer call_data)
 /*  [PURPOSE] This routine will precompute all ViewableImages. This routine may
@@ -1176,31 +1454,55 @@ void XkwThreeDeeSlicePrecompute (Widget w, XtPointer client_data,
     if (top->threeDeeSlice.xy_frames == NULL) return;
     if (top->threeDeeSlice.xz_frames == NULL) return;
     if (top->threeDeeSlice.zy_frames == NULL) return;
-    (void) fprintf (stderr, "Precomputing XY frames...\n");
+    fprintf (stderr, "Precomputing XY frames...\n");
     for (count = iarray_dim_length (top->threeDeeSlice.cube, 0) - 1;
 	 count >= 0; --count)
     {
 	if ( !viewimg_make_active (top->threeDeeSlice.xy_frames[count]) )
 	{
-	    (void) fprintf (stderr, "Error making ViewableImage active\n");
+	    fprintf (stderr, "Error making ViewableImage active\n");
 	}
     }
-    (void) fprintf (stderr, "Precomputing XZ frames...\n");
+    fprintf (stderr, "Precomputing XZ frames...\n");
     for (count = iarray_dim_length (top->threeDeeSlice.cube, 1) - 1;
 	 count >= 0; --count)
     {
 	if ( !viewimg_make_active (top->threeDeeSlice.xz_frames[count]) )
 	{
-	    (void) fprintf (stderr, "Error making ViewableImage active\n");
+	    fprintf (stderr, "Error making ViewableImage active\n");
 	}
     }
-    (void) fprintf (stderr, "Precomputing ZY frames...\n");
+    fprintf (stderr, "Precomputing ZY frames...\n");
     for (count = iarray_dim_length (top->threeDeeSlice.cube, 2) - 1;
 	 count >= 0; --count)
     {
 	if ( !viewimg_make_active (top->threeDeeSlice.zy_frames[count]) )
 	{
-	    (void) fprintf (stderr, "Error making ViewableImage active\n");
+	    fprintf (stderr, "Error making ViewableImage active\n");
 	}
     }
 }   /*  End Function XkwThreeDeeSlicePrecompute  */
+
+void XkwThreeDeeSliceSetCursor (Widget W, unsigned int type,
+				double x, double y, double z)
+/*  [SUMMARY] Set the 3D cursor position.
+    <W> The ThreeDeeSlice widget.
+    <type> The type of the supplied co-ordinates.
+    <x> The x co-ordinate.
+    <y> The y co-ordinate.
+    <z> The z co-ordinate.
+    [RETURNS] Nothing.
+*/
+{
+    struct XkwThreeDeeSliceCursor cursor;
+    ThreeDeeSliceWidget w = (ThreeDeeSliceWidget) W;
+    static char function_name[] = "XkwThreeDeeSliceSetCursor";
+
+    if ( !XtIsThreeDeeSlice (W) )
+    {
+	fprintf (stderr, "Bad widget passed\n");
+	a_prog_bug (function_name);
+    }
+    fillin_cursor (w, &cursor, type, x, y, z);
+    move_cursor (w, cursor);
+}   /*  End Function XkwThreeDeeSliceSetCursor  */

@@ -219,8 +219,24 @@
   separate file. Fixed bug in <kwin_draw_lines_TRANSITION> when specialised
   hook function not available.
 
-    Last updated by Richard Gooch   14-SEP-1996: Set canvas offsets to 0 in
+    Updated by      Richard Gooch   14-SEP-1996: Set canvas offsets to 0 in
   <kwin_new_driver_refresh>.
+
+    Updated by      Richard Gooch   22-NOV-1996: Fixed bug in
+  <kwin_draw_rgb_image> when drawing PostScript onto a PseudoColour canvas.
+
+    Updated by      Richard Gooch   27-NOV-1996: Created
+  <kwin_refresh_if_visible>.
+
+    Updated by      Richard Gooch   28-NOV-1996: Created
+  <kwin_fill_polygon_TRANSITION> which will become <kwin_fill_polygon> in
+  Karma v2.0.
+
+    Updated by      Richard Gooch   5-DEC-1996: Removed subtraction of 1 from
+  with and height in rectangle drawing operations when doing it the hard way.
+
+    Last updated by Richard Gooch   8-DEC-1996: Fixed loading of fonts so that
+  a cache is maintained, rather than loading again each time.
 
 
 */
@@ -280,6 +296,7 @@ struct pixcanvas_type
     flag visible;
     PostScriptPage pspage;
     KPixCanvasFont font;
+    KPixCanvasFont first_font;
     KPixCanvas parent;
     void *user_ptr;
     double line_width;
@@ -326,6 +343,8 @@ struct pixfont_type
     unsigned int magic_number;
     KPixCanvas canvas;
     void *info;
+    CONST char *name;
+    KPixCanvasFont next;
 };
 
 struct position_struct
@@ -450,6 +469,7 @@ KPixCanvas kwin_create_generic (void *info, int xoff, int yoff,
     canvas->visual = visual;
     canvas->pspage = NULL;
     canvas->font = NULL;
+    canvas->first_font = NULL;
     canvas->parent = NULL;
     canvas->draw_funcs.point = draw_point;
     canvas->create_child = create_child;
@@ -818,6 +838,23 @@ flag kwin_resize (KPixCanvas canvas, flag clear, int xoff, int yoff,
     c_call_callbacks (canvas->refresh_list, NULL);
     return (TRUE);
 }   /*  End Function kwin_resize  */
+
+/*EXPERIMENTAL_FUNCTION*/
+flag kwin_refresh_if_visible (KPixCanvas canvas, flag clear)
+/*  [SUMMARY] Refresh a pixel canvas if it is visible.
+    <canvas> The pixel canvas.
+    <clear> If TRUE the canvas is cleared prior to refreshing.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    static char function_name[] = "kwin_refresh_if_visible";
+
+    VERIFY_CANVAS (canvas);
+    FLAG_VERIFY (clear);
+    canvas->pspage = NULL;
+    if (!canvas->visible) return (TRUE);
+    return kwin_resize (canvas, clear, 0, 0, 0, 0);
+}   /*  End Function kwin_refresh_if_visible  */
 
 /*EXPERIMENTAL_FUNCTION*/
 flag kwin_partial_refresh (KPixCanvas canvas, unsigned int num_areas,
@@ -1476,13 +1513,14 @@ flag kwin_draw_rgb_image (KPixCanvas canvas, int x_off, int y_off,
 
     VERIFY_CANVAS (canvas);
     if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
-	(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
+	 (canvas->visual != KWIN_VISUAL_TRUECOLOUR) &&
+	 (canvas->pspage == NULL) )
     {
 	fprintf (stderr, "Canvas visual type: %u illegal for RGB images\n",
 		 canvas->visual);
 	a_prog_bug (function_name);
     }
-    if (canvas->depth != 24)
+    if ( (canvas->depth != 24) && (canvas->pspage == NULL) )
     {
 	fprintf(stderr,"Canvas depth: %u illegal for RGB images. Must be 24\n",
 		canvas->depth);
@@ -1970,6 +2008,62 @@ flag kwin_fill_polygon (KPixCanvas canvas, int *point_x, int *point_y,
     return (retval);
 }   /*  End Function kwin_fill_polygon  */
 
+/*TRANSITION_FUNCTION*/
+flag kwin_fill_polygon_TRANSITION (KPixCanvas canvas,
+				   double *point_x, double *point_y,
+				   unsigned int num_vertices,
+				   unsigned long pixel_value,
+				   flag convex)
+/*  [SUMMARY] Draw a filled polygon onto a pixel canvas.
+    <canvas> The canvas.
+    <point_x> The array of x co-ordinates of vertices of the polygon.
+    <point_y> The array of y co-ordinates of vertices of the polygon.
+    <num_vertices> The number of vertices in the polygon.
+    <pixel_value> The pixel value to use.
+    <convex> If TRUE, then the points must form a convex polygon.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    flag retval;
+    unsigned int coord_count;
+    double *x_arr, *y_arr;
+    static char function_name[] = "kwin_fill_polygon_TRANSITION";
+
+    VERIFY_CANVAS (canvas);
+    FLAG_VERIFY (convex);
+    if ( ( x_arr = (double *) m_alloc (num_vertices * sizeof *x_arr) )
+	== NULL )
+    {
+	m_error_notify (function_name, "x array");
+	return (FALSE);
+    }
+    if ( ( y_arr = (double *) m_alloc (num_vertices * sizeof *y_arr) )
+	== NULL )
+    {
+	m_error_notify (function_name, "y array");
+	m_free ( (char *) x_arr );
+	return (FALSE);
+    }
+    if (canvas->draw_funcs.polygon == NULL)
+    {
+	fprintf (stderr, "Filling polygons not supported\n");
+	m_free ( (char *) x_arr );
+	m_free ( (char *) y_arr );
+	return (FALSE);
+    }
+    for (coord_count = 0; coord_count < num_vertices; ++coord_count)
+    {
+	x_arr[coord_count] = point_x[coord_count] + (double) canvas->xoff;
+	y_arr[coord_count] = point_y[coord_count] + (double) canvas->yoff;
+    }
+    retval = (*canvas->draw_funcs.polygon) (canvas->draw_funcs.info,
+					    x_arr, y_arr, num_vertices,
+					    pixel_value, convex, TRUE);
+    m_free ( (char *) x_arr );
+    m_free ( (char *) y_arr );
+    return (retval);
+}   /*  End Function kwin_fill_polygon_TRANSITION  */
+
 /*PUBLIC_FUNCTION*/
 flag kwin_draw_string (KPixCanvas canvas, double x, double y,
 		       CONST char *string, unsigned long pixel_value,
@@ -2028,8 +2122,8 @@ flag kwin_draw_rectangle (KPixCanvas canvas, double x, double y,
 						  FALSE) );
     }
     /*  Do it the slow way  */
-    x1 = x + width - 1.0;
-    y1 = y + height - 1.0;
+    x1 = x + width;
+    y1 = y + height;
     if ( !kwin_draw_line (canvas, x, y, x1, y, pixel_value) ) return (FALSE);
     if ( !kwin_draw_line (canvas, x, y1, x1, y1, pixel_value) ) return (FALSE);
     if ( !kwin_draw_line (canvas, x, y, x, y1, pixel_value) ) return (FALSE);
@@ -2050,7 +2144,7 @@ flag kwin_fill_rectangle (KPixCanvas canvas, double x, double y,
     [RETURNS] TRUE on success, else FALSE.
 */
 {
-    int px[4], py[4];
+    double px[4], py[4];
     static char function_name[] = "kwin_fill_rectangle";
 
     VERIFY_CANVAS (canvas);
@@ -2064,15 +2158,16 @@ flag kwin_fill_rectangle (KPixCanvas canvas, double x, double y,
 						  TRUE) );
     }
     /*  Do it the slow way  */
-    px[0] = (int) x;
-    py[0] = (int) y;
-    px[1] = (int) x + width - 1;
+    px[0] = x;
+    py[0] = y;
+    px[1] = x + width;
     py[1] = py[0];
     px[2] = px[1];
-    py[2] = (int) y + height - 1;
-    px[3] = (int) x;
+    py[2] = y + height;
+    px[3] = x;
     py[3] = py[2];
-    return ( kwin_fill_polygon (canvas, px, py, 4, pixel_value, TRUE) );
+    return ( kwin_fill_polygon_TRANSITION (canvas, px, py, 4, pixel_value,
+					   TRUE) );
 }   /*  End Function kwin_fill_rectangle  */
 
 /*PUBLIC_FUNCTION*/
@@ -2634,18 +2729,32 @@ KPixCanvasFont kwin_load_font (KPixCanvas canvas, CONST char *fontname)
 	fprintf (stderr, "Font loading not supported\n");
 	return (NULL);
     }
+    /*  Search for existing font  */
+    for (font = canvas->first_font; font != NULL; font = font->next)
+    {
+	if (strcmp (fontname, font->name) == 0) return (font);
+    }
+    /*  Have to load a new font  */
     if ( ( font = (KPixCanvasFont) m_alloc (sizeof *font) ) == NULL )
     {
 	m_abort (function_name, "font structure");
     }
     if ( ( font->info = (*canvas->load_font) (canvas->info, fontname) )
-	== NULL )
+	 == NULL )
     {
 	m_free ( (char *) font );
 	return (NULL);
     }
-    font->magic_number = FONT_MAGIC_NUMBER;
     font->canvas = canvas;
+    if ( ( font->name = st_dup (fontname) ) == NULL )
+    {
+	m_error_notify (function_name, "fontname");
+	m_free ( (char *) font );
+	return (NULL);
+    }
+    font->next = canvas->first_font;
+    canvas->first_font = font;
+    font->magic_number = FONT_MAGIC_NUMBER;
     return (font);
 }   /*  End Function kwin_load_font  */
 

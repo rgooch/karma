@@ -47,6 +47,7 @@ double reference_dec[MAX_PAIRS];
 
 /*  Target information  */
 iarray tar_array = NULL;
+KwcsAstro target_original_ap = NULL;
 KwcsAstro target_ap = NULL;
 unsigned int num_target_points = 0;
 double target_x[MAX_PAIRS];

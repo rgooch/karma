@@ -145,12 +145,20 @@
     Updated by      Richard Gooch   16-SEP-1996: Allow NULL win_scale for
   <canvas_create>.
 
-    Last updated by Richard Gooch   28-SEP-1996: Fixed bug in
+    Updated by      Richard Gooch   28-SEP-1996: Fixed bug in
   <canvas_set_attributes> when setting iscale_func.
+
+    Updated by      Richard Gooch   5-NOV-1996: Fixed <canvas_draw_lines_p> to
+  divide equally in non-linear world co-ordinates rather than in linear
+  co-ordinates.
+
+    Last updated by Richard Gooch   8-DEC-1996: Added support for
+  "!valueR valueI" colournames in <canvas_get_colour>. Undocumented.
 
 
 */
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 #include <stdarg.h>
 #include <karma.h>
@@ -183,10 +191,10 @@
 #define COORD_BUF_SIZE 2048
 
 #define VERIFY_CANVAS(canvas) if (canvas == NULL) \
-{(void) fprintf (stderr, "NULL canvas passed\n"); \
+{fprintf (stderr, "NULL canvas passed\n"); \
  a_prog_bug (function_name); } \
 if (canvas->magic_number != MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid canvas object\n"); \
+{fprintf (stderr, "Invalid canvas object\n"); \
  a_prog_bug (function_name); }
 
 
@@ -196,6 +204,9 @@ struct worldcanvas_type
     unsigned int magic_number;
     KPixCanvas pixcanvas;
     Kcolourmap cmap;
+    unsigned int cmap_num_pixels;
+    unsigned long *cmap_pixels;
+    unsigned short *cmap_rgb_values;
     struct win_scale_type win_scale;
     flag auto_min_sat;
     flag auto_max_sat;
@@ -229,10 +240,11 @@ struct worldcanvas_type
     void (*deprecated_coord_transform_func) ();
     void *coord_transform_info;
     /*  Specification information  */
-    char *specify_xlabel;
-    char *specify_ylabel;
+    char specify_xlabel[STRING_LENGTH];
+    char specify_ylabel[STRING_LENGTH];
     unsigned int num_restrictions;
-    char **restriction_names;
+    unsigned int restrictions_allocated;
+    char **restriction_names;  /*  Strings of length STRING_LENGTH  */
     double *restriction_values;
     /*  Dressing display parameters  */
     flag dressing_drawn;
@@ -293,8 +305,9 @@ STATIC_FUNCTION (void refresh_canvas,
 		  unsigned int num_areas, KPixCanvasRefreshArea *areas,
 		  flag *honoured_areas) );
 STATIC_FUNCTION (unsigned long get_pixel_from_value,
-		 (double value[2], struct win_scale_type *win_scale,
-		  Kcolourmap cmap) );
+		 (KWorldCanvas canvas, double value[2],
+		  unsigned short *red, unsigned short *green,
+		  unsigned short *blue) );
 STATIC_FUNCTION (flag pixcanvas_position_event,
 		 (KPixCanvas pixcanvas, int x, int y, unsigned int event_code,
 		  void *event_info, void **f_info) );
@@ -347,7 +360,7 @@ KWorldCanvas canvas_create (KPixCanvas pixcanvas, Kcolourmap cmap,
 
     if (pixcanvas == NULL)
     {
-	(void) fprintf (stderr, "NULL KPixCanvas passed\n");
+	fprintf (stderr, "NULL KPixCanvas passed\n");
 	a_prog_bug (function_name);
     }
     if (win_scale == NULL)
@@ -365,6 +378,17 @@ KWorldCanvas canvas_create (KPixCanvas pixcanvas, Kcolourmap cmap,
     canvas->magic_number = MAGIC_NUMBER;
     canvas->pixcanvas = pixcanvas;
     canvas->cmap = cmap;
+    if (cmap == NULL)
+    {
+	canvas->cmap_num_pixels = 0;
+	canvas->cmap_rgb_values = NULL;
+    }
+    else
+    {
+	canvas->cmap_num_pixels = kcmap_get_pixels (cmap,
+						    &canvas->cmap_pixels);
+	canvas->cmap_rgb_values = kcmap_get_rgb_values (cmap, NULL);
+    }
     canvas->auto_min_sat = FALSE;
     canvas->auto_max_sat = FALSE;
     m_copy ( (char *) &canvas->win_scale, (char *) win_scale,
@@ -386,9 +410,10 @@ KWorldCanvas canvas_create (KPixCanvas pixcanvas, Kcolourmap cmap,
     canvas->position_list = NULL;
     canvas->quash_negotiate = FALSE;
     canvas->in_size_control_func = FALSE;
-    canvas->specify_xlabel = NULL;
-    canvas->specify_ylabel = NULL;
+    canvas->specify_xlabel[0] = '\0';
+    canvas->specify_ylabel[0] = '\0';
     canvas->num_restrictions = 0;
+    canvas->restrictions_allocated = 0;
     canvas->restriction_names = NULL;
     canvas->restriction_values = NULL;
     canvas->dressing_drawn = FALSE;
@@ -413,7 +438,7 @@ KWorldCanvas canvas_create (KPixCanvas pixcanvas, Kcolourmap cmap,
     kwin_register_refresh_func (pixcanvas, pixcanvas_refresh_func,
 				(void *) canvas);
     /*  Process position events from lower down  */
-    (void) kwin_register_position_event_func (pixcanvas,
+    kwin_register_position_event_func (pixcanvas,
 					      pixcanvas_position_event,
 					      (void *) canvas);
     /*  Process colourmap resizes  */
@@ -473,7 +498,7 @@ void canvas_register_size_control_func (KWorldCanvas canvas,
     if (size_control_func == NULL) return;
     if (canvas->size_control_func != NULL)
     {
-	(void) fprintf (stderr, "size_control_func already registered\n");
+	fprintf (stderr, "size_control_func already registered\n");
 	a_prog_bug (function_name);
     }
     canvas->size_control_func = size_control_func;
@@ -582,7 +607,7 @@ void canvas_get_attributes (KWorldCanvas canvas, ...)
 	    *( va_arg (argp, flag *) ) = canvas->auto_max_sat;
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Unknown attribute key: %u\n", att_key);
+	    fprintf (stderr, "Unknown attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	    break;
 	}
@@ -666,7 +691,7 @@ flag canvas_set_attributes (KWorldCanvas canvas, ...)
 	    canvas->auto_max_sat = va_arg (argp, flag);
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Unknown attribute key: %u\n", att_key);
+	    fprintf (stderr, "Unknown attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	    break;
 	}
@@ -717,7 +742,7 @@ flag canvas_resize (KWorldCanvas canvas, struct win_scale_type *win_scale,
 	/*  Call size control function first  */
 	if ( !negotiate_scale_change (canvas, width, height, &boundary_clear) )
 	{
-	    (void) fprintf (stderr, "Pixel canvas not big enough\n");
+	    fprintf (stderr, "Pixel canvas not big enough\n");
 	    return (FALSE);
 	}
 	FLAG_VERIFY (boundary_clear);
@@ -777,110 +802,78 @@ flag canvas_specify (KWorldCanvas canvas, char *xlabel, char *ylabel,
     [NOTE] This routine DOES NOT cause the canvas to be refreshed. It is highly
     recommended that the canvas is refreshed after this routine, as higher
     level packages may depend on the specification information.
+    [NOTE] All string values are copied.
     [RETURNS] TRUE on success, else FALSE.
 */
 {
     unsigned int count;
-    char *xlab;
-    char *ylab;
     char **names;
     double *values;
     static char function_name[] = "canvas_specify";
 
     VERIFY_CANVAS (canvas);
-    if (xlabel == NULL)
+    if (xlabel == NULL) canvas->specify_xlabel[0] = '\0';
+    else strcpy (canvas->specify_xlabel, xlabel);
+    if (ylabel == NULL) canvas->specify_ylabel[0] = '\0';
+    else strcpy (canvas->specify_ylabel, ylabel);
+    if (num_restr > canvas->restrictions_allocated)
     {
-	xlab = NULL;
-    }
-    else
-    {
-	if ( ( xlab = st_dup (xlabel) ) == NULL )
-	{
-	    m_error_notify (function_name, "horizontal dimension label");
-	    return (FALSE);
-	}
-    }
-    if (ylabel == NULL)
-    {
-	ylab = NULL;
-    }
-    else
-    {
-	if ( ( ylab = st_dup (ylabel) ) == NULL )
-	{
-	    m_error_notify (function_name, "vertical dimension label");
-	    m_free (xlab);
-	    return (FALSE);
-	}
-    }
-    if (num_restr > 0)
-    {
-	/*  Restrictions needed  */
+	/*  Allocate restriction space  */
 	if ( ( names = (char **) m_alloc (sizeof *names * num_restr) ) ==NULL )
 	{
 	    m_error_notify (function_name, "array of restriction names");
-	    if (xlab != NULL) m_free (xlab);
-	    if (ylab != NULL) m_free (ylab);
 	    return (FALSE);
 	}
 	if ( ( values = (double *) m_alloc (sizeof *values * num_restr) )
-	    == NULL )
+	     == NULL )
 	{
 	    m_error_notify (function_name, "array of restriction values");
-	    if (xlab != NULL) m_free (xlab);
-	    if (ylab != NULL) m_free (ylab);
 	    m_free ( (char *) names );
 	    return (FALSE);
 	}
 	for (count = 0; count < num_restr; ++count)
 	{
-	    if ( ( names[count] = st_dup (restr_names[count]) ) == NULL )
+	    if ( ( names[count] = m_alloc (STRING_LENGTH) ) == NULL )
 	    {
-		m_error_notify (function_name, "restriction name");
-		if (xlab != NULL) m_free (xlab);
-		if (ylab != NULL) m_free (ylab);
-		for (; count > 0; --count)
-		{
-		    m_free (names[count - 1]);
-		}
+		m_error_notify (function_name, "restriction names");
 		m_free ( (char *) names );
 		m_free ( (char *) values );
+		while (count > 0)
+		{
+		    m_free (names[count]);
+		    --count;
+		}
 		return (FALSE);
 	    }
-	    values[count] = restr_values[count];
 	}
-    }
-    else
-    {
-	/*  No restrictions needed  */
-	names = NULL;
-	values = NULL;
-    }
-    /*  Remove old info  */
-    if (canvas->specify_xlabel != NULL) m_free (canvas->specify_xlabel);
-    if (canvas->specify_ylabel != NULL) m_free (canvas->specify_ylabel);
-    if (canvas->restriction_names != NULL)
-    {
-	for (count = 0; count < canvas->num_restrictions; ++count)
+	/*  Free old  */
+	if (canvas->restriction_names != NULL)
 	{
-	    if (canvas->restriction_names[count] != NULL)
+	    for (count = 0; count < canvas->restrictions_allocated; ++count)
 	    {
 		m_free (canvas->restriction_names[count]);
 	    }
+	    m_free ( (char *) canvas->restriction_names );
 	}
-	m_free ( (char *) canvas->restriction_names );
-	canvas->restriction_names = NULL;
+	if (canvas->restriction_values != NULL)
+	    m_free ( (char *) canvas->restriction_values );
+	canvas->restriction_names = names;
+	canvas->restriction_values = values;
+	canvas->restrictions_allocated = num_restr;
     }
-    if (canvas->restriction_values != NULL)
+    else
     {
-	m_free ( (char *) canvas->restriction_values );
-	canvas->restriction_values = NULL;
+	names = canvas->restriction_names;
+	values = canvas->restriction_values;
     }
-    canvas->specify_xlabel = xlab;
-    canvas->specify_ylabel = ylab;
+    /*  Copy the restriction data  */
     canvas->num_restrictions = num_restr;
-    canvas->restriction_names = names;
-    canvas->restriction_values = values;
+    for (count = 0; count < num_restr; ++count)
+    {
+	strncpy (names[count], restr_names[count], STRING_LENGTH - 1);
+	names[count][STRING_LENGTH - 1] = '\0';
+	values[count] = restr_values[count];
+    }
     return (TRUE);
 }   /*  End Function canvas_specify  */
 
@@ -906,8 +899,10 @@ void canvas_get_specification (KWorldCanvas canvas, char **xlabel,
     static char function_name[] = "canvas_get_specification";
 
     VERIFY_CANVAS (canvas);
-    *xlabel = canvas->specify_xlabel;
-    *ylabel = canvas->specify_ylabel;
+    if (canvas->specify_xlabel[0] == '\0') *xlabel = NULL;
+    else *xlabel = canvas->specify_xlabel;
+    if (canvas->specify_ylabel[0] == '\0') *ylabel = NULL;
+    else *ylabel = canvas->specify_ylabel;
     *num_restr = canvas->num_restrictions;
     *restr_names = canvas->restriction_names;
     *restr_values = canvas->restriction_values;
@@ -1170,7 +1165,7 @@ void canvas_register_coords_convert_func (KWorldCanvas canvas,
     if (coord_convert_func == NULL) return;
     if (canvas->coords_convert_func != NULL)
     {
-	(void) fprintf (stderr, "coord_convert_func already registered\n");
+	fprintf (stderr, "coord_convert_func already registered\n");
 	a_prog_bug (function_name);
     }
     canvas->coords_convert_func = coord_convert_func;
@@ -1257,7 +1252,7 @@ void canvas_register_transforms_func (KWorldCanvas canvas,
     if (coord_transform_func == NULL) return;
     if (canvas->coord_transforms_func != NULL)
     {
-	(void) fprintf (stderr, "coord_transform_func already registered\n");
+	fprintf (stderr, "coord_transform_func already registered\n");
 	a_prog_bug (function_name);
     }
     canvas->coord_transforms_func = coord_transform_func;
@@ -1298,11 +1293,20 @@ flag canvas_get_colour (KWorldCanvas canvas, CONST char *colourname,
     [RETURNS] TRUE if the colourcell was allocated, else FALSE.
 */
 {
+    double value[2];
     static char function_name[] = "canvas_get_colour";
 
     VERIFY_CANVAS (canvas);
-    return ( kwin_get_colour (canvas->pixcanvas, colourname, pixel_value,
-			      red, green, blue) );
+    if ( (canvas->cmap != NULL) && (colourname[0] == '!') )
+    {
+	/*  Embedded value in colourname  */
+	value[0] = 0.0;
+	value[1] = 0.0;
+	sscanf (colourname + 1, "%le %le", value, value + 1);
+	return get_pixel_from_value (canvas, value, red, green, blue);
+    }
+    return kwin_get_colour (canvas->pixcanvas, colourname, pixel_value,
+			    red, green, blue);
 }   /*  End Function canvas_get_colour  */
 
 /*PUBLIC_FUNCTION*/
@@ -1518,14 +1522,14 @@ void canvas_set_dressing (KWorldCanvas canvas, ...)
 	    canvas->title_fontname = string;
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Illegal attribute key: %u\n", att_key);
+	    fprintf (stderr, "Illegal attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	}
     }
     va_end (arg_pointer);
     if (no_changes) return;
     /*  Refresh canvas  */
-    (void) canvas_resize (canvas, (struct win_scale_type *) NULL, TRUE);
+    canvas_resize (canvas, (struct win_scale_type *) NULL, TRUE);
 }   /*  End Function canvas_set_dressing  */
 
 /*PUBLIC_FUNCTION*/
@@ -1576,7 +1580,7 @@ void canvas_draw_dressing (KWorldCanvas canvas)
 			   (unsigned short *) NULL, (unsigned short *) NULL,
 			   (unsigned short *) NULL) )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Could not allocate colour: \"%s\" for dressing\n",
 			colourname);
 	return;
@@ -1649,14 +1653,14 @@ flag canvas_draw_image (KWorldCanvas canvas, array_desc *arr_desc, char *slice,
     VERIFY_CANVAS (canvas);
     if (canvas->cmap == NULL)
     {
-	(void) fprintf (stderr,"Canvas has no colourmap associated with it\n");
+	fprintf (stderr,"Canvas has no colourmap associated with it\n");
 	a_prog_bug (function_name);
     }
     num_pixels = kcmap_get_pixels (canvas->cmap, &pixel_values);
     pack_desc = arr_desc->packet;
     if (elem_index >= pack_desc->num_elements)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"elem_index: %u greater than number of elements: %u\n",
 			elem_index, pack_desc->num_elements);
 	a_prog_bug (function_name);
@@ -1672,7 +1676,7 @@ flag canvas_draw_image (KWorldCanvas canvas, array_desc *arr_desc, char *slice,
 				      SEARCH_BIAS_CLOSEST);
     if (abs_start_index >= abs_end_index)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Left co-ordinate index: %u not less than right: %u\n",
 			abs_start_index, abs_end_index);
 	a_prog_bug (function_name);
@@ -1684,7 +1688,7 @@ flag canvas_draw_image (KWorldCanvas canvas, array_desc *arr_desc, char *slice,
 				      SEARCH_BIAS_CLOSEST);
     if (ord_start_index >= ord_end_index)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Bottom co-ordinate index: %u not less than top: %u\n",
 			ord_start_index, ord_end_index);
 	a_prog_bug (function_name);
@@ -1755,40 +1759,40 @@ flag canvas_draw_rgb_image (KWorldCanvas canvas, array_desc *arr_desc,
     pack_desc = arr_desc->packet;
     if (red_index >= pack_desc->num_elements)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"red_index: %u greater than number of elements: %u\n",
 			red_index, pack_desc->num_elements);
 	a_prog_bug (function_name);
     }
     if (pack_desc->element_types[red_index] != K_UBYTE)
     {
-	(void) fprintf (stderr, "Red component type: %u is not K_UBYTE\n",
+	fprintf (stderr, "Red component type: %u is not K_UBYTE\n",
 			pack_desc->element_types[red_index]);
 	return (FALSE);
     }
     if (green_index >= pack_desc->num_elements)
     {
-	(void) fprintf(stderr,
+	fprintf(stderr,
 		       "green_index: %u greater than number of elements: %u\n",
 		       green_index, pack_desc->num_elements);
 	a_prog_bug (function_name);
     }
     if (pack_desc->element_types[green_index] != K_UBYTE)
     {
-	(void) fprintf (stderr, "Green component type: %u is not K_UBYTE\n",
+	fprintf (stderr, "Green component type: %u is not K_UBYTE\n",
 			pack_desc->element_types[green_index]);
 	return (FALSE);
     }
     if (blue_index >= pack_desc->num_elements)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"blue_index: %u greater than number of elements: %u\n",
 			blue_index, pack_desc->num_elements);
 	a_prog_bug (function_name);
     }
     if (pack_desc->element_types[blue_index] != K_UBYTE)
     {
-	(void) fprintf (stderr, "Blue component type: %u is not K_UBYTE\n",
+	fprintf (stderr, "Blue component type: %u is not K_UBYTE\n",
 			pack_desc->element_types[blue_index]);
 	return (FALSE);
     }
@@ -1811,7 +1815,7 @@ flag canvas_draw_rgb_image (KWorldCanvas canvas, array_desc *arr_desc,
 				      SEARCH_BIAS_CLOSEST);
     if (abs_start_index >= abs_end_index)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Left co-ordinate index: %u not less than right: %u\n",
 			abs_start_index, abs_end_index);
 	a_prog_bug (function_name);
@@ -1823,7 +1827,7 @@ flag canvas_draw_rgb_image (KWorldCanvas canvas, array_desc *arr_desc,
 				      SEARCH_BIAS_CLOSEST);
     if (ord_start_index >= ord_end_index)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Bottom co-ordinate index: %u not less than top: %u\n",
 			ord_start_index, ord_end_index);
 	a_prog_bug (function_name);
@@ -1863,11 +1867,10 @@ void canvas_draw_point (KWorldCanvas canvas, double x, double y,
     VERIFY_CANVAS (canvas);
     if (canvas->cmap == NULL)
     {
-	(void) fprintf (stderr,"Canvas has no colourmap associated with it\n");
+	fprintf (stderr,"Canvas has no colourmap associated with it\n");
 	a_prog_bug (function_name);
     }
-    pixel_value = get_pixel_from_value (value, &canvas->win_scale,
-					canvas->cmap);
+    pixel_value = get_pixel_from_value (canvas, value, NULL, NULL, NULL);
     canvas_draw_point_p (canvas, x, y, pixel_value);
 }   /*  End Function canvas_draw_point  */
 
@@ -1914,11 +1917,10 @@ void canvas_draw_line (KWorldCanvas canvas,
     VERIFY_CANVAS (canvas);
     if (canvas->cmap == NULL)
     {
-	(void) fprintf (stderr,"Canvas has no colourmap associated with it\n");
+	fprintf (stderr,"Canvas has no colourmap associated with it\n");
 	a_prog_bug (function_name);
     }
-    pixel_value = get_pixel_from_value (value, &canvas->win_scale,
-					canvas->cmap);
+    pixel_value = get_pixel_from_value (canvas, value, NULL, NULL, NULL);
     canvas_draw_line_p (canvas, x0, y0, x1, y1, pixel_value);
 }   /*  End Function canvas_draw_line  */
 
@@ -1967,11 +1969,10 @@ void canvas_draw_ellipse (KWorldCanvas canvas,
     VERIFY_CANVAS (canvas);
     if (canvas->cmap == NULL)
     {
-	(void) fprintf (stderr,"Canvas has no colourmap associated with it\n");
+	fprintf (stderr,"Canvas has no colourmap associated with it\n");
 	a_prog_bug (function_name);
     }
-    pixel_value = get_pixel_from_value (value, &canvas->win_scale,
-					canvas->cmap);
+    pixel_value = get_pixel_from_value (canvas, value, NULL, NULL, NULL);
     canvas_draw_ellipse_p (canvas,
 			   centre_x, centre_y, radius_x, radius_y,
 			   pixel_value);
@@ -2032,11 +2033,10 @@ void canvas_fill_ellipse (KWorldCanvas canvas,
     VERIFY_CANVAS (canvas);
     if (canvas->cmap == NULL)
     {
-	(void) fprintf (stderr,"Canvas has no colourmap associated with it\n");
+	fprintf (stderr,"Canvas has no colourmap associated with it\n");
 	a_prog_bug (function_name);
     }
-    pixel_value = get_pixel_from_value (value, &canvas->win_scale,
-					canvas->cmap);
+    pixel_value = get_pixel_from_value (canvas, value, NULL, NULL, NULL);
     canvas_fill_ellipse_p (canvas,
 			   centre_x, centre_y, radius_x, radius_y,
 			   pixel_value);
@@ -2101,7 +2101,7 @@ flag canvas_fill_polygon (KWorldCanvas canvas, edit_coord *coords,
     VERIFY_CANVAS (canvas);
     if (canvas->cmap == NULL)
     {
-	(void) fprintf (stderr,"Canvas has no colourmap associated with it\n");
+	fprintf (stderr,"Canvas has no colourmap associated with it\n");
 	a_prog_bug (function_name);
     }
     if (num_vertices > num_points_allocated)
@@ -2143,8 +2143,7 @@ flag canvas_fill_polygon (KWorldCanvas canvas, edit_coord *coords,
 	point_x[coord_count] = px;
 	point_y[coord_count] = py;
     }
-    pixel_value = get_pixel_from_value (value, &canvas->win_scale,
-					canvas->cmap);
+    pixel_value = get_pixel_from_value (canvas, value, NULL, NULL, NULL);
     return ( kwin_fill_polygon (canvas->pixcanvas,
 				point_x, point_y, num_vertices,
 				pixel_value, convex) );
@@ -2169,11 +2168,10 @@ void canvas_draw_rectangle (KWorldCanvas canvas, double x, double y,
     VERIFY_CANVAS (canvas);
     if (canvas->cmap == NULL)
     {
-	(void) fprintf (stderr,"Canvas has no colourmap associated with it\n");
+	fprintf (stderr,"Canvas has no colourmap associated with it\n");
 	a_prog_bug (function_name);
     }
-    pixel_value = get_pixel_from_value (value, &canvas->win_scale,
-					canvas->cmap);
+    pixel_value = get_pixel_from_value (canvas, value, NULL, NULL, NULL);
     canvas_draw_rectangle_p (canvas, x, y, width, height, pixel_value);
 }   /*  End Function canvas_draw_rectangle  */
 
@@ -2229,11 +2227,10 @@ void canvas_fill_rectangle (KWorldCanvas canvas, double x, double y,
     VERIFY_CANVAS (canvas);
     if (canvas->cmap == NULL)
     {
-	(void) fprintf (stderr,"Canvas has no colourmap associated with it\n");
+	fprintf (stderr,"Canvas has no colourmap associated with it\n");
 	a_prog_bug (function_name);
     }
-    pixel_value = get_pixel_from_value (value, &canvas->win_scale,
-					canvas->cmap);
+    pixel_value = get_pixel_from_value (canvas, value, NULL, NULL, NULL);
     canvas_fill_rectangle_p (canvas, x, y, width, height, pixel_value);
 }   /*  End Function canvas_fill_rectangle  */
 
@@ -2294,11 +2291,10 @@ void canvas_draw_lines (KWorldCanvas canvas,
     VERIFY_CANVAS (canvas);
     if (canvas->cmap == NULL)
     {
-	(void) fprintf (stderr,"Canvas has no colourmap associated with it\n");
+	fprintf (stderr,"Canvas has no colourmap associated with it\n");
 	a_prog_bug (function_name);
     }
-    pixel_value = get_pixel_from_value (value, &canvas->win_scale,
-					canvas->cmap);
+    pixel_value = get_pixel_from_value (canvas, value, NULL, NULL, NULL);
     canvas_draw_lines_p (canvas, x_array, y_array, num_points, pixel_value);
 }   /*  End Function canvas_draw_lines  */
 
@@ -2322,23 +2318,28 @@ void canvas_draw_lines_p (KWorldCanvas canvas,
 {
     flag draw_block;
     int count, pcount;
-    double xscale, yscale;
-    double wx, wy;
+    double xscale, yscale, wx, wy;
+    double wlx, wby, wrx, wty;
     double px[COORD_BUF_SIZE], py[COORD_BUF_SIZE];
     static char function_name[] = "canvas_draw_lines_p";
 
     VERIFY_CANVAS (canvas);
-    xscale = canvas->win_scale.right_x - canvas->win_scale.left_x;
-    xscale /= (double) (num_points - 1);
-    yscale = canvas->win_scale.top_y - canvas->win_scale.bottom_y;
-    yscale /= (double) (num_points - 1);
+    /*  Compute extrema in non-linear world co-ordinates  */
+    wlx = canvas->win_scale.left_x;
+    wby = canvas->win_scale.bottom_y;
+    canvas_coords_transform (canvas, 1, &wlx, FALSE, &wby, FALSE);
+    wrx = canvas->win_scale.right_x;
+    wty = canvas->win_scale.top_y;
+    canvas_coords_transform (canvas, 1, &wrx, FALSE, &wty, FALSE);
+    xscale = (wrx - wlx) / (double) (num_points - 1);
+    yscale = (wty - wby) / (double) (num_points - 1);
     /*  Divide request into managable blocks  */
     for (count = 0, pcount = 0, draw_block = FALSE; count < num_points;
 	 ++count)
     {
-	if (x_array == NULL) wx = canvas->win_scale.left_x + xscale * count;
+	if (x_array == NULL) wx = wlx + xscale * (double) count;
 	else if ( (wx = x_array[count]) >= TOOBIG ) draw_block = TRUE;
-	if (y_array == NULL) wy = canvas->win_scale.bottom_y + yscale * count;
+	if (y_array == NULL) wy = wby + yscale * (double) count;
 	else if ( (wy = y_array[count]) >= TOOBIG ) draw_block = TRUE;
 	if (!draw_block)
 	{
@@ -2381,11 +2382,10 @@ void canvas_draw_segments (KWorldCanvas canvas,
     VERIFY_CANVAS (canvas);
     if (canvas->cmap == NULL)
     {
-	(void) fprintf (stderr,"Canvas has no colourmap associated with it\n");
+	fprintf (stderr,"Canvas has no colourmap associated with it\n");
 	a_prog_bug (function_name);
     }
-    pixel_value = get_pixel_from_value (value, &canvas->win_scale,
-					canvas->cmap);
+    pixel_value = get_pixel_from_value (canvas, value, NULL, NULL, NULL);
     canvas_draw_segments_p (canvas, x0, y0, x1, y1, num_segments, pixel_value);
 }   /*  End Function canvas_draw_segments  */
 
@@ -2446,16 +2446,16 @@ void canvas_get_size (KWorldCanvas canvas, int *width, int *height,
     VERIFY_CANVAS (canvas);
     if (win_scale == NULL)
     {
-	(void) fputs ("NULL win_scale structure pointer passed\n", stderr);
+	fputs ("NULL win_scale structure pointer passed\n", stderr);
 	a_prog_bug (function_name);
     }
     if (first_time)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"WARNING: the <%s> routine will be removed in Karma",
 			function_name);
-	(void) fputs (" version 2.0\nUse ", stderr);
-	(void) fputs ("the <canvas_get_attributes> routine instead\n", stderr);
+	fputs (" version 2.0\nUse ", stderr);
+	fputs ("the <canvas_get_attributes> routine instead\n", stderr);
 	first_time = FALSE;
     }
     kwin_get_size (canvas->pixcanvas, width, height);
@@ -2484,11 +2484,11 @@ flag canvas_convert_to_canvas_coord (KWorldCanvas canvas,
     VERIFY_CANVAS (canvas);
     if (first_time)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"WARNING: the <%s> routine will be removed in Karma",
 			function_name);
-	(void) fputs (" version 2.0\nUse the ", stderr);
-	(void) fputs ("<canvas_convert_to_canvas_coords> routine instead\n",
+	fputs (" version 2.0\nUse the ", stderr);
+	fputs ("<canvas_convert_to_canvas_coords> routine instead\n",
 		      stderr);
 	first_time = FALSE;
     }
@@ -2522,11 +2522,11 @@ flag canvas_convert_from_canvas_coord (KWorldCanvas canvas,
     VERIFY_CANVAS (canvas);
     if (first_time)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"WARNING: the <%s> routine will be removed in Karma",
 			function_name);
-	(void) fputs (" version 2.0\nUse the ", stderr);
-	(void) fputs ("<canvas_convert_from_canvas_coords> routine instead\n",
+	fputs (" version 2.0\nUse the ", stderr);
+	fputs ("<canvas_convert_from_canvas_coords> routine instead\n",
 		      stderr);
 	first_time = FALSE;
     }
@@ -2571,7 +2571,7 @@ void canvas_register_d_convert_func (KWorldCanvas canvas,
     if ( (canvas->coords_convert_func != NULL) ||
 	 (canvas->deprecated_coord_d_convert_func != NULL) )
     {
-	(void) fprintf (stderr, "coord_convert_func already registered\n");
+	fprintf (stderr, "coord_convert_func already registered\n");
 	a_prog_bug (function_name);
     }
     canvas->deprecated_coord_d_convert_func = coord_convert_func;
@@ -2632,7 +2632,7 @@ void canvas_register_convert_func (KWorldCanvas canvas,
 	 (canvas->deprecated_coord_d_convert_func != NULL) ||
 	 (canvas->deprecated_coord_convert_func != NULL) )
     {
-	(void) fprintf (stderr, "coord_convert_func already registered\n");
+	fprintf (stderr, "coord_convert_func already registered\n");
 	a_prog_bug (function_name);
     }
     canvas->deprecated_coord_convert_func = coord_convert_func;
@@ -2726,17 +2726,17 @@ void canvas_register_transform_func (KWorldCanvas canvas,
     static char function_name[] = "canvas_register_transform_func";
 
     VERIFY_CANVAS (canvas);
-    (void) fprintf (stderr,
+    fprintf (stderr,
 		    "WARNING: the <%s> routine will be removed in Karma",
 		    function_name);
-    (void) fprintf (stderr, " version 2.0\nUse ");
-    (void) fprintf (stderr,
+    fprintf (stderr, " version 2.0\nUse ");
+    fprintf (stderr,
 		    "the <canvas_register_transforms_func> routine instead\n");
     if (coord_transform_func == NULL) return;
     if ( (canvas->coord_transforms_func != NULL) ||
 	 (canvas->deprecated_coord_transform_func != NULL) )
     {
-	(void) fprintf (stderr, "coord_transform_func already registered\n");
+	fprintf (stderr, "coord_transform_func already registered\n");
 	a_prog_bug (function_name);
     }
     canvas->deprecated_coord_transform_func = coord_transform_func;
@@ -2777,7 +2777,7 @@ static void pixcanvas_refresh_func (KPixCanvas pixcanvas, int width,int height,
     VERIFY_CANVAS (canvas);
     if (pixcanvas != canvas->pixcanvas)
     {
-	(void) fprintf (stderr, "Pixel canvases do not match\n");
+	fprintf (stderr, "Pixel canvases do not match\n");
 	a_prog_bug (function_name);
     }
     refresh_canvas (canvas, width, height, FALSE, pspage,
@@ -2799,11 +2799,14 @@ static void cmap_resize_func (Kcolourmap cmap, void **info)
     VERIFY_CANVAS (canvas);
     if (cmap != canvas->cmap)
     {
-	(void) fprintf (stderr, "Colourmaps do not match\n");
+	fprintf (stderr, "Colourmaps do not match\n");
 	a_prog_bug (function_name);
     }
     if (canvas->in_size_control_func) return;
     set_sat_pixels (canvas);
+    m_free ( (char *) canvas->cmap_rgb_values );
+    canvas->cmap_num_pixels = kcmap_get_pixels (cmap, &canvas->cmap_pixels);
+    canvas->cmap_rgb_values = kcmap_get_rgb_values (cmap, NULL);
     /*  Get pixel canvas size  */
     kwin_get_size (canvas->pixcanvas, &width, &height);
     refresh_canvas (canvas, width, height, TRUE, NULL, 0, NULL, NULL);
@@ -2847,7 +2850,7 @@ static void refresh_canvas (KWorldCanvas canvas, int width, int height,
     {
 	if ( !negotiate_scale_change (canvas, width, height, &dummy) )
 	{
-	    (void) fprintf (stderr, "Pixel canvas not big enough\n");
+	    fprintf (stderr, "Pixel canvas not big enough\n");
 	    return;
 	}
     }
@@ -2859,7 +2862,7 @@ static void refresh_canvas (KWorldCanvas canvas, int width, int height,
     data.num_areas = num_areas;
     data.areas = areas;
     data.honoured_areas = FALSE;
-    (void) c_call_callbacks (canvas->refresh_list, &data);
+    c_call_callbacks (canvas->refresh_list, &data);
     if (data.honoured_areas && (honoured_areas != NULL) )
     {
 	*honoured_areas = TRUE;
@@ -2868,31 +2871,33 @@ static void refresh_canvas (KWorldCanvas canvas, int width, int height,
     if (canvas->display_dressing) canvas_draw_dressing (canvas);
 }   /*  End Function refresh_canvas  */
 
-static unsigned long get_pixel_from_value (double value[2],
-					   struct win_scale_type *win_scale,
-					   Kcolourmap cmap)
-/*  This routine will get a pixel value from a data value.
-    The data value must be given by  value  .
-    The window scaling information must be pointed to by  win_scale  .
-    The colourmap must be given by  cmap  .
-    The routine returns the pixel value.
+static unsigned long get_pixel_from_value (KWorldCanvas canvas,double value[2],
+					   unsigned short *red,
+					   unsigned short *green,
+					   unsigned short *blue)
+/*  [SUMMARY] Get a pixel value from a data value.
+    <canvas> The world canvas.
+    <value> The data value.
+    <red> The red intensity in the colourmap for the pixel will be
+    written here. If this is NULL, nothing is written here.
+    <green> The green intensity in the colourmap for the pixel will be
+    written here. If this is NULL, nothing is written here.
+    <blue> The blue intensity in the colourmap for the pixel will be
+    written here. If this is NULL, nothing is written here.
+    [RETURNS] The pixel value.
 */
 {
-    unsigned int num_pixels;
+    unsigned int index;
     unsigned long pixel_value;
-    unsigned long *pixel_values;
+    struct win_scale_type *win_scale;
     static char function_name[] = "get_pixel_from_value";
 
-    if (cmap == NULL)
-    {
-	(void) fprintf (stderr, "NULL colourmap passed\n");
-	a_prog_bug (function_name);
-    }
+    VERIFY_CANVAS (canvas);
+    win_scale = &canvas->win_scale;
     if ( (value[0] >= TOOBIG) || (value[1] >= TOOBIG) )
     {
 	return (win_scale->blank_pixel);
     }
-    num_pixels = kcmap_get_pixels (cmap, &pixel_values);
     switch (win_scale->conv_type)
     {
       case KIMAGE_COMPLEX_CONV_REAL:
@@ -2917,14 +2922,12 @@ static unsigned long get_pixel_from_value (double value[2],
 	}
 	break;
       case KIMAGE_COMPLEX_CONV_CONT_PHASE:
-	(void) fprintf (stderr, "Not finished continuous phase\n");
+	fprintf (stderr, "Not finished continuous phase\n");
 	return (FALSE);
-/*
-	break;
-*/
+	/*break;*/
       default:
-	(void) fprintf (stderr, "Illegal value of conversion: %u\n",
-			win_scale->conv_type);
+	fprintf (stderr, "Illegal value of conversion: %u\n",
+		 win_scale->conv_type);
 	a_prog_bug (function_name);
 	break;
     }
@@ -2936,7 +2939,7 @@ static unsigned long get_pixel_from_value (double value[2],
 					 win_scale->z_min, win_scale->z_max,
 					 win_scale->iscale_info) )
 	{
-	    (void) fprintf (stderr, "Error scaling data\n");
+	    fprintf (stderr, "Error scaling data\n");
 	    a_prog_bug (function_name);
 	}
     }
@@ -2944,11 +2947,13 @@ static unsigned long get_pixel_from_value (double value[2],
     else if (value[0] >win_scale->z_max) pixel_value =win_scale->max_sat_pixel;
     else
     {
-	pixel_value = pixel_values[(unsigned int)
-				   ( (value[0] - win_scale->z_min)
-				    * (num_pixels - 1) /
-				    (win_scale->z_max -
-				     win_scale->z_min) + 0.5 )];
+	index = ( (value[0] - win_scale->z_min)
+		  * (canvas->cmap_num_pixels - 1) /
+		  (win_scale->z_max - win_scale->z_min) + 0.5 );
+	pixel_value = canvas->cmap_pixels[index];
+	if (red != NULL) *red = canvas->cmap_rgb_values[index * 3];
+	if (green != NULL) *green = canvas->cmap_rgb_values[index * 3 + 1];
+	if (blue != NULL) *blue = canvas->cmap_rgb_values[index * 3 + 2];
     }
     return (pixel_value);
 }   /*  End Function get_pixel_from_value  */
@@ -3060,30 +3065,30 @@ static void verify_win_scale (struct win_scale_type *win_scale,
     if (win_scale == NULL) return;
     if (K_WIN_SCALE_MAGIC_NUMBER != win_scale->magic_number)
     {
-	(void) fprintf (stderr,"Bad magic number for  win_scale  structure\n");
-	(void) fprintf (stderr, "This will break in Karma version 2.0\n");
-	(void) fprintf (stderr,
+	fprintf (stderr,"Bad magic number for  win_scale  structure\n");
+	fprintf (stderr, "This will break in Karma version 2.0\n");
+	fprintf (stderr,
 			"Make sure a call is made to canvas_init_win_scale\n");
-	(void) fprintf (stderr, "and then recompile the application\n");
+	fprintf (stderr, "and then recompile the application\n");
 /*      Coming in Version 2.0 of Karma
 	a_prog_bug (function_name);
 */
     }
     if (win_scale->right_x == win_scale->left_x)
     {
-	(void) fprintf (stderr, "right_x: %e must not equal left_x: %e\n",
+	fprintf (stderr, "right_x: %e must not equal left_x: %e\n",
 			win_scale->right_x, win_scale->left_x);
 	a_prog_bug (function_name);
     }
     if (win_scale->top_y == win_scale->bottom_y)
     {
-	(void) fprintf (stderr, "top_y: %e must not equal bottom_y: %e\n",
+	fprintf (stderr, "top_y: %e must not equal bottom_y: %e\n",
 			win_scale->top_y, win_scale->bottom_y);
 	a_prog_bug (function_name);
     }
     if (win_scale->z_scale != K_INTENSITY_SCALE_LINEAR)
     {
-	(void) fprintf (stderr, "z_scale: %u never was supported.\n",
+	fprintf (stderr, "z_scale: %u never was supported.\n",
 			win_scale->z_scale);
 	a_prog_bug (function_name);
     }
@@ -3126,14 +3131,14 @@ static flag negotiate_scale_change (KWorldCanvas canvas, int width, int height,
 	get_dressing_size (canvas, &p_left, &p_right, &p_top, &p_bottom);
 	if (p_left + p_right >= width)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Dressing (%d pixels) too wide for pixel canvas (%d pixels)\n",
 			    p_left + p_right, width);
 	    return (FALSE);
 	}
 	if (p_top + p_bottom >= height)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Dressing (%d pixels) too high for pixel canvas (%d pixels)\n",
 			    p_top + p_bottom, height);
 	    return (FALSE);
@@ -3170,20 +3175,20 @@ static flag negotiate_scale_change (KWorldCanvas canvas, int width, int height,
     {
 	if (p_left + p_right + win_scale->x_pixels > width)
 	{
-	    (void) fprintf (stderr,
-			    "Dressing+active (%d + %d = %d) too wide for pixel canvas (%d pixels)\n",
-			    p_left + p_right, win_scale->x_pixels,
-			    p_left + p_right + win_scale->x_pixels,
-			    width);
+	    fprintf (stderr,
+		     "Dressing+active (%d + %d = %d) too wide for pixel canvas (%d pixels)\n",
+		     p_left + p_right, win_scale->x_pixels,
+		     p_left + p_right + win_scale->x_pixels,
+		     width);
 	    return (FALSE);
 	}
 	if (p_top + p_bottom + win_scale->y_pixels > height)
 	{
-	    (void) fprintf (stderr,
-			    "Dressing+active (%d + %d = %d) too high for pixel canvas (%d pixels)\n",
-			    p_top + p_bottom, win_scale->y_pixels,
-			    p_top + p_bottom + win_scale->y_pixels,
-			    height);
+	    fprintf (stderr,
+		     "Dressing+active (%d + %d = %d) too high for pixel canvas (%d pixels)\n",
+		     p_top + p_bottom, win_scale->y_pixels,
+		     p_top + p_bottom + win_scale->y_pixels,
+		     height);
 	    return (FALSE);
 	}
     }

@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   15-SEP-1996
 
-    Last updated by Richard Gooch   9-OCT-1996
+    Last updated by Richard Gooch   4-NOV-1996
 
 */
 
@@ -40,7 +40,6 @@
 
  Name		         Class            RepType         Default Value
  ----		         -----            -------         -------------
- XkwNiarray              Iarray           Pointer         NULL
  XkwNverbose             Verbose          Bool            FALSE
  XkwNcanvasVisual        Visual           Pointer         CopyFromParent
  XkwNworldCanvas         WorldCanvas      Pointer         NULL
@@ -59,14 +58,12 @@ typedef struct _TracePopupRec *TracePopupWidget;
 
 #define XtIsTracePopup(w) XtIsSubclass((w), tracePopupWidgetClass)
 
-#define XkwNiarray "iarray"
 #define XkwNverbose "verbose"
 #define XkwNcanvasVisual "canvasVisual"
 #define XkwNworldCanvas "worldCanvas"
 #define XkwNrealiseCallback "realiseCallback"
 #define XkwNkarmaColourmap "karmaColourmap"
 
-#define XkwCIarray "Iarray"
 #define XkwCVerbose "Verbose"
 #define XkwCWorldCanvas "WorldCanvas"
 #define XkwCKarmaColourmap "KarmaColourmap"

@@ -33,8 +33,10 @@
 
     Updated by      Richard Gooch   17-OCT-1996: Completed centroid hunter.
 
-    Last updated by Richard Gooch   21-OCT-1996: Made <get_colour> public.
+    Updated by      Richard Gooch   21-OCT-1996: Made <get_colour> public.
   Created <update_magnifier>.
+
+    Last updated by Richard Gooch   3-NOV-1996: Disabled radius display.
 
 
 */
@@ -60,7 +62,7 @@
 
 #define ELLIPSE_RADIUS 5.0
 #define CURSOR_RADIUS 8.0
-
+#define SIZE_THRESHOLD 0.5
 
 /*  Private functions  */
 STATIC_FUNCTION (unsigned long get_colour,
@@ -291,7 +293,7 @@ void tar_refresh_func (KWorldCanvas canvas, int width, int height,
 
     pixel_value = get_colour (canvas, "green");
     pixcanvas = canvas_get_pixcanvas (canvas);
-    canvas_convert_from_canvas_coords (canvas, FALSE, FALSE, num_target_points,
+    canvas_convert_from_canvas_coords (canvas, FALSE, TRUE, num_target_points,
 				       target_x, target_y, px, py);
     for (count = 0; count < num_target_points; ++count)
     {
@@ -429,10 +431,11 @@ static void find_object (KWorldCanvas canvas, iarray array,
     find_peak (array, &ix, &iy, radius_x, radius_y);
     walk_up_hill (array, &ix, &iy);
     value = get_value (array, iy, ix);
-    size = find_size (array, ix, iy, value * 0.5);
+    size = find_size (array, ix, iy, value * SIZE_THRESHOLD);
     *xpos = ix;
     *ypos = iy;
     find_centroid (array, xpos, ypos, size);
+    /*fprintf (stderr, "x: %e  y: %e\n", *xpos, *ypos);*/
 }   /*  End Function find_object  */
 
 static double get_value (iarray array, int y, int x)
@@ -609,6 +612,7 @@ static int find_size (iarray array, int xpos, int ypos, double threshold)
     int radius, sq_radius, radiusP1, sq_radiusP1;
     int x, y, sq_distance;
     double value;
+    /*double sum, nval;*/
 
     for (radius = 1; keep_going; ++radius)
     {
@@ -616,6 +620,10 @@ static int find_size (iarray array, int xpos, int ypos, double threshold)
 	radiusP1 = radius + 1;
 	sq_radiusP1 = radiusP1 * radiusP1;
 	keep_going = FALSE;
+#ifdef dummy
+	nval = 0.0;
+	sum = 0.0;
+#endif
 	/*  Scan through a box just bigger than the circle  */
 	for (y = ypos - radiusP1; y < ypos + radiusP1; ++y)
 	{
@@ -625,17 +633,26 @@ static int find_size (iarray array, int xpos, int ypos, double threshold)
 		if (sq_distance < sq_radius) continue;
 		if (sq_distance > sq_radiusP1) continue;
 		/*  Should be just outside the circle  */
-		value = get_value (array, y, x);
+		if ( ( value = get_value (array, y, x) ) >= TOOBIG ) continue;
+#ifdef dummy
+		sum += value;
+		++nval;
+#endif
 		if (value > threshold) keep_going = TRUE;
 	    }
 	}
+	/*if (sum / nval > threshold) keep_going = TRUE;*/
 	if (radius > 50)
 	{
 	    fprintf (stderr, "Enormous object: setting size to 50\n");
+#ifdef dummy
+	    fprintf (stderr, "thres: %e  sum: %e  nval: %e  aver: %e\n",
+		     threshold, sum, nval, sum / nval);
+#endif
 	    return (radius);
 	}
     }
-    fprintf (stderr, "radius: %d\n", radius);
+    /*fprintf (stderr, "radius: %d\n", radius);*/
     return (radius);
 }   /*  End Function find_size  */
 

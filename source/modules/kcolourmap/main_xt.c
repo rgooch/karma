@@ -40,7 +40,7 @@
     Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
 
-    Last updated by Richard Gooch   15-SEP-1996: Made use of new <kwin_xutil_*>
+    Last updated by Richard Gooch   15-SEP-1996: Made use of new <xv_*>
   routines.
 
 
@@ -58,6 +58,7 @@
 #include <karma_conn.h>
 #include <karma_dir.h>
 #include <karma_chx.h>
+#include <karma_xv.h>
 #include <karma_im.h>
 #include <karma_hi.h>
 #include <karma_xc.h>
@@ -149,9 +150,8 @@ int main (int argc, char **argv)
     im_register_lib_version (KARMA_VERSION);
     /*  Start up Xt  */
     main_shell = XtVaAppInitialize (&app_context, "Kcolourmap",
-				    NULL, 0,
-				    &argc, argv, fallback_resources,
-				    NULL, 0);
+				    NULL, 0, &argc, argv, fallback_resources,
+				    NULL);
     if (argc == 3)
     {
 	if (strcmp (argv[1], "-num_colours") == 0)
@@ -167,8 +167,8 @@ int main (int argc, char **argv)
     setup_comms (dpy);
     /*  Get visual information  */
     root_visual = XDefaultVisualOfScreen (screen);
-    vinfo = kwin_xutil_get_visinfo_for_visual (dpy, root_visual);
-    kwin_xutil_get_visuals (screen, &pseudocolour_visual, NULL, NULL);
+    vinfo = xv_get_visinfo_for_visual (dpy, root_visual);
+    xv_get_visuals (screen, &pseudocolour_visual, NULL, NULL);
     if (pseudocolour_visual == NULL)
     {
 	(void) fprintf (stderr, "No 8 bit PseudoColour visual available\n");

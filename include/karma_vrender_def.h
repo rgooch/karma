@@ -1,9 +1,9 @@
 /*  karma_vrender_def.h
 
-    Header for  vrender_  package. This file ONLY contains the object
+    Header for  <vrender>  package. This file ONLY contains the object
     definitions.
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -32,7 +32,7 @@
 
     Written by      Richard Gooch   24-DEC-1995
 
-    Last updated by Richard Gooch   24-DEC-1995
+    Last updated by Richard Gooch   9-NOV-1996
 
 */
 
@@ -41,6 +41,13 @@
 
 
 typedef struct vrendercontext_type * KVolumeRenderContext;
+
+typedef struct
+{
+    double x;
+    double y;
+    double z;
+} Kdcoord_3d;
 
 typedef struct
 {

@@ -8,6 +8,31 @@ $LIBRARY          karmaXt
 $LINKWITH         -lkarmaXt
 $END
 
+$FUNCTION           xtmisc_event_create_list
+$RETURN_TYPE        KPeriodicEventList
+$PARAMETER_LIST
+    (XtAppContext app_context,
+					     unsigned long interval_us,
+					     unsigned long interval_s,
+					     void *list_info)
+$SUMMARY            Create a periodic event management list under Xt.
+$PURPOSE
+    Create a periodic event management list under Xt.
+$PARAMETER          app_context :
+    The application context to use.
+$PARAMETER          interval_us :
+    The microsecond component time between timeouts on this list.
+$PARAMETER          interval_s :
+    The second component time between timeouts on this list.
+$PARAMETER          list_info :
+    An arbitrary pointer passed to event functions on this list.
+$NOTE
+    The specified interval may be rounded up to the system timer
+    resolution (10ms on many systems).
+$RETURNS
+    A KPeriodicEventList on success, else the process aborts.
+$END
+
 $FUNCTION           xtmisc_set_icon
 $RETURN_TYPE        void
 $PARAMETER_LIST
@@ -24,6 +49,45 @@ $PARAMETER          icon_func :
     function is <-XTMISC_PROTO_icon_func->.
 $RETURNS
     Nothing.
+$END
+
+$FUNCTION           xtmisc_init_app_initialise
+$RETURN_TYPE        Widget
+$PARAMETER_LIST
+    (XtAppContext *app_context_return,
+				   CONST char* application_class,
+				   XrmOptionDescList options,
+				   Cardinal num_options,
+				   int *argc_in_out, String *argv_in_out,
+				   String *fallback_resources,
+				   unsigned int min_ccells, ...)
+$SUMMARY            Initialise an application for Xt.
+$PURPOSE
+    This routine will initialise an application to use Xt. This
+    routine is similar to the <<XtVaAppInitialize>> routine, except that a new
+    colourmap for the application may be created.
+$PARAMETER          app_context_return :
+    As for <<XtVaAppInitialize>>.
+$PARAMETER          application_class :
+    As for <<XtVaAppInitialize>>.
+$PARAMETER          options :
+    As for <<XtVaAppInitialize>>.
+$PARAMETER          num_options :
+    As for <<XtVaAppInitialize>>.
+$PARAMETER          argc_in_out :
+    As for <<XtVaAppInitialize>>.
+$PARAMETER          argv_in_out :
+    As for <<XtVaAppInitialize>>.
+$PARAMETER          fallback_resources :
+    As for <<XtVaAppInitialize>>.
+$PARAMETER          min_ccells :
+    The minimum number of colourcells that the application will
+    want to allocate. If this many colourcells could not be allocated from the
+    default colourmap, the application is given a freshly created colourmap.
+$PARAMETER          ... :
+    As for <<XtVaAppInitialize>>.
+$RETURNS
+    The application shell.
 $END
 
 $FUNCTION           xtmisc_popup_cbk

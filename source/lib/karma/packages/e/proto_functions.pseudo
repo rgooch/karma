@@ -1,0 +1,8 @@
+/*PROTOTYPE_FUNCTION*/  /*
+flag E_PROTO_event_func (KPeriodicEventFunc func, void *info)
+    [SUMMARY] Event callback.
+    [PURPOSE] This routine is called when a periodic event occurs.
+    <func> The KPeriodicEventFunc object.
+    <info> A pointer to arbitrary information.
+    [RETURNS] TRUE if the event function should be called again, else FALSE.
+*/

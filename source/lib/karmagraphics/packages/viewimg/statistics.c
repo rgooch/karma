@@ -30,14 +30,16 @@
 
     Written by      Richard Gooch   22-OCT-1996
 
-    Last updated by Richard Gooch   27-OCT-1996: Created
+    Updated by      Richard Gooch   27-OCT-1996: Created
   <viewimg_statistics_compute> routine.
+
+    Last updated by Richard Gooch   3-NOV-1996: Incorporated data and unit
+  scaling.
 
 
 */
 #include <stdio.h>
 #include <math.h>
-#include <stdarg.h>
 #include <karma.h>
 #define KWIN_GENERIC_ONLY
 #define NEW_WIN_SCALE
@@ -124,12 +126,13 @@ flag viewimg_statistics_compute (ViewableImage vimage,
     unsigned int hstart, hend, hlength, vstart, vend, vlength, tmp;
     unsigned int hdim, vdim, elem_index;
     unsigned long npoints;
-    double min, max, mean, stddev, sum;
+    double min, max, mean, stddev, sum, sumsq, scale, offset, unit_scale;
     char *array;
     uaddr *hoffsets, *voffsets;
     array_desc *arr_desc;
     packet_desc *pack_desc;
     dim_desc *hdim_desc, *vdim_desc;
+    char unit[STRING_LENGTH];
 
     viewimg_get_attributes (vimage,
 			    VIEWIMG_VATT_ARRAY_DESC, &arr_desc,
@@ -137,6 +140,8 @@ flag viewimg_statistics_compute (ViewableImage vimage,
 			    VIEWIMG_VATT_HDIM, &hdim,
 			    VIEWIMG_VATT_VDIM, &vdim,
 			    VIEWIMG_VATT_PSEUDO_INDEX, &elem_index,
+			    VIEWIMG_VATT_DATA_SCALE, &scale,
+			    VIEWIMG_VATT_DATA_OFFSET, &offset,
 			    VIEWIMG_VATT_END);
     hoffsets = arr_desc->offsets[hdim];
     voffsets = arr_desc->offsets[vdim];
@@ -159,11 +164,30 @@ flag viewimg_statistics_compute (ViewableImage vimage,
 			    hlength, hoffsets + hstart,
 			    pack_desc->element_types[elem_index],
 			    CONV_CtoR_REAL,
-			    &min, &max, &mean, &stddev, &sum, &npoints) )
+			    &min, &max, &mean, &stddev, &sum, &sumsq,
+			    &npoints) )
 	return (FALSE);
-    fputs("npoints  mean         std dev      min          max          sum\n",
-	  stderr);
-    fprintf (stderr, "%-8lu %-12e %-12e %-12e %-12e %e\n",
+    /*  Apply data scaling to the results  */
+    min = min * scale + offset;
+    max = max * scale + offset;
+    sumsq = scale * scale * sumsq + 2.0 * scale * offset * sum +
+	(double) npoints * offset * offset;
+    mean = scale * sum / (double) npoints + offset;
+    sum = scale * sum + (double) npoints * offset;
+    stddev = sqrt (sumsq / (double) npoints - mean * mean);
+    /*  Apply unit scale to the results  */
+    ds_format_unit (unit, &unit_scale, pack_desc->element_desc[elem_index]);
+    min *= unit_scale;
+    max *= unit_scale;
+    sumsq *= unit_scale * unit_scale;
+    mean *= unit_scale;
+    sum *= unit_scale;
+    stddev *= unit_scale;
+    fprintf
+	(stderr,
+	 "npoints  mean %-8s std dev       min           max           sum\n",
+	 unit);
+    fprintf (stderr, "%-8lu %-+11e %-+11e %-+11e %-+11e %+e\n",
 	     npoints, mean, stddev, min, max, sum);
     return (TRUE);
 }   /*  End Function viewimg_statistics_compute  */

@@ -85,8 +85,23 @@
     Updated by      Richard Gooch   1-OCT-1996: Fixed resource names for new
   ExportMenu widget. Added "0th channel" image mode.
 
-    Last updated by Richard Gooch   28-OCT-1996: Added hostname and port number
+    Updated by      Richard Gooch   28-OCT-1996: Added hostname and port number
   to title.
+
+    Updated by      Richard Gooch   3-NOV-1996: Made use of new
+  <viewimg_track_compute> routine.
+
+    Updated by      Richard Gooch   10-NOV-1996: Made use of new attributes for
+  ViewableImage objects to override the canvas intensity range.
+
+    Updated by      Richard Gooch   11-NOV-1996: Only refresh magnifier canvas
+  if visible.
+
+    Updated by      Richard Gooch   14-NOV-1996: Trap when displaying
+  ViewableImage for moment maps not yet computed.
+
+    Last updated by Richard Gooch   1-DEC-1996: Made use of
+  <xtmisc_init_app_initialise>.
 
 
 */
@@ -129,7 +144,7 @@
 #include "kpvslice.h"
 
 
-#define VERSION "1.7.5"
+#define VERSION "1.7.9"
 
 
 /*  Private functions  */
@@ -205,6 +220,7 @@ String fallback_resources[] =
     "Kpvslice*Dataclip.AutoValueScale:                  False",
     "Kpvslice*SimpleSlider.borderWidth:                 0",
     "Kpvslice*font:                                     9x15bold",
+    "Kpvslice*borderColor:                              black",
     NULL
 };
 static XrmOptionDescRec Options[] =
@@ -253,10 +269,11 @@ int main (int argc, char **argv)
     im_register_module_version_date (VERSION);
     im_register_lib_version (KARMA_VERSION);
     /*  Start up Xt  */
-    main_shell = XtVaAppInitialize (&app_context, "Kpvslice",
-				    Options, XtNumber (Options),
-				    &argc, argv, fallback_resources,
-				    NULL);
+    main_shell = xtmisc_init_app_initialise (&app_context, "Kpvslice",
+					     Options, XtNumber (Options),
+					     &argc, argv, fallback_resources,
+					     210,
+					     NULL);
     xtmisc_set_icon (main_shell, ic_write_kimage_icon);
     /*  Initialise communications  */
     chx_register_app_context (app_context);
@@ -476,18 +493,72 @@ void print_slice_info (CONST char *window_string)
 {
     Widget label;
     extern Widget main_image_display;
-    extern Widget  aux_image_display; /* vjm 96.08.01 */
 
     label = XtNameToWidget (main_image_display, "trackLabel3");
     XtVaSetValues (label,
 		   XtNlabel, window_string,
 		   NULL);
-    /* vjm 96.08.01 */
-    label = XtNameToWidget (aux_image_display, "trackLabel0");
-    XtVaSetValues (label,
-		   XtNlabel, window_string,
-		   NULL);
 }   /*  End Function print_slice_info  */
+
+flag track_aux_canvas_xtcoord (CONST char *track_txt, int track_num)
+/*  [PURPOSE] Handles the Xt part of outputting coords while tracking cursor
+    in auxilary window.
+    NB: The first track coord is slice centre & PA, which is sent from
+    track_canvas_event, as the slice is moved around in the main window.
+    This routine updates the second or third track coord lines, which have
+    the offset arcsec & velocity coords, and
+    the RA & DEC of that offset, respectively.
+    This routine should only be called by track_aux_canvas_event.
+    [RETURNS] FALSE if an error, TRUE otherwise.
+*/
+{
+    Widget track_label;
+    char trackLabeln[STRING_LENGTH];
+    extern Widget aux_image_display;
+    /*static char function_name[] = "track_aux_canvas_xtcoord";*/
+
+    if ( track_num < 0 || track_num > 2 ) {
+      fprintf (stderr, "TRACK_AUX_CANVAS_XTSTUFF: Bad track label number\n");
+      return(FALSE);
+    }
+    sprintf (trackLabeln, "%s%d", "trackLabel", track_num);
+
+    track_label = XtNameToWidget (aux_image_display, trackLabeln);
+    XtVaSetValues (track_label, XtNlabel, track_txt, NULL);
+
+    return(TRUE);
+}
+
+flag track_aux_canvas_xtmagupd (ViewableImage vimage,
+				unsigned long xi, unsigned long yi)
+/*  [PURPOSE] Handles the Xt part of updating magnifier while tracking cursor
+    in auxilary window.
+    There are two tasks; displaying coordinates in the track windows, and
+    updating the magnifier window.
+    NB: The first track coord is slice centre & PA, which is sent from
+    track_canvas_event, as the slice is moved around in the main window.
+    This routine updates the second or third track coord lines, which have
+    the offset arcsec & velocity coords, and
+    the RA & DEC of that offset, respectively.
+    This routine should only be called by track_aux_canvas_event.
+    [NOTE] The slice magnifier is not implemented yet.
+    [RETURNS] FALSE if an error, TRUE otherwise.
+*/
+{
+    KWorldCanvas  magnifier_canvas;
+    extern Widget aux_image_display;
+    /*static char function_name[] = "track_aux_canvas_xtmagupd";*/
+
+    XtVaGetValues (aux_image_display,
+		   XkwNmagnifierVisibleCanvas, &magnifier_canvas,
+		   NULL);
+    viewimg_set_canvas_attributes (magnifier_canvas,
+				   VIEWIMG_ATT_PAN_CENTRE_X, xi,
+				   VIEWIMG_ATT_PAN_CENTRE_Y, yi,
+				   VIEWIMG_ATT_END);
+    kwin_resize (canvas_get_pixcanvas (magnifier_canvas), FALSE, 0, 0, 0, 0);
+    return (TRUE);
+}   /*  End Function track_aux_canvas_xtmagupd  */
 
 
 /*  Private routines follow  */
@@ -542,6 +613,10 @@ static void cubeselect_cbk (Widget w, XtPointer client_data,
     {
 	m_abort (function_name, "0th channel ViewableImage");
     }
+    viewimg_set_attributes (channel0_vimage,
+			    VIEWIMG_VATT_VALUE_MIN, cube_min,
+			    VIEWIMG_VATT_VALUE_MAX, cube_max,
+			    VIEWIMG_VATT_END);
     if (mom0_vimage != NULL)
     {
 	fprintf (stderr,"WARNING: 0th moment ViewableImage not deallocated\n");
@@ -639,29 +714,21 @@ static flag track_canvas_event (ViewableImage vimage, double x, double y,
 */
 {
     KWorldCanvas magnifier_canvas;
-    iarray array = NULL;
-    unsigned int hdim, vdim, rdim;
-    unsigned int num_restr, count;
-    unsigned long pointer_x_index, pointer_y_index, r_index;
+    KPixCanvas pixcanvas;
+    flag visible;
+    unsigned long pointer_x_index, pointer_y_index;
     double cube_x, cube_y;
     Widget image_display = (Widget) *f_info;
     Widget first_track_label, second_track_label, third_track_label;
-    unsigned char *rgb_ptr = (unsigned char *) value;
-    char *xlabel, *ylabel;
-    char **restr_names;
-    double *restr_values;
-    array_desc *arr_desc;
     dim_desc *dim;
     uaddr coords[2];
-    char txt[STRING_LENGTH];
-    char value_string[STRING_LENGTH], index_string[STRING_LENGTH];
+    char pix_string[STRING_LENGTH];
     char world_string[STRING_LENGTH], extra_string[STRING_LENGTH];
     unsigned int dim_indices[2];
-    extern iarray cube_arr, image_arr, mom0_arr, mom1_arr;
+    extern iarray cube_arr;
     extern KwcsAstro main_ap, cube_ap;
-    extern unsigned int image_mode;
     extern Widget trace_winpopup;
-    static char function_name[] = "track_canvas_event";
+    /*static char function_name[] = "track_canvas_event";*/
 
     if (event_code != K_CANVAS_EVENT_POINTER_MOVE) return (FALSE);
     if (cube_arr != NULL)
@@ -676,93 +743,15 @@ static flag track_canvas_event (ViewableImage vimage, double x, double y,
 	coords[1] = ds_get_coord_num (dim, cube_y, SEARCH_BIAS_CLOSEST);
 	XkwTracePopupShowTrace (trace_winpopup, dim_indices, coords);
     }
-    /*  Create value string  */
-    switch (image_mode)
-    {
-      case IMAGE_MODE_LOADED:
-	array = image_arr;
-	break;
-      case IMAGE_MODE_MOM0:
-	array = mom0_arr;
-	break;
-      case IMAGE_MODE_MOM1:
-	array = mom1_arr;
-	break;
-      case IMAGE_MODE_CHANNEL0:
-	array = cube_arr;
-	break;
-      default:
-	fprintf (stderr, "Illegal image mode: %u\n", image_mode);
-	a_prog_bug (function_name);
-	break;
-    }
-    if (array == NULL) return (TRUE);
-    switch (value_type)
-    {
-      case K_DCOMPLEX:
-	/*  Compute value  */
-	iarray_format_value (array, value_string,
-			     *(double *) value, TOOBIG, TOOBIG);
-	break;
-      case K_UB_RGB:
-	sprintf (value_string, "RGB: %u %u %u",
-		 rgb_ptr[0], rgb_ptr[1], rgb_ptr[2]);
-	break;
-      default:
-	fprintf (stderr, "Illegal type: %u\n", value_type);
-	a_prog_bug (function_name);
-	break;
-    }
-    canvas_get_specification (viewimg_get_worldcanvas (vimage),
-			      &xlabel, &ylabel, &num_restr,
-			      &restr_names, &restr_values);
-    viewimg_get_attributes (vimage,
-			    VIEWIMG_VATT_ARRAY_DESC, &arr_desc,
-			    VIEWIMG_VATT_HDIM, &hdim,
-			    VIEWIMG_VATT_VDIM, &vdim,
-			    VIEWIMG_VATT_END);
-    /*  Convert linear world co-ordinates to array indices and display  */
-    pointer_x_index = ds_get_coord_num (arr_desc->dimensions[hdim], x_lin,
-					SEARCH_BIAS_CLOSEST);
-    pointer_y_index = ds_get_coord_num (arr_desc->dimensions[vdim], y_lin,
-					SEARCH_BIAS_CLOSEST);
-    sprintf (index_string, "x: %lu  y: %lu  ",
-		    pointer_x_index, pointer_y_index);
-    /*  Add any restriction information  */
-    for (count = 0; count < num_restr; ++count)
-    {
-	if ( ( rdim = ds_f_dim_in_array (arr_desc, restr_names[count]) )
-	     >= arr_desc->num_dimensions ) continue;
-	r_index = ds_get_coord_num (arr_desc->dimensions[rdim],
-				    restr_values[count], SEARCH_BIAS_CLOSEST);
-	sprintf (txt, "z%u: %lu  ", rdim, r_index);
-	strcat (index_string, txt);
-    }
-    strcat (index_string, value_string);
+    viewimg_track_compute (vimage, value, value_type, x, y, x_lin, y_lin,
+			   main_ap, pix_string, world_string,
+			   extra_string, &pointer_x_index, &pointer_y_index);
     first_track_label = XtNameToWidget (image_display, "trackLabel0");
     second_track_label = XtNameToWidget (image_display, "trackLabel1");
     third_track_label = XtNameToWidget (image_display, "trackLabel2");
-    XtVaSetValues (first_track_label, XtNlabel, index_string, NULL);
-    /*  Now display the world co-ordinate information  */
-    if (main_ap == NULL)
-    {
-	sprintf (world_string, "%5e %s  %5e %s  ", x, xlabel, y, ylabel);
-	/*  Add any restriction information  */
-	for (count = 0; count < num_restr; ++count)
-	{
-	    sprintf (txt, "%5e %s  ", restr_values[count], restr_names[count]);
-	    strcat (world_string, txt);
-	}
-    }
-    else
-    {
-	wcs_astro_format_all (main_ap, world_string,
-			      xlabel, x_lin, ylabel, y_lin, NULL, 0.0,
-			      num_restr, (CONST char **) restr_names,
-			      restr_values, extra_string);
-	XtVaSetValues (third_track_label, XtNlabel, extra_string, NULL);
-    }
+    XtVaSetValues (first_track_label, XtNlabel, pix_string, NULL);
     XtVaSetValues (second_track_label, XtNlabel, world_string, NULL);
+    XtVaSetValues (third_track_label, XtNlabel, extra_string, NULL);
     XtVaGetValues (image_display,
 		   XkwNmagnifierVisibleCanvas, &magnifier_canvas,
 		   NULL);
@@ -770,7 +759,11 @@ static flag track_canvas_event (ViewableImage vimage, double x, double y,
 				   VIEWIMG_ATT_PAN_CENTRE_X, pointer_x_index,
 				   VIEWIMG_ATT_PAN_CENTRE_Y, pointer_y_index,
 				   VIEWIMG_ATT_END);
-    kwin_resize (canvas_get_pixcanvas (magnifier_canvas), FALSE, 0, 0, 0, 0);
+    pixcanvas = canvas_get_pixcanvas (magnifier_canvas);
+    kwin_get_attributes (pixcanvas,
+			 KWIN_ATT_VISIBLE, &visible,
+			 KWIN_ATT_END);
+    if (visible) kwin_resize (pixcanvas, FALSE, 0, 0, 0, 0);
     return (TRUE);
 }   /*  End Function track_canvas_event  */
 
@@ -780,90 +773,6 @@ static void toggle_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 {
     *(flag *) client_data = (iaddr) call_data ? TRUE : FALSE;
 }   /*  End Function toggle_cbk   */
-
-flag track_aux_canvas_xtcoord (CONST char *track_txt, CONST int track_num)
-{
-/*  [PURPOSE] Handles the Xt part of outputting coords while tracking cursor
-    in auxilary window.
-    NB: The first track coord is slice centre & PA, which is sent from
-    track_canvas_event, as the slice is moved around in the main window.
-    This routine updates the second or third track coord lines, which have
-    the offset arcsec & velocity coords, and
-    the RA & DEC of that offset, respectively.
-    This routine should only be called by track_aux_canvas_event.
-    [RETURNS] FALSE if an error, TRUE otherwise.
-*/
-    /*static char function_name[] = "track_aux_canvas_xtcoord";*/
-
-    extern Widget aux_image_display;
-    Widget track_label;
-    char trackLabeln[STRING_LENGTH];
-
-    if ( track_num < 1 || track_num > 2 ) {
-      fprintf (stderr, "TRACK_AUX_CANVAS_XTSTUFF: Bad track label number\n");
-      return(FALSE);
-    }
-    sprintf (trackLabeln, "%s%d", "trackLabel", track_num);
-
-    track_label = XtNameToWidget (aux_image_display, trackLabeln);
-    XtVaSetValues (track_label, XtNlabel, track_txt, NULL);
-
-    return(TRUE);
-}
-
-flag track_aux_canvas_xtmagupd (ViewableImage vimage,
-				double x_lin, double y_lin )
-/*  [PURPOSE] Handles the Xt part of updating magnifier while tracking cursor
-    in auxilary window.
-    There are two tasks; displaying coordinates in the track windows, and
-    updating the magnifier window.
-    NB: The first track coord is slice centre & PA, which is sent from
-    track_canvas_event, as the slice is moved around in the main window.
-    This routine updates the second or third track coord lines, which have
-    the offset arcsec & velocity coords, and
-    the RA & DEC of that offset, respectively.
-    This routine should only be called by track_aux_canvas_event.
-    [RETURNS] FALSE if an error, TRUE otherwise.
-*/
-{
-    KWorldCanvas  magnifier_canvas;
-    unsigned int  hdim, vdim;
-    unsigned int  num_restr;
-    unsigned long pointer_x_index, pointer_y_index;
-    char          *xlabel, *ylabel;
-    char          **restr_names;
-    double        *restr_values;
-    array_desc    *arr_desc;
-    extern Widget aux_image_display;
-    /*static char function_name[] = "track_aux_canvas_xtmagupd";*/
-
-
-    canvas_get_specification (viewimg_get_worldcanvas (vimage),
-			      &xlabel, &ylabel, &num_restr,
-			      &restr_names, &restr_values);
-    viewimg_get_attributes (vimage,
-			    VIEWIMG_VATT_ARRAY_DESC, &arr_desc,
-			    VIEWIMG_VATT_HDIM, &hdim,
-			    VIEWIMG_VATT_VDIM, &vdim,
-			    VIEWIMG_VATT_END);
-
-    /*  Convert linear world co-ordinates to array indices */
-    pointer_x_index = ds_get_coord_num (arr_desc->dimensions[hdim], x_lin,
-					SEARCH_BIAS_CLOSEST);
-    pointer_y_index = ds_get_coord_num (arr_desc->dimensions[vdim], y_lin,
-					SEARCH_BIAS_CLOSEST);
-
-    XtVaGetValues (aux_image_display,
-		   XkwNmagnifierVisibleCanvas, &magnifier_canvas,
-		   NULL);
-    viewimg_set_canvas_attributes (magnifier_canvas,
-				   VIEWIMG_ATT_PAN_CENTRE_X, pointer_x_index,
-				   VIEWIMG_ATT_PAN_CENTRE_Y, pointer_y_index,
-				   VIEWIMG_ATT_END);
-    kwin_resize (canvas_get_pixcanvas (magnifier_canvas), FALSE, 0, 0, 0, 0);
-
-    return (TRUE);
-}   /*  End Function track_aux_canvas_xtmagupd  */
 
 static void image_mode_cbk (Widget w, XtPointer client_data,
 			    XtPointer call_data)
@@ -916,20 +825,9 @@ static void show_image (KWorldCanvas canvas, iarray image,ViewableImage vimage)
     [RETURNS] Nothing.
 */
 {
-    double i_min, i_max;
     /*static char function_name[] = "show_image";*/
 
     if (vimage == NULL) return;
-    if (viewimg_get_active (canvas) == vimage) return;
-    /*  Must change the canvas intensity scale  */
-    if ( !iarray_min_max (image, CONV1_REAL, &i_min, &i_max) )
-    {
-	fprintf (stderr, "Error computing min-max\n");
-    }
-    canvas_set_attributes (canvas,
-			   CANVAS_ATT_VALUE_MIN, i_min,
-			   CANVAS_ATT_VALUE_MAX, i_max,
-			   CANVAS_ATT_END);
     viewimg_make_active (vimage);
 }   /*  End Function show_image  */
 
@@ -939,27 +837,21 @@ static void show_mom0 (KWorldCanvas canvas)
     [RETURNS] Nothing.
 */
 {
-    double i_min, i_max;
-    extern iarray mom0_arr;
+    double min, max;
     extern ViewableImage mom0_vimage;
     /*static char function_name[] = "show_mom0";*/
 
     if (mom0_vimage == NULL) return;
-    if (viewimg_get_active (canvas) == mom0_vimage) return;
-    /*  Must change the canvas intensity scale  */
-    if ( !iarray_min_max (mom0_arr, CONV1_REAL, &i_min, &i_max) )
+    viewimg_get_attributes (mom0_vimage,
+			    VIEWIMG_VATT_VALUE_MIN, &min,
+			    VIEWIMG_VATT_VALUE_MAX, &max,
+			    VIEWIMG_VATT_END);
+    if (min >= max)
     {
-	fprintf (stderr, "Error computing min-max\n");
-    }
-    if (i_min >= i_max)
-    {
-	fprintf (stderr, "Computed 0th moment map is blank: ignoring\n");
+	fprintf (stderr, "0th moment image contains only: %e: ignoring\n",
+		 min);
 	return;
     }
-    canvas_set_attributes (canvas,
-			   CANVAS_ATT_VALUE_MIN, i_min,
-			   CANVAS_ATT_VALUE_MAX, i_max,
-			   CANVAS_ATT_END);
     viewimg_make_active (mom0_vimage);
 }   /*  End Function show_mom0  */
 
@@ -969,29 +861,20 @@ static void show_mom1 (KWorldCanvas canvas)
     [RETURNS] Nothing.
 */
 {
-    double i_min, i_max;
-    extern iarray mom1_arr;
-    extern ViewableImage mom0_vimage, mom1_vimage;
+    double min, max;
+    extern ViewableImage mom1_vimage;
     /*static char function_name[] = "show_mom1";*/
 
     if (mom1_vimage == NULL) return;
-    if ( (viewimg_get_active (canvas) == NULL) ||
-	 (viewimg_get_active (canvas) == mom0_vimage) )
+    viewimg_get_attributes (mom1_vimage,
+			    VIEWIMG_VATT_VALUE_MIN, &min,
+			    VIEWIMG_VATT_VALUE_MAX, &max,
+			    VIEWIMG_VATT_END);
+    if (min >= max)
     {
-	/*  Must change the canvas intensity scale  */
-	if ( !iarray_min_max (mom1_arr, CONV1_REAL, &i_min, &i_max) )
-	{
-	    fprintf (stderr, "Error computing min-max\n");
-	}
-	if (i_min >= i_max)
-	{
-	    fprintf (stderr, "Computed 1st moment map is blank: ignoring\n");
-	    return;
-	}
-	canvas_set_attributes (canvas,
-			       CANVAS_ATT_VALUE_MIN, i_min,
-			       CANVAS_ATT_VALUE_MAX, i_max,
-			       CANVAS_ATT_END);
+	fprintf (stderr, "1st moment image contains only: %e: ignoring\n",
+		 min);
+	return;
     }
     viewimg_make_active (mom1_vimage);
 }   /*  End Function show_mom1  */
@@ -1004,14 +887,25 @@ static void moment_cbk (Widget w, XtPointer client_data, XtPointer call_data)
     [RETURNS] Nothing.
 */
 {
-    extern iarray cube_arr;
+    double min, max;
+    extern iarray cube_arr, mom0_arr, mom1_arr;
     extern KWorldCanvas main_canvas, aux_canvas;
     extern ViewableImage mom0_vimage, mom1_vimage;
     extern unsigned int image_mode;
     /*static char function_name[] = "moment_cbk";*/
 
     if (cube_arr == NULL) return;
+    iarray_min_max (mom0_arr, CONV_CtoR_REAL, &min, &max);
+    viewimg_set_attributes (mom0_vimage,
+			    VIEWIMG_VATT_VALUE_MIN, min,
+			    VIEWIMG_VATT_VALUE_MAX, max,
+			    VIEWIMG_VATT_END);
     viewimg_register_data_change (mom0_vimage);
+    iarray_min_max (mom1_arr, CONV_CtoR_REAL, &min, &max);
+    viewimg_set_attributes (mom1_vimage,
+			    VIEWIMG_VATT_VALUE_MIN, min,
+			    VIEWIMG_VATT_VALUE_MAX, max,
+			    VIEWIMG_VATT_END);
     viewimg_register_data_change (mom1_vimage);
     if (image_mode == IMAGE_MODE_MOM0) show_mom0 (main_canvas);
     if (image_mode == IMAGE_MODE_MOM1) show_mom1 (main_canvas);
@@ -1049,15 +943,8 @@ static void show_channel0 (KWorldCanvas canvas)
 */
 {
     extern ViewableImage channel0_vimage;
-    extern double cube_min, cube_max;
     /*static char function_name[] = "show_channel0";*/
 
     if (channel0_vimage == NULL) return;
-    if (viewimg_get_active (canvas) == channel0_vimage) return;
-    /*  Must change the canvas intensity scale  */
-    canvas_set_attributes (canvas,
-			   CANVAS_ATT_VALUE_MIN, cube_min,
-			   CANVAS_ATT_VALUE_MAX, cube_max,
-			   CANVAS_ATT_END);
     viewimg_make_active (channel0_vimage);
 }   /*  End Function show_channel0  */

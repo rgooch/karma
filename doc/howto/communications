@@ -30,24 +30,24 @@ support are listed below, grouped by layer.
   =======
 
 The lowest level (most primitive) communications routines are in the
-<r_> package in the Karma library. These routines provide a very low
+<r> package in the Karma library. These routines provide a very low
 level interface to Unix sockets (on Unix systems). Routines exist for
 allocating ports and making connections to ports.
 These routines are *not* recommended for use, as they are inherently
 non-portable (outside of Unix, say) in their interactions, and too
 primitive.
-The <r_> package also provides other miscellaneous functions to
+The <r> package also provides other miscellaneous functions to
 manipulate the process environment, determining the hostname of a
 machine, computing port numbers, etc. These routines provide some OS
 independent functions, and hence are preferred over the vendor
 supplied routines.
-The <r_> package is a key package in providing OS abstraction.
+The <r> package is a key package in providing OS abstraction.
 
   Level 2
   =======
 
 The basic Input/Output class in Karma is the "channel". This is
-provided by the <ch_> package. A channel is a (possibly) full duplex
+provided by the <ch> package. A channel is a (possibly) full duplex
 buffered stream of data. These are similar to the standard C library
 FILE * streams, but fix a number of deficiencies in FILE streams, such
 as:
@@ -58,7 +58,7 @@ as:
 
 A channel may be associated with a file (disc file, named FIFO, tty,
 etc.), a connection to another process, a memory object, and others.
-A single interface for reading and writing is presented by the <ch_>
+A single interface for reading and writing is presented by the <ch>
 package.
 A powerful extension for Channels is the ability to push a stack of
 filter functions (termed "converters") onto a Channel. Examples of
@@ -75,19 +75,19 @@ management". In Unix, there are two ways of doing this. One way is to
 install signal handlers. Unfortunately, becauses most code is not
 re-entrant, there are inherent dangers in using signals. The other
 alternative is to using a polling loop to watch for communication
-events. The <chm_> package provides the means (when running under a
+events. The <chm> package provides the means (when running under a
 plain Unix environment) to register event callback functions to
-process communications events. The <chm_> package also provides the
+process communications events. The <chm> package also provides the
 chm_poll routine which does the actual polling for events. On Unix
 systems, this can effectively place a process in hibernation until an
 event occurs.
 When running under a different environment, say using the Xt or XView
-toolkits, the <chx_> and <notify_chm_> packages provide the
+toolkits, the <chx> and <notify_chm> packages provide the
 callback registration functions, respectively. These packages do not
 provide a polling routine, as the toolkit choosen supplies this
 function.
 
-The <pio_> package provides a simple means to transfer binary data
+The <pio> package provides a simple means to transfer binary data
 between a unified "network" format and local (host) format. These
 routines write to/ read from channels. These routines are handy for
 simple communications.
@@ -96,13 +96,13 @@ simple communications.
   =======
 
 The real power in the communications support in Karma comes from the
-<conn_> package. This is the recommended interface for all user-level
+<conn> package. This is the recommended interface for all user-level
 communications (and most library communications too).
-The <conn_> package is initialised with the <conn_register_managers>
-routine. This tells the <conn_> package whether to use the plain Unix
+The <conn> package is initialised with the <conn_register_managers>
+routine. This tells the <conn> package whether to use the plain Unix
 channel management, or the Xt or XView based channel management.
-The <conn_> package provides support for modules (processes) to
-connect to each other, using agreed upon "protocols". The <conn_>
+The <conn> package provides support for modules (processes) to
+connect to each other, using agreed upon "protocols". The <conn>
 package does not enforce the definition of a "protocol", it just
 provides a means for modules to differentiate between the various
 connections they may have. It is the responsibility of the code
@@ -124,7 +124,7 @@ it cannot accept connections with that protocol.
 Each module may have both client and server support for zero, one or
 more protocols. Also, each module may be operating both as a client
 and a server for different connections. The difference between a
-client and server (as far as the <conn_> package is concerned) is that
+client and server (as far as the <conn> package is concerned) is that
 a client initiates a connection while the server accepts (or rejects)
 the connection. See the section on security below which details how
 access may be restricted.
@@ -133,7 +133,7 @@ In order to transfer data over a Connection, one must call the
 <conn_get_channel> routine to obtain the underlying Channel, since all
 I/O is based on the Channel.
 
-The <conn_> package, in conjunction with the <ch_> package provides
+The <conn> package, in conjunction with the <ch> package provides
 complete abstraction of communications. Higher level library code and
 user code has no knowledge of the underlying transport mechanisms
 used. This allows the library to choose the most efficient transport
@@ -142,9 +142,9 @@ It is worth pointing out that the communications abstraction does not
 come at the cost of speed or efficiency, both in terms of raw
 throughput and turnaround times.
 
-The <arln_> package allows the reading (with blocking: waiting for
+The <arln> package allows the reading (with blocking: waiting for
 input) from the standard input of lines, while still polling for other
-events. This package uses the <chm_> package for channel management,
+events. This package uses the <chm> package for channel management,
 hence is not applicable to Xt or XView toolkit based modules.
 
   Level 5
@@ -152,25 +152,25 @@ hence is not applicable to Xt or XView toolkit based modules.
 
 Another fundamental part of the Karma library is the Karma Data
 Structure. This flexible, heirarchical data structure can be simply
-transferred between modules by using the <dsxfr_> package. This
+transferred between modules by using the <dsxfr> package. This
 package defines the "multi_array" protocol, and provides simple
 routines to read or write an entire data structure from/ to another
 modules (or disc file).
 Part of the definition of the "multi_array" protocol is that data
 always flows from the client to the server, never the other way around.
 
-Another package in the Karma library is the <kcmap_> package. This
+Another package in the Karma library is the <kcmap> package. This
 package defines an opaque dynamic pseudocolourmap class. This provides
 a graphics system independent means to modify colourmaps. In addition,
 it provides for dynamic changes to colourmaps to be shared between
-modules by using the <conn_> package to define the "colourmap_indices"
+modules by using the <conn> package to define the "colourmap_indices"
 and "full_colourmap" protocols. This allows processes attached to the
 same graphics display and separate graphics displays (ie. separate X
 displays) to dynamically share colourmaps.
 
-The <iedit_> package defines an opaque image edit instruction class.
-This is designed for simple image painting operations. The <iedit_>
-package also uses the <conn_> package to define the "2D_edit" protocol
+The <iedit> package defines an opaque image edit instruction class.
+This is designed for simple image painting operations. The <iedit>
+package also uses the <conn> package to define the "2D_edit" protocol
 which allows changes to an edit list to be propagated to co-operating
 modules. Using this package, it is trivial to implement a "shared
 paintboard" application for several users, where each user sees what
@@ -180,9 +180,9 @@ every other user is painting, in real time.
   =======
 
 The Karma library provides a simplified interface to the general Karma
-Data Structure in the <iarray_> package. This package defines the
+Data Structure in the <iarray> package. This package defines the
 "Intelligent Array" class.
-As with the <dsxfr_> package, the <iarray_> package provides similar
+As with the <dsxfr> package, the <iarray> package provides similar
 routines to transfer data between modules and to/from disc files.
 
 
@@ -208,8 +208,7 @@ Below are some examples:
 
 This simple example is a module which generates some data (a 2
 dimensional Intelligent Array) and then wishes to transmit this to a
-module (name "receiver") on another machine (with name
-"server.regional.edu.mars").
+module (name "receiver") on another machine (with name "localhost").
 
 
 /*----------------------------------------------------------*/
@@ -233,12 +232,11 @@ main ()
     /*  Register "multi_array" client protocol support  */
     dsxfr_register_connection_limits (-1, 1);
     /*  Attempt connection to module  */
-    if (conn_attempt_connection ("server.regional.edu.mars",
-				 r_get_def_port ("receiver", NULL),
-				 "multi_array")
-	!= TRUE)
+    if ( !conn_attempt_connection ("localhost",
+				   r_get_def_port ("receiver", NULL),
+				   "multi_array") )
     {
-	(void) fprintf (stderr, "Error connecting\n");
+	fprintf (stderr, "Error connecting\n");
 	exit (1);
     }
     /*  Create a 10x10 integer 2D iarray  */
@@ -254,7 +252,7 @@ main ()
     }
 
     /*  Send  a  to module  */
-    (void) iarray_write (a, "connections");
+    iarray_write (a, "connections");
 
     /*  Deallocate array  */
     iarray_dealloc (a);
@@ -291,9 +289,9 @@ main ()
     dsxfr_register_read_func (read_func);
     /*  Allocate a port  */
     port_number = r_get_def_port ("receiver", NULL);
-    if (conn_become_server (&port_number, 0) != TRUE)
+    if ( !conn_become_server (&port_number, 0) )
     {
-	(void) fprintf (stderr, "Could not become a server\n");
+	fprintf (stderr, "Could not become a server\n");
 	exit (1);
     }
 
@@ -320,11 +318,11 @@ flag first_time_data;
 			       NULL, K_CH_MMAP_NEVER) )
 	== NULL )
     {
-	(void) fprintf (stderr, "Error getting Intelligent Array\n");
+	fprintf (stderr, "Error getting Intelligent Array\n");
 	exit (1);
     }
     /*  Write "out.kf"  */
-    (void) iarray_write (a, "out");
+    iarray_write (a, "out");
     /*  Exit module now that data has been read  */
     exit (0);
 }
@@ -336,13 +334,14 @@ This simple example is a module which reads lines from the standard
 input and transmits the lines to all modules connected with the
 "experimental" protocol.
 The module will attempt a connection to a module (name "receiver") on
-another machine (with name "server.regional.edu.mars").
+another machine (with name "localhost").
 
 
 /*-----------------------------------------------------------*/
 /*  Communications sample program: experimental transmitter  */
 /*-----------------------------------------------------------*/
 
+#include <stdio.h>
 #include <karma_arln.h>
 #include <karma_conn.h>
 #include <karma_chm.h>
@@ -365,17 +364,16 @@ main ()
 				   ( flag (*) () ) NULL, ( flag (*) () ) NULL,
 				   ( void (*) () ) NULL);
     /*  Attempt connection to module  */
-    if (conn_attempt_connection ("server.regional.edu.mars",
-				 r_get_def_port ("receiver", NULL),
-				 "experimental")
-	!= TRUE)
+    if ( !conn_attempt_connection ("localhost",
+				   r_get_def_port ("receiver", NULL),
+				   "experimental") )
     {
-	(void) fprintf (stderr, "Error connecting\n");
+	fprintf (stderr, "Error connecting\n");
 	exit (1);
     }
 
     /*  Loop waiting for input and transmit each line  */
-    while ( arln (buffer, 256, "Hurry up> ") )
+    while ( arln_read_line (buffer, 256, "Hurry up> ") )
     {
 	/*  Have line of data: transmit to all "experimental" servers  */
 	/*  Get number of connections made (should be 1 in this example)  */
@@ -386,7 +384,7 @@ main ()
 	    if ( ( conn = conn_get_client_connection ("experimental", count) )
 		== NULL )
 	    {
-		(void) fprintf (stderr,
+		fprintf (stderr,
 			    "Error getting \"experimental\" connection: %u\n",
 				count);
 		exit (1);
@@ -394,8 +392,8 @@ main ()
 	    /*  Get the channel  */
 	    channel = conn_get_channel (conn);
 	    /*  Write and flush  */
-	    (void) ch_puts (channel, buffer, TRUE);
-	    (void) ch_flush (channel);
+	    ch_puts (channel, buffer, TRUE);
+	    ch_flush (channel);
 	}
     }
 }
@@ -411,6 +409,7 @@ the "experimental" protocol and displays the lines.
 /*  Communications sample program: experimental receiver  */
 /*--------------------------------------------------------*/
 
+#include <stdio.h>
 #include <karma_arln.h>
 #include <karma_conn.h>
 #include <karma_chm.h>
@@ -420,6 +419,8 @@ flag read_func (/* connection, info */);
 
 main ()
 {
+   unsigned int port_number;
+
     /*  Initialise communications package  */
     conn_register_managers (chm_manage, chm_unmanage, ( void (*) () ) NULL);
     /*  Register "experimental" server protocol support  */
@@ -427,9 +428,9 @@ main ()
 				   read_func, ( void (*) () ) NULL);
     /*  Allocate a port  */
     port_number = r_get_def_port ("receiver", NULL);
-    if (conn_become_server (&port_number, 0) != TRUE)
+    if ( !conn_become_server (&port_number, 0) )
     {
-	(void) fprintf (stderr, "Could not become a server\n");
+	fprintf (stderr, "Could not become a server\n");
 	exit (1);
     }
 
@@ -453,12 +454,12 @@ void **info;
 
     /*  Get channel  */
     channel = conn_get_channel (connection);
-    if (ch_gets (channel, buffer, 256) != TRUE)
+    if ( !ch_gets (channel, buffer, 256) )
     {
-	(void) fprintf (stderr, "Error reading line\n");
+	fprintf (stderr, "Error reading line\n");
 	return (FALSE);
     }
-    (void) fprintf (stderr, "Incoming line: \"%s\"\n", buffer);
+    fprintf (stderr, "Incoming line: \"%s\"\n", buffer);
     return (TRUE);
 }
 
@@ -534,7 +535,7 @@ The Karma communcations security support is aimed at:
   Details
   =======
 
-All connections maintained by the <conn_> package may be both
+All connections maintained by the <conn> package may be both
 authenticated and encrypted. The configuration of this is centralised
 in your ~/.KARMAauthority file (this file should bar all access except
 for the owner). You may set a uniform authentication/encryption
@@ -547,7 +548,7 @@ file is a follows (one line per protocol):
 
 The <protocol_name> may be any protocol name (a specific module need
 not support a protocol). The name "RAW_PROTOCOL" designates the raw
-Karma protocol used by the <conn_> package prior to negotiating a
+Karma protocol used by the <conn> package prior to negotiating a
 specific application protocol.
 
 <security_type> may be any of the following:

@@ -1,0 +1,100 @@
+<html><head><title>Package: e</title></head> 
+<body>
+<center><h1>The "e" Package</h1></center>    These routines are meant to provide a flexible, portable means to generate
+    periodic events.
+    NOTE: THIS PACKAGE IS WORK IN PROGRESS. THE INTERFACE MAY CHANGE IN THE
+    NEXT RELEASE, POSSIBLY WITHOUT NOTICE.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=e></a></table><h4>Functions</h4><table><tr><td><a href=e.html#e_dispatch_events>e_dispatch_events</a></td><td>Dispatch events for a list.
+</td></tr>
+<tr><td><a href=e.html#e_register_func>e_register_func</a></td><td>Register a function to be called periodically.
+</td></tr>
+<tr><td><a href=e.html#e_unregister_func>e_unregister_func</a></td><td>Unregister an event function.
+</td></tr>
+<tr><td><a href=e.html#e_unix_create_list>e_unix_create_list</a></td><td>Create a periodic event management list under Unix.
+</td></tr>
+<tr><td><a href=e.html#e_unix_dispatch_events>e_unix_dispatch_events</a></td><td>Dispatch events for Unix.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=e.html#E_PROTO_event_func>E_PROTO_event_func</a></td><td>Event callback.
+</td></tr>
+</table><h4>Tables</h4><table><tr><td><a href=e.html#E_DISPATCH_LEVELS>E_DISPATCH_LEVELS</a></td><td>List of replacement policies when adding keys
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=e_dispatch_events></a> void
+ <b>e_dispatch_events</b><i>    (KPeriodicEventList list, unsigned int dispatch_level,
+			flag timeout)
+</i><br><p>    Dispatch events for a list.
+<p><b>Parameters:</b><ul><li><i>list :</i> 
+    The event list.
+<br><li><i>dispatch_level :</i> 
+    The level of events that may dispatched. Event functions
+    at the same level or higher are dispatched. See <a href=e.html#E_DISPATCH_LEVELS>E_DISPATCH_LEVELS</a> for a
+    list of legal values.
+<br><li><i>timeout :</i> 
+    If TRUE, the perdiodic timer timed out.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=e_register_func></a> KPeriodicEventFunc
+ <b>e_register_func</b><i>    (KPeriodicEventList list, flag (*func) (),
+				    void *info, unsigned long interval,
+				    unsigned int dispatch_level)
+</i><br><p>    Register a function to be called periodically.
+<p><b>Parameters:</b><ul><li><i>list :</i> 
+    The event list to manage the function.
+<br><li><i>func :</i> 
+    The function to be called upon the specified timout. The prototype
+    function is <a href=e.html#E_PROTO_event_func>E_PROTO_event_func</a>.
+<br><li><i>info :</i> 
+    An arbitrary pointer passed to <em>func</em>.
+<br><li><i>interval :</i> 
+    The interval between successive calls to <em>func</em>. This is
+    measured in units of the list timeout.
+<br><li><i>dispatch_level :</i> 
+    The preferred method of dispatch for the function. See
+    <a href=e.html#E_DISPATCH_LEVELS>E_DISPATCH_LEVELS</a> for a list of legal values. Not all implementations
+    may support the higher levels, so events may dispatched at a lower level
+    than desired.
+<br></ul><b>Returns:</b>     A KPeriodicEventFunc on success, else the process aborts.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=e_unregister_func></a> void
+ <b>e_unregister_func</b><i>    (KPeriodicEventFunc func)
+</i><br><p>    Unregister an event function.
+<p><b>Parameters:</b><ul><li><i>func :</i> 
+    The callback function.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=e_unix_create_list></a> KPeriodicEventList
+ <b>e_unix_create_list</b><i>    (unsigned long interval_us,
+				       unsigned long interval_s,
+				       void *list_info)
+</i><br><p>    Create a periodic event management list under Unix.
+<p><b>Parameters:</b><ul><li><i>interval_us :</i> 
+    The microsecond component time between timeouts on this list.
+<br><li><i>interval_s :</i> 
+    The second component time between timeouts on this list.
+<br><li><i>list_info :</i> 
+    An arbitrary pointer passed to event functions on this list.
+<br></ul><b>Returns:</b>     A KPeriodicEventList on success, else the process aborts.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The specified interval may be rounded up to the system timer
+    resolution (10ms on many systems).
+</ul><p><hr> <a name=e_unix_dispatch_events></a> void
+ <b>e_unix_dispatch_events</b><i>    (unsigned int dispatch_level)
+</i><br><p>    Dispatch events for Unix.
+<p><b>Parameters:</b><ul><li><i>dispatch_level :</i> 
+    The level of events that may dispatched. Event functions
+    at the same level or higher are dispatched.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=E_PROTO_event_func></a> flag
+ <b>E_PROTO_event_func</b><i>    (KPeriodicEventFunc func, void *info)
+</i><br><p>    This routine is called when a periodic event occurs.
+<p><b>Parameters:</b><ul><li><i>func :</i> 
+    The KPeriodicEventFunc object.
+<br><li><i>info :</i> 
+    A pointer to arbitrary information.
+<br></ul><b>Returns:</b>     TRUE if the event function should be called again, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Tables</h2></center><hr> <a name=E_DISPATCH_LEVELS><b>E_DISPATCH_LEVELS</b></a><p> <table><tr><td>Dispatch level        </td><td>Meaning
+
+</td></tr><tr><td>DISPATCH_SYNCHRONOUS  </td><td>Dispatch synchronously with the application main
+                      thread
+</td></tr><tr><td>DISPATCH_ASYNCHRONOUS </td><td>Dispatch asynchronously (like a Unix signal handler).
+                      Use with caution, as race conditions may result
+</table><p>
+<hr><a href="../index.html">Back to Karma Home Page</a>
+<hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.ariel.com.au/">Ariel Internet Services</a></address></center></body></html>

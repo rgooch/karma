@@ -388,8 +388,7 @@ $RETURNS
     TRUE on successful reading, else FALSE (indicating the connection
     should be closed).
 $NOTE
-    The <<close_func>> will not be called if this routine returns
-    FALSE.
+    The <<close_func>> will be called if this routine returns FALSE.
 $END
 
 $PROTO_FUNC         CONN_PROTO_close_func

@@ -2,7 +2,7 @@
 
     Header for  xtmisc_  package.
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   30-DEC-1995
 
-    Last updated by Richard Gooch   30-DEC-1995
+    Last updated by Richard Gooch   1-DEC-1996
 
 */
 
@@ -41,12 +41,33 @@
 #  include <karma.h>
 #endif
 
+#if !defined(KARMA_E_DEF_H) || defined(MAKEDEPEND)
+#  include <karma_e_def.h>
+#endif
+
 #ifndef KARMA_XTMISC_H
 #define KARMA_XTMISC_H
 
 
-/*  File:   work.c   */
-EXTERN_FUNCTION (void xtmisc_support_work_funcs, (XtAppContext app_context) );
+/*  File:  event.c  */
+EXTERN_FUNCTION (KPeriodicEventList xtmisc_event_create_list,
+		 (XtAppContext app_context,
+		  unsigned long interval_us, unsigned long interval_s,
+		  void *list_info) );
+
+/*  File:  icon.c  */
+EXTERN_FUNCTION (void xtmisc_set_icon,
+		 ( Widget top_level,
+		   void (*icon_func) (Display *display, Pixmap pixmap,
+				      int width, int height) ) );
+
+/*  File:  icon.c  */
+EXTERN_FUNCTION (Widget xtmisc_init_app_initialise,
+		 (XtAppContext *app_context_return,
+		  CONST char* application_class,
+		  XrmOptionDescList options, Cardinal num_options,
+		  int *argc_in_out, String *argv_in_out,
+		  String *fallback_resources, unsigned int min_ccells, ...) );
 
 /*  File:   pop.c   */
 EXTERN_FUNCTION (void xtmisc_popup_cbk,
@@ -56,11 +77,8 @@ EXTERN_FUNCTION (void xtmisc_exclusive_popup_cbk,
 EXTERN_FUNCTION (void xtmisc_popdown_cbk,
 		 (Widget w, XtPointer client_data, XtPointer call_data) );
 
-/*  File:  icon.c  */
-EXTERN_FUNCTION (void xtmisc_set_icon,
-		 ( Widget top_level,
-		   void (*icon_func) (Display *display, Pixmap pixmap,
-				      int width, int height) ) );
+/*  File:   work.c   */
+EXTERN_FUNCTION (void xtmisc_support_work_funcs, (XtAppContext app_context) );
 
 
 #endif /*  KARMA_XTMISC_H  */

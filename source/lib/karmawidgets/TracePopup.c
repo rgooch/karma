@@ -34,8 +34,15 @@
     Updated by      Richard Gooch   19-SEP-1996: Changed to special function
   call interface for setting new array.
 
-    Last updated by Richard Gooch   9-OCT-1996: Store trace details and use
+    Updated by      Richard Gooch   9-OCT-1996: Store trace details and use
   refresh function. Added print button.
+
+    Updated by      Richard Gooch   5-NOV-1996: Added track display.
+
+    Updated by      Richard Gooch   6-NOV-1996: Added horizontal pixel
+  co-ordinate in track display and put both track dislays on their own line.
+
+    Last updated by Richard Gooch   11-NOV-1996: Only refresh canvas if visible
 
 
 */
@@ -57,13 +64,15 @@
 #  define X11
 #endif
 #include <karma.h>
+#include <k_event_codes.h>
 #include <karma_iarray.h>
-#include <karma_c.h>
 #include <karma_xtmisc.h>
+#include <karma_wcs.h>
 #include <karma_ds.h>
 #include <karma_ex.h>
 #include <karma_m.h>
 #include <karma_a.h>
+#include <karma_c.h>
 #include <Xkw/TracePopupP.h>
 #include <Xkw/Canvas.h>
 #include <Xkw/ExclusiveMenu.h>
@@ -89,6 +98,10 @@ STATIC_FUNCTION (void refresh_func,
 		  flag *honoured_areas) );
 STATIC_FUNCTION (void postscript_cbk, (Widget w, XtPointer client_data,
 				       XtPointer call_data) );
+STATIC_FUNCTION (flag position_func,
+		 (KWorldCanvas canvas, double x, double y,
+		  unsigned int event_code, void *e_info,
+		  void **f_info, double x_lin, double y_lin) );
 
 
 /*----------------------------------------------------------------------*/
@@ -100,8 +113,6 @@ STATIC_FUNCTION (void postscript_cbk, (Widget w, XtPointer client_data,
 
 static XtResource TracePopupResources[] = 
 {
-    {XkwNiarray, XkwCIarray, XtRPointer, sizeof (XtPointer),
-     offset (array), XtRImmediate, NULL},
     {XkwNverbose, XkwCVerbose, XtRBool, sizeof (Bool),
      offset (verbose), XtRImmediate, FALSE},
     {XkwNcanvasVisual, XtCVisual, XtRVisual, sizeof (Visual *),
@@ -195,6 +206,7 @@ static void TracePopup__Initialise (Widget Request, Widget New)
     new->tracePopup.y_arr = NULL;
     new->tracePopup.buf_len = 0;
     new->tracePopup.trace = NULL;
+    new->tracePopup.ap = NULL;
     form = XtVaCreateManagedWidget ("form", formWidgetClass, New,
 				    XtNborderWidth, 0,
 				    NULL);
@@ -214,12 +226,30 @@ static void TracePopup__Initialise (Widget Request, Widget New)
 				 XtNheight, 20,
 				 NULL);
     print_btn = w;
+    w = XtVaCreateManagedWidget ("trackLabel0", labelWidgetClass, form,
+				 XtNlabel,
+				 "Track Output                               ",
+				 XtNtop, XtChainTop,
+				 XtNbottom, XtChainTop,
+				 XtNfromVert,  w,
+				 XtNheight, 20,
+				 NULL);
+    new->tracePopup.track_label0 = w;
+    w = XtVaCreateManagedWidget ("trackLabel1", labelWidgetClass, form,
+				 XtNlabel,
+				 "Track Output                               ",
+				 XtNtop, XtChainTop,
+				 XtNbottom, XtChainTop,
+				 XtNfromVert,  w,
+				 XtNheight, 20,
+				 NULL);
+    new->tracePopup.track_label1 = w;
     w = XtVaCreateManagedWidget ("pseudoColourCanvas", canvasWidgetClass, form,
 				 XtNfromVert, w,
 				 XtNleft, XtChainLeft,
 				 XtNright, XtChainRight,
 				 XtNwidth, 400,
-				 XtNheight, 300,
+				 XtNheight, 280,
 				 XtNvisual, new->tracePopup.canvasVisual,
 				 XkwNsilenceUnconsumed, True,
 				 XtNresizable, True,
@@ -257,6 +287,8 @@ static void iarr_destroy_callback (iarray arr, TracePopupWidget top)
     top->tracePopup.array = NULL;
     top->tracePopup.iarr_destroy_callback = NULL;
     top->tracePopup.trace = NULL;
+    if (top->tracePopup.ap != NULL) wcs_astro_destroy (top->tracePopup.ap);
+    top->tracePopup.ap = NULL;
 }   /*  End Function iarr_destroy_callback  */
 
 static void TracePopup__canvas_realise_cbk (Widget w, XtPointer client_data,
@@ -275,137 +307,26 @@ static void TracePopup__canvas_realise_cbk (Widget w, XtPointer client_data,
     /*static char function_name[] = "TracePopupWidget::canvas_realise_cbk";*/
 
     top->tracePopup.worldCanvas = canvas_create (pixcanvas, NULL, NULL);
+    canvas_use_astro_transform (top->tracePopup.worldCanvas,
+				&top->tracePopup.ap);
     XtVaGetValues (w,
 		   XtNforeground, &top->tracePopup.canvas_foreground,
 		   NULL);
     if (top->tracePopup.array != NULL)
     {
-	canvas_set_attributes(top->tracePopup.worldCanvas,
-			      CANVAS_ATT_BOTTOM_Y,
-			      top->tracePopup.array_minimum,
-			      CANVAS_ATT_TOP_Y, top->tracePopup.array_maximum,
-			      CANVAS_ATT_END);
+	canvas_set_attributes (top->tracePopup.worldCanvas,
+			       CANVAS_ATT_BOTTOM_Y,
+			       top->tracePopup.array_minimum,
+			       CANVAS_ATT_TOP_Y, top->tracePopup.array_maximum,
+			       CANVAS_ATT_END);
     }
     canvas_register_refresh_func (top->tracePopup.worldCanvas, refresh_func,
 				  top);
+    canvas_register_position_event_func (top->tracePopup.worldCanvas,
+					 position_func, top);
     XtCallCallbacks ( (Widget) top, XkwNrealiseCallback,
 		      (XtPointer) top->tracePopup.worldCanvas );
 }   /*  End Function canvas_realise_cbk   */
-
-
-/*  Public functions follow  */
-
-void XkwTracePopupNewArray (Widget W, iarray array, double min, double max)
-/*  [SUMMARY] Register new array.
-    <W> The TracePopup widget.
-    <array> The new array. This may be NULL.
-    <min> The minimum data value in the array.
-    <max> The maximum data value in the array. If this is less than <<min>>
-    then the minimum and maximum values are computed.
-    [RETURNS] Nothing.
-*/
-{
-    TracePopupWidget w = (TracePopupWidget) W;
-    static char function_name[] = "XkwTracePopupNewArray";
-
-    /*  Clean up and old array  */
-    if (w->tracePopup.iarr_destroy_callback != NULL)
-    {
-	c_unregister_callback (w->tracePopup.iarr_destroy_callback);
-	w->tracePopup.iarr_destroy_callback = NULL;
-	w->tracePopup.trace = NULL;
-    }
-    if (w->tracePopup.worldCanvas != NULL)
-    {
-	kwin_resize (canvas_get_pixcanvas (w->tracePopup.worldCanvas),
-		     TRUE, 0, 0, 0, 0);
-    }
-    /*  Process new array  */
-    if (array == NULL) return;
-    w->tracePopup.array = array;
-    if (iarray_type (w->tracePopup.array) != K_FLOAT)
-    {
-	fprintf (stderr, "Only floating point data supported\n");
-	a_prog_bug (function_name);
-    }
-    if (max < min)
-    {
-	/*  Compute the minimum and maximum  */
-	iarray_min_max (w->tracePopup.array, CONV_CtoR_REAL,
-			&w->tracePopup.array_minimum,
-			&w->tracePopup.array_maximum);
-    }
-    else
-    {
-	w->tracePopup.array_minimum = min;
-	w->tracePopup.array_maximum = max;
-    }
-    w->tracePopup.iarr_destroy_callback = 
-	iarray_register_destroy_func (w->tracePopup.array,
-				      ( flag (*) () )iarr_destroy_callback,
-				      w);
-    if (w->tracePopup.worldCanvas != NULL)
-    {
-	canvas_set_attributes(w->tracePopup.worldCanvas,
-			      CANVAS_ATT_BOTTOM_Y, w->tracePopup.array_minimum,
-			      CANVAS_ATT_TOP_Y, w->tracePopup.array_maximum,
-			      CANVAS_ATT_END);
-    }
-}   /*  End Function XkwTracePopupNewArray  */
-
-void XkwTracePopupShowTrace (Widget W, unsigned int *dim_indices,uaddr *coords)
-/*  [SUMMARY] Show a trace.
-    <w> The widget.
-    <dim_indices> The dimension indicies. The length of this array must be one
-    less than the number of dimensions in the array.
-    <coords> The coordinates of the trace. The length of this array must be one
-    less than the number of dimensions in the array.
-    [RETURNS] Nothing.
-*/
-{
-    int trace_dim = -1;
-    unsigned int count, dim_count, num_dim;
-    TracePopupWidget w = (TracePopupWidget) W;
-    CONST char *trace;
-    static char function_name[] = "XkwTracePopupShowTrace";
-
-    if (w->tracePopup.worldCanvas == NULL) return;
-    if (w->tracePopup.array == NULL) return;
-    num_dim = iarray_num_dim (w->tracePopup.array);
-    /*  Compute offset to trace  */
-    trace = w->tracePopup.array->data;
-    for (count = 0; count < num_dim - 1; ++count)
-    {
-	dim_count = dim_indices[count];
-	if (coords[count] >= w->tracePopup.array->lengths[dim_count])
-	{
-	    fprintf(stderr,
-		    "Axis: %u  coordinate: %lu is not less than length: %lu\n",
-		    dim_count, coords[count],
-		    w->tracePopup.array->lengths[dim_count]);
-	    return;
-	}
-	trace += w->tracePopup.array->offsets[dim_count][ coords[count] ];
-    }
-    w->tracePopup.trace = trace;
-    /*  Find trace dimension  */
-    for (dim_count = 0; (dim_count < num_dim) && (trace_dim < 0); ++dim_count)
-    {
-	trace_dim = dim_count;
-	for (count = 0; count < num_dim - 1; ++count)
-	{
-	    if (dim_indices[count] == dim_count) trace_dim = -1;
-	}
-    }
-    if (trace_dim < 0)
-    {
-	fprintf (stderr, "No trace dimension!\n");
-	a_prog_bug (function_name);
-    }
-    w->tracePopup.trace_dim = trace_dim;
-    kwin_resize (canvas_get_pixcanvas (w->tracePopup.worldCanvas),
-		 TRUE, 0, 0, 0, 0);
-}   /*  End Function XkwTracePopupShowTrace  */
 
 static void refresh_func (KWorldCanvas canvas, int width, int height,
 			  struct win_scale_type *win_scale,
@@ -442,6 +363,7 @@ static void refresh_func (KWorldCanvas canvas, int width, int height,
     unsigned int count, length, num_pixels;
     unsigned long pixel_value, *pixel_values;
     double x0, y0, x1, y1, left_x, right_x, xscale;
+    double wlx, wrx, dummy;
     TracePopupWidget w = (TracePopupWidget) *info;
     uaddr *offsets;
     static char function_name[] = "TracePopupWidget::refresh_func";
@@ -449,6 +371,19 @@ static void refresh_func (KWorldCanvas canvas, int width, int height,
     if (w->tracePopup.worldCanvas == NULL) return;
     if (w->tracePopup.array == NULL) return;
     if (w->tracePopup.trace == NULL) return;
+    canvas_get_attributes (w->tracePopup.worldCanvas,
+			   CANVAS_ATT_LEFT_X, &left_x,
+			   CANVAS_ATT_RIGHT_X, &right_x,
+			   CANVAS_ATT_END);
+    /*  Convert left&right x values to non-linear co-ordinates  */
+    wlx = left_x;
+    dummy = 0.0;
+    canvas_coords_transform (w->tracePopup.worldCanvas, 1,
+			     &wlx, FALSE, &dummy, FALSE);
+    wrx = right_x;
+    dummy = 0.0;
+    canvas_coords_transform (w->tracePopup.worldCanvas, 1,
+			     &wrx, FALSE, &dummy, FALSE);
     /*  Draw zero line  */
     if ( !canvas_get_colour (w->tracePopup.worldCanvas,
 			     (pspage == NULL) ? "yellow" : "black",
@@ -456,7 +391,7 @@ static void refresh_func (KWorldCanvas canvas, int width, int height,
     {
 	pixel_value = w->tracePopup.canvas_foreground;
     }
-    canvas_draw_line_p (w->tracePopup.worldCanvas, 0.0, 0.0, 1.0, 0.0,
+    canvas_draw_line_p (w->tracePopup.worldCanvas, wlx, 0.0, wrx, 0.0,
 			pixel_value);
     length = iarray_dim_length (w->tracePopup.array, w->tracePopup.trace_dim);
     offsets = w->tracePopup.array->offsets[w->tracePopup.trace_dim];
@@ -465,19 +400,15 @@ static void refresh_func (KWorldCanvas canvas, int width, int height,
 	/*  Use pixels from supplied colourmap  */
 	num_pixels = kcmap_get_pixels (w->tracePopup.karmaColourmap,
 				       &pixel_values);
-	canvas_get_attributes (w->tracePopup.worldCanvas,
-			       CANVAS_ATT_LEFT_X, &left_x,
-			       CANVAS_ATT_RIGHT_X, &right_x,
-			       CANVAS_ATT_END);
-	xscale = (right_x - left_x) / (double) (length - 1);
+	xscale = (wrx - wlx) / (double) (length - 1);
 	/*  Now draw each line  */
 	for (count = 0; count < length - 1; ++count)
 	{
 	    y0 = *(float *) (w->tracePopup.trace + offsets[count]);
 	    y1 = *(float *) (w->tracePopup.trace + offsets[count + 1]);
 	    if ( (y0 >= TOOBIG) || (y1 >= TOOBIG) ) continue;
-	    x0 = left_x + (double) count * xscale;
-	    x1 = left_x + (double) (count + 1) * xscale;
+	    x0 = wlx + (double) count * xscale;
+	    x1 = wlx + (double) (count + 1) * xscale;
 	    pixel_value = pixel_values[count * (num_pixels - 1) / (length -1)];
 	    canvas_draw_line_p (w->tracePopup.worldCanvas, x0, y0, x1, y1,
 				pixel_value);
@@ -521,3 +452,193 @@ static void postscript_cbk (Widget w, XtPointer client_data,
     pixcanvas = canvas_get_pixcanvas (top->tracePopup.worldCanvas);
     XkwPostscriptRegisterImageAndName (w, pixcanvas, NULL);
 }   /*  End Function postscript_cbk   */
+
+static flag position_func (KWorldCanvas canvas, double x, double y,
+			   unsigned int event_code, void *e_info,
+			   void **f_info, double x_lin, double y_lin)
+/*  [SUMMARY] Position event callback.
+    [PURPOSE] This routine is a position event consumer for a world canvas.
+    <canvas> The canvas on which the event occurred.
+    <x> The horizontal world co-ordinate of the event.
+    <y> The vertical world co-ordinate of the event.
+    <event_code> The arbitrary event code.
+    <e_info> A pointer to arbitrary event information.
+    <f_info> A pointer to an arbitrary function information pointer.
+    <x_lin> The horizontal linear world co-ordinate prior to the transform
+    function being called.
+    <y_lin> The vertical linear world co-ordinate prior to the transform
+    function being called.
+    [NOTE] The world co-ordinate values will have been transformed by the
+    registered transform function (see [<canvas_register_transform_func>]).
+    [RETURNS] TRUE if the event was consumed, else FALSE indicating that
+    the event is still to be processed.
+*/
+{
+    unsigned long px;
+    double unit_scale;
+    TracePopupWidget w = (TracePopupWidget) *f_info;
+    dim_desc *dim;
+    char txt[STRING_LENGTH], unit_string[STRING_LENGTH];
+
+    if (event_code != K_CANVAS_EVENT_POINTER_MOVE) return (FALSE);
+    if (w->tracePopup.trace == NULL) return (FALSE);
+    if (w->tracePopup.array == NULL) return (FALSE);
+    /*  First display the x co-ordinate information  */
+    dim = iarray_get_dim_desc (w->tracePopup.array, w->tracePopup.trace_dim);
+    /*  Convert linear world co-ordinates to array indices and display  */
+    px = ds_get_coord_num (dim, x_lin, SEARCH_BIAS_CLOSEST);
+    if (w->tracePopup.ap == NULL)
+    {
+	ds_format_unit (unit_string, &unit_scale, dim->name);
+	sprintf (txt, "x: %lu pixel  %e %s", px, x * unit_scale, unit_string);
+    }
+    else
+    {
+	wcs_astro_format (w->tracePopup.ap, dim->name, unit_string, x);
+	sprintf (txt, "x: %lu pixel  %s", px, unit_string);
+    }
+    XtVaSetValues (w->tracePopup.track_label0,
+		   XtNlabel, txt,
+		   NULL);
+    /*  Now display the y co-ordinate information  */
+    iarray_format_value (w->tracePopup.array, txt, y, TOOBIG, TOOBIG);
+    XtVaSetValues (w->tracePopup.track_label1,
+		   XtNlabel, txt,
+		   NULL);
+    return (TRUE);
+}   /*  End Function position_func  */
+
+
+/*  Public functions follow  */
+
+void XkwTracePopupNewArray (Widget W, iarray array, double min, double max)
+/*  [SUMMARY] Register new array.
+    <W> The TracePopup widget.
+    <array> The new array. This may be NULL.
+    <min> The minimum data value in the array.
+    <max> The maximum data value in the array. If this is less than <<min>>
+    then the minimum and maximum values are computed.
+    [RETURNS] Nothing.
+*/
+{
+    TracePopupWidget w = (TracePopupWidget) W;
+    static char function_name[] = "XkwTracePopupNewArray";
+
+    /*  Clean up any old array  */
+    if (w->tracePopup.iarr_destroy_callback != NULL)
+    {
+	c_unregister_callback (w->tracePopup.iarr_destroy_callback);
+	w->tracePopup.iarr_destroy_callback = NULL;
+	w->tracePopup.trace = NULL;
+    }
+    if (w->tracePopup.ap != NULL) wcs_astro_destroy (w->tracePopup.ap);
+    w->tracePopup.ap = NULL;
+    if (w->tracePopup.worldCanvas != NULL)
+    {
+	kwin_resize (canvas_get_pixcanvas (w->tracePopup.worldCanvas),
+		     TRUE, 0, 0, 0, 0);
+    }
+    /*  Process new array  */
+    if (array == NULL) return;
+    w->tracePopup.array = array;
+    if (iarray_type (w->tracePopup.array) != K_FLOAT)
+    {
+	fprintf (stderr, "Only floating point data supported\n");
+	a_prog_bug (function_name);
+    }
+    if (max < min)
+    {
+	/*  Compute the minimum and maximum  */
+	iarray_min_max (w->tracePopup.array, CONV_CtoR_REAL,
+			&w->tracePopup.array_minimum,
+			&w->tracePopup.array_maximum);
+    }
+    else
+    {
+	w->tracePopup.array_minimum = min;
+	w->tracePopup.array_maximum = max;
+    }
+    w->tracePopup.iarr_destroy_callback = 
+	iarray_register_destroy_func (w->tracePopup.array,
+				      ( flag (*) () )iarr_destroy_callback,
+				      w);
+    w->tracePopup.ap = wcs_astro_setup (array->top_pack_desc,
+					*array->top_packet);
+    if (w->tracePopup.worldCanvas != NULL)
+    {
+	canvas_set_attributes(w->tracePopup.worldCanvas,
+			      CANVAS_ATT_BOTTOM_Y, w->tracePopup.array_minimum,
+			      CANVAS_ATT_TOP_Y, w->tracePopup.array_maximum,
+			      CANVAS_ATT_END);
+    }
+}   /*  End Function XkwTracePopupNewArray  */
+
+void XkwTracePopupShowTrace (Widget W, unsigned int *dim_indices,uaddr *coords)
+/*  [SUMMARY] Show a trace.
+    <W> The widget.
+    <dim_indices> The dimension indicies. The length of this array must be one
+    less than the number of dimensions in the array.
+    <coords> The coordinates of the trace. The length of this array must be one
+    less than the number of dimensions in the array.
+    [RETURNS] Nothing.
+*/
+{
+    KPixCanvas pixcanvas;
+    flag visible;
+    int trace_dim = -1;
+    unsigned int count, dim_count, num_dim;
+    TracePopupWidget w = (TracePopupWidget) W;
+    dim_desc *dim;
+    CONST char *trace;
+    static char function_name[] = "XkwTracePopupShowTrace";
+
+    if (w->tracePopup.worldCanvas == NULL) return;
+    if (w->tracePopup.array == NULL) return;
+    num_dim = iarray_num_dim (w->tracePopup.array);
+    /*  Compute offset to trace  */
+    trace = w->tracePopup.array->data;
+    for (count = 0; count < num_dim - 1; ++count)
+    {
+	dim_count = dim_indices[count];
+	if (coords[count] >= w->tracePopup.array->lengths[dim_count])
+	{
+	    fprintf(stderr,
+		    "Axis: %u  coordinate: %lu is not less than length: %lu\n",
+		    dim_count, coords[count],
+		    w->tracePopup.array->lengths[dim_count]);
+	    return;
+	}
+	trace += w->tracePopup.array->offsets[dim_count][ coords[count] ];
+    }
+    w->tracePopup.trace = trace;
+    /*  Find trace dimension  */
+    for (dim_count = 0; (dim_count < num_dim) && (trace_dim < 0); ++dim_count)
+    {
+	trace_dim = dim_count;
+	for (count = 0; count < num_dim - 1; ++count)
+	{
+	    if (dim_indices[count] == dim_count) trace_dim = -1;
+	}
+    }
+    if (trace_dim < 0)
+    {
+	fprintf (stderr, "No trace dimension!\n");
+	a_prog_bug (function_name);
+    }
+    w->tracePopup.trace_dim = trace_dim;
+    dim = iarray_get_dim_desc (w->tracePopup.array, trace_dim);
+    if (w->tracePopup.worldCanvas != NULL)
+    {
+	canvas_set_attributes (w->tracePopup.worldCanvas,
+			       CANVAS_ATT_LEFT_X, dim->first_coord,
+			       CANVAS_ATT_RIGHT_X, dim->last_coord,
+			       CANVAS_ATT_END);
+    }
+    canvas_specify (w->tracePopup.worldCanvas, dim->name,
+		    iarray_value_name (w->tracePopup.array), 0, NULL, NULL);
+    pixcanvas = canvas_get_pixcanvas (w->tracePopup.worldCanvas);
+    kwin_get_attributes (pixcanvas,
+			 KWIN_ATT_VISIBLE, &visible,
+			 KWIN_ATT_END);
+    if (visible) kwin_resize (pixcanvas, TRUE, 0, 0, 0, 0);
+}   /*  End Function XkwTracePopupShowTrace  */

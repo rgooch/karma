@@ -220,7 +220,7 @@ if (conn->magic_number != OBJECT_MAGIC_NUMBER) \
       Magic number
       Revision number
     Stage 2:
-      Client and server negotiate PRIMARY_KEY security if applicable
+      Client and server negotiate RAW_PROTOCOL security if applicable
     Stage 3: Client sends:
       Protocol name [PROTOCOL_NAME_LENGTH]
       Protocol version number
@@ -1520,7 +1520,7 @@ static flag verify_raw (Connection connection)
     if (authinfo->security_type == SECURITY_TYPE_DROP_ENCRYPTION)
     {
 	a_func_abort (function_name,
-		      "security type: \"drop-encryption\" not valid for PRIMARY_KEY");
+		      "security type: \"drop-encryption\" not valid for RAW_PROTOCOL");
 	exit (RV_BAD_DATA);
     }
     /*  Setup security requirements  */
@@ -1595,7 +1595,7 @@ static flag verify_security (Connection connection)
 	break;
       case SECURITY_TYPE_DROP_ENCRYPTION:
 	a_func_abort (function_name,
-		      "security type: \"drop-encryption\" not valid for PRIMARY_KEY\n");
+		      "security type: \"drop-encryption\" not valid for RAW_PROTOCOL\n");
 	exit (RV_BAD_DATA);
 /*
 	break;
@@ -2314,7 +2314,7 @@ static char *write_protocol (Channel channel, CONST char *protocol_name,
 	if (authinfo->security_type == SECURITY_TYPE_DROP_ENCRYPTION)
 	{
 	    a_func_abort (function_name,
-			  "security type: \"drop-encryption\" not valid for PRIMARY_KEY\n");
+			  "security type: \"drop-encryption\" not valid for RAW_PROTOCOL\n");
 	    exit (RV_BAD_DATA);
 	}
 	if ( ( pri_converter = get_encryption (channel, authinfo, FALSE,

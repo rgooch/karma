@@ -88,7 +88,10 @@
   make widget more robust when insufficient colours are available. Added
   cursor position label. Apply cube scaling attachments to all value displays.
 
-    Last updated by Richard Gooch   13-OCT-1996: Added Zoom and Unzoom buttons.
+    Updated by      Richard Gooch   13-OCT-1996: Added Zoom and Unzoom buttons.
+
+    Last updated by Richard Gooch   12-NOV-1996: Fixed bug in <apply_cbk> so
+  that when <<num_regions>> is zero, no region callbacks are called.
 
 
 */
@@ -607,6 +610,7 @@ static void apply_cbk (Widget w, XtPointer client_data, XtPointer call_data)
     char txt[STRING_LENGTH];
 
     if (top->dataclip.array == NULL) return;
+    if (top->dataclip.num_regions < 1) return;
     regions.blank_data_outside_regions = top->dataclip.blank_data;
     regions.num_regions = top->dataclip.num_regions;
     if ( ( regions.minima = (double *) m_dup ( (char *) top->dataclip.minima,

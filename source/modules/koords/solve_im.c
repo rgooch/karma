@@ -11,7 +11,7 @@
 #include "solve_im.h"
 
 #define		EPSILON	1.e-10
-/* #define DIAG */
+/*#define DIAG*/
 
 /* External functions */
 /* File: radecio.c */
@@ -74,6 +74,8 @@ unsigned int compute_coords (double *crval1, double *crpix1, double *cdelt1,
 	S. Gordon
  Mod: Convert to interface with KOORDS, which allows graphical input of RA, DEC
       and x, y. 96/10/14 VJM
+ Bug: Add 1 to CRPIXn values 96/11/13 REG,VJM
+
 */
 
 {
@@ -98,15 +100,6 @@ char   proj[STRING_LENGTH];
 
 
 
-/* assume nothing is known already - this will change.
-q.ra=p->ra;
-q.dec=p->dec;
-q.x=p->x;
-q.y=p->y;
-q.angle=p->angle;
-q.scale=p->scale;
-q.invert=p->invert;
-*/
 sprintf ( proj, "ARC" );
 if ( projection != NULL ) sprintf(proj,"%s",projection);
 
@@ -120,13 +113,6 @@ if ( num_pairs >= MAXSTARS ) {
   fprintf(stderr, "Input data truncated after %d stars\n",MAXSTARS);
 }
 
-/* start with image center at default value; the middle of x & y range.
-for ( i=0; i < ndata; i++ ) {
-  q.x += x[i]; q.y += y[i];
-}
-q.x = q.x / ndata;
-q.y = q.y / ndata;
-*/
 q.x = (double) naxis1 * 0.5;
 q.y = (double) naxis2 * 0.5;
 
@@ -155,13 +141,7 @@ for (i=0; i < ndata; i++) {
 
 mdata=0;
 for ( n=0; n < (ndata-1); n++){
-#ifdef DIAG
- fprintf(stderr,"Starting n loop %d\n",n);
-#endif
   for ( m=n+1; m < ndata; m++){
-#ifdef DIAG
- fprintf(stderr,"LENGTH/ANG Calc\n");
-#endif
     /*Calculate distances in ra,dec*/
     dis =  sin(PION180*d[m].dec)*sin(PION180*d[n].dec) +
       cos(PION180*d[m].dec)*cos(PION180*d[n].dec)*cos(PION180*(d[m].ra-d[n].ra));
@@ -185,17 +165,20 @@ for ( n=0; n < (ndata-1); n++){
     if ( e[mdata].aim < 0.0 ) e[mdata].aim += 360.0;
 		
 #ifdef DIAG
- fprintf(stderr,"LENGTHS,ANGLES %d %d %d %f %f %f %f\n",mdata,n,m,
-	e[mdata].drd,e[mdata].ard,e[mdata].dim,e[mdata].aim);
+ fprintf(stderr,"LENGTHS,ANGLES %d %d %d %f %f %f %f\n",
+	 mdata,n,m,
+	 e[mdata].drd,e[mdata].ard,e[mdata].dim,e[mdata].aim);
+  fprintf(stderr," %12.8e\n",
+	  (e[mdata].aim - e[mdata].ard));
+  fprintf(stderr," %12.8e %12.8e\n",
+	  sin((PION180*(e[mdata].aim - e[mdata].ard))),
+	  cos((PION180*(e[mdata].aim - e[mdata].ard))));
 #endif
 
     mdata++;
   }
 }
 
-#ifdef DIAG
- fprintf(stderr,"MDATA %d\n",mdata);
-#endif
 /* determine the scale. */
 lenradec=lenim=0.0;
 for ( m=0; m < mdata; m++ ) {
@@ -204,7 +187,8 @@ for ( m=0; m < mdata; m++ ) {
 }
 q.scale=lenradec/lenim;
 #ifdef DIAG
- fprintf(stderr,"The calculated image scale is %f arcsec/pix\n",3600.*q.scale);
+ fprintf(stderr,"The calculated image scale is %20.15e arcsec/pix\n",
+	 3600.*q.scale);
 #endif
 
 /* determine rotation angle & whether the image is inverted */
@@ -220,7 +204,8 @@ for ( m=0; m < mdata; m++ ) {
 diff    = atan2(ds,dc)/PION180;
 diffinv = atan2(dsinv,dcinv)/PION180;
 #ifdef DIAG
- fprintf(stderr,"The average angular diff and diffinv is %f %f\n",diff,diffinv);
+ fprintf(stderr,"The average angular diff and diffinv is %20.15e %20.15e\n",
+	 diff,diffinv);
 #endif
 
 var=varinv=0;
@@ -233,20 +218,15 @@ for ( m=0; m < mdata; m++ ) {
   varinv  += xx*xx;
 }
 #ifdef DIAG
- fprintf(stderr,"The variance for var and vainv is %f %f\n",var,varinv);
+ fprintf(stderr,"The variance for var and vainv is %20.15e %20.15e\n",
+	 var,varinv);
 #endif
 
 if(varinv<var) {
   q.invert=(-1); 
-#ifdef DIAG
- fprintf(stderr,"The image is inverted\n");
-#endif
 }
 else {
   q.invert=1;
-#ifdef DIAG
- fprintf(stderr,"The image is not inverted\n");
-#endif
 }
 
 /* fix up sense of position angle */
@@ -254,7 +234,7 @@ if(q.invert==1) q.angle=diff;
 else q.angle=diffinv+180;
 
 #ifdef DIAG
- fprintf(stderr,"The calculated rotation angle is %f deg.\n",q.angle);
+ fprintf(stderr,"The calculated rotation angle is %20.15e deg.\n",q.angle);
 #endif
 
 /*
@@ -277,9 +257,11 @@ for ( n=0; n < ndata; n++ ){
 racen /= ndata; racen -= 360.;
 decen /= ndata;
 
+/*
 #ifdef DIAG
  printf("INITIAL ESTIMATE of RACEN DECEN %f %f\n",racen,decen);
 #endif
+*/
 
 for ( n=0; n < ndata; n++){
   radec_to_xy(racen,decen,d[n].ra,d[n].dec,&d[n].xrdn,&d[n].yrdn);
@@ -343,20 +325,17 @@ Assumed projection in POSIT is the 'RECTANGULAR' or 'ARC' projection
  sin(ra-racen) = (sin(distance)/distance) * (L/cos(dec))
 
 */
-
-*crpix1 = q.x;
+/*  Stupid FITS (fortran) convention starts numbering CRPIX's from 1  */
+*crpix1 = q.x + 1.0;
 *crval1 = q.ra;
 /*  Normally, CDELT1 is negative (RA decreases left to right (+x)), so we need
     to invert the sign of the invert value  */
 *cdelt1 = -q.scale*( (double) q.invert); 
 *crval2 = q.dec;
-*crpix2 = q.y;
+*crpix2 = q.y + 1.0;
 *cdelt2 = q.scale;
 *crota  = -q.angle;  /*  ???  */
 
-#ifdef DIAG
- fprintf(stderr,"Returning to main routine!\n");
-#endif
 return(7);
 }
 
@@ -417,18 +396,18 @@ mat_mult(q, (double *) mat,xpr,2,2,1);
 mat_sub(offset,x,q,2,1);
  
 #ifdef DIAG
- fprintf(stderr,"mat %f %f\nmat %f      %f\n",
-        mat[0][0],mat[0][1],mat[1][0],mat[1][1]);
+ fprintf(stderr,"mat %f %f\n",
+        mat[0][0],mat[0][1]);
+ fprintf(stderr,"mat %f ",
+        mat[1][0]);
+ fprintf(stderr,"%f\n",
+        mat[1][1]);
  fprintf(stderr,"offset %f\noffset %f\n",offset[0],offset[1]);
 #endif
 return(0);
 }
 /*-------------------------------begin function-------------------------------*/
 void lintran(double mat[2][2], double offset[], double xin[], double xout[])
-/*
-lintran(mat,offset,xin,xout)
-double mat[],offset[],xin[],xout[];
-*/
 {
 mat_mult(xout, (double *) mat,xin,2,2,1);
 mat_add(xout,xout,offset,2,1);
@@ -465,10 +444,6 @@ Coded by ksl 1/8/88.
 
 unsigned int radec_to_xy(double racen, double decen, double ra, double dec,
 		 double *x, double *y)
-/*
-radec_to_xy(racen,decen,ra,dec,x,y)
-double racen,decen,ra,dec,*x,*y;
-*/
 {
 double distance,angle,c,s;
 
@@ -511,10 +486,6 @@ the field and the star using the law of sines.*/
 /*--------------------------------end function--------------------------------*/
 /*------------------------------begin function--------------------------------*/
 
-/*
-xy_to_radec(racen,decen,x,y,ra,dec)
-double racen,decen,x,y,*ra,*dec;
-*/
 unsigned int xy_to_radec(double racen, double decen, double x, double y,
 		 double *ra, double *dec)
 {

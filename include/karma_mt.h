@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   12-JAN-1995
 
-    Last updated by Richard Gooch   2-MAY-1996
+    Last updated by Richard Gooch   26-NOV-1996
 
 */
 
@@ -52,6 +52,7 @@ EXTERN_FUNCTION (KThreadPool mt_get_shared_pool, () );
 EXTERN_FUNCTION (void mt_destroy_pool, (KThreadPool pool, flag interrupt) );
 EXTERN_FUNCTION (void mt_destroy_all_pools, (flag interrupt) );
 EXTERN_FUNCTION (unsigned int mt_num_threads, (KThreadPool pool) );
+EXTERN_FUNCTION (unsigned int mt_num_processors, () );
 EXTERN_FUNCTION (void mt_launch_job,
 		 (KThreadPool pool,
 		  void (*func) (void *pool_info,

@@ -5,5 +5,7 @@ rm -f *~ >& /dev/null
 foreach i (karma*)
     echo $i
     if ( ! -d $i/master ) mkdir $i/master
-    if (-d $i/packages) (cd $i; ../build.single_lib)
+    if (-d $i/packages) then
+	(cd $i; ../build.single_lib)
+    endif
 end

@@ -48,10 +48,10 @@
 #define FUNC_MAGIC_NUMBER 1987342876
 
 #define VERIFY_FUNC(func) if (func == NULL) \
-{(void) fprintf (stderr, "NULL KWorkFunc passed\n"); \
+{fprintf (stderr, "NULL KWorkFunc passed\n"); \
  a_prog_bug (function_name); } \
 if (func->magic_number != FUNC_MAGIC_NUMBER ) \
-{(void) fprintf (stderr, "Invalid KWorkFunc object\n"); \
+{fprintf (stderr, "Invalid KWorkFunc object\n"); \
  a_prog_bug (function_name); }
 
 struct work_func_type
@@ -107,7 +107,7 @@ void wf_register_support ()
 	first_time = FALSE;
 	return;
     }
-    (void) fprintf (stderr, "Work functions already supported\n");
+    fprintf (stderr, "Work functions already supported\n");
     a_prog_bug (function_name);
 }   /*  End Function wf_register_support  */
 
@@ -157,7 +157,7 @@ flag wf_do_work ()
     if (first_func == NULL) return (FALSE);
     if (executing_func != NULL)
     {
-	(void) fprintf (stderr, "Not re-entrant!\n");
+	fprintf (stderr, "Not re-entrant!\n");
 	a_prog_bug (function_name);
     }
     executing_func = first_func;
@@ -194,8 +194,7 @@ KWorkFunc wf_register_func (flag (*func) (void **info), void *info,
 
     if (!work_funcs_supported)
     {
-	(void) fprintf (stderr,
-			"Work functions not supported be application\n");
+	fprintf (stderr, "Work functions not supported by application\n");
 	a_prog_bug (function_name);
     }
     if ( ( new = (KWorkFunc) m_alloc (sizeof *new) ) == NULL )
@@ -214,7 +213,7 @@ KWorkFunc wf_register_func (flag (*func) (void **info), void *info,
 	new->next = first_func;
 	first_func = new;
 	if (last_func == NULL) last_func = new;
-	(void) c_call_callbacks (register_list, NULL);
+	c_call_callbacks (register_list, NULL);
 	return (new);
     }
     /*  We have been called from inside a work function, which will not allow
@@ -223,7 +222,7 @@ KWorkFunc wf_register_func (flag (*func) (void **info), void *info,
     new->prev = executing_func;
     new->next = executing_func->next;
     executing_func->next = new;
-    (void) c_call_callbacks (register_list, NULL);
+    c_call_callbacks (register_list, NULL);
     return (new);
 }   /*  End Function wf_register_func  */
 
@@ -245,8 +244,7 @@ void wf_unregister_func (KWorkFunc wf)
     VERIFY_FUNC (wf);
     if (wf == executing_func)
     {
-	(void) fprintf (stderr,
-			"Work procedure cannot unregister itself this way\n");
+	fprintf (stderr, "Work procedure cannot unregister itself this way\n");
 	a_prog_bug (function_name);
     }
     if (wf->prev == NULL) first_func = wf->next;

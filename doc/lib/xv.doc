@@ -1,0 +1,80 @@
+$PACKAGE          xv
+$SUMMARY          Routines to query X visuals
+$PURPOSE
+    These routines are meant to provide a convenience interface for querying
+    X visuals.
+$LIBRARY          karmaX11
+$LINKWITH         -lkarmaX11
+$END
+
+$FUNCTION           xv_get_vinfos
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (Screen *screen, XVisualInfo **pseudocolour,
+		    XVisualInfo **truecolour, XVisualInfo **directcolour)
+$SUMMARY            Get supported visuals available on a screen.
+$PURPOSE
+    Get supported visuals available on a screen.
+$PARAMETER          screen :
+    The X Window screen.
+$PARAMETER          pseudocolour :
+    A PseudoColour XVisualInfo pointer will be written here. If
+    this is NULL, nothing is written here. If no PseudoColour visual is
+    supported, NULL is written here.
+$PARAMETER          truecolour :
+    A TrueColour XVisualInfo pointer will be written here. If this
+    is NULL, nothing is written here. If no TrueColour visual is supported,
+    NULL is written here.
+$PARAMETER          directcolour :
+    A DirectColour XVisualInfo pointer will be written here. If
+    this is NULL, nothing is written here. If no DirectColour visual is
+    supported, NULL is written here.
+$NOTE
+    The XVisualInfo structures returned must be freed by XFree()
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           xv_get_visuals
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (Screen *screen, Visual **pseudocolour,
+		     Visual **truecolour, Visual **directcolour)
+$SUMMARY            Get supported visuals available on a screen.
+$PURPOSE
+    Get supported visuals available on a screen.
+$PARAMETER          screen :
+    The X Window screen.
+$PARAMETER          pseudocolour :
+    A PseudoColour XVisualInfo pointer will be written here. If
+    this is NULL, nothing is written here. If no PseudoColour visual is
+    supported, NULL is written here.
+$PARAMETER          truecolour :
+    A TrueColour XVisualInfo pointer will be written here. If this
+    is NULL, nothing is written here. If no TrueColour visual is supported,
+    NULL is written here.
+$PARAMETER          directcolour :
+    A DirectColour XVisualInfo pointer will be written here. If
+    this is NULL, nothing is written here. If no DirectColour visual is
+    supported, NULL is written here.
+$NOTE
+    The XVisualInfo structures returned must be freed by XFree()
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           xv_get_visinfo_for_visual
+$RETURN_TYPE        XVisualInfo *
+$PARAMETER_LIST
+    (Display *dpy, Visual *visual)
+$SUMMARY            Get the visual information structure for a visual.
+$PURPOSE
+    Get the visual information structure for a visual.
+$PARAMETER          dpy :
+    The X display.
+$PARAMETER          visual :
+    The visual.
+$RETURNS
+    A pointer to an XVisualInfo structure on succes, else NULL. The
+    XVisualInfo structure must be freed by XFree()
+$END

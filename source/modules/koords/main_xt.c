@@ -33,8 +33,14 @@
 
     Updated by      Richard Gooch   17-OCT-1996: Updated pick sequencing.
 
-    Last updated by Richard Gooch   28-OCT-1996: Added hostname and port number
+    Updated by      Richard Gooch   28-OCT-1996: Added hostname and port number
   to title.
+
+    Updated by      Richard Gooch   3-NOV-1996: Made use of new
+  <viewimg_track_compute> routine.
+
+    Last updated by Richard Gooch   1-DEC-1996: Made use of
+  <xtmisc_init_app_initialise>.
 
 
 */
@@ -76,12 +82,13 @@
 #include "koords.h"
 
 
-#define VERSION "1.0.2"
+#define VERSION "1.1.0"
 
 
 /*  Private functions  */
 STATIC_FUNCTION (void load_and_setup,
 		 (CONST char *filename, iarray *array, KwcsAstro *ap,
+		  flag reference,
 		  ViewableImage *image, ViewableImage *magnified_image,
 		  Widget shell, Widget image_display) );
 STATIC_FUNCTION (void reference_select_cbk, (Widget w, XtPointer client_data,
@@ -149,6 +156,7 @@ String fallback_resources[] =
     "Koords*Dataclip.AutoValueScale:                  False",
     "Koords*SimpleSlider.borderWidth:                 0",
     "Koords*font:                                     9x15bold",
+    "Koords*borderColor:                              black",
     NULL
 };
 static XrmOptionDescRec Options[] =
@@ -165,6 +173,7 @@ static KWorldCanvas ref_canvas = NULL;
 static Widget tar_shell = NULL;
 static Widget tar_image_display = NULL;
 static KWorldCanvas tar_canvas = NULL;
+static Widget apply_btn = NULL;
 
 
 /*  Public functions follow  */
@@ -177,7 +186,7 @@ int main (int argc, char **argv)
     Widget filewin, filepopup, w, box;
     Display *dpy;
     extern KwcsAstro reference_ap, target_ap;
-    extern Widget main_shell, ref_image_display;
+    extern Widget main_shell, ref_image_display, apply_btn;
     extern char title_name[STRING_LENGTH];
 
 #ifdef SIGFPE_ABORT
@@ -188,10 +197,11 @@ int main (int argc, char **argv)
     im_register_module_version_date (VERSION);
     im_register_lib_version (KARMA_VERSION);
     /*  Start up Xt  */
-    main_shell = XtVaAppInitialize (&app_context, "Koords",
-				    Options, XtNumber (Options),
-				    &argc, argv, fallback_resources,
-				    NULL);
+    main_shell = xtmisc_init_app_initialise (&app_context, "Koords",
+					     Options, XtNumber (Options),
+					     &argc, argv, fallback_resources,
+					     100,
+					     NULL);
     xtmisc_set_icon (main_shell, ic_write_kimage_icon);
     cursor = XCreateFontCursor (XtDisplay (main_shell), XC_target);
     /*  Initialise communications  */
@@ -298,6 +308,7 @@ int main (int argc, char **argv)
     w = XtVaCreateManagedWidget ("button", commandWidgetClass, box,
 				 XtNlabel, "Apply Co-ordinate System",
 				 NULL);
+    apply_btn = w;
     XtAddCallback (w, XtNcallback, apply_coordinates, NULL);
     XtRealizeWidget (tar_shell);
     XtVaGetValues (tar_image_display,
@@ -344,7 +355,7 @@ void ring_bell ()
 /*  Private routines follow  */
 
 static void load_and_setup (CONST char *filename, iarray *array, KwcsAstro *ap,
-			    ViewableImage *image,
+			    flag reference, ViewableImage *image,
 			    ViewableImage *magnified_image,
 			    Widget shell, Widget image_display)
 {
@@ -366,7 +377,8 @@ static void load_and_setup (CONST char *filename, iarray *array, KwcsAstro *ap,
 		   XkwNpseudoColourCanvas, &pseudo_canvas,
 		   XkwNmagnifierPseudoColourCanvas, &mag_pseudo_canvas,
 		   NULL);
-    if ( !load_image (filename, array, ap, pseudo_canvas, mag_pseudo_canvas,
+    if ( !load_image (filename, array, ap, reference,
+		      pseudo_canvas, mag_pseudo_canvas,
 		      image, magnified_image, &min, &max) ) return;
     sprintf (title, "%s  file: %s\n", title_name, filename);
     XtVaSetValues (shell,
@@ -402,7 +414,7 @@ static void reference_select_cbk (Widget w, XtPointer client_data,
     static ViewableImage ref_magnified_vimage = NULL;
 
     filename = (char *) call_data;
-    load_and_setup (filename, &ref_array, &reference_ap, &ref_vimage,
+    load_and_setup (filename, &ref_array, &reference_ap, TRUE, &ref_vimage,
 		    &ref_magnified_vimage, main_shell, ref_image_display);
 }   /*  End Function reference_select_cbk  */
 
@@ -428,13 +440,25 @@ static void target_select_cbk (Widget w, XtPointer client_data,
 {
     char *filename;
     extern iarray tar_array;
-    extern Widget tar_shell, tar_image_display;
+    extern KwcsAstro target_original_ap;
+    extern Widget tar_shell, tar_image_display, apply_btn;
     static ViewableImage tar_vimage = NULL;
     static ViewableImage tar_magnified_vimage = NULL;
 
     filename = (char *) call_data;
-    load_and_setup (filename, &tar_array, NULL, &tar_vimage,
+    load_and_setup (filename, &tar_array, &target_original_ap, FALSE,
+		    &tar_vimage,
 		    &tar_magnified_vimage, tar_shell, tar_image_display);
+    if (target_original_ap == NULL)
+    {
+	XtSetSensitive (apply_btn, True);
+    }
+    else
+    {
+	fprintf (stderr, "Target image already has co-ordinate system. New ");
+	fprintf (stderr, "co-ordinate system\ncannot be applied/saved\n");
+	XtSetSensitive (apply_btn, False);
+    }
 }   /*  End Function target_select_cbk  */
 
 static flag target_dirselect_cbk (Widget w, void *info, CONST char *dirname)
@@ -475,92 +499,25 @@ static flag track_ref_event (ViewableImage vimage, double x, double y,
 */
 {
     KWorldCanvas canvas, magnifier_canvas;
-    unsigned int hdim, vdim, rdim;
-    unsigned int num_restr, count;
-    unsigned long pointer_x_index, pointer_y_index, r_index;
+    unsigned long pointer_x_index, pointer_y_index;
     Widget image_display = (Widget) *f_info;
     Widget first_track_label, second_track_label, third_track_label;
-    unsigned char *rgb_ptr = (unsigned char *) value;
-    char *xlabel, *ylabel;
-    char **restr_names;
-    double *restr_values;
-    array_desc *arr_desc;
-    char txt[STRING_LENGTH];
-    char value_string[STRING_LENGTH], index_string[STRING_LENGTH];
+    char pix_string[STRING_LENGTH];
     char world_string[STRING_LENGTH], extra_string[STRING_LENGTH];
-    extern iarray ref_array;
     extern KwcsAstro reference_ap;
-    static char function_name[] = "track_ref_event";
+    /*static char function_name[] = "track_ref_event";*/
 
     if (event_code != K_CANVAS_EVENT_POINTER_MOVE) return (FALSE);
-    /*  Create value string  */
-    if (ref_array == NULL) return (TRUE);
-    switch (value_type)
-    {
-      case K_DCOMPLEX:
-	/*  Compute value  */
-	iarray_format_value (ref_array, value_string,
-			     *(double *) value, TOOBIG, TOOBIG);
-	break;
-      case K_UB_RGB:
-	sprintf (value_string, "RGB: %u %u %u",
-		 rgb_ptr[0], rgb_ptr[1], rgb_ptr[2]);
-	break;
-      default:
-	fprintf (stderr, "Illegal type: %u\n", value_type);
-	a_prog_bug (function_name);
-	break;
-    }
     canvas = viewimg_get_worldcanvas (vimage);
-    canvas_get_specification (canvas, &xlabel, &ylabel, &num_restr,
-			      &restr_names, &restr_values);
-    viewimg_get_attributes (vimage,
-			    VIEWIMG_VATT_ARRAY_DESC, &arr_desc,
-			    VIEWIMG_VATT_HDIM, &hdim,
-			    VIEWIMG_VATT_VDIM, &vdim,
-			    VIEWIMG_VATT_END);
-    /*  Convert linear world co-ordinates to array indices and display  */
-    pointer_x_index = ds_get_coord_num (arr_desc->dimensions[hdim], x_lin,
-					SEARCH_BIAS_CLOSEST);
-    pointer_y_index = ds_get_coord_num (arr_desc->dimensions[vdim], y_lin,
-					SEARCH_BIAS_CLOSEST);
-    sprintf (index_string, "x: %lu  y: %lu  ",
-	     pointer_x_index, pointer_y_index);
-    /*  Add any restriction information  */
-    for (count = 0; count < num_restr; ++count)
-    {
-	if ( ( rdim = ds_f_dim_in_array (arr_desc, restr_names[count]) )
-	     >= arr_desc->num_dimensions ) continue;
-	r_index = ds_get_coord_num (arr_desc->dimensions[rdim],
-				    restr_values[count], SEARCH_BIAS_CLOSEST);
-	sprintf (txt, "z%u: %lu  ", rdim, r_index);
-	strcat (index_string, txt);
-    }
-    strcat (index_string, value_string);
+    viewimg_track_compute (vimage, value, value_type, x, y, x_lin, y_lin,
+			   reference_ap, pix_string, world_string,
+			   extra_string, &pointer_x_index, &pointer_y_index);
     first_track_label = XtNameToWidget (image_display, "trackLabel0");
     second_track_label = XtNameToWidget (image_display, "trackLabel1");
     third_track_label = XtNameToWidget (image_display, "trackLabel2");
-    XtVaSetValues (first_track_label, XtNlabel, index_string, NULL);
-    /*  Now display the world co-ordinate information  */
-    if (reference_ap == NULL)
-    {
-	sprintf (world_string, "%5e %s  %5e %s  ", x, xlabel, y, ylabel);
-	/*  Add any restriction information  */
-	for (count = 0; count < num_restr; ++count)
-	{
-	    sprintf (txt, "%5e %s  ", restr_values[count], restr_names[count]);
-	    strcat (world_string, txt);
-	}
-    }
-    else
-    {
-	wcs_astro_format_all (reference_ap, world_string,
-			      xlabel, x_lin, ylabel, y_lin, NULL, 0.0,
-			      num_restr, (CONST char **) restr_names,
-			      restr_values, extra_string);
-	XtVaSetValues (third_track_label, XtNlabel, extra_string, NULL);
-    }
+    XtVaSetValues (first_track_label, XtNlabel, pix_string, NULL);
     XtVaSetValues (second_track_label, XtNlabel, world_string, NULL);
+    XtVaSetValues (third_track_label, XtNlabel, extra_string, NULL);
     XtVaGetValues (image_display,
 		   XkwNmagnifierVisibleCanvas, &magnifier_canvas,
 		   NULL);

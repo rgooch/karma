@@ -2,7 +2,7 @@
 
     Header for platform and Operating System dependent definitions.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -33,7 +33,7 @@
 
     Written by      Richard Gooch   20-MAY-1992
 
-    Last updated by Richard Gooch   15-JUN-1995
+    Last updated by Richard Gooch   3-DEC-1996
 
 
 */
@@ -66,13 +66,13 @@
 
 
 /*  If  MACHINE_BIG_ENDIAN  is defined, this means that host data is big
-    endian. This is only of relevance to integer data.
+    endian.
 */
 #undef MACHINE_BIG_ENDIAN
 
 
 /*  If  MACHINE_LITTLE_ENDIAN  is defined, this means that host data is little
-    endian. This is only of relevance to integer data.
+    endian.
 */
 #undef MACHINE_LITTLE_ENDIAN
 
@@ -227,6 +227,12 @@
 #undef HAS_WAIT3
 
 
+/*  If  HAS_ITIMER  is defined, then the platform supports the setitimer(2)
+    system call.
+*/
+#undef HAS_ITIMER
+
+
 /*  Slowaris 2  */
 #ifdef OS_Solaris
 #  define OS_SUPPORTED
@@ -251,6 +257,7 @@
 #  define HAS_ENVIRON
 #  define HAS_MMAP
 #  define HAS_ATEXIT
+#  define HAS_ITIMER
 #endif  /*  OS_Solaris  */
 
 
@@ -281,6 +288,7 @@
 #  define HAS_MMAP
 #  define HAS_ON_EXIT
 #  define HAS_WAIT3
+#  define HAS_ITIMER
 #endif  /*  OS_SunOS  */
 
 /*  Convex  */
@@ -304,6 +312,7 @@
 #  define HAS_ENVIRON
 #  define HAS_MMAP
 #  define HAS_WAIT3
+#  define HAS_ITIMER
 #endif
 
 /*  IBM RS6000 with AIX  */
@@ -327,6 +336,7 @@
 #  define HAS_INTERNATIONALISATION
 #  define HAS_ENVIRON
 #  define HAS_WAIT3
+#  define HAS_ITIMER
 #endif
 
 /*  VX/ MVX system for a Sun Sparc Station  */
@@ -345,7 +355,10 @@
 #endif
 
 /*  SGI Station  */
-#if defined(OS_IRIX5)
+#if defined(OS_IRIX5) || defined(OS_IRIX6)
+#  define OS_IRIX
+#endif
+#if defined(OS_IRIX)
 #  define OS_SUPPORTED
 #  if defined(MACHINE_mips1) || defined(MACHINE_mips2)
 #    define MACHINE_SUPPORTED
@@ -359,22 +372,7 @@
 #    define NEED_ALIGNED_DATA
 #    define IS_ALIGNED(ptr,size) ((uaddr) ptr % size == 0)
 #  endif
-#  define CAN_FORK
-#  define HAS_GETRUSAGE
-#  define HAS_SOCKETS
-#  define HAS_TERMCAP
-#  define HAS_SYSV_SHARED_MEMORY
-#  define HAS_ATEXIT
-#  define HAS_INTERNATIONALISATION
-#  define HAS_ENVIRON
-#  define HAS_MMAP
-#  define HAS_WAIT3
-#endif
-
-/*  SGI Station (r8000)  */
-#if defined(OS_IRIX6)
-#  define OS_SUPPORTED
-#  if defined(MACHINE_mips4)
+#  if defined(MACHINE_mips4)  /*  r8000 in 64 bit mode  */
 #    define MACHINE_SUPPORTED
 #    define MACHINE_BIG_ENDIAN
 #    define HAS_IEEE
@@ -398,6 +396,7 @@
 #  define HAS_ENVIRON
 #  define HAS_MMAP
 #  define HAS_WAIT3
+#  define HAS_ITIMER
 #endif
 
 /*  HP/Apollo 9000  */
@@ -419,6 +418,7 @@
 #  define HAS_ATEXIT
 #  define HAS_INTERNATIONALISATION
 #  define HAS_ENVIRON
+#  define HAS_ITIMER
 #endif
 
 
@@ -446,6 +446,7 @@
 #  define HAS_ENVIRON
 /*#  define HAS_MMAP  Ultrix mmap(2) does not seem to support regular files! */
 #  define HAS_WAIT3
+#  define HAS_ITIMER
 #endif
 
 /*  IBM PC with 80386 processor running in full, 32 bit 386 mode under
@@ -488,6 +489,7 @@
 #  define HAS_ENVIRON
 #  define HAS_MMAP
 #  define HAS_WAIT3
+#  define HAS_ITIMER
 #endif
 
 /*  Phantom machine  */
@@ -546,6 +548,7 @@
 #  define HAS_ENVIRON
 #  define HAS_MMAP
 #  define HAS_WAIT3
+#  define HAS_ITIMER
 #endif  /*  alpha_OSF1  */
 
 

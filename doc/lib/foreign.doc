@@ -327,7 +327,8 @@ $PARAMETER          mmap_option :
 $PARAMETER          writeable :
     This has the same meaning as for the <dsxfr_get_multi> routine.
 $PARAMETER          ftype :
-    The type of the file that was read in is written here.
+    The type of the file that was read in is written here. This may be
+    NULL.
 $PARAMETER        ... :
     The optional attributes are given as pairs of attribute-key
     attribute-value pairs. This list must terminated with FA_GUESS_READ_END.
@@ -360,7 +361,8 @@ $PARAMETER          mmap_option :
 $PARAMETER          writeable :
     This has the same meaning as for the <dsxfr_get_multi> routine.
 $PARAMETER          ftype :
-    The type of the file that was read in is written here.
+    The type of the file that was read in is written here. This may be
+    NULL.
 $PARAMETER          inform :
     If TRUE, the routine displays some informative messages.
 $PARAMETER          num_dim :
@@ -587,6 +589,23 @@ $RETURNS
     A value indicating the format of the file. The value
     FOREIGN_FILE_FORMAT_KARMA is returned if the extension is ".kf". See
     <-FOREIGN_TYPES-> for a list of possible values.
+$END
+
+$FUNCTION           foreign_pgm_read
+$RETURN_TYPE        multi_array *
+$PARAMETER_LIST
+    (Channel channel, ...)
+$SUMMARY            Read a colour image in PGM format from a channel.
+$PURPOSE
+    Read a colour image in PGM format from a channel.
+$PARAMETER          channel :
+    The channel to read from.
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with FA_PGM_READ_END.
+    See <-FOREIGN_ATT_PGM_READ-> for a list of defined attributes.
+$RETURNS
+    A pointer to the multi_array data structure on success, else NULL
 $END
 
 $FUNCTION           foreign_ppm_read

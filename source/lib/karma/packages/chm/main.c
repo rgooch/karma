@@ -68,8 +68,11 @@
 
     Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
 
-    Last updated by Richard Gooch   1-APR-1996: Moved remaing functions to new
+    Updated by      Richard Gooch   1-APR-1996: Moved remaing functions to new
   documentation style.
+
+    Last updated by Richard Gooch   2-DEC-1996: Added scheduling of work
+  functions.
 
 
 */
@@ -94,9 +97,11 @@
 #include <karma.h>
 #include <karma_chm.h>
 #include <karma_ch.h>
+#include <karma_wf.h>
 #include <karma_m.h>
 #include <karma_a.h>
 #include <karma_r.h>
+#include <karma_e.h>
 
 #if defined(HAS_SOCKETS) || defined(HAS_COMMUNICATIONS_EMULATION)
 #define COMMUNICATIONS_AVAILABLE
@@ -167,15 +172,13 @@ flag chm_manage ( Channel channel, void *info, flag (*input_func) (),
     /*  Check if channel is a connection  */
     if (ch_test_for_asynchronous (channel) != TRUE)
     {
-	(void) fprintf (stderr,
-			"Cannot manage a channel if it is not asynchronous\n");
+	fprintf (stderr,"Cannot manage a channel if it is not asynchronous\n");
 	a_prog_bug (function_name);
     }
     /*  Get file descriptor  */
     if ( ( fd = ch_get_descriptor (channel) ) < 0 )
     {
-	(void) fprintf (stderr,
-			"Error getting file descriptor for channel object\n");
+	fprintf (stderr, "Error getting file descriptor for channel object\n");
 	return (FALSE);
     }
     if (close_func != NULL)
@@ -183,8 +186,8 @@ flag chm_manage ( Channel channel, void *info, flag (*input_func) (),
 	/*  Check if closure detectable  */
 	if (r_get_bytes_readable (fd) < 0)
 	{
-	    (void) fprintf (stderr,
-			    "close_func  supplied and closure not detectable\n");
+	    fprintf (stderr,
+		     "close_func  supplied and closure not detectable\n");
 	    a_prog_bug (function_name);
 	}
     }
@@ -193,8 +196,7 @@ flag chm_manage ( Channel channel, void *info, flag (*input_func) (),
     {
 	if (channel == entry->channel)
 	{
-	    (void) fprintf (stderr, "Channel: %p is already managed\n",
-			    channel);
+	    fprintf (stderr, "Channel: %p is already managed\n", channel);
 	    a_prog_bug (function_name);
 	}
 	last_entry = entry;
@@ -202,8 +204,8 @@ flag chm_manage ( Channel channel, void *info, flag (*input_func) (),
     /*  Channel is not already managed  */
     /*  Allocate new entry  */
     if ( ( new_entry =
-	  (struct managed_channel_type *) m_alloc (sizeof *new_entry) )
-	== NULL )
+	   (struct managed_channel_type *) m_alloc (sizeof *new_entry) )
+	 == NULL )
     {
 	m_error_notify (function_name, "new managed descriptor entry");
 	return (FALSE);
@@ -222,25 +224,24 @@ flag chm_manage ( Channel channel, void *info, flag (*input_func) (),
     /*  Set process ID which will receive SIGIO signals  */
     if (fcntl ( fd, F_SETOWN, getpid () ) == -1)
     {
-	(void) fprintf (stderr,
-			"Error setting owner PID for descriptor: %d\t%s\n",
-			fd, sys_errlist[errno]);
+	fprintf (stderr, "Error setting owner PID for descriptor: %d\t%s\n",
+		 fd, sys_errlist[errno]);
 	m_free ( (char *) new_entry );
 	return (FALSE);
     }
     /*  Set descriptor to send SIGIO events  */
     if ( ( fd_flags = fcntl (fd, F_GETFL, NULL) ) == -1 )
     {
-	(void) fprintf (stderr, "Error getting flags for descriptor: %d\t%s\n",
-			fd, sys_errlist[errno]);
+	fprintf (stderr, "Error getting flags for descriptor: %d\t%s\n",
+		 fd, sys_errlist[errno]);
 	m_free ( (char *) new_entry );
 	return (FALSE);
     }
     fd_flags |= FASYNC;
     if (fcntl (fd, F_SETFL, fd_flags) == -1)
     {
-	(void) fprintf (stderr, "Error setting flags for descriptor: %d\t%s\n",
-			fd, sys_errlist[errno]);
+	fprintf (stderr, "Error setting flags for descriptor: %d\t%s\n",
+		 fd, sys_errlist[errno]);
 	m_free ( (char *) new_entry );
 	return (FALSE);
     }
@@ -260,7 +261,7 @@ flag chm_manage ( Channel channel, void *info, flag (*input_func) (),
     return (TRUE);
 
 #else  /*  COMMUNICATIONS_AVAILABLE  */
-    (void) fprintf (stderr, "Communications support not available\n");
+    fprintf (stderr, "Communications support not available\n");
     return (FALSE);
 #endif  /*  COMMUNICATIONS_AVAILABLE  */
 }   /*  End Function chm_manage  */
@@ -303,7 +304,7 @@ void chm_unmanage (Channel channel)
 	}
     }
     /*  Channel not found  */
-    (void) fprintf (stderr, "Channel: %p not managed\n", channel);
+    fprintf (stderr, "Channel: %p not managed\n", channel);
     a_prog_bug (function_name);
 }   /*  End Function chm_unmanage  */
 
@@ -331,10 +332,15 @@ void chm_poll (long timeout_ms)
 
     if (locked)
     {
-	(void) fprintf (stderr, "Code non-reentrant\n");
+	fprintf (stderr, "Code non-reentrant\n");
 	a_prog_bug (function_name);
     }
     locked = TRUE;
+    if ( wf_work_to_be_done () )
+    {
+	timeout_ms = 0;
+	wf_do_work ();
+    }
 #  ifdef HAS_SOCKETS
     FD_ZERO (&input_fds);
     FD_ZERO (&output_fds);
@@ -375,21 +381,17 @@ void chm_poll (long timeout_ms)
       case 0:
 	locked = FALSE;
 	return;
-/*
-	break;
-*/
+	/*break;*/
       case -1:
 	if (errno == EINTR)
 	{
 	    locked = FALSE;
+	    e_unix_dispatch_events (DISPATCH_SYNCHRONOUS);
 	    return;
 	}
 	/*  Failure  */
-	(void) fprintf (stderr, "Error calling  select(2)\t%s\n",
-			sys_errlist[errno]);
-/*
-	return;
-*/
+	fprintf (stderr, "Error calling  select(2)\t%s\n", sys_errlist[errno]);
+	/*return;*/
 	break;
       default:
 	/*  Success  */
@@ -457,8 +459,7 @@ void chm_poll (long timeout_ms)
 #  endif  /*  OS_VXMVX  */
 
 #else  /*  COMMUNICATIONS_AVAILABLE  */
-    (void) fprintf (stderr,
-		    "Operating system does not support communications\n");
+    fprintf (stderr, "Operating system does not support communications\n");
 #endif  /*  COMMUNICATIONS_AVAILABLE  */
     locked = FALSE;
 }   /*  End Function chm_poll  */
@@ -487,7 +488,7 @@ struct managed_channel_type *entry;
 	    of closure  */
 	if ( ( bytes_readable = r_get_bytes_readable (entry->fd) ) < 0 )
 	{
-	    (void) exit (RV_SYS_ERROR);
+	    exit (RV_SYS_ERROR);
 	}
     }
     else
@@ -504,14 +505,14 @@ struct managed_channel_type *entry;
 	{
 	  case -1:
 	    /*  Error  */
-	    (void) fprintf (stderr, "Error draining descriptor\t%s\n",
+	    fprintf (stderr, "Error draining descriptor\t%s\n",
 			    sys_errlist[errno]);
 	    break;
 	  case 0:
 	    /*  This is what we expect  */
 	    break;
 	  case 1:
-	    (void) fprintf (stderr, "Data readable on closed descriptor\n");
+	    fprintf (stderr, "Data readable on closed descriptor\n");
 	    a_prog_bug (function_name);
 	    break;
 	}
@@ -523,7 +524,7 @@ struct managed_channel_type *entry;
 	/*  Not bufferable  */
 	if (entry->input_func == NULL)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Input on asynchronous channel but no callback\n");
 	    a_prog_bug (function_name);
 	}
@@ -532,7 +533,7 @@ struct managed_channel_type *entry;
     /*  Buffered connection  */
     if (entry->input_func == NULL)
     {
-	(void) fprintf (stderr, "Input on channel not being drained\n");
+	fprintf (stderr, "Input on channel not being drained\n");
 	a_prog_bug (function_name);
     }
     while (bytes_readable > 0)
@@ -547,7 +548,7 @@ struct managed_channel_type *entry;
 	    well as descriptor drained  */
 	if ( ( bytes_readable = ch_get_bytes_readable (entry->channel) ) < 0 )
 	{
-	    (void) exit (RV_SYS_ERROR);
+	    exit (RV_SYS_ERROR);
 	}
     }
     return (TRUE);
@@ -567,6 +568,6 @@ struct managed_channel_type *entry;
     {
 	(*entry->close_func) (entry->channel, entry->info);
     }
-    (void) ch_close (entry->channel);
+    ch_close (entry->channel);
     chm_unmanage (entry->channel);
 }   /*  End Function close_channel  */

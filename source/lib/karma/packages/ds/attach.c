@@ -74,7 +74,12 @@
     Updated by      Richard Gooch   29-AUG-1996: Made
   <ds_get_unique_named_value> tolerant when element is a string type.
 
-    Last updated by Richard Gooch   29-SEP-1996: Created <ds_get_fits_axis>.
+    Updated by      Richard Gooch   29-SEP-1996: Created <ds_get_fits_axis>.
+
+    Updated by      Richard Gooch   2-NOV-1996: Created <ds_get_data_scaling>.
+
+    Last updated by Richard Gooch   12-NOV-1996: Fixed bug when updating in
+  <ds_copy_unique_named_element> routine.
 
 
 */
@@ -120,9 +125,8 @@ flag ds_put_unique_named_value (packet_desc *pack_desc, char **packet,
     if ( !IS_ALIGNED ( value, sizeof (double) ) )
 #endif
     {
-	fprintf (stderr,
-			"value  address: %p not on a double boundary\n",
-			value);
+	fprintf (stderr, "value  address: %p not on a double boundary\n",
+		 value);
 	a_prog_bug (function_name);
     }
     /*  Test to see if element is legal  */
@@ -145,27 +149,19 @@ flag ds_put_unique_named_value (packet_desc *pack_desc, char **packet,
 	}
 	fprintf (stderr, "Element: \"%s\" already exists\n", name);
 	return (FALSE);
-/*
-	break;
-*/
+	/*break;*/
       case IDENT_DIMENSION:
-	fprintf (stderr,
-			"Item: \"%s\" already used for a dimension name\n",
-			name);
+	fprintf (stderr, "Item: \"%s\" already used for a dimension name\n",
+		 name);
 	return (FALSE);
-/*
-	break;
-*/
+	/*break;*/
       case IDENT_MULTIPLE:
-	fprintf (stderr,
-			"Item: \"%s\" has multiple occurrences\n", name);
+	fprintf (stderr, "Item: \"%s\" has multiple occurrences\n", name);
 	return (FALSE);
-/*
-	break;
-*/
+	/*break;*/
       default:
 	fprintf (stderr,
-			"Illegal return value from function: ds_f_name_in_packet\n");
+		 "Illegal return value from function: ds_f_name_in_packet\n");
 	a_prog_bug (function_name);
 	break;
     }
@@ -281,9 +277,8 @@ flag ds_put_unique_named_string (packet_desc *pack_desc, char **packet,
       case IDENT_ELEMENT:
 	if (pack_desc->element_types[elem_index] != K_VSTRING)
 	{
-	    fprintf (stderr,
-			    "Element: \"%s\" must be of type K_VSTRING\n",
-			    name);
+	    fprintf (stderr, "Element: \"%s\" must be of type K_VSTRING\n",
+		     name);
 	    return (FALSE);
 	}
 	if (!update)
@@ -302,27 +297,19 @@ flag ds_put_unique_named_string (packet_desc *pack_desc, char **packet,
 	if (*(char **) element != NULL) m_free (*(char **) element);
 	*(char **) element = copy;
 	return (TRUE);
-/*
-	break;
-*/
+	/*break;*/
       case IDENT_DIMENSION:
-	fprintf (stderr,
-			"Item: \"%s\" already used for a dimension name\n",
-			name);
+	fprintf (stderr, "Item: \"%s\" already used for a dimension name\n",
+		 name);
 	return (FALSE);
-/*
-	break;
-*/
+	/*break;*/
       case IDENT_MULTIPLE:
-	fprintf (stderr,
-			"Item: \"%s\" has multiple occurrences\n", name);
+	fprintf (stderr, "Item: \"%s\" has multiple occurrences\n", name);
 	return (FALSE);
-/*
-	break;
-*/
+	/*break;*/
       default:
 	fprintf (stderr,
-			"Illegal return value from function: ds_f_name_in_packet\n");
+		 "Illegal return value from function: ds_f_name_in_packet\n");
 	a_prog_bug (function_name);
 	break;
     }
@@ -436,9 +423,8 @@ flag ds_get_unique_named_value (CONST packet_desc *pack_desc,
     if ( !IS_ALIGNED ( value, sizeof (double) ) )
 #endif
     {
-	fprintf (stderr,
-			"value  address: %p not on a double boundary\n",
-			value);
+	fprintf (stderr, "value  address: %p not on a double boundary\n",
+		 value);
 	a_prog_bug (function_name);
     }
     /*  Try to find element  */
@@ -486,7 +472,7 @@ char *ds_get_unique_named_string (CONST packet_desc *pack_desc,
 
     /*  Try to find element  */
     if ( ( elem_num = ds_f_elem_in_packet (pack_desc, name) ) >=
-	pack_desc->num_elements )
+	 pack_desc->num_elements )
     {
 	return (NULL);
     }
@@ -506,9 +492,7 @@ char *ds_get_unique_named_string (CONST packet_desc *pack_desc,
       default:
 	fprintf (stderr, "Element is not a named string\n");
 	return (NULL);
-/*
-	break;
-*/
+	/*break;*/
     }
     if ( ( copy = m_alloc (strlen (orig) + 1) ) == NULL )
     {
@@ -568,12 +552,11 @@ flag ds_copy_unique_named_element (packet_desc *out_desc, char **out_packet,
 			      in_desc->element_types[elem_num], value,
 			      (flag *) NULL) )
 	{
-	    fprintf (stderr, "Error getting data for element: \"%s\"\n",
-			    name);
+	    fprintf (stderr, "Error getting data for element: \"%s\"\n", name);
 	    return (FALSE);
 	}
 	return ( ds_put_unique_named_value (out_desc, out_packet,
-					    name, elem_type, value, FALSE) );
+					    name, elem_type, value, TRUE) );
     }
     if (elem_type != K_VSTRING)
     {
@@ -626,3 +609,64 @@ unsigned int ds_get_fits_axis (CONST packet_desc *top_pack_desc,
 	return (count);
     }
 }   /*  End Function ds_get_fits_axis  */
+
+/*EXPERIMENTAL_FUNCTION*/
+flag ds_get_data_scaling (CONST char *elem_name, CONST packet_desc *pack_desc,
+			  CONST char *packet, double *scale, double *offset)
+/*  [SUMMARY] Get the scale and offset for a data element in a packet.
+    [PURPOSE] This routine will determine the scale and offset for data in an
+    packet. This may be important when a floating-point array has
+    been converted to an integer array to save space. Scaling information
+    should be attached to the array so that the original data values may be
+    reconstructed (aside from quantisation effects). The following expression
+    may be used to convert scaled values to real values:
+    (output = input * scale + offset). The scaling and offset values should
+    previously have been attached to the array using an appropriate routine.
+    No low-level routine currently exists to do this, but higher-level support
+    is given by the [<iarray_set_data_scaling>] routine.
+    <elem_name> The name of the element.
+    <pack_desc> The packet descriptor.
+    <packet> The packet.
+    <scale> The scaling value will be written here. The name of the scaling
+    value is constructed by appending "__SCALE" to the element name. If no
+    scaling value is found, 1.0 is written here.
+    <offset> The offset value will be written here. The name of the offset
+    value is constructed by appending "__OFFSET" to the element name. If no
+    offset value is found, 0.0 is written here.
+    [RETURNS] TRUE if either the scaling or offset value were found, else FALSE
+*/
+{
+    flag found = FALSE;
+    double value[2];
+    char txt[STRING_LENGTH];
+    static char function_name[] = "ds_get_data_scaling";
+
+    if ( (elem_name == NULL) || (pack_desc == NULL) || (packet == NULL) )
+    {
+	fprintf (stderr, "NULL pointer(s) passed\n");
+	a_prog_bug (function_name);
+    }
+    sprintf (txt, "%s__SCALE", elem_name);
+    if ( ds_get_unique_named_value (pack_desc, packet, txt, NULL, value) )
+    {
+	found = TRUE;
+	*scale = value[0];
+    }
+    else
+    {
+	/*  Not found: use default  */
+	*scale = 1.0;
+    }
+    sprintf (txt, "%s__OFFSET", elem_name);
+    if ( ds_get_unique_named_value (pack_desc, packet, txt, NULL, value) )
+    {
+	found = TRUE;
+	*offset = value[0];
+    }
+    else
+    {
+	/*  Not found: use default  */
+	*offset = 0.0;
+    }
+    return (found);
+}   /*  End Function ds_get_data_scaling  */

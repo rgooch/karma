@@ -19,17 +19,21 @@ $TABLE            VIEWIMG_VIEWIMG_ATTRIBUTES
 $COLUMNS          4
 $SUMMARY          List of attributes for viewable images
 $TABLE_DATA
-|.Name                      |,Get Type       |,Meaning
+|.Name                      |,Get Type       |,Set Type |,Meaning
 |.
-|.VIEWIMG_VATT_END          |,               |,End of varargs list
-|.VIEWIMG_VATT_TRUECOLOUR   |,flag *         |,Image is TrueColour
-|.VIEWIMG_VATT_ARRAY_DESC   |,array_desc **  |,The array descriptor for the image
-|.VIEWIMG_VATT_SLICE        |,char **        |,Start of the image data
-|.VIEWIMG_VATT_HDIM         |,unsigned int * |,The horizontal dimension
-|.VIEWIMG_VATT_VDIM         |,unsigned int * |,The vertical dimension
-|.VIEWIMG_VATT_PSEUDO_INDEX |,unsigned int * |,The PseudoColour element index
-|.VIEWIMG_VATT_RED_INDEX    |,unsigned int * |,The TrueColour red element index
-|.VIEWIMG_VATT_GREEN_INDEX  |,unsigned int * |,The TrueColour green element index
-|.VIEWIMG_VATT_BLUE_INDEX   |,unsigned int * |,The TrueColour blue element index
-|.VIEWIMG_VATT_MULTI_ARRAY  |,multi_array ** |,The multi_array descriptor
+|.VIEWIMG_VATT_END          |,               |,         |,End of varargs list
+|.VIEWIMG_VATT_TRUECOLOUR   |,flag *         |,         |,Image is TrueColour
+|.VIEWIMG_VATT_ARRAY_DESC   |,array_desc **  |,         |,The array descriptor for the image
+|.VIEWIMG_VATT_SLICE        |,char **        |,         |,Start of the image data
+|.VIEWIMG_VATT_HDIM         |,unsigned int * |,         |,The horizontal dimension
+|.VIEWIMG_VATT_VDIM         |,unsigned int * |,         |,The vertical dimension
+|.VIEWIMG_VATT_PSEUDO_INDEX |,unsigned int * |,         |,The PseudoColour element index
+|.VIEWIMG_VATT_RED_INDEX    |,unsigned int * |,         |,The TrueColour red element index
+|.VIEWIMG_VATT_GREEN_INDEX  |,unsigned int * |,         |,The TrueColour green element index
+|.VIEWIMG_VATT_BLUE_INDEX   |,unsigned int * |,         |,The TrueColour blue element index
+|.VIEWIMG_VATT_MULTI_ARRAY  |,multi_array ** |,         |,The multi_array descriptor
+|.VIEWIMG_VATT_DATA_SCALE   |,double *       |,double   |,PsueodoColour data multiplier
+|.VIEWIMG_VATT_DATA_OFFSET  |,double *       |,double   |,PsueodoColour data offset
+|.VIEWIMG_VATT_VALUE_MIN    |,double *       |,double   |,PseudoColour minimum value override
+|.VIEWIMG_VATT_VALUE_MAX    |,double *       |,double   |,PseudoColour maximum value override
 $END

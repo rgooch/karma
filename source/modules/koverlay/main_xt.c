@@ -31,7 +31,22 @@
 
     Written by      Richard Gooch   13-OCT-1996: Copied from  kview/main_xt.c
 
-    Last updated by Richard Gooch   16-OCT-1996: Renamed to <koverlay>.
+    Updated by      Richard Gooch   16-OCT-1996: Renamed to <koverlay>.
+
+    Updated by      Richard Gooch   3-NOV-1996: Made use of new
+  <viewimg_track_compute> routine.
+
+    Updated by      Richard Gooch   5-NOV-1996: Fixed bug with setting data
+  scaling on ViewableImages introduced in previous change.
+
+    Updated by      Richard Gooch   6-NOV-1996: Added hostname and port number
+  to title.
+
+    Updated by      Richard Gooch   10-NOV-1996: Switched to
+  <viewimg_set_array_attributes>
+
+    Last updated by Richard Gooch   1-DEC-1996: Made use of
+  <xtmisc_init_app_initialise>.
 
 
 */
@@ -68,7 +83,7 @@
 #include "koverlay.h"
 
 
-#define VERSION "1.0.0"
+#define VERSION "1.0.3"
 
 
 /*  File: contour_xt.c  */
@@ -130,6 +145,7 @@ String fallback_resources[] =
     "Koverlay*Dataclip.AutoValueScale:                  False",
     "Koverlay*SimpleSlider.borderWidth:                 0",
     "Koverlay*font:                                     9x15bold",
+    "Koverlay*borderColor:                              black",
     NULL
 };
 static XrmOptionDescRec Options[] =
@@ -160,10 +176,9 @@ int main (int argc, char **argv)
     XtAppContext app_context;
     Widget filewin, filepopup, animate_control, w, box, contour_btn;
     Display *dpy;
-    char txt[STRING_LENGTH];
     extern KwcsAstro image_ap;
     extern Widget main_shell, image_display, trace_winpopup;
-    extern char module_name[STRING_LENGTH + 1];
+    extern char title_name[STRING_LENGTH];
 
 #ifdef SIGFPE_ABORT
 	ieee_handler ("set", "division", SIGFPE_ABORT);
@@ -173,12 +188,11 @@ int main (int argc, char **argv)
     im_register_module_version_date (VERSION);
     im_register_lib_version (KARMA_VERSION);
     /*  Start up Xt  */
-    sprintf (txt, "%s v%s", module_name, VERSION);
-    main_shell = XtVaAppInitialize (&app_context, "Koverlay",
-				    Options, XtNumber (Options),
-				    &argc, argv, fallback_resources,
-				    XtNtitle, txt,
-				    NULL, 0);
+    main_shell = xtmisc_init_app_initialise (&app_context, "Koverlay",
+					     Options, XtNumber (Options),
+					     &argc, argv, fallback_resources,
+					     100,
+					     NULL);
     xtmisc_set_icon (main_shell, ic_write_kimage_icon);
     /*  Initialise communications  */
     chx_register_app_context (app_context);
@@ -187,6 +201,9 @@ int main (int argc, char **argv)
 			     ( void (*) () ) NULL );
     dpy = XtDisplay (main_shell);
     setup_comms (dpy);
+    XtVaSetValues (main_shell,
+		   XtNtitle, title_name,
+		   NULL);
     image_display = XtVaCreateManagedWidget ("topForm",
 					     imageDisplayWidgetClass,
 					     main_shell,
@@ -380,6 +397,30 @@ void load_image_and_setup (CONST char *filename)
 	    XkwTracePopupNewArray (trace_winpopup, pseudo_arr, min, max);
 	    XtPopup (trace_winpopup, XtGrabNone);
 	}
+	if (num_vimages > 0)
+	{
+	    viewimg_set_array_attributes (movie, num_vimages,
+					  VIEWIMG_VATT_DATA_SCALE,pseudo_scale,
+					  VIEWIMG_VATT_DATA_OFFSET,
+					  pseudo_offset,
+					  VIEWIMG_VATT_END);
+	    viewimg_set_array_attributes (magnified_movie, num_vimages,
+					  VIEWIMG_VATT_DATA_SCALE,pseudo_scale,
+					  VIEWIMG_VATT_DATA_OFFSET,
+					  pseudo_offset,
+					  VIEWIMG_VATT_END);
+	}
+	else
+	{
+	    viewimg_set_attributes (image,
+				    VIEWIMG_VATT_DATA_SCALE, pseudo_scale,
+				    VIEWIMG_VATT_DATA_OFFSET, pseudo_offset,
+				    VIEWIMG_VATT_END);
+	    viewimg_set_attributes (magnified_image,
+				    VIEWIMG_VATT_DATA_SCALE, pseudo_scale,
+				    VIEWIMG_VATT_DATA_OFFSET, pseudo_offset,
+				    VIEWIMG_VATT_END);
+	}
     }
 }   /*  End Function load_image_and_setup  */
 
@@ -494,58 +535,22 @@ static flag track_canvas_event (ViewableImage vimage, double x, double y,
 */
 {
     KWorldCanvas magnifier_canvas;
-    unsigned int hdim, vdim, rdim;
-    unsigned int num_restr, count;
-    unsigned long pointer_x_index, pointer_y_index, r_index;
+    unsigned long pointer_x_index, pointer_y_index;
     Widget image_display = (Widget) *f_info;
     Widget first_track_label, second_track_label, third_track_label;
-    unsigned char *rgb_ptr = (unsigned char *) value;
-    char *xlabel, *ylabel;
-    char **restr_names;
-    double *restr_values;
-    array_desc *arr_desc;
     uaddr coords[2];
-    char txt[STRING_LENGTH];
-    char value_string[STRING_LENGTH], index_string[STRING_LENGTH];
+    char pix_string[STRING_LENGTH];
     char world_string[STRING_LENGTH], extra_string[STRING_LENGTH];
     unsigned int dim_indices[2];
     extern iarray pseudo_arr;
     extern KwcsAstro image_ap;
-    extern double pseudo_scale, pseudo_offset;
     extern Widget trace_winpopup;
-    static char function_name[] = "track_canvas_event";
+    /*static char function_name[] = "track_canvas_event";*/
 
     if (event_code != K_CANVAS_EVENT_POINTER_MOVE) return (FALSE);
-    /*  Create value string  */
-    switch (value_type)
-    {
-      case K_DCOMPLEX:
-	/*  Compute value  */
-	iarray_format_value (pseudo_arr, value_string,
-			     *(double *) value, pseudo_scale, pseudo_offset);
-	break;
-      case K_UB_RGB:
-	sprintf (value_string, "RGB: %u %u %u",
-			rgb_ptr[0], rgb_ptr[1], rgb_ptr[2]);
-	break;
-      default:
-	fprintf (stderr, "Illegal type: %u\n", value_type);
-	a_prog_bug (function_name);
-	break;
-    }
-    canvas_get_specification (viewimg_get_worldcanvas (vimage),
-			      &xlabel, &ylabel, &num_restr,
-			      &restr_names, &restr_values);
-    viewimg_get_attributes (vimage,
-			    VIEWIMG_VATT_ARRAY_DESC, &arr_desc,
-			    VIEWIMG_VATT_HDIM, &hdim,
-			    VIEWIMG_VATT_VDIM, &vdim,
-			    VIEWIMG_VATT_END);
-    /*  Convert linear world co-ordinates to array indices and display  */
-    pointer_x_index = ds_get_coord_num (arr_desc->dimensions[hdim], x_lin,
-					SEARCH_BIAS_CLOSEST);
-    pointer_y_index = ds_get_coord_num (arr_desc->dimensions[vdim], y_lin,
-					SEARCH_BIAS_CLOSEST);
+    viewimg_track_compute (vimage, value, value_type, x, y, x_lin, y_lin,
+			   image_ap, pix_string, world_string,
+			   extra_string, &pointer_x_index, &pointer_y_index);
     if ( (pseudo_arr != NULL) && (iarray_num_dim (pseudo_arr) == 3) &&
 	 (iarray_type (pseudo_arr) == K_FLOAT) )
     {
@@ -555,43 +560,12 @@ static flag track_canvas_event (ViewableImage vimage, double x, double y,
 	coords[1] = pointer_y_index;
 	XkwTracePopupShowTrace (trace_winpopup, dim_indices, coords);
     }
-    sprintf (index_string, "x: %lu  y: %lu  ",
-	     pointer_x_index, pointer_y_index);
-    /*  Add any restriction information  */
-    for (count = 0; count < num_restr; ++count)
-    {
-	if ( ( rdim = ds_f_dim_in_array (arr_desc, restr_names[count]) )
-	     >= arr_desc->num_dimensions ) continue;
-	r_index = ds_get_coord_num (arr_desc->dimensions[rdim],
-				    restr_values[count], SEARCH_BIAS_CLOSEST);
-	sprintf (txt, "z%u: %lu  ", rdim, r_index);
-	strcat (index_string, txt);
-    }
-    strcat (index_string, value_string);
     first_track_label = XtNameToWidget (image_display, "trackLabel0");
     second_track_label = XtNameToWidget (image_display, "trackLabel1");
     third_track_label = XtNameToWidget (image_display, "trackLabel2");
-    XtVaSetValues (first_track_label, XtNlabel, index_string, NULL);
-    /*  Now display the world co-ordinate information  */
-    if (image_ap == NULL)
-    {
-	sprintf (world_string, "%5e %s  %5e %s  ", x, xlabel, y, ylabel);
-	/*  Add any restriction information  */
-	for (count = 0; count < num_restr; ++count)
-	{
-	    sprintf (txt, "%5e %s  ", restr_values[count], restr_names[count]);
-	    strcat (world_string, txt);
-	}
-    }
-    else
-    {
-	wcs_astro_format_all (image_ap, world_string,
-			      xlabel, x_lin, ylabel, y_lin, NULL, 0.0,
-			      num_restr, (CONST char **) restr_names,
-			      restr_values, extra_string);
-	XtVaSetValues (third_track_label, XtNlabel, extra_string, NULL);
-    }
+    XtVaSetValues (first_track_label, XtNlabel, pix_string, NULL);
     XtVaSetValues (second_track_label, XtNlabel, world_string, NULL);
+    XtVaSetValues (third_track_label, XtNlabel, extra_string, NULL);
     XtVaGetValues (image_display,
 		   XkwNmagnifierVisibleCanvas, &magnifier_canvas,
 		   NULL);

@@ -1,0 +1,6 @@
+$SUMMARY          Routines to generate periodic events
+$PURPOSE
+    These routines are meant to provide a flexible, portable means to generate
+    periodic events.
+    NOTE: THIS PACKAGE IS WORK IN PROGRESS. THE INTERFACE MAY CHANGE IN THE
+    NEXT RELEASE, POSSIBLY WITHOUT NOTICE.

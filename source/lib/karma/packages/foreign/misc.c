@@ -47,7 +47,9 @@
     Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
   format.
 
-    Last updated by Richard Gooch   21-JUN-1996: Added support for GIPSY files.
+    Updated by      Richard Gooch   21-JUN-1996: Added support for GIPSY files.
+
+    Last updated by Richard Gooch   3-DEC-1996: Added support for PGM files.
 
 
 */
@@ -83,6 +85,7 @@ unsigned int foreign_guess_format_from_filename (CONST char *filename)
     end = filename + strlen (filename);
     if (strcmp  (end - 3, ".kf")   == 0) return (FOREIGN_FILE_FORMAT_KARMA);
     if (st_icmp (end - 3, ".mt")  == 0) return (FOREIGN_FILE_FORMAT_FITS);
+    if (strcmp  (end - 4, ".pgm")  == 0) return (FOREIGN_FILE_FORMAT_PGM);
     if (strcmp  (end - 4, ".ppm")  == 0) return (FOREIGN_FILE_FORMAT_PPM);
     if (st_icmp (end - 4, ".fts")  == 0) return (FOREIGN_FILE_FORMAT_FITS);
     if (st_icmp (end - 4, ".fit")  == 0) return (FOREIGN_FILE_FORMAT_FITS);

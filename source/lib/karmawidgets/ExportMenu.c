@@ -30,8 +30,12 @@
 
     Written by      Richard Gooch   1-OCT-1996
 
-    Last updated by Richard Gooch   22-OCT-1996: Set dialog widget label and
+    Updated by      Richard Gooch   22-OCT-1996: Set dialog widget label and
   increased dialog widget size.
+
+    Last updated by Richard Gooch   27-NOV-1996: Fixed bug where PseudoColour
+  colourmap was being used when writing TrueColour images in PPM or Sun
+  Rasterfile formats.
 
 
 */
@@ -296,6 +300,7 @@ static void save_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 */
 {
     flag dealloc;
+    flag ok;
     ViewableImage vimage;
     Kcolourmap cmap = NULL;  /*  Initialised to keep compiler happy  */
     Channel channel;
@@ -308,7 +313,7 @@ static void save_cbk (Widget w, XtPointer client_data, XtPointer call_data)
     array_desc *arr_desc;
     multi_array *multi_desc;
     CONST unsigned char *image;
-    unsigned short *intensities = NULL;/* Initialised to keep compiler happy */
+    unsigned short *intensities = NULL;
     unsigned short *cmap_red, *cmap_green, *cmap_blue;
     unsigned short tmp_cmap[256 * 3];
     String fname = (String) call_data;
@@ -320,7 +325,7 @@ static void save_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 	return;
     }
     if ( ( vimage = viewimg_get_active (top->exportMenu.worldCanvas) )
-	== NULL )
+	 == NULL )
     {
 	fprintf (stderr, "No visible image!\n");
 	return;
@@ -358,7 +363,8 @@ static void save_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 			 KWIN_ATT_VISUAL, &visual,
 			 KWIN_ATT_END);
     cmap = canvas_get_cmap (top->exportMenu.worldCanvas);
-    if (cmap == NULL)
+    if ( (cmap == NULL) ||
+	 ( (visual == KWIN_VISUAL_PSEUDOCOLOUR) && truecolour ) )
     {
 	cmap_red = NULL;
 	cmap_green = NULL;
@@ -367,16 +373,16 @@ static void save_cbk (Widget w, XtPointer client_data, XtPointer call_data)
     else
     {
 	if ( ( intensities = kcmap_get_rgb_values (cmap, &cmap_size) )
-	    == NULL )
+	     == NULL )
 	{
 	    return;
 	}
-	if ( (visual == KWIN_VISUAL_DIRECTCOLOUR) && (cmap_size != 256) )
+	cmap_red = tmp_cmap;
+	cmap_green = tmp_cmap + 1;
+	cmap_blue = tmp_cmap + 2;
+	if ( (visual == KWIN_VISUAL_DIRECTCOLOUR) && (cmap_size < 256) )
 	{
 	    /*  Set extra colours at front to first colour in colourmap  */
-	    cmap_red = tmp_cmap;
-	    cmap_green = tmp_cmap + 1;
-	    cmap_blue = tmp_cmap + 2;
 	    for (count = 0; count < (256 - cmap_size);
 		 ++count, cmap_red += 3, cmap_green += 3, cmap_blue += 3)
 	    {
@@ -385,12 +391,11 @@ static void save_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 		*cmap_blue = intensities[2];
 	    }
 	    /*  Copy remaining colours  */
-	    for (count = 0; count < cmap_size;
-		 ++count, cmap_red += 3, cmap_green += 3, cmap_blue += 3)
+	    for (count = 0; count < cmap_size; ++count)
 	    {
-		*cmap_red = intensities[count * 3];
-		*cmap_green = intensities[count * 3 + 1];
-		*cmap_blue = intensities[count * 3 + 2];
+		cmap_red[count * 3] = intensities[count * 3];
+		cmap_green[count * 3 + 1] = intensities[count * 3 + 1];
+		cmap_blue[count * 3 + 2] = intensities[count * 3 + 2];
 	    }
 	    cmap_red = tmp_cmap;
 	    cmap_green = tmp_cmap + 1;
@@ -398,10 +403,14 @@ static void save_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 	}
 	else
 	{
-	    cmap_red = intensities;
-	    cmap_green = intensities + 1;
-	    cmap_blue = intensities + 2;
+	    for (count = 0; count < cmap_size; ++count)
+	    {
+		cmap_red[count * 3] = intensities[count * 3];
+		cmap_green[count * 3 + 1] = intensities[count * 3 + 1];
+		cmap_blue[count * 3 + 2] = intensities[count * 3 + 2];
+	    }
 	}
+	m_free ( (char *) intensities );
     }
     if (truecolour)
     {
@@ -429,31 +438,20 @@ static void save_cbk (Widget w, XtPointer client_data, XtPointer call_data)
     switch (top->exportMenu.export_type)
     {
       case EXPORT_PPM:
-	if ( ( channel = ch_open_file (fname, "w") ) == NULL )
-	{
-	    if (!truecolour) m_free ( (char *) intensities );
-	    return;
-	}
+	if ( ( channel = ch_open_file (fname, "w") ) == NULL ) return;
 	if (truecolour)
 	{
-	    if ( !foreign_ppm_write_rgb
-		 (channel, TRUE,
-		  image + ds_get_element_offset (arr_desc->packet, red_index),
-		  image + ds_get_element_offset (arr_desc->packet,green_index),
-		  image + ds_get_element_offset (arr_desc->packet, blue_index),
-		  arr_desc->offsets[hdim], arr_desc->offsets[vdim],
-		  arr_desc->dimensions[hdim]->length,
-		  arr_desc->dimensions[vdim]->length,
-		  cmap_red, cmap_green, cmap_blue, 3) )
-	    {
-		ch_close (channel);
-		unlink (fname);
-		return;
-	    }
+	    ok = foreign_ppm_write_rgb
+		(channel, TRUE,
+		 image + ds_get_element_offset (arr_desc->packet, red_index),
+		 image + ds_get_element_offset (arr_desc->packet,green_index),
+		 image + ds_get_element_offset (arr_desc->packet, blue_index),
+		 arr_desc->offsets[hdim], arr_desc->offsets[vdim],
+		 arr_desc->dimensions[hdim]->length,
+		 arr_desc->dimensions[vdim]->length,
+		 cmap_red, cmap_green, cmap_blue, 3);
 	}
-	else
-	{
-	    if ( !foreign_ppm_write_pseudo
+	else ok = foreign_ppm_write_pseudo
 		 (channel, TRUE,
 		  (CONST char *) image +
 		  ds_get_element_offset (arr_desc->packet,pseudo_index),
@@ -462,27 +460,21 @@ static void save_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 		  arr_desc->dimensions[hdim]->length,
 		  arr_desc->dimensions[vdim]->length,
 		  cmap_red, cmap_green, cmap_blue, cmap_size, 3,
-		  i_min, i_max) )
-	    {
-		m_free ( (char *) intensities );
-		ch_close (channel);
-		unlink (fname);
-		return;
-	    }
-	    m_free ( (char *) intensities );
+		  i_min, i_max);
+	if (!ok)
+	{
+	    ch_close (channel);
+	    unlink (fname);
+	    return;
 	}
 	ch_close (channel);
 	fprintf (stderr, "Wrote PPM file: \"%s\"\n", fname);
 	break;
       case EXPORT_SUNRAS:
-	if ( ( channel = ch_open_file (fname, "w") ) == NULL )
-	{
-	    if (!truecolour) m_free ( (char *) intensities );
-	    return;
-	}
+	if ( ( channel = ch_open_file (fname, "w") ) == NULL ) return;
 	if (truecolour)
 	{
-	    if ( !foreign_sunras_write_rgb
+	    ok = foreign_sunras_write_rgb
 		(channel,
 		 image + ds_get_element_offset (arr_desc->packet, red_index),
 		 image + ds_get_element_offset (arr_desc->packet, green_index),
@@ -490,39 +482,29 @@ static void save_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 		 arr_desc->offsets[hdim], arr_desc->offsets[vdim],
 		 arr_desc->dimensions[hdim]->length,
 		 arr_desc->dimensions[vdim]->length,
-		 cmap_red, cmap_green, cmap_blue, 3) )
-	    {
-		ch_close (channel);
-		unlink (fname);
-		return;
-	    }
+		 cmap_red, cmap_green, cmap_blue, 3);
 	}
-	else
+	else ok = foreign_sunras_write_pseudo
+		 (channel,
+		  (CONST char *) image +
+		  ds_get_element_offset (arr_desc->packet,pseudo_index),
+		  arr_desc->packet->element_types[pseudo_index],
+		  arr_desc->offsets[hdim], arr_desc->offsets[vdim],
+		  arr_desc->dimensions[hdim]->length,
+		  arr_desc->dimensions[vdim]->length,
+		  cmap_red, cmap_green, cmap_blue, cmap_size, 3,
+		  i_min, i_max);
+	if (!ok)
 	{
-	    if ( !foreign_sunras_write_pseudo
-		(channel,
-		 (CONST char *) image +
-		 ds_get_element_offset (arr_desc->packet,pseudo_index),
-		 arr_desc->packet->element_types[pseudo_index],
-		 arr_desc->offsets[hdim], arr_desc->offsets[vdim],
-		 arr_desc->dimensions[hdim]->length,
-		 arr_desc->dimensions[vdim]->length,
-		 cmap_red, cmap_green, cmap_blue, cmap_size, 3,
-		 i_min, i_max) )
-	    {
-		m_free ( (char *) intensities );
-		ch_close (channel);
-		unlink (fname);
-		return;
-	    }
-	    m_free ( (char *) intensities );
+	    ch_close (channel);
+	    unlink (fname);
+	    return;
 	}
 	ch_close (channel);
 	fprintf (stderr, "Wrote Sun Rasterfile: \"%s\"\n", fname);
 	break;
       case EXPORT_WHOLE_KARMA:
       case EXPORT_SUB_KARMA:
-	if (!truecolour) m_free ( (char *) intensities );
 	if (multi_desc == NULL)
 	{
 	    fprintf (stderr, "%s: NULL multi_array\n", function_name);
@@ -538,7 +520,6 @@ static void save_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 	break;
       case EXPORT_WHOLE_FITS:
       case EXPORT_SUB_FITS:
-	if (!truecolour) m_free ( (char *) intensities );
 	if (multi_desc == NULL)
 	{
 	    fprintf (stderr, "%s: NULL multi_array\n", function_name);
@@ -562,7 +543,6 @@ static void save_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 	break;
       case EXPORT_WHOLE_MIRIAD:
       case EXPORT_SUB_MIRIAD:
-	if (!truecolour) m_free ( (char *) intensities );
 	if (multi_desc == NULL)
 	{
 	    fprintf (stderr, "%s: NULL multi_array\n", function_name);
@@ -578,7 +558,6 @@ static void save_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 	break;
       case EXPORT_WHOLE_GIPSY:
       case EXPORT_SUB_GIPSY:
-	if (!truecolour) m_free ( (char *) intensities );
 	if (multi_desc == NULL)
 	{
 	    fprintf (stderr, "%s: NULL multi_array\n", function_name);

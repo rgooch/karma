@@ -38,10 +38,14 @@
   field for dimension descriptor (use "CRVALn" instead) and improved merging
   algorithm for header information.
 
-    Last updated by Richard Gooch   26-SEP-1996: Changed to implement the new
+    Updated by      Richard Gooch   26-SEP-1996: Changed to implement the new
   FITS-style co-ordinate handling, where dimension co-ordinates range from 0 to
   length - 1. This means that "CRVALn", "CRPIXn" and "CDELTn" values are passed
   through unmolested, irrespective of the dimension co-ordinates.
+
+    Last updated by Richard Gooch   27-NOV-1996: Ensure "NAXISn" keywords are
+  written before most other keywords, to keep saoimage and other broken FITS
+  readers happy.
 
 
 */
@@ -111,7 +115,7 @@ flag foreign_fits_write (Channel channel, multi_array *multi_desc, ...)
     va_start (argp, multi_desc);
     if ( (channel == NULL) || (multi_desc == NULL) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     ok = fits_write (channel, multi_desc, argp);
@@ -142,7 +146,7 @@ flag foreign_fits_write_iarray (Channel channel, iarray array, ...)
     va_start (argp, array);
     if ( (channel == NULL) || (array == NULL) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     ok = fits_write (channel, array->multi_desc, argp);
@@ -192,7 +196,7 @@ flag foreign_fits_write_data (Channel channel, multi_array *multi_desc,
     if ( (channel == NULL) || (multi_desc == NULL) ||
 	 (header_pack_desc == NULL) || (header_packet == NULL) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     /*  Process attributes  */
@@ -202,7 +206,7 @@ flag foreign_fits_write_data (Channel channel, multi_array *multi_desc,
 	switch (att_key)
 	{
 	  default:
-	    (void) fprintf (stderr, "Unknown attribute key: %u\n", att_key);
+	    fprintf (stderr, "Unknown attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	    break;
 	}
@@ -212,7 +216,7 @@ flag foreign_fits_write_data (Channel channel, multi_array *multi_desc,
     top_packet = multi_desc->data[0];
     if (top_pack_desc->element_types[0] != K_ARRAY)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"First element in top level packet must be K_ARRAY\n");
 	a_prog_bug (function_name);
     }
@@ -224,25 +228,25 @@ flag foreign_fits_write_data (Channel channel, multi_array *multi_desc,
 	data = *(char **) top_packet;
 	if (data == NULL)
 	{
-	    (void) fprintf (stderr, "No array to read data from!\n");
+	    fprintf (stderr, "No array to read data from!\n");
 	    a_prog_bug (function_name);
 	}
 	num_values = ds_get_array_size (arr_desc);
     }
     if ( !ds_element_is_atomic (elem_type) )
     {
-	(void) fprintf (stderr, "Non-atomic element not allowed\n");
+	fprintf (stderr, "Non-atomic element not allowed\n");
 	a_prog_bug (function_name);
     }
     if ( ds_element_is_complex (elem_type) )
     {
-	(void) fprintf (stderr, "Complex element not allowed\n");
+	fprintf (stderr, "Complex element not allowed\n");
 	a_prog_bug (function_name);
     }
     if ( !ds_get_unique_named_value (header_pack_desc, header_packet, "BITPIX",
 				     NULL, d_value) )
     {
-	(void) fprintf (stderr, "BITPIX not found\n");
+	fprintf (stderr, "BITPIX not found\n");
 	a_prog_bug (function_name);
     }
     bitpix = d_value[0];
@@ -265,7 +269,7 @@ flag foreign_fits_write_data (Channel channel, multi_array *multi_desc,
 	if ( !ds_get_elements (data, elem_type, elem_size, d_values, NULL,
 			       block_length) )
 	{
-	    (void) fprintf (stderr, "Error converting data\n");
+	    fprintf (stderr, "Error converting data\n");
 	    a_prog_bug (function_name);
 	}
 	/*  TODO: test for TOOBIGs  */
@@ -374,7 +378,7 @@ flag foreign_fits_generate_header (packet_desc **header_pack_desc,
     if ( (multi_desc == NULL) ||
 	 (header_pack_desc == NULL) || (header_packet == NULL) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     /*  Process attributes  */
@@ -384,7 +388,7 @@ flag foreign_fits_generate_header (packet_desc **header_pack_desc,
 	switch (att_key)
 	{
 	  default:
-	    (void) fprintf (stderr, "Unknown attribute key: %u\n", att_key);
+	    fprintf (stderr, "Unknown attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	    break;
 	}
@@ -393,7 +397,7 @@ flag foreign_fits_generate_header (packet_desc **header_pack_desc,
     /*  Sanity checks on the data  */
     if (multi_desc->num_arrays != 1)
     {
-	(void) fprintf (stderr, "Only one data structure allowed!\n");
+	fprintf (stderr, "Only one data structure allowed!\n");
 	a_prog_bug (function_name);
     }
     top_pack_desc = multi_desc->headers[0];
@@ -407,36 +411,36 @@ flag foreign_fits_generate_header (packet_desc **header_pack_desc,
 	/*  Found an array  */
 	if (arr_desc != NULL)
 	{
-	    (void) fprintf (stderr, "Only one n-dimensional array allowed\n");
+	    fprintf (stderr, "Only one n-dimensional array allowed\n");
 	    a_prog_bug (function_name);
 	}
 	arr_desc = (array_desc *) top_pack_desc->element_desc[count];
     }
     if (arr_desc == NULL)
     {
-	(void) fprintf (stderr, "No n-dimensional array found\n");
+	fprintf (stderr, "No n-dimensional array found\n");
 	a_prog_bug (function_name);
     }
     if (arr_desc->packet->num_elements != 1)
     {
-	(void) fprintf (stderr, "Only one array element allowed\n");
+	fprintf (stderr, "Only one array element allowed\n");
 	a_prog_bug (function_name);
     }
     if (arr_desc->num_levels > 0)
     {
-	(void) fprintf (stderr, "Tiled array not supported\n");
+	fprintf (stderr, "Tiled array not supported\n");
 	a_prog_bug (function_name);
     }
     elem_type = arr_desc->packet->element_types[0];
     data_name = arr_desc->packet->element_desc[0];
     if ( !ds_element_is_atomic (elem_type) )
     {
-	(void) fprintf (stderr, "Non-atomic element not allowed\n");
+	fprintf (stderr, "Non-atomic element not allowed\n");
 	a_prog_bug (function_name);
     }
     if ( ds_element_is_complex (elem_type) )
     {
-	(void) fprintf (stderr, "Complex element not allowed\n");
+	fprintf (stderr, "Complex element not allowed\n");
 	a_prog_bug (function_name);
     }
     /*  It appears we have a single data structure with a single n-dimensional
@@ -480,46 +484,6 @@ flag foreign_fits_generate_header (packet_desc **header_pack_desc,
 	break;
     }
     append_int (*header_pack_desc, header_packet, "BITPIX", bitpix);
-    /*  Get any data scaling  */
-    (void) sprintf (txt, "%s__SCALE", data_name);
-    if ( ds_get_unique_named_value (top_pack_desc, top_packet, txt,
-				    NULL, value) )
-    {
-	scale = value[0];
-    }
-    else scale = 1.0;
-    (void) sprintf (txt, "%s__OFFSET", data_name);
-    if ( ds_get_unique_named_value (top_pack_desc, top_packet, txt,
-				    NULL, value) )
-    {
-	offset = value[0];
-    }
-    else offset = 0.0;
-    if ( ( (scale != 1.0) || (offset != 0.0) ) &&
-	 ( (bitpix != -32) && (bitpix != -64) ) )
-    {
-	/*  Add scaling information  */
-	value[0] = scale;
-	value[1] = 0.0;
-	if ( !ds_put_unique_named_value (*header_pack_desc, header_packet,
-					 "BSCALE", K_DOUBLE, value, FALSE) )
-	{
-	    m_abort (function_name, txt);
-	}
-	value[0] = offset;
-	value[1] = 0.0;
-	if ( !ds_put_unique_named_value (*header_pack_desc, header_packet,
-					 "BZERO", K_DOUBLE, value, FALSE) )
-	{
-	    m_abort (function_name, txt);
-	}
-    }
-    /*  Write the data name  */
-    if ( !ds_put_unique_named_string (*header_pack_desc, header_packet,
-				      "BUNIT", data_name, FALSE) )
-    {
-	m_abort (function_name, "BUNIT");
-    }
     /*  Start processing the supplied header data and check for consistency
 	with the n-dimensional array  */
     if ( ( dim_to_axis = (unsigned int *)
@@ -536,7 +500,7 @@ flag foreign_fits_generate_header (packet_desc **header_pack_desc,
 	num_non_degenerate = 0;
 	for (count = 1; count <= naxis; ++count)
 	{
-	    (void) sprintf (txt, "NAXIS%u", count);
+	    sprintf (txt, "NAXIS%u", count);
 	    if ( !ds_get_unique_named_value (top_pack_desc, top_packet, txt,
 					     NULL, value) )
 	    {
@@ -552,7 +516,7 @@ flag foreign_fits_generate_header (packet_desc **header_pack_desc,
 	    }
 	    ++num_non_degenerate;
 	    /*  Check if this corresponds with a dimension  */
-	    (void) sprintf (txt, "CTYPE%u", count);
+	    sprintf (txt, "CTYPE%u", count);
 	    if ( ( ptr = ds_get_unique_named_string (top_pack_desc,
 						     top_packet, txt) )
 		 == NULL )
@@ -603,9 +567,37 @@ flag foreign_fits_generate_header (packet_desc **header_pack_desc,
     append_int (*header_pack_desc, header_packet, "NAXIS", naxis);
     for (count = arr_desc->num_dimensions - 1; count >= 0; --count)
     {
-	(void) sprintf (txt, "NAXIS%u", dim_to_axis[count]);
+	sprintf (txt, "NAXIS%u", dim_to_axis[count]);
 	append_int (*header_pack_desc, header_packet, txt,
 		    arr_desc->dimensions[count]->length);
+    }
+    if (!discard_axes_info)
+    {
+	/*  There may be other "NAXISn" elements which correspond to degenerate
+	    axes. Need to write these next because some FITS readers (e.g.
+	    saoimage) are broken and want the axis lengths before almost
+	    anything else  */
+	for (count = 0; count < top_pack_desc->num_elements; ++count)
+	{
+	    elem_type = top_pack_desc->element_types[count];
+	    elem_desc = top_pack_desc->element_desc[count];
+	    if ( !ds_element_is_named (elem_type) ) continue;
+	    if (strlen (elem_desc) > EQUALS_POSITION)
+	    {
+		/*  FITS does not define keywords of more than 8 characters,
+		    hence this cannot be represented  */
+		continue;
+	    }
+	    if (strncmp (elem_desc, "NAXIS", 5) != 0) continue;
+	    if ( !ds_copy_unique_named_element (*header_pack_desc,
+						header_packet,
+						top_pack_desc, top_packet,
+						elem_desc, TRUE, FALSE,
+						FALSE) )
+	    {
+		m_abort (function_name, "header item");
+	    }
+	}
     }
     /*  Construct "CTYPE", "CRVAL", "CRPIX" and "CDELT" information manually */
     crval[1] = 0.0;
@@ -664,24 +656,64 @@ flag foreign_fits_generate_header (packet_desc **header_pack_desc,
 	{
 	    m_abort (function_name, txt);
 	}
-	(void) sprintf (txt, "CRVAL%u", dim_to_axis[count]);
+	sprintf (txt, "CRVAL%u", dim_to_axis[count]);
 	if ( !ds_put_unique_named_value (*header_pack_desc, header_packet,
 					 txt, K_DOUBLE, crval, FALSE) )
 	{
 	    m_abort (function_name, txt);
 	}
-	(void) sprintf (txt, "CRPIX%u", dim_to_axis[count]);
+	sprintf (txt, "CRPIX%u", dim_to_axis[count]);
 	if ( !ds_put_unique_named_value (*header_pack_desc, header_packet,
 					 txt, K_DOUBLE, crpix, FALSE) )
 	{
 	    m_abort (function_name, txt);
 	}
-	(void) sprintf (txt, "CDELT%u", dim_to_axis[count]);
+	sprintf (txt, "CDELT%u", dim_to_axis[count]);
 	if ( !ds_put_unique_named_value (*header_pack_desc, header_packet,
 					 txt, K_DOUBLE, cdelta, FALSE) )
 	{
 	    m_abort (function_name, txt);
 	}
+    }
+    /*  Get any data scaling  */
+    sprintf (txt, "%s__SCALE", data_name);
+    if ( ds_get_unique_named_value (top_pack_desc, top_packet, txt,
+				    NULL, value) )
+    {
+	scale = value[0];
+    }
+    else scale = 1.0;
+    sprintf (txt, "%s__OFFSET", data_name);
+    if ( ds_get_unique_named_value (top_pack_desc, top_packet, txt,
+				    NULL, value) )
+    {
+	offset = value[0];
+    }
+    else offset = 0.0;
+    if ( ( (scale != 1.0) || (offset != 0.0) ) &&
+	 ( (bitpix != -32) && (bitpix != -64) ) )
+    {
+	/*  Add scaling information  */
+	value[0] = scale;
+	value[1] = 0.0;
+	if ( !ds_put_unique_named_value (*header_pack_desc, header_packet,
+					 "BSCALE", K_DOUBLE, value, FALSE) )
+	{
+	    m_abort (function_name, txt);
+	}
+	value[0] = offset;
+	value[1] = 0.0;
+	if ( !ds_put_unique_named_value (*header_pack_desc, header_packet,
+					 "BZERO", K_DOUBLE, value, FALSE) )
+	{
+	    m_abort (function_name, txt);
+	}
+    }
+    /*  Write the data name  */
+    if ( !ds_put_unique_named_string (*header_pack_desc, header_packet,
+				      "BUNIT", data_name, FALSE) )
+    {
+	m_abort (function_name, "BUNIT");
     }
     /*  Copy (with possible discards) header information from supplied header
      */
@@ -698,13 +730,13 @@ flag foreign_fits_generate_header (packet_desc **header_pack_desc,
 	}
 	if (strcmp (elem_desc, "SIMPLE") == 0) continue;
 	if (strcmp (elem_desc, "BITPIX") == 0) continue;
+	if (strncmp (elem_desc, "NAXIS", 5) == 0) continue;
 	if (strcmp (elem_desc, "BSCALE") == 0) continue;
 	if (strcmp (elem_desc, "BZERO") == 0) continue;
 	if (strcmp (elem_desc, "BUNIT") == 0) continue;
 	if (strcmp (elem_desc, "BLANK") == 0) continue;
 	if (discard_axes_info)
 	{
-	    if (strncmp (elem_desc, "NAXIS", 5) == 0) continue;
 	    if (strncmp (elem_desc, "CTYPE", 5) == 0) continue;
 	    if (strncmp (elem_desc, "CRVAL", 5) == 0) continue;
 	    if (strncmp (elem_desc, "CRPIX", 5) == 0) continue;
@@ -749,7 +781,7 @@ static flag fits_write (Channel channel, multi_array *multi_desc, va_list argp)
 
     if ( (channel == NULL) || (multi_desc == NULL) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     /*  Process attributes  */
@@ -758,7 +790,7 @@ static flag fits_write (Channel channel, multi_array *multi_desc, va_list argp)
 	switch (att_key)
 	{
 	  default:
-	    (void) fprintf (stderr, "Unknown attribute key: %u\n", att_key);
+	    fprintf (stderr, "Unknown attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	    break;
 	}
@@ -841,7 +873,7 @@ static flag write_fits_header (Channel channel, CONST packet_desc *header_desc,
 	    ptr = NULL;  /*  Keep compiler happy  */
 	    if (complex)
 	    {
-		(void) fprintf (stderr, "Complex header item\n");
+		fprintf (stderr, "Complex header item\n");
 		a_prog_bug (function_name);
 	    }
 	}
@@ -853,7 +885,7 @@ static flag write_fits_header (Channel channel, CONST packet_desc *header_desc,
 	}
 	if (!ok)
 	{
-	    (void) fprintf (stderr, "Error getting header item\n");
+	    fprintf (stderr, "Error getting header item\n");
 	    a_prog_bug (function_name);
 	}
 	switch (type)

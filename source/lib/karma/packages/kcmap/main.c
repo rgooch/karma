@@ -107,7 +107,9 @@
     Updated by      Richard Gooch   23-JUN-1996: Added <cf_greyscale3> to the
   list.
 
-    Last updated by Richard Gooch   1-OCT-1996: Added <cf_rgb2> to the list.
+    Updated by      Richard Gooch   1-OCT-1996: Added <cf_rgb2> to the list.
+
+    Last updated by Richard Gooch   23-NOV-1996: Created <kcmap_initialise>.
 
 
 */
@@ -138,10 +140,10 @@
 #define MAX_INTENSITY 65535
 
 #define VERIFY_COLOURMAP(cmap) if (cmap == NULL) \
-{(void) fprintf (stderr, "NULL colourmap passed\n"); \
+{fprintf (stderr, "NULL colourmap passed\n"); \
  a_prog_bug (function_name); } \
 if (cmap->magic_number != MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid colourmap object\n"); \
+{fprintf (stderr, "Invalid colourmap object\n"); \
  a_prog_bug (function_name); }
 
 #define CMAP_FUNC_TYPE_RGB       (unsigned int) 0
@@ -200,7 +202,6 @@ static Kcolourmap slaveable_colourmap = NULL;
 
 
 /*  Private functions  */
-STATIC_FUNCTION (void initialise, () );
 static struct cmap_func_type *get_cmap_function (/* name */);
 static flag register_new_cmap_indices_slave (/* connection, info */);
 static flag register_new_full_cmap_slave (/* connection, info */);
@@ -220,6 +221,63 @@ static flag change_cmap_size (/* cmap, num_cells, tolerant, notify,
 
 
 /*  Public functions follow  */
+
+/*EXPERIMENTAL_FUNCTION*/
+void kcmap_initialise ()
+/*  [SUMMARY] This routine will initialise the package.
+    [RETURNS] Nothing.
+*/
+{
+    static flag initialised = FALSE;
+
+    if (initialised) return;
+    initialised = TRUE;
+    kcmap_add_grey_func ("Greyscale1", cf_greyscale1, 0, 0);
+    kcmap_add_grey_func ("Greyscale2", cf_greyscale2, 0, 0);
+    kcmap_add_grey_func ("Greyscale3", cf_greyscale3, 0, 0);
+    kcmap_add_grey_func ("Random Grey", cf_random_grey, 0, 0);
+    kcmap_add_RGB_func ("Random Pseudocolour", cf_random_pseudocolour, 0, 0);
+    kcmap_add_RGB_func ("mirp", cf_mirp, 0, 0);
+    kcmap_add_RGB_func ("Glynn Rogers1", cf_rainbow1, 0, 0);
+    kcmap_add_RGB_func ("Glynn Rogers2", cf_rainbow2, 0, 0);
+    kcmap_add_RGB_func ("Glynn Rogers3", cf_rainbow3, 0, 0);
+    kcmap_add_RGB_func ("Cyclic 1", cf_cyclic1, 0, 0);
+    kcmap_add_RGB_func ("Velocity: Compensating Tones",
+			  cf_velocity_compensating_tones, 0, 0);
+    kcmap_add_RGB_func ("Compressed Colourmap 3R2G2B",
+			  cf_compressed_colourmap_3r2g2b, 128, 128);
+
+    kcmap_add_RGB_func ("Background", cf_background, 0, 0);
+    kcmap_add_RGB_func ("Heat",       cf_heat,       0, 0);
+    kcmap_add_RGB_func ("Isophot",    cf_isophot,    0, 0);
+    kcmap_add_grey_func ("Mono",       cf_mono,       0, 0);
+    kcmap_add_RGB_func ("Mousse",     cf_mousse,     0, 0);
+    kcmap_add_RGB_func ("Rainbow",    cf_rainbow,    0, 0);
+    kcmap_add_RGB_func ("Random",     cf_random,     0, 0);
+    kcmap_add_RGB_func ("RGB",        cf_rgb,        0, 0);
+    kcmap_add_RGB_func ("Ronekers",   cf_ronekers,   0, 0);
+    kcmap_add_RGB_func ("Smooth",     cf_smooth,     0, 0);
+    kcmap_add_RGB_func ("Staircase",  cf_staircase,  0, 0);
+    kcmap_add_RGB_func ("Velocity Field",  cf_rgb2,  0, 0);
+    kcmap_add_RGB_func ("Mandelbrot", cf_mandelbrot, 0, 0);
+    conn_register_server_protocol ("colourmap_indices", PROTOCOL_VERSION, 0,
+				   register_new_cmap_indices_slave,
+				   ( flag (*) () ) NULL, ( void (*) () ) NULL);
+    conn_register_client_protocol ("colourmap_indices", PROTOCOL_VERSION, 1,
+				   verify_indices_slave_cmap_connection,
+				   register_cmap_indices_connection,
+				   read_cmap_indices,
+				   register_cmap_connection_close);
+    conn_register_server_protocol ("full_colourmap", PROTOCOL_VERSION, 0,
+				   register_new_full_cmap_slave,
+				   ( flag (*) () ) NULL,
+				   ( void (*) () ) NULL);
+    conn_register_client_protocol ("full_colourmap", PROTOCOL_VERSION, 1,
+				   verify_full_slave_cmap_connection,
+				   register_full_cmap_connection,
+				   read_full_cmap,
+				   register_cmap_connection_close);
+}   /*  End Function kcmap_initialise  */
 
 /*PUBLIC_FUNCTION*/
 Kcolourmap kcmap_va_create (CONST char *name, unsigned int num_cells,
@@ -274,7 +332,7 @@ Kcolourmap kcmap_va_create (CONST char *name, unsigned int num_cells,
     static char function_name[] = "kcmap_va_create";
 
     va_start (argp, location_func);
-    initialise ();
+    kcmap_initialise ();
     /*  It's all or nothing...  */
     num_null = 0;
     if (alloc_func == NULL) ++num_null;
@@ -283,37 +341,37 @@ Kcolourmap kcmap_va_create (CONST char *name, unsigned int num_cells,
     if (location_func == NULL) ++num_null;
     if ( (num_null != 0) && (num_null != 4) )
     {
-	(void) fprintf (stderr, "Number of NULL functions: %u\n", num_null);
+	fprintf (stderr, "Number of NULL functions: %u\n", num_null);
 	a_prog_bug (function_name);
     }
     if (num_cells < 2)
     {
-	(void) fprintf (stderr, "Must specify colourmap size of at least 2\n");
+	fprintf (stderr, "Must specify colourmap size of at least 2\n");
 	a_prog_bug (function_name);
     }
     if (name == NULL) name = def_name;
     /*  Verify if colourmap function exists  */
     if ( (cmap_func = get_cmap_function (name) ) == NULL )
     {
-	(void) fprintf (stderr, "Colourmap function: \"%s\" does not exist\n",
+	fprintf (stderr, "Colourmap function: \"%s\" does not exist\n",
 			name);
 	a_prog_bug (function_name);
     }
     if ( (cmap_func->min_cells > 1) && (num_cells < cmap_func->min_cells) )
     {
-	(void) fprintf (stderr, "Requested number of cells: %u is less than\n",
+	fprintf (stderr, "Requested number of cells: %u is less than\n",
 			num_cells);
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"minimum number of cells: %u for colourmap function: %s\n",
 			cmap_func->min_cells, cmap_func->name);
 	return (NULL);
     }
     if ( (cmap_func->max_cells > 1) && (num_cells > cmap_func->max_cells) )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Requested number of cells: %u is greater than\n",
 			num_cells);
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"maximum number of cells: %u for colourmap function: %s\n",
 			cmap_func->max_cells, cmap_func->name);
 	return (NULL);
@@ -391,7 +449,7 @@ Kcolourmap kcmap_va_create (CONST char *name, unsigned int num_cells,
 	    cmap->blue_scale = va_arg (argp, unsigned short);
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Unknown attribute key: %u\n", att_key);
+	    fprintf (stderr, "Unknown attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	    break;
 	}
@@ -508,10 +566,10 @@ void kcmap_init ( unsigned int (*alloc_func) (), void (*free_func) (),
 
     if (obsolete_alloc_ccells_func != NULL)
     {
-	(void) fprintf (stderr, "Initialisation already performed\n");
+	fprintf (stderr, "Initialisation already performed\n");
 	a_prog_bug (function_name);
     }
-    (void) fprintf (stderr,
+    fprintf (stderr,
 		    "WARNING: the <%s> routine will be removed in Karma ",
 		    function_name);
     (void)fprintf(stderr,
@@ -624,11 +682,11 @@ Kcolourmap kcmap_create (CONST char *name, unsigned int num_cells,
 
     if (obsolete_alloc_ccells_func == NULL)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Lower level display routines not registered yet\n");
 	a_prog_bug (function_name);
     }
-    (void) fprintf (stderr,
+    fprintf (stderr,
 		    "WARNING: the <%s> routine will be removed in Karma ",
 		    function_name);
     (void)fprintf(stderr,
@@ -700,13 +758,13 @@ flag kcmap_change (Kcolourmap cmap, CONST char *new_name,
 	/*  Slave colourmap: close connection  */
 	if ( !conn_close (cmap->master) )
 	{
-	    (void) fprintf (stderr, "Error closing slave connection\n");
+	    fprintf (stderr, "Error closing slave connection\n");
 	    return (FALSE);
 	}
     }
     if (cmap->master != NULL)
     {
-	(void) fprintf (stderr, "Attempt to resize a slave colourmap\n");
+	fprintf (stderr, "Attempt to resize a slave colourmap\n");
 	a_prog_bug (function_name);
     }
     cmap->modifiable = TRUE;
@@ -719,7 +777,7 @@ flag kcmap_change (Kcolourmap cmap, CONST char *new_name,
 	/*  Get new colourmap function  */
 	if ( ( cmap_func = get_cmap_function (new_name) ) == NULL )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Colourmap function: \"%s\" does not exist\n",
 			    new_name);
 	    a_prog_bug (function_name);
@@ -752,10 +810,10 @@ flag kcmap_change (Kcolourmap cmap, CONST char *new_name,
 	if ( (cmap_func->min_cells > 1) && 
 	    (num_cells < cmap_func->min_cells) )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Requested number of cells: %u is less than\n",
 			    num_cells);
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "minimum number of cells: %u for colourmap function: %s\n",
 			    cmap_func->min_cells, cmap_func->name);
 	    return (FALSE);
@@ -763,10 +821,10 @@ flag kcmap_change (Kcolourmap cmap, CONST char *new_name,
 	if ( (cmap_func->max_cells > 1) && 
 	    (num_cells > cmap_func->max_cells) )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Requested number of cells: %u is greater than\n",
 			    num_cells);
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "maximum number of cells: %u for colourmap function: %s\n",
 			    cmap_func->max_cells, cmap_func->name);
 	    return (FALSE);
@@ -780,10 +838,10 @@ flag kcmap_change (Kcolourmap cmap, CONST char *new_name,
     {
 	if (num_cells > 1)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "%s: Could not allocate colourmap of size: %u\n",
 			    function_name, num_cells);
-	    (void) fprintf (stderr, "Original  num_cells: %u\n",
+	    fprintf (stderr, "Original  num_cells: %u\n",
 			    orig_num_cells);
 	}
 	return (FALSE);
@@ -825,7 +883,7 @@ void kcmap_modify (Kcolourmap cmap, double x, double y, void *var_param)
     VERIFY_COLOURMAP (cmap);
     if (cmap->direct_visual)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Cannot modify a direct visual type colourmap this way\n");
 	a_prog_bug (function_name);
     }
@@ -837,13 +895,13 @@ void kcmap_modify (Kcolourmap cmap, double x, double y, void *var_param)
     cmap_func = cmap->modify_func;
     if ( (x < 0.0) || (x > 1.0) )
     {
-	(void) fprintf (stderr, "x value: %e  outside range 0.0 to 1.0\n",
+	fprintf (stderr, "x value: %e  outside range 0.0 to 1.0\n",
 			x);
 	a_prog_bug (function_name);
     }
     if ( (y < 0.0) || (y > 1.0) )
     {
-	(void) fprintf (stderr, "y value: %e  outside range 0.0 to 1.0\n",
+	fprintf (stderr, "y value: %e  outside range 0.0 to 1.0\n",
 			y);
 	a_prog_bug (function_name);
     }
@@ -953,7 +1011,7 @@ void kcmap_modify_direct_type (Kcolourmap cmap,
     VERIFY_COLOURMAP (cmap);
     if (!cmap->direct_visual)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Cannot modify a regular type colourmap this way\n");
 	a_prog_bug (function_name);
     }
@@ -965,37 +1023,37 @@ void kcmap_modify_direct_type (Kcolourmap cmap,
     cmap_func = cmap->modify_func;
     if ( (red_x < 0.0) || (red_x > 1.0) )
     {
-	(void) fprintf (stderr, "red_x value: %e  outside range 0.0 to 1.0\n",
+	fprintf (stderr, "red_x value: %e  outside range 0.0 to 1.0\n",
 			red_x);
 	a_prog_bug (function_name);
     }
     if ( (red_y < 0.0) || (red_y > 1.0) )
     {
-	(void) fprintf (stderr, "red_y value: %e  outside range 0.0 to 1.0\n",
+	fprintf (stderr, "red_y value: %e  outside range 0.0 to 1.0\n",
 			red_y);
 	a_prog_bug (function_name);
     }
     if ( (green_x < 0.0) || (green_x > 1.0) )
     {
-	(void) fprintf (stderr, "green_x value: %e  outside range 0.0 to 1.0\n",
+	fprintf (stderr, "green_x value: %e  outside range 0.0 to 1.0\n",
 			green_x);
 	a_prog_bug (function_name);
     }
     if ( (green_y < 0.0) || (green_y > 1.0) )
     {
-	(void) fprintf (stderr, "green_y value: %e  outside range 0.0 to 1.0\n",
+	fprintf (stderr, "green_y value: %e  outside range 0.0 to 1.0\n",
 			green_y);
 	a_prog_bug (function_name);
     }
     if ( (blue_x < 0.0) || (blue_x > 1.0) )
     {
-	(void) fprintf (stderr, "blue_x value: %e  outside range 0.0 to 1.0\n",
+	fprintf (stderr, "blue_x value: %e  outside range 0.0 to 1.0\n",
 			blue_x);
 	a_prog_bug (function_name);
     }
     if ( (blue_y < 0.0) || (blue_y > 1.0) )
     {
-	(void) fprintf (stderr, "blue_y value: %e  outside range 0.0 to 1.0\n",
+	fprintf (stderr, "blue_y value: %e  outside range 0.0 to 1.0\n",
 			blue_y);
 	a_prog_bug (function_name);
     }
@@ -1064,7 +1122,7 @@ CONST char **kcmap_list_funcs ()
 	 ++num_funcs, entry = entry->next);
     if (num_funcs < 1)
     {
-	(void) fprintf (stderr, "No colourmap functions!\n");
+	fprintf (stderr, "No colourmap functions!\n");
 	a_prog_bug (function_name);
     }
     if ( ( names = (char **) m_alloc ( sizeof *names * (num_funcs + 1) ) )
@@ -1109,7 +1167,7 @@ CONST char **kcmap_get_funcs_for_cmap (Kcolourmap cmap)
     }
     if (num_funcs < 1)
     {
-	(void) fprintf (stderr, "No colourmap functions!\n");
+	fprintf (stderr, "No colourmap functions!\n");
 	a_prog_bug (function_name);
     }
     if ( ( names = (char **) m_alloc ( sizeof *names * (num_funcs + 1) ) )
@@ -1178,10 +1236,10 @@ void kcmap_notify_pixels_changed (Kcolourmap cmap)
 
     if (!cmap->software)
     {
-	(void) fprintf (stderr, "Not a software colourmap!\n");
+	fprintf (stderr, "Not a software colourmap!\n");
 	a_prog_bug (function_name);
     }
-    (void) c_call_callbacks (cmap->resize_list, NULL);
+    c_call_callbacks (cmap->resize_list, NULL);
 }   /*  End Function kcmap_notify_pixels_changed  */
 
 /*PUBLIC_FUNCTION*/
@@ -1197,12 +1255,12 @@ unsigned long kcmap_get_pixel (Kcolourmap cmap, unsigned int index)
     VERIFY_COLOURMAP (cmap);
     if (cmap->software)
     {
-	(void) fprintf (stderr, "No pixels in a software colourmap!\n");
+	fprintf (stderr, "No pixels in a software colourmap!\n");
 	a_prog_bug (function_name);
     }
     if (index >= cmap->size)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"index: %u  is not less than colourmap size: %u\n",
 			index, cmap->size);
 	a_prog_bug (function_name);
@@ -1248,7 +1306,7 @@ flag kcmap_copy_to_struct (Kcolourmap cmap, packet_desc **top_pack_desc,
     VERIFY_COLOURMAP (cmap);
     if (cmap->intensities == NULL)
     {
-	(void) fprintf (stderr, "Colourmap has no colour information\n");
+	fprintf (stderr, "Colourmap has no colour information\n");
 	return (FALSE);
     }
     if ( ( *top_pack_desc = ds_copy_desc_until (cmap->top_pack_desc, NULL ) )
@@ -1269,7 +1327,7 @@ flag kcmap_copy_to_struct (Kcolourmap cmap, packet_desc **top_pack_desc,
     if ( !ds_copy_data (cmap->top_pack_desc, cmap->top_packet,
 			*top_pack_desc, *top_packet) )
     {
-	(void) fprintf (stderr, "Data structure copy not identical\n");
+	fprintf (stderr, "Data structure copy not identical\n");
 	a_prog_bug (function_name);
     }
     return (TRUE);
@@ -1310,7 +1368,7 @@ flag kcmap_copy_from_struct (Kcolourmap cmap, packet_desc *top_pack_desc,
     }
     if ( !ds_copy_data (top_pack_desc, top_packet, pack_desc, packet) )
     {
-	(void) fprintf (stderr, "Data structure copy not identical\n");
+	fprintf (stderr, "Data structure copy not identical\n");
 	a_prog_bug (function_name);
     }
     /*  Now get a handle to the colourmap  */
@@ -1321,17 +1379,17 @@ flag kcmap_copy_from_struct (Kcolourmap cmap, packet_desc *top_pack_desc,
 						  (double *) NULL,
 						  (unsigned int) 0) ) == NULL )
     {
-	(void) fprintf (stderr, "Could not find colourmap\n");
+	fprintf (stderr, "Could not find colourmap\n");
 	ds_dealloc_packet (pack_desc, packet);
 	return (FALSE);
     }
-    if (reordering_done) (void) fprintf (stderr, "Colourmap was reordered\n");
+    if (reordering_done) fprintf (stderr, "Colourmap was reordered\n");
     if (cmap->master != NULL)
     {
 	/*  Slave colourmap: close connection  */
 	if ( !conn_close (cmap->master) )
 	{
-	    (void) fprintf (stderr, "Error closing slave connection\n");
+	    fprintf (stderr, "Error closing slave connection\n");
 	    ds_dealloc_packet (pack_desc, packet);
 	    return (FALSE);
 	}
@@ -1339,7 +1397,7 @@ flag kcmap_copy_from_struct (Kcolourmap cmap, packet_desc *top_pack_desc,
     if ( !change_cmap_size (cmap, colourmap_size, colourmap_size, TRUE,
 			    colour_array, pack_desc, packet) )
     {
-	(void) fprintf (stderr, "Could not reallocate colourmap\n");
+	fprintf (stderr, "Could not reallocate colourmap\n");
 	ds_dealloc_packet (pack_desc, packet);
 	return (FALSE);
     }
@@ -1362,7 +1420,8 @@ unsigned short *kcmap_get_rgb_values (Kcolourmap cmap, unsigned int *size)
     [PURPOSE] This routine will return the RGB values in a colourmap. The
     colour values are arranged in packets of Red, Green and Blue values.
     <cmap> The colourmap object.
-    <size> The routine will write the size of the colourmap here.
+    <size> The routine will write the size of the colourmap here. This may be
+    NULL.
     [RETURNS] A pointer to a dynamically allocated array. This must be freed
     with [<m_free>]. On failure it returns NULL.
 */
@@ -1373,18 +1432,18 @@ unsigned short *kcmap_get_rgb_values (Kcolourmap cmap, unsigned int *size)
     VERIFY_COLOURMAP (cmap);
     if (cmap->intensities == NULL)
     {
-	(void) fprintf (stderr, "Colourmap has no colour information\n");
+	fprintf (stderr, "Colourmap has no colour information\n");
 	return (NULL);
     }
     if ( ( intensities = (unsigned short *)
-	  m_alloc (sizeof *intensities * 3 * cmap->size) ) == NULL )
+	   m_alloc (sizeof *intensities * 3 * cmap->size) ) == NULL )
     {
 	m_error_notify (function_name, "array of intensities");
 	return (NULL);
     }
     m_copy ( (char *) intensities, (char *) cmap->intensities,
-	    sizeof *intensities * 3 * cmap->size );
-    *size = cmap->size;
+	     sizeof *intensities * 3 * cmap->size );
+    if (size != NULL) *size = cmap->size;
     return (intensities);
 }   /*  End Function kcmap_get_rgb_values  */
 
@@ -1427,7 +1486,7 @@ void kcmap_get_attributes (Kcolourmap cmap, ...)
 	    (* va_arg (argp, unsigned int *) ) = cmap->size;
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Illegal attribute key: %u\n", att_key);
+	    fprintf (stderr, "Illegal attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	}
     }
@@ -1476,7 +1535,7 @@ void kcmap_set_attributes (Kcolourmap cmap, ...)
 	    cmap->blue_scale = va_arg (argp, unsigned short);
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Illegal attribute key: %u\n", att_key);
+	    fprintf (stderr, "Illegal attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	}
     }
@@ -1485,62 +1544,6 @@ void kcmap_set_attributes (Kcolourmap cmap, ...)
 
 
 /*  Private routines follow  */
-
-static void initialise ()
-/*  [SUMMARY] This routine will initialise the package.
-    [RETURNS] Nothing.
-*/
-{
-    static flag initialised = FALSE;
-
-    if (initialised) return;
-    initialised = TRUE;
-    kcmap_add_grey_func ("Greyscale1", cf_greyscale1, 0, 0);
-    kcmap_add_grey_func ("Greyscale2", cf_greyscale2, 0, 0);
-    kcmap_add_grey_func ("Greyscale3", cf_greyscale3, 0, 0);
-    kcmap_add_grey_func ("Random Grey", cf_random_grey, 0, 0);
-    kcmap_add_RGB_func ("Random Pseudocolour", cf_random_pseudocolour, 0, 0);
-    kcmap_add_RGB_func ("mirp", cf_mirp, 0, 0);
-    kcmap_add_RGB_func ("Glynn Rogers1", cf_rainbow1, 0, 0);
-    kcmap_add_RGB_func ("Glynn Rogers2", cf_rainbow2, 0, 0);
-    kcmap_add_RGB_func ("Glynn Rogers3", cf_rainbow3, 0, 0);
-    kcmap_add_RGB_func ("Cyclic 1", cf_cyclic1, 0, 0);
-    kcmap_add_RGB_func ("Velocity: Compensating Tones",
-			  cf_velocity_compensating_tones, 0, 0);
-    kcmap_add_RGB_func ("Compressed Colourmap 3R2G2B",
-			  cf_compressed_colourmap_3r2g2b, 128, 128);
-
-    kcmap_add_RGB_func ("Background", cf_background, 0, 0);
-    kcmap_add_RGB_func ("Heat",       cf_heat,       0, 0);
-    kcmap_add_RGB_func ("Isophot",    cf_isophot,    0, 0);
-    kcmap_add_grey_func ("Mono",       cf_mono,       0, 0);
-    kcmap_add_RGB_func ("Mousse",     cf_mousse,     0, 0);
-    kcmap_add_RGB_func ("Rainbow",    cf_rainbow,    0, 0);
-    kcmap_add_RGB_func ("Random",     cf_random,     0, 0);
-    kcmap_add_RGB_func ("RGB",        cf_rgb,        0, 0);
-    kcmap_add_RGB_func ("Ronekers",   cf_ronekers,   0, 0);
-    kcmap_add_RGB_func ("Smooth",     cf_smooth,     0, 0);
-    kcmap_add_RGB_func ("Staircase",  cf_staircase,  0, 0);
-    kcmap_add_RGB_func ("Velocity Field",  cf_rgb2,  0, 0);
-    kcmap_add_RGB_func ("Mandelbrot", cf_mandelbrot, 0, 0);
-    conn_register_server_protocol ("colourmap_indices", PROTOCOL_VERSION, 0,
-				   register_new_cmap_indices_slave,
-				   ( flag (*) () ) NULL, ( void (*) () ) NULL);
-    conn_register_client_protocol ("colourmap_indices", PROTOCOL_VERSION, 1,
-				   verify_indices_slave_cmap_connection,
-				   register_cmap_indices_connection,
-				   read_cmap_indices,
-				   register_cmap_connection_close);
-    conn_register_server_protocol ("full_colourmap", PROTOCOL_VERSION, 0,
-				   register_new_full_cmap_slave,
-				   ( flag (*) () ) NULL,
-				   ( void (*) () ) NULL);
-    conn_register_client_protocol ("full_colourmap", PROTOCOL_VERSION, 1,
-				   verify_full_slave_cmap_connection,
-				   register_full_cmap_connection,
-				   read_full_cmap,
-				   register_cmap_connection_close);
-}   /*  End Function initialise  */
 
 static struct cmap_func_type *get_cmap_function (char *name)
 /*  This routine will get the named colourmap function
@@ -1596,20 +1599,20 @@ static flag register_new_cmap_indices_slave (Connection connection,void **info)
 	/*  Cannot service requests: tell client  */
 	if (ch_write (channel, &false, 1) < 1)
 	{
-	    (void) fprintf (stderr, "Error writing rejection\t%s\n",
+	    fprintf (stderr, "Error writing rejection\t%s\n",
 			    sys_errlist[errno]);
 	    return (FALSE);
 	}
 	if ( !ch_flush (channel) )
 	{
-	    (void) fprintf (stderr, "Error flushing channel\t%s\n",
+	    fprintf (stderr, "Error flushing channel\t%s\n",
 			    sys_errlist[errno]);
 	}
 	return (FALSE);
     }
     if (ch_write (channel, &true, 1) < 1)
     {
-	(void) fprintf (stderr, "Error writing acceptance\t%s\n",
+	fprintf (stderr, "Error writing acceptance\t%s\n",
 			sys_errlist[errno]);
 	return (FALSE);
     }
@@ -1627,14 +1630,14 @@ static flag register_new_cmap_indices_slave (Connection connection,void **info)
     }
     if ( !ch_flush (channel) )
     {
-	(void) fprintf (stderr, "Error flushing channel\t%s\n",
+	fprintf (stderr, "Error flushing channel\t%s\n",
 			sys_errlist[errno]);
 	return (FALSE);
     }
     /*  Wait for client's response (acceptance or rejection)  */
     if (ch_read (channel, &accepted, 1) < 1)
     {
-	(void) fprintf (stderr, "Error reading acceptance\t%s\n",
+	fprintf (stderr, "Error reading acceptance\t%s\n",
 			sys_errlist[errno]);
 	return (FALSE);
     }
@@ -1646,7 +1649,7 @@ static flag register_new_cmap_indices_slave (Connection connection,void **info)
     /*  Client is happy about this connection: send pixel values  */
     if ( !write_cmap_indices (connection, shareable_colourmap) )
     {
-	(void) fprintf (stderr, "Error writing pixels\n");
+	fprintf (stderr, "Error writing pixels\n");
 	return (FALSE);
     }
     *info = (void *) shareable_colourmap;
@@ -1675,26 +1678,26 @@ static flag register_new_full_cmap_slave (Connection connection, void **info)
 	/*  Cannot service requests: tell client  */
 	if (ch_write (channel, &false, 1) < 1)
 	{
-	    (void) fprintf (stderr, "Error writing rejection\t%s\n",
+	    fprintf (stderr, "Error writing rejection\t%s\n",
 			    sys_errlist[errno]);
 	    return (FALSE);
 	}
 	if ( !ch_flush (channel) )
 	{
-	    (void) fprintf (stderr, "Error flushing channel\t%s\n",
+	    fprintf (stderr, "Error flushing channel\t%s\n",
 			    sys_errlist[errno]);
 	}
 	return (FALSE);
     }
     if (ch_write (channel, &true, 1) < 1)
     {
-	(void) fprintf (stderr, "Error writing acceptance\t%s\n",
+	fprintf (stderr, "Error writing acceptance\t%s\n",
 			sys_errlist[errno]);
 	return (FALSE);
     }
     if ( !write_full_cmap (connection, shareable_colourmap) )
     {
-	(void) fprintf (stderr, "Error writing colourcell definitions\n");
+	fprintf (stderr, "Error writing colourcell definitions\n");
 	return (FALSE);
     }
     *info = (void *) shareable_colourmap;
@@ -1720,17 +1723,17 @@ static flag verify_indices_slave_cmap_connection (void **info)
 
     if (slaveable_colourmap == NULL)
     {
-	(void) fprintf (stderr, "No slaveable colourmap registered\n");
+	fprintf (stderr, "No slaveable colourmap registered\n");
 	return (FALSE);
     }
     if (slaveable_colourmap->master != NULL)
     {
-	(void) fprintf (stderr, "Slaveable colourmap is already a slave\n");
+	fprintf (stderr, "Slaveable colourmap is already a slave\n");
 	return (FALSE);
     }
     if (slaveable_colourmap->software)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Slaveable colourmap is a software colourmap\n");
 	return (FALSE);
     }
@@ -1754,12 +1757,12 @@ static flag verify_full_slave_cmap_connection (void **info)
 
     if (slaveable_colourmap == NULL)
     {
-	(void) fprintf (stderr, "No slaveable colourmap registered\n");
+	fprintf (stderr, "No slaveable colourmap registered\n");
 	return (FALSE);
     }
     if (slaveable_colourmap->master != NULL)
     {
-	(void) fprintf (stderr, "Slaveable colourmap is already a slave\n");
+	fprintf (stderr, "Slaveable colourmap is already a slave\n");
 	return (FALSE);
     }
     *info = (void *) slaveable_colourmap;
@@ -1800,7 +1803,7 @@ static flag register_cmap_indices_connection (Connection connection,
     /*  See if server can cope with it  */
     if (ch_read (channel, &server_happy, 1) < 1)
     {
-	(void) fprintf (stderr, "Error reading server acceptance\t%s\n",
+	fprintf (stderr, "Error reading server acceptance\t%s\n",
 			sys_errlist[errno]);
 	return (FALSE);
     }
@@ -1813,13 +1816,13 @@ static flag register_cmap_indices_connection (Connection connection,
 	and display number it is connected to.  */
     if ( !pio_read32 (channel, &server_display_inet_addr) )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Error reading Internet address of X server of colourmap server\n");
 	return (FALSE);
     }
     if ( !pio_read32 (channel, &server_display_num) )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Error reading display number for colourmap server\n");
 	return (FALSE);
     }
@@ -1836,7 +1839,7 @@ static flag register_cmap_indices_connection (Connection connection,
 	/*  Tell server we are closing this connection: send FALSE  */
 	if (ch_write (channel, &false, 1) < 1)
 	{
-	    (void) fprintf (stderr, "Error writing to connection\t%s\n",
+	    fprintf (stderr, "Error writing to connection\t%s\n",
 			    sys_errlist[errno]);
 	}
 	/*  Close connection: we will try for a more advanced protocol later */
@@ -1845,13 +1848,13 @@ static flag register_cmap_indices_connection (Connection connection,
     /*  We are connected to the same X server: send TRUE  */
     if (ch_write (channel, &true, 1) < 1)
     {
-	(void) fprintf (stderr, "Error writing to connection\t%s\n",
+	fprintf (stderr, "Error writing to connection\t%s\n",
 			sys_errlist[errno]);
 	return (FALSE);
     }
     if ( !ch_flush (channel) )
     {
-	(void) fprintf (stderr, "Error flushing channel\t%s\n",
+	fprintf (stderr, "Error flushing channel\t%s\n",
 			sys_errlist[errno]);
 	return (FALSE);
     }
@@ -1867,8 +1870,8 @@ static flag register_cmap_indices_connection (Connection connection,
     }
     if ( !read_cmap_indices (connection, info) )
     {
-	(void) fprintf (stderr, "Error reading pixels\n");
-	(void) kcmap_change (cmap, cmap->modify_func->name, num_cells, TRUE);
+	fprintf (stderr, "Error reading pixels\n");
+	kcmap_change (cmap, cmap->modify_func->name, num_cells, TRUE);
 	return (FALSE);
     }
     return (TRUE);
@@ -1897,7 +1900,7 @@ static flag register_full_cmap_connection (Connection connection, void **info)
     /*  See if server can cope with it  */
     if (ch_read (channel, &server_happy, 1) < 1)
     {
-	(void) fprintf (stderr, "Error reading server acceptance\t%s\n",
+	fprintf (stderr, "Error reading server acceptance\t%s\n",
 			sys_errlist[errno]);
 	return (FALSE);
     }
@@ -1912,8 +1915,8 @@ static flag register_full_cmap_connection (Connection connection, void **info)
     cmap->modifiable = FALSE;
     if ( !read_full_cmap (connection, info) )
     {
-	(void) fprintf (stderr, "Error reading full colourmap\n");
-	(void) kcmap_change (cmap, cmap->modify_func->name, num_cells, TRUE);
+	fprintf (stderr, "Error reading full colourmap\n");
+	kcmap_change (cmap, cmap->modify_func->name, num_cells, TRUE);
 	return (FALSE);
     }
     return (TRUE);
@@ -1935,7 +1938,7 @@ static void register_cmap_connection_close (Connection connection, void *info)
     VERIFY_COLOURMAP (cmap);
     if (cmap->master != connection)
     {
-	(void) fprintf (stderr, "Invalid connection for colourmap object\n");
+	fprintf (stderr, "Invalid connection for colourmap object\n");
 	a_prog_bug (function_name);
     }
     cmap->master = NULL;
@@ -1947,7 +1950,7 @@ static void register_cmap_connection_close (Connection connection, void *info)
 	m_free ( (char *) cmap->pixel_values );
 	cmap->pixel_values = NULL;
 	cmap->size = 0;
-	(void) kcmap_change (cmap, (char *) NULL, num_cells, TRUE);
+	kcmap_change (cmap, (char *) NULL, num_cells, TRUE);
     }
     /*  Everything deallocated  */
 }   /*  End Function register_cmap_connection_close  */
@@ -1972,7 +1975,7 @@ static flag write_cmap_indices (Connection connection, Kcolourmap cmap)
     /*  Write 4 bytes indicicating how many pixel values are coming  */
     if ( !pio_write32 (channel, (unsigned long) num_pixels) )
     {
-	(void) fprintf (stderr, "Error writing number of pixels\t%s\n",
+	fprintf (stderr, "Error writing number of pixels\t%s\n",
 			sys_errlist[errno]);
 	return (FALSE);
     }
@@ -1981,7 +1984,7 @@ static flag write_cmap_indices (Connection connection, Kcolourmap cmap)
     {
 	if ( !pio_write32 (channel, pixel_values[pixel_count]) )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Error writing pixel value: %u to channel\t%s\n",
 			    pixel_count, sys_errlist[errno]);
 	    return (FALSE);
@@ -1989,7 +1992,7 @@ static flag write_cmap_indices (Connection connection, Kcolourmap cmap)
     }
     if ( !ch_flush (channel) )
     {
-	(void) fprintf (stderr, "Error flushing channel\t%s\n",
+	fprintf (stderr, "Error flushing channel\t%s\n",
 			sys_errlist[errno]);
 	return (FALSE);
     }
@@ -2025,7 +2028,7 @@ static flag read_cmap_indices (Connection connection, void **info)
     /*  Read number of pixel values to read  */
     if (pio_read32 (channel, &pixels_to_read) == FALSE)
     {
-	(void) fprintf (stderr, "Error reading number of pixels to read\t%s\n",
+	fprintf (stderr, "Error reading number of pixels to read\t%s\n",
 			sys_errlist[errno]);
 	return (FALSE);
     }
@@ -2042,7 +2045,7 @@ static flag read_cmap_indices (Connection connection, void **info)
     {
 	if ( !pio_read32 (channel, pixel_values + pixel_count) )
 	{
-	    (void) fprintf (stderr, "Error reading pixel value: %u\t%s\n",
+	    fprintf (stderr, "Error reading pixel value: %u\t%s\n",
 			    pixel_count, sys_errlist[errno]);
 	    m_free ( (char *) pixel_values );
 	    return (FALSE);
@@ -2051,7 +2054,7 @@ static flag read_cmap_indices (Connection connection, void **info)
     m_free ( (char *) cmap->pixel_values );
     cmap->pixel_values = pixel_values;
     cmap->size = pixels_to_read;
-    (void) c_call_callbacks (cmap->resize_list, NULL);
+    c_call_callbacks (cmap->resize_list, NULL);
     return (TRUE);
 }   /*  End Function read_cmap_indices  */
 
@@ -2075,7 +2078,7 @@ static flag write_full_cmap (Connection connection, Kcolourmap cmap)
     dsrw_write_packet (channel, cmap->top_pack_desc, cmap->top_packet);
     if ( !ch_flush (channel) )
     {
-	(void) fprintf (stderr, "Error writing Karma colourmap\t%s\n",
+	fprintf (stderr, "Error writing Karma colourmap\t%s\n",
 			sys_errlist[errno]);
 	return (FALSE);
     }
@@ -2104,7 +2107,7 @@ static flag read_full_cmap (Connection connection, void **info)
     /*  Read a single Karma general data structure  */
     if ( ( pack_desc = dsrw_read_packet_desc (channel) ) == NULL )
     {
-	(void) fprintf (stderr, "Error reading Karma colourmap descriptor\n");
+	fprintf (stderr, "Error reading Karma colourmap descriptor\n");
 	return (FALSE);
     }
     if ( ( packet = ds_alloc_data (pack_desc, TRUE, TRUE) ) == NULL )
@@ -2115,7 +2118,7 @@ static flag read_full_cmap (Connection connection, void **info)
     }
     if ( !dsrw_read_packet (channel, pack_desc, packet) )
     {
-	(void) fprintf (stderr, "Error reading Karma colourmap data\n");
+	fprintf (stderr, "Error reading Karma colourmap data\n");
 	ds_dealloc_packet (pack_desc, packet);
 	return (FALSE);
     }
@@ -2127,14 +2130,14 @@ static flag read_full_cmap (Connection connection, void **info)
 						  (double *) NULL,
 						  (unsigned int) 0) ) == NULL )
     {
-	(void) fprintf (stderr, "Could not find colourmap\n");
+	fprintf (stderr, "Could not find colourmap\n");
 	ds_dealloc_packet (pack_desc, packet);
 	return (FALSE);
     }
     if ( !change_cmap_size (cmap, colourmap_size, colourmap_size, TRUE,
 			    colour_array, pack_desc, packet) )
     {
-	(void) fprintf (stderr, "Could not reallocate colourmap\n");
+	fprintf (stderr, "Could not reallocate colourmap\n");
 	ds_dealloc_packet (pack_desc, packet);
 	return (FALSE);
     }
@@ -2167,19 +2170,19 @@ static void notify_cmap_resize (Kcolourmap cmap)
 						      connection_count) )
 	    == NULL )
 	{
-	    (void) fprintf (stderr, "Error getting connection: %u\n",
+	    fprintf (stderr, "Error getting connection: %u\n",
 			    connection_count);
 	    a_prog_bug (function_name);
 	}
 	if ( ( conn_cmap = (Kcolourmap) conn_get_connection_info (connection) )
 	    == NULL )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "colourmap_indices connection has no colourmap\n");
 	    a_prog_bug (function_name);
 	}
 	if (conn_cmap != cmap) continue;
-	(void) write_cmap_indices (connection, cmap);
+	write_cmap_indices (connection, cmap);
     }
 }   /*  End Function notify_cmap_resize  */
 
@@ -2205,19 +2208,19 @@ static void notify_cmap_modify (Kcolourmap cmap)
 						      connection_count) )
 	    == NULL )
 	{
-	    (void) fprintf (stderr, "Error getting connection: %u\n",
+	    fprintf (stderr, "Error getting connection: %u\n",
 			    connection_count);
 	    a_prog_bug (function_name);
 	}
 	if ( ( conn_cmap = (Kcolourmap) conn_get_connection_info (connection) )
 	    == NULL )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "full_colourmap connection has no colourmap\n");
 	    a_prog_bug (function_name);
 	}
 	if (conn_cmap != cmap) continue;
-	(void) write_full_cmap (connection, cmap);
+	write_full_cmap (connection, cmap);
     }
 }   /*  End Function notify_cmap_modify  */
 
@@ -2275,7 +2278,7 @@ static flag change_cmap_size (Kcolourmap cmap, unsigned int num_cells,
     }
     if (num_cells < min_cells)
     {
-	(void) fprintf (stderr, "num_cells: %u is less than min_cells: %u\n",
+	fprintf (stderr, "num_cells: %u is less than min_cells: %u\n",
 			num_cells, min_cells);
 	a_prog_bug (function_name);
     }
@@ -2341,7 +2344,7 @@ static flag change_cmap_size (Kcolourmap cmap, unsigned int num_cells,
 	    < min_cells )
 	{
 	    /*  Failed  */
-	    (void) fprintf (stderr, "Could not allocate: %u colourcells\n",
+	    fprintf (stderr, "Could not allocate: %u colourcells\n",
 			    num_to_alloc);
 	    m_free ( (char *) pixel_values );
 	    return (FALSE);
@@ -2388,7 +2391,7 @@ static flag change_cmap_size (Kcolourmap cmap, unsigned int num_cells,
     }
     cmap->pixel_values = pixel_values;
     /*  Colourmap has been resized (colours not computed yet)  */
-    if (notify) (void) c_call_callbacks (cmap->resize_list, NULL);
+    if (notify) c_call_callbacks (cmap->resize_list, NULL);
     /*  Transmit this colourmap to any slaves of it  */
     notify_cmap_resize (cmap);
     return (TRUE);
@@ -2432,9 +2435,8 @@ flag *reordering_done;
     m_free ( (char *) array_indices );
     if (num_found != 1)
     {
-	(void) fprintf (stderr,
-			"More than one colourmap in arrayfile: \"%s\"\n",
-			arrayfile);
+	fprintf (stderr, "More than one colourmap in arrayfile: \"%s\"\n",
+		 arrayfile);
 	return (NULL);
     }
     return ( ds-cmap_find_colourmap (multi_desc->headers[0],

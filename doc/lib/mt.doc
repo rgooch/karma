@@ -96,6 +96,17 @@ $RETURNS
     The number of concurrent threads.
 $END
 
+$EXPERIMENTAL_FUNC  mt_num_processors
+$RETURN_TYPE        unsigned int
+$PARAMETER_LIST
+    ()
+$SUMMARY            Get the number of processors available on the system.
+$PURPOSE
+    Get the number of processors available on the system.
+$RETURNS
+    The number of processors available.
+$END
+
 $FUNCTION           mt_launch_job
 $RETURN_TYPE        void
 $PARAMETER_LIST

@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   18-APR-1993
 
-    Last updated by Richard Gooch   27-OCT-1996
+    Last updated by Richard Gooch   8-DEC-1996
 
 */
 
@@ -79,6 +79,10 @@ typedef struct viewableimage_type * ViewableImage;
 #define VIEWIMG_VATT_GREEN_INDEX     8
 #define VIEWIMG_VATT_BLUE_INDEX      9
 #define VIEWIMG_VATT_MULTI_ARRAY     10
+#define VIEWIMG_VATT_DATA_SCALE      11
+#define VIEWIMG_VATT_DATA_OFFSET     12
+#define VIEWIMG_VATT_VALUE_MIN       13
+#define VIEWIMG_VATT_VALUE_MAX       14
 
 
 /*  File:   main.c  */
@@ -88,7 +92,7 @@ EXTERN_FUNCTION (ViewableImage viewimg_create_restr,
 		  array_desc *arr_desc, char *slice,
 		  unsigned int hdim, unsigned int vdim,
 		  unsigned int elem_index, unsigned num_restr,
-		  char **restr_names, double *restr_values) );
+		  CONST char **restr_names, CONST double *restr_values) );
 EXTERN_FUNCTION (ViewableImage viewimg_create, (KWorldCanvas canvas,
 						multi_array *multi_desc,
 						array_desc *arr_desc,
@@ -111,8 +115,8 @@ EXTERN_FUNCTION (ViewableImage viewimg_create_rgb,
 		  array_desc *arr_desc, char *slice, unsigned int hdim,
 		  unsigned int vdim, unsigned int red_index,
 		  unsigned int green_index, unsigned int blue_index,
-		  unsigned num_restr, char **restr_names,
-		  double *restr_values) );
+		  unsigned num_restr, CONST char **restr_names,
+		  CONST double *restr_values) );
 EXTERN_FUNCTION (ViewableImage *viewimg_create_rgb_sequence,
 		 (KWorldCanvas canvas, multi_array *multi_desc,
 		  array_desc *arr_desc, char *cube,
@@ -146,6 +150,9 @@ EXTERN_FUNCTION (void viewimg_get_canvas_attributes,
 EXTERN_FUNCTION (void viewimg_set_canvas_attributes,
 		 (KWorldCanvas canvas, ...) );
 EXTERN_FUNCTION (void viewimg_get_attributes, (ViewableImage vimage, ...) );
+EXTERN_FUNCTION (void viewimg_set_attributes, (ViewableImage vimage, ...) );
+EXTERN_FUNCTION (void viewimg_set_array_attributes,
+		 (ViewableImage *vimages, unsigned int len, ...) );
 EXTERN_FUNCTION (flag viewimg_partial_refresh,
 		 (KWorldCanvas canvas,
 		  unsigned int num_areas, KPixCanvasRefreshArea *areas) );
@@ -161,6 +168,13 @@ EXTERN_FUNCTION (flag viewimg_draw_edit_object, (ViewableImage vimage,
 EXTERN_FUNCTION (void viewimg_create_drag_and_zoom_interface,
 		 (KWorldCanvas canvas) );
 
+/*  File: header.c  */
+EXTERN_FUNCTION (flag viewimg_header_position_func,
+		 (ViewableImage vimage,double x, double y,
+		  void *value, unsigned int event_code,
+		  void *e_info, void **f_info, double x_lin, double y_lin,
+		  unsigned int value_type) );
+
 /*  File: statistics.c  */
 EXTERN_FUNCTION (flag viewimg_statistics_position_func,
 		 (ViewableImage vimage, double x, double y,
@@ -170,6 +184,15 @@ EXTERN_FUNCTION (flag viewimg_statistics_position_func,
 EXTERN_FUNCTION (flag viewimg_statistics_compute,
 		 (ViewableImage vimage,
 		  double lx0, double ly0, double lx1, double ly1) );
+
+/*  File: track.c  */
+EXTERN_FUNCTION (void viewimg_track_compute,
+		 (ViewableImage vimage, void *value, unsigned int value_type,
+		  double x, double y, double x_lin, double y_lin, KwcsAstro ap,
+		  char pix_string[STRING_LENGTH],
+		  char world_string[STRING_LENGTH],
+		  char extra_string[STRING_LENGTH],
+		  unsigned long *x_index, unsigned long *y_index) );
 
 
 #endif /*  KARMA_VIEWIMG_H  */

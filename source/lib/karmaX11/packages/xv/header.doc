@@ -1,0 +1,4 @@
+$SUMMARY          Routines to query X visuals
+$PURPOSE
+    These routines are meant to provide a convenience interface for querying
+    X visuals.

@@ -334,9 +334,8 @@ int main (int argc, char **argv)
 /*  Start up Xt  */   
 
     main_shell = XtVaAppInitialize (&app_context, "Khuei",
-				    NULL, 0,
-				    &argc, argv, fallback_resources,
-				    NULL, 0);
+				    NULL, 0, &argc, argv, fallback_resources,
+				    NULL);
 
 
 /*  Initialise communications  */ 

@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   4-MAY-1996
 
-    Last updated by Richard Gooch   6-MAY-1996
+    Last updated by Richard Gooch   21-NOV-1996
 
 */
 
@@ -71,6 +71,8 @@ typedef struct {
     Bool            showRange;
     Bool            showValue;
     Bool            valueBesideLabel;
+    String          scaledFormat;
+    String          scaledUnit;
     Bool            callbackOnDrag;
     int             initialDelay;
     int             repeatDelay;
@@ -85,6 +87,10 @@ typedef struct {
     int             last_event_code;
     flag            allow_timer;
     int             next_delay;
+    flag            show_raw;
+    flag            show_scaled;
+    double          scale;
+    double          offset;
 } SimpleSliderPart;
 
 typedef struct _SimpleSliderRec {

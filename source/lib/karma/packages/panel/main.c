@@ -79,8 +79,14 @@
     Updated by      Richard Gooch   30-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
 
-    Last updated by Richard Gooch   28-SEP-1996: Created incomplete
+    Updated by      Richard Gooch   28-SEP-1996: Created incomplete
   <panel_put_history_with_stack>.
+
+    Updated by      Richard Gooch   23-NOV-1996: Created experimental
+  <panel_set_extra_comment_string> routine.
+
+    Last updated by Richard Gooch   24-NOV-1996: Created <cleanup_strings> and
+  ensure it's called for string items associated with a group.
 
 
 */
@@ -113,6 +119,7 @@ struct controlpanel_type
 {
     unsigned int magic_number;
     flag group;
+    char *extra_comment_string;
     KPanelItem first_item;
     KPanelItem last_item;
 };
@@ -135,9 +142,6 @@ struct panelitem_type
     /*  Pointer to the next item in the panel  */
     KPanelItem prev;
     KPanelItem next;
-/*
-    void (*func) ();
-*/
 };
 
 typedef struct
@@ -183,6 +187,8 @@ STATIC_FUNCTION (void show_version_func, (char *cmd) );
 STATIC_FUNCTION (void decode_group, (KPanelItem item, char *string,flag add) );
 STATIC_FUNCTION (void show_group, (KPanelItem item, flag screen_display,
 				   FILE *fp, flag verbose) );
+STATIC_FUNCTION (flag cleanup_strings,
+		 (KPanelItem item, KPanelItem length_item) );
 
 
 /*  Public functions follow  */
@@ -211,6 +217,7 @@ KControlPanel panel_create (flag blank)
     }
     panel->magic_number = MAGIC_NUMBER;
     panel->group = FALSE;
+    panel->extra_comment_string = NULL;
     panel->first_item = NULL;
     panel->last_item = NULL;
     if (blank) return (panel);
@@ -283,12 +290,9 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
     KPanelItem item;
     KPanelItem curr_item;
     KPanelItem dup_item;
-    KControlPanel group;
+    KControlPanel group = NULL;  /*  Initialised to keep compiler happy  */
     flag top_of_panel = TRUE;
-    unsigned int count, arr_len;
     unsigned int att_key;
-    char *new_string;
-    char **string_ptr;
     static char function_name[] = "panel_add_item";
 
     va_start (argp, value_ptr);
@@ -406,8 +410,7 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
 	    }
 	    break;
 	  case PIA_CHOICE_STRINGS:
-	    if ( ( item->choice_strings = va_arg (argp, char **) )
-		== NULL )
+	    if ( ( item->choice_strings = va_arg (argp, char **) ) == NULL )
 	    {
 		fprintf (stderr, "NULL choice string array pointer passed\n");
 		a_prog_bug (function_name);
@@ -421,8 +424,7 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
 	    }
 	    break;
 	  case PIA_CHOICE_COMMENTS:
-	    if ( ( item->choice_comments = va_arg (argp, char **) )
-		== NULL )
+	    if ( ( item->choice_comments = va_arg (argp, char **) ) == NULL )
 	    {
 		fprintf (stderr, "NULL choice comment array pointer passed\n");
 		a_prog_bug (function_name);
@@ -545,7 +547,7 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
     }
     /*  Check for valid minimum and maximum  */
     if ( (item->min_value > -TOOBIG) && (item->max_value < TOOBIG) &&
-	(item->min_value >= item->max_value) )
+	 (item->min_value >= item->max_value) )
     {
 	fprintf (stderr, "Maximum value: %e not greater than minimum: %e\n",
 		 item->max_value, item->min_value);
@@ -554,27 +556,16 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
     /*  Make sure we don't reference externally defined strings  */
     if (type == K_VSTRING)
     {
-	arr_len = (item->max_array_length < 1) ? 1 : *item->curr_array_length;
-	string_ptr = (char **) value_ptr;
-	for (count = 0; count < arr_len; ++count)
+	if ( !cleanup_strings (item, item) ) return;
+    }
+    else if (type == PIT_GROUP)
+    {
+	/*  Have to loop through all sub-items of string type  */
+	for (curr_item = group->first_item; curr_item != NULL;
+	     curr_item = curr_item->next)
 	{
-	    if (string_ptr[count] == NULL)
-	    {
-		if ( ( new_string = st_dup ("") ) == NULL )
-		{
-		    m_error_notify (function_name, "string value");
-		    return;
-		}
-	    }
-	    else
-	    {
-		if ( ( new_string = st_dup (string_ptr[count]) ) == NULL )
-		{
-		    m_error_notify (function_name, "string value");
-		    return;
-		}
-	    }
-	    string_ptr[count] = new_string;
+	    if (curr_item->type != K_VSTRING) continue;
+	    if ( !cleanup_strings (curr_item, item) ) return;
 	}
     }
     /*  Add panel item to list  */
@@ -716,12 +707,6 @@ flag panel_process_command_with_stack (char *cmd, flag (*unknown_func) (),
 	    m_free (arg1);
 	    return (TRUE);
 	}
-	if (strcmp (arg1, "?#") == 0)
-	{
-	    /*  Transition period: support  ez_decode  too  */
-	    m_free (arg1);
-	    return ( (*unknown_func) ("?!", fp) );
-	}
 	m_free (arg1);
 	return ( (*unknown_func) (cmd, fp) );
     }
@@ -835,6 +820,29 @@ flag panel_put_history_with_stack (multi_array *multi_desc, flag module_header)
     }
     return (TRUE);
 }   /*  End Function panel_put_history_with_stack  */
+
+/*EXPERIMENTAL_FUNCTION*/
+void panel_set_extra_comment_string (KControlPanel panel, CONST char *string)
+/*  [SUMMARY] Set the extra comment string for a panel.
+    <panel> The control panel.
+    <string> The comment string. The contents are copied.
+    [RETURNS] Nothing.
+*/
+{
+    static char function_name[] = "panel_set_extra_comment_string";
+
+    VERIFY_CONTROLPANEL (panel);
+    if (panel->extra_comment_string != NULL)
+    {
+	m_free (panel->extra_comment_string);
+	panel->extra_comment_string = NULL;
+    }
+    if (string == NULL) return;
+    if ( ( panel->extra_comment_string = st_dup (string) ) == NULL )
+    {
+	m_abort (function_name, "copy of comment string");
+    }
+}   /*  End Function panel_set_extra_comment_string  */
 
 
 /*  Temporary private functions follow (will probably be made public later)  */
@@ -1073,6 +1081,11 @@ static void panel_show_items (KControlPanel panel, flag screen_display,
 	{
 	    fprintf (fp, "\n");
 	}
+    }
+    if ( screen_display && (panel->extra_comment_string != NULL) )
+    {
+	fputs (panel->extra_comment_string, fp);
+	fputc ('\n', fp);
     }
 }   /*  End Function panel_show_items  */
 
@@ -1931,7 +1944,7 @@ static void show_group (KPanelItem item, flag screen_display, FILE *fp,
 	/*  Show group items  */
 	for (gitem = group->first_item; gitem != NULL; gitem = gitem->next)
 	{
-	    fprintf (fp, "  %-9s", gitem->name);
+	    fprintf (fp, " %-15s", gitem->name);
 	}
 	fprintf (fp, "\n");
     }
@@ -1951,93 +1964,93 @@ static void show_group (KPanelItem item, flag screen_display, FILE *fp,
 	    switch (gitem->type)
 	    {
 	      case K_FLOAT:
-		fprintf (fp, "  %-9.3e", *(float *) value_ptr);
+		fprintf (fp, " %-15.8e", *(float *) value_ptr);
 		break;
 	      case K_DOUBLE:
-		fprintf (fp, "  %-9.3e", *(double *) value_ptr);
+		fprintf (fp, " %-15.8e", *(double *) value_ptr);
 		break;
 	      case K_BYTE:
-		fprintf (fp, "  %-9d", *(char *) value_ptr);
+		fprintf (fp, " %-15d", *(char *) value_ptr);
 		break;
 	      case K_INT:
-		fprintf (fp, "  %-9d", *(int *) value_ptr);
+		fprintf (fp, " %-15d", *(int *) value_ptr);
 		break;
 	      case K_SHORT:
-		fprintf (fp, "  %-9d", *(short *) value_ptr);
+		fprintf (fp, " %-15d", *(short *) value_ptr);
 		break;
 	      case K_COMPLEX:
-		fprintf ( fp, "  %-4e %-4e",
+		fprintf ( fp, " %-7e %-7e",
 			  *(float *) value_ptr,
 			  *( (float *) value_ptr + 1 ) );
 		break;
 	      case K_DCOMPLEX:
-		fprintf ( fp, "  %-4e %-4e",
+		fprintf ( fp, " %-7e %-7e",
 			  *(double *) value_ptr,
 			  *( (double *) value_ptr + 1 ) );
 		break;
 	      case K_BCOMPLEX:
-		fprintf ( fp, "  %-4d %-4d",
+		fprintf ( fp, " %-7d %-7d",
 			  *(char *) value_ptr,
 			  *( (char *) value_ptr + 1 ) );
 		break;
 	      case K_ICOMPLEX:
-		fprintf ( fp, "  %-4d %-4d",
+		fprintf ( fp, " %-7d %-7d",
 			  *(int *) value_ptr,
 			  *( (int *) value_ptr + 1 ) );
 		break;
 	      case K_SCOMPLEX:
-		fprintf ( fp, "  %-4d %-4d",
+		fprintf ( fp, " %-7d %-7d",
 			  *(short *) value_ptr,
 			  *( (short *) value_ptr + 1 ) );
 		break;
 	      case K_LONG:
-		fprintf (fp, "  %-9ld", *(long *) value_ptr);
+		fprintf (fp, " %-15ld", *(long *) value_ptr);
 		break;
 	      case K_LCOMPLEX:
-		fprintf ( fp, "  %-4ld %-4ld",
+		fprintf ( fp, " %-7ld %-7ld",
 			  *(long *) value_ptr,
 			  *( (long *) value_ptr + 1 ) );
 		break;
 	      case K_UBYTE:
-		fprintf (fp, "  %-9u", *(unsigned char *) value_ptr);
+		fprintf (fp, " %-15u", *(unsigned char *) value_ptr);
 		break;
 	      case K_UINT:
-		fprintf (fp, "  %-9u", *(unsigned int *) value_ptr);
+		fprintf (fp, " %-15u", *(unsigned int *) value_ptr);
 		break;
 	      case K_USHORT:
-		fprintf (fp, "  %-9u", *(unsigned short *) value_ptr);
+		fprintf (fp, " %-15u", *(unsigned short *) value_ptr);
 		break;
 	      case K_ULONG:
-		fprintf (fp, "  %-9lu", *(unsigned long *) value_ptr);
+		fprintf (fp, " %-15lu", *(unsigned long *) value_ptr);
 		break;
 	      case K_UBCOMPLEX:
-		fprintf ( fp, "  %-4u %-4u",
+		fprintf ( fp, " %-7u %-7u",
 			  *(unsigned char *) value_ptr,
 			  *( (unsigned char *) value_ptr + 1 ) );
 		break;
 	      case K_UICOMPLEX:
-		fprintf ( fp, "  %-4u %-4u",
+		fprintf ( fp, " %-7u %-7u",
 			  *(unsigned int *) value_ptr,
 			  *( (unsigned int *) value_ptr + 1 ) );
 		break;
 	      case K_USCOMPLEX:
-		fprintf ( fp, "  %-4u %-4u",
+		fprintf ( fp, " %-7u %-7u",
 			  *(unsigned short *) value_ptr,
 			  *( (unsigned short *) value_ptr + 1 ) );
 		break;
 	      case K_ULCOMPLEX:
-		fprintf ( fp, "  %-4lu %-4lu",
+		fprintf ( fp, " %-7lu %-7lu",
 			  *(unsigned long *) value_ptr,
 			  *( (unsigned long *) value_ptr + 1 ) );
 		break;
 	      case K_VSTRING:
 		sprintf (txt, "\"%s\"", *(char **) value_ptr);
-		fprintf (fp, "  %-9s", txt);
+		fprintf (fp, " %-15s", txt);
 		break;
 	      case K_FSTRING:
 		fstring = (FString *) value_ptr;
 		sprintf (txt, "\"%s\"", fstring->string);
-		fprintf (fp, "  %-9s", txt);
+		fprintf (fp, " %-15s", txt);
 		break;
 	      default:
 		fprintf (stderr, "Illegal panel item type: %u\n", item->type);
@@ -2128,3 +2141,41 @@ static void decode_group (KPanelItem item, char *string, flag add)
     }
     *item->curr_array_length = array_count;
 }   /*  End Function decode_group  */
+
+static flag cleanup_strings (KPanelItem item, KPanelItem length_item)
+/*  [SUMMARY] Make local copies of strings.
+    <item> The panel item.
+    <length_item> The panel item containing length information.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    unsigned int count, arr_len;
+    char *new_string;
+    char **string_ptr;
+    static char function_name[] = "__panel_cleanup_strings";
+
+    arr_len = (length_item->max_array_length <
+	       1) ? 1 : *length_item->curr_array_length;
+    string_ptr = (char **) item->value_ptr;
+    for (count = 0; count < arr_len; ++count)
+    {
+	if (string_ptr[count] == NULL)
+	{
+	    if ( ( new_string = st_dup ("") ) == NULL )
+	    {
+		m_error_notify (function_name, "string value");
+		return (FALSE);
+	    }
+	}
+	else
+	{
+	    if ( ( new_string = st_dup (string_ptr[count]) ) == NULL )
+	    {
+		m_error_notify (function_name, "string value");
+		return (FALSE);
+	    }
+	}
+	string_ptr[count] = new_string;
+    }
+    return (TRUE);
+}   /*  End Function cleanup_strings  */

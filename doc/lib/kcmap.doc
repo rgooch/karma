@@ -8,6 +8,17 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
+$EXPERIMENTAL_FUNC  kcmap_initialise
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    ()
+$SUMMARY            This routine will initialise the package.
+$PURPOSE
+    This routine will initialise the package.
+$RETURNS
+    Nothing.
+$END
+
 $FUNCTION           kcmap_va_create
 $RETURN_TYPE        Kcolourmap
 $PARAMETER_LIST
@@ -394,7 +405,8 @@ $PURPOSE
 $PARAMETER          cmap :
     The colourmap object.
 $PARAMETER          size :
-    The routine will write the size of the colourmap here.
+    The routine will write the size of the colourmap here. This may be
+    NULL.
 $RETURNS
     A pointer to a dynamically allocated array. This must be freed
     with <-m_free->. On failure it returns NULL.

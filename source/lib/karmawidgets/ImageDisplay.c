@@ -150,7 +150,7 @@
     Updated by      Richard Gooch   15-AUG-1996: Made use of improved
   dialogpopup widget when saving foreign data.
 
-    Updated by      Richard Gooch   15-SEP-1996: Made use of new <kwin_xutil_*>
+    Updated by      Richard Gooch   15-SEP-1996: Made use of new <xv_*>
   package.
 
     Updated by      Richard Gooch   28-SEP-1996: Added export of entire dataset
@@ -162,7 +162,16 @@
     Updated by      Richard Gooch   21-OCT-1996: Update magnifierPseudoCanvas
   in <region_cbk>.
 
-    Last updated by Richard Gooch   22-OCT-1996: Added statistics reporting.
+    Updated by      Richard Gooch   22-OCT-1996: Added statistics reporting.
+
+    Updated by      Richard Gooch   6-NOV-1996: Copied XkwNforceNewCmap
+  resource for magnifier canvases to be the same as their corresponding main
+  canvases.
+
+    Updated by      Richard Gooch   10-NOV-1996: Made use of new attributes for
+  ViewableImage objects to override the canvas intensity range.
+
+    Last updated by Richard Gooch   30-NOV-1996: Added header display.
 
 
 */
@@ -184,6 +193,7 @@
 #include <karma_xtmisc.h>
 #include <karma_dsxfr.h>
 #include <karma_kwin.h>
+#include <karma_xv.h>
 #include <karma_xc.h>
 #include <karma_ch.h>
 #include <karma_st.h>
@@ -406,6 +416,7 @@ static void ImageDisplay__Initialise (Widget Request, Widget New)
     new->imageDisplay.cmapwinpopup_direct = NULL;
     new->imageDisplay.cmap_btn = NULL;
     new->imageDisplay.set_canvases = FALSE;
+    new->imageDisplay.num_unrealised = 0;
     new->imageDisplay.magnifier_pseudo_canvas = NULL;
     new->imageDisplay.magnifier_direct_canvas = NULL;
     new->imageDisplay.magnifier_true_canvas = NULL;
@@ -453,8 +464,7 @@ static void ImageDisplay__Initialise (Widget Request, Widget New)
     XtAddCallback (files_btn, XtNcallback, xtmisc_popup_cbk, filewin);
     /*  A bit of buggerising is required to setup the colourmap popup button or
 	menu  */
-    kwin_xutil_get_visuals (screen, &pseudocolour_visual, NULL,
-			    &directcolour_visual);
+    xv_get_visuals (screen, &pseudocolour_visual, NULL, &directcolour_visual);
     if ( (pseudocolour_visual == NULL) && (directcolour_visual == NULL) )
     {
 	left_widget = files_btn;
@@ -606,6 +616,7 @@ static void ImageDisplay__Initialise (Widget Request, Widget New)
     mag_popup = XtVaCreatePopupShell ("magnifierShell",
 				      topLevelShellWidgetClass, New,
 				      NULL);
+    new->imageDisplay.magnifier_popup = mag_popup;
     XtAddCallback (mag_open_btn, XtNcallback, xtmisc_popup_cbk, mag_popup);
     mag_form = XtVaCreateManagedWidget ("topform", formWidgetClass, mag_popup,
 					NULL);
@@ -642,7 +653,6 @@ static void ImageDisplay__Initialise (Widget Request, Widget New)
 	XtRealizeWidget (shell);
 	XtPopup (shell, XtGrabNone);
     }
-    XtRealizeWidget (mag_popup);
 }   /*  End Function Initialise  */
 
 static Boolean ImageDisplay__SetValues (Widget Current, Widget Request,
@@ -666,7 +676,7 @@ static Boolean ImageDisplay__SetValues (Widget Current, Widget Request,
 			    (unsigned int) new->imageDisplay.cmapSize, TRUE) )
 	{
 	    fprintf (stderr, "Error resizing colourmap to: %d cells\n",
-			    new->imageDisplay.cmapSize);
+		     new->imageDisplay.cmapSize);
 	    new->imageDisplay.cmapSize = current->imageDisplay.cmapSize;
 	}
     }
@@ -901,7 +911,7 @@ static void ImageDisplay__canvas_realise_cbk (Widget w, XtPointer client_data,
     if (verbose)
     {
 	fprintf ( stderr, "%s: visual: %p visualID: %#lx\n",
-			function_name, visual, XVisualIDFromVisual (visual) );
+		  function_name, visual, XVisualIDFromVisual (visual) );
     }
     /*  Visual-specific work  */
     if (w == pseudo_cnvs)
@@ -981,6 +991,9 @@ static void ImageDisplay__canvas_realise_cbk (Widget w, XtPointer client_data,
 						  viewimg_statistics_position_func,
 						  NULL);
 	}
+	viewimg_register_position_event_func (*worldcanvas,
+					      viewimg_header_position_func,
+					      NULL);
 	viewimg_set_canvas_attributes (*worldcanvas,
 				       VIEWIMG_ATT_MAINTAIN_ASPECT, TRUE,
 				       VIEWIMG_ATT_ALLOW_TRUNCATION, TRUE,
@@ -1038,6 +1051,17 @@ static void ImageDisplay__canvas_realise_cbk (Widget w, XtPointer client_data,
 				       top->imageDisplay.autoIntensityScale,
 				       VIEWIMG_ATT_END);
     }
+    /*  Finally realise the magnifier popup if this was the last of the
+	unmagnified canvases to realise. Of course, it could have been realised
+	back in the Initialise method, but I started doing it this way do solve
+	a problem that no longer exists. It's kind of cuter this way anyway  */
+    if (top->imageDisplay.num_unrealised == 0)
+    {
+	fprintf (stderr, "%s: spurious realise\n", function_name);
+	return;
+    }
+    if (--top->imageDisplay.num_unrealised > 0) return;
+    XtRealizeWidget (top->imageDisplay.magnifier_popup);
 }   /*  End Function canvas_realise_cbk   */
 
 static void ImageDisplay__magnifier_canvas_realise_cbk (Widget w,
@@ -1080,7 +1104,7 @@ static void ImageDisplay__magnifier_canvas_realise_cbk (Widget w,
     if (verbose)
     {
 	fprintf ( stderr, "%s: visual: %p visualID: %#lx\n",
-			function_name, visual, XVisualIDFromVisual (visual) );
+		  function_name, visual, XVisualIDFromVisual (visual) );
     }
     /*  Visual-specific work  */
     if (w == top->imageDisplay.magnifier_pseudo_canvas)
@@ -1236,9 +1260,11 @@ static void region_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 /*  This is the region callback.
 */
 {
+    ViewableImage vimage;
     KWorldCanvas vc;
     KPixCanvas pc;
-    flag visible;
+    flag visible, truecolour;
+    double min, max;
     DataclipRegions *regions = (DataclipRegions *) call_data;
     ImageDisplayWidget top = (ImageDisplayWidget) client_data;
     static char function_name[] = "ImageDisplayWidget::region_cbk";
@@ -1259,6 +1285,49 @@ static void region_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 			       CANVAS_ATT_VALUE_MIN, regions->minima[0],
 			       CANVAS_ATT_VALUE_MAX, regions->maxima[0],
 			       CANVAS_ATT_END);
+	if ( ( vimage = viewimg_get_active (top->imageDisplay.pseudoCanvas) )
+	     != NULL )
+	{
+	    viewimg_get_attributes (vimage,
+				    VIEWIMG_VATT_TRUECOLOUR, &truecolour,
+				    VIEWIMG_VATT_END);
+	    if (truecolour) vimage = NULL;
+	}
+	if (vimage != NULL)
+	{
+	    viewimg_get_attributes (vimage,
+				    VIEWIMG_VATT_VALUE_MIN, &min,
+				    VIEWIMG_VATT_VALUE_MAX, &max,
+				    VIEWIMG_VATT_END);
+	    min = (min < TOOBIG) ? regions->minima[0] : TOOBIG;
+	    max = (max < TOOBIG) ? regions->maxima[0] : TOOBIG;
+	    viewimg_set_attributes (vimage,
+				    VIEWIMG_VATT_VALUE_MIN, min,
+				    VIEWIMG_VATT_VALUE_MAX, max,
+				    VIEWIMG_VATT_END);
+	}
+	if ( ( vimage =
+	       viewimg_get_active (top->imageDisplay.magnifierPseudoCanvas) )
+	     != NULL )
+	{
+	    viewimg_get_attributes (vimage,
+				    VIEWIMG_VATT_TRUECOLOUR, &truecolour,
+				    VIEWIMG_VATT_END);
+	    if (truecolour) vimage = NULL;
+	}
+	if (vimage != NULL)
+	{
+	    viewimg_get_attributes (vimage,
+				    VIEWIMG_VATT_VALUE_MIN, &min,
+				    VIEWIMG_VATT_VALUE_MAX, &max,
+				    VIEWIMG_VATT_END);
+	    min = (min < TOOBIG) ? regions->minima[0] : TOOBIG;
+	    max = (max < TOOBIG) ? regions->maxima[0] : TOOBIG;
+	    viewimg_set_attributes (vimage,
+				    VIEWIMG_VATT_VALUE_MIN, min,
+				    VIEWIMG_VATT_VALUE_MAX, max,
+				    VIEWIMG_VATT_END);
+	}
 	if (top->imageDisplay.pseudoCanvas == vc)
 	{
 	    if ( !kwin_resize (canvas_get_pixcanvas (vc), TRUE, 0, 0, 0, 0) )
@@ -1282,6 +1351,50 @@ static void region_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 			       CANVAS_ATT_VALUE_MIN, regions->minima[0],
 			       CANVAS_ATT_VALUE_MAX, regions->maxima[0],
 			       CANVAS_ATT_END);
+	if ( ( vimage =
+	       viewimg_get_active (top->imageDisplay.pseudoCanvasLeft) )
+	     != NULL )
+	{
+	    viewimg_get_attributes (vimage,
+				    VIEWIMG_VATT_TRUECOLOUR, &truecolour,
+				    VIEWIMG_VATT_END);
+	    if (truecolour) vimage = NULL;
+	}
+	if (vimage != NULL)
+	{
+	    viewimg_get_attributes (vimage,
+				    VIEWIMG_VATT_VALUE_MIN, &min,
+				    VIEWIMG_VATT_VALUE_MAX, &max,
+				    VIEWIMG_VATT_END);
+	    min = (min < TOOBIG) ? regions->minima[0] : TOOBIG;
+	    max = (max < TOOBIG) ? regions->maxima[0] : TOOBIG;
+	    viewimg_set_attributes (vimage,
+				    VIEWIMG_VATT_VALUE_MIN, min,
+				    VIEWIMG_VATT_VALUE_MAX, max,
+				    VIEWIMG_VATT_END);
+	}
+	if ( ( vimage =
+	       viewimg_get_active (top->imageDisplay.pseudoCanvasRight) )
+	     != NULL )
+	{
+	    viewimg_get_attributes (vimage,
+				    VIEWIMG_VATT_TRUECOLOUR, &truecolour,
+				    VIEWIMG_VATT_END);
+	    if (truecolour) vimage = NULL;
+	}
+	if (vimage != NULL)
+	{
+	    viewimg_get_attributes (vimage,
+				    VIEWIMG_VATT_VALUE_MIN, &min,
+				    VIEWIMG_VATT_VALUE_MAX, &max,
+				    VIEWIMG_VATT_END);
+	    min = (min < TOOBIG) ? regions->minima[0] : TOOBIG;
+	    max = (max < TOOBIG) ? regions->maxima[0] : TOOBIG;
+	    viewimg_set_attributes (vimage,
+				    VIEWIMG_VATT_VALUE_MIN, min,
+				    VIEWIMG_VATT_VALUE_MAX, max,
+				    VIEWIMG_VATT_END);
+	}
     }
 }   /*  End Function region_cbk   */
 
@@ -1425,12 +1538,18 @@ static Kcolourmap get_colourmap (ImageDisplayWidget w, Visual *visual,
 	    fprintf (stderr, "Error creating main colourmap\n");
 	    a_prog_bug (function_name);
 	}
+	if (w->imageDisplay.verbose)
+	{
+	    fprintf (stderr,
+		     "%s: created Karma colourmap: %p from X cmap: 0x%lx\n",
+		     function_name, kcmap, xcmap);
+	}
 	w->imageDisplay.pseudo_cmap = kcmap;
 	num_ccels = kcmap_get_pixels (kcmap, &pixel_values);
 	if (verbose)
 	{
 	    fprintf (stderr, "%s: num colours for PseudoColour: %u\n",
-			    function_name, num_ccels);
+		     function_name, num_ccels);
 	}
 	colourmapwinpopup = XtVaCreatePopupShell
 	    ("pseudoCmapwinpopup", cmapwinpopupWidgetClass, (Widget) w,
@@ -1471,7 +1590,7 @@ static Kcolourmap get_colourmap (ImageDisplayWidget w, Visual *visual,
     if (verbose)
     {
 	fprintf (stderr, "%s: num colours for DirectColour: %u\n",
-			function_name, num_ccels);
+		 function_name, num_ccels);
     }
     colourmapwinpopup = XtVaCreatePopupShell
 	("directCmapwinpopup", cmapwinpopupWidgetClass, (Widget) w,
@@ -1502,6 +1621,7 @@ static Widget handle_canvas (ImageDisplayWidget w, Widget canvas,
 {
     flag map;
     unsigned long foreground_pixel;
+    Bool force_cmap;
     Widget mag_canvas;
     Colormap xcmap;
     Visual *visual;
@@ -1515,10 +1635,12 @@ static Widget handle_canvas (ImageDisplayWidget w, Widget canvas,
 		   NULL);
     XtAddCallback (canvas, XkwNrealiseCallback,
 		   ImageDisplay__canvas_realise_cbk, (XtPointer) w);
+    ++w->imageDisplay.num_unrealised;
     XtVaGetValues (canvas,
 		   XtNforeground, &foreground_pixel,
 		   XtNvisual, &visual,
 		   XtNcolormap, &xcmap,
+		   XkwNforceNewCmap, &force_cmap,
 		   NULL);
     if (form == NULL) return (NULL);
     mag_canvas = XtVaCreateManagedWidget (XtName (canvas), canvasWidgetClass,
@@ -1536,6 +1658,7 @@ static Widget handle_canvas (ImageDisplayWidget w, Widget canvas,
 					  XtNmappedWhenManaged, map,
 					  XtNborderWidth, 0,
 					  XkwNsilenceUnconsumed, True,
+					  XkwNforceNewCmap, force_cmap,
 					  NULL);
     XtAddCallback (mag_canvas, XkwNrealiseCallback,
 		   ImageDisplay__magnifier_canvas_realise_cbk, (XtPointer) w);
@@ -1572,13 +1695,13 @@ void XkwImageDisplayRefresh (Widget W, flag clear)
 	canvas_resize (w->imageDisplay.pseudoCanvasRight, NULL, clear);
     }
     else if ( (vc == w->imageDisplay.directCanvasLeft) ||
-	 (vc == w->imageDisplay.directCanvasRight) )
+	      (vc == w->imageDisplay.directCanvasRight) )
     {
 	canvas_resize (w->imageDisplay.directCanvasLeft, NULL, clear);
 	canvas_resize (w->imageDisplay.directCanvasRight, NULL, clear);
     }
     else if ( (vc == w->imageDisplay.trueCanvasLeft) ||
-	 (vc == w->imageDisplay.trueCanvasRight) )
+	      (vc == w->imageDisplay.trueCanvasRight) )
     {
 	canvas_resize (w->imageDisplay.trueCanvasLeft, NULL, clear);
 	canvas_resize (w->imageDisplay.trueCanvasRight, NULL, clear);

@@ -209,11 +209,9 @@ char *m_alloc (uaddr size)
 	ptr = (char *) &test_val;
 	if (*ptr != -127)
 	{
-	    (void) fprintf (stderr,
-			    "Type:  char  is not a proper signed type\n");
-	    (void) fprintf (stderr,
-			    "Library should be recompiled with appropriate");
-	    (void) fprintf (stderr, " flag. Exiting.\n");
+	    fprintf (stderr, "Type:  char  is not a proper signed type\n");
+	    fprintf (stderr, "Library should be recompiled with appropriate");
+	    fprintf (stderr, " flag. Exiting.\n");
 	    exit (RV_UNDEF_ERROR);
 	}
     }
@@ -225,21 +223,18 @@ char *m_alloc (uaddr size)
 	if ( ( ptr = CHAR_MALLOC (size) ) == NULL )
 	{
 	    if ( !debug_required () ) return (NULL);
-	    (void) fprintf (stderr, "Allocation failure for: %lu bytes\n",
-			    size);
+	    fprintf (stderr, "Allocation failure for: %lu bytes\n", size);
 	    return (NULL);
 	}
 	return (ptr);
     }
-    (void) m_verify_memory_integrity (FALSE);
+    m_verify_memory_integrity (FALSE);
     pad_bytes = MIN_HEAD_SIZE % MIN_BOUNDARY_SIZE;
     if (pad_bytes > 0) pad_bytes = MIN_BOUNDARY_SIZE - pad_bytes;
     tot_head_size = MIN_HEAD_SIZE + pad_bytes;
     if ( ( ptr = CHAR_MALLOC (tot_head_size + size + TAIL_SIZE) ) == NULL )
     {
-	(void) fprintf (stderr,
-			"Unable to allocate memory, size = %lu bytes\n",
-			size);
+	fprintf (stderr, "Unable to allocate memory, size = %lu bytes\n",size);
 	return (NULL);
     }
     header = (struct mem_header *) ptr;
@@ -260,8 +255,8 @@ char *m_alloc (uaddr size)
     total_allocated += size;
     if ( debug_required () )
     {
-	(void) fprintf (stderr, "Allocated: %-20lu total: %-20lu ptr: %p\n",
-			size, total_allocated, ptr + tot_head_size);
+	fprintf (stderr, "Allocated: %-20lu total: %-20lu ptr: %p\n",
+		 size, total_allocated, ptr + tot_head_size);
     }
     return (ptr + tot_head_size);
 }   /*  End Function m_alloc  */
@@ -287,18 +282,18 @@ void m_free (char *ptr)
     /*  Check fast flag  */
     if (ptr == NULL)
     {
-	(void) fprintf (stderr, "NULL pointer passed\n");
+	fprintf (stderr, "NULL pointer passed\n");
 	prog_bug (function_name);
     }
     if ( fast_alloc_required () )
     {
-	(void) free (ptr);
+	free (ptr);
 	return;
     }
 #ifndef MACHINE_crayPVP  /*  I might manage to get away with this  */
     if ( (unsigned long) ptr % MIN_BOUNDARY_SIZE != 0 )
     {
-	(void) fprintf (stderr, "Non aligned block: %p\n", ptr);
+	fprintf (stderr, "Non aligned block: %p\n", ptr);
 	prog_bug (function_name);
     }
 #endif
@@ -309,8 +304,7 @@ void m_free (char *ptr)
     if (*(unsigned int *) (ptr - HEAD_SIZE) != HEAD_MAGIC_NUMBER)
     {
 	trashed = TRUE;
-	(void) fprintf (stderr, "Invalid check field in front of block: %p\n",
-			ptr);
+	fprintf (stderr, "Invalid check field in front of block: %p\n", ptr);
     }
     tail_ptr = (unsigned char *) ptr + (*header).size;
     if ( (tail_ptr[0] != TAIL_MAGIC_NUMBER0) ||
@@ -319,29 +313,27 @@ void m_free (char *ptr)
 	(tail_ptr[3] != TAIL_MAGIC_NUMBER3) )
     {
 	trashed = TRUE;
-	(void) fprintf (stderr, "Invalid check field after block: %p\n", ptr);
+	fprintf (stderr, "Invalid check field after block: %p\n", ptr);
     }
     /*  The order of the test below is significant  */
     if ( (m_verify_memory_integrity (trashed) < 1) && trashed )
     {
-	(void) fprintf (stderr, "Check of all known blocks is fine: maybe ");
-	(void) fprintf (stderr, "block at: %p does not exist?\n", ptr);
+	fprintf (stderr, "Check of all known blocks is fine: maybe ");
+	fprintf (stderr, "block at: %p does not exist?\n", ptr);
     }
     if (trashed)
     {
-	(void) fprintf (stderr,
-			"Attempted free of block at: %p ignored for purposes",
-			ptr);
-	(void) fprintf (stderr, " of total allocation count\n");
+	fprintf (stderr, "Attempted free of block at: %p ignored for purposes",
+		 ptr);
+	fprintf (stderr, " of total allocation count\n");
     }
     else
     {
 	total_allocated -= (*header).size;
 	if ( debug_required () )
 	{
-	    (void) fprintf (stderr,
-			    "Freed    : %-20lu total: %-20lu ptr: %p\n",
-			    (*header).size, total_allocated, ptr);
+	    fprintf (stderr, "Freed    : %-20lu total: %-20lu ptr: %p\n",
+		     (*header).size, total_allocated, ptr);
 	}
     }
     /*  Remove from list  */
@@ -363,7 +355,7 @@ void m_free (char *ptr)
     tail_ptr[2] = 0;
     tail_ptr[3] = 0;
     (*header).size = 0;
-    (void) free ( (char *) header );
+    free ( (char *) header );
 }   /*  End Function m_free  */
 
 /*PUBLIC_FUNCTION*/
@@ -374,9 +366,8 @@ void m_error_notify (char *function_name, char *purpose)
     [RETURNS] Nothing.
 */
 {
-    (void) fprintf (stderr,
-		    "Error allocating memory for: %s in function: %s\n",
-		    purpose, function_name);
+    fprintf (stderr, "Error allocating memory for: %s in function: %s\n",
+	     purpose, function_name);
 }   /*  End Function m_error_notify   */
 
 /*PUBLIC_FUNCTION*/
@@ -391,18 +382,17 @@ void m_abort (char *name, char *reason)
 
     if (name == NULL)
     {
-	(void) fprintf (stderr, "Parameter name is NULL\n");
+	fprintf (stderr, "Parameter name is NULL\n");
 	prog_bug (function_name);
     }
     if (reason == NULL)
     {
-	(void) fprintf (stderr, "Parameter reason is NULL\n");
+	fprintf (stderr, "Parameter reason is NULL\n");
 	prog_bug (function_name);
     }
-    (void) fprintf (stderr,
-		    "Error allocating memory for: %s  for function: %s%c\n",
-		    reason, name, BEL);
-    (void) fprintf (stderr, "Aborting.\n");
+    fprintf (stderr, "Error allocating memory for: %s  for function: %s%c\n",
+	     reason, name, BEL);
+    fprintf (stderr, "Aborting.\n");
     exit (RV_MEM_ERROR);
 }   /*  End Function m_abort  */  
 
@@ -436,8 +426,7 @@ unsigned int m_verify_memory_integrity (flag force)
 	{
 	    max_check_interval = atoi (env);
 	    check_cycle = max_check_interval;
-	    (void) fprintf (stderr, "Memory check interval: %u\n",
-			    max_check_interval);
+	    fprintf (stderr, "Memory check interval: %u\n",max_check_interval);
 	}
     }
     if (!force)
@@ -474,25 +463,24 @@ unsigned int m_verify_memory_integrity (flag force)
 	}
 	if ( (front_trashed || back_trashed) && !printed_preamble )
 	{
-	    (void)fprintf(stderr,
-			  "Overwriting past memory block bounds has occurred\n");
-	    (void) fprintf (stderr,
-			    "List of blocks with corrupted front and back guards follows:\n\n");
+	    fprintf (stderr,
+		     "Overwriting past memory block bounds has occurred\n");
+	    fprintf (stderr,
+		     "List of blocks with corrupted front and back guards follows:\n\n");
 	    printed_preamble = TRUE;
 	}
 	if (front_trashed || back_trashed)
 	{
-	    (void) fprintf (stderr,
-			    "Block at: %p size: %-20lufront %-12sback %s\n",
-			    ptr + tot_head_size, (*header).size,
-			    front_trashed ? "corrupted" : "untouched",
-			    back_trashed ? "corrupted" : "untouched");
+	    fprintf (stderr, "Block at: %p size: %-20lufront %-12sback %s\n",
+		     ptr + tot_head_size, (*header).size,
+		     front_trashed ? "corrupted" : "untouched",
+		     back_trashed ? "corrupted" : "untouched");
 	    ++num_bad_blocks;
 	}
     }
     if (num_bad_blocks > 0)
     {
-	(void) fprintf (stderr, "Aborting.\n");
+	fprintf (stderr, "Aborting.\n");
 	abort ();
     }
     UNLOCK;
@@ -504,9 +492,8 @@ unsigned int m_verify_memory_integrity (flag force)
 
 static void prog_bug (char *function_name)
 {
-    (void) fprintf (stderr, "Program bug noted in function: %s\n",
-		    function_name);
-    (void) fprintf (stderr, "Aborting.%c\n", BEL);
+    fprintf (stderr, "Program bug noted in function: %s\n", function_name);
+    fprintf (stderr, "Aborting.%c\n", BEL);
     abort ();
 }   /*  End Function prog_bug   */
 
@@ -538,15 +525,15 @@ static int string_icmp (char *string1, char *string2)
     {
 	m_abort (function_name, "copy of string1");
     }
-    (void) strcpy (str1, string1);
-    (void) string_upr (str1);
+    strcpy (str1, string1);
+    string_upr (str1);
 
     if ( ( str2 = CHAR_MALLOC (strlen (string2) + 1) ) == NULL )
     {
 	m_abort (function_name, "copy of string2");
     }
-    (void) strcpy (str2, string2);
-    (void) string_upr (str2);
+    strcpy (str2, string2);
+    string_upr (str2);
     ret_value = strcmp (str1, str2);
     free (str1);
     free (str2);
@@ -588,11 +575,10 @@ static flag debug_required ()
     checked = TRUE;
     /*  Determine if debug needed  */
     if ( ( ( env = getenv ("M_ALLOC_DEBUG") ) != NULL ) &&
-	(string_icmp (env, "TRUE") == 0) )
+	 (string_icmp (env, "TRUE") == 0) )
     {
 	debug = TRUE;
-	(void) fprintf (stderr,
-			"Running m_alloc and m_free with debugging\n");
+	fprintf (stderr, "Running m_alloc and m_free with debugging\n");
     }
     UNLOCK;
     return (debug);
@@ -617,11 +603,10 @@ static flag fast_alloc_required ()
     checked = TRUE;
     /*  Determine if fast alloc needed  */
     if ( ( ( env = getenv ("M_ALLOC_FAST") ) != NULL ) &&
-	(string_icmp (env, "TRUE") == 0) )
+	 (string_icmp (env, "TRUE") == 0) )
     {
 	fast_alloc = TRUE;
-	(void) fprintf (stderr,
-			"Running m_alloc and m_free without checking\n");
+	fprintf (stderr, "Running m_alloc and m_free without checking\n");
     }
     UNLOCK;
     return (fast_alloc);
@@ -644,7 +629,7 @@ static char *getenv (char *name)
     {
 	return (NULL);
     }
-    (void) strcpy (cmp, name);
+    strcpy (cmp, name);
     length = strlen (cmp);
     if (cmp[length] != '=')
     {

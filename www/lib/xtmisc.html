@@ -5,7 +5,11 @@
     NEXT RELEASE, POSSIBLY WITHOUT NOTICE.
 <p><b>Library:</b> karmaXt
 <br><b>Link With:</b> -lkarmaXt
-<br><p><a name=xtmisc></a></table><h4>Functions</h4><table><tr><td><a href=xtmisc.html#xtmisc_set_icon>xtmisc_set_icon</a></td><td>Create an icon for an application's top level widget.
+<br><p><a name=xtmisc></a></table><h4>Functions</h4><table><tr><td><a href=xtmisc.html#xtmisc_event_create_list>xtmisc_event_create_list</a></td><td>Create a periodic event management list under Xt.
+</td></tr>
+<tr><td><a href=xtmisc.html#xtmisc_set_icon>xtmisc_set_icon</a></td><td>Create an icon for an application's top level widget.
+</td></tr>
+<tr><td><a href=xtmisc.html#xtmisc_init_app_initialise>xtmisc_init_app_initialise</a></td><td>Initialise an application for Xt.
 </td></tr>
 <tr><td><a href=xtmisc.html#xtmisc_popup_cbk>xtmisc_popup_cbk</a></td><td>Pop up a popup widget.
 </td></tr>
@@ -17,7 +21,24 @@
 </td></tr>
 </table><h4>Prototype Functions</h4><table><tr><td><a href=xtmisc.html#XTMISC_PROTO_icon_func>XTMISC_PROTO_icon_func</a></td><td>Write an icon pixmap.
 </td></tr>
-</table><p><hr><center><h2>Functions</h2></center><hr> <a name=xtmisc_set_icon></a> void
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=xtmisc_event_create_list></a> KPeriodicEventList
+ <b>xtmisc_event_create_list</b><i>    (XtAppContext app_context,
+					     unsigned long interval_us,
+					     unsigned long interval_s,
+					     void *list_info)
+</i><br><p>    Create a periodic event management list under Xt.
+<p><b>Parameters:</b><ul><li><i>app_context :</i> 
+    The application context to use.
+<br><li><i>interval_us :</i> 
+    The microsecond component time between timeouts on this list.
+<br><li><i>interval_s :</i> 
+    The second component time between timeouts on this list.
+<br><li><i>list_info :</i> 
+    An arbitrary pointer passed to event functions on this list.
+<br></ul><b>Returns:</b>     A KPeriodicEventList on success, else the process aborts.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The specified interval may be rounded up to the system timer
+    resolution (10ms on many systems).
+</ul><p><hr> <a name=xtmisc_set_icon></a> void
  <b>xtmisc_set_icon</b><i>    ( Widget top_level,
 		       void (*icon_func) (Display *display, Pixmap pixmap,
 					  int width, int height) )
@@ -28,6 +49,38 @@
     The function to use when writing the icon. The prototype
     function is <a href=xtmisc.html#XTMISC_PROTO_icon_func>XTMISC_PROTO_icon_func</a>.
 <br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=xtmisc_init_app_initialise></a> Widget
+ <b>xtmisc_init_app_initialise</b><i>    (XtAppContext *app_context_return,
+				   CONST char* application_class,
+				   XrmOptionDescList options,
+				   Cardinal num_options,
+				   int *argc_in_out, String *argv_in_out,
+				   String *fallback_resources,
+				   unsigned int min_ccells, ...)
+</i><br><p>    This routine will initialise an application to use Xt. This
+    routine is similar to the <em>XtVaAppInitialize</em> routine, except that a new
+    colourmap for the application may be created.
+<p><b>Parameters:</b><ul><li><i>app_context_return :</i> 
+    As for <em>XtVaAppInitialize</em>.
+<br><li><i>application_class :</i> 
+    As for <em>XtVaAppInitialize</em>.
+<br><li><i>options :</i> 
+    As for <em>XtVaAppInitialize</em>.
+<br><li><i>num_options :</i> 
+    As for <em>XtVaAppInitialize</em>.
+<br><li><i>argc_in_out :</i> 
+    As for <em>XtVaAppInitialize</em>.
+<br><li><i>argv_in_out :</i> 
+    As for <em>XtVaAppInitialize</em>.
+<br><li><i>fallback_resources :</i> 
+    As for <em>XtVaAppInitialize</em>.
+<br><li><i>min_ccells :</i> 
+    The minimum number of colourcells that the application will
+    want to allocate. If this many colourcells could not be allocated from the
+    default colourmap, the application is given a freshly created colourmap.
+<br><li><i>... :</i> 
+    As for <em>XtVaAppInitialize</em>.
+<br></ul><b>Returns:</b>     The application shell.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=xtmisc_popup_cbk></a> void
  <b>xtmisc_popup_cbk</b><i>    (Widget w, XtPointer client_data, XtPointer call_data)
 </i><br><p>    This routine will pop up a popup widget. This routine is a

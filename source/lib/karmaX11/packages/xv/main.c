@@ -1,6 +1,5 @@
 /*LINTLIBRARY*/
-#ifdef X11
-/*  visuals.c
+/*  main.c
 
     This code provides miscellaneous routines for the X Window system
 
@@ -31,7 +30,7 @@
 
     Written by      Richard Gooch   15-SEP-1996
 
-    Last updated by Richard Gooch   15-SEP-1996
+    Last updated by Richard Gooch   3-DEC-1996
 
 
 */
@@ -40,7 +39,7 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <karma.h>
-#include <karma_kwin.h>
+#include <karma_xv.h>
 #include <karma_a.h>
 
 
@@ -53,9 +52,8 @@
 /*  Public functions follow  */
 
 /*PUBLIC_FUNCTION*/
-void kwin_xutil_get_vinfos (Screen *screen, XVisualInfo **pseudocolour,
-			    XVisualInfo **truecolour,
-			    XVisualInfo **directcolour)
+void xv_get_vinfos (Screen *screen, XVisualInfo **pseudocolour,
+		    XVisualInfo **truecolour, XVisualInfo **directcolour)
 /*  [SUMMARY] Get supported visuals available on a screen.
     <screen> The X Window screen.
     <pseudocolour> A PseudoColour XVisualInfo pointer will be written here. If
@@ -108,11 +106,11 @@ void kwin_xutil_get_vinfos (Screen *screen, XVisualInfo **pseudocolour,
 					VisualColormapSizeMask,
 					&vinfo_template, &num_vinfos);
     }
-}   /*  End Function kwin_xutil_get_vinfos  */
+}   /*  End Function xv_get_vinfos  */
 
 /*PUBLIC_FUNCTION*/
-void kwin_xutil_get_visuals (Screen *screen, Visual **pseudocolour,
-			     Visual **truecolour, Visual **directcolour)
+void xv_get_visuals (Screen *screen, Visual **pseudocolour,
+		     Visual **truecolour, Visual **directcolour)
 /*  [SUMMARY] Get supported visuals available on a screen.
     <screen> The X Window screen.
     <pseudocolour> A PseudoColour XVisualInfo pointer will be written here. If
@@ -151,17 +149,17 @@ void kwin_xutil_get_visuals (Screen *screen, Visual **pseudocolour,
 	dc_ptr = &dc;
 	*directcolour = NULL;
     }
-    kwin_xutil_get_vinfos (screen, pc_ptr, tc_ptr, dc_ptr);
+    xv_get_vinfos (screen, pc_ptr, tc_ptr, dc_ptr);
     if ( (pseudocolour != NULL) && (pc != NULL) ) *pseudocolour = pc->visual;
     if ( (truecolour != NULL) && (tc != NULL) ) *truecolour = tc->visual;
     if ( (directcolour != NULL) && (dc != NULL) ) *directcolour = dc->visual;
     if (pc != NULL) XFree (pc);
     if (tc != NULL) XFree (tc);
     if (dc != NULL) XFree (dc);
-}   /*  End Function kwin_xutil_get_visuals  */
+}   /*  End Function xv_get_visuals  */
 
 /*PUBLIC_FUNCTION*/
-XVisualInfo *kwin_xutil_get_visinfo_for_visual (Display *dpy, Visual *visual)
+XVisualInfo *xv_get_visinfo_for_visual (Display *dpy, Visual *visual)
 /*  [SUMMARY] Get the visual information structure for a visual.
     <dpy> The X display.
     <visual> The visual.
@@ -172,23 +170,20 @@ XVisualInfo *kwin_xutil_get_visinfo_for_visual (Display *dpy, Visual *visual)
     int num_vinfos;
     XVisualInfo vinfo_template;
     XVisualInfo *vinfos;
-    static char function_name[] = "kwin_xutil_get_visinfo_for_visual";
+    static char function_name[] = "xv_get_visinfo_for_visual";
 
     vinfo_template.visualid = XVisualIDFromVisual (visual);
     vinfos = XGetVisualInfo (dpy, VisualIDMask, &vinfo_template, &num_vinfos);
     if (num_vinfos < 1)
     {
-	(void) fprintf (stderr, "Error getting visual info for visual: %p\n",
-			visual);
+	fprintf (stderr, "Error getting visual info for visual: %p\n",
+		 visual);
 	a_prog_bug (function_name);
     }
     if (num_vinfos > 1)
     {
-	(void) fprintf (stderr,
-			"WARNING: number of visuals for visual: %p is: %d\n",
-			visual, num_vinfos);
+	fprintf (stderr, "WARNING: number of visuals for visual: %p is: %d\n",
+		 visual, num_vinfos);
     }
     return (vinfos);
-}   /*  End Function kwin_xutil_get_visinfo_for_visual  */
-
-#endif  /*  X11  */
+}   /*  End Function xv_get_visinfo_for_visual  */

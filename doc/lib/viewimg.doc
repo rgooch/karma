@@ -59,6 +59,51 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
+$EXPERIMENTAL_FUNC  viewimg_header_position_func
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (ViewableImage vimage,
+				   double x, double y,
+				   void *value, unsigned int event_code,
+				   void *e_info, void **f_info,
+				   double x_lin, double y_lin,
+				   unsigned int value_type)
+$SUMMARY            Position event callback.
+$PURPOSE
+    This routine is a position event consumer for a world canvas
+    which has a number of ViewableImage objects associated with it.
+$PARAMETER          viewimg :
+    The active viewable image.
+$PARAMETER          x :
+    The horizontal world co-ordinate of the event.
+$PARAMETER          y :
+    The vertical world co-ordinate of the event.
+    These values will have been transformed by the registered transform
+    function (see <-canvas_register_transform_func->) for the associated
+    world canvas.
+$PARAMETER          value :
+    A pointer to the data value in the viewable image corresponding
+    to the event co-ordinates.
+$PARAMETER          event_code :
+    The arbitrary event code.
+$PARAMETER          e_info :
+    The arbitrary event information.
+$PARAMETER          f_info :
+    The arbitrary function information pointer.
+$PARAMETER          x_lin :
+    The linear horizontal world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+$PARAMETER          y_lin :
+    The linear vertical world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+$PARAMETER          value_type :
+    The type of the data value. This may be K_DCOMPLEX or
+    K_UB_RGB.
+$RETURNS
+    TRUE if the event was consumed, else FALSE indicating that
+    the event is still to be processed.
+$END
+
 $FUNCTION           viewimg_init
 $RETURN_TYPE        void
 $PARAMETER_LIST
@@ -87,7 +132,8 @@ $PARAMETER_LIST
 				    unsigned int hdim, unsigned int vdim,
 				    unsigned int elem_index,
 				    unsigned num_restr,
-				    char **restr_names, double *restr_values)
+				    CONST char **restr_names,
+				    CONST double *restr_values)
 $SUMMARY            Create viewable image from 2D slice with restrictions.
 $PURPOSE
     This routine will create a PseudoColour viewable image object
@@ -289,7 +335,8 @@ $PARAMETER_LIST
 				  unsigned int red_index,
 				  unsigned int green_index,
 				  unsigned int blue_index, unsigned num_restr,
-				  char **restr_names, double *restr_values)
+				  CONST char **restr_names,
+				  CONST double *restr_values)
 $SUMMARY            Create a TrueColour viewable image.
 $PURPOSE
     This routine will create a TrueColour viewable image object from
@@ -603,7 +650,7 @@ $PURPOSE
 $PARAMETER          canvas :
     The world canvas.
 $PARAMETER        ... :
-    The list of parameter attribute-key attribute-value-ptr pairs
+    The list of parameter attribute-key attribute-value pairs
     must follow. This list must be terminated with the VIEWIMG_ATT_END.
     See <-VIEWIMG_CANVAS_ATTRIBUTES-> for the list of attributes.
 $NOTE
@@ -623,6 +670,43 @@ $PARAMETER          vimage :
     The ViewableImage.
 $PARAMETER        ... :
     The list of parameter attribute-key attribute-value-ptr pairs
+    must follow. This list must be terminated with the VIEWIMG_VATT_END. See
+    <-VIEWIMG_VIMAGE_ATTRIBUTES-> for the list of attributes.
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           viewimg_set_attributes
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (ViewableImage vimage, ...)
+$SUMMARY            Set the attributes for a viewable image.
+$PURPOSE
+    Set the attributes for a viewable image.
+$PARAMETER          vimage :
+    The ViewableImage.
+$PARAMETER        ... :
+    The list of parameter attribute-key attribute-value pairs
+    must follow. This list must be terminated with the VIEWIMG_VATT_END. See
+    <-VIEWIMG_VIMAGE_ATTRIBUTES-> for the list of attributes.
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           viewimg_set_array_attributes
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (ViewableImage *vimages, unsigned int len,
+				   ...)
+$SUMMARY            Set the attributes for an array of viewable images.
+$PURPOSE
+    Set the attributes for an array of viewable images.
+$PARAMETER          vimages :
+    The array of ViewableImage objects.
+$PARAMETER          len :
+    The length of the array.
+$PARAMETER        ... :
+    The list of parameter attribute-key attribute-value pairs
     must follow. This list must be terminated with the VIEWIMG_VATT_END. See
     <-VIEWIMG_VIMAGE_ATTRIBUTES-> for the list of attributes.
 $RETURNS
@@ -730,6 +814,58 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
+$EXPERIMENTAL_FUNC  viewimg_track_compute
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (ViewableImage vimage,
+			    void *value, unsigned int value_type,
+			    double x, double y,
+			    double x_lin, double y_lin, KwcsAstro ap,
+			    char pix_string[STRING_LENGTH],
+			    char world_string[STRING_LENGTH],
+			    char extra_string[STRING_LENGTH],
+			    unsigned long *x_index, unsigned long *y_index)
+$SUMMARY            Compute track strings.
+$PURPOSE
+    Compute track strings.
+$PARAMETER          vimage :
+    The active ViewableImage object.
+$PARAMETER          value :
+    A pointer to the data value in the viewable image corresponding
+    to the event co-ordinates.
+$PARAMETER          value_type :
+    The type of the data value. This may be K_DCOMPLEX or
+    K_UB_RGB.
+$PARAMETER          x :
+    The horizontal world co-ordinate of the event.
+$PARAMETER          y :
+    The vertical world co-ordinate of the event.
+$PARAMETER          x_lin :
+    The linear horizontal world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+$PARAMETER          y_lin :
+    The linear vertical world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+$PARAMETER          ap :
+    The KwcsAstro object. This may be NULL.
+$PARAMETER          pix_string :
+    The pixel co-ordinates and data value will be written here.
+$PARAMETER          world_string :
+    The world co-ordinates and restriction information will be
+    written here.
+$PARAMETER          extra_string :
+    Extra information is written here. This may be NULL if
+    <<world_string>> is also NULL.
+$PARAMETER          x_index :
+    The horizontal data co-ordinate index is written here. This may
+    be NULL
+$PARAMETER          y_index :
+    The vertical data co-ordinate index is written here. This may be
+    NULL
+$RETURNS
+    Nothing.
+$END
+
 $PROTO_FUNC         VIEWIMG_PROTO_position_func
 $RETURN_TYPE        flag
 $PARAMETER_LIST
@@ -794,17 +930,21 @@ $TABLE            VIEWIMG_VIEWIMG_ATTRIBUTES
 $COLUMNS          4
 $SUMMARY          List of attributes for viewable images
 $TABLE_DATA
-|.Name                      |,Get Type       |,Meaning
+|.Name                      |,Get Type       |,Set Type |,Meaning
 |.
-|.VIEWIMG_VATT_END          |,               |,End of varargs list
-|.VIEWIMG_VATT_TRUECOLOUR   |,flag *         |,Image is TrueColour
-|.VIEWIMG_VATT_ARRAY_DESC   |,array_desc **  |,The array descriptor for the image
-|.VIEWIMG_VATT_SLICE        |,char **        |,Start of the image data
-|.VIEWIMG_VATT_HDIM         |,unsigned int * |,The horizontal dimension
-|.VIEWIMG_VATT_VDIM         |,unsigned int * |,The vertical dimension
-|.VIEWIMG_VATT_PSEUDO_INDEX |,unsigned int * |,The PseudoColour element index
-|.VIEWIMG_VATT_RED_INDEX    |,unsigned int * |,The TrueColour red element index
-|.VIEWIMG_VATT_GREEN_INDEX  |,unsigned int * |,The TrueColour green element index
-|.VIEWIMG_VATT_BLUE_INDEX   |,unsigned int * |,The TrueColour blue element index
-|.VIEWIMG_VATT_MULTI_ARRAY  |,multi_array ** |,The multi_array descriptor
+|.VIEWIMG_VATT_END          |,               |,         |,End of varargs list
+|.VIEWIMG_VATT_TRUECOLOUR   |,flag *         |,         |,Image is TrueColour
+|.VIEWIMG_VATT_ARRAY_DESC   |,array_desc **  |,         |,The array descriptor for the image
+|.VIEWIMG_VATT_SLICE        |,char **        |,         |,Start of the image data
+|.VIEWIMG_VATT_HDIM         |,unsigned int * |,         |,The horizontal dimension
+|.VIEWIMG_VATT_VDIM         |,unsigned int * |,         |,The vertical dimension
+|.VIEWIMG_VATT_PSEUDO_INDEX |,unsigned int * |,         |,The PseudoColour element index
+|.VIEWIMG_VATT_RED_INDEX    |,unsigned int * |,         |,The TrueColour red element index
+|.VIEWIMG_VATT_GREEN_INDEX  |,unsigned int * |,         |,The TrueColour green element index
+|.VIEWIMG_VATT_BLUE_INDEX   |,unsigned int * |,         |,The TrueColour blue element index
+|.VIEWIMG_VATT_MULTI_ARRAY  |,multi_array ** |,         |,The multi_array descriptor
+|.VIEWIMG_VATT_DATA_SCALE   |,double *       |,double   |,PsueodoColour data multiplier
+|.VIEWIMG_VATT_DATA_OFFSET  |,double *       |,double   |,PsueodoColour data offset
+|.VIEWIMG_VATT_VALUE_MIN    |,double *       |,double   |,PseudoColour minimum value override
+|.VIEWIMG_VATT_VALUE_MAX    |,double *       |,double   |,PseudoColour maximum value override
 $END

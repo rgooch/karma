@@ -4,7 +4,7 @@ $PURPOSE
     These routines provide a simple interface to the recursive,
     heirarchical data structure supported in Karma, to define 2-dimensional
     (image) overlay objects. In addition, all the mechanics for drawing onto
-    world canvases (see the [<canvas>] package) is supplied automatically.
+    world canvases (see the <-canvas-> package) is supplied automatically.
 $LIBRARY          karmagraphics
 $LINKWITH         -lkarmagraphics
 $END
@@ -123,13 +123,15 @@ $PURPOSE
 $PARAMETER          olist :
     The overlay list object.
 $PARAMETER          type0 :
-    The type of the first co-ordinate.
+    The type of the first co-ordinate. See
+    <-OVERLAY_COORDINATE_TYPES-> for a list of supported co-ordinate types.
 $PARAMETER          x0 :
     The horizontal position of the first co-ordinate.
 $PARAMETER          y0 :
     The vertical position of the first co-ordinate.
 $PARAMETER          type1 :
-    The type of the second co-ordinate.
+    The type of the second co-ordinate. See
+    <-OVERLAY_COORDINATE_TYPES-> for a list of supported co-ordinate types.
 $PARAMETER          x1 :
     The horizontal position of the second co-ordinate.
 $PARAMETER          y1 :
@@ -158,7 +160,8 @@ $PARAMETER          num_coords :
     than this value.
 $PARAMETER          types :
     An array of co-ordinate types. If this is NULL, all co-ordinates
-    are assumed to be world co-ordinates.
+    are assumed to be world co-ordinates. See <-OVERLAY_COORDINATE_TYPES-> for
+    a list of supported co-ordinate types.
 $PARAMETER          x_arr :
     The horizontal co-ordinate values.
 $PARAMETER          y_arr :
@@ -183,7 +186,8 @@ $PARAMETER          olist :
 $PARAMETER          string :
     The text string.
 $PARAMETER          type :
-    The type of the co-ordinate.
+    The type of the co-ordinate. See <-OVERLAY_COORDINATE_TYPES-> for a
+    list of supported co-ordinate types.
 $PARAMETER          x :
     The horizontal position of the co-ordinate.
 $PARAMETER          y :
@@ -212,13 +216,15 @@ $PURPOSE
 $PARAMETER          olist :
     The overlay list object.
 $PARAMETER          ctype :
-    The type of the centre co-ordinate.
+    The type of the centre co-ordinate. See
+    <-OVERLAY_COORDINATE_TYPES-> for a list of supported co-ordinate types.
 $PARAMETER          cx :
     The horizontal position of the centre co-ordinate.
 $PARAMETER          cy :
     The vertical position of the centre co-ordinate.
 $PARAMETER          rtype :
-    The type of the radius co-ordinate.
+    The type of the radius co-ordinate. See
+    <-OVERLAY_COORDINATE_TYPES-> for a list of supported co-ordinate types.
 $PARAMETER          rx :
     The horizontal radius.
 $PARAMETER          ry :
@@ -248,7 +254,8 @@ $PARAMETER          num_coords :
     The number of co-ordinates (vertices).
 $PARAMETER          types :
     The array of co-ordinate type values. If this is NULL, all
-    co-ordinates are assumed to be world co-ordinates.
+    co-ordinates are assumed to be world co-ordinates. See
+    <-OVERLAY_COORDINATE_TYPES-> for a list of supported co-ordinate types.
 $PARAMETER          x_arr :
     The array of horizontal co-ordinate values.
 $PARAMETER          y_arr :
@@ -273,13 +280,15 @@ $PURPOSE
 $PARAMETER          olist :
     The overlay list object.
 $PARAMETER          stype :
-    The type of the start co-ordinate.
+    The type of the start co-ordinate. See <-OVERLAY_COORDINATE_TYPES->
+    for a list of supported co-ordinate types.
 $PARAMETER          sx :
     The horizontal position of the start co-ordinate.
 $PARAMETER          sy :
     The vertical position of the start co-ordinate.
 $PARAMETER          dtype :
-    The type of the vector direction.
+    The type of the vector direction. See <-OVERLAY_COORDINATE_TYPES->
+    for a list of supported co-ordinate types.
 $PARAMETER          dx :
     The horizontal vector direction.
 $PARAMETER          dy :
@@ -308,14 +317,16 @@ $PARAMETER          num_ellipses :
     The number of ellipses.
 $PARAMETER          ctypes :
     The types of the centre co-ordinates. If this is NULL, all
-    co-ordinates are assumed to be world co-ordinates.
+    co-ordinates are assumed to be world co-ordinates. See
+    <-OVERLAY_COORDINATE_TYPES-> for a list of supported co-ordinate types.
 $PARAMETER          cx :
     The horizontal positions of the centre co-ordinates.
 $PARAMETER          cy :
     The vertical positions of the centre co-ordinates.
 $PARAMETER          rtypes :
     The types of the radii co-ordinates. If this is NULL, all
-    co-ordinates are assumed to be world co-ordinates.
+    co-ordinates are assumed to be world co-ordinates. See
+    <-OVERLAY_COORDINATE_TYPES-> for a list of supported co-ordinate types.
 $PARAMETER          rx :
     The horizontal radii.
 $PARAMETER          ry :
@@ -346,14 +357,16 @@ $PARAMETER          num_segments :
     The number of segments.
 $PARAMETER          types0 :
     The types of the start co-ordinates. If this is NULL, all
-    co-ordinates are assumed to be world co-ordinates.
+    co-ordinates are assumed to be world co-ordinates. See
+    <-OVERLAY_COORDINATE_TYPES-> for a list of supported co-ordinate types.
 $PARAMETER          x0 :
     The horizontal positions of the start co-ordinates.
 $PARAMETER          y0 :
     The vertical positions of the start co-ordinates.
 $PARAMETER          types1 :
     The types of the stop co-ordinates. If this is NULL, all
-    co-ordinates are assumed to be world co-ordinates.
+    co-ordinates are assumed to be world co-ordinates. See
+    <-OVERLAY_COORDINATE_TYPES-> for a list of supported co-ordinate types.
 $PARAMETER          x1 :
     The horizontal positions of the stop co-ordinates.
 $PARAMETER          y1 :
@@ -382,14 +395,16 @@ $PARAMETER          num_vectors :
     The number of vectors.
 $PARAMETER          stypes :
     The types of the start co-ordinates. If this is NULL, all
-    co-ordinates are assumed to be world co-ordinates.
+    co-ordinates are assumed to be world co-ordinates. See
+    <-OVERLAY_COORDINATE_TYPES-> for a list of supported co-ordinate types.
 $PARAMETER          sx :
     The horizontal positions of the start co-ordinates.
 $PARAMETER          sy :
     The vertical positions of the start co-ordinates.
 $PARAMETER          dtypes :
     The types of the vector directions. If this is NULL, all
-    directions are assumed to be in world co-ordinates.
+    directions are assumed to be in world co-ordinates. See
+    <-OVERLAY_COORDINATE_TYPES-> for a list of supported co-ordinate types.
 $PARAMETER          dx :
     The horizontal vector directions.
 $PARAMETER          dy :
@@ -453,9 +468,23 @@ $PARAMETER          list_id :
     The ID of the list which created the object. If this is 0, the
     list given by <<olist>> is assumed.
 $PARAMETER          dx :
-    The horizontal distance to move.
+    The horizontal distance to move. This is of the same co-ordinate type
+    as the original co-ordinates.
 $PARAMETER          dy :
-    The vertical distance to move.
+    The vertical distance to move. This is of the same co-ordinate type
+    as the original co-ordinates.
 $RETURNS
     TRUE on success, else FALSE.
+$END
+
+$TABLE            OVERLAY_COORDINATE_TYPES
+$COLUMNS          2
+$SUMMARY          List of co-ordinate types
+$TABLE_DATA
+|.Name                    |,Meaning
+|.
+|.OVERLAY_COORD_PIXEL     |,Pixel co-ordinates
+|.OVERLAY_COORD_RELATIVE  |,Relative to a unit canvas (0,0) to (1,1)
+|.OVERLAY_COORD_WORLD     |,True world co-ordinates
+|.OVERLAY_COORD_LAST      |,Use last co-ordinate instead
 $END

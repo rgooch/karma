@@ -5,7 +5,9 @@
     and event management.
 <p><b>Library:</b> karma
 <br><b>Link With:</b> -lkarma
-<br><p><a name=kcmap></a></table><h4>Functions</h4><table><tr><td><a href=kcmap.html#kcmap_va_create>kcmap_va_create</a></td><td>Create a high level colourmap.
+<br><p><a name=kcmap></a></table><h4>Functions</h4><table><tr><td><a href=kcmap.html#kcmap_initialise>kcmap_initialise</a></td><td>This routine will initialise the package.
+</td></tr>
+<tr><td><a href=kcmap.html#kcmap_va_create>kcmap_va_create</a></td><td>Create a high level colourmap.
 </td></tr>
 <tr><td><a href=kcmap.html#kcmap_add_RGB_func>kcmap_add_RGB_func</a></td><td>Register a new colourmap function.
 </td></tr>
@@ -59,7 +61,11 @@
 </td></tr>
 </table><h4>Tables</h4><table><tr><td><a href=kcmap.html#KCMAP_ATTRIBUTES>KCMAP_ATTRIBUTES</a></td><td>List of attributes for Kcolourmap objects
 </td></tr>
-</table><p><hr><center><h2>Functions</h2></center><hr> <a name=kcmap_va_create></a> Kcolourmap
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=kcmap_initialise></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>void
+ <b>kcmap_initialise</b><i>    ()
+</i><br><p>    This routine will initialise the package.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kcmap_va_create></a> Kcolourmap
  <b>kcmap_va_create</b><i>    (CONST char *name, unsigned int num_cells,
 			    flag tolerant,
 			    Kdisplay dpy_handle, unsigned int (*alloc_func) (),
@@ -324,7 +330,8 @@
 <p><b>Parameters:</b><ul><li><i>cmap :</i> 
     The colourmap object.
 <br><li><i>size :</i> 
-    The routine will write the size of the colourmap here.
+    The routine will write the size of the colourmap here. This may be
+    NULL.
 <br></ul><b>Returns:</b>     A pointer to a dynamically allocated array. This must be freed
     with <a href=m.html#m_free>m_free</a>. On failure it returns NULL.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kcmap_get_attributes></a> void

@@ -163,7 +163,10 @@
     Updated by      Richard Gooch   14-JUN-1996: Changed more pointers to
   CONST.
 
-    Last updated by Richard Gooch   27-JUL-1996: Created <iarray_sum>.
+    Updated by      Richard Gooch   27-JUL-1996: Created <iarray_sum>.
+
+    Last updated by Richard Gooch   23-NOV-1996: Fixed bug in
+  <iarray_get_sub_array_2D> where element index was not copied.
 
 
 */
@@ -184,10 +187,10 @@
 #define MAGIC_NUMBER 939032982
 
 #define VERIFY_IARRAY(array) if (array == NULL) \
-{(void) fprintf (stderr, "NULL iarray passed\n"); \
+{fprintf (stderr, "NULL iarray passed\n"); \
  a_prog_bug (function_name); } \
 if (array->magic_number != MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid iarray\n"); \
+{fprintf (stderr, "Invalid iarray\n"); \
  a_prog_bug (function_name); }
 
 
@@ -341,7 +344,7 @@ iarray iarray_read_nD (CONST char *object, flag cache, CONST char *arrayname,
     if ( ( multi_desc = dsxfr_get_multi (object, cache, mmap_option, FALSE) )
 	== NULL )
     {
-	(void) fprintf (stderr, "Error reading Intelligent Array\n");
+	fprintf (stderr, "Error reading Intelligent Array\n");
 	return (NULL);
     }
     array = iarray_get_from_multi_array (multi_desc, arrayname,
@@ -366,13 +369,13 @@ flag iarray_write (iarray array, CONST char *arrayfile)
     VERIFY_IARRAY (array);
     if (array->multi_desc == NULL)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Intelligent array is not an original array\n");
 	a_prog_bug (function_name);
     }
     if ( !dsxfr_put_multi (arrayfile, array->multi_desc) )
     {
-	(void) fprintf (stderr, "Error writing Intelligent Array\n");
+	fprintf (stderr, "Error writing Intelligent Array\n");
 	return (FALSE);
     }
     return (TRUE);
@@ -447,12 +450,12 @@ iarray iarray_create (unsigned int type, unsigned int num_dim,
 	ds_dealloc_multi (out_multi_desc);
 	if ( mem_debug_required () )
 	{
-	    (void) fprintf (stderr, "iarray_create: ");
+	    fprintf (stderr, "iarray_create: ");
 	    for (dim_count = 0; dim_count < num_dim - 1; ++dim_count)
 	    {
-		(void) fprintf (stderr, "%lu * ", dim_lengths[dim_count]);
+		fprintf (stderr, "%lu * ", dim_lengths[dim_count]);
 	    }
-	    (void) fprintf (stderr, "%lu  type: %s\n",
+	    fprintf (stderr, "%lu  type: %s\n",
 			    dim_lengths[dim_count], data_type_names[type]);
 	}
 	return (new);
@@ -511,7 +514,7 @@ iarray iarray_create (unsigned int type, unsigned int num_dim,
 			    out_multi_desc->headers[array_count],
 			    out_multi_desc->data[array_count]) )
 	{
-	    (void) fprintf (stderr, "\nError copying auxilary data");
+	    fprintf (stderr, "\nError copying auxilary data");
 	    ds_dealloc_multi (out_multi_desc);
 	    return (NULL);
 	}
@@ -532,7 +535,7 @@ iarray iarray_create (unsigned int type, unsigned int num_dim,
 			   &out_pack_desc, &elem_num) )
     {
       case IDENT_NOT_FOUND:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Old array does not have Intelligent Array\n");
 	ds_dealloc_multi (out_multi_desc);
 	return (NULL);
@@ -540,7 +543,7 @@ iarray iarray_create (unsigned int type, unsigned int num_dim,
 	break;
 */
       case IDENT_MULTIPLE:
-	(void) fprintf (stderr, "Old array has multiple holes\n");
+	fprintf (stderr, "Old array has multiple holes\n");
 	ds_dealloc_multi (out_multi_desc);
 	return (NULL);
 /*
@@ -550,7 +553,7 @@ iarray iarray_create (unsigned int type, unsigned int num_dim,
 	/*  Got what we wanted  */
 	break;
       default:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Illegal return value from function: ds_find_hole\n");
 	a_prog_bug (function_name);
 	break;
@@ -585,7 +588,7 @@ iarray iarray_create (unsigned int type, unsigned int num_dim,
 			out_multi_desc->headers[old_array->array_num],
 			out_multi_desc->data[old_array->array_num]) )
     {
-	(void) fprintf (stderr, "Error copying auxilary data\n");
+	fprintf (stderr, "Error copying auxilary data\n");
 	ds_dealloc_multi (out_multi_desc);
 	return (NULL);
     }
@@ -610,12 +613,12 @@ iarray iarray_create (unsigned int type, unsigned int num_dim,
     ds_dealloc_multi (out_multi_desc);
     if ( mem_debug_required () )
     {
-	(void) fprintf (stderr, "iarray_create: ");
+	fprintf (stderr, "iarray_create: ");
 	for (dim_count = 0; dim_count < num_dim - 1; ++dim_count)
 	{
-	    (void) fprintf (stderr, "%lu * ", dim_lengths[dim_count]);
+	    fprintf (stderr, "%lu * ", dim_lengths[dim_count]);
 	}
-	(void) fprintf (stderr, "%lu  type: %s\n",
+	fprintf (stderr, "%lu  type: %s\n",
 			dim_lengths[dim_count], data_type_names[type]);
     }
     return (new);
@@ -688,7 +691,7 @@ iarray iarray_get_from_multi_array (multi_array *multi_desc,
 				  (char **) NULL, &array_num) )
 	{
 	  case IDENT_NOT_FOUND:
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Could not find general data structure: \"%s\"\n",
 			    arrayname);
 	    return (NULL);
@@ -696,7 +699,7 @@ iarray iarray_get_from_multi_array (multi_array *multi_desc,
 	    break;
 */
 	  case IDENT_MULTIPLE:
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Multiple general data structure name: \"%s\"\n",
 			    arrayname);
 	    return (NULL);
@@ -707,7 +710,7 @@ iarray iarray_get_from_multi_array (multi_array *multi_desc,
 	    /*  Got what we wanted  */
 	    break;
 	  default:
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Illegal return value from function: f_array_name\n");
 	    a_prog_bug (function_name);
 	    break;
@@ -739,7 +742,7 @@ iarray iarray_get_from_multi_array (multi_array *multi_desc,
 		    if (match_index < top_pack_desc->num_elements)
 		    {
 			/*  Match already found  */
-			(void) fprintf (stderr,
+			fprintf (stderr,
 					"Too many candidate arrays\n");
 			return (NULL);
 		    }
@@ -761,7 +764,7 @@ iarray iarray_get_from_multi_array (multi_array *multi_desc,
 	}
 	if (match_index >= top_pack_desc->num_elements)
 	{
-	    (void) fprintf (stderr, "No candidate arrays found\n");
+	    fprintf (stderr, "No candidate arrays found\n");
 	    return (NULL);
 	}
 	/*  Got the one and only decent match  */
@@ -796,7 +799,7 @@ iarray iarray_get_from_multi_array (multi_array *multi_desc,
 		    if (match_index < top_pack_desc->num_elements)
 		    {
 			/*  Match already found  */
-			(void) fprintf (stderr,
+			fprintf (stderr,
 					"Too many candidate arrays\n");
 			return (NULL);
 		    }
@@ -819,7 +822,7 @@ iarray iarray_get_from_multi_array (multi_array *multi_desc,
 	}
 	if (match_index >= top_pack_desc->num_elements)
 	{
-	    (void) fprintf (stderr, "No candidate arrays found\n");
+	    fprintf (stderr, "No candidate arrays found\n");
 	    return (NULL);
 	}
 	/*  Got the one and only decent match  */
@@ -836,14 +839,14 @@ iarray iarray_get_from_multi_array (multi_array *multi_desc,
 				      &dim_index) )
     {
       case IDENT_NOT_FOUND:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Could not find dimension: \"%s\"\n", dim_names[0]);
 	return (NULL);
 /*
 	break;
 */
       case IDENT_MULTIPLE:
-	(void) fprintf (stderr, "Multiple instances of Intelligent Array\n");
+	fprintf (stderr, "Multiple instances of Intelligent Array\n");
 	return (NULL);
 /*
         break;
@@ -852,7 +855,7 @@ iarray iarray_get_from_multi_array (multi_array *multi_desc,
 	/*  This is what we want  */
 	break;
       case IDENT_ELEMENT:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Item: \"%s\" is an atomic element and not a dimension\n",
 			dim_names[0]);
 	return (NULL);
@@ -860,7 +863,7 @@ iarray iarray_get_from_multi_array (multi_array *multi_desc,
 	break;
 */
       default:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Illegal return value from function: ds_get_handle_in_packet\n");
 	a_prog_bug (function_name);
 	break;
@@ -869,7 +872,7 @@ iarray iarray_get_from_multi_array (multi_array *multi_desc,
     /*  Check number of dimensions  */
     if (num_dim != arr_desc->num_dimensions)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Array with dimension: \"%s\" must have: %u dimensions\n",
 			dim_names[0], num_dim);
 	return (NULL);
@@ -889,7 +892,7 @@ iarray iarray_get_from_multi_array (multi_array *multi_desc,
 	if ( ( dim_index = ds_f_dim_in_array (arr_desc, dim_names[dim_count]) )
 	    >= arr_desc->num_dimensions)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Could not find dimension: \"%s\" with dimension: \"%s\"\n",
 			    dim_names[dim_count], dim_names[0]);
 	    m_free ( (char *) reorder_indices );
@@ -904,7 +907,7 @@ iarray iarray_get_from_multi_array (multi_array *multi_desc,
     /*  Check array packet descriptor  */
     if (arr_desc->packet->num_elements != 1)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Intelligent Array must have only one element\n");
 	m_free ( (char *) reorder_indices );
 	return (NULL);
@@ -914,7 +917,7 @@ iarray iarray_get_from_multi_array (multi_array *multi_desc,
 	if (ds_f_elem_in_packet (arr_desc->packet, elem_name) >=
 	    arr_desc->packet->num_elements)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Intelligent array must have \"%s\" element\n",
 			    elem_name);
 	    m_free ( (char *) reorder_indices );
@@ -924,10 +927,10 @@ iarray iarray_get_from_multi_array (multi_array *multi_desc,
     /*  Now that array checks out, transpose dimensions if necessary  */
     if (reorder_needed)
     {
-	(void) fprintf (stderr, "Re-ordering array\n");
+	fprintf (stderr, "Re-ordering array\n");
 	if ( !ds_reorder_array (arr_desc, reorder_indices, parent, TRUE) )
 	{
-	    (void) fprintf (stderr, "Error re-ordering Intelligent Array\n");
+	    fprintf (stderr, "Error re-ordering Intelligent Array\n");
 	    m_free ( (char *) reorder_indices );
 	    return (NULL);
 	}
@@ -971,12 +974,12 @@ void iarray_dealloc (iarray array)
     multi_desc = array->multi_desc;
     if ( (multi_desc->attachments == 0) && mem_debug_required () )
     {
-	(void) fprintf (stderr, "iarray_dealloc: ");
+	fprintf (stderr, "iarray_dealloc: ");
 	for (dim_count = 0; dim_count < iarray_num_dim (array) -1; ++dim_count)
 	{
-	    (void) fprintf (stderr, "%lu * ", array->lengths[dim_count]);
+	    fprintf (stderr, "%lu * ", array->lengths[dim_count]);
 	}
-	(void) fprintf (stderr, "%lu  type: %s\n",
+	fprintf (stderr, "%lu  type: %s\n",
 			array->lengths[dim_count],
 			data_type_names[iarray_type (array)]);
     }
@@ -1091,28 +1094,28 @@ char *iarray_get_element_1D (iarray array, unsigned int type, int x)
     VERIFY_IARRAY (array);
     if (iarray_num_dim (array) != 1)
     {
-	(void) fprintf ( stderr,
+	fprintf ( stderr,
 			"Array has: %u dimensions: must have only 1\n",
 			iarray_num_dim (array) );
 	a_prog_bug (function_name);
     }
     if (iarray_type (array) != type)
     {
-	(void) fprintf ( stderr,
+	fprintf ( stderr,
 			"Type requested: %u is not equal to type of array: %u\n",
 			type, iarray_type (array) );
 	a_prog_bug (function_name);
     }
     if (x < -array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"x coordinate: %d is less than -boundary_width: %d\n",
 			x, -array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (x >= array->lengths[0] - array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"x coordinate: %d exceeds dimension end: %ld\n",
 			x, array->lengths[0] - array->boundary_width);
 	a_prog_bug (function_name);
@@ -1138,42 +1141,42 @@ char *iarray_get_element_2D (iarray array, unsigned int type, int y, int x)
     VERIFY_IARRAY (array);
     if (iarray_num_dim (array) != 2)
     {
-	(void) fprintf ( stderr,
+	fprintf ( stderr,
 			"Array has: %u dimensions: must have only 2\n",
 			iarray_num_dim (array) );
 	a_prog_bug (function_name);
     }
     if (iarray_type (array) != type)
     {
-	(void) fprintf ( stderr,
+	fprintf ( stderr,
 			"Type requested: %u is not equal to type of array: %u\n",
 			type, iarray_type (array) );
 	a_prog_bug (function_name);
     }
     if (x < -array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"x coordinate: %d is less than -boundary_width: %d\n",
 			x, -array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (x >= array->lengths[1] - array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"x coordinate: %d exceeds dimension end: %ld\n",
 			x, array->lengths[1] - array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (y < -array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"y coordinate: %d is less than -boundary_width: %d\n",
 			y, -array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (y >= array->lengths[0] - array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"y coordinate: %d exceeds dimension end: %ld\n",
 			y, array->lengths[0] - array->boundary_width);
 	a_prog_bug (function_name);
@@ -1201,56 +1204,56 @@ char *iarray_get_element_3D (iarray array, unsigned int type, int z, int y,
     VERIFY_IARRAY (array);
     if (iarray_num_dim (array) != 3)
     {
-	(void) fprintf ( stderr,
+	fprintf ( stderr,
 			"Array has: %u dimensions: must have only 3\n",
 			iarray_num_dim (array) );
 	a_prog_bug (function_name);
     }
     if (iarray_type (array) != type)
     {
-	(void) fprintf ( stderr,
+	fprintf ( stderr,
 			"Type requested: %u is not equal to type of array: %u\n",
 			type, iarray_type (array) );
 	a_prog_bug (function_name);
     }
     if (x < -array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"x coordinate: %d is less than -boundary_width: %d\n",
 			x, -array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (x >= array->lengths[2] - array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"x coordinate: %d exceeds dimension end: %ld\n",
 			x, array->lengths[2] - array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (y < -array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"y coordinate: %d is less than -boundary_width: %d\n",
 			y, -array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (y >= array->lengths[1] - array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"y coordinate: %d exceeds dimension end: %ld\n",
 			y, array->lengths[1] - array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (z < -array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"z coordinate: %d is less than -boundary_width: %d\n",
 			z, -array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (z >= array->lengths[0] - array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"z coordinate: %d exceeds dimension end: %ld\n",
 			z, array->lengths[0] - array->boundary_width);
 	a_prog_bug (function_name);
@@ -1280,70 +1283,70 @@ char *iarray_get_element_4D (iarray array, unsigned int type, int z, int y,
     VERIFY_IARRAY (array);
     if (iarray_num_dim (array) != 4)
     {
-	(void) fprintf ( stderr,
+	fprintf ( stderr,
 			"Array has: %u dimensions: must have only 4\n",
 			iarray_num_dim (array) );
 	a_prog_bug (function_name);
     }
     if (iarray_type (array) != type)
     {
-	(void) fprintf ( stderr,
+	fprintf ( stderr,
 			"Type requested: %u is not equal to type of array: %u\n",
 			type, iarray_type (array) );
 	a_prog_bug (function_name);
     }
     if (w < -array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"w coordinate: %d is less than -boundary_width: %d\n",
 			w, -array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (w >= array->lengths[3] - array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"w coordinate: %d exceeds dimension end: %ld\n",
 			w, array->lengths[3] - array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (x < -array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"x coordinate: %d is less than -boundary_width: %d\n",
 			x, -array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (x >= array->lengths[2] - array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"x coordinate: %d exceeds dimension end: %ld\n",
 			x, array->lengths[2] - array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (y < -array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"y coordinate: %d is less than -boundary_width: %d\n",
 			y, -array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (y >= array->lengths[1] - array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"y coordinate: %d exceeds dimension end: %ld\n",
 			y, array->lengths[1] - array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (z < -array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"z coordinate: %d is less than -boundary_width: %d\n",
 			z, -array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (z >= array->lengths[0] - array->boundary_width)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"z coordinate: %d exceeds dimension end: %ld\n",
 			z, array->lengths[0] - array->boundary_width);
 	a_prog_bug (function_name);
@@ -1384,51 +1387,44 @@ iarray iarray_get_sub_array_2D (iarray array, int starty, int startx,
     /*  Sanity checks  */
     if (iarray_num_dim (array) != 2)
     {
-	(void) fprintf ( stderr,
-			"Input array has: %u dimensions, must have only 2\n",
-			iarray_num_dim (array) );
+	fprintf ( stderr, "Input array has: %u dimensions, must have only 2\n",
+		  iarray_num_dim (array) );
 	a_prog_bug (function_name);
     }
     if (starty < -array->boundary_width)
     {
-	(void) fprintf (stderr,
-			"starty: %d is less than -boundary_width: %d\n",
-			starty, -array->boundary_width);
+	fprintf (stderr, "starty: %d is less than -boundary_width: %d\n",
+		 starty, -array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (starty >= array->lengths[0] - array->boundary_width)
     {
-	(void) fprintf (stderr, "starty: %d exceeds dimension end: %ld\n",
-			starty, array->lengths[0] - array->boundary_width);
+	fprintf (stderr, "starty: %d exceeds dimension end: %ld\n",
+		 starty, array->lengths[0] - array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (starty + ylen > array->lengths[0] - array->boundary_width)
     {
-	(void) fprintf (stderr,
-			"starty + ylen: %d exceeds dimension end: %ld\n",
-			starty + ylen,
-			array->lengths[0] - array->boundary_width);
+	fprintf (stderr, "starty + ylen: %d exceeds dimension end: %ld\n",
+		 starty + ylen, array->lengths[0] - array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (startx < -array->boundary_width)
     {
-	(void) fprintf (stderr,
-			"startx: %d is less than -boundary_width: %d\n",
-			startx, -array->boundary_width);
+	fprintf (stderr, "startx: %d is less than -boundary_width: %d\n",
+		 startx, -array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (startx >= array->lengths[1] - array->boundary_width)
     {
-	(void) fprintf (stderr, "startx: %d exceeds dimension end: %ld\n",
-			startx, array->lengths[1] - array->boundary_width);
+	fprintf (stderr, "startx: %d exceeds dimension end: %ld\n",
+		 startx, array->lengths[1] - array->boundary_width);
 	a_prog_bug (function_name);
     }
     if (startx + xlen > array->lengths[1] - array->boundary_width)
     {
-	(void) fprintf (stderr,
-			"startx + xlen: %d exceeds dimension end: %ld\n",
-			startx + xlen,
-			array->lengths[1] - array->boundary_width);
+	fprintf (stderr, "startx + xlen: %d exceeds dimension end: %ld\n",
+		 startx + xlen, array->lengths[1] - array->boundary_width);
 	a_prog_bug (function_name);
     }
     /*  Checks OK: create the alias  */
@@ -1437,7 +1433,7 @@ iarray iarray_get_sub_array_2D (iarray array, int starty, int startx,
 	m_error_notify (function_name, "iarray");
     }
     if ( ( sub->lengths = (unsigned long *)
-	  m_alloc (sizeof *sub->lengths * 2) ) == NULL )
+	   m_alloc (sizeof *sub->lengths * 2) ) == NULL )
     {
 	m_error_notify (function_name, "iarray");
 	m_free ( (char *) sub );
@@ -1446,6 +1442,7 @@ iarray iarray_get_sub_array_2D (iarray array, int starty, int startx,
     sub->lengths[1] = xlen;
     sub->data = array->data;
     sub->array_num = array->array_num;
+    sub->elem_index = array->elem_index;
     sub->multi_desc = array->multi_desc;
     sub->top_pack_desc = array->top_pack_desc;
     sub->top_packet = array->top_packet;
@@ -1521,26 +1518,26 @@ iarray iarray_get_2D_slice_from_3D (iarray cube, unsigned int ydim,
     /*  Sanity checks  */
     if ( ( inp_num_dim = iarray_num_dim (cube) ) != 3 )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Input array has: %u dimensions, must have only 3\n",
 			inp_num_dim);
 	a_prog_bug (function_name);
     }
     if (ydim == xdim)
     {
-	(void) fprintf (stderr, "ydim and xdim must have different values\n");
-	(void) fprintf (stderr, "Common value: %u\n", ydim);
+	fprintf (stderr, "ydim and xdim must have different values\n");
+	fprintf (stderr, "Common value: %u\n", ydim);
 	a_prog_bug (function_name);
     }
     if (ydim >= inp_num_dim)
     {
-	(void) fprintf (stderr, "ydim: %u must be less than: %u\n",
+	fprintf (stderr, "ydim: %u must be less than: %u\n",
 			ydim, inp_num_dim);
 	a_prog_bug (function_name);
     }
     if (xdim >= inp_num_dim)
     {
-	(void) fprintf (stderr, "xdim: %u must be less than: %u\n",
+	fprintf (stderr, "xdim: %u must be less than: %u\n",
 			xdim, inp_num_dim);
 	a_prog_bug (function_name);
     }
@@ -1553,7 +1550,7 @@ iarray iarray_get_2D_slice_from_3D (iarray cube, unsigned int ydim,
     }
     if (slice_pos >= cube->lengths[rdim])
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"slice_pos: %u must be less than dim. length: %lu\n",
 			slice_pos, cube->lengths[rdim]);
 	a_prog_bug (function_name);
@@ -1655,7 +1652,7 @@ void iarray_remap_torus (iarray array, unsigned int boundary_width)
     {
 	if (array->offsets[dim_count] == NULL)
 	{
-	    (void) fprintf (stderr, "No address offsets for dimension: %u\n",
+	    fprintf (stderr, "No address offsets for dimension: %u\n",
 			    dim_count);
 	    a_prog_bug (function_name);
 	}
@@ -1704,7 +1701,7 @@ unsigned long iarray_dim_length (iarray array, unsigned int index)
     VERIFY_IARRAY (array);
     if ( index >= iarray_num_dim (array) )
     {
-	(void) fprintf ( stderr,
+	fprintf ( stderr,
 			"Dimension index: %u is not less than number of dimensions: %u\n",
 			index, iarray_num_dim (array) );
 	a_prog_bug (function_name);
@@ -1729,7 +1726,7 @@ CONST char *iarray_dim_name (iarray array, unsigned int index)
     arr_desc = array->arr_desc;
     if ( index >= iarray_num_dim (array) )
     {
-	(void) fprintf ( stderr,
+	fprintf ( stderr,
 			"Dimension index: %u is not less than number of dimensions: %u\n",
 			index, iarray_num_dim (array) );
 	a_prog_bug (function_name);
@@ -1755,7 +1752,7 @@ void iarray_set_world_coords (iarray array, unsigned int index, double first,
     arr_desc = array->arr_desc;
     if ( index >= iarray_num_dim (array) )
     {
-	(void) fprintf ( stderr,
+	fprintf ( stderr,
 			"Dimension index: %u is not less than number of dimensions: %u\n",
 			index, iarray_num_dim (array) );
 	a_prog_bug (function_name);
@@ -1793,14 +1790,14 @@ void iarray_get_world_coords (iarray array, unsigned int index,
     arr_desc = array->arr_desc;
     if ( index >= iarray_num_dim (array) )
     {
-	(void) fprintf ( stderr,
+	fprintf ( stderr,
 			"Dimension index: %u is not less than number of dimensions: %u\n",
 			index, iarray_num_dim (array) );
 	a_prog_bug (function_name);
     }
     if ( (first == NULL) || (last == NULL) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     index = array->orig_dim_indices[index];
@@ -1823,7 +1820,7 @@ dim_desc *iarray_get_dim_desc (iarray array, unsigned int index)
     arr_desc = array->arr_desc;
     if ( index >= iarray_num_dim (array) )
     {
-	(void) fprintf ( stderr,
+	fprintf ( stderr,
 			"Dimension index: %u is not less than number of dimensions: %u\n",
 			index, iarray_num_dim (array) );
 	a_prog_bug (function_name);
@@ -1923,7 +1920,7 @@ flag iarray_copy_data (iarray output, iarray input, flag magnitude)
     /*  Test array sizes  */
     if ( ( num_dim = iarray_num_dim (input) ) != iarray_num_dim (output) )
     {
-	(void) fprintf ( stderr,
+	fprintf ( stderr,
 			"Input array has: %u dimensions whilst output array has: %u\n",
 			iarray_num_dim (input), iarray_num_dim (output) );
 	return (FALSE);
@@ -1932,11 +1929,11 @@ flag iarray_copy_data (iarray output, iarray input, flag magnitude)
     {
 	if (input->lengths[dim_count] != output->lengths[dim_count])
 	{
-	    (void) fprintf (stderr, "Input dimension: %u has length: %lu\n",
+	    fprintf (stderr, "Input dimension: %u has length: %lu\n",
 			    dim_count, input->lengths[dim_count]);
-	    (void) fprintf (stderr, "Output dimension: %u has length: %lu\n",
+	    fprintf (stderr, "Output dimension: %u has length: %lu\n",
 			    dim_count, output->lengths[dim_count]);
-	    (void) fprintf (stderr, "Must be the same\n");
+	    fprintf (stderr, "Must be the same\n");
 	    return (FALSE);
 	}
     }
@@ -2150,7 +2147,7 @@ flag iarray_min_max (iarray array, unsigned int conv_type, double *min,
     VERIFY_IARRAY (array);
     if ( (min == NULL) || (max == NULL) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     *min = TOOBIG;
@@ -2254,7 +2251,7 @@ flag iarray_scale_and_offset (iarray out, iarray inp, double scale[2],
     /*  Test array sizes  */
     if ( ( num_dim = iarray_num_dim (inp) ) != iarray_num_dim (out) )
     {
-	(void) fprintf ( stderr,
+	fprintf ( stderr,
 			"Input array has: %u dimensions whilst output array has: %u\n",
 			iarray_num_dim (inp), iarray_num_dim (out) );
 	return (FALSE);
@@ -2288,11 +2285,11 @@ flag iarray_scale_and_offset (iarray out, iarray inp, double scale[2],
     {
 	if (inp->lengths[dim_count] != out->lengths[dim_count])
 	{
-	    (void) fprintf (stderr, "Input dimension: %u has length: %lu\n",
+	    fprintf (stderr, "Input dimension: %u has length: %lu\n",
 			    dim_count, inp->lengths[dim_count]);
-	    (void) fprintf (stderr, "Output dimension: %u has length: %lu\n",
+	    fprintf (stderr, "Output dimension: %u has length: %lu\n",
 			    dim_count, out->lengths[dim_count]);
-	    (void) fprintf (stderr, "Must be the same\n");
+	    fprintf (stderr, "Must be the same\n");
 	    return (FALSE);
 	}
     }
@@ -2480,7 +2477,7 @@ flag iarray_clip_scale_and_offset (iarray out, iarray inp, double scale,
     /*  Test array sizes  */
     if ( ( num_dim = iarray_num_dim (inp) ) != iarray_num_dim (out) )
     {
-	(void) fprintf ( stderr,
+	fprintf ( stderr,
 			"Input array has: %u dimensions whilst output array has: %u\n",
 			iarray_num_dim (inp), iarray_num_dim (out) );
 	return (FALSE);
@@ -2490,12 +2487,12 @@ flag iarray_clip_scale_and_offset (iarray out, iarray inp, double scale,
 	*/
     if ( ds_element_is_complex ( iarray_type (inp) ) )
     {
-	(void) fprintf (stderr, "Input array is complex\n");
+	fprintf (stderr, "Input array is complex\n");
 	return (FALSE);
     }
     if ( ds_element_is_complex ( iarray_type (out) ) )
     {
-	(void) fprintf (stderr, "Input array is complex\n");
+	fprintf (stderr, "Input array is complex\n");
 	return (FALSE);
     }
     switch ( iarray_type (out) )
@@ -2515,11 +2512,11 @@ flag iarray_clip_scale_and_offset (iarray out, iarray inp, double scale,
     {
 	if (inp->lengths[dim_count] != out->lengths[dim_count])
 	{
-	    (void) fprintf (stderr, "Input dimension: %u has length: %lu\n",
+	    fprintf (stderr, "Input dimension: %u has length: %lu\n",
 			    dim_count, inp->lengths[dim_count]);
-	    (void) fprintf (stderr, "Output dimension: %u has length: %lu\n",
+	    fprintf (stderr, "Output dimension: %u has length: %lu\n",
 			    dim_count, out->lengths[dim_count]);
-	    (void) fprintf (stderr, "Must be the same\n");
+	    fprintf (stderr, "Must be the same\n");
 	    return (FALSE);
 	}
     }
@@ -2699,14 +2696,14 @@ flag iarray_add_and_scale (iarray out, iarray inp1, iarray inp2,
     /*  Test array sizes  */
     if ( ( num_dim = iarray_num_dim (inp1) ) != iarray_num_dim (out) )
     {
-	(void) fprintf ( stderr,
+	fprintf ( stderr,
 			"Input array1 has: %u dimensions whilst output array has: %u\n",
 			iarray_num_dim (inp1), iarray_num_dim (out) );
 	return (FALSE);
     }
     if ( iarray_num_dim (inp2) != iarray_num_dim (out) )
     {
-	(void) fprintf ( stderr,
+	fprintf ( stderr,
 			"Input array2 has: %u dimensions whilst output array has: %u\n",
 			iarray_num_dim (inp2), iarray_num_dim (out) );
 	return (FALSE);
@@ -2715,20 +2712,20 @@ flag iarray_add_and_scale (iarray out, iarray inp1, iarray inp2,
     {
 	if (inp1->lengths[dim_count] != out->lengths[dim_count])
 	{
-	    (void) fprintf (stderr, "Input1 dimension: %u has length: %lu\n",
+	    fprintf (stderr, "Input1 dimension: %u has length: %lu\n",
 			    dim_count, inp1->lengths[dim_count]);
-	    (void) fprintf (stderr, "Output dimension: %u has length: %lu\n",
+	    fprintf (stderr, "Output dimension: %u has length: %lu\n",
 			    dim_count, out->lengths[dim_count]);
-	    (void) fprintf (stderr, "Must be the same\n");
+	    fprintf (stderr, "Must be the same\n");
 	    return (FALSE);
 	}
 	if (inp2->lengths[dim_count] != out->lengths[dim_count])
 	{
-	    (void) fprintf (stderr, "Input2 dimension: %u has length: %lu\n",
+	    fprintf (stderr, "Input2 dimension: %u has length: %lu\n",
 			    dim_count, inp2->lengths[dim_count]);
-	    (void) fprintf (stderr, "Output dimension: %u has length: %lu\n",
+	    fprintf (stderr, "Output dimension: %u has length: %lu\n",
 			    dim_count, out->lengths[dim_count]);
-	    (void) fprintf (stderr, "Must be the same\n");
+	    fprintf (stderr, "Must be the same\n");
 	    return (FALSE);
 	}
     }
@@ -2932,14 +2929,14 @@ flag iarray_sub_and_scale (iarray out, iarray inp1, iarray inp2,
     /*  Test array sizes  */
     if ( ( num_dim = iarray_num_dim (inp1) ) != iarray_num_dim (out) )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Input array1 has: %u dimensions whilst output array has: %u\n",
 			iarray_num_dim (inp1), iarray_num_dim (out) );
 	return (FALSE);
     }
     if ( iarray_num_dim (inp2) != iarray_num_dim (out) )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Input array2 has: %u dimensions whilst output array has: %u\n",
 			iarray_num_dim (inp2), iarray_num_dim (out) );
 	return (FALSE);
@@ -2948,20 +2945,20 @@ flag iarray_sub_and_scale (iarray out, iarray inp1, iarray inp2,
     {
 	if (inp1->lengths[dim_count] != out->lengths[dim_count])
 	{
-	    (void) fprintf (stderr, "Input1 dimension: %u has length: %lu\n",
+	    fprintf (stderr, "Input1 dimension: %u has length: %lu\n",
 			    dim_count, inp1->lengths[dim_count]);
-	    (void) fprintf (stderr, "Output dimension: %u has length: %lu\n",
+	    fprintf (stderr, "Output dimension: %u has length: %lu\n",
 			    dim_count, out->lengths[dim_count]);
-	    (void) fprintf (stderr, "Must be the same\n");
+	    fprintf (stderr, "Must be the same\n");
 	    return (FALSE);
 	}
 	if (inp2->lengths[dim_count] != out->lengths[dim_count])
 	{
-	    (void) fprintf (stderr, "Input2 dimension: %u has length: %lu\n",
+	    fprintf (stderr, "Input2 dimension: %u has length: %lu\n",
 			    dim_count, inp2->lengths[dim_count]);
-	    (void) fprintf (stderr, "Output dimension: %u has length: %lu\n",
+	    fprintf (stderr, "Output dimension: %u has length: %lu\n",
 			    dim_count, out->lengths[dim_count]);
-	    (void) fprintf (stderr, "Must be the same\n");
+	    fprintf (stderr, "Must be the same\n");
 	    return (FALSE);
 	}
     }
@@ -3160,7 +3157,7 @@ flag iarray_compute_histogram (iarray array, unsigned int conv_type,
     if ( (histogram_array == NULL) || (histogram_peak == NULL) ||
 	(histogram_mode == NULL) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     num_dim = iarray_num_dim (array);
@@ -3262,7 +3259,7 @@ flag iarray_sum (iarray array, double sum[2])
     VERIFY_IARRAY (array);
     if (sum == NULL)
     {
-	(void) fprintf (stderr, "NULL pointer passed\n");
+	fprintf (stderr, "NULL pointer passed\n");
 	a_prog_bug (function_name);
     }
     num_dim = iarray_num_dim (array);
@@ -3359,7 +3356,7 @@ static iarray get_array_from_array (multi_array *multi_desc,
     }
     if (elem_index >= arr_desc->packet->num_elements)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"elem_index: %u  is not less than num elements: %u\n",
 			elem_index, arr_desc->packet->num_elements);
 	a_prog_bug (function_name);
@@ -3442,9 +3439,8 @@ static flag iarray_allocate_records (iarray array, flag offsets)
     arr_desc = array->arr_desc;
     if ( (num_dim = array->num_dim) > arr_desc->num_dimensions )
     {
-	(void) fprintf (stderr,
-			"iarray num_dim: %u greater than base num_dim: %u\n",
-			num_dim, arr_desc->num_dimensions);
+	fprintf (stderr, "iarray num_dim: %u greater than base num_dim: %u\n",
+		 num_dim, arr_desc->num_dimensions);
 	a_prog_bug (function_name);
     }
     num_restr = arr_desc->num_dimensions - num_dim;
@@ -3452,8 +3448,8 @@ static flag iarray_allocate_records (iarray array, flag offsets)
     if (offsets)
     {
 	if ( ( array->offsets = (uaddr **)
-	      m_alloc (sizeof *array->offsets * num_dim) )
-	    == NULL )
+	       m_alloc (sizeof *array->offsets * num_dim) )
+	     == NULL )
 	{
 	    m_error_notify (function_name, "array of offset pointers");
 	    return (FALSE);
@@ -3464,8 +3460,8 @@ static flag iarray_allocate_records (iarray array, flag offsets)
 	array->offsets = NULL;
     }
     if ( ( array->contiguous = (flag *)
-	  m_alloc (sizeof *array->contiguous * num_dim) )
-	== NULL )
+	   m_alloc (sizeof *array->contiguous * num_dim) )
+	 == NULL )
     {
 	m_error_notify (function_name, "array of offset pointers");
 	return (FALSE);
@@ -3637,7 +3633,7 @@ static flag mem_debug_required ()
 	(st_icmp (env, "TRUE") == 0) )
     {
 	debug = TRUE;
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Running iarray_create and iarray_dealloc with debugging\n");
     }
     return (debug);
@@ -3722,12 +3718,12 @@ static flag scatter_process (iarray array,
 
     if (pool == NULL)
     {
-	(void) fprintf (stderr, "Thread pool not yet initialised\n");
+	fprintf (stderr, "Thread pool not yet initialised\n");
 	a_prog_bug (function_name);
     }
     if (max_dim < 1)
     {
-	(void) fprintf (stderr, "max_dim: %u is not greater than zero\n",
+	fprintf (stderr, "max_dim: %u is not greater than zero\n",
 			max_dim);
 	a_prog_bug (function_name);
     }
@@ -3856,7 +3852,7 @@ static flag min_max_scatter_job_func (KThreadPool pool, iarray array,
 				      iarray_type (array), info->conv_type,
 				      &info->min, &info->max) );
     }
-    (void) fprintf (stderr, "num_dim: %u illegal\n", num_dim);
+    fprintf (stderr, "num_dim: %u illegal\n", num_dim);
     a_prog_bug (function_name);
     return (FALSE);
 }   /*  End Function min_max_scatter_job_func  */
@@ -3902,7 +3898,7 @@ static flag histogram_scatter_job_func (KThreadPool pool, iarray array,
 				       info->min, info->max,info->num_bins,
 				       histogram_array, &hpeak, &hmode) );
     }
-    (void) fprintf (stderr, "num_dim: %u illegal\n", num_dim);
+    fprintf (stderr, "num_dim: %u illegal\n", num_dim);
     a_prog_bug (function_name);
     return (FALSE);
 }   /*  End Function histogram_scatter_job_func  */
@@ -3939,7 +3935,7 @@ static flag sum_scatter_job_func (KThreadPool pool, iarray array,
 				 lengths[0], offsets[0],
 				 lengths[1], offsets[1], sum_arr) );
     }
-    (void) fprintf (stderr, "num_dim: %u illegal\n", num_dim);
+    fprintf (stderr, "num_dim: %u illegal\n", num_dim);
     a_prog_bug (function_name);
     return (FALSE);
 }   /*  End Function sum_scatter_job_func  */
@@ -3999,7 +3995,7 @@ static flag contiguous_process (iarray array,
 
     if (pool == NULL)
     {
-	(void) fprintf (stderr, "Thread pool not yet initialised\n");
+	fprintf (stderr, "Thread pool not yet initialised\n");
 	a_prog_bug (function_name);
     }
     thread_info = mt_get_thread_info (pool);

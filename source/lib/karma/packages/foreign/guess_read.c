@@ -47,8 +47,10 @@
 
     Updated by      Richard Gooch   21-JUN-1996: Added support for GIPSY format
 
-    Last updated by Richard Gooch   12-OCT-1996: Created
+    Updated by      Richard Gooch   12-OCT-1996: Created
   <foreign_read_and_setup> routine.
+
+    Last updated by Richard Gooch   3-DEC-1996: Added support for PGM files.
 
 
 */
@@ -85,7 +87,8 @@ multi_array *foreign_guess_and_read (CONST char *filename,
     <mmap_option> This has the same meaning as for the <dsxfr_get_multi>
     routine.
     <writeable> This has the same meaning as for the <dsxfr_get_multi> routine.
-    <ftype> The type of the file that was read in is written here.
+    <ftype> The type of the file that was read in is written here. This may be
+    NULL.
     [VARARGS] The optional attributes are given as pairs of attribute-key
     attribute-value pairs. This list must terminated with FA_GUESS_READ_END.
     See [<FOREIGN_ATT_GUESS>] for a list of defined attributes.
@@ -95,7 +98,7 @@ multi_array *foreign_guess_and_read (CONST char *filename,
 {
     Channel inp;
     flag fits_convert_to_float = FALSE;
-    unsigned int att_key;
+    unsigned int att_key, filetype;
     va_list argp;
     multi_array *multi_desc = NULL;  /*  Initialised to keep compiler happy  */
     extern char *sys_errlist[];
@@ -118,11 +121,12 @@ multi_array *foreign_guess_and_read (CONST char *filename,
 	}
     }
     va_end (argp);
-    *ftype = foreign_guess_format_from_filename (filename);
-    if (*ftype == FOREIGN_FILE_FORMAT_UNKNOWN) return (NULL);
+    filetype = foreign_guess_format_from_filename (filename);
+    if (ftype != NULL) *ftype = filetype;
+    if (filetype == FOREIGN_FILE_FORMAT_UNKNOWN) return (NULL);
     if ( (mmap_option == K_CH_MAP_ALWAYS) &&
-	(*ftype != FOREIGN_FILE_FORMAT_KARMA) ) return (NULL);
-    switch (*ftype)
+	 (filetype != FOREIGN_FILE_FORMAT_KARMA) ) return (NULL);
+    switch (filetype)
     {
       case FOREIGN_FILE_FORMAT_KARMA:
 	if ( ( multi_desc = dsxfr_get_multi (filename, FALSE,
@@ -133,6 +137,24 @@ multi_array *foreign_guess_and_read (CONST char *filename,
 			    filename);
 	    return (NULL);
 	}
+	break;
+      case FOREIGN_FILE_FORMAT_PGM:
+	/*  Read PGM file  */
+	if ( ( inp = ch_open_file (filename, "r") ) == NULL )
+	{
+	    fprintf (stderr, "Error opening file: \"%s\"\t%s\n",
+			    filename, sys_errlist[errno]);
+	    return (NULL);
+	}
+	if ( ( multi_desc = foreign_pgm_read (inp,
+					      FA_PGM_READ_END) )
+	    == NULL )
+	{
+	    fprintf (stderr, "Error reading PGM file\n");
+	    ch_close (inp);
+	    return (NULL);
+	}
+	ch_close (inp);
 	break;
       case FOREIGN_FILE_FORMAT_PPM:
 	/*  Read PPM file  */
@@ -216,7 +238,7 @@ multi_array *foreign_guess_and_read (CONST char *filename,
 	}
 	break;
       default:
-	fprintf (stderr, "Illegal filetype: %u\n", *ftype);
+	fprintf (stderr, "Illegal filetype: %u\n", filetype);
 	a_prog_bug (function_name);
 	break;
     }
@@ -239,7 +261,8 @@ flag foreign_read_and_setup (CONST char *filename, unsigned int mmap_option,
     <mmap_option> This has the same meaning as for the <dsxfr_get_multi>
     routine.
     <writeable> This has the same meaning as for the <dsxfr_get_multi> routine.
-    <ftype> The type of the file that was read in is written here.
+    <ftype> The type of the file that was read in is written here. This may be
+    NULL.
     <inform> If TRUE, the routine displays some informative messages.
     <num_dim> The number of dimensions required. If this is 0, any number of
     dimensions is allowed.
@@ -279,8 +302,7 @@ flag foreign_read_and_setup (CONST char *filename, unsigned int mmap_option,
     }
     /*  Try to get array  */
     if ( ( arr = iarray_get_from_multi_array (multi_desc, NULL, num_dim,
-					       NULL, NULL) )
-	 == NULL )
+					      NULL, NULL) ) == NULL )
     {
 	fprintf (stderr, "Could not find array\n");
 	ds_dealloc_multi (multi_desc);

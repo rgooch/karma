@@ -1,0 +1,64 @@
+<html><head><title>Package: xv</title></head> 
+<body>
+<center><h1>The "xv" Package</h1></center>    These routines are meant to provide a convenience interface for querying
+    X visuals.
+<p><b>Library:</b> karmaX11
+<br><b>Link With:</b> -lkarmaX11
+<br><p><a name=xv></a></table><h4>Functions</h4><table><tr><td><a href=xv.html#xv_get_vinfos>xv_get_vinfos</a></td><td>Get supported visuals available on a screen.
+</td></tr>
+<tr><td><a href=xv.html#xv_get_visuals>xv_get_visuals</a></td><td>Get supported visuals available on a screen.
+</td></tr>
+<tr><td><a href=xv.html#xv_get_visinfo_for_visual>xv_get_visinfo_for_visual</a></td><td>Get the visual information structure for a visual.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=xv_get_vinfos></a> void
+ <b>xv_get_vinfos</b><i>    (Screen *screen, XVisualInfo **pseudocolour,
+		    XVisualInfo **truecolour, XVisualInfo **directcolour)
+</i><br><p>    Get supported visuals available on a screen.
+<p><b>Parameters:</b><ul><li><i>screen :</i> 
+    The X Window screen.
+<br><li><i>pseudocolour :</i> 
+    A PseudoColour XVisualInfo pointer will be written here. If
+    this is NULL, nothing is written here. If no PseudoColour visual is
+    supported, NULL is written here.
+<br><li><i>truecolour :</i> 
+    A TrueColour XVisualInfo pointer will be written here. If this
+    is NULL, nothing is written here. If no TrueColour visual is supported,
+    NULL is written here.
+<br><li><i>directcolour :</i> 
+    A DirectColour XVisualInfo pointer will be written here. If
+    this is NULL, nothing is written here. If no DirectColour visual is
+    supported, NULL is written here.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The XVisualInfo structures returned must be freed by XFree()
+</ul><p><hr> <a name=xv_get_visuals></a> void
+ <b>xv_get_visuals</b><i>    (Screen *screen, Visual **pseudocolour,
+		     Visual **truecolour, Visual **directcolour)
+</i><br><p>    Get supported visuals available on a screen.
+<p><b>Parameters:</b><ul><li><i>screen :</i> 
+    The X Window screen.
+<br><li><i>pseudocolour :</i> 
+    A PseudoColour XVisualInfo pointer will be written here. If
+    this is NULL, nothing is written here. If no PseudoColour visual is
+    supported, NULL is written here.
+<br><li><i>truecolour :</i> 
+    A TrueColour XVisualInfo pointer will be written here. If this
+    is NULL, nothing is written here. If no TrueColour visual is supported,
+    NULL is written here.
+<br><li><i>directcolour :</i> 
+    A DirectColour XVisualInfo pointer will be written here. If
+    this is NULL, nothing is written here. If no DirectColour visual is
+    supported, NULL is written here.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The XVisualInfo structures returned must be freed by XFree()
+</ul><p><hr> <a name=xv_get_visinfo_for_visual></a> XVisualInfo *
+ <b>xv_get_visinfo_for_visual</b><i>    (Display *dpy, Visual *visual)
+</i><br><p>    Get the visual information structure for a visual.
+<p><b>Parameters:</b><ul><li><i>dpy :</i> 
+    The X display.
+<br><li><i>visual :</i> 
+    The visual.
+<br></ul><b>Returns:</b>     A pointer to an XVisualInfo structure on succes, else NULL. The
+    XVisualInfo structure must be freed by XFree()
+<br><b>Multithreading Level:</b> Unsafe<br><p>
+<hr><a href="../index.html">Back to Karma Home Page</a>
+<hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.ariel.com.au/">Ariel Internet Services</a></address></center></body></html>

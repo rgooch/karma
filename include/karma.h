@@ -1,7 +1,7 @@
 /*
     Various definitions for Karma.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -61,11 +61,11 @@ typedef unsigned long uaddr;
  *-----------------------------------------------------------*/
 
 #ifndef PI
-#define PI 3.14159265358979
+#  define PI 3.14159265358979323846
 #endif
-#define PI_ON_2 1.57079632679489
-#define TWO_PI 6.28318530717958
-#define PION180 (PI/180.0)
+#define PI_ON_2 (PI * 0.5)
+#define TWO_PI (PI * 2.0)
+#define PION180 (PI / 180.0)
 #define TWOPI TWO_PI
 
 /*-----------------------------------------------------------*

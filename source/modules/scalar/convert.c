@@ -56,7 +56,10 @@
     Updated by      Richard Gooch   30-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
 
-    Last updated by Richard Gooch   28-SEP-1996: Copy and append new history.
+    Updated by      Richard Gooch   28-SEP-1996: Copy and append new history.
+
+    Last updated by Richard Gooch   3-DEC-1996: Cosmentic changes to stop IRIX
+  compiler from complaining.
 
 
 */
@@ -230,9 +233,8 @@ flag convert (char *p, FILE *fp)
 
     if ( (type == NONE) || (type == MULTI_ARRAY) )
     {
-	fprintf (fp,
-			"type: \"%s\" not allowed: defaulting to K_FLOAT\n",
-			data_type_names[type] );
+	fprintf (fp, "type: \"%s\" not allowed: defaulting to K_FLOAT\n",
+		 data_type_names[type] );
 	type = K_FLOAT;
 	return (TRUE);
     }
@@ -249,24 +251,20 @@ flag convert (char *p, FILE *fp)
       case SCALE_NORMALISE:
 	if (norm < 0.0)
 	{
-	    fprintf (fp,
-			    "Normalise parameter must be positive: taking abs\n");
+	    fprintf (fp, "Normalise parameter must be positive: taking abs\n");
 	    norm = fabs (norm);
 	}
 	if (norm == 0.0)
 	{
-	    fprintf (fp,
-			    "Can't normalize to zero: I'll clean up after you\n");
+	    fprintf (fp, "Can't normalize to zero: I'll clean up after you\n");
 	    norm = 1.0;
 	}
 	break;
       case SCALE_RANGE:
 	if (low_range > up_range)
 	{
-	    fprintf (fp,
-			    "Lower range must be less than upper range\n");
-	    fprintf (fp,
-			    "Since I'm smarter than you, I'll swap them\n");
+	    fprintf (fp, "Lower range must be less than upper range\n");
+	    fprintf (fp, "Since I'm smarter than you, I'll swap them\n");
 	    tmp = low_range;
 	    low_range = up_range;
 	    up_range = tmp;
@@ -274,7 +272,7 @@ flag convert (char *p, FILE *fp)
 	if (low_range == up_range)
 	{
 	    fprintf (fp,
-			    "Can't have zero size range: I'll move them apart 0.5 each way\n");
+		     "Can't have zero size range: I'll move them apart 0.5 each way\n");
 	    low_range -= 0.5;
 	    up_range += 0.5;
 	}
@@ -283,9 +281,8 @@ flag convert (char *p, FILE *fp)
 	if (saturate_min > saturate_max)
 	{
 	    fprintf (fp,
-			    "Lower saturation point must be less than upper saturation point\n");
-	    fprintf (fp,
-			    "Since I'm smarter than you, I'll swap them\n");
+		     "Lower saturation point must be less than upper saturation point\n");
+	    fprintf (fp, "Since I'm smarter than you, I'll swap them\n");
 	    tmp = saturate_min;
 	    saturate_min = saturate_max;
 	    saturate_max = tmp;
@@ -293,8 +290,8 @@ flag convert (char *p, FILE *fp)
 	if (saturate_min == saturate_max)
 	{
 	    fprintf (fp,
-			    "Can't have equal saturation points: using: %g and %g\n",
-			    1.0 / TOOBIG, TOOBIG);
+		     "Can't have equal saturation points: using: %g and %g\n",
+		     1.0 / TOOBIG, TOOBIG);
 	    saturate_min = 1.0 / TOOBIG;
 	    saturate_max = TOOBIG;
 	}
@@ -318,8 +315,7 @@ flag convert (char *p, FILE *fp)
 	}
 	if ( ( element_name = ex_str (p, &p) ) == NULL )
 	{
-	    fprintf (fp,
-			    "Must specify element name to change type of\n");
+	    fprintf (fp, "Must specify element name to change type of\n");
 	    m_free (arrayfile);
 	    return (TRUE);
 	}
@@ -398,8 +394,7 @@ char **out_data;
     }
     if (element_name == NULL)
     {
-	fprintf (stderr,
-			"NULL external variable element name pointer\n");
+	fprintf (stderr, "NULL external variable element name pointer\n");
 	a_prog_bug (function_name);
     }
     toobig_count = 0;
@@ -429,8 +424,7 @@ char **out_data;
 	if (ds_foreach_occurrence (inp_desc, inp_data, element_name, FALSE,
 				   find_scale) == FALSE)
 	{
-	    fprintf (stderr,
-			    "Error getting minimum and maximum of input\n");
+	    fprintf (stderr, "Error getting minimum and maximum of input\n");
 	    a_prog_bug (function_name);
 	}
 	break;
@@ -459,9 +453,8 @@ char **out_data;
     }
     if (toobig_count > 0)
     {
-	fprintf (stderr,
-			"Converted: %u occurrences of TOOBIG values\n",
-			toobig_count);
+	fprintf (stderr, "Converted: %u occurrences of TOOBIG values\n",
+		 toobig_count);
     }
     return (TRUE);
 }   /*  End Function process_array  */
@@ -496,27 +489,25 @@ packet_desc *inp_desc;
 				  (char **) &enclosing_packet, &elem_index) )
     {
       case IDENT_NOT_FOUND:
-	fprintf (stderr,
-			"Atomic element: \"%s\" not found\n", element_name);
+	fprintf (stderr, "Atomic element: \"%s\" not found\n", element_name);
 	return (NULL);
-	break;
+	/*break;*/
       case IDENT_ELEMENT:
 	break;
       case IDENT_MULTIPLE:
-	fprintf (stderr,
-			"Item \"%s\" found more than once\n", element_name);
+	fprintf (stderr, "Item \"%s\" found more than once\n", element_name);
 	return (NULL);
-	break;
+	/*break;*/
       case IDENT_DIMENSION:
 	fprintf (stderr,
-			"Item: \"%s\" must be an element, not a dimension name\n",
-			element_name);
+		 "Item: \"%s\" must be an element, not a dimension name\n",
+		 element_name);
 	return (NULL);
-	break;
+	/*break;*/
       case IDENT_GEN_STRUCT:
       default:
 	fprintf (stderr,
-			"Bad return value from function: ds_f_name_in_packet\n");
+		 "Bad return value from function: ds_f_name_in_packet\n");
 	a_prog_bug (function_name);
 	break;
     }
@@ -537,36 +528,34 @@ packet_desc *inp_desc;
 				  (char **) &enclosing_packet, &elem_num) )
     {
       case IDENT_NOT_FOUND:
-	fprintf (stderr,
-			"Output atomic element: \"%s\" not found\n",
-			element_name);
+	fprintf (stderr, "Output atomic element: \"%s\" not found\n",
+		 element_name);
 	a_prog_bug (function_name);
 	break;
       case IDENT_ELEMENT:
 	break;
       case IDENT_MULTIPLE:
-	fprintf (stderr,
-			"Output item \"%s\" found more than once\n",
-			element_name);
+	fprintf (stderr, "Output item \"%s\" found more than once\n",
+		 element_name);
 	a_prog_bug (function_name);
 	break;
       case IDENT_DIMENSION:
 	fprintf (stderr,
-			"Output item: \"%s\" must be an element, not a dimension name\n",
-			element_name);
+		 "Output item: \"%s\" must be an element, not a dimension name\n",
+		 element_name);
 	a_prog_bug (function_name);
 	break;
       case IDENT_GEN_STRUCT:
       default:
 	fprintf (stderr,
-			"Bad return value from function: ds_f_name_in_packet\n");
+		 "Bad return value from function: ds_f_name_in_packet\n");
 	a_prog_bug (function_name);
 	break;
     }
     if (elem_num != elem_index)
     {
 	fprintf (stderr, "Element index has changed from: %u to: %u\n",
-			elem_index, elem_num);
+		 elem_index, elem_num);
 	a_prog_bug (function_name);
     }
     /*  Change type of output element  */
@@ -654,8 +643,8 @@ char *out_data;
     {
 	/*  Descriptors are of the same type  */
 	fprintf (stderr,
-			"Descriptors: input: %s output: %s are not of the same type\n",
-			data_type_names[inp_type], data_type_names[out_type]);
+		 "Descriptors: input: %s output: %s are not of the same type\n",
+		 data_type_names[inp_type], data_type_names[out_type]);
 	a_prog_bug (function_name);
     }
     switch (inp_type)
@@ -675,8 +664,7 @@ char *out_data;
 	list_head_inp = (list_header *) inp_data;
 	if ( (*list_head_inp).magic != MAGIC_LIST_HEADER )
 	{
-	    fprintf (stderr,
-			    "Input list header has bad magic number\n");
+	    fprintf (stderr, "Input list header has bad magic number\n");
 	    a_prog_bug (function_name);
 	}
 	list_head_out = (list_header *) out_data;
@@ -701,16 +689,16 @@ char *out_data;
     if ( (*pack_desc_inp).num_elements != (*pack_desc_out).num_elements )
     {
 	fprintf (stderr,
-			"Packet descriptors have different num. of elements: %u %u\n",
-			(*pack_desc_inp).num_elements,
+		 "Packet descriptors have different num. of elements: %u %u\n",
+		 (*pack_desc_inp).num_elements,
 			(*pack_desc_out).num_elements);
 	a_prog_bug (function_name);
     }
     if ( (*pack_desc_out).element_types[elem_index] != type )
     {
 	fprintf (stderr,
-			"Output element descriptor type has changed to: \"%s\"\n",
-			data_type_names[ (*pack_desc_out).element_types[elem_index] ]);
+		 "Output element descriptor type has changed to: \"%s\"\n",
+		 data_type_names[ (*pack_desc_out).element_types[elem_index] ]);
 	a_prog_bug (function_name);
     }
     inp_offset = ds_get_element_offset (pack_desc_inp, elem_index);
@@ -726,7 +714,7 @@ char *out_data;
 				 (*pack_desc_out).element_types[elem_index],
 				 out_pack_size, array_size) );
 	
-	break;
+	/*break;*/
       case LISTP:
 	/*  List: process each entry  */
 	/*  Process input contiguous section in bulk  */
@@ -758,7 +746,7 @@ char *out_data;
 		return (FALSE);
 	    }
 	}
-	break;
+	/*break;*/
       case NONE:
 	/*  Single packet: process differing element  */
 	return ( convert_values (inp_data + inp_offset,
@@ -767,7 +755,7 @@ char *out_data;
 				 out_data + out_offset,
 				 (*pack_desc_out).element_types[elem_index],
 				 out_pack_size, 1) );
-	break;
+	/*break;*/
     }
     return (TRUE);
 }   /*  End Function process_occurrence  */
@@ -801,14 +789,13 @@ unsigned int index;
     }
     if (type != NONE)
     {
-	fprintf (stderr,
-			"Enclosing desciptor must be a packet descriptor\n");
+	fprintf (stderr, "Enclosing desciptor must be a packet descriptor\n");
 	a_prog_bug (function_name);
     }
     if (index != elem_index)
     {
 	fprintf (stderr, "Element index has changed from: %u to: %u\n",
-			elem_index, index);
+		 elem_index, index);
 	a_prog_bug (function_name);
     }
     pack_desc = (packet_desc*) encls_desc;
@@ -870,13 +857,13 @@ unsigned int operation;
     {
       case K_COMPLEX_REAL:
 	return (input[0]);
-	break;
+	/*break;*/
       case K_COMPLEX_IMAG:
 	return (input[1]);
-	break;
+	/*break;*/
       case K_COMPLEX_ABS:
 	return ( sqrt (input[0] * input[0] + input[1] * input[1]) );
-	break;
+	/*break;*/
       case K_COMPLEX_PHASE:
 	if ( (input[0] == 0.0) && (input[1] == 0.0) )
 	{
@@ -886,14 +873,14 @@ unsigned int operation;
 	{
 	    return ( atan2 (input[1], input[0]) / PION180 );
 	}
-	break;
+	/*break;*/
       case K_COMPLEX_SQUARE:
 	return (input[0] * input[0] + input[1] * input[1]);
-	break;
+	/*break;*/
       case K_COMPLEX_CONT_PHASE:
 	fprintf (stderr, "Continuous phase not implemented yet\n");
 	return (TOOBIG);
-	break;
+	/*break;*/
       default:
 	fprintf (stderr, "Bad operation value: %u\n", operation);
 	a_prog_bug (function_name);
@@ -931,14 +918,13 @@ unsigned int index;
     }
     if (type != NONE)
     {
-	fprintf (stderr,
-			"Enclosing desciptor must be a packet descriptor\n");
+	fprintf (stderr, "Enclosing desciptor must be a packet descriptor\n");
 	a_prog_bug (function_name);
     }
     if (index != elem_index)
     {
 	fprintf (stderr, "Element index has changed from: %u to: %u\n",
-			elem_index, index);
+		 elem_index, index);
 	a_prog_bug (function_name);
     }
     pack_desc = (packet_desc*) encls_desc;
@@ -1102,13 +1088,11 @@ unsigned int num_values;
 		}
 		break;
 	      case K_COMPLEX_CONT_PHASE:
-		fprintf (stderr,
-				"Continuous phase not implemented yet\n");
+		fprintf (stderr, "Continuous phase not implemented yet\n");
 		return (FALSE);
-		break;
+		/*break;*/
 	      default:
-		fprintf (stderr, "Bad operation value: %u\n",
-				complex_option);
+		fprintf (stderr, "Bad operation value: %u\n", complex_option);
 		a_prog_bug (function_name);
 		break;
 	    }
@@ -1318,8 +1302,7 @@ unsigned int num_values;
 	    }
 	    break;
 	  default:
-	    fprintf (stderr, "Bad scale_option value: %d\n",
-			    scale_option);
+	    fprintf (stderr, "Bad scale_option value: %d\n", scale_option);
 	    a_prog_bug (function_name);
 	    break;
 	}

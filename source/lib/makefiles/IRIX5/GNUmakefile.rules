@@ -21,7 +21,7 @@ $(library):	$(members)
 
 $(shared_target):	$(objects) $(csource)
 	ld -shared -VS $(KARMA_VERSION) -update_registry ../so_locations \
-	-o $(shared_lib) -all $(objects) \
+	-o $(shared_lib) -$(MACHINE) -all $(objects) \
 	-none -L$(KARMALIBPATH) $(LDFLAGS) -lc -lm
 	mv $(shared_lib) $(KARMALIBPATH)
 

@@ -50,34 +50,34 @@
 
 /* Resources:
 
- Name		     Class		RepType		Default Value
- ----		     -----		-------		-------------
- background	     Background		Pixel		XtDefaultBackground
- border		     BorderColor	Pixel		XtDefaultForeground
- borderWidth	     BorderWidth	Dimension	1
- destroyCallback     Callback		Pointer		NULL
- height		     Height		Dimension	0
- mappedWhenManaged   MappedWhenManaged	Boolean         True
- sensitive	     Sensitive		Boolean		True
- width		     Width		Dimension	0
- x		     Position		Position	0
- y		     Position		Position	0
- visual              Visual             Pointer         CopyFromParent
- colormap            Colormap           Colormap        dynamic
- stereoMode          StereoMode         Int             XkwSTEREO_MODE_MONO
- verticalSplit       VerticalSplit      Bool            False
- splitSeparation     SplitSeparation    Int             0
- monoPixCanvas       PixCanvas          Pointer         NULL
- leftPixCanvas       PixCanvas          Pointer         NULL
- rightPixCanvas      PixCanvas          Pointer         NULL
- clipEvents          ClipEvents         Bool            FALSE
- silenceUnconsumed   SilenceUnconsumed  Bool            FALSE
- foreground	     Foreground		Pixel		XtDefaultForeground
- forceNewCmap	     ForceNewCmap	Bool   		False
- retainFgBg	     RetainFgBg		Bool   		False
- realiseCallback     Callback           Callback        NULL
- font                Font               String          NULL
- verbose             Verbose            Bool            False
+ Name                  Class             RepType         Default Value
+ ----                  -----             -------         -------------
+ XtNbackground         Background        Pixel           XtDefaultBackground
+ XtNborder             BorderColor       Pixel           XtDefaultForeground
+ XtNborderWidth        BorderWidth       Dimension       1
+ XtNdestroyCallback    Callback          Pointer         NULL
+ XtNheight             Height            Dimension       0
+ XtNmappedWhenManaged  MappedWhenManaged Boolean         True
+ XtNsensitive          Sensitive         Boolean         True
+ XtNwidth              Width             Dimension       0
+ XtNx                  Position          Position        0
+ XtNy                  Position          Position        0
+ XtNvisual             Visual            Pointer         CopyFromParent
+ XtNcolormap           Colormap          Colormap        dynamic
+ XkwNstereoMode        StereoMode        Int             XkwSTEREO_MODE_MONO
+ XkwNverticalSplit     VerticalSplit     Bool            False
+ XkwNsplitSeparation   SplitSeparation   Int             0
+ XkwNmonoPixCanvas     PixCanvas         Pointer         NULL
+ XkwNleftPixCanvas     PixCanvas         Pointer         NULL
+ XkwNrightPixCanvas    PixCanvas         Pointer         NULL
+ XkwNclipEvents        ClipEvents        Bool            FALSE
+ XkwNsilenceUnconsumed SilenceUnconsumed Bool            FALSE
+ XtNforeground         Foreground        Pixel           XtDefaultForeground
+ XkwNforceNewCmap      ForceNewCmap      Bool            False
+ XkwNretainFgBg        RetainFgBg        Bool            False
+ XkwNrealiseCallback   Callback          Callback        NULL
+ XtNfont               Font              String          NULL
+ XkwNverbose           Verbose           Bool            False
 
 */
 
@@ -111,8 +111,8 @@
 #define XkwSTEREO_MODE_OpenGL    3
 #define XkwSTEREO_MODE_SPLIT     4
 
-typedef struct _CanvasClassRec	*CanvasWidgetClass;
-typedef struct _CanvasRec	*CanvasWidget;
+typedef struct _CanvasClassRec  *CanvasWidgetClass;
+typedef struct _CanvasRec       *CanvasWidget;
 
 extern WidgetClass canvasWidgetClass;
 

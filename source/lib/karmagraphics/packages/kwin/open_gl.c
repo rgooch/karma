@@ -35,7 +35,7 @@
 
     Updated by      Richard Gooch   26-MAY-1996: Moved stub functions in.
 
-    Last updated by Richard Gooch   15-SEP-1996: Made use of new <kwin_xutil_*>
+    Last updated by Richard Gooch   15-SEP-1996: Made use of new <xv_*>
   routines.
 
 
@@ -49,6 +49,7 @@
 #include <karma_kwin_hooks.h>
 #include <karma_drw.h>
 #include <karma_xi.h>
+#include <karma_xv.h>
 #ifdef X11
 #  include <X11/Xutil.h>
 #endif
@@ -69,17 +70,17 @@
 #define CACHE_DATA_MAGIC_NUMBER (unsigned int) 1834532176
 
 #define VERIFY_CANVAS(canvas) if (canvas == NULL) \
-{(void) fprintf (stderr, "NULL canvas passed\n"); \
+{fprintf (stderr, "NULL canvas passed\n"); \
  a_prog_bug (function_name); } \
 if (canvas->magic_number != CANVAS_MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid canvas object\n"); \
+{fprintf (stderr, "Invalid canvas object\n"); \
  a_prog_bug (function_name); }
 
 #define VERIFY_FONT(font) if (font == NULL) \
-{(void) fprintf (stderr, "NULL font passed\n"); \
+{fprintf (stderr, "NULL font passed\n"); \
  a_prog_bug (function_name); } \
 if (font->magic_number != FONT_MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid font object\n"); \
+{fprintf (stderr, "Invalid font object\n"); \
  a_prog_bug (function_name); }
 
 /*  Structure declarations  */
@@ -255,11 +256,11 @@ flag kwin_open_gl_test_available (Display *display)
     if ( glXQueryExtension (display, NULL, NULL) )
     {
 	/*  DEBUG  */
-	(void) fprintf (stderr, "GLX extension available\n");
+	fprintf (stderr, "GLX extension available\n");
 	return (TRUE);
     }
     /*  DEBUG  */
-    (void) fprintf (stderr, "GLX extension not available\n");
+    fprintf (stderr, "GLX extension not available\n");
     return (FALSE);
 }   /*  End Function kwin_open_gl_test_available  */
 
@@ -279,53 +280,53 @@ flag kwin_open_gl_test_stereo (Display *display, XVisualInfo *visinfo)
     /*  HACK  */
     if ( ( tmp_vinfo = glXChooseVisual (display, 0, attrib_list) ) == NULL )
     {
-	(void) fprintf (stderr, "No PseudoColour stereo visuals available\n");
+	fprintf (stderr, "No PseudoColour stereo visuals available\n");
     }
     else
     {
-	(void) fprintf (stderr, "Found PseudoColour stereo visual\n");
+	fprintf (stderr, "Found PseudoColour stereo visual\n");
     }
     /*  END HACK  */
     if (glXGetConfig (display, visinfo, GLX_USE_GL, &value) != 0)
     {
-	(void) fprintf (stderr, "%s: error testing GLX_USE_GL attribute\n",
+	fprintf (stderr, "%s: error testing GLX_USE_GL attribute\n",
 			function_name);
 	return (FALSE);
     }
     if (!value)
     {
 	/*  DEBUG  */
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"OpenGL rendering not supported on this visual\n");
 	return (FALSE);
     }
     /*  DEBUG  */
     if (glXGetConfig (display, visinfo, GLX_RGBA, &value) != 0)
     {
-	(void) fprintf (stderr, "%s: error testing GLX_RGBA attribute\n",
+	fprintf (stderr, "%s: error testing GLX_RGBA attribute\n",
 			function_name);
 	return (FALSE);
     }
-    if (value) (void) fprintf (stderr, "%s: RGBA visual\n", function_name);
-    else (void) fprintf (stderr, "%s: colour index visual\n", function_name);
+    if (value) fprintf (stderr, "%s: RGBA visual\n", function_name);
+    else fprintf (stderr, "%s: colour index visual\n", function_name);
     /*  END DEBUG  */
     if (glXGetConfig (display, visinfo, GLX_STEREO, &value) != 0)
     {
-	(void) fprintf (stderr, "%s: error testing GLX_STEREO attribute\n",
+	fprintf (stderr, "%s: error testing GLX_STEREO attribute\n",
 			function_name);
 	return (FALSE);
     }
     if (!value)
     {
 	/*  DEBUG  */
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"OpenGL stereo not supported on this visual\n");
 /*
-	(void) fprintf (stderr, "WARNING: forcing use of stereo anyway\n");
+	fprintf (stderr, "WARNING: forcing use of stereo anyway\n");
 */
 	return (FALSE);
     }
-    else (void) fprintf (stderr, "OpenGL stereo supported on this visual\n");
+    else fprintf (stderr, "OpenGL stereo supported on this visual\n");
     return (TRUE);
 }   /*  End Function kwin_open_gl_test_stereo  */
 
@@ -346,11 +347,11 @@ flag kwin_open_gl_create_stereo (Display *display, Window window,
     static char function_name[] = "kwin_create_open_gl_stereo";
 
     /*  DEBUG  */
-    (void) fprintf (stderr, "%s...\n", function_name);
+    fprintf (stderr, "%s...\n", function_name);
     /*  Do some sanity tests  */
     if (BitmapUnit (display) != 32)
     {
-	(void) fprintf (stderr, "BitmapUnit must be 32\n");
+	fprintf (stderr, "BitmapUnit must be 32\n");
 	return (FALSE);
     }
     im_byte_order = ImageByteOrder (display);
@@ -358,7 +359,7 @@ flag kwin_open_gl_create_stereo (Display *display, Window window,
     XGetWindowAttributes (display, window, &window_attributes);
     if (window_attributes.colormap == None)
     {
-	(void) fprintf (stderr, "Error: window has no colourmap\n");
+	fprintf (stderr, "Error: window has no colourmap\n");
 	a_prog_bug (function_name);
     }
     /*  Create and initialise the shared canvas  */
@@ -379,11 +380,10 @@ flag kwin_open_gl_create_stereo (Display *display, Window window,
     shared_canvas->xwin_width = window_attributes.width;
     shared_canvas->xwin_height = window_attributes.height;
     /*  Process the window's visual information  */
-    vinfo = kwin_xutil_get_visinfo_for_visual (display,
-					       window_attributes.visual);
+    vinfo = xv_get_visinfo_for_visual (display, window_attributes.visual);
     if (window_attributes.depth != vinfo->depth)
     {
-	(void) fprintf (stderr, "Window depth: %d is not visual depth: %d\n",
+	fprintf (stderr, "Window depth: %d is not visual depth: %d\n",
 			window_attributes.depth, vinfo->depth);
 	a_prog_bug (function_name);
     }
@@ -395,7 +395,7 @@ flag kwin_open_gl_create_stereo (Display *display, Window window,
       case TrueColor:
 	if (shared_canvas->vinfo.colormap_size != 256)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Colourmap size: %d for %s visual is not 256\n",
 			    shared_canvas->vinfo.colormap_size,
 			    (shared_canvas->vinfo.class ==
@@ -405,7 +405,7 @@ flag kwin_open_gl_create_stereo (Display *display, Window window,
 	}
 	if (window_attributes.depth != 24)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Depth: %u for %s visual is not 24\n",
 			    window_attributes.depth,
 			    (shared_canvas->vinfo.class ==
@@ -455,7 +455,7 @@ flag kwin_open_gl_create_stereo (Display *display, Window window,
 	visual = KWIN_VISUAL_STATICCOLOUR;
 	break;
       default:
-	(void) fprintf (stderr, "Illegal visual class: %u\n",
+	fprintf (stderr, "Illegal visual class: %u\n",
 			shared_canvas->vinfo.class);
 	a_prog_bug (function_name);
 	break;
@@ -465,7 +465,7 @@ flag kwin_open_gl_create_stereo (Display *display, Window window,
 	   glXCreateContext (display, &shared_canvas->vinfo, NULL, True) )
 	 == NULL )
     {
-	(void) fprintf (stderr, "Error creating GLXContext object\n");
+	fprintf (stderr, "Error creating GLXContext object\n");
 	m_free ( (char *) shared_canvas );
 	return (FALSE);
     }
@@ -575,7 +575,7 @@ flag kwin_open_gl_create_stereo (Display *display, Window window,
     shared_canvas->gl_right->shared_canvas = shared_canvas;
     if ( !glXMakeCurrent (display, window, shared_canvas->context) )
     {
-	(void) fprintf (stderr, "Error making GLXContext current\n");
+	fprintf (stderr, "Error making GLXContext current\n");
 	exit (RV_UNDEF_ERROR);
     }
     current_context = shared_canvas->context;
@@ -643,7 +643,7 @@ static void *create_child (void *v_parent, KPixCanvas child)
     static char function_name[] = "__kwin_open_gl_create_child";
 
     VERIFY_CANVAS (opengl_parent);
-    (void) fprintf (stderr, "%s: child creation not supported yet\n",
+    fprintf (stderr, "%s: child creation not supported yet\n",
 		    function_name);
     return (NULL);
 }   /*  End Function create_child  */
@@ -666,12 +666,12 @@ static flag clear_area (void *v_canvas, int x, int y, int width, int height)
     sc = opengl_canvas->shared_canvas;
     set_active_canvas (opengl_canvas);
 /*
-    (void) fprintf (stderr, "%s...\n", function_name);
+    fprintf (stderr, "%s...\n", function_name);
 */
     if ( (x == 0) && (y == 0) && (width == sc->xwin_width) &&
 	 (height == sc->xwin_height) )
     {
-	(void) fprintf (stderr, "%s clear all...\n", function_name);
+	fprintf (stderr, "%s clear all...\n", function_name);
 	glClear (GL_COLOR_BUFFER_BIT);
     }
     return (TRUE);
@@ -700,7 +700,7 @@ static flag resize (OpenGLCanvas opengl_canvas, int xoff, int yoff,
     if ( (xoff == sc->xoff) && (yoff == sc->yoff) &&
 	(width == sc->width) && (height == sc->height) ) return (TRUE);
 /*
-    (void) fprintf (stderr,
+    fprintf (stderr,
 		    "%s: xoff: %d  yoff: %d   width: %d  height: %d...\n",
 		    function_name, xoff, yoff, width, height);
 */
@@ -735,7 +735,7 @@ static void set_active_canvas (OpenGLCanvas opengl_canvas)
 	if ( !glXMakeCurrent (shared_canvas->display, shared_canvas->window,
 			      shared_canvas->context) )
 	{
-	    (void) fprintf (stderr, "Error making GLXContext current\n");
+	    fprintf (stderr, "Error making GLXContext current\n");
 	    exit (RV_UNDEF_ERROR);
 	}
 	current_context = shared_canvas->context;
@@ -743,17 +743,17 @@ static void set_active_canvas (OpenGLCanvas opengl_canvas)
     if (opengl_canvas == shared_canvas->gl_active) return;
     if (opengl_canvas == shared_canvas->gl_left)
     {
-	(void) fprintf (stderr, "Setting left buffer...\n");
+	fprintf (stderr, "Setting left buffer...\n");
 	glDrawBuffer (GL_FRONT_LEFT);
     }
     else if (opengl_canvas == shared_canvas->gl_right)
     {
-	(void) fprintf (stderr, "Setting right buffer...\n");
+	fprintf (stderr, "Setting right buffer...\n");
 	glDrawBuffer (GL_FRONT_RIGHT);
     }
     else
     {
-	(void) fprintf (stderr, "Unknown OpenGLCanvas: %p\n", opengl_canvas);
+	fprintf (stderr, "Unknown OpenGLCanvas: %p\n", opengl_canvas);
 	a_prog_bug (function_name);
     }
     shared_canvas->gl_active = opengl_canvas;
@@ -821,7 +821,7 @@ flag kwin_open_gl_create_stereo (Display *display, Window window,
 {
     static char function_name[] = "kwin_create_open_gl_stereo";
 
-    (void) fprintf (stderr, "%s: OpenGL not available!\n", function_name);
+    fprintf (stderr, "%s: OpenGL not available!\n", function_name);
     return (FALSE);
 }   /*  End Function kwin_create_open_gl_stereo  */
 

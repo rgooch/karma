@@ -42,8 +42,10 @@
     Updated by      Richard Gooch   30-SEP-1996: Fixed bug in initialisation
   where cube_arr and cube_ap were not initialised.
 
-    Last updated by Richard Gooch   14-OCT-1996: Copy "OBSRA" and "OBSDEC" from
+    Updated by      Richard Gooch   14-OCT-1996: Copy "OBSRA" and "OBSDEC" from
   cube to moment maps.
+
+    Last updated by Richard Gooch   14-NOV-1996: Removed upper clip level.
 
 
 */
@@ -121,8 +123,7 @@ STATIC_FUNCTION (void apply_cbk,
 		 (Widget w, XtPointer client_data, XtPointer call_data) );
 STATIC_FUNCTION (flag compute_moments,
 		 (iarray mom0, iarray mom1, iarray cube, KwcsAstro cube_ap,
-		  float lower_clip, float upper_clip,float sum_clip,
-		  unsigned int mom1_algorithm,
+		  float lower_clip,float sum_clip, unsigned int mom1_algorithm,
 		  float *mom0_min, float *mom0_max) );
 STATIC_FUNCTION (flag copy_header_info, (iarray out, iarray in) );
 
@@ -287,18 +288,11 @@ static void MomentGenerator__Initialise (Widget Request, Widget New)
 				 XtNvalue, "5e-3",
 				 NULL);
     new->momentGenerator.lower_clip_dlg = w;
-    w = XtVaCreateManagedWidget ("upperClipLevel", dialogWidgetClass, form,
-				 XtNlabel, "Upper Clip Level",
-				 XtNfromVert,
-				 new->momentGenerator.sum_max_label,
-				 XtNfromHoriz,
-				 new->momentGenerator.lower_clip_dlg,
-				 XtNvalue, "0.5",
-				 NULL);
-    new->momentGenerator.upper_clip_dlg = w;
     w = XtVaCreateManagedWidget ("sumClipLevel", dialogWidgetClass, form,
 				 XtNlabel, "Sum Clip Level",
-				 XtNfromVert, w,
+				 XtNfromVert,
+				 new->momentGenerator.sum_max_label,
+				 XtNfromHoriz, w,
 				 XtNvalue, "5e-2",
 				 NULL);
     new->momentGenerator.sum_clip_dlg = w;
@@ -336,7 +330,7 @@ static void apply_cbk (Widget w, XtPointer client_data, XtPointer call_data)
     [RETURNS] Nothing.
 */
 {
-    float lower_clip, upper_clip, sum_clip;
+    float lower_clip, sum_clip;
     MomentGeneratorWidget top = (MomentGeneratorWidget) client_data;
     float mom0_min, mom0_max;
     char *clip_str, *p;
@@ -348,10 +342,6 @@ static void apply_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 		   XtNvalue, &clip_str,
 		   NULL);
     lower_clip = ex_float (clip_str, &p);
-    XtVaGetValues (top->momentGenerator.upper_clip_dlg,
-		   XtNvalue, &clip_str,
-		   NULL);
-    upper_clip = ex_float (clip_str, &p);
     XtVaGetValues (top->momentGenerator.sum_clip_dlg,
 		   XtNvalue, &clip_str,
 		   NULL);
@@ -360,7 +350,7 @@ static void apply_cbk (Widget w, XtPointer client_data, XtPointer call_data)
     compute_moments (top->momentGenerator.mom0Array,
 		     top->momentGenerator.mom1Array,
 		     top->momentGenerator.cube_arr,
-		     top->momentGenerator.cube_ap, lower_clip, upper_clip,
+		     top->momentGenerator.cube_ap, lower_clip,
 		     sum_clip, top->momentGenerator.mom1_algorithm,
 		     &mom0_min, &mom0_max);
     fprintf (stderr, "done\n");
@@ -377,7 +367,7 @@ static void apply_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 
 static flag compute_moments (iarray mom0, iarray mom1, iarray cube,
 			     KwcsAstro cube_ap,
-			     float lower_clip, float upper_clip,float sum_clip,
+			     float lower_clip, float sum_clip,
 			     unsigned int mom1_algorithm,
 			     float *mom0_min, float *mom0_max)
 /*  [SUMMARY] Compute the 0th and 1st moments along the Z axis of a cube.
@@ -387,8 +377,6 @@ static flag compute_moments (iarray mom0, iarray mom1, iarray cube,
     <cube_ap> The cube KwcsAstro object.
     <lower_clip> Values in the cube lower than this value are not used in the
     computation of the moments.
-    <upper_clip> Values in the cube higher than this value are not used in the
-    computation of the moment.
     <sum_clip> Values in the 0th moment map lower than this value are not used
     in the computation of the 1st moment.
     <mom1_algorithm> The 1st moment algorithm.
@@ -413,7 +401,7 @@ static flag compute_moments (iarray mom0, iarray mom1, iarray cube,
 #ifdef dummy
     /*  Append a bit of history  */
     sprintf (txt, "%s: 1st moment map  low clip %e  high clip %e",
-	     module_name, lower_clip, upper_clip);
+	     module_name, lower_clip);
     iarray_append_history_string (mom1, txt, TRUE);
     sprintf (txt, "%s: sum_clip: %e  algorithm: %s",
 	     module_name, sum_clip,
@@ -431,7 +419,6 @@ static flag compute_moments (iarray mom0, iarray mom1, iarray cube,
 	    for (z = 0; z < zlen; ++z)
 	    {
 		if ( ( val = F3 (cube, z, y, x) ) >= TOOBIG ) continue;
-		if (val > upper_clip) continue;
 		if (val < lower_clip) continue;
 		mom0_val += val;
 		weighted_sum += val * (float) z;
@@ -472,7 +459,6 @@ static flag compute_moments (iarray mom0, iarray mom1, iarray cube,
 	    for (z = 0; z < zlen; ++z)
 	    {
 		if ( ( val = F3 (cube, z, y, x) ) >= TOOBIG ) continue;
-		if (val > upper_clip) continue;
 		if (val < lower_clip) continue;
 		mom0_val += val;
 	    }
@@ -495,7 +481,6 @@ static flag compute_moments (iarray mom0, iarray mom1, iarray cube,
 	    for (z = 0; z < zlen; ++z)
 	    {
 		if ( ( val = F3 (cube, z, y, x) ) >= TOOBIG ) continue;
-		if (val > upper_clip) continue;
 		if (val < lower_clip) continue;
 		sum += val;
 		if (sum >= half_mom0_val)

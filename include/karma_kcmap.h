@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   24-FEB-1993
 
-    Last updated by Richard Gooch   5-JUN-1996
+    Last updated by Richard Gooch   23-NOV-1996
 
 */
 
@@ -69,6 +69,7 @@ typedef struct kdisplay_handle_type * Kdisplay;
 
 
 /*  File:   kcmap.c   */
+EXTERN_FUNCTION (void kcmap_initialise, () );
 EXTERN_FUNCTION (Kcolourmap kcmap_va_create,
 		 (CONST char *name, unsigned int num_cells, flag tolerant,
 		  Kdisplay dpy_handle, unsigned int (*alloc_func) (),

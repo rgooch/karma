@@ -18,6 +18,8 @@
 </td></tr>
 <tr><td><a href=panel.html#panel_put_history_with_stack>panel_put_history_with_stack</a></td><td>Put history into Karma multi_array structure.
 </td></tr>
+<tr><td><a href=panel.html#panel_set_extra_comment_string>panel_set_extra_comment_string</a></td><td>Set the extra comment string for a panel.
+</td></tr>
 </table><h4>Prototype Functions</h4><table><tr><td><a href=panel.html#PANEL_PROTO_decode_func>PANEL_PROTO_decode_func</a></td><td>Command line decode callback.
 </td></tr>
 </table><h4>Tables</h4><table><tr><td><a href=panel.html#PANEL_ATTRIBUTES>PANEL_ATTRIBUTES</a></td><td>List of attributes for panel item objects
@@ -95,6 +97,14 @@
     If TRUE the module name and version are appended before the
     parameter information.
 <br></ul><b>Returns:</b>     TRUE on sucess, else FALSE
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=panel_set_extra_comment_string></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>void
+ <b>panel_set_extra_comment_string</b><i>    (KControlPanel panel, CONST char *string)
+</i><br><p>    Set the extra comment string for a panel.
+<p><b>Parameters:</b><ul><li><i>panel :</i> 
+    The control panel.
+<br><li><i>string :</i> 
+    The comment string. The contents are copied.
+<br></ul><b>Returns:</b>     Nothing.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=PANEL_PROTO_decode_func></a> flag
  <b>PANEL_PROTO_decode_func</b><i>    (char *command, FILE *fp)
 </i><br><p>    This function is called whenever a command string is to be

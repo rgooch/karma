@@ -34,14 +34,14 @@ if ("$argv[1]" == "production") then
 	    set oldbase = ${oldroot}/${MACHINE_OS}
 	    set newroot = /applic/karma
 	    set newbase = /usr/local/karma
-	    echo "Using production version of sparc_Solaris Karma"
+	    echo "Using production version of ${MACHINE_OS} Karma"
 	    breaksw
-	case "deepthought":
-	    set oldroot = /disk1/karma
+	case "raptor":
+	    set oldroot = /usr/llocal/karma-exp
 	    set oldbase = ${oldroot}/${MACHINE_OS}
 	    set newroot = /applic/karma
 	    set newbase = /usr/local/karma
-	    echo "Using production version of sparc_Solaris Karma"
+	    echo "Using production version of ${MACHINE_OS} Karma"
 	    breaksw
 	default:
 	    exit 0
@@ -57,21 +57,21 @@ if ("$argv[1]" == "experimental") then
 	    set newroot = /phoenix/karma
 	    set newbase = ${newroot}/${MACHINE_OS}
 	    if ( ! -d $newbase ) then
-		echo "Experimental version of sparc_Solaris Karma not available"
+		echo "Experimental version of $MACHINE_OS Karma not available"
 		exit 2
 	    endif
-	    echo "Using experimental version of sparc_Solaris Karma"
+	    echo "Using experimental version of ${MACHINE_OS} Karma"
 	    breaksw
-	case "deepthought":
+	case "raptor":
 	    set oldroot = /applic/karma
 	    set oldbase = /usr/local/karma
-	    set newroot = /disk1/karma
+	    set newroot = /usr/llocal/karma-exp
 	    set newbase = ${newroot}/${MACHINE_OS}
 	    if ( ! -d $newbase ) then
-		echo "Experimental version of sparc_Solaris Karma not available"
+		echo "Experimental version of $MACHINE_OS Karma not available"
 		exit 2
 	    endif
-	    echo "Using experimental version of sparc_Solaris Karma"
+	    echo "Using experimental version of ${MACHINE_OS} Karma"
 	    breaksw
 	default:
 	    exit 0

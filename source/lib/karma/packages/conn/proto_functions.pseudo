@@ -40,8 +40,7 @@ flag CONN_PROTO_read_func (Connection connection, void **info)
     <info> A pointer to the arbitrary information pointer. This may be modified
     [RETURNS] TRUE on successful reading, else FALSE (indicating the connection
     should be closed).
-    [NOTE] The <<close_func>> will not be called if this routine returns
-    FALSE.
+    [NOTE] The <<close_func>> will be called if this routine returns FALSE.
 */
 
 /*PROTOTYPE_FUNCTION*/  /*

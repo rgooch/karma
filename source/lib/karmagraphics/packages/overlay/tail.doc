@@ -1,0 +1,12 @@
+
+$TABLE            OVERLAY_COORDINATE_TYPES
+$COLUMNS          2
+$SUMMARY          List of co-ordinate types
+$TABLE_DATA
+|.Name                    |,Meaning
+|.
+|.OVERLAY_COORD_PIXEL     |,Pixel co-ordinates
+|.OVERLAY_COORD_RELATIVE  |,Relative to a unit canvas (0,0) to (1,1)
+|.OVERLAY_COORD_WORLD     |,True world co-ordinates
+|.OVERLAY_COORD_LAST      |,Use last co-ordinate instead
+$END

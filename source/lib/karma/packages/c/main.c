@@ -60,17 +60,17 @@
 #define FUNC_MAGIC_NUMBER 219873398
 
 #define VERIFY_LIST(list) if (list == NULL) \
-{(void) fprintf (stderr, "NULL KCallbackList passed\n"); \
+{fprintf (stderr, "NULL KCallbackList passed\n"); \
  prog_bug (function_name); } \
 if ((list)->magic_number != LIST_MAGIC_NUMBER ) \
-{(void) fprintf (stderr, "Invalid KCallbackList object\n"); \
+{fprintf (stderr, "Invalid KCallbackList object\n"); \
  prog_bug (function_name); }
 
 #define VERIFY_FUNC(func) if (func == NULL) \
-{(void) fprintf (stderr, "NULL KCallbackFunc passed\n"); \
+{fprintf (stderr, "NULL KCallbackFunc passed\n"); \
  prog_bug (function_name); } \
 if (func->magic_number != FUNC_MAGIC_NUMBER ) \
-{(void) fprintf (stderr, "Invalid KCallbackFunc object\n"); \
+{fprintf (stderr, "Invalid KCallbackFunc object\n"); \
  prog_bug (function_name); }
 
 struct callback_list_type
@@ -237,7 +237,7 @@ flag c_call_callbacks (KCallbackList list, void *call_data)
     VERIFY_LIST (list);
     if (list->dispatching)
     {
-	(void) fprintf (stderr, "Already dispatching callbacks for list!\n");
+	fprintf (stderr, "Already dispatching callbacks for list!\n");
 	prog_bug (function_name);
     }
     for (curr = list->first; curr != NULL; curr = curr->next)
@@ -266,8 +266,7 @@ flag c_call_callbacks (KCallbackList list, void *call_data)
 	{
 	    if ( (quench != TRUE) && (quench != FALSE) )
 	    {
-		(void) fprintf (stderr, "Illegal return flag value: %d\n",
-				quench);
+		fprintf (stderr, "Illegal return flag value: %d\n", quench);
 		prog_bug (function_name);
 	    }
 	    if (quench) return (TRUE);
@@ -298,17 +297,15 @@ void c_destroy_list (KCallbackList list)
 
 static void prog_bug (char *function_name)
 {
-    (void) fprintf (stderr, "Program bug noted in function: %s\n",
-		    function_name);
-    (void) fprintf (stderr, "Aborting.%c\n", BEL);
+    fprintf (stderr, "Program bug noted in function: %s\n", function_name);
+    fprintf (stderr, "Aborting.%c\n", BEL);
     abort ();
 }   /*  End Function prog_bug   */
 
 static void mem_abort (char *name, char *reason)
 {
-    (void) fprintf (stderr,
-		    "Error allocating memory for: %s  for function: %s%c\n",
-		    reason, name, BEL);
-    (void) fprintf (stderr, "Aborting.\n");
+    fprintf (stderr, "Error allocating memory for: %s  for function: %s%c\n",
+	     reason, name, BEL);
+    fprintf (stderr, "Aborting.\n");
     exit (RV_MEM_ERROR);
 }   /*  End Function mem_abort  */  

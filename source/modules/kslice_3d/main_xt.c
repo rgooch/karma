@@ -74,11 +74,14 @@
   <XkwFilewinStandardFileTester_nD> and <XkwFilewinStandardFileTester_3D>
   routines.
 
-    Updated by      Richard Gooch   15-SEP-1996: Made use of new <kwin_xutil_*>
+    Updated by      Richard Gooch   15-SEP-1996: Made use of new <xv_*>
   routines.
 
-    Last updated by Richard Gooch   29-OCT-1996: Added hostname and port number
+    Updated by      Richard Gooch   29-OCT-1996: Added hostname and port number
   to title.
+
+    Last updated by Richard Gooch   8-NOV-1996: Added font resource for track
+  labels.
 
 
 */
@@ -102,6 +105,7 @@
 #include <karma_kwin.h>
 #include <karma_conn.h>
 #include <karma_chx.h>
+#include <karma_xv.h>
 #include <karma_ds.h>
 #include <karma_im.h>
 #include <karma_hi.h>
@@ -119,7 +123,7 @@
 #define DEFAULT_COLOURMAP_NAME "Greyscale1"
 #define NUM_COLOURS (unsigned int) 200
 
-#define VERSION "1.4.1"
+#define VERSION "1.5.0"
 
 
 /*  Private functions  */
@@ -147,11 +151,8 @@ String fallback_resources[] =
     "Kslice_3d*ChoiceMenu.background:                    turquoise",
     "Kslice_3d*topForm*quit*background:                  orange",
     "Kslice_3d*background:                               aquamarine",
-    "Kslice_3d*ImageDisplay*trackLabel*font:             8x13bold",
-    "Kslice_3d*ImageDisplay*zoomMenu*font:               10x20",
-    "Kslice_3d*ImageDisplay*crosshairMenu*font:          10x20",
-    "Kslice_3d*ImageDisplay*font:                        9x15bold",
-    "Kslice_3d*ImageDisplay*zoomMenu*Unzoom*foreground:  red",
+    "Kslice_3d*ThreeDeeSlice*trackLabel0*font:           8x13bold",
+    "Kslice_3d*ThreeDeeSlice*trackLabel1*font:           8x13bold",
     "Kslice_3d*font:                                     9x15bold",
     NULL
 };
@@ -195,7 +196,7 @@ int main (int argc, char **argv)
     main_shell = XtVaAppInitialize (&app_context, "Kslice_3d",
 				    Options, XtNumber (Options),
 				    &argc, argv, fallback_resources,
-				    NULL, 0);
+				    NULL);
     /*  Initialise communications  */
     chx_register_app_context (app_context);
     conn_register_managers (chx_manage, chx_unmanage, ( void (*) () ) NULL);
@@ -203,8 +204,8 @@ int main (int argc, char **argv)
     screen = XtScreen (main_shell);
     /*  Get visual information  */
     root_visual = XDefaultVisualOfScreen (screen);
-    vinfo = kwin_xutil_get_visinfo_for_visual (dpy, root_visual);
-    kwin_xutil_get_visuals (screen, &pseudocolour_visual, NULL, NULL);
+    vinfo = xv_get_visinfo_for_visual (dpy, root_visual);
+    xv_get_visuals (screen, &pseudocolour_visual, NULL, NULL);
     if (pseudocolour_visual == NULL)
     {
 	fprintf (stderr, "No 8 bit PseudoColour visual available\n");
@@ -230,9 +231,8 @@ int main (int argc, char **argv)
 	    exit (1);
 	}
 	XSync (dpy, False);
-	fprintf (stderr,
-			"Created colourmap: 0x%lx for PseudoColour visual\n",
-			xcmap);
+	fprintf (stderr, "Created colourmap: 0x%lx for PseudoColour visual\n",
+		 xcmap);
     }
     setup_comms (dpy);
     XtVaSetValues (main_shell,

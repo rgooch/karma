@@ -65,7 +65,7 @@
     Updated by      Richard Gooch   10-JUN-1996: Added clipping code to
   <draw_cached_image>.
 
-    Updated by      Richard Gooch   15-SEP-1996: Made use of new <kwin_xutil_*>
+    Updated by      Richard Gooch   15-SEP-1996: Made use of new <xv_*>
   routines.
 
     Last updated by Richard Gooch   10-OCT-1996: Made colour query in chunks.
@@ -80,12 +80,12 @@
 #include <karma.h>
 #include <karma_kwin.h>
 #include <karma_kwin_hooks.h>
-#include <karma_xi.h>
-#include <X11/Xutil.h>
 #include <karma_psw.h>
 #include <karma_imw.h>
+#include <karma_xv.h>
 #include <karma_ds.h>
 #include <karma_st.h>
+#include <karma_xi.h>
 #include <karma_a.h>
 #include <karma_m.h>
 #include <karma_r.h>
@@ -98,17 +98,17 @@
 #define FONT_MAGIC_NUMBER (unsigned int) 298732498
 
 #define VERIFY_CANVAS(canvas) if (canvas == NULL) \
-{(void) fprintf (stderr, "NULL canvas passed\n"); \
+{fprintf (stderr, "NULL canvas passed\n"); \
  a_prog_bug (function_name); } \
 if (canvas->magic_number != CANVAS_MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid canvas object\n"); \
+{fprintf (stderr, "Invalid canvas object\n"); \
  a_prog_bug (function_name); }
 
 #define VERIFY_FONT(font) if (font == NULL) \
-{(void) fprintf (stderr, "NULL font passed\n"); \
+{fprintf (stderr, "NULL font passed\n"); \
  a_prog_bug (function_name); } \
 if (font->magic_number != FONT_MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid font object\n"); \
+{fprintf (stderr, "Invalid font object\n"); \
  a_prog_bug (function_name); }
 
 #define MAX_POINTS 10000
@@ -298,7 +298,7 @@ KPixCanvas kwin_create_x (Display *display, Window window, GC gc,
 
     if (BitmapUnit (display) != 32)
     {
-	(void) fprintf (stderr, "BitmapUnit must be 32\n");
+	fprintf (stderr, "BitmapUnit must be 32\n");
 	return (NULL);
     }
     im_byte_order = ImageByteOrder (display);
@@ -306,7 +306,7 @@ KPixCanvas kwin_create_x (Display *display, Window window, GC gc,
     XGetWindowAttributes (display, window, &window_attributes);
     if (window_attributes.colormap == None)
     {
-	(void) fprintf (stderr, "Error: window has no colourmap\n");
+	fprintf (stderr, "Error: window has no colourmap\n");
 	a_prog_bug (function_name);
     }
     if ( ( x11canvas = (X11Canvas) m_alloc (sizeof *x11canvas) ) == NULL )
@@ -330,7 +330,7 @@ KPixCanvas kwin_create_x (Display *display, Window window, GC gc,
 		      GCDashOffset | GCArcMode,
 		      &x11canvas->gcvalues) == 0)
     {
-	(void) fprintf (stderr, "Error getting GC values\n");
+	fprintf (stderr, "Error getting GC values\n");
 	m_free ( (char *) x11canvas );
 	return (NULL);
     }
@@ -338,11 +338,10 @@ KPixCanvas kwin_create_x (Display *display, Window window, GC gc,
     x11canvas->max_request_size = XMaxRequestSize (display);
     x11canvas->common_ximage = NULL;
     x11canvas->colours = NULL;
-    vinfo = kwin_xutil_get_visinfo_for_visual (display,
-					       window_attributes.visual);
+    vinfo = xv_get_visinfo_for_visual (display, window_attributes.visual);
     if (window_attributes.depth != vinfo->depth)
     {
-	(void) fprintf (stderr, "Window depth: %d is not visual depth: %d\n",
+	fprintf (stderr, "Window depth: %d is not visual depth: %d\n",
 			window_attributes.depth, vinfo->depth);
 	a_prog_bug (function_name);
     }
@@ -354,7 +353,7 @@ KPixCanvas kwin_create_x (Display *display, Window window, GC gc,
       case TrueColor:
 	if (x11canvas->vinfo.colormap_size != 256)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Colourmap size: %d for %s visual is not 256\n",
 			    x11canvas->vinfo.colormap_size,
 			    (x11canvas->vinfo.class ==
@@ -364,7 +363,7 @@ KPixCanvas kwin_create_x (Display *display, Window window, GC gc,
 	}
 	if (window_attributes.depth != 24)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Depth: %u for %s visual is not 24\n",
 			    window_attributes.depth,
 			    (x11canvas->vinfo.class ==
@@ -387,7 +386,7 @@ KPixCanvas kwin_create_x (Display *display, Window window, GC gc,
 	    red_offset = (im_byte_order == MSBFirst) ? 1 : 2;
 	    break;
 	  default:
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Red mask: 0x%lx for %s visual is not valid\n",
 			    x11canvas->vinfo.red_mask,
 			    (x11canvas->vinfo.class ==
@@ -410,7 +409,7 @@ KPixCanvas kwin_create_x (Display *display, Window window, GC gc,
 	    green_offset = (im_byte_order == MSBFirst) ? 1 : 2;
 	    break;
 	  default:
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Green mask: 0x%lx for %s visual is not valid\n",
 			    x11canvas->vinfo.green_mask,
 			    (x11canvas->vinfo.class ==
@@ -433,7 +432,7 @@ KPixCanvas kwin_create_x (Display *display, Window window, GC gc,
 	    blue_offset = (im_byte_order == MSBFirst) ? 1 : 2;
 	    break;
 	  default:
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Blue mask: 0x%lx for %s visual is not valid\n",
 			    x11canvas->vinfo.blue_mask,
 			    (x11canvas->vinfo.class ==
@@ -480,7 +479,7 @@ KPixCanvas kwin_create_x (Display *display, Window window, GC gc,
 	visual = KWIN_VISUAL_STATICCOLOUR;
 	break;
       default:
-	(void) fprintf (stderr, "Illegal visual class: %u\n",
+	fprintf (stderr, "Illegal visual class: %u\n",
 			x11canvas->vinfo.class);
 	a_prog_bug (function_name);
 	break;
@@ -581,7 +580,7 @@ void kwin_set_gc_x (KPixCanvas canvas, GC gc)
     VERIFY_CANVAS (x11canvas);
     if (gc == NULL)
     {
-	(void) fprintf (stderr, "NULL GraphicsContext passed\n");
+	fprintf (stderr, "NULL GraphicsContext passed\n");
 	a_prog_bug (function_name);
     }
     x11canvas->gc = gc;
@@ -596,7 +595,7 @@ void kwin_set_gc_x (KPixCanvas canvas, GC gc)
 		      GCDashOffset | GCArcMode,
 		      &x11canvas->gcvalues) == 0)
     {
-	(void) fprintf (stderr, "Error getting GC values\n");
+	fprintf (stderr, "Error getting GC values\n");
 	return;
     }
 }   /*  End Function kwin_set_gc_x  */
@@ -793,8 +792,8 @@ static flag draw_pc_image (X11Canvas x11canvas, int x_off, int y_off,
     {
 	if (gettimeofday (&start_time, &tz) != 0)
 	{
-	    (void) fprintf (stderr, "Error getting time of day\n");
-	    (void) exit (1);
+	    fprintf (stderr, "Error getting time of day\n");
+	    exit (1);
 	}
     }
     /*  Now have an XImage big enough  */
@@ -805,7 +804,7 @@ static flag draw_pc_image (X11Canvas x11canvas, int x_off, int y_off,
 	{
 	    if (pixel_values[count] > 255)
 	    {
-		(void) fprintf (stderr, "Pixel value: %lu  over 255\n",
+		fprintf (stderr, "Pixel value: %lu  over 255\n",
 				pixel_values[count]);
 		return (FALSE);
 	    }
@@ -826,7 +825,7 @@ static flag draw_pc_image (X11Canvas x11canvas, int x_off, int y_off,
 			  blank_pixel, min_sat_pixel, max_sat_pixel,
 			  i_min, i_max, iscale_func, iscale_info ) )
 	{
-	    (void) fprintf (stderr, "Error drawing image into X11Canvas\n");
+	    fprintf (stderr, "Error drawing image into X11Canvas\n");
 	    kwin_free_cache_data (cache);
 	    if (cache_ptr != NULL) *cache_ptr = NULL;
 	    return (FALSE);
@@ -855,7 +854,7 @@ static flag draw_pc_image (X11Canvas x11canvas, int x_off, int y_off,
 				  ub_ptr + im_blue_offset,
 				  sizeof *pixel_values) )
 	{
-	    (void) fprintf (stderr, "Error drawing image into X11Canvas\n");
+	    fprintf (stderr, "Error drawing image into X11Canvas\n");
 	    kwin_free_cache_data (cache);
 	    if (cache_ptr != NULL) *cache_ptr = NULL;
 	    return (FALSE);
@@ -884,7 +883,7 @@ static flag draw_pc_image (X11Canvas x11canvas, int x_off, int y_off,
 				   ub_ptr + im_blue_offset,
 				   sizeof *pixel_values) )
 	{
-	    (void) fprintf (stderr, "Error drawing image into X11Canvas\n");
+	    fprintf (stderr, "Error drawing image into X11Canvas\n");
 	    kwin_free_cache_data (cache);
 	    if (cache_ptr != NULL) *cache_ptr = NULL;
 	    return (FALSE);
@@ -901,7 +900,7 @@ static flag draw_pc_image (X11Canvas x11canvas, int x_off, int y_off,
 			     blank_pixel, min_sat_pixel, max_sat_pixel,
 			     i_min, i_max, iscale_func, iscale_info ) )
 	{
-	    (void) fprintf (stderr, "Error drawing image into X11Canvas\n");
+	    fprintf (stderr, "Error drawing image into X11Canvas\n");
 	    kwin_free_cache_data (cache);
 	    if (cache_ptr != NULL) *cache_ptr = NULL;
 	    return (FALSE);
@@ -909,7 +908,7 @@ static flag draw_pc_image (X11Canvas x11canvas, int x_off, int y_off,
     }
     else
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"%s: general drawing request not implemented\n",
 			function_name);
 	kwin_free_cache_data (cache);
@@ -920,8 +919,8 @@ static flag draw_pc_image (X11Canvas x11canvas, int x_off, int y_off,
     {
 	if (gettimeofday (&stop_time, &tz) != 0)
 	{
-	    (void) fprintf (stderr, "Error getting time of day");
-	    (void) exit (1);
+	    fprintf (stderr, "Error getting time of day");
+	    exit (1);
 	}
 	compute_time = 1000 * (stop_time.tv_sec - start_time.tv_sec);
 	compute_time += (stop_time.tv_usec - start_time.tv_usec) / 1000;
@@ -951,8 +950,8 @@ static flag draw_pc_image (X11Canvas x11canvas, int x_off, int y_off,
     {
 	if (gettimeofday (&stop_time, &tz) != 0)
 	{
-	    (void) fprintf (stderr, "Error getting time of day\n");
-	    (void) exit (1);
+	    fprintf (stderr, "Error getting time of day\n");
+	    exit (1);
 	}
 	dump_time = 1000 * (stop_time.tv_sec - start_time.tv_sec);
 	dump_time += (stop_time.tv_usec - start_time.tv_usec) / 1000;
@@ -1025,7 +1024,7 @@ static flag draw_rgb_image (X11Canvas x11canvas,
     pstride = ximage->bits_per_pixel / 8;  /*  Typically 4  */
     if (pstride != 4)
     {
-	(void) fprintf (stderr, "%s: pstride: %ld\n", function_name, pstride);
+	fprintf (stderr, "%s: pstride: %ld\n", function_name, pstride);
     }
     out_image = (unsigned char *) ximage->data;
     /*  Set up pixel value array  */
@@ -1042,7 +1041,7 @@ static flag draw_rgb_image (X11Canvas x11canvas,
 			 K_UBYTE, KIMAGE_COMPLEX_CONV_REAL,
 			 256, pixels, 0, 0, 255, 0.0, 255.0) )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Error drawing red image into X11Canvas\n");
 	    kwin_free_cache_data (cache);
 	    if (cache_ptr != NULL) *cache_ptr = NULL;
@@ -1055,7 +1054,7 @@ static flag draw_rgb_image (X11Canvas x11canvas,
 			 K_UBYTE, KIMAGE_COMPLEX_CONV_REAL,
 			 256, pixels, 0, 0, 255, 0.0, 255.0) )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Error drawing green image into X11Canvas\n");
 	    kwin_free_cache_data (cache);
 	    if (cache_ptr != NULL) *cache_ptr = NULL;
@@ -1068,7 +1067,7 @@ static flag draw_rgb_image (X11Canvas x11canvas,
 			 K_UBYTE, KIMAGE_COMPLEX_CONV_REAL,
 			 256, pixels, 0, 0, 255, 0.0, 255.0) )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Error drawing blue image into X11Canvas\n");
 	    kwin_free_cache_data (cache);
 	    if (cache_ptr != NULL) *cache_ptr = NULL;
@@ -1087,7 +1086,7 @@ static flag draw_rgb_image (X11Canvas x11canvas,
 			     256, pixels, 0, 0, 255, 0.0, 255.0,
 			     ( flag (*) () ) NULL, NULL) )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Error drawing red image into X11Canvas\n");
 	    kwin_free_cache_data (cache);
 	    if (cache_ptr != NULL) *cache_ptr = NULL;
@@ -1102,7 +1101,7 @@ static flag draw_rgb_image (X11Canvas x11canvas,
 			     256, pixels, 0, 0, 255, 0.0, 255.0,
 			     ( flag (*) () ) NULL, NULL) )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Error drawing green image into X11Canvas\n");
 	    kwin_free_cache_data (cache);
 	    if (cache_ptr != NULL) *cache_ptr = NULL;
@@ -1117,7 +1116,7 @@ static flag draw_rgb_image (X11Canvas x11canvas,
 			     256, pixels, 0, 0, 255, 0.0, 255.0,
 			     ( flag (*) () ) NULL, NULL) )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Error drawing blue image into X11Canvas\n");
 	    kwin_free_cache_data (cache);
 	    if (cache_ptr != NULL) *cache_ptr = NULL;
@@ -1193,7 +1192,7 @@ static flag draw_cached_image (KPixCanvasImageCache cache, flag wait,
     if (cache == NULL) return (FALSE);
     if (cache->magic_number != CACHE_DATA_MAGIC_NUMBER)
     {
-	(void) fprintf (stderr, "Invalid cache data\n");
+	fprintf (stderr, "Invalid cache data\n");
 	a_prog_bug (function_name);
     }
     x11canvas = cache->x11canvas;
@@ -1282,7 +1281,7 @@ static void free_cache_data (KPixCanvasImageCache cache)
     if (cache == NULL) return;
     if (cache->magic_number != CACHE_DATA_MAGIC_NUMBER)
     {
-	(void) fprintf (stderr, "Invalid cache data\n");
+	fprintf (stderr, "Invalid cache data\n");
 	a_prog_bug (function_name);
     }
     if (cache->ximage != NULL)
@@ -1379,7 +1378,7 @@ static flag draw_polygon (X11Canvas x11canvas, double *x_arr, double *y_arr,
     FLAG_VERIFY (fill);
     if (!fill)
     {
-	(void) fprintf (stderr, "%s: unfilled polygons not supported\n",
+	fprintf (stderr, "%s: unfilled polygons not supported\n",
 			function_name);
 	return (FALSE);
     }
@@ -1659,7 +1658,7 @@ static flag get_colour (X11Canvas x11canvas, CONST char *colourname,
     VERIFY_CANVAS (x11canvas);
     if (colourname == NULL)
     {
-	(void) fprintf (stderr, "NULL colourname pointer passed\n");
+	fprintf (stderr, "NULL colourname pointer passed\n");
 	a_prog_bug (function_name);
     }
     /*  Search canvas for existing allocation  */
@@ -1687,7 +1686,7 @@ static flag get_colour (X11Canvas x11canvas, CONST char *colourname,
     if (XAllocNamedColor (x11canvas->display, x11canvas->cmap, colourname,
 			  &colourcell_def, &rgb_db_def) == 0)
     {
-	(void) fprintf (stderr, "Error allocating colour: \"%s\"\n",
+	fprintf (stderr, "Error allocating colour: \"%s\"\n",
 			colourname);
 	m_free ( colour->name );
 	m_free ( (char *) colour );
@@ -1716,7 +1715,7 @@ static XFontStruct *load_font (X11Canvas x11canvas, CONST char *fontname)
     VERIFY_CANVAS (x11canvas);
     if ( ( x11font = XLoadQueryFont (x11canvas->display, fontname) ) == NULL )
     {
-	(void) fprintf (stderr, "Error loading font: \"%s\"\n", fontname);
+	fprintf (stderr, "Error loading font: \"%s\"\n", fontname);
 	return (NULL);
     }
     return (x11font);
@@ -1755,7 +1754,7 @@ static flag get_string_size (XFontStruct *x11font, CONST char *string,
 	    *( va_arg (argp, int *) ) = x11font->descent;
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Illegal attribute key: %u\n", att_key);
+	    fprintf (stderr, "Illegal attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	}
     }
@@ -1896,7 +1895,7 @@ static KPixCanvasImageCache size_cache (X11Canvas x11canvas,
 	    enable_pixmaps = FALSE;
 	    (void)fprintf(stderr,
 			  "KWIN_DISABLE_PIXMAPS environment variable found\n");
-	    (void) fprintf (stderr, "No pixmap image caching used.\n");
+	    fprintf (stderr, "No pixmap image caching used.\n");
 	}
     }
     if ( (cache_ptr == NULL) || (*cache_ptr == NULL) )
@@ -1924,7 +1923,7 @@ static KPixCanvasImageCache size_cache (X11Canvas x11canvas,
     }
     if (cache->magic_number != CACHE_DATA_MAGIC_NUMBER)
     {
-	(void) fprintf (stderr, "Invalid cache data\n");
+	fprintf (stderr, "Invalid cache data\n");
 	a_prog_bug (function_name);
     }
     /*  Check if existing XImage is big enough  */
@@ -1939,7 +1938,7 @@ static KPixCanvasImageCache size_cache (X11Canvas x11canvas,
 	    /*  XImage is big enough: great!  */
 	    if (cache->pixmap != (Pixmap) NULL)
 	    {
-		(void) fprintf (stderr, "Cache has XImage and Pixmap!\n");
+		fprintf (stderr, "Cache has XImage and Pixmap!\n");
 		a_prog_bug (function_name);
 	    }
 	    return (cache);

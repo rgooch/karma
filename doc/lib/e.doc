@@ -1,0 +1,134 @@
+$PACKAGE          e
+$SUMMARY          Routines to generate periodic events
+$PURPOSE
+    These routines are meant to provide a flexible, portable means to generate
+    periodic events.
+    NOTE: THIS PACKAGE IS WORK IN PROGRESS. THE INTERFACE MAY CHANGE IN THE
+    NEXT RELEASE, POSSIBLY WITHOUT NOTICE.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
+
+$FUNCTION           e_dispatch_events
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (KPeriodicEventList list, unsigned int dispatch_level,
+			flag timeout)
+$SUMMARY            Dispatch events for a list.
+$PURPOSE
+    Dispatch events for a list.
+$PARAMETER          list :
+    The event list.
+$PARAMETER          dispatch_level :
+    The level of events that may dispatched. Event functions
+    at the same level or higher are dispatched. See <-E_DISPATCH_LEVELS-> for a
+    list of legal values.
+$PARAMETER          timeout :
+    If TRUE, the perdiodic timer timed out.
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           e_register_func
+$RETURN_TYPE        KPeriodicEventFunc
+$PARAMETER_LIST
+    (KPeriodicEventList list, flag (*func) (),
+				    void *info, unsigned long interval,
+				    unsigned int dispatch_level)
+$SUMMARY            Register a function to be called periodically.
+$PURPOSE
+    Register a function to be called periodically.
+$PARAMETER          list :
+    The event list to manage the function.
+$PARAMETER          func :
+    The function to be called upon the specified timout. The prototype
+    function is <-E_PROTO_event_func->.
+$PARAMETER          info :
+    An arbitrary pointer passed to <<func>>.
+$PARAMETER          interval :
+    The interval between successive calls to <<func>>. This is
+    measured in units of the list timeout.
+$PARAMETER          dispatch_level :
+    The preferred method of dispatch for the function. See
+    <-E_DISPATCH_LEVELS-> for a list of legal values. Not all implementations
+    may support the higher levels, so events may dispatched at a lower level
+    than desired.
+$RETURNS
+    A KPeriodicEventFunc on success, else the process aborts.
+$END
+
+$FUNCTION           e_unregister_func
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (KPeriodicEventFunc func)
+$SUMMARY            Unregister an event function.
+$PURPOSE
+    Unregister an event function.
+$PARAMETER          func :
+    The callback function.
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           e_unix_create_list
+$RETURN_TYPE        KPeriodicEventList
+$PARAMETER_LIST
+    (unsigned long interval_us,
+				       unsigned long interval_s,
+				       void *list_info)
+$SUMMARY            Create a periodic event management list under Unix.
+$PURPOSE
+    Create a periodic event management list under Unix.
+$PARAMETER          interval_us :
+    The microsecond component time between timeouts on this list.
+$PARAMETER          interval_s :
+    The second component time between timeouts on this list.
+$PARAMETER          list_info :
+    An arbitrary pointer passed to event functions on this list.
+$NOTE
+    The specified interval may be rounded up to the system timer
+    resolution (10ms on many systems).
+$RETURNS
+    A KPeriodicEventList on success, else the process aborts.
+$END
+
+$FUNCTION           e_unix_dispatch_events
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (unsigned int dispatch_level)
+$SUMMARY            Dispatch events for Unix.
+$PURPOSE
+    Dispatch events for Unix.
+$PARAMETER          dispatch_level :
+    The level of events that may dispatched. Event functions
+    at the same level or higher are dispatched.
+$RETURNS
+    Nothing.
+$END
+
+$PROTO_FUNC         E_PROTO_event_func
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (KPeriodicEventFunc func, void *info)
+$SUMMARY            Event callback.
+$PURPOSE
+    This routine is called when a periodic event occurs.
+$PARAMETER          func :
+    The KPeriodicEventFunc object.
+$PARAMETER          info :
+    A pointer to arbitrary information.
+$RETURNS
+    TRUE if the event function should be called again, else FALSE.
+$END
+
+$TABLE            E_DISPATCH_LEVELS
+$COLUMNS          2
+$SUMMARY          List of replacement policies when adding keys
+$TABLE_DATA
+|.Dispatch level        |,Meaning
+
+|.DISPATCH_SYNCHRONOUS  |,Dispatch synchronously with the application main
+|~                      |~thread
+|.DISPATCH_ASYNCHRONOUS |,Dispatch asynchronously (like a Unix signal handler).
+|~                      |~Use with caution, as race conditions may result
+$END

@@ -35,8 +35,12 @@
     Updated by      Richard Gooch   14-SEP-1996: Created <draw_point> and
   <set_linewidth>.
 
-    Last updated by Richard Gooch   10-OCT-1996: Support huge pixel arrays in
+    Updated by      Richard Gooch   10-OCT-1996: Support huge pixel arrays in
   <draw_pc_image>.
+
+    Last updated by Richard Gooch   22-NOV-1996: Fixed bug in <draw_rgb_image>
+  when drawing onto a PseudoColour canvas. Fixed bug in <draw_pc_image> when
+  getting RGB values from pixel values.
 
 
 */
@@ -283,9 +287,13 @@ static flag draw_pc_image (PSCanvas pscanvas, int x_off, int y_off,
 {
     flag complex, greyscale, retval;
     int canvas_width, canvas_height, index;
-    unsigned char red, green, blue;
+    int pix_red_shift, pix_green_shift, pix_blue_shift;
+    int im_red_shift, im_green_shift, im_blue_shift;
     unsigned int x, y;
-    unsigned int count, num_colours;
+    unsigned int count, num_colours, visual;
+    unsigned long pix_red_mask, pix_green_mask, pix_blue_mask;
+    unsigned long im_red_mask, im_green_mask, im_blue_mask;
+    unsigned long tmp_mask, red, green, blue;
     unsigned char *ubimage;
     double y0, y1;
     double val, factor;
@@ -327,6 +335,82 @@ static flag draw_pc_image (PSCanvas pscanvas, int x_off, int y_off,
     }
     cmap_greens = cmap_reds + num_colours;
     cmap_blues = cmap_greens + num_colours;
+    kwin_get_attributes (pscanvas->pixcanvas,
+			 KWIN_ATT_VISUAL, &visual,
+			 KWIN_ATT_END);
+    if (visual != KWIN_VISUAL_PSEUDOCOLOUR)
+    {
+	/*  Note that the pixel values in the array are valid for drawing
+	    images, not pixels. Because the <kwin_get_pixel_RGB_values>
+	    routine expects regular pixel values (i.e. NOT image pixel values),
+	    the array of pixel values needs to be fiddled  */
+	kwin_get_attributes (pscanvas->pixcanvas,
+			     KWIN_ATT_PIX_RED_MASK, &pix_red_mask,
+			     KWIN_ATT_PIX_GREEN_MASK, &pix_green_mask,
+			     KWIN_ATT_PIX_BLUE_MASK, &pix_blue_mask,
+			     KWIN_ATT_IM_RED_MASK, &im_red_mask,
+			     KWIN_ATT_IM_GREEN_MASK, &im_green_mask,
+			     KWIN_ATT_IM_BLUE_MASK, &im_blue_mask,
+			     KWIN_ATT_END);
+	for (pix_red_shift = 0, tmp_mask = pix_red_mask; !(tmp_mask & 1);
+	     tmp_mask = tmp_mask >> 1, ++pix_red_shift);
+	if (tmp_mask != 0xff)
+	{
+	    fprintf (stderr, "Shifted red_mask: %lx is not 0xff\n",
+		     tmp_mask);
+	    a_prog_bug (function_name);
+	}
+	for (pix_green_shift = 0, tmp_mask = pix_green_mask; !(tmp_mask & 1);
+	    tmp_mask = tmp_mask >> 1, ++pix_green_shift);
+	if (tmp_mask != 0xff)
+	{
+	    fprintf (stderr, "Shifted green_mask: %lx is not 0xff\n",
+		     tmp_mask);
+	    a_prog_bug (function_name);
+	}
+	for (pix_blue_shift = 0, tmp_mask = pix_blue_mask; !(tmp_mask & 1);
+	     tmp_mask = tmp_mask >> 1, ++pix_blue_shift);
+	if (tmp_mask != 0xff)
+	{
+	    fprintf (stderr, "Shifted blue_mask: %lx is not 0xff\n",
+		     tmp_mask);
+	    a_prog_bug (function_name);
+	}
+	for (im_red_shift = 0, tmp_mask = im_red_mask; !(tmp_mask & 1);
+	     tmp_mask = tmp_mask >> 1, ++im_red_shift);
+	if (tmp_mask != 0xff)
+	{
+	    fprintf (stderr, "Shifted red_mask: %lx is not 0xff\n",
+		     tmp_mask);
+	    a_prog_bug (function_name);
+	}
+	for (im_green_shift = 0, tmp_mask = im_green_mask; !(tmp_mask & 1);
+	    tmp_mask = tmp_mask >> 1, ++im_green_shift);
+	if (tmp_mask != 0xff)
+	{
+	    fprintf (stderr, "Shifted green_mask: %lx is not 0xff\n",
+		     tmp_mask);
+	    a_prog_bug (function_name);
+	}
+	for (im_blue_shift = 0, tmp_mask = im_blue_mask; !(tmp_mask & 1);
+	     tmp_mask = tmp_mask >> 1, ++im_blue_shift);
+	if (tmp_mask != 0xff)
+	{
+	    fprintf (stderr, "Shifted blue_mask: %lx is not 0xff\n",
+		     tmp_mask);
+	    a_prog_bug (function_name);
+	}
+	for (count = 0; count < num_colours; ++count)
+	{
+	    red = cmap_pixels[count];
+	    green = red;
+	    blue = red;
+	    red = (red & im_red_mask) >> im_red_shift << pix_red_shift;
+	    green = (green & im_green_mask) >>im_green_shift <<pix_green_shift;
+	    blue = (blue & im_blue_mask) >> im_blue_shift << pix_blue_shift;
+	    cmap_pixels[count] = red | green | blue;
+	}
+    }
     if ( !kwin_get_pixel_RGB_values (pscanvas->pixcanvas, cmap_pixels,
 				     cmap_reds, cmap_greens, cmap_blues,
 				     num_colours) )
@@ -341,9 +425,9 @@ static flag draw_pc_image (PSCanvas pscanvas, int x_off, int y_off,
 	R=G=B  */
     for (count = 0, greyscale = TRUE; count < num_colours; ++count)
     {
-	red = (int) cmap_reds[count] >> 8;
-	green = (int) cmap_greens[count] >> 8;
-	blue = (int) cmap_blues[count] >> 8;
+	red = cmap_reds[count] >> 8;
+	green = cmap_greens[count] >> 8;
+	blue = cmap_blues[count] >> 8;
 	cmap_reds[count] = red;
 	cmap_greens[count] = green;
 	cmap_blues[count] = blue;
@@ -529,9 +613,6 @@ static flag draw_rgb_image (PSCanvas pscanvas,
     kwin_get_size (pscanvas->pixcanvas, &canvas_width, &canvas_height);
     kwin_get_attributes (pscanvas->pixcanvas,
 			 KWIN_ATT_VISUAL, &visual,
-			 KWIN_ATT_PIX_RED_MASK, &red_mask,
-			 KWIN_ATT_PIX_GREEN_MASK, &green_mask,
-			 KWIN_ATT_PIX_BLUE_MASK, &blue_mask,
 			 KWIN_ATT_END);
     /*  Flip  */
     y0 = (double) (canvas_height - 1 - y_off);
@@ -556,6 +637,11 @@ static flag draw_rgb_image (PSCanvas pscanvas,
 	return (ok);
     }
     /*  DirectColour visual: have to get colourmap values  */
+    kwin_get_attributes (pscanvas->pixcanvas,
+			 KWIN_ATT_PIX_RED_MASK, &red_mask,
+			 KWIN_ATT_PIX_GREEN_MASK, &green_mask,
+			 KWIN_ATT_PIX_BLUE_MASK, &blue_mask,
+			 KWIN_ATT_END);
     red_max = red_mask;
     green_max = green_mask;
     blue_max = blue_mask;

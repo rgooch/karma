@@ -1,0 +1,12 @@
+
+$TABLE            E_DISPATCH_LEVELS
+$COLUMNS          2
+$SUMMARY          List of replacement policies when adding keys
+$TABLE_DATA
+|.Dispatch level        |,Meaning
+
+|.DISPATCH_SYNCHRONOUS  |,Dispatch synchronously with the application main
+|~                      |~thread
+|.DISPATCH_ASYNCHRONOUS |,Dispatch asynchronously (like a Unix signal handler).
+|~                      |~Use with caution, as race conditions may result
+$END

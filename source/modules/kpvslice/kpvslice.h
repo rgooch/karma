@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   13-AUG-1996
 
-    Last updated by Richard Gooch   13-OCT-1996
+    Last updated by Richard Gooch   3-NOV-1996
 
 
 */
@@ -62,10 +62,9 @@ static char *image_mode_alternatives[] =
 EXTERN_FUNCTION (void load_and_setup, (CONST char *filename) );
 EXTERN_FUNCTION (void print_slice_info, (CONST char *window_string) );
 EXTERN_FUNCTION (flag track_aux_canvas_xtcoord,
-		 (CONST char *track_txt, CONST int track_num)   );
-EXTERN_FUNCTION (flag track_aux_canvas_xtmagupd, (ViewableImage vimage,
-						  double x_lin,
-						  double y_lin) );
+		 (CONST char *track_txt, int track_num)   );
+EXTERN_FUNCTION (flag track_aux_canvas_xtmagupd,
+		 (ViewableImage vimage, unsigned long xi, unsigned long yi) );
 
 /*  File: generic.c  */
 #ifndef KWIN_GENERIC_ONLY

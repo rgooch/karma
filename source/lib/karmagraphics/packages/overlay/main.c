@@ -74,8 +74,14 @@
     Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
 
-    Last updated by Richard Gooch   4-JUN-1996: Switched to left-right
+    Updated by      Richard Gooch   4-JUN-1996: Switched to left-right
   bottom-top co-ordinate specification instead of min-max x and y.
+
+    Updated by      Richard Gooch   14-NOV-1996: Added references to supported
+  co-ordinate types.
+
+    Last updated by Richard Gooch   8-DEC-1996: Switched to
+  <kwin_refresh_if_visible>.
 
 
 */
@@ -139,10 +145,10 @@
 #define OBJECT_MOVE_OBJECT (unsigned int) 15
 
 #define VERIFY_OVERLAYLIST(olist) if (olist == NULL) \
-{(void) fprintf (stderr, "NULL overlay list passed\n"); \
+{fprintf (stderr, "NULL overlay list passed\n"); \
  a_prog_bug (function_name); } \
 if (olist->magic_number != MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid overlay list object\n"); \
+{fprintf (stderr, "Invalid overlay list object\n"); \
  a_prog_bug (function_name); }
 
 /*  Some explanation of list IDs:
@@ -248,7 +254,7 @@ static char *str_object_desc[] =
     "        Overlay Restriction Name",
     "      END",
     "      ELEMENT",
-    "        UINT",
+    "        VSTRING",
     "        Overlay Restriction Pad",
     "      END",
     "      ELEMENT",
@@ -541,10 +547,10 @@ flag overlay_associate_display_canvas (KOverlayList olist, KWorldCanvas canvas)
 	    cnv->active = TRUE;
 	    if (olist->list_head->length < 1) return (TRUE);
 	    /*  Display  */
-	    if ( !canvas_resize (canvas, (struct win_scale_type *) NULL,
-				 TRUE) )
+	    if ( !kwin_refresh_if_visible (canvas_get_pixcanvas (canvas),
+					   TRUE) )
 	    {
-		(void) fprintf (stderr, "Error refreshing canvas\n");
+		fprintf (stderr, "Error refreshing canvas\n");
 		return (FALSE);
 	    }
 	    return (TRUE);
@@ -563,9 +569,9 @@ flag overlay_associate_display_canvas (KOverlayList olist, KWorldCanvas canvas)
     canvas_register_refresh_func (canvas,
 				  ( void (*) () ) worldcanvas_refresh_func,
 				  (void *) olist);
-    if ( !canvas_resize (canvas, (struct win_scale_type *) NULL, TRUE) )
+    if ( !kwin_refresh_if_visible (canvas_get_pixcanvas (canvas), TRUE) )
     {
-	(void) fprintf (stderr, "Error refreshing canvas\n");
+	fprintf (stderr, "Error refreshing canvas\n");
 	return (FALSE);
     }
     return (TRUE);
@@ -595,8 +601,7 @@ flag overlay_unassociate_display_canvas (KOverlayList olist,
 		cnv->active = FALSE;
 		if (olist->list_head->length < 1) return (TRUE);
 		/*  Refresh canvas  */
-		(void) canvas_resize (canvas, (struct win_scale_type *) NULL,
-				      TRUE);
+		kwin_refresh_if_visible (canvas_get_pixcanvas (canvas), TRUE);
 		return (TRUE);
 	    }
 	    return (FALSE);
@@ -631,7 +636,7 @@ flag overlay_redraw_on_canvas (KOverlayList olist, KWorldCanvas canvas)
 			      &num_restr, &restr_names, &restr_values);
     if (list_head->contiguous_data)
     {
-	(void) fprintf (stderr, "Overlay list has contiguous section!\n");
+	fprintf (stderr, "Overlay list has contiguous section!\n");
 	a_prog_bug (function_name);
     }
     /*  Process fragmented section of list  */
@@ -655,10 +660,12 @@ unsigned int overlay_line (KOverlayList olist,
 			   char *colourname)
 /*  [SUMMARY] Add a line to an overlay object list. See also [<overlay_lines>].
     <olist> The overlay list object.
-    <type0> The type of the first co-ordinate.
+    <type0> The type of the first co-ordinate. See
+    [<OVERLAY_COORDINATE_TYPES>] for a list of supported co-ordinate types.
     <x0> The horizontal position of the first co-ordinate.
     <y0> The vertical position of the first co-ordinate.
-    <type1> The type of the second co-ordinate.
+    <type1> The type of the second co-ordinate. See
+    [<OVERLAY_COORDINATE_TYPES>] for a list of supported co-ordinate types.
     <x1> The horizontal position of the second co-ordinate.
     <y1> The vertical position of the second co-ordinate.
     <colourname> The colourname.
@@ -721,7 +728,8 @@ unsigned int overlay_lines (KOverlayList olist, unsigned int num_coords,
     <num_coords> The number of co-ordinates. The number of lines is one less
     than this value.
     <types> An array of co-ordinate types. If this is NULL, all co-ordinates
-    are assumed to be world co-ordinates.
+    are assumed to be world co-ordinates. See [<OVERLAY_COORDINATE_TYPES>] for
+    a list of supported co-ordinate types.
     <x_arr> The horizontal co-ordinate values.
     <y_arr> The vertical co-ordinate values.
     <colourname> The colourname.
@@ -741,12 +749,12 @@ unsigned int overlay_lines (KOverlayList olist, unsigned int num_coords,
     VERIFY_OVERLAYLIST (olist);
     if (x_arr == NULL)
     {
-	(void) fprintf (stderr, "NULL x_arr passed\n");
+	fprintf (stderr, "NULL x_arr passed\n");
 	a_prog_bug (function_name);
     }
     if (y_arr == NULL)
     {
-	(void) fprintf (stderr, "NULL y_arr passed\n");
+	fprintf (stderr, "NULL y_arr passed\n");
 	a_prog_bug (function_name);
     }
     if ( ( object = create_generic (olist, OBJECT_LINES, colourname,
@@ -792,7 +800,8 @@ unsigned int overlay_text (KOverlayList olist, char *string, unsigned int type,
 /*  [SUMMARY] Add a text string to an overlay object list.
     <olist> The overlay list object.
     <string> The text string.
-    <type> The type of the co-ordinate.
+    <type> The type of the co-ordinate. See [<OVERLAY_COORDINATE_TYPES>] for a
+    list of supported co-ordinate types.
     <x> The horizontal position of the co-ordinate.
     <y> The vertical position of the co-ordinate.
     <colourname> The colourname.
@@ -850,10 +859,12 @@ unsigned int overlay_ellipse (KOverlayList olist,
 			      char *colourname, flag filled)
 /*  [SUMMARY] Add an ellipse to an overlay list. See also [<overlay_eillipses>]
     <olist> The overlay list object.
-    <ctype> The type of the centre co-ordinate.
+    <ctype> The type of the centre co-ordinate. See
+    [<OVERLAY_COORDINATE_TYPES>] for a list of supported co-ordinate types.
     <cx> The horizontal position of the centre co-ordinate.
     <cy> The vertical position of the centre co-ordinate.
-    <rtype> The type of the radius co-ordinate.
+    <rtype> The type of the radius co-ordinate. See
+    [<OVERLAY_COORDINATE_TYPES>] for a list of supported co-ordinate types.
     <rx> The horizontal radius.
     <ry> The vertical radius.
     <colourname> The colourname.
@@ -917,7 +928,8 @@ unsigned int overlay_filled_polygon (KOverlayList olist,
     <olist> The overlay list object.
     <num_coords> The number of co-ordinates (vertices).
     <types> The array of co-ordinate type values. If this is NULL, all
-    co-ordinates are assumed to be world co-ordinates.
+    co-ordinates are assumed to be world co-ordinates. See
+    [<OVERLAY_COORDINATE_TYPES>] for a list of supported co-ordinate types.
     <x_arr> The array of horizontal co-ordinate values.
     <y_arr> The array of vertical co-ordinate values.
     <colourname> The colour name.
@@ -980,10 +992,12 @@ unsigned int overlay_vector (KOverlayList olist,
     [PURPOSE] This routine will add a vector (directed line) to an overlay
     object list. See also [<overlay_vectors>].
     <olist> The overlay list object.
-    <stype> The type of the start co-ordinate.
+    <stype> The type of the start co-ordinate. See [<OVERLAY_COORDINATE_TYPES>]
+    for a list of supported co-ordinate types.
     <sx> The horizontal position of the start co-ordinate.
     <sy> The vertical position of the start co-ordinate.
-    <dtype> The type of the vector direction.
+    <dtype> The type of the vector direction. See [<OVERLAY_COORDINATE_TYPES>]
+    for a list of supported co-ordinate types.
     <dx> The horizontal vector direction.
     <dy> The vertical vector direction.
     <colourname> The colour name.
@@ -1046,11 +1060,13 @@ unsigned int overlay_ellipses (KOverlayList olist, unsigned int num_ellipses,
     <olist> The overlay list object.
     <num_ellipses> The number of ellipses.
     <ctypes> The types of the centre co-ordinates. If this is NULL, all
-    co-ordinates are assumed to be world co-ordinates.
+    co-ordinates are assumed to be world co-ordinates. See
+    [<OVERLAY_COORDINATE_TYPES>] for a list of supported co-ordinate types.
     <cx> The horizontal positions of the centre co-ordinates.
     <cy> The vertical positions of the centre co-ordinates.
     <rtypes> The types of the radii co-ordinates. If this is NULL, all
-    co-ordinates are assumed to be world co-ordinates.
+    co-ordinates are assumed to be world co-ordinates. See
+    [<OVERLAY_COORDINATE_TYPES>] for a list of supported co-ordinate types.
     <rx> The horizontal radii.
     <ry> The vertical radii.
     <colourname> The colour name.
@@ -1145,11 +1161,13 @@ unsigned int overlay_segments (KOverlayList olist, unsigned int num_segments,
     <olist> The overlay list object.
     <num_segments> The number of segments.
     <types0> The types of the start co-ordinates. If this is NULL, all
-    co-ordinates are assumed to be world co-ordinates.
+    co-ordinates are assumed to be world co-ordinates. See
+    [<OVERLAY_COORDINATE_TYPES>] for a list of supported co-ordinate types.
     <x0> The horizontal positions of the start co-ordinates.
     <y0> The vertical positions of the start co-ordinates.
     <types1> The types of the stop co-ordinates. If this is NULL, all
-    co-ordinates are assumed to be world co-ordinates.
+    co-ordinates are assumed to be world co-ordinates. See
+    [<OVERLAY_COORDINATE_TYPES>] for a list of supported co-ordinate types.
     <x1> The horizontal positions of the stop co-ordinates.
     <y1> The vertical positions of the stop co-ordinates.
     <colourname> The colour name.
@@ -1243,11 +1261,13 @@ unsigned int overlay_vectors (KOverlayList olist, unsigned int num_vectors,
     <olist> The overlay list object.
     <num_vectors> The number of vectors.
     <stypes> The types of the start co-ordinates. If this is NULL, all
-    co-ordinates are assumed to be world co-ordinates.
+    co-ordinates are assumed to be world co-ordinates. See
+    [<OVERLAY_COORDINATE_TYPES>] for a list of supported co-ordinate types.
     <sx> The horizontal positions of the start co-ordinates.
     <sy> The vertical positions of the start co-ordinates.
     <dtypes> The types of the vector directions. If this is NULL, all
-    directions are assumed to be in world co-ordinates.
+    directions are assumed to be in world co-ordinates. See
+    [<OVERLAY_COORDINATE_TYPES>] for a list of supported co-ordinate types.
     <dx> The horizontal vector directions.
     <dy> The vertical vector directions.
     <colourname> The colour name.
@@ -1407,8 +1427,10 @@ flag overlay_move_object (KOverlayList olist, unsigned int id_in_list,
     particular list master or slave.
     <list_id> The ID of the list which created the object. If this is 0, the
     list given by <<olist>> is assumed.
-    <dx> The horizontal distance to move.
-    <dy> The vertical distance to move.
+    <dx> The horizontal distance to move. This is of the same co-ordinate type
+    as the original co-ordinates.
+    <dy> The vertical distance to move. This is of the same co-ordinate type
+    as the original co-ordinates.
     [RETURNS] TRUE on success, else FALSE.
 */
 {
@@ -1469,10 +1491,10 @@ static void initialise_overlay_package ()
     }
     if ( ( object_desc = dsra_packet_desc (channel) ) == NULL )
     {
-	(void) ch_close (channel);
+	ch_close (channel);
 	m_abort (function_name, "overlay object list descriptor");
     }
-    (void) ch_close (channel);
+    ch_close (channel);
     /*  Register protocols  */
     conn_register_server_protocol ("2D_overlay", PROTOCOL_VERSION, 0,
 				   ( flag (*) () ) register_new_overlay_slave,
@@ -1516,7 +1538,7 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas, int width,
 	if ( (canvas == cnv->canvas) && cnv->active ) no_association = FALSE;
     }
     if (no_association) return;
-    (void) overlay_redraw_on_canvas (olist, canvas);
+    overlay_redraw_on_canvas (olist, canvas);
 }   /*  End Function worldcanvas_refresh_func  */
 
 
@@ -1546,25 +1568,25 @@ static flag register_new_overlay_slave (Connection connection, void **info)
     channel = conn_get_channel (connection);
     if (masterable_list == NULL)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Connection attempt by 2D_overlay client but we have no list!\n");
 	dsrw_write_flag (channel, FALSE);
-	(void) ch_flush (channel);
+	ch_flush (channel);
 	return (FALSE);
     }
     if (masterable_list->master != NULL)
     {
-	(void) fprintf (stderr, "Default masterable list is a slave!\n");
+	fprintf (stderr, "Default masterable list is a slave!\n");
 	dsrw_write_flag (channel, FALSE);
-	(void) ch_flush (channel);
+	ch_flush (channel);
 	return (FALSE);
     }
     if (masterable_list->next_slave_id == 0)
     {
 	/*  Wow! There's been a lot of slave connections!  */
-	(void) fprintf (stderr, "Slave ID counter has wrapped around!\n");
+	fprintf (stderr, "Slave ID counter has wrapped around!\n");
 	dsrw_write_flag (channel, FALSE);
-	(void) ch_flush (channel);
+	ch_flush (channel);
 	return (FALSE);
     }
     masterable_list->my_id = 1;
@@ -1630,7 +1652,7 @@ static void register_slave_loss (Connection connection, void *info)
     if (connection == olist->token_conn)
     {
 	/*  Take back the token  */
-	(void) process_token_receive (olist, connection);
+	process_token_receive (olist, connection);
     }
     --olist->slave_count;
     remove_token_request (olist, connection);
@@ -1658,20 +1680,20 @@ static flag verify_overlay_slave_connection (void **info)
 
     if (slaveable_list == NULL)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Connection attempt to 2D_overlay server but we have no list!\n");
 	return (FALSE);
     }
     if (slaveable_list->master != NULL)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Connection attempt to 2D_overlay server but already a slave!\n");
 	return (FALSE);
     }
     list_head = slaveable_list->list_head;
     if (list_head->length > 0)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Overlay list must be empty before becomming a slave\n");
 	return (FALSE);
     }
@@ -1701,7 +1723,7 @@ static flag register_overlay_slave_connection (Connection connection,
     VERIFY_OVERLAYLIST (olist);
     if (olist->master != NULL)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Connection attempt to 2D_overlay server but suddenly a slave!\n");
 	a_prog_bug (function_name);
     }
@@ -1740,7 +1762,7 @@ static flag read_instruction_from_master (Connection connection, void **info)
     }
     if (connection != olist->master)
     {
-	(void) fprintf (stderr, "Connection missmatch\n");
+	fprintf (stderr, "Connection missmatch\n");
 	a_prog_bug (function_name);
     }
     channel = conn_get_channel (connection);
@@ -1765,7 +1787,7 @@ static void register_master_loss (Connection connection, void *info)
     VERIFY_OVERLAYLIST (olist);
     if (!olist->have_token)
     {
-	(void) process_token_receive (olist, olist->master);
+	process_token_receive (olist, olist->master);
     }
     olist->master = NULL;
 }   /*  End Function register_master_loss  */
@@ -1798,7 +1820,7 @@ static flag transmit_to_slaves (KOverlayList olist, list_entry *object,
 	if ( ( conn = conn_get_serv_connection ("2D_overlay", conn_count) )
 	    == NULL )
 	{
-	    (void) fprintf (stderr, "2D_overlay connection: %u not found\n",
+	    fprintf (stderr, "2D_overlay connection: %u not found\n",
 			    conn_count);
 	    a_prog_bug (function_name);
 	}
@@ -1864,7 +1886,7 @@ static flag process_instruction (KOverlayList olist, list_entry *instruction,
 				     "Overlay Object Code",
 				     (unsigned int *) NULL, value) )
     {
-	(void) fprintf (stderr, "Error getting overlay object code\n");
+	fprintf (stderr, "Error getting overlay object code\n");
 	return (FALSE);
     }
     instruction_code = (unsigned int) value[0];
@@ -1882,7 +1904,7 @@ static flag process_instruction (KOverlayList olist, list_entry *instruction,
 					 "Overlay GP UInteger",
 					 (unsigned int *) NULL, value) )
 	{
-	    (void) fprintf (stderr, "Error getting overlay object UINT\n");
+	    fprintf (stderr, "Error getting overlay object UINT\n");
 	    ds_dealloc_data (object_desc, instruction->data);
 	    m_free ( (char *) instruction );
 	    return (FALSE);
@@ -1898,7 +1920,7 @@ static flag process_instruction (KOverlayList olist, list_entry *instruction,
 	{
 	    if (curr_entry == NULL)
 	    {
-		(void) fprintf (stderr,
+		fprintf (stderr,
 				"Overran list! Possible protocol error\n");
 		a_prog_bug (function_name);
 	    }
@@ -1918,30 +1940,23 @@ static flag process_instruction (KOverlayList olist, list_entry *instruction,
 	{
 	    if (!cnv->active) continue;
 	    /*  Refresh canvas  */
-	    if ( !canvas_resize (cnv->canvas,
-				 (struct win_scale_type *) NULL,
-				 FALSE) ) return (FALSE);
+	    if ( !kwin_refresh_if_visible (canvas_get_pixcanvas (cnv->canvas),
+					   FALSE) ) return (FALSE);
 	}
 	return (TRUE);
-/*
-        break;
-*/
+        /*break;*/
       case OBJECT_REQUEST_TOKEN:
 	/*  Deallocate instruction: can't use it later!  */
 	ds_dealloc_data (object_desc, instruction->data);
 	m_free ( (char *) instruction );
 	return ( process_conn_token_request (olist, conn) );
-/*
-	break;
-*/
+	/*break;*/
       case OBJECT_GRANT_TOKEN:
 	/*  Deallocate instruction: can't use it later!  */
 	ds_dealloc_data (object_desc, instruction->data);
 	m_free ( (char *) instruction );
 	return ( process_token_receive (olist, conn) );
-/*
-	break;
-*/
+	/*break;*/
       case OBJECT_REMOVE_OBJECT:
 	if (olist->master == NULL)
 	{
@@ -1953,7 +1968,7 @@ static flag process_instruction (KOverlayList olist, list_entry *instruction,
 					 "Overlay ListID",
 					 (unsigned int *) NULL, value) )
 	{
-	    (void) fprintf (stderr, "Error getting overlay object ListID\n");
+	    fprintf (stderr, "Error getting overlay object ListID\n");
 	    ds_dealloc_data (object_desc, instruction->data);
 	    m_free ( (char *) instruction );
 	    return (FALSE);
@@ -1963,7 +1978,7 @@ static flag process_instruction (KOverlayList olist, list_entry *instruction,
 					 "Overlay ObjectID",
 					 (unsigned int *) NULL, value) )
 	{
-	    (void) fprintf (stderr, "Error getting overlay object ObjectID\n");
+	    fprintf (stderr, "Error getting overlay object ObjectID\n");
 	    ds_dealloc_data (object_desc, instruction->data);
 	    m_free ( (char *) instruction );
 	    return (FALSE);
@@ -1978,14 +1993,11 @@ static flag process_instruction (KOverlayList olist, list_entry *instruction,
 	{
 	    if (!cnv->active) continue;
 	    /*  Refresh canvas  */
-	    if ( !canvas_resize (cnv->canvas,
-				 (struct win_scale_type *) NULL,
-				 FALSE) ) return (FALSE);
+	    if ( !kwin_refresh_if_visible (canvas_get_pixcanvas (cnv->canvas),
+					   FALSE) ) return (FALSE);
 	}
 	return (TRUE);
-/*
-	break;
-*/
+	/*break;*/
       case OBJECT_MOVE_OBJECT:
 	if (olist->master == NULL)
 	{
@@ -1997,7 +2009,7 @@ static flag process_instruction (KOverlayList olist, list_entry *instruction,
 					 "Overlay ListID",
 					 (unsigned int *) NULL, value) )
 	{
-	    (void) fprintf (stderr, "Error getting overlay object ListID\n");
+	    fprintf (stderr, "Error getting overlay object ListID\n");
 	    ds_dealloc_data (object_desc, instruction->data);
 	    m_free ( (char *) instruction );
 	    return (FALSE);
@@ -2007,7 +2019,7 @@ static flag process_instruction (KOverlayList olist, list_entry *instruction,
 					 "Overlay ObjectID",
 					 (unsigned int *) NULL, value) )
 	{
-	    (void) fprintf (stderr, "Error getting overlay object ObjectID\n");
+	    fprintf (stderr, "Error getting overlay object ObjectID\n");
 	    ds_dealloc_data (object_desc, instruction->data);
 	    m_free ( (char *) instruction );
 	    return (FALSE);
@@ -2037,14 +2049,11 @@ static flag process_instruction (KOverlayList olist, list_entry *instruction,
 	{
 	    if (!cnv->active) continue;
 	    /*  Refresh canvas  */
-	    if ( !canvas_resize (cnv->canvas,
-				 (struct win_scale_type *) NULL,
-				 FALSE) ) return (FALSE);
+	    if ( !kwin_refresh_if_visible (canvas_get_pixcanvas (cnv->canvas),
+					   FALSE) ) return (FALSE);
 	}
 	return (TRUE);
-/*
-	break;
-*/
+	/*break;*/
       default:
         break;
     }
@@ -2171,12 +2180,12 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
     clear_under = *(unsigned int *) ptr;
     /*  Check if labels match  */
     if ( (xlabel != NULL) && (xlabel[0] != '\0') &&
-	(x_label != NULL) && (x_label[0] != '\0') )
+	 (x_label != NULL) && (x_label[0] != '\0') )
     {
 	if (strcmp (xlabel, x_label) != 0) return (TRUE);
     }
     if ( (ylabel != NULL) && (ylabel[0] != '\0') &&
-	(y_label != NULL) && (y_label[0] != '\0') )
+	 (y_label != NULL) && (y_label[0] != '\0') )
     {
 	if (strcmp (ylabel, y_label) != 0) return (TRUE);
     }
@@ -2192,8 +2201,7 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
 	 restriction_values += restr_pack_size)
     {
 	name = *(char **) restriction_names;
-	(void) ds_get_element (restriction_values, K_DOUBLE, value,
-			       (flag *) NULL);
+	ds_get_element (restriction_values, K_DOUBLE, value, (flag *) NULL);
 	/*  Scan through canvas restrictions  */
 	for (count2 = 0; count2 < num_restr; ++count2)
 	{
@@ -2241,9 +2249,8 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
       case OBJECT_LINE:
 	if (num_coords != 2)
 	{
-	    (void) fprintf (stderr,
-			    "Co-ordinate list length: %u must be 2 for line\n",
-			    num_coords);
+	    fprintf (stderr,"Co-ordinate list length: %u must be 2 for line\n",
+		     num_coords);
 	    return (FALSE);
 	}
 	convert_to_pixcoords (canvas, num_coords, types, x_arr, y_arr,
@@ -2258,9 +2265,8 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
       case OBJECT_TEXT:
 	if (num_coords != 1)
 	{
-	    (void) fprintf (stderr,
-			    "Co-ordinate list length: %u must be 1 for line\n",
-			    num_coords);
+	    fprintf (stderr,"Co-ordinate list length: %u must be 1 for line\n",
+		     num_coords);
 	    return (FALSE);
 	}
 	convert_to_pixcoords (canvas, num_coords, types, x_arr, y_arr,
@@ -2279,9 +2285,8 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
       case OBJECT_FELLIPSE:
 	if (num_coords != 2)
 	{
-	    (void) fprintf (stderr,
-			    "Co-ordinate list length: %u must be 2 for line\n",
-			    num_coords);
+	    fprintf (stderr,"Co-ordinate list length: %u must be 2 for line\n",
+		     num_coords);
 	    return (FALSE);
 	}
 	convert_to_pixcoords (canvas, num_coords, types, x_arr, y_arr,
@@ -2325,9 +2330,8 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
       case OBJECT_VECTOR:
 	if (num_coords != 2)
 	{
-	    (void) fprintf (stderr,
-			    "Co-ordinate list length: %u must be 2 for line\n",
-			    num_coords);
+	    fprintf (stderr,"Co-ordinate list length: %u must be 2 for line\n",
+		     num_coords);
 	    return (FALSE);
 	}
 	convert_to_pixcoords (canvas, num_coords, types, x_arr, y_arr,
@@ -2359,9 +2363,9 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
       case OBJECT_FELLIPSES:
 	if (num_coords % 2 != 0)
 	{
-	    (void) fprintf (stderr,
-			    "Co-ordinate list length: %u must be even for ellipses\n",
-			    num_coords);
+	    fprintf (stderr,
+		     "Co-ordinate list length: %u must be even for ellipses\n",
+		     num_coords);
 	    return (FALSE);
 	}
 	convert_to_pixcoords (canvas, num_coords, types, x_arr, y_arr,
@@ -2407,9 +2411,9 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
       case OBJECT_SEGMENTS:
 	if (num_coords % 2 != 0)
 	{
-	    (void) fprintf (stderr,
-			    "Co-ordinate list length: %u must be even for segments\n",
-			    num_coords);
+	    fprintf (stderr,
+		     "Co-ordinate list length: %u must be even for segments\n",
+		     num_coords);
 	    return (FALSE);
 	}
 	convert_to_pixcoords (canvas, num_coords, types, x_arr, y_arr,
@@ -2423,9 +2427,9 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
       case OBJECT_VECTORS:
 	if (num_coords % 2 != 0)
 	{
-	    (void) fprintf (stderr,
-			    "Co-ordinate list length: %u must be even for vectors\n",
-			    num_coords);
+	    fprintf (stderr,
+		     "Co-ordinate list length: %u must be even for vectors\n",
+		     num_coords);
 	    return (FALSE);
 	}
 	convert_to_pixcoords (canvas, num_coords, types, x_arr, y_arr,
@@ -2463,7 +2467,7 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
 
 	break;
       default:
-	(void) fprintf (stderr, "Illegal object code: %u\n", object_code);
+	fprintf (stderr, "Illegal object code: %u\n", object_code);
 	a_prog_bug (function_name);
 	break;
     }
@@ -2509,9 +2513,9 @@ static void convert_to_pixcoords (KWorldCanvas canvas, unsigned int num_coords,
 	/*  Need to use the generic routine because doubles will not be
 	    aligned. Stupid Sparc processor doesn't like it.
 	*/
-	(void) ds_get_element (x_arr, K_DOUBLE, value, (flag *) NULL);
+	ds_get_element (x_arr, K_DOUBLE, value, (flag *) NULL);
 	x = value[0];
-	(void) ds_get_element (y_arr, K_DOUBLE, value, (flag *) NULL);
+	ds_get_element (y_arr, K_DOUBLE, value, (flag *) NULL);
 	y = value[0];
 	switch (*(unsigned int *) types)
 	{
@@ -2533,7 +2537,7 @@ static void convert_to_pixcoords (KWorldCanvas canvas, unsigned int num_coords,
 	    *py = last_y;
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Illegal co-ordinate type: %u\n",
+	    fprintf (stderr, "Illegal co-ordinate type: %u\n",
 			    *(unsigned int *) types);
 	    a_prog_bug (function_name);
 	    break;
@@ -2562,7 +2566,7 @@ static flag send_token_request (KOverlayList olist)
     VERIFY_OVERLAYLIST (olist);
     if (olist->have_token)
     {
-	(void) fprintf (stderr, "Already have token\n");
+	fprintf (stderr, "Already have token\n");
 	a_prog_bug (function_name);
     }
     if (olist->requested_token) return (TRUE);
@@ -2578,7 +2582,7 @@ static flag send_token_request (KOverlayList olist)
 	/*  This is master: look at slave connection with token  */
 	if (olist->token_conn == NULL)
 	{
-	    (void) fprintf (stderr, "Nowhere to get token from\n");
+	    fprintf (stderr, "Nowhere to get token from\n");
 	    a_prog_bug (function_name);
 	}
 	channel = conn_get_channel (olist->token_conn);
@@ -2612,12 +2616,12 @@ static flag send_token_grant (KOverlayList olist, Connection conn)
     VERIFY_OVERLAYLIST (olist);
     if (!olist->have_token)
     {
-	(void) fprintf (stderr, "Do not have token\n");
+	fprintf (stderr, "Do not have token\n");
 	a_prog_bug (function_name);
     }
     if ( (olist->master != NULL) && (conn != olist->master) )
     {
-	(void) fprintf (stderr, "Slave not sending token to master\n");
+	fprintf (stderr, "Slave not sending token to master\n");
 	a_prog_bug (function_name);
     }
     if ( ( instruction = create_generic (olist, OBJECT_GRANT_TOKEN, NULL,
@@ -2652,7 +2656,7 @@ static flag process_conn_token_request (KOverlayList olist, Connection conn)
     VERIFY_OVERLAYLIST (olist);
     if (conn == NULL)
     {
-	(void) fprintf (stderr, "Who asked for token?\n");
+	fprintf (stderr, "Who asked for token?\n");
 	a_prog_bug (function_name);
     }
     if (olist->master == NULL)
@@ -2662,7 +2666,7 @@ static flag process_conn_token_request (KOverlayList olist, Connection conn)
 	/*  Do not have the token: must be with a slave  */
 	if (olist->token_conn == NULL)
 	{
-	    (void) fprintf (stderr, "MASTER: who has the token?\n");
+	    fprintf (stderr, "MASTER: who has the token?\n");
 	    a_prog_bug (function_name);
 	}
 	/*  Check for existing token request  */
@@ -2671,7 +2675,7 @@ static flag process_conn_token_request (KOverlayList olist, Connection conn)
 	{
 	    if (conn == entry->conn)
 	    {
-		(void) fprintf (stderr,
+		fprintf (stderr,
 				"MASTER: slave has already asked for token\n");
 		a_prog_bug (function_name);
 	    }
@@ -2700,13 +2704,13 @@ static flag process_conn_token_request (KOverlayList olist, Connection conn)
     /*  This is a slave  */
     if (!olist->have_token)
     {
-	(void) fprintf(stderr,
+	fprintf(stderr,
 		       "SLAVE: request for token but I don't have it\n");
 	a_prog_bug (function_name);
     }
     if (conn != olist->master)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"SLAVE: request for token not from master\n");
 	a_prog_bug (function_name);
     }
@@ -2731,7 +2735,7 @@ static flag process_token_receive (KOverlayList olist, Connection conn)
     VERIFY_OVERLAYLIST (olist);
     if (olist->have_token)
     {
-	(void) fprintf (stderr, "Already have token\n");
+	fprintf (stderr, "Already have token\n");
 	a_prog_bug (function_name);
     }
     list_head = olist->buf_list;
@@ -2774,7 +2778,7 @@ static flag process_token_receive (KOverlayList olist, Connection conn)
     /*  Slave: must have come from master  */
     if (conn != olist->master)
     {
-	(void) fprintf (stderr, "SLAVE: token received but not from master\n");
+	fprintf (stderr, "SLAVE: token received but not from master\n");
 	a_prog_bug (function_name);
     }
     olist->have_token = TRUE;
@@ -2791,7 +2795,7 @@ static flag process_token_receive (KOverlayList olist, Connection conn)
 	next_instruction = instruction->next;
 	if ( !process_instruction (olist, instruction, NULL) )
 	{
-	    (void) fprintf (stderr, "Error processing instruction\n");
+	    fprintf (stderr, "Error processing instruction\n");
 	    ds_dealloc_list_entries (object_desc, list_head);
 	    return (FALSE);
 	}
@@ -2864,7 +2868,7 @@ static flag process_app_instruction (KOverlayList olist,
     if ( !olist->have_token && (olist->master == NULL) &&
 	(olist->slave_count < 1) )
     {
-	(void) fprintf (stderr, "Lost token!\n");
+	fprintf (stderr, "Lost token!\n");
 	a_prog_bug (function_name);
     }
     if (olist->have_token)
@@ -2882,7 +2886,7 @@ static flag process_app_instruction (KOverlayList olist,
 		return (FALSE);
 	    }
 	}
-	(void) transmit_to_slaves (olist, instruction, NULL);
+	transmit_to_slaves (olist, instruction, NULL);
 	return ( process_instruction (olist, instruction, NULL) );
     }
     /*  Do not have the token: store the instruction for later  */
@@ -2933,7 +2937,6 @@ static list_entry *create_generic (KOverlayList olist,
     list_header *coord_list;
     list_header *restriction_list;
     packet_desc *restriction_desc;
-    double value[2];
     extern packet_desc *object_desc;
     static char function_name[] = "__overlay_create_generic";
 
@@ -2958,7 +2961,7 @@ static list_entry *create_generic (KOverlayList olist,
     {
 	if (++olist->last_object_id == 0)
 	{
-	    (void) fprintf (stderr, "Object ID counter wrapped around!\n");
+	    fprintf (stderr, "Object ID counter wrapped around!\n");
 	    return (NULL);
 	}
 	*object_id = olist->last_object_id;
@@ -3036,7 +3039,7 @@ static list_entry *create_generic (KOverlayList olist,
     ptr = object->data + ds_get_element_offset (object_desc,
 						OBJECT_RESTRICTION_INDEX);
     restriction_desc = ( (packet_desc *)
-			object_desc->element_desc[OBJECT_RESTRICTION_INDEX]);
+			 object_desc->element_desc[OBJECT_RESTRICTION_INDEX]);
     restriction_list = *(list_header **) ptr;
     restriction_list->sort_type = SORT_RANDOM;
     if (num_restr < 1) return (object);
@@ -3055,7 +3058,6 @@ static list_entry *create_generic (KOverlayList olist,
 					 RESTRICTION_NAME_INDEX);
     values = ptr + ds_get_element_offset (restriction_desc,
 					  RESTRICTION_VALUE_INDEX);
-    value[1] = 0.0;
     for (count = 0; count < num_restr;
 	 ++count, names += restr_pack_size, values += restr_pack_size)
     {
@@ -3065,14 +3067,7 @@ static list_entry *create_generic (KOverlayList olist,
 	    m_free ( (char *) object );
 	    return (NULL);
 	}
-	value[0] = restr_values[count];
-	if ( !ds_put_named_element (restriction_desc, values,
-				    "Overlay Restriction Value", value) )
-	{
-	    ds_dealloc_data (object_desc, object->data);
-	    m_free ( (char *) object );
-	    return (NULL);
-	}
+	*(double *) values = restr_values[count];
     }
     return (object);
 }   /*  End Function create_generic  */
@@ -3207,7 +3202,7 @@ static flag move_object (KOverlayList olist, unsigned int object_id,
 	num_coords /= 2;
 	break;
       default:
-	(void) fprintf (stderr, "Illegal object code: %u\n", object_code);
+	fprintf (stderr, "Illegal object code: %u\n", object_code);
 	a_prog_bug (function_name);
 	break;
     }

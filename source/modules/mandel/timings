@@ -38,6 +38,9 @@ Realtime: 4406 ms				realtime MFLOPS: 52
 hp9000/J200:
 Realtime: 4604 ms				realtime MFLOPS: 49
 
+P166/256 kByte L2 cache:
+Realtime: 4908 ms       CPUtime MFLOPS: 46      realtime MFLOPS: 46
+
 Power Challenge XL/r8000 75 MHz:
 Realtime: 5613 ms       CPUtime MFLOPS: 41      realtime MFLOPS: 40
 

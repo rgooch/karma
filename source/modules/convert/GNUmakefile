@@ -4,6 +4,7 @@ include $(KARMAINCLUDEPATH)/gmakedefs/modules.head
 TARGETS =	$(KARMABINPATH)/kgen \
 		$(KARMABINPATH)/raw_grey2karma \
 		$(KARMABINPATH)/raw_planes2karma \
+		$(KARMABINPATH)/pgm2karma \
 		$(KARMABINPATH)/ppm2karma \
 		$(KARMABINPATH)/fits2karma \
 		$(KARMABINPATH)/karma2fits \
@@ -15,7 +16,8 @@ TARGETS =	$(KARMABINPATH)/kgen \
 		$(KARMABINPATH)/kdump \
 		$(KARMABINPATH)/karma2ps \
 		$(KARMABINPATH)/karma2ppm \
-		$(KARMABINPATH)/karma2sunras
+		$(KARMABINPATH)/karma2sunras \
+		$(KARMABINPATH)/images2karma
 
 all:	$(TARGETS)	generic_clean
 
@@ -45,6 +47,15 @@ $(KARMABINPATH)/raw_planes2karma:	$(RAW_PLANES2KARMAO) $(KDEPLIB_KARMA)
 	cd $(machine_dir); $(LD) $(LDFLAGS) -o tmpraw_planes2karma $(RAW_PLANES2KARMAO) $(CLIBS)
 	install -s $(machine_dir)/tmpraw_planes2karma $(KARMABINPATH)/raw_planes2karma
 	chmod u=rwx,go=x $(KARMABINPATH)/raw_planes2karma
+
+
+PGM2KARMA =	pgm2karma.c
+PGM2KARMAO =	pgm2karma.o
+
+$(KARMABINPATH)/pgm2karma:	$(PGM2KARMAO) $(KDEPLIB_KARMA)
+	cd $(machine_dir);$(LD) $(LDFLAGS) -o tmppgm2karma $(PGM2KARMAO) $(CLIBS)
+	install -s $(machine_dir)/tmppgm2karma $(KARMABINPATH)/pgm2karma
+	chmod u=rwx,go=x $(KARMABINPATH)/pgm2karma
 
 
 PPM2KARMA =	ppm2karma.c
@@ -153,6 +164,15 @@ $(KARMABINPATH)/karma2sunras:	$(KARMA2SUNRASO) $(KDEPLIB_KARMA)
 	cd $(machine_dir);$(LD) $(LDFLAGS) -o tmpkarma2sunras $(KARMA2SUNRASO) $(CLIBS)
 	install -s $(machine_dir)/tmpkarma2sunras $(KARMABINPATH)/karma2sunras
 	chmod u=rwx,go=x $(KARMABINPATH)/karma2sunras
+
+
+IMAGES2KARMA =	images2karma.c
+IMAGES2KARMAO =	images2karma.o
+
+$(KARMABINPATH)/images2karma:	$(IMAGES2KARMAO) $(KDEPLIB_KARMA)
+	cd $(machine_dir);$(LD) $(LDFLAGS) -o tmpimages2karma $(IMAGES2KARMAO) $(CLIBS)
+	install -s $(machine_dir)/tmpimages2karma $(KARMABINPATH)/images2karma
+	chmod u=rwx,go=x $(KARMABINPATH)/images2karma
 
 
 depend:

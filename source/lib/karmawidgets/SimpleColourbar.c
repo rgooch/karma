@@ -33,8 +33,10 @@
 
     Updated by      Richard Gooch   28-APR-1996: Added mask* resources.
 
-    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+    Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   6-NOV-1996: Cosmetic changes.
 
 
 */
@@ -258,7 +260,7 @@ static void canvas_refresh_func (KPixCanvas canvas, int width, int height,
 	for (count = 0; count < width; ++count)
 	{
 	    index = count * (int) (num_pixels - 1) / (width - 1);
-	    (void) kwin_draw_line (canvas, count, 0, count, height - 1,
+	    kwin_draw_line (canvas, count, 0, count, height - 1,
 				   pixel_values[index] & pixel_mask);
 	}
 	return;
@@ -288,8 +290,7 @@ static void canvas_refresh_func (KPixCanvas canvas, int width, int height,
     {
 	if ( !kwin_draw_cached_image (top->simpleColourbar.row_cache, 0, 0) )
 	{
-	    (void) fprintf (stderr,
-			    "Error drawing cached first row of colourbar\n");
+	    fprintf (stderr, "Error drawing cached first row of colourbar\n");
 	}
     }
     else
@@ -312,7 +313,7 @@ static void canvas_refresh_func (KPixCanvas canvas, int width, int height,
 				  ( flag (*) () ) NULL, NULL,
 				  &top->simpleColourbar.row_cache) )
 	{
-	    (void) fprintf (stderr, "Error drawing top row of colourbar\n");
+	    fprintf (stderr, "Error drawing top row of colourbar\n");
 	}
 	top->simpleColourbar.valid_cache = TRUE;
 	top->simpleColourbar.cache_width = width;
@@ -323,7 +324,7 @@ static void canvas_refresh_func (KPixCanvas canvas, int width, int height,
 	if ( !kwin_draw_cached_image (top->simpleColourbar.row_cache,
 				      0, count) )
 	{
-	    (void) fprintf (stderr, "Error drawing cached row of colourbar\n");
+	    fprintf (stderr, "Error drawing cached row of colourbar\n");
 	}
     }
 }   /*  End Function canvas_refresh_func  */

@@ -29,11 +29,13 @@
 
     Written by      Richard Gooch   6-AUG-1996
 
-    Last updated by Richard Gooch   6-AUG-1996
+    Last updated by Richard Gooch   2-DEC-1996: Added trap if output file has
+  the same name as the input file.
 
 
 */
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 #include <unistd.h>
 #include <errno.h>
@@ -68,13 +70,13 @@ int main (int argc, char **argv)
     return (RV_OK);
 }   /*  End Function main   */
 
-static flag karma2fits (p, fp)
-char *p;
-FILE *fp;
+static flag karma2fits (char *p, FILE *fp)
 {
     Channel out;
+    int len;
     multi_array *multi_desc;
     char *inp_filename, *out_filename;
+    char txt[STRING_LENGTH];
     extern char *sys_errlist[];
 
     if ( ( inp_filename = ex_word (p, &p) ) == NULL )
@@ -86,6 +88,17 @@ FILE *fp;
     {
 	(void) fprintf (stderr, "Must also supply output filename\n");
 	m_free (inp_filename);
+	return (TRUE);
+    }
+    /*  Append ".kf" if doesn't already exist  */
+    strcpy (txt, inp_filename);
+    len = strlen (txt);
+    if (strcmp (txt + len - 3, ".kf") != 0) strcat (txt, ".kf");
+    if (strcmp (txt, out_filename) == 0)
+    {
+	fprintf (stderr, "Input file would be overwritten!\n");
+	m_free (inp_filename);
+	m_free (out_filename);
 	return (TRUE);
     }
     /*  Read input file  */

@@ -77,8 +77,8 @@ ifeq ($(OS),IRIX6)
 ktmpos = IRIX
 endif
 ifeq ($(ktmpos),IRIX)
-CC   = cc -xansi -signed -D_SGI_MP_SOURCE $(kcflags)
-LD   = cc -xansi $(lpath) -Wl,-no_library_replacement -rpath $(rpath)
+CC   = cc -xansi -signed -D_SGI_MP_SOURCE -$(MACHINE) $(kcflags)
+LD   = cc -xansi $(lpath) -$(MACHINE) -rpath $(rpath)
 KOPTIMISE = -O2
 endif
 
@@ -86,7 +86,6 @@ ifeq ($(OS),OSF1)
 # gcc causes problems with shared Xt library ???
 # CC   = gcc -fpcc-struct-return -Wall
 CC   = cc -std $(kcflags)
-#LD   = $(CC) $(lpath) -Wl,-no_library_replacement -Wl,-rpath,$(rpath)
 LD   = $(CC) $(lpath) -Wl,-rpath,$(rpath)
 KOPTIMISE = -O2
 endif

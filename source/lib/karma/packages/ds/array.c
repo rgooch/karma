@@ -61,8 +61,11 @@
 
     Updated by      Richard Gooch   27-JUL-1996: Created <ds_find_1D_sum>.
 
-    Last updated by Richard Gooch   22-OCT-1996: Accepted and fixed code for
+    Updated by      Richard Gooch   22-OCT-1996: Accepted and fixed code for
   <ds_find_?D_stats> from Vincent McIntyre.
+
+    Last updated by Richard Gooch   3-NOV-1996: Returned total square from
+  <ds_find_2D_stats>.
 
 
 */
@@ -945,7 +948,8 @@ flag ds_find_2D_stats (CONST char *data,
 		       unsigned int length2, uaddr *offsets2,
 		       unsigned int elem_type, unsigned int conv_type,
 		       double *min, double *max, double *mean,
-		       double *stddev, double *sum, unsigned long *npoints)
+		       double *stddev, double *sum, double *sumsq,
+		       unsigned long *npoints)
 /*  [SUMMARY] Compute simple statistics for a 2D array.
     [PURPOSE] This routine will find the minimum, maximum, mean, rms and sum of
     a single plane (element versus two dimensions).
@@ -962,6 +966,7 @@ flag ds_find_2D_stats (CONST char *data,
     <mean> The mean value will be written here.
     <stddev> The standard deviation will be written here.
     <sum> The total of all values will be written here.
+    <sumsq> The total of the squares of all values will be written here.
     <npoints> The number of values used to compute statistics will be written
     here. This will differ from num_values if there are blanked pixels.
     [NOTE] The minimum and maximum value must be initialised to a very large
@@ -991,22 +996,13 @@ flag ds_find_2D_stats (CONST char *data,
 	totalsq    += sub_totalsq;
 	points_val += sub_npoints;
     }
-    if (points_val > 0)
-    {
-	*sum     = total;
-	*mean    = total / points_val;
-	*stddev  = sqrt ( totalsq / (double) points_val -
-			  (total / (double) points_val) *
-			  (total / (double) points_val) );
-	*npoints = points_val;
-    }
-    else
-    {
-	*sum     = 0.0;
-	*mean    = 0.0;
-	*stddev  = 0.0;
-	*npoints = 0;
-    }
+    *sum     = total;
+    *mean    = total / points_val;
+    *stddev  = sqrt ( totalsq / (double) points_val -
+		      (total / (double) points_val) *
+		      (total / (double) points_val) );
+    *sumsq = totalsq;
+    *npoints = points_val;
     return (TRUE);
 }   /*  End Function ds_find_2D_stats  */
 

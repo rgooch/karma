@@ -57,8 +57,11 @@
     Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
 
-    Last updated by Richard Gooch   15-SEP-1996: Made use of new <kwin_xutil_*>
+    Updated by      Richard Gooch   15-SEP-1996: Made use of new <xv_*>
   package.
+
+    Last updated by Richard Gooch   1-DEC-1996: Inherit colourmap from parent
+  rather than root window in <create_canvases_for_visual>.
 
 
 */
@@ -73,6 +76,7 @@
 #include <X11/extensions/multibuf.h>
 #include <karma.h>
 #include <karma_kwin.h>
+#include <karma_xv.h>
 #include <karma_a.h>
 #include <Xkw/MultiCanvasP.h>
 
@@ -192,24 +196,24 @@ static void MultiCanvas__Initialise (Widget Request, Widget New)
     w = XtParent (New);
     /*  Get visual information  */
     root_visual = XDefaultVisualOfScreen (screen);
-    root_vinfo = kwin_xutil_get_visinfo_for_visual (dpy, root_visual);
-    kwin_xutil_get_vinfos (screen, &pc_vinfo, &tc_vinfo, &dc_vinfo);
+    root_vinfo = xv_get_visinfo_for_visual (dpy, root_visual);
+    xv_get_vinfos (screen, &pc_vinfo, &tc_vinfo, &dc_vinfo);
     if ( (root_vinfo->depth == 8) && (root_vinfo->class == PseudoColor) &&
-	(root_vinfo->colormap_size == 256) )
+	 (root_vinfo->colormap_size == 256) )
     {
 	/*  Use the default visual  */
 	pseudocolour_vinfo = root_vinfo;
     }
     else pseudocolour_vinfo = pc_vinfo;
     if ( (root_vinfo->depth == 24) && (root_vinfo->class == DirectColor) &&
-	(root_vinfo->colormap_size == 256) )
+	 (root_vinfo->colormap_size == 256) )
     {
 	/*  Use the default visual  */
 	directcolour_vinfo = root_vinfo;
     }
     else directcolour_vinfo = dc_vinfo;
     if ( (root_vinfo->depth == 24) && (root_vinfo->class == TrueColor) &&
-	(root_vinfo->colormap_size == 256) )
+	 (root_vinfo->colormap_size == 256) )
     {
 	/*  Use the default visual  */
 	truecolour_vinfo = root_vinfo;
@@ -356,43 +360,41 @@ static void create_canvases_for_visual (MultiCanvasWidget parent,
     else if (vinfo->class == TrueColor) strcpy (visual_name, "TrueColour");
     else
     {
-	(void) fprintf (stderr, "Illegal visual\n");
+	fprintf (stderr, "Illegal visual\n");
 	exit (1);
     }
-    (void) strcpy (mono_canvas_name, visual_name);
+    strcpy (mono_canvas_name, visual_name);
     mono_canvas_name[0] = tolower (mono_canvas_name[0]);
-    (void) strcat (mono_canvas_name, "Canvas");
-    (void) strcpy (stereo_canvas_name, visual_name);
+    strcat (mono_canvas_name, "Canvas");
+    strcpy (stereo_canvas_name, visual_name);
     stereo_canvas_name[0] = tolower (stereo_canvas_name[0]);
-    (void) strcat (stereo_canvas_name, "StereoCanvas");
+    strcat (stereo_canvas_name, "StereoCanvas");
     if (vinfo == root_vinfo)
     {
 	/*  Get root window colourmap  */
-	cmap = XDefaultColormapOfScreen (screen);
+	cmap = parent->core.colormap;
     }
     else
     {
-	/*  Inheriting the colourmap from the root won't work: make one  */
+	/*  Inheriting the colourmap from the parent won't work: make one  */
 	if ( ( cmap = XCreateColormap (dpy, root_window,
 				       vinfo->visual, AllocNone) ) ==
 	     (Colormap) NULL )
 	{
-	    (void) fprintf (stderr, "Could not create colourmap\n");
+	    fprintf (stderr, "Could not create colourmap\n");
 	    exit (1);
 	}
 	XSync (dpy, False);
 	if (verbose)
 	{
-	    (void) fprintf (stderr,
-			    "%s: created colourmap: 0x%lx for %s visual\n",
-			    function_name, cmap, visual_name);
+	    fprintf (stderr, "%s: created colourmap: 0x%lx for %s visual\n",
+		     function_name, cmap, visual_name);
 	}
     }
     if (verbose)
     {
-	(void) fprintf (stderr,
-			"%s: creating mono %s canvas...\n",
-			function_name, visual_name);
+	fprintf (stderr, "%s: creating mono %s canvas...\n",
+		 function_name, visual_name);
     }
     w = XtVaCreateManagedWidget (mono_canvas_name, canvasWidgetClass, Parent,
 				 XtNforeground, 0,
@@ -408,9 +410,8 @@ static void create_canvases_for_visual (MultiCanvasWidget parent,
     {
 	if (verbose)
 	{
-	    (void) fprintf (stderr,
-			    "%s: creating Xmbuf stereo %s canvas...\n",
-			    function_name, visual_name);
+	    fprintf (stderr, "%s: creating Xmbuf stereo %s canvas...\n",
+		     function_name, visual_name);
 	}
 	stereo_mode = XkwSTEREO_MODE_XMBUF;
     }
@@ -418,9 +419,8 @@ static void create_canvases_for_visual (MultiCanvasWidget parent,
     {
 	if (verbose)
 	{
-	    (void) fprintf (stderr,
-			    "%s: creating OpenGL stereo %s canvas...\n",
-			    function_name, visual_name);
+	    fprintf (stderr, "%s: creating OpenGL stereo %s canvas...\n",
+		     function_name, visual_name);
 	}
 	stereo_mode = XkwSTEREO_MODE_OpenGL;
     }
@@ -428,9 +428,8 @@ static void create_canvases_for_visual (MultiCanvasWidget parent,
     {
 	if (verbose)
 	{
-	    (void) fprintf (stderr,
-			    "%s: creating XGL stereo %s canvas...\n",
-			    function_name, visual_name);
+	    fprintf (stderr, "%s: creating XGL stereo %s canvas...\n",
+		     function_name, visual_name);
 	}
 	stereo_mode = XkwSTEREO_MODE_XGL;
     }
@@ -438,9 +437,9 @@ static void create_canvases_for_visual (MultiCanvasWidget parent,
     {
 	if (verbose)
 	{
-	    (void) fprintf (stderr,
-			    "%s: creating split stereo PseudoColour canvas...\n",
-			    function_name);
+	    fprintf (stderr,
+		     "%s: creating split stereo PseudoColour canvas...\n",
+		     function_name);
 	}
 	stereo_mode = XkwSTEREO_MODE_SPLIT;
     }

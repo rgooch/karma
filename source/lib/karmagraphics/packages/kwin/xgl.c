@@ -60,7 +60,7 @@
 
     Updated by      Richard Gooch   26-JUL-1996: Created <draw_string>.
 
-    Last updated by Richard Gooch   15-SEP-1996: Made use of new <kwin_xutil_*>
+    Last updated by Richard Gooch   15-SEP-1996: Made use of new <xv_*>
   routines.
 
 
@@ -79,6 +79,7 @@
 #include <karma_imw.h>
 #include <karma_ds.h>
 #include <karma_st.h>
+#include <karma_xv.h>
 #include <karma_a.h>
 #include <karma_m.h>
 #include <karma_r.h>
@@ -391,8 +392,7 @@ flag kwin_xgl_create_stereo (Display *display, Window window,
     shared_canvas->height = height;
     shared_canvas->xwin_width = window_attributes.width;
     shared_canvas->xwin_height = window_attributes.height;
-    vinfo = kwin_xutil_get_visinfo_for_visual (display,
-					       window_attributes.visual);
+    vinfo = xv_get_visinfo_for_visual (display, window_attributes.visual);
     if (window_attributes.depth != vinfo->depth)
     {
 	(void) fprintf (stderr, "Window depth: %d is not visual depth: %d\n",

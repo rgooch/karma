@@ -23,6 +23,8 @@
 </td></tr>
 <tr><td><a href=kwin.html#kwin_resize>kwin_resize</a></td><td>Resize a pixel canvas.
 </td></tr>
+<tr><td><a href=kwin.html#kwin_refresh_if_visible>kwin_refresh_if_visible</a></td><td>Refresh a pixel canvas if it is visible.
+</td></tr>
 <tr><td><a href=kwin.html#kwin_partial_refresh>kwin_partial_refresh</a></td><td>Perform a partial refresh of a pixel canvas.
 </td></tr>
 <tr><td><a href=kwin.html#kwin_process_position_event>kwin_process_position_event</a></td><td>Process position event on a pixel canvas.
@@ -94,12 +96,6 @@
 <tr><td><a href=kwin.html#kwin_xgl_test_stereo>kwin_xgl_test_stereo</a></td><td>Test if stereo supported using XGL.
 </td></tr>
 <tr><td><a href=kwin.html#kwin_xgl_create_stereo>kwin_xgl_create_stereo</a></td><td>Create a stereo pixel canvas using XGL.
-</td></tr>
-<tr><td><a href=kwin.html#kwin_xutil_get_vinfos>kwin_xutil_get_vinfos</a></td><td>Get supported visuals available on a screen.
-</td></tr>
-<tr><td><a href=kwin.html#kwin_xutil_get_visuals>kwin_xutil_get_visuals</a></td><td>Get supported visuals available on a screen.
-</td></tr>
-<tr><td><a href=kwin.html#kwin_xutil_get_visinfo_for_visual>kwin_xutil_get_visinfo_for_visual</a></td><td>Get the visual information structure for a visual.
 </td></tr>
 </table><h4>Prototype Functions</h4><table><tr><td><a href=kwin.html#KWIN_PROTO_refresh_func>KWIN_PROTO_refresh_func</a></td><td>Process a refresh event for a pixel canvas.
 </td></tr>
@@ -314,6 +310,14 @@
 <br><li><i>height :</i> 
     The new height (vertical extent) of the canvas. If this is less
     than 1 canvas is not resized, it is only refreshed.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_refresh_if_visible></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>kwin_refresh_if_visible</b><i>    (KPixCanvas canvas, flag clear)
+</i><br><p>    Refresh a pixel canvas if it is visible.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The pixel canvas.
+<br><li><i>clear :</i> 
+    If TRUE the canvas is cleared prior to refreshing.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_partial_refresh></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
  <b>kwin_partial_refresh</b><i>    (KPixCanvas canvas, unsigned int num_areas,
@@ -968,57 +972,7 @@
     The height (horizontal extent) of the canvas.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine is only available with the X window system.
-</ul><p><hr> <a name=kwin_xutil_get_vinfos></a> void
- <b>kwin_xutil_get_vinfos</b><i>    (Screen *screen, XVisualInfo **pseudocolour,
-			    XVisualInfo **truecolour,
-			    XVisualInfo **directcolour)
-</i><br><p>    Get supported visuals available on a screen.
-<p><b>Parameters:</b><ul><li><i>screen :</i> 
-    The X Window screen.
-<br><li><i>pseudocolour :</i> 
-    A PseudoColour XVisualInfo pointer will be written here. If
-    this is NULL, nothing is written here. If no PseudoColour visual is
-    supported, NULL is written here.
-<br><li><i>truecolour :</i> 
-    A TrueColour XVisualInfo pointer will be written here. If this
-    is NULL, nothing is written here. If no TrueColour visual is supported,
-    NULL is written here.
-<br><li><i>directcolour :</i> 
-    A DirectColour XVisualInfo pointer will be written here. If
-    this is NULL, nothing is written here. If no DirectColour visual is
-    supported, NULL is written here.
-<br></ul><b>Returns:</b>     Nothing.
-<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The XVisualInfo structures returned must be freed by XFree()
-</ul><p><hr> <a name=kwin_xutil_get_visuals></a> void
- <b>kwin_xutil_get_visuals</b><i>    (Screen *screen, Visual **pseudocolour,
-			     Visual **truecolour, Visual **directcolour)
-</i><br><p>    Get supported visuals available on a screen.
-<p><b>Parameters:</b><ul><li><i>screen :</i> 
-    The X Window screen.
-<br><li><i>pseudocolour :</i> 
-    A PseudoColour XVisualInfo pointer will be written here. If
-    this is NULL, nothing is written here. If no PseudoColour visual is
-    supported, NULL is written here.
-<br><li><i>truecolour :</i> 
-    A TrueColour XVisualInfo pointer will be written here. If this
-    is NULL, nothing is written here. If no TrueColour visual is supported,
-    NULL is written here.
-<br><li><i>directcolour :</i> 
-    A DirectColour XVisualInfo pointer will be written here. If
-    this is NULL, nothing is written here. If no DirectColour visual is
-    supported, NULL is written here.
-<br></ul><b>Returns:</b>     Nothing.
-<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The XVisualInfo structures returned must be freed by XFree()
-</ul><p><hr> <a name=kwin_xutil_get_visinfo_for_visual></a> XVisualInfo *
- <b>kwin_xutil_get_visinfo_for_visual</b><i>    (Display *dpy, Visual *visual)
-</i><br><p>    Get the visual information structure for a visual.
-<p><b>Parameters:</b><ul><li><i>dpy :</i> 
-    The X display.
-<br><li><i>visual :</i> 
-    The visual.
-<br></ul><b>Returns:</b>     A pointer to an XVisualInfo structure on succes, else NULL. The
-    XVisualInfo structure must be freed by XFree()
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=KWIN_PROTO_refresh_func></a> void
+</ul><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=KWIN_PROTO_refresh_func></a> void
  <b>KWIN_PROTO_refresh_func</b><i>    (KPixCanvas canvas, int width, int height,
 			      void **info, PostScriptPage pspage,
 			      unsigned int num_areas,

@@ -36,9 +36,15 @@
     Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
 
-    Last updated by Richard Gooch   2-SEP-1996: Check if pixel canvas exists
+    Updated by      Richard Gooch   2-SEP-1996: Check if pixel canvas exists
   prior to refreshing in <set_value> to cope with case where value is set prior
   to widget realisation.
+
+    Updated by      Richard Gooch   21-NOV-1996: Added support for showing
+  scaled data.
+
+    Last updated by Richard Gooch   1-DEC-1996: Use <kwin_get_colour> rather
+  then <BlackPixel> and <WhitePixel>.
 
 
 */
@@ -51,6 +57,7 @@
 #include <X11/extensions/multibuf.h>
 #include <karma.h>
 #include <k_event_codes.h>
+#include <karma_ds.h>
 #include <karma_a.h>
 #include <Xkw/SimpleSliderP.h>
 #include <os.h>
@@ -123,6 +130,10 @@ static XtResource resources[] =
      TheOffset (showValue), XtRImmediate, (XtPointer) True},
     {XkwNvalueBesideLabel, XkwCValueBesideLabel, XtRBool, sizeof (Bool),
      TheOffset (valueBesideLabel), XtRImmediate, (XtPointer) True},
+    {XkwNscaledFormat, XkwCScaledFormat, XtRString, sizeof (String),
+     TheOffset (scaledFormat), XtRString, "%.3e"},
+    {XkwNscaledUnit, XkwCScaledUnit, XtRString, sizeof (String),
+     TheOffset (scaledUnit), XtRString, ""},
     {XkwNcallbackOnDrag, XkwCCallbackOnDrag, XtRBool, sizeof (Bool),
      TheOffset (callbackOnDrag), XtRImmediate, (XtPointer) True},
     {XtNdecay, XtCDecay, XtRInt, sizeof (int),
@@ -162,6 +173,9 @@ STATIC_FUNCTION (void set_value,
 		 (SimpleSliderWidget top, int new_value, flag callback,
 		  flag start_timer) );
 STATIC_FUNCTION (void timer_cbk, (XtPointer client_data, XtIntervalId *id) );
+STATIC_FUNCTION (void compute_value_string, (SimpleSliderWidget w,
+					     char string[STRING_LENGTH]) );
+
 
 #define DO_CALLBACK(sw) \
     XtCallCallbackList ((Widget) sw, sw->command.callbacks, NULL)
@@ -253,6 +267,10 @@ static void SimpleSlider__Initialise (Widget Request, Widget New)
     new->slider.hyperspace = FALSE;
     new->slider.timer = 0;
     new->slider.next_delay = new->slider.initialDelay;
+    new->slider.show_raw = TRUE;
+    new->slider.show_scaled = FALSE;
+    new->slider.scale = 1.0;
+    new->slider.offset = 0.0;
     XtAddCallback (New, XkwNrealiseCallback, canvas_realise_cbk,
 		   (XtPointer) New);
 }   /*  End Function Initialise  */
@@ -277,7 +295,7 @@ static Boolean SimpleSlider__SetValues (Widget Current, Widget Request,
 	if ( !IS_ALIGNED (new->slider.valuePtr, sizeof *new->slider.valuePtr) )
 	{
 	    fprintf (stderr, "valuePtr: %p is not aligned\n",
-			    new->slider.valuePtr);
+		     new->slider.valuePtr);
 	    a_prog_bug (function_name);
 	}
     }
@@ -334,8 +352,8 @@ static void refresh_func (KPixCanvas canvas, int width, int height,
     dpy = XtDisplay ( (Widget) top );
     screen = XtScreen ( (Widget) top );
     screen_number = XScreenNumberOfScreen (screen);
-    black_pixel = BlackPixel (dpy, screen_number);
-    white_pixel = WhitePixel (dpy, screen_number);
+    kwin_get_colour (canvas, "black", &black_pixel, NULL, NULL, NULL);
+    kwin_get_colour (canvas, "white", &white_pixel, NULL, NULL, NULL);
     /*  Setup position parameters  */
     setup_position_parameters (top, width, height, &pos);
     if ( (top->slider.label != NULL) && (top->slider.label[0] != '\0') )
@@ -347,7 +365,7 @@ static void refresh_func (KPixCanvas canvas, int width, int height,
     }
     if (top->slider.showValue)
     {
-	sprintf (txt, "%d", top->slider.value);
+	compute_value_string (top, txt);
 	kwin_draw_string (canvas,
 			  pos.value_string_x_start, pos.value_string_y_start,
 			  txt, black_pixel, FALSE);
@@ -678,7 +696,14 @@ static void setup_position_parameters (SimpleSliderWidget top,
     /*  Determine width of value string  */
     if (top->slider.showValue)
     {
-	value_width = (min_width > max_width) ? min_width : max_width;
+	compute_value_string (top, txt);
+	if ( !kwin_get_string_size (font, txt,
+				    KWIN_STRING_WIDTH, &value_width,
+				    KWIN_STRING_END) )
+	{
+	    fprintf (stderr, "Error getting string width\n");
+	    a_prog_bug (function_name);
+	}
     }
     else value_width = 0;
     /*  Determine width of label string  */
@@ -846,3 +871,80 @@ static void timer_cbk (XtPointer client_data, XtIntervalId *id)
 	  sw->slider.next_delay = sw->slider.minimumDelay;
     }
 }   /*  End Function timer_cbk  */
+
+static void compute_value_string (SimpleSliderWidget w,
+				  char string[STRING_LENGTH])
+/*  [SUMMARY] Compute the value string.
+    <w> The SimpleSliderWidget.
+    <string> The value string will be written here.
+    [RETURNS] Nothing.
+*/
+{
+    double unit_scale = 1.0;
+    double value;
+    char txt[STRING_LENGTH], format_string[STRING_LENGTH];
+
+    if (w->slider.show_raw && w->slider.show_scaled)
+    {
+	sprintf (format_string, "r: %%d  sc: %s", w->slider.scaledFormat);
+	if ( (w->slider.scaledUnit != NULL) &&
+	     (w->slider.scaledUnit[0] != '\0') )
+	{
+	    ds_format_unit (txt, &unit_scale, w->slider.scaledUnit);
+	    strcat (format_string, " ");
+	    strcat (format_string, txt);
+	}
+	value = (double) w->slider.value * w->slider.scale + w->slider.offset;
+	sprintf (string, format_string,
+		 w->slider.value, value * unit_scale);
+    }
+    else if (w->slider.show_raw) sprintf (string, "%d", w->slider.value);
+    else if (w->slider.show_scaled)
+    {
+	strcpy (format_string, w->slider.scaledFormat);
+	if ( (w->slider.scaledUnit != NULL) &&
+	     (w->slider.scaledUnit[0] != '\0') )
+	{
+	    ds_format_unit (txt, &unit_scale, w->slider.scaledUnit);
+	    strcat (format_string, " ");
+	    strcat (format_string, txt);
+	}
+	value = (double) w->slider.value * w->slider.scale + w->slider.offset;
+	sprintf (string, format_string, value * unit_scale);
+    }
+}   /*  End Function compute_value_string  */
+
+
+/*  Public functions follow  */
+
+void XkwSimpleSliderSetScale (Widget W, double scale, double offset,
+			      flag show_raw, flag show_scaled)
+/*  [SUMMARY] Set the data scaling.
+    <W> The widget.
+    <scale> The scale value to be applied to data.
+    <offset> The offset value to be applied after the scale value is applied.
+    <show_raw> If TRUE, raw (unscaled) values are shown.
+    <show_scaled> If TRUE, scaled values are shown.
+    [RETURNS] Nothing.
+*/
+{
+    SimpleSliderWidget w = (SimpleSliderWidget) W;
+    static char function_name[] = "XkwSimpleSliderSetScale";
+
+    if ( !XtIsSimpleSlider (W) )
+    {
+	fprintf (stderr, "Not SimpleSliderWidgetClass!\n");
+	a_prog_bug (function_name);
+    }
+    if ( (scale == 1.0) && (offset == 0.0) )
+    {
+	show_raw = TRUE;
+	show_scaled = FALSE;
+    }
+    w->slider.scale = scale;
+    w->slider.offset = offset;
+    w->slider.show_raw = show_raw;
+    w->slider.show_scaled = show_scaled;
+    if (w->canvas.monoPixCanvas != NULL)
+	kwin_resize (w->canvas.monoPixCanvas, TRUE, 0, 0, 0, 0);
+}   /*  End Function XkwSimpleSliderSetScale  */

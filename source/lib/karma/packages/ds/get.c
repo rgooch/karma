@@ -117,8 +117,13 @@
     Updated by      Richard Gooch   20-JUL-1996: Changed more pointers to
   CONST.
 
-    Last updated by Richard Gooch   2-AUG-1996: Changed type of co-ordinate
+    Updated by      Richard Gooch   2-AUG-1996: Changed type of co-ordinate
   index parameter for <ds_get_coordinate> to double.
+
+    Updated by      Richard Gooch   1-NOV-1996: Moved some code into find.c and
+  compare.c
+
+    Last updated by Richard Gooch   3-NOV-1996: Improved blank trapping.
 
 
 */
@@ -221,7 +226,7 @@ unsigned int ds_get_element_offset (CONST packet_desc *pack_desc,
 
     if (pack_desc == NULL)
     {
-	(void) fprintf (stderr, "NULL pointer passed\n");
+	fprintf (stderr, "NULL pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (elem_num >= pack_desc->num_elements)
@@ -247,7 +252,7 @@ unsigned int ds_get_packet_size (CONST packet_desc *pack_desc)
 
     if (pack_desc == NULL)
     {
-	(void) fprintf (stderr, "NULL pointer passed\n");
+	fprintf (stderr, "NULL pointer passed\n");
 	a_prog_bug (function_name);
     }
     return ( ds_get_element_offset (pack_desc,
@@ -267,7 +272,7 @@ unsigned long ds_get_array_size (CONST array_desc *arr_desc)
 
     if (arr_desc == NULL)
     {
-	(void) fprintf (stderr, "NULL pointer passed\n");
+	fprintf (stderr, "NULL pointer passed\n");
 	a_prog_bug (function_name);
     }
     while (dim_count < arr_desc->num_dimensions)
@@ -293,7 +298,7 @@ flag ds_packet_all_data (CONST packet_desc *pack_desc)
 
     if (pack_desc == NULL)
     {
-	(void) fprintf (stderr, "NULL pointer passed\n");
+	fprintf (stderr, "NULL pointer passed\n");
 	a_prog_bug (function_name);
     }
     while (elem_count < pack_desc->num_elements)
@@ -349,12 +354,10 @@ flag ds_element_is_atomic (unsigned int element_type)
       case LISTP:
 	/*  Not atomic data type  */
 	return (FALSE);
-/*
-	break;
-*/
+	/*break;*/
       default:
 	/*  Illegal data type  */
-	(void) fprintf (stderr, "Illegal data type: %u\n", element_type);
+	fprintf (stderr, "Illegal data type: %u\n", element_type);
 	a_prog_bug (function_name);
 	break;
     }
@@ -403,12 +406,10 @@ flag ds_element_is_named (unsigned int element_type)
       case LISTP:
 	/*  Not atomic data type  */
 	return (FALSE);
-/*
-	break;
-*/
+	/*break;*/
       default:
 	/*  Illegal data type  */
-	(void) fprintf (stderr, "Illegal data type: %u\n", element_type);
+	fprintf (stderr, "Illegal data type: %u\n", element_type);
 	a_prog_bug (function_name);
 	break;
     }
@@ -453,656 +454,10 @@ flag ds_element_is_legal (unsigned int element_type)
       default:
 	/*  Illegal data type   */
 	return (FALSE);
-/*
-	break;
-*/
+	/*break;*/
     }
     return (TRUE);
 }   /*  End Function ds_element_is_legal  */
-
-/*PUBLIC_FUNCTION*/
-unsigned int ds_identify_name (CONST multi_array *multi_desc, CONST char *name,
-			       char **encls_desc, unsigned int *index)
-/*  [SUMMARY] Search a data structure for a name.
-    <multi_desc> The multi_array descriptor.
-    <name> The name of the item to search for.
-    <encls_desc> A pointer to the enclosing descriptor of the item is written
-    here. If this is NULL, nothing is written here.
-    <index> The index (general data structure number, dimension number or
-    element number) of the item in the enclosing structure will be written
-    here. If this is NULL, nothing is written here.
-    [RETURNS] A code based on the type of the item with the same name. See
-    [<DS_IDENT_TABLE>] for a list of possible values.
-*/
-{
-    unsigned int array_count = 0;
-    unsigned int temp_ident;
-    unsigned int return_value = IDENT_NOT_FOUND;
-    static char function_name[] = "ds_identify_name";
-
-    if (multi_desc == NULL)
-    {
-	return (IDENT_NOT_FOUND);
-    }
-    if (multi_desc->headers == NULL)
-    {
-	(void) fprintf (stderr,
-			"Multi array descriptor has no list of packet descriptors\n");
-        a_prog_bug (function_name);
-    }
-    if (name == NULL)
-    {
-	return (IDENT_NOT_FOUND);
-    }
-    return_value = ds_f_array_name (multi_desc, name, encls_desc, index);
-    while (array_count < multi_desc->num_arrays)
-    {
-	/*  Search one array    */
-        if ( ( temp_ident =
-	      ds_f_name_in_packet (multi_desc->headers[array_count],
-				   name, encls_desc, index) )
-            != IDENT_NOT_FOUND )
-        {
-	    if (return_value != IDENT_NOT_FOUND)
-            {
-		return (IDENT_MULTIPLE);
-            }
-            return_value = temp_ident;
-        }
-        ++array_count;
-    }
-    return (return_value);
-}   /*  End Function ds_identify_name  */
-
-/*PUBLIC_FUNCTION*/
-unsigned int ds_f_array_name (CONST multi_array *multi_desc, CONST char *name,
-			      char **encls_desc, unsigned int *index)
-/*  [SUMMARY] Search a the top level of a data structure for a name.
-    [PURPOSE] This routine will search a multi array general data structure
-    header for an occurrence of an array name.
-    <multi_desc> The multi_array data structure.
-    <name> The array name.
-    <encls_desc> If the array name is found, the pointer to the multi array
-    header will be written here. If this is NULL, nothing is written here.
-    <index> The index number of the general data structure with will be written
-    here. If this is NULL, nothing is written here.
-    [NOTE] The routine will not search the packet descriptors for name matches.
-    [RETURNS] A code based on the number of matches found. See
-    [<DS_IDENT_TABLE>] for a list of possible values.
-*/
-{
-    unsigned int array_count = 0;
-    unsigned int return_value = IDENT_NOT_FOUND;
-    static char function_name[] = "ds_f_array_name";
-
-    if (multi_desc == NULL)
-    {
-	return (IDENT_NOT_FOUND);
-    }
-    if (multi_desc->headers == NULL)
-    {
-	(void) fprintf (stderr,
-			"Multi array descriptor has no list of packet descriptors\n");
-        a_prog_bug (function_name);
-    }
-    if (multi_desc->num_arrays == 1)
-    {
-	/*  Only one array  */
-        if (multi_desc->array_names != NULL)
-        {
-	    /*  Should be a NULL pointer    */
-            (void) fprintf (stderr,
-			    "Multi array descriptor has one array with name: \"%s\"\n",
-			    multi_desc->array_names[0]);
-            a_prog_bug (function_name);
-        }
-        if ( (name == NULL) || (*name == '\0') )
-        {
-	    /*  Only one general data structure array   */
-            if (encls_desc != NULL)
-            {
-		*encls_desc = (char *) multi_desc;
-            }
-	    if (index != NULL)
-	    {
-		*index = 0;
-	    }
-            return_value = IDENT_GEN_STRUCT;
-        }
-        return (return_value);
-    }
-    /*  Many arrays */
-    if (multi_desc->array_names == NULL)
-    {
-	(void) fprintf (stderr,
-			"Multi array descriptor has many arrays and no list of array names\n");
-        a_prog_bug (function_name);
-    }
-    if (name == NULL)
-    {
-	/*  Return here, else strcmp will bomb out  */
-	return (IDENT_NOT_FOUND);
-    }
-    while (array_count < multi_desc->num_arrays)
-    {
-	if (multi_desc->array_names[array_count] == NULL)
-        {
-	    (void) fprintf (stderr, "Multiple arrays without names given\n");
-            a_prog_bug (function_name);
-        }
-        /*  Compare  name  with name of an array    */
-        if (strcmp (name, multi_desc->array_names[array_count]) == 0)
-        {
-	    /*  Array name match    */
-            if (return_value != IDENT_NOT_FOUND)
-            {
-		return (IDENT_MULTIPLE);
-            }
-            return_value = IDENT_GEN_STRUCT;
-	    if (index != NULL)
-	    {
-		*index = array_count;
-	    }
-        }
-        ++array_count;
-    }
-    if (encls_desc != NULL)
-    {
-	*encls_desc = (char *) multi_desc;
-    }
-    return (return_value);
-}   /*  End Function ds_f_array_name  */
-
-/*PUBLIC_FUNCTION*/
-unsigned int ds_f_name_in_packet (CONST packet_desc *pack_desc,
-				  CONST char *name,
-				  char **encls_desc, unsigned int *index)
-/*  [SUMMARY] Recursively search for named item under a packet.
-    <pack_desc> The packet descriptor.
-    <name> The name of the item to search form. If NULL, then the routine will
-    not find anything.
-    <encls_desc> The pointer to the enclosing structure of the named item will
-    be written here. If this is NULL, nothing is written here.
-    <index> The index (dimension number or element number) of the item will be
-    written here. If this is NULL, nothing is written here.
-    [RETURNS] A code based on the type of the item with the same name. See
-    [<DS_IDENT_TABLE>] for a list of possible values.
-*/
-{
-    unsigned int elem_count;
-    unsigned int temp_ident;
-    unsigned int return_value = IDENT_NOT_FOUND;
-    static char function_name[] = "ds_f_name_in_packet";
-
-    if ( (pack_desc == NULL) || (pack_desc->num_elements < 1)
-	|| (name == NULL) )
-    {
-	return (IDENT_NOT_FOUND);
-    }
-    for (elem_count = 0; elem_count < pack_desc->num_elements; ++elem_count)
-    {
-	if ( ds_element_is_named (pack_desc->element_types[elem_count]) )
-        {
-	    /*  Atomic data type    */
-	    if (strcmp (name, pack_desc->element_desc[elem_count])
-		== 0)
-	    {
-		if (return_value != IDENT_NOT_FOUND)
-		{
-		    return (IDENT_MULTIPLE);
-		}
-		return_value = IDENT_ELEMENT;
-		if (encls_desc != NULL)
-		{
-		    *encls_desc = (char *) pack_desc;
-		}
-		if (index != NULL)
-		{
-		    *index = elem_count;
-		}
-	    }
-	    continue;
-	}
-	/*  Not a named element  */
-	switch (pack_desc->element_types[elem_count])
-	{
-	  case K_ARRAY:
-	    if ( ( temp_ident =
-		  ds_f_name_in_array ( (array_desc *)
-				      pack_desc->element_desc[elem_count],
-				      name, encls_desc, index) )
-		!= IDENT_NOT_FOUND )
-	    {
-		if (return_value != IDENT_NOT_FOUND)
-		{
-		    return (IDENT_MULTIPLE);
-		}
-		return_value = temp_ident;
-	    }
-	    break;
-	  case LISTP:
-	    if ( ( temp_ident =
-		  ds_f_name_in_packet ( (packet_desc *)
-				       pack_desc->element_desc[elem_count],
-				       name, encls_desc, index) )
-		!= IDENT_NOT_FOUND )
-	    {
-		if (return_value != IDENT_NOT_FOUND)
-		{
-		    return (IDENT_MULTIPLE);
-		}
-		return_value = temp_ident;
-	    }
-	    break;
-	  default:
-	    /*  Bad data type   */
-	    (void) fprintf (stderr, "Bad element type value: %u\n",
-			    pack_desc->element_types[elem_count]);
-	    a_prog_bug (function_name);
-	    break;
-	}
-    }
-    return (return_value);
-}   /*  End Function ds_f_name_in_packet  */
-
-/*PUBLIC_FUNCTION*/
-unsigned int ds_f_name_in_array (CONST array_desc *arr_desc, CONST char *name,
-				 char **encls_desc, unsigned int *index)
-/*  [SUMMARY] Recursively search for named item under an array.
-    [PURPOSE] This routine will search an array descriptor for occurrences of a
-    named item. The routine searches both the dimension names and the packet
-    associated with the array. The routine recursively searches the array
-    packet descriptor.
-    <arr_desc> The array descriptor.
-    <name> The name of the item to search form. If NULL, then the routine will
-    not find anything.
-    <encls_desc> The pointer to the enclosing structure of the named item will
-    be written here. If this is NULL, nothing is written here.
-    <index> The index (dimension number or element number) of the item will be
-    written here. If this is NULL, nothing is written here.
-    [RETURNS] A code based on the type of the item with the same name. See
-    [<DS_IDENT_TABLE>] for a list of possible values.
-*/
-{
-    unsigned int dim_count = 0;
-    unsigned int temp_ident;
-    unsigned int return_value = IDENT_NOT_FOUND;
-
-    if ( (arr_desc == NULL) || (name == NULL) )
-    {
-	return (IDENT_NOT_FOUND);
-    }
-    while (dim_count < arr_desc->num_dimensions)
-    {
-	if (strcmp (name, arr_desc->dimensions[dim_count]->name) == 0)
-        {
-	    if (return_value != IDENT_NOT_FOUND)
-            {
-		return (IDENT_MULTIPLE);
-            }
-            if (encls_desc != NULL)
-            {
-		*encls_desc = (char *) arr_desc;
-            }
-	    if (index != NULL)
-	    {
-		*index = dim_count;
-	    }
-            return_value = IDENT_DIMENSION;
-        }
-        ++dim_count;
-    }
-    if (arr_desc->packet == NULL)
-    {
-	return (return_value);
-    }
-    if ( ( temp_ident = ds_f_name_in_packet (arr_desc->packet, name,
-					  encls_desc, index) )
-        != IDENT_NOT_FOUND )
-    {
-	if (return_value != IDENT_NOT_FOUND)
-        {
-	    return (IDENT_MULTIPLE);
-        }
-        return_value = temp_ident;
-    }
-    return (return_value);
-}   /*  End Function ds_f_name_in_array  */
-
-/*PUBLIC_FUNCTION*/
-unsigned int ds_f_elem_in_packet (CONST packet_desc *pack_desc,
-				  CONST char *name)
-/*  [SUMMARY] Search for a named element in a packet, without recursion.
-    <pack_desc> The packet descriptor.
-    <name> The element name to search for. If this is NULL, then the routine
-    will not find anything.
-    [NOTE] If the specified name occurs twice, the program aborts.
-    [RETURNS] The number of the element in the packet if it was found, else the
-    number of elements in the packet.
-*/
-{
-    unsigned int elem_count = 0;
-    unsigned int return_value;
-    static char function_name[] = "ds_f_elem_in_packet";
-
-    if (pack_desc == NULL)
-    {
-	(void) fprintf (stderr, "NULL  pack_desc  pointer passed\n");
-	a_prog_bug (function_name);
-    }
-    if ( ( pack_desc->num_elements < 1) || (name == NULL) )
-    {
-	return (pack_desc->num_elements);
-    }
-    return_value = pack_desc->num_elements;
-    while (elem_count < pack_desc->num_elements)
-    {
-	if ( ds_element_is_named (pack_desc->element_types[elem_count]) )
-        {
-	    /*  Atomic data type    */
-            if (strcmp (name, pack_desc->element_desc[elem_count]) == 0)
-            {
-		/*  Found atomic element name   */
-                if (return_value < pack_desc->num_elements)
-                {
-		    (void) fprintf (stderr,
-				    "Multiple occurrences of: \"%s\"\n",
-				    name);
-		    a_prog_bug (function_name);
-                }   
-                return_value = elem_count;
-            }
-        }
-        ++elem_count;
-    }
-    return (return_value);
-}   /*  End Function ds_f_elem_in_packet  */
-
-/*PUBLIC_FUNCTION*/
-unsigned int ds_find_hole (CONST packet_desc *inp_desc, packet_desc **out_desc,
-			   unsigned int *elem_num)
-/*  [SUMMARY] Recursively search packet for a hole.
-    [PURPOSE] This routine will recursively search a packet descriptor for a
-    hole (element type NONE or element descriptor pointer NULL).
-    <inp_desc> The packet descriptor to search.
-    <out_desc> A pointer to the packet descriptor which contains the hole is
-    written here. If this is NULL, nothing is written here.
-    <elem_num> The element number in that packet which corresponds to the hole
-    is written here. If this is NULL, nothing is written here.
-    [RETURNS] A code indicating the status of the search. See
-    [<DS_IDENT_TABLE>] for a list of possible values.
-*/
-{
-    unsigned int elem_count = 0;
-    unsigned int temp_ident;
-    unsigned int return_value = IDENT_NOT_FOUND;
-    packet_desc *elem_desc;
-    array_desc *arr_desc;
-
-    if (inp_desc == NULL)
-    {
-	return (IDENT_NOT_FOUND);
-    }
-    if (inp_desc->num_elements < 1)
-    {
-	return (IDENT_NOT_FOUND);
-    }
-    /*  Search for occurence of hole in this packet descriptor  */
-    while (elem_count < inp_desc->num_elements)
-    {
-	elem_desc =(packet_desc *) inp_desc->element_desc[elem_count];
-        if ( (inp_desc->element_types[elem_count] == NONE) ||
-	    (elem_desc == NULL) )
-        {
-	    if (return_value != IDENT_NOT_FOUND)
-            {
-		return (IDENT_MULTIPLE);
-            }
-            return_value = IDENT_ELEMENT;
-            *out_desc = (packet_desc *) inp_desc;
-            *elem_num = elem_count;
-        }
-        if (inp_desc->element_types[elem_count] == K_ARRAY)
-        {
-	    arr_desc = (array_desc *) elem_desc;
-            if ( ( temp_ident = ds_find_hole (arr_desc->packet, out_desc,
-					      elem_num) ) != IDENT_NOT_FOUND )
-            {
-		if (return_value != IDENT_NOT_FOUND)
-                {
-		    return (IDENT_MULTIPLE);
-                }
-                return_value = temp_ident;
-            }
-        }
-        if (inp_desc->element_types[elem_count] == LISTP)
-        {
-	    if ( ( temp_ident = ds_find_hole (elem_desc, out_desc, elem_num) )
-                != IDENT_NOT_FOUND )
-            {
-		if (return_value != IDENT_NOT_FOUND)
-                {
-		    return (IDENT_MULTIPLE);
-                }
-                return_value = temp_ident;
-            }
-        }
-        ++elem_count;
-    }
-    return (return_value);
-}   /*  End Function ds_find_hole  */
-
-/*PUBLIC_FUNCTION*/
-flag ds_compare_packet_desc (CONST packet_desc *desc1,CONST packet_desc *desc2,
-			     flag recursive)
-/*  [SUMMARY] Recursively compare two packet descriptors.
-    <desc1> One of the packet descriptors.
-    <desc2> The other packet descriptor.
-    <recursive> If TRUE the routine will perform a recursive comparison of
-    sub-arrays and linked list descriptors.
-    [RETURNS] TRUE if the two packet descriptors are equal, else FALSE.
-*/
-{
-    unsigned int elem_count = 0;
-    unsigned int elem_type1;
-    unsigned int elem_type2;
-    char *elem_name1;
-    char *elem_name2;
-    static char function_name[] = "ds_compare_packet_desc";
-
-    if ( (desc1 == NULL) || (desc2 == NULL) )
-    {
-	a_func_abort (function_name, "NULL descriptor pointer(s)");
-        return (FALSE);
-    }
-    if (desc1->num_elements != desc2->num_elements)
-    {
-	return (FALSE);
-    }
-    while (elem_count < desc1->num_elements)
-    {
-	elem_type1 = desc1->element_types[elem_count];
-        elem_type2 = desc2->element_types[elem_count];
-        elem_name1 = desc1->element_desc[elem_count];
-        elem_name2 = desc2->element_desc[elem_count];
-        if (elem_type1 == elem_type2)
-        {
-	    /*  Element types are the same  */
-            if ( ds_element_is_named (elem_type1) )
-            {
-		if (strcmp (elem_name1, elem_name2) != 0)
-                    return (FALSE);
-            }
-            else
-            {
-		if ( recursive && (elem_type1 == K_ARRAY) )
-                {
-		    if ( !ds_compare_array_desc ( (array_desc *)
-						  elem_name1,
-						  (array_desc *)
-						  elem_name2,
-						  recursive) )
-                        return (FALSE);
-                }
-                if ( recursive &&(elem_type1 == LISTP) )
-                {
-		    if ( !ds_compare_packet_desc ( (packet_desc *)
-						   elem_name1,
-						   (packet_desc *)
-						   elem_name2,
-						   recursive) )
-                        return (FALSE);             
-                }
-            }
-        }
-        else
-        {
-	    /*  Element types are not the same  */
-            /*  Trap for bad element types  */
-            if ( !ds_element_is_legal (elem_type1) )
-            {
-		(void) fprintf (stderr, "Element type: %u is not legal\n",
-				elem_type1);
-                a_prog_bug (function_name);
-            }
-            if ( !ds_element_is_legal (elem_type2) )
-            {
-		(void) fprintf (stderr, "Element type: %u is not legal\n",
-				elem_type2);
-                a_prog_bug (function_name);
-            }
-	    return (FALSE);
-        }
-        ++elem_count;
-    }
-    return (TRUE);
-}   /*  End Function ds_compare_packet_desc  */
-
-/*PUBLIC_FUNCTION*/
-flag ds_compare_array_desc (CONST array_desc *desc1, CONST array_desc *desc2,
-			    flag recursive)
-/*  [SUMMARY] Recursively compare two array descriptors.
-    <desc1> One of the array descriptors.
-    <desc2> The other array descriptor.
-    <recursive> If TRUE the routine will perform a recursive comparison of the
-    array packet descriptors.
-    [RETURNS] TRUE if the two array descriptors are equal, else FALSE.
-*/
-{
-    unsigned int dim_count = 0;
-    static char function_name[] = "ds_compare_array_desc";
-
-    if ( (desc1 == NULL) || (desc2 == NULL) )
-    {
-	a_func_abort (function_name, "NULL descriptor pointer(s)");
-        return (FALSE);
-    }
-    if (desc1->num_dimensions != desc2->num_dimensions)
-    {
-	return (FALSE);
-    }
-    while (dim_count < desc1->num_dimensions)
-    {
-	if ( !ds_compare_dim_desc (desc1->dimensions[dim_count],
-				   desc2->dimensions[dim_count]) )
-	return (FALSE);
-        ++dim_count;
-    }
-    if (recursive)
-    {
-	if ( !ds_compare_packet_desc (desc1->packet, desc2->packet,recursive) )
-	return (FALSE);
-    }
-    return (TRUE);
-}   /*  End Function ds_compare_array_desc  */
-
-/*PUBLIC_FUNCTION*/
-flag ds_compare_dim_desc (CONST dim_desc *desc1, CONST dim_desc *desc2)
-/*  [SUMMARY] Compare two dimension descriptors.
-    <desc1> One of the dimension descriptors.
-    <desc2> The other dimension descriptor.
-    [RETURNS] TRUE if the two dimension descriptors are equal, else FALSE.
-*/
-{
-    unsigned int coord_count = 0;
-    static char function_name[] = "ds_compare_dim_desc";
-
-    if ( (desc1 == NULL) || (desc2 == NULL) )
-    {
-	a_func_abort (function_name, "NULL descriptor pointer(s)");
-        return (FALSE);
-    }
-    if ( (desc1->name == NULL) || (desc2->name == NULL) )
-    {
-	(void) fprintf (stderr, "Dimension name is a NULL pointer\n");
-        a_prog_bug (function_name);
-    }
-    if (strcmp (desc1->name, desc2->name) != 0)
-    return (FALSE);
-    if (desc1->length != desc2->length) return (FALSE);
-    if (desc1->first_coord != desc2->first_coord) return (FALSE);
-    if (desc1->last_coord != desc2->last_coord) return (FALSE);
-    if (desc1->coordinates == NULL)
-    {
-	if (desc2->coordinates != NULL)
-	return (FALSE);
-    }
-    else
-    {
-	if (desc2->coordinates == NULL)
-	return (FALSE);
-        while (coord_count < desc1->length)
-        {
-	    if (desc1->coordinates[coord_count] !=
-                desc2->coordinates[coord_count])
-	    return (FALSE);
-            ++coord_count;
-        }
-    }
-    return (TRUE);
-}   /*  End Function ds_compare_dim_desc  */
-
-/*PUBLIC_FUNCTION*/
-unsigned int ds_f_dim_in_array (CONST array_desc *arr_desc, CONST char *name)
-/*  [SUMMARY] Find dimension in array.
-    <arr_desc> The array descriptor.
-    <name> The name of the dimension to find. If this is NULL, then the routine
-    will not find anything.
-    [NOTE] If the specified name occurs twice, the program aborts.
-    [RETURNS] The number of the dimension in the array if it was found, else
-    the number of dimensions in the array.
-*/
-{
-    unsigned int dim_count;
-    unsigned int return_value;
-    static char function_name[] = "ds_f_dim_in_array";
-
-    if (arr_desc == NULL)
-    {
-	(void) fprintf (stderr, "NULL  arr_desc  pointer passed\n");
-	a_prog_bug (function_name);
-    }
-    if ( (arr_desc->num_dimensions < 1) || (name == NULL) )
-    {
-	return (arr_desc->num_dimensions);
-    }
-    return_value = arr_desc->num_dimensions;
-    for (dim_count = 0; dim_count < arr_desc->num_dimensions; ++dim_count)
-    {
-	if (strcmp (name, arr_desc->dimensions[dim_count]->name) == 0)
-	{
-	    /*  Found dimension name   */
-	    if (return_value < arr_desc->num_dimensions)
-	    {
-		(void) fprintf (stderr, "Multiple occurrences of: \"%s\"\n",
-				name);
-		a_prog_bug (function_name);
-	    }   
-	    return_value = dim_count;
-        }
-    }
-    return (return_value);
-}   /*  End Function ds_f_dim_in_array  */
 
 /*PUBLIC_FUNCTION*/
 unsigned long ds_get_array_offset (CONST array_desc *arr_desc,
@@ -1122,7 +477,7 @@ unsigned long ds_get_array_offset (CONST array_desc *arr_desc,
 
     if ( (arr_desc == NULL) || (coordinates == NULL) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     for (dim_count = arr_desc->num_dimensions; dim_count > 0; --dim_count)
@@ -1130,7 +485,7 @@ unsigned long ds_get_array_offset (CONST array_desc *arr_desc,
 	current_length = arr_desc->dimensions[dim_count - 1]->length;
 	if (coordinates[dim_count - 1] >= current_length)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Coordinate[%u]: %lu >= dimension length: %lu\n",
 			    dim_count - 1, coordinates[dim_count - 1],
 			    current_length);
@@ -1160,7 +515,7 @@ unsigned long ds_get_coord_num (CONST dim_desc *dimension, double coordinate,
 
     if (dimension == NULL)
     {
-	(void) fprintf (stderr, "NULL pointer passed\n");
+	fprintf (stderr, "NULL pointer passed\n");
 	a_prog_bug (function_name);
     }
     /*  Check if co-ordinate specified is within range
@@ -1208,9 +563,7 @@ unsigned long ds_get_coord_num (CONST dim_desc *dimension, double coordinate,
 	/*  Co-ordinate number is lower one due to integer truncation  */
 	if (dimension->first_coord < dimension->last_coord) return (coord_num);
 	else return (coord_num + 1);
-/*
-	break;
-*/
+	/*break;*/
       case SEARCH_BIAS_CLOSEST:
 	if ( fabs (coordinate - tmp_found_coord) <
 	     fabs (ds_get_coordinate (dimension, coord_num + 1) - coordinate) )
@@ -1223,20 +576,16 @@ unsigned long ds_get_coord_num (CONST dim_desc *dimension, double coordinate,
 	    /*  Closest co-ordinate is upper one  */
 	    return (coord_num + 1);
 	}
-/*
-	break;
-*/
+	/*break;*/
       case SEARCH_BIAS_UPPER:
 	if (dimension->first_coord < dimension->last_coord)
 	{
 	    return (coord_num + 1);
 	}
 	else return (coord_num);
-/*
-	break;
-*/
+	/*break;*/
       default:
-	(void) fprintf (stderr, "Illegal value of  bias  passed: %u\n", bias);
+	fprintf (stderr, "Illegal value of  bias  passed: %u\n", bias);
 	a_prog_bug (function_name);
 	break;
     }
@@ -1268,12 +617,12 @@ flag ds_get_element (CONST char *datum, unsigned int datum_type,
 
     if (datum == NULL)
     {
-	(void) fprintf (stderr, "NULL datum pointer passed\n");
+	fprintf (stderr, "NULL datum pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (value == NULL)
     {
-	(void) fprintf (stderr, "NULL value storage pointer passed\n");
+	fprintf (stderr, "NULL value storage pointer passed\n");
 	a_prog_bug (function_name);
     }
 #ifdef NEED_ALIGNED_DATA
@@ -1292,7 +641,7 @@ flag ds_get_element (CONST char *datum, unsigned int datum_type,
     if ( !IS_ALIGNED ( value, sizeof (double) ) )
 #endif
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"value  address: %p not on a double boundary\n",
 			value);
 	a_prog_bug (function_name);
@@ -1304,7 +653,7 @@ flag ds_get_element (CONST char *datum, unsigned int datum_type,
       case K_ARRAY:
       case LISTP:
       case MULTI_ARRAY:
-	(void) fprintf (stderr, "Non-atomic data type: %u\n", datum_type);
+	fprintf (stderr, "Non-atomic data type: %u\n", datum_type);
 	a_prog_bug (function_name);
 	break;
       case K_FLOAT:
@@ -1314,20 +663,16 @@ flag ds_get_element (CONST char *datum, unsigned int datum_type,
 	value[0] = *(double *) datum;
 	break;
       case K_BYTE:
-	if (*(signed char *) datum < -127)
-	{
-	    value[0] = TOOBIG;
-	}
-	else
-	{
-	    value[0] = *(signed char *) datum;
-	}
+	if (*(signed char *) datum < -127) value[0] = TOOBIG;
+	else value[0] = *(signed char *) datum;
 	break;
       case K_INT:
-	value[0] = *(int *) datum;
+	if (*(int *) datum < -2147483647) value[0] = TOOBIG;
+	else value[0] = *(int *) datum;
 	break;
       case K_SHORT:
-        value[0] = *(short *) datum;
+	if (*(short *) datum < -32767) value[0] = TOOBIG;
+        else value[0] = *(short *) datum;
 	break;
       case K_COMPLEX:
 	value[0] = *(float *) datum;
@@ -1402,7 +747,7 @@ flag ds_get_element (CONST char *datum, unsigned int datum_type,
 	break;
       default:
 	/*  Unknown data type   */
-	(void) fprintf (stderr, "Illegal data type: %u\n", datum_type);
+	fprintf (stderr, "Illegal data type: %u\n", datum_type);
 	a_prog_bug (function_name);
 	break;
     }
@@ -1442,12 +787,12 @@ flag ds_get_elements (CONST char *data, unsigned int data_type,
 
     if (data == NULL)
     {
-	(void) fprintf (stderr, "NULL data pointer passed\n");
+	fprintf (stderr, "NULL data pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (values == NULL)
     {
-	(void) fprintf (stderr, "NULL values storage pointer passed\n");
+	fprintf (stderr, "NULL values storage pointer passed\n");
 	a_prog_bug (function_name);
     }
 #ifdef MACHINE_i386
@@ -1456,7 +801,7 @@ flag ds_get_elements (CONST char *data, unsigned int data_type,
     if ( !IS_ALIGNED ( values, sizeof (double) ) )
 #endif
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"values  address: %p not on a double boundary\n",
 			values);
 	a_prog_bug (function_name);
@@ -1481,7 +826,7 @@ flag ds_get_elements (CONST char *data, unsigned int data_type,
       case K_ARRAY:
       case LISTP:
       case MULTI_ARRAY:
-	(void) fprintf (stderr, "Non-atomic data type: %u\n", data_type);
+	fprintf (stderr, "Non-atomic data type: %u\n", data_type);
 	a_prog_bug (function_name);
 	break;
       case K_FLOAT:
@@ -1511,7 +856,7 @@ flag ds_get_elements (CONST char *data, unsigned int data_type,
 	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
 	    i_ptr = (signed int *) data;
-	    if (i_ptr[0] == 0x80000000) *values++ = toobig;
+	    if (i_ptr[0] < -2147483647) *values++ = toobig;
 	    else *values++ = i_ptr[0];
 	    *values++ = 0.0;
 	}
@@ -1520,7 +865,7 @@ flag ds_get_elements (CONST char *data, unsigned int data_type,
 	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
 	    s_ptr = (signed short *) data;
-	    if (s_ptr[0] == -32768) *values++ = toobig;
+	    if (s_ptr[0] < -32767) *values++ = toobig;
 	    else *values++ = s_ptr[0];
 	    *values++ = 0.0;
 	}
@@ -1556,9 +901,9 @@ flag ds_get_elements (CONST char *data, unsigned int data_type,
 	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
 	    i_ptr = (signed int *) data;
-	    if (i_ptr[0] == 0x80000000) *values++ = toobig;
+	    if (i_ptr[0] < -2147483647) *values++ = toobig;
 	    else *values++ = i_ptr[0];
-	    if (i_ptr[1] == 0x80000000) *values++ = toobig;
+	    if (i_ptr[1] < -2147483647) *values++ = toobig;
 	    else *values++ = i_ptr[1];
 	}
 	tmp_complex = TRUE;
@@ -1567,9 +912,9 @@ flag ds_get_elements (CONST char *data, unsigned int data_type,
 	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
 	    s_ptr = (signed short *) data;
-	    if (s_ptr[0] == -32768) *values++ = toobig;
+	    if (s_ptr[0] < -32767) *values++ = toobig;
 	    else *values++ = s_ptr[0];
-	    if (s_ptr[1] == -32768) *values++ = toobig;
+	    if (s_ptr[1] < -32767) *values++ = toobig;
 	    else *values++ = s_ptr[1];
 	}
 	tmp_complex = TRUE;
@@ -1651,7 +996,7 @@ flag ds_get_elements (CONST char *data, unsigned int data_type,
 	break;
       default:
 	/*  Unknown data type   */
-	(void) fprintf (stderr, "%s: Illegal data type: %u\n",
+	fprintf (stderr, "%s: Illegal data type: %u\n",
 			function_name, data_type);
 	a_prog_bug (function_name);
 	break;
@@ -1679,7 +1024,7 @@ double *ds_get_coordinate_array (CONST dim_desc *dimension)
 
     if (dimension == NULL)
     {
-	(void) fprintf (stderr, "NULL descriptor pointer passed\n");
+	fprintf (stderr, "NULL descriptor pointer passed\n");
 	a_prog_bug (function_name);
     }
     if ( ( return_value = (double *) m_alloc (sizeof *return_value *
@@ -1749,7 +1094,7 @@ flag ds_element_is_complex (unsigned int element_type)
 	break;
       default:
 	/*  Illegal data type  */
-	(void) fprintf (stderr, "Illegal data type: %u\n",
+	fprintf (stderr, "Illegal data type: %u\n",
 			element_type);
 	a_prog_bug (function_name);
 	break;
@@ -1790,12 +1135,12 @@ flag ds_get_scattered_elements (CONST char *data, unsigned int data_type,
 
     if (data == NULL)
     {
-	(void) fprintf (stderr, "NULL data pointer passed\n");
+	fprintf (stderr, "NULL data pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (values == NULL)
     {
-	(void) fprintf (stderr, "NULL values storage pointer passed\n");
+	fprintf (stderr, "NULL values storage pointer passed\n");
 	a_prog_bug (function_name);
     }
 #ifdef MACHINE_i386
@@ -1804,14 +1149,14 @@ flag ds_get_scattered_elements (CONST char *data, unsigned int data_type,
     if ( !IS_ALIGNED ( values, sizeof (double) ) )
 #endif
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"values  address: %p not on a double boundary\n",
 			values);
 	a_prog_bug (function_name);
     }
     if (offsets == NULL)
     {
-	(void) fprintf (stderr, "NULL offset array pointer passed\n");
+	fprintf (stderr, "NULL offset array pointer passed\n");
 	a_prog_bug (function_name);
     }
     switch (data_type)
@@ -1820,7 +1165,7 @@ flag ds_get_scattered_elements (CONST char *data, unsigned int data_type,
       case K_ARRAY:
       case LISTP:
       case MULTI_ARRAY:
-	(void) fprintf (stderr, "Non-atomic data type: %u\n", data_type);
+	fprintf (stderr, "Non-atomic data type: %u\n", data_type);
 	a_prog_bug (function_name);
 	break;
       case K_FLOAT:
@@ -2004,15 +1349,12 @@ flag ds_get_scattered_elements (CONST char *data, unsigned int data_type,
 	break;
       default:
 	/*  Unknown data type   */
-	(void) fprintf (stderr, "%s: Illegal data type: %u\n",
-			function_name, data_type);
+	fprintf (stderr, "%s: Illegal data type: %u\n",
+		 function_name, data_type);
 	a_prog_bug (function_name);
 	break;
     }
-    if (complex != NULL)
-    {
-	*complex = tmp_complex;
-    }
+    if (complex != NULL) *complex = tmp_complex;
     return (TRUE);
 }   /*  End Function ds_get_scattered_elements  */
 
@@ -2073,12 +1415,10 @@ flag ds_can_transfer_element_as_block (unsigned int type)
       case LISTP:
 	/*  Not atomic data type  */
 	return (FALSE);
-/*
-	break;
-*/
+	/*break;*/
       default:
 	/*  Illegal data type  */
-	(void) fprintf (stderr, "Illegal data type: %u\n", type);
+	fprintf (stderr, "Illegal data type: %u\n", type);
 	a_prog_bug (function_name);
 	break;
     }
@@ -2106,7 +1446,7 @@ flag ds_can_transfer_packet_as_block (CONST packet_desc *pack_desc)
 
     if (pack_desc == NULL)
     {
-	(void) fprintf (stderr, "NULL pointer passed\n");
+	fprintf (stderr, "NULL pointer passed\n");
 	a_prog_bug (function_name);
     }
     for (elem_count = 0; elem_count < pack_desc->num_elements; ++elem_count)
@@ -2152,12 +1492,10 @@ flag ds_can_transfer_packet_as_block (CONST packet_desc *pack_desc)
 	  case LISTP:
 	    /*  Not atomic data type  */
 	    return (FALSE);
-/*
-	    break;
-*/
+	    /*break;*/
 	  default:
 	    /*  Illegal data type  */
-	    (void) fprintf (stderr, "Illegal data type: %u\n", type);
+	    fprintf (stderr, "Illegal data type: %u\n", type);
 	    a_prog_bug (function_name);
 	    break;
 	}
@@ -2222,12 +1560,10 @@ flag ds_can_swaptransfer_element (unsigned int type)
       case LISTP:
 	/*  Not atomic data type  */
 	return (FALSE);
-/*
-	break;
-*/
+	/*break;*/
       default:
 	/*  Illegal data type  */
-	(void) fprintf (stderr, "Illegal data type: %u\n", type);
+	fprintf (stderr, "Illegal data type: %u\n", type);
 	a_prog_bug (function_name);
 	break;
     }

@@ -1,7 +1,7 @@
 LIB = karmagraphics
 
 CFLAGS = -DX11 -I$(XINCLUDEPATH) -DHAS_OpenGL
-LDFLAGS = -lGL
+LDFLAGS = -L$(XLIBPATH) -lkarmaX11 -lkarma -lGL -lXt -lXext -lX11
 DEPENDFLAGS = -DX11 -I$(XINCLUDEPATH)
 
 include $(KARMAROOT)/source/lib/makefiles/$(OS)/GNUmakefile.rules

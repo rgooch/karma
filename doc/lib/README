@@ -186,6 +186,14 @@ c_register_callback		    c_call_callbacks
 c_unregister_callback		    c_destroy_list
 
 -----------------------------------------------------------------------------
+Routines to generate periodic events
+Link with:    -lkarma
+
+e_dispatch_events		    e_unix_create_list
+e_register_func			    e_unix_dispatch_events
+e_unregister_func
+
+-----------------------------------------------------------------------------
 Routines to manipulate channel objects
 Link with:    -lkarma
 
@@ -238,22 +246,22 @@ cf_compressed_colourmap_3r2g2b	    cf_rgb2
 Routines to manipulate the general data structure
 Link with:    -lkarma
 
-ds_alloc_multi			    ds_get_packet_size
-ds_alloc_packet_desc		    ds_get_array_size
-ds_alloc_data			    ds_packet_all_data
-ds_alloc_packet_subdata		    ds_element_is_atomic
-ds_alloc_packet			    ds_element_is_named
-ds_alloc_array_desc		    ds_element_is_legal
-ds_alloc_tiling_info		    ds_identify_name
-ds_alloc_dim_desc		    ds_f_array_name
-ds_alloc_list_head		    ds_f_name_in_packet
-ds_alloc_list_entry		    ds_f_name_in_array
-ds_alloc_array			    ds_f_elem_in_packet
-ds_easy_alloc_array		    ds_find_hole
-ds_easy_alloc_n_element_array	    ds_compare_packet_desc
-ds_wrap_preallocated_n_element_arra ds_compare_array_desc
-ds_easy_alloc_array_desc	    ds_compare_dim_desc
-ds_alloc_contiguous_list	    ds_f_dim_in_array
+ds_alloc_multi			    ds_identify_name
+ds_alloc_packet_desc		    ds_f_array_name
+ds_alloc_data			    ds_f_name_in_packet
+ds_alloc_packet_subdata		    ds_f_name_in_array
+ds_alloc_packet			    ds_f_elem_in_packet
+ds_alloc_array_desc		    ds_find_hole
+ds_alloc_tiling_info		    ds_f_dim_in_array
+ds_alloc_dim_desc		    ds_convert_atomic
+ds_alloc_list_head		    ds_get_coordinate
+ds_alloc_list_entry		    ds_get_element_offset
+ds_alloc_array			    ds_get_packet_size
+ds_easy_alloc_array		    ds_get_array_size
+ds_easy_alloc_n_element_array	    ds_packet_all_data
+ds_wrap_preallocated_n_element_arra ds_element_is_atomic
+ds_easy_alloc_array_desc	    ds_element_is_named
+ds_alloc_contiguous_list	    ds_element_is_legal
 ds_find_1D_extremes		    ds_get_array_offset
 ds_find_2D_extremes		    ds_get_coord_num
 ds_find_contiguous_extremes	    ds_get_element
@@ -269,28 +277,28 @@ ds_get_fits_axis		    ds_get_handle_in_array
 ds_cmap_alloc_colourmap		    ds_get_handle_in_list
 ds_cmap_find_colourmap		    ds_history_append_string
 ds_cmap_get_all_colourmaps	    ds_history_copy
-ds_copy_packet			    ds_list_insert
-ds_copy_desc_until		    ds_list_append
-ds_copy_array_desc_until	    ds_list_delete
-ds_copy_dim_desc		    ds_list_unfragment
-ds_copy_data			    ds_list_fragment
-ds_copy_array			    ds_remove_dim_desc
-ds_copy_list			    ds_append_dim_desc
-ds_select_arrays		    ds_prepend_dim_desc
-ds_dealloc_multi		    ds_compute_array_offsets
-ds_dealloc_packet		    ds_remove_tiling_info
-ds_dealloc_data			    ds_append_gen_struct
-ds_dealloc_packet_subdata	    ds_put_element
-ds_dealloc_array_desc		    ds_put_elements
-ds_dealloc_list			    ds_put_element_many_times
-ds_dealloc_list_entries		    ds_put_named_element
-ds_dealloc2_list		    ds_reorder_array
-ds_dealloc_array		    ds_foreach_occurrence
-ds_draw_ellipse			    ds_foreach_in_array
-ds_draw_polygon			    ds_foreach_in_list
-ds_convert_atomic		    ds_traverse_and_process
-ds_get_coordinate		    ds_traverse_array
-ds_get_element_offset		    ds_traverse_list
+ds_compare_packet_desc		    ds_list_insert
+ds_compare_array_desc		    ds_list_append
+ds_compare_dim_desc		    ds_list_delete
+ds_copy_packet			    ds_list_unfragment
+ds_copy_desc_until		    ds_list_fragment
+ds_copy_array_desc_until	    ds_remove_dim_desc
+ds_copy_dim_desc		    ds_append_dim_desc
+ds_copy_data			    ds_prepend_dim_desc
+ds_copy_array			    ds_compute_array_offsets
+ds_copy_list			    ds_remove_tiling_info
+ds_select_arrays		    ds_append_gen_struct
+ds_dealloc_multi		    ds_put_element
+ds_dealloc_packet		    ds_put_elements
+ds_dealloc_data			    ds_put_element_many_times
+ds_dealloc_packet_subdata	    ds_put_named_element
+ds_dealloc_array_desc		    ds_reorder_array
+ds_dealloc_list			    ds_foreach_occurrence
+ds_dealloc_list_entries		    ds_foreach_in_array
+ds_dealloc2_list		    ds_foreach_in_list
+ds_dealloc_array		    ds_traverse_and_process
+ds_draw_ellipse			    ds_traverse_array
+ds_draw_polygon			    ds_traverse_list
 
 -----------------------------------------------------------------------------
 Routines to provide encryption
@@ -427,6 +435,13 @@ vc_get_dpy_handle		    vc_store_colours_24bit
 vc_alloc_colours		    vc_get_location
 vc_free_colours			    vc_set_visualtype
 vc_store_colours		    vc_get_visualtype
+
+-----------------------------------------------------------------------------
+Routines to query X visuals
+Link with:    -lkarmaX11
+
+xv_get_vinfos			    xv_get_visinfo_for_visual
+xv_get_visuals
 
 -----------------------------------------------------------------------------
 Routines to provide channel encryption
@@ -589,26 +604,25 @@ dsrw_write_flag			    dsrw_read_type
 Manipulate pixel canvases in a device independent way
 Link with:    -lkarmagraphics
 
-kwin_create_x			    kwin_draw_string
-kwin_set_gc_x			    kwin_draw_rectangle
-kwin_get_gc_x			    kwin_fill_rectangle
-kwin_create_child		    kwin_draw_ellipse
-kwin_register_refresh_func	    kwin_draw_ellipses
-kwin_register_position_event_func   kwin_fill_ellipses
-kwin_resize			    kwin_draw_segments
-kwin_process_position_event	    kwin_get_size
-kwin_get_attributes		    kwin_free_cache_data
-kwin_set_attributes		    kwin_convert_to_canvas_coord
-kwin_clear			    kwin_convert_from_canvas_coord
-kwin_draw_pc_image		    kwin_get_colour
-kwin_draw_rgb_image		    kwin_load_font
-kwin_draw_cached_image		    kwin_get_string_size
-kwin_draw_point			    kwin_write_ps
-kwin_draw_points		    kwin_xgl_test_stereo
-kwin_draw_line			    kwin_xgl_create_stereo
-kwin_draw_lines			    kwin_xutil_get_vinfos
-kwin_fill_ellipse		    kwin_xutil_get_visuals
-kwin_fill_polygon		    kwin_xutil_get_visinfo_for_visual
+kwin_create_x			    kwin_fill_polygon
+kwin_set_gc_x			    kwin_draw_string
+kwin_get_gc_x			    kwin_draw_rectangle
+kwin_create_child		    kwin_fill_rectangle
+kwin_register_refresh_func	    kwin_draw_ellipse
+kwin_register_position_event_func   kwin_draw_ellipses
+kwin_resize			    kwin_fill_ellipses
+kwin_process_position_event	    kwin_draw_segments
+kwin_get_attributes		    kwin_get_size
+kwin_set_attributes		    kwin_free_cache_data
+kwin_clear			    kwin_convert_to_canvas_coord
+kwin_draw_pc_image		    kwin_convert_from_canvas_coord
+kwin_draw_rgb_image		    kwin_get_colour
+kwin_draw_cached_image		    kwin_load_font
+kwin_draw_point			    kwin_get_string_size
+kwin_draw_points		    kwin_write_ps
+kwin_draw_line			    kwin_xgl_test_stereo
+kwin_draw_lines			    kwin_xgl_create_stereo
+kwin_fill_ellipse
 
 -----------------------------------------------------------------------------
 Routines to manipulate colourmaps
@@ -700,9 +714,10 @@ module_run			    module_process_argvs
 Routines to provide miscellaneous Xt support
 Link with:    -lkarmaXt
 
+xtmisc_event_create_list	    xtmisc_exclusive_popup_cbk
 xtmisc_set_icon			    xtmisc_popdown_cbk
-xtmisc_popup_cbk		    xtmisc_support_work_funcs
-xtmisc_exclusive_popup_cbk
+xtmisc_init_app_initialise	    xtmisc_support_work_funcs
+xtmisc_popup_cbk
 
 -----------------------------------------------------------------------------
 Routines to manipulate world canvases
@@ -741,11 +756,11 @@ foreign_fits_write		    foreign_miriad_read
 foreign_fits_write_iarray	    foreign_miriad_write
 foreign_gipsy_test		    foreign_miriad_write_iarray
 foreign_gipsy_read_header	    foreign_guess_format_from_filename
-foreign_gipsy_read_data		    foreign_ppm_read
-foreign_gipsy_read		    foreign_ppm_write
-foreign_gipsy_write		    foreign_sunras_read
-foreign_gipsy_write_iarray	    foreign_sunras_write
-foreign_guess_and_read
+foreign_gipsy_read_data		    foreign_pgm_read
+foreign_gipsy_read		    foreign_ppm_read
+foreign_gipsy_write		    foreign_ppm_write
+foreign_gipsy_write_iarray	    foreign_sunras_read
+foreign_guess_and_read		    foreign_sunras_write
 
 -----------------------------------------------------------------------------
 Routines to support volume rendering
@@ -777,18 +792,19 @@ overlay_text			    overlay_move_object
 Routines to manipulate viewable images
 Link with:    -lkarmagraphics
 
-viewimg_draw_edit_list		    viewimg_register_data_change
-viewimg_draw_edit_object	    viewimg_destroy
-viewimg_init			    viewimg_get_active
-viewimg_create_restr		    viewimg_test_active
-viewimg_create			    viewimg_register_position_event_fun
-viewimg_create_from_iarray	    viewimg_fill_ellipse
-viewimg_create_sequence		    viewimg_fill_polygon
-viewimg_create_sequence_from_iarray viewimg_get_canvas_attributes
-viewimg_create_rgb		    viewimg_set_canvas_attributes
-viewimg_create_rgb_sequence	    viewimg_get_attributes
-viewimg_make_active		    viewimg_get_worldcanvas
-viewimg_set_active
+viewimg_draw_edit_list		    viewimg_destroy
+viewimg_draw_edit_object	    viewimg_get_active
+viewimg_init			    viewimg_test_active
+viewimg_create_restr		    viewimg_register_position_event_fun
+viewimg_create			    viewimg_fill_ellipse
+viewimg_create_from_iarray	    viewimg_fill_polygon
+viewimg_create_sequence		    viewimg_get_canvas_attributes
+viewimg_create_sequence_from_iarray viewimg_set_canvas_attributes
+viewimg_create_rgb		    viewimg_get_attributes
+viewimg_create_rgb_sequence	    viewimg_set_attributes
+viewimg_make_active		    viewimg_set_array_attributes
+viewimg_set_active		    viewimg_get_worldcanvas
+viewimg_register_data_change
 
 -----------------------------------------------------------------------------
 Routines to manipulate contour images

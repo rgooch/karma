@@ -285,8 +285,7 @@
     A pointer to the arbitrary information pointer. This may be modified
 <br></ul><b>Returns:</b>     TRUE on successful reading, else FALSE (indicating the connection
     should be closed).
-<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The <em>close_func</em> will not be called if this routine returns
-    FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The <em>close_func</em> will be called if this routine returns FALSE.
 </ul><p><hr> <a name=CONN_PROTO_close_func></a> void
  <b>CONN_PROTO_close_func</b><i>    (Connection connection, void *info)
 </i><br><p>    This routine is called when a connection closed.

@@ -73,7 +73,10 @@
 #include <karma.h>
 #include <karma_vrender.h>
 #include <karma_iarray.h>
+#include <karma_dsrw.h>
 #include <karma_conn.h>
+#include <karma_pio.h>
+#include <karma_ch.h>
 #include <karma_ds.h>
 #include <karma_st.h>
 #include <karma_aa.h>
@@ -102,6 +105,20 @@ if (ctx->magic_number != CONTEXT_MAGIC_NUMBER) \
  a_prog_bug (function_name); }
 
 
+/*  Protocol definition  */
+
+/*  Master to Slave commands  */
+#define MtoS_CUBE                0
+#define MtoS_VIEW                1
+#define MtoS_SHADER              2
+#define MtoS_SUBCUBE             3
+#define MtoS_PROJECTION          4
+#define MtoS_EYE_SEPARATION      5
+#define MtoS_SMOOTH_CACHE        6
+#define MtoS_SHADER_BLANK_PACKET 7
+#define MtoS_RENDER              8
+#define MtoS_COMPUTE_CACHES      9
+
 /*  Structure declarations follow  */
 
 typedef struct
@@ -113,6 +130,7 @@ typedef struct
 
 typedef struct shader_type
 {
+    CONST char *name;
     void (*slow_func) (signed char **_sh_planes,
 		       uaddr *_sh_dim_offsets_v, uaddr *_sh_dim_offsets_h,
 		       float _sh_ray_start_d,
@@ -211,6 +229,8 @@ struct vrendercontext_type
     array_desc *arr_desc;
     flag valid_image_desc;
     /*  Private data  */
+    KCallbackFunc cube_destroy_cbk;
+    flag cube_from_master;
     dim_desc h_dim;
     dim_desc v_dim;
     flag valid_view_info_cache;
@@ -223,11 +243,8 @@ struct vrendercontext_type
     KCallbackList image_desc_notify_list;
     KCallbackList cache_notify_list;
     KCallbackList view_notify_list;
-/*
-    unsigned int (*alloc_func) ();
-    KCallbackList resize_list;
     Connection master;
-*/
+    unsigned int num_slaves;
 };
 
 typedef struct
@@ -239,9 +256,15 @@ typedef struct
     float opacity;
 } substance;
 
+typedef struct
+{
+    KVolumeRenderContext context;
+} *ClientInfo;
+
 
 /*  Private data  */
 static KAssociativeArray shaders = NULL;
+static KVolumeRenderContext context_for_connections = NULL;
 
 
 /*  Private functions  */
@@ -294,6 +317,29 @@ STATIC_FUNCTION (float geom_intersect_plane_with_ray,
 		 (Kcoord_3d point, Kcoord_3d normal,
 		  Kcoord_3d start, Kcoord_3d direction,
 		  Kcoord_3d *intersection_point) );
+STATIC_FUNCTION (void cube_destroy_func, (iarray array, void *info) );
+STATIC_FUNCTION (void initialise_communications, () );
+STATIC_FUNCTION (flag server_open_func, (Connection connection, void **info) );
+STATIC_FUNCTION (flag server_read_func, (Connection connection, void **info) );
+STATIC_FUNCTION (void server_close_func, (Connection connection, void *info) );
+STATIC_FUNCTION (flag client_validate_func, (void **info) );
+STATIC_FUNCTION (flag client_open_func, (Connection connection, void **info) );
+STATIC_FUNCTION (flag client_read_func, (Connection connection, void **info) );
+STATIC_FUNCTION (void client_close_func, (Connection connection, void *info) );
+STATIC_FUNCTION (flag send_cube_func,
+		 (KVolumeRenderContext context, Channel channel) );
+STATIC_FUNCTION (flag send_view_func,
+		 (KVolumeRenderContext context, Channel channel) );
+STATIC_FUNCTION (flag send_shader_func,
+		 (KVolumeRenderContext context, Channel channel) );
+STATIC_FUNCTION (flag send_subcube_func,
+		 (KVolumeRenderContext context, Channel channel) );
+STATIC_FUNCTION (flag send_projection_func,
+		 (KVolumeRenderContext context, Channel channel) );
+STATIC_FUNCTION (flag send_eye_separation_func,
+		 (KVolumeRenderContext context, Channel channel) );
+STATIC_FUNCTION (flag send_smooth_cache_func,
+		 (KVolumeRenderContext context, Channel channel) );
 
 
 /*  Public functions follow  */
@@ -311,11 +357,13 @@ KVolumeRenderContext vrender_create_context (void *info, ...)
 {
     va_list argp;
     KVolumeRenderContext context;
+    extern KVolumeRenderContext context_for_connections;
     static char function_name[] = "vrender_create_context";
 
     va_start (argp, info);
+    initialise_communications ();
     if ( ( context = (KVolumeRenderContext) m_alloc (sizeof *context) )
-	== NULL )
+	 == NULL )
     {
 	m_error_notify (function_name, "context");
 	return (NULL);
@@ -327,6 +375,8 @@ KVolumeRenderContext vrender_create_context (void *info, ...)
     context->eye_separation = 50.0;
     context->smooth_cache = FALSE;
     context->valid_image_desc = FALSE;
+    context->cube_destroy_cbk = NULL;
+    context->cube_from_master = FALSE;
     context->valid_view_info_cache = FALSE;
     context->cyclops.context = context;
     context->cyclops.num_planes_allocated = 0;
@@ -369,6 +419,8 @@ KVolumeRenderContext vrender_create_context (void *info, ...)
     context->image_desc_notify_list = NULL;
     context->cache_notify_list = NULL;
     context->view_notify_list = NULL;
+    context->master = NULL;
+    context->num_slaves = 0;
     if ( !process_context_attributes (context, argp) )
     {
 	context->magic_number = 0;
@@ -376,6 +428,7 @@ KVolumeRenderContext vrender_create_context (void *info, ...)
 	return (NULL);
     }
     va_end (argp);
+    context_for_connections = context;
     return (context);
 }   /*  End Function vrender_create_context  */
 
@@ -535,6 +588,10 @@ void vrender_register_shader (void (*slow_func) (), void (*fast_func) (),
     static char function_name[] = "vrender_register_shader";
 
     initialise_shader_aa ();
+    if ( ( tmp.name = st_dup (name) ) == NULL )
+    {
+	m_abort (function_name, "shader name");
+    }
     ptr = (void **) &tmp.slow_func;
     *ptr = (void *) slow_func;
     ptr = (void **) &tmp.fast_func;
@@ -789,6 +846,15 @@ CONST signed char *vrender_collect_ray (KVolumeRenderContext context,
 	fprintf (stderr, "Illegal value of eye_view: %u\n", eye_view);
 	a_prog_bug (function_name);
 	break;
+    }
+    if ( (pos_2d.x < context->h_dim.first_coord) ||
+	 (pos_2d.x > context->h_dim.last_coord) ||
+	 (pos_2d.y < context->v_dim.first_coord) ||
+	 (pos_2d.y > context->v_dim.last_coord) )
+    {
+	fprintf (stderr, "%s: WARNING: 2D point: %e %e is not in view plane\n",
+		 function_name, pos_2d.x, pos_2d.y);
+	return (NULL);
     }
     x_coord = ds_get_coord_num (&context->h_dim, pos_2d.x,
 				SEARCH_BIAS_CLOSEST);
@@ -1201,14 +1267,24 @@ static flag process_context_attributes (KVolumeRenderContext context,
 */
 {
     iarray cube;
+    Connection connection;
+    Channel channel;
     Shader shader;
     flag bool;
-    unsigned int att_key, ui_val;
+    flag send_cube = FALSE;
+    flag send_view = FALSE;
+    flag send_shader = FALSE;
+    flag send_subcube = FALSE;
+    flag send_projection = FALSE;
+    flag send_eye_separation = FALSE;
+    flag send_smooth_cache = FALSE;
+    unsigned int att_key, ui_val, count;
     unsigned long ulong;
     double d_val;
     view_specification *view;
     CONST char *shader_name;
     extern KAssociativeArray shaders;
+    extern char *sys_errlist[];
     static char function_name[] = "__vrender_process_context_attributes";
 
     initialise_shader_aa ();
@@ -1232,7 +1308,20 @@ static flag process_context_attributes (KVolumeRenderContext context,
 		    a_prog_bug (function_name);
 		}
 	    }
+	    if (context->cube_destroy_cbk != NULL)
+	    {
+		c_unregister_callback (context->cube_destroy_cbk);
+	    }
+	    if ( context->cube_from_master && (context->cube != NULL) )
+	    {
+		iarray_dealloc (context->cube);
+	    }
+	    context->cube_from_master = FALSE;
 	    context->cube = cube;
+	    context->cube_destroy_cbk =
+		iarray_register_destroy_func (cube,
+					      ( flag (*)() ) cube_destroy_func,
+					      context);
 	    context->subcube_x_start = 0;
 	    context->subcube_x_end = iarray_dim_length (cube, 2) - 1;
 	    context->subcube_y_end = 0;
@@ -1241,6 +1330,7 @@ static flag process_context_attributes (KVolumeRenderContext context,
 	    context->subcube_z_end = iarray_dim_length (cube, 0) - 1;
 	    context->valid_image_desc = FALSE;
 	    context->valid_view_info_cache = FALSE;
+	    send_cube = TRUE;
 	    break;
 	  case VRENDER_CONTEXT_ATT_VIEW:
 	    if ( ( view = va_arg (argp, view_specification *) ) == NULL )
@@ -1250,6 +1340,7 @@ static flag process_context_attributes (KVolumeRenderContext context,
 	    }
 	    m_copy ( (char *) &context->view, (char *) view, sizeof *view );
 	    context->valid_view_info_cache = FALSE;
+	    send_view = TRUE;
 	    break;
 	  case VRENDER_CONTEXT_ATT_SHADER:
 	    if ( ( shader_name = va_arg (argp, CONST char *) ) == NULL )
@@ -1266,126 +1357,133 @@ static flag process_context_attributes (KVolumeRenderContext context,
 	    }
 	    context->shader = shader;
 	    context->valid_image_desc = FALSE;
+	    send_shader = TRUE;
 	    break;
 	  case VRENDER_CONTEXT_ATT_SUBCUBE_X_START:
 	    ulong = va_arg (argp, unsigned long);
 	    if (iarray_dim_length (context->cube, 2) <= ulong)
 	    {
-		(void)fprintf( stderr,
-			      "Subcube x start: %lu not less than length: %lu\n",
-			      ulong, iarray_dim_length (context->cube, 2) );
+		fprintf ( stderr,
+			  "Subcube x start: %lu not less than length: %lu\n",
+			  ulong, iarray_dim_length (context->cube, 2) );
 		a_prog_bug (function_name);
 	    }
 	    if (ulong >= context->subcube_x_end)
 	    {
-		fprintf(stderr,
-			       "Subcube x start: %lu not less than end: %lu\n",
-			       ulong, context->subcube_x_end);
+		fprintf (stderr,
+			 "Subcube x start: %lu not less than end: %lu\n",
+			 ulong, context->subcube_x_end);
 		a_prog_bug (function_name);
 	    }
 	    context->subcube_x_start = ulong;
 	    context->valid_image_desc = FALSE;
 	    context->valid_view_info_cache = FALSE;
+	    send_subcube = TRUE;
 	    break;
 	  case VRENDER_CONTEXT_ATT_SUBCUBE_X_END:
 	    ulong = va_arg (argp, unsigned long);
 	    if (iarray_dim_length (context->cube, 2) <= ulong)
 	    {
-		(void)fprintf( stderr,
-			      "Subcube x end: %lu not less than length: %lu\n",
-			      ulong, iarray_dim_length (context->cube, 2) );
+		fprintf ( stderr,
+			  "Subcube x end: %lu not less than length: %lu\n",
+			  ulong, iarray_dim_length (context->cube, 2) );
 		a_prog_bug (function_name);
 	    }
 	    if (ulong <= context->subcube_x_start)
 	    {
-		fprintf(stderr,
-			       "Subcube x end: %lu not greater than start: %lu\n",
-			       ulong, context->subcube_x_start);
+		fprintf (stderr,
+			 "Subcube x end: %lu not greater than start: %lu\n",
+			 ulong, context->subcube_x_start);
 		a_prog_bug (function_name);
 	    }
 	    context->subcube_x_end = ulong;
 	    context->valid_image_desc = FALSE;
 	    context->valid_view_info_cache = FALSE;
+	    send_subcube = TRUE;
 	    break;
 	  case VRENDER_CONTEXT_ATT_SUBCUBE_Y_START:
 	    ulong = va_arg (argp, unsigned long);
 	    if (iarray_dim_length (context->cube, 1) <= ulong)
 	    {
-		(void)fprintf( stderr,
-			      "Subcube y start: %lu not less than length: %lu\n",
-			      ulong, iarray_dim_length (context->cube, 1) );
+		fprintf ( stderr,
+			  "Subcube y start: %lu not less than length: %lu\n",
+			  ulong, iarray_dim_length (context->cube, 1) );
 		a_prog_bug (function_name);
 	    }
 	    if (ulong >= context->subcube_y_end)
 	    {
-		fprintf(stderr,
-			       "Subcube y start: %lu not less than end: %lu\n",
-			       ulong, context->subcube_y_end);
+		fprintf (stderr,
+			 "Subcube y start: %lu not less than end: %lu\n",
+			 ulong, context->subcube_y_end);
 		a_prog_bug (function_name);
 	    }
 	    context->subcube_y_start = ulong;
 	    context->valid_image_desc = FALSE;
 	    context->valid_view_info_cache = FALSE;
+	    send_subcube = TRUE;
 	    break;
 	  case VRENDER_CONTEXT_ATT_SUBCUBE_Y_END:
 	    ulong = va_arg (argp, unsigned long);
 	    if (iarray_dim_length (context->cube, 1) <= ulong)
 	    {
-		(void)fprintf( stderr,
-			      "Subcube y end: %lu not less than length: %lu\n",
-			      ulong, iarray_dim_length (context->cube, 1) );
+		fprintf ( stderr,
+			  "Subcube y end: %lu not less than length: %lu\n",
+			  ulong, iarray_dim_length (context->cube, 1) );
 		a_prog_bug (function_name);
 	    }
 	    if (ulong <= context->subcube_y_start)
 	    {
-		fprintf(stderr,
-			       "Subcube y end: %lu not greater than start: %lu\n",
-			       ulong, context->subcube_y_start);
+		fprintf (stderr,
+			 "Subcube y end: %lu not greater than start: %lu\n",
+			 ulong, context->subcube_y_start);
 		a_prog_bug (function_name);
 	    }
 	    context->subcube_y_end = ulong;
 	    context->valid_image_desc = FALSE;
 	    context->valid_view_info_cache = FALSE;
+	    send_subcube = TRUE;
 	    break;
 	  case VRENDER_CONTEXT_ATT_SUBCUBE_Z_START:
 	    ulong = va_arg (argp, unsigned long);
 	    if (iarray_dim_length (context->cube, 0) <= ulong)
 	    {
-		(void)fprintf( stderr,
-			      "Subcube z start: %lu not less than length: %lu\n",
-			      ulong, iarray_dim_length (context->cube, 0) );
+		fprintf ( stderr,
+			  "Subcube z start: %lu not less than length: %lu\n",
+			  ulong, iarray_dim_length (context->cube, 0) );
 		a_prog_bug (function_name);
 	    }
 	    if (ulong >= context->subcube_z_end)
 	    {
-		fprintf(stderr,
-			       "Subcube z start: %lu not less than end: %lu\n",
-			       ulong, context->subcube_z_end);
+		fprintf (stderr,
+			 "Subcube z start: %lu not less than end: %lu\n",
+			 ulong, context->subcube_z_end);
 		a_prog_bug (function_name);
 	    }
 	    context->subcube_z_start = ulong;
 	    context->valid_image_desc = FALSE;
 	    context->valid_view_info_cache = FALSE;
+	    send_subcube = TRUE;
 	    break;
 	  case VRENDER_CONTEXT_ATT_SUBCUBE_Z_END:
 	    ulong = va_arg (argp, unsigned long);
 	    if (iarray_dim_length (context->cube, 0) <= ulong)
 	    {
-		(void)fprintf( stderr,
-			      "Subcube z end: %lu not less than length: %lu\n",
-			      ulong, iarray_dim_length (context->cube, 0) );
+		fprintf ( stderr,
+			  "Subcube z end: %lu not less than length: %lu\n",
+			  ulong, iarray_dim_length (context->cube, 0) );
 		a_prog_bug (function_name);
 	    }
 	    if (ulong <= context->subcube_z_start)
 	    {
-		fprintf(stderr,
-			       "Subcube z end: %lu not greater than start: %lu\n",
-			       ulong, context->subcube_z_start);
+		fprintf (stderr,
+			 "Subcube z end: %lu not greater than start: %lu\n",
+			 ulong, context->subcube_z_start);
 		a_prog_bug (function_name);
 	    }
 	    context->subcube_z_end = ulong;
 	    context->valid_image_desc = FALSE;
 	    context->valid_view_info_cache = FALSE;
+	    send_subcube = TRUE;
 	    break;
 	  case VRENDER_CONTEXT_ATT_PROJECTION:
 	    ui_val = va_arg (argp, unsigned int);
@@ -1398,6 +1496,7 @@ static flag process_context_attributes (KVolumeRenderContext context,
 	    }
 	    context->projection = ui_val;
 	    context->valid_view_info_cache = FALSE;
+	    send_projection = TRUE;
 	    break;
 	  case VRENDER_CONTEXT_ATT_EYE_SEPARATION:
 	    if ( ( d_val = va_arg (argp, double) ) <= 0.0 )
@@ -1409,6 +1508,7 @@ static flag process_context_attributes (KVolumeRenderContext context,
 	    }
 	    context->eye_separation = d_val;
 	    context->valid_view_info_cache = FALSE;
+	    send_eye_separation = TRUE;
 	    break;
 	  case VRENDER_CONTEXT_ATT_SMOOTH_CACHE:
 	    bool = va_arg (argp, flag);
@@ -1418,6 +1518,7 @@ static flag process_context_attributes (KVolumeRenderContext context,
 		context->smooth_cache = bool;
 		context->valid_view_info_cache = FALSE;
 	    }
+	    send_smooth_cache = TRUE;
 	    break;
 	  default:
 	    fprintf (stderr, "Unknown attribute key: %u\n", att_key);
@@ -1428,6 +1529,77 @@ static flag process_context_attributes (KVolumeRenderContext context,
     /*  Try to make the output image descriptor valid  */
     compute_output_image_desc (context);
     compute_view_info_cache (context);
+    if (context->num_slaves < 1) return (TRUE);
+    /*  Have to pass on the changes to all slaves  */
+    for (count = 0; count < context->num_slaves; ++count)
+    {
+	if ( ( connection = conn_get_serv_connection ("VRENDER_private",
+						      count) ) == NULL )
+	{
+	    fprintf (stderr, "Error getting connection: %u\n", count);
+	    a_prog_bug (function_name);
+	}
+	channel = conn_get_channel (connection);
+	if (send_cube)
+	{
+	    if ( !send_cube_func (context, channel) ) continue;
+	}
+	if (send_view)
+	{
+	    if ( !send_view_func (context, channel) )
+	    {
+		conn_close (connection);
+		continue;
+	    }
+	}
+	if (send_shader)
+	{
+	    if ( !send_shader_func (context, channel) )
+	    {
+		conn_close (connection);
+		continue;
+	    }
+	}
+	if (send_subcube)
+	{
+	    if ( !send_subcube_func (context, channel) )
+	    {
+		conn_close (connection);
+		continue;
+	    }
+	}
+	if (send_projection)
+	{
+	    if ( !send_projection_func (context, channel) )
+	    {
+		conn_close (connection);
+		continue;
+	    }
+	}
+	if (send_eye_separation)
+	{
+	    if ( !send_eye_separation_func (context, channel) )
+	    {
+		conn_close (connection);
+		continue;
+	    }
+	}
+	if (send_smooth_cache)
+	{
+	    if ( !send_smooth_cache_func (context, channel) )
+	    {
+		conn_close (connection);
+		continue;
+	    }
+	}
+	if ( !ch_flush (channel) )
+	{
+	    fprintf (stderr, "Error flushing channel\t%s\n",
+		     sys_errlist[errno]);
+	    conn_close (connection);
+	    continue;
+	}
+    }
     return (TRUE);
 }   /*  End Function process_context_attributes  */
 
@@ -2248,7 +2420,7 @@ static flag get_ray_intersections_with_cube(RotatedKcoord_3d *position,
 	    h = position->h + t * direction->h;
 	    v = position->v + t * direction->v;
 	    if ( (h >= subcube_start->h) && (h <= subcube_end->h) &&
-		(v >= subcube_start->v) && (v <= subcube_end->v) )
+		 (v >= subcube_start->v) && (v <= subcube_end->v) )
 	    {
 		if (d < min) min = d;
 		if (d > max) max = d;
@@ -2501,7 +2673,7 @@ static void collect_ray_rough (iarray cube, eye_info *eye,
     float half = 0.5;
     float offset = 0.01;
     float h, v, t, one_on_direction_d;
-/*    static char function_name[] = "__vrender_collect_ray_rough";*/
+    /*static char function_name[] = "__vrender_collect_ray_rough";*/
 
     /*  Find enter co-ordinate  */
     enter.h = ray_start.h + t_enter * direction.h;
@@ -2768,7 +2940,7 @@ static void reorder_job (void *pool_info, void *call_info1, void *call_info2,
 	}
 	if (ray->length != (int) max_d - (int) min_d + 1)
 	{
-	    (void)fprintf(stderr,
+	    fprintf(stderr,
 			  "Computed ray length: %d is not stored length: %d\n",
 			  (int) max_d - (int) min_d + 1, ray->length);
 	    a_prog_bug (function_name);
@@ -3104,3 +3276,397 @@ static float geom_intersect_plane_with_ray (Kcoord_3d point, Kcoord_3d normal,
     }
     return (t);
 }   /*  End Function geom_intersect_plane_with_ray  */
+
+static void cube_destroy_func (iarray array, void *info)
+/*  [SUMMARY] Register destruction of an Intelligent Array.
+    <array> The Intelligent Array.
+    <info> A pointer to the arbitrary information.
+    [RETURNS] Nothing.
+*/
+{
+    KVolumeRenderContext context = info;
+    static char function_name[] = "cube_destroy_func";
+
+    VERIFY_CONTEXT (context);
+    context->cube = NULL;
+    context->cube_destroy_cbk = NULL;
+}   /*  End Function cube_destroy_func  */
+
+static void initialise_communications ()
+/*  [SUMMARY] Initialise the communications support.
+    [RETURNS] Nothing.
+*/
+{
+    static flag initialised = FALSE;
+
+    if (initialised) return;
+    initialised = TRUE;
+    conn_register_server_protocol ("VRENDER_private", PROTOCOL_VERSION, 0,
+				   server_open_func, server_read_func,
+				   server_close_func);
+    conn_register_client_protocol ("VRENDER_private", PROTOCOL_VERSION, 0,
+				   client_validate_func, client_open_func,
+				   client_read_func, client_close_func);
+}   /*  End Function initialise_communiations  */
+
+
+/*  Server connection callbacks follow  */
+
+static flag server_open_func (Connection connection, void **info)
+/*  [SUMMARY] Connection open event callback.
+    [PURPOSE] This routine is called when a connection from a client opens.
+    <connection> The connection object.
+    <info> A pointer to the arbitrary information pointer. This may be modified
+    [RETURNS] TRUE on successful registration, else FALSE (indicating the
+    connection should be closed).
+    [NOTE] The <<close_func>> will not be called if this routine returns
+    FALSE.
+*/
+{
+    KVolumeRenderContext context;
+    ClientInfo new;
+    extern KVolumeRenderContext context_for_connections;
+    static char function_name[] = "__vrender_server_open_func";
+
+    if (context_for_connections == NULL) return (FALSE);
+    context = context_for_connections;
+    if ( ( new = (ClientInfo) m_alloc (sizeof *new) ) == NULL )
+    {
+	m_error_notify (function_name, "ClientInfo");
+	return (FALSE);
+    }
+    new->context = context;
+    ++context->num_slaves;
+    *info = new;
+    return (TRUE);
+}   /*  End Function server_open_func  */
+
+static flag server_read_func (Connection connection, void **info)
+/*  [SUMMARY] Connection read event callback.
+    [PURPOSE] This routine is called when data is ready to be read from a
+    connection.
+    <connection> The connection object.
+    <info> A pointer to the arbitrary information pointer. This may be modified
+    [RETURNS] TRUE on successful reading, else FALSE (indicating the connection
+    should be closed).
+    [NOTE] The <<close_func>> will be called if this routine returns FALSE.
+*/
+{
+    ClientInfo client = (ClientInfo) *info;
+    static char function_name[] = "__vrender_server_read_func";
+
+    VERIFY_CONTEXT (client->context);
+    return (TRUE);
+}   /*  End Function server_read_func  */
+
+static void server_close_func (Connection connection, void *info)
+/*  [SUMMARY] Connection close event callback.
+    [PURPOSE] This routine is called when a connection closed.
+    When this routine is called, this is the last chance to read any
+    buffered data from the channel associated with the connection object.
+    <connection> The connection object.
+    <info> The arbitrary connection information pointer.
+    [RETURNS] Nothing.
+*/
+{
+    ClientInfo client = (ClientInfo) info;
+    static char function_name[] = "__vrender_server_close_func";
+
+    if (client->context->num_slaves < 1)
+    {
+	fprintf (stderr, "Client closure with zero client count!\n");
+	a_prog_bug (function_name);
+    }
+    --client->context->num_slaves;
+    m_free ( (char *) client );
+}   /*  End Function server_close_func  */
+
+
+/*  Client connection callbacks follow  */
+
+static flag client_validate_func (void **info)
+/*  [SUMMARY] Client connection validate event callback.
+    [PURPOSE] This routine is called to validate whether it is appropriate to
+    open a connection.
+    <info> A pointer to the arbitrary information pointer. This may be modified
+    [RETURNS] TRUE if the connection should be attempted, else FALSE
+    indicating the connection should be aborted.
+    [NOTE] Even if this routine is called and returns TRUE, there is no
+    guarantee that the connection will be subsequently opened.
+*/
+{
+    KVolumeRenderContext context;
+    extern KVolumeRenderContext context_for_connections;
+    /*static char function_name[] = "__vrender_client_validate_func";*/
+
+    if (context_for_connections == NULL) return (FALSE);
+    context = context_for_connections;
+    if (context->master != NULL) return (FALSE);
+    return (TRUE);
+}   /*  End Function client_validate_func  */
+
+static flag client_open_func (Connection connection, void **info)
+/*  [SUMMARY] Connection open event callback.
+    [PURPOSE] This routine is called when a connection to a server opens.
+    <connection> The connection object.
+    <info> A pointer to the arbitrary information pointer. This may be modified
+    [RETURNS] TRUE on successful registration, else FALSE (indicating the
+    connection should be closed).
+    [NOTE] The <<close_func>> will not be called if this routine returns
+    FALSE.
+*/
+{
+    KVolumeRenderContext context;
+    extern KVolumeRenderContext context_for_connections;
+    /*static char function_name[] = "__vrender_client_open_func";*/
+
+    if (context_for_connections == NULL) return (FALSE);
+    context = context_for_connections;
+    if (context->master != NULL) return (FALSE);
+    context->master = connection;
+    *info = context;
+    return (TRUE);
+}   /*  End Function client_open_func  */
+
+static flag client_read_func (Connection connection, void **info)
+/*  [SUMMARY] Connection read event callback.
+    [PURPOSE] This routine is called when data is ready to be read from a
+    connection.
+    <connection> The connection object.
+    <info> A pointer to the arbitrary information pointer. This may be modified
+    [RETURNS] TRUE on successful reading, else FALSE (indicating the connection
+    should be closed).
+    [NOTE] The <<close_func>> will be called if this routine returns FALSE.
+*/
+{
+    Channel channel;
+    char command;
+    iarray array;
+    KVolumeRenderContext context = *info;
+    multi_array *multi_desc;
+    extern char *sys_errlist[];
+    static char function_name[] = "__vrender_client_read_func";
+
+    VERIFY_CONTEXT (context);
+    channel = conn_get_channel (connection);
+    if (ch_read (channel, &command, 1) < 1)
+    {
+	fprintf (stderr, "%s: error reading command\t%s\n",
+		 function_name, sys_errlist[errno]);
+	return (FALSE);
+    }
+    switch (command)
+    {
+      case MtoS_CUBE:
+	if ( ( multi_desc = dsrw_read_multi (channel) ) == NULL ) return FALSE;
+	array = iarray_get_from_multi_array (multi_desc, NULL, 3, NULL, NULL);
+	ds_dealloc_multi (multi_desc);
+	if (array == NULL) return (FALSE);
+	if (iarray_type (array) != K_BYTE)
+	{
+	    fprintf (stderr, "Received non-byte cube!\n");
+	    iarray_dealloc (array);
+	    return (FALSE);
+	}
+	vrender_set_context_attributes (context,
+					VRENDER_CONTEXT_ATT_CUBE, array,
+					VRENDER_CONTEXT_ATT_END);
+	context->cube_from_master = TRUE;
+	break;
+      case MtoS_VIEW:
+	break;
+      case MtoS_SHADER:
+	break;
+      case MtoS_SUBCUBE:
+	break;
+      case MtoS_PROJECTION:
+	break;
+      case MtoS_EYE_SEPARATION:
+	break;
+      case MtoS_SMOOTH_CACHE:
+	break;
+      case MtoS_SHADER_BLANK_PACKET:
+	break;
+      case MtoS_RENDER:
+	break;
+      case MtoS_COMPUTE_CACHES:
+	break;
+      default:
+	fprintf (stderr, "%s: illegal command code: %d\n",
+		 function_name, command);
+	return (FALSE);
+	/*break;*/
+    }
+    return (TRUE);
+}   /*  End Function client_read_func  */
+
+static void client_close_func (Connection connection, void *info)
+/*  [SUMMARY] Connection close event callback.
+    [PURPOSE] This routine is called when a connection closed.
+    When this routine is called, this is the last chance to read any
+    buffered data from the channel associated with the connection object.
+    <connection> The connection object.
+    <info> The arbitrary connection information pointer.
+    [RETURNS] Nothing.
+*/
+{
+    KVolumeRenderContext context = info;
+    static char function_name[] = "__vrender_client_close_func";
+
+    VERIFY_CONTEXT (context);
+    context->master = NULL;
+}   /*  End Function client_close_func  */
+
+
+/*  Communications support functions  */
+
+static flag send_cube_func (KVolumeRenderContext context, Channel channel)
+/*  [SUMMARY] Send a cube to a slave.
+    <context> The KVolumeRenderContext object.
+    <channel> The channel object.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    char command = MtoS_CUBE;
+    extern char *sys_errlist[];
+
+    if (ch_write (channel, &command, 1) < 1)
+    {
+	fprintf (stderr, "Error writing command to channel\t%s\n",
+		 sys_errlist[errno]);
+	return (FALSE);
+    }
+    return dsrw_write_multi (channel, context->cube->multi_desc);
+}   /*  End Function send_cube_func  */
+
+static flag send_view_func (KVolumeRenderContext context, Channel channel)
+/*  [SUMMARY] Send a view to a slave.
+    <context> The KVolumeRenderContext object.
+    <channel> The channel object.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    char command = MtoS_VIEW;
+    extern char *sys_errlist[];
+
+    if (ch_write (channel, &command, 1) < 1)
+    {
+	fprintf (stderr, "Error writing command to channel\t%s\n",
+		 sys_errlist[errno]);
+	return (FALSE);
+    }
+    if ( !pio_write_float (channel, context->view.position.x) ) return (FALSE);
+    if ( !pio_write_float (channel, context->view.position.y) ) return (FALSE);
+    if ( !pio_write_float (channel, context->view.position.z) ) return (FALSE);
+    if ( !pio_write_float (channel, context->view.focus.x) ) return (FALSE);
+    if ( !pio_write_float (channel, context->view.focus.y) ) return (FALSE);
+    if ( !pio_write_float (channel, context->view.focus.z) ) return (FALSE);
+    if ( !pio_write_float (channel, context->view.vertical.x) ) return (FALSE);
+    if ( !pio_write_float (channel, context->view.vertical.y) ) return (FALSE);
+    if ( !pio_write_float (channel, context->view.vertical.z) ) return (FALSE);
+    return (TRUE);
+}   /*  End Function send_view_func  */
+
+static flag send_shader_func (KVolumeRenderContext context, Channel channel)
+/*  [SUMMARY] Send a cube to a slave.
+    <context> The KVolumeRenderContext object.
+    <channel> The channel object.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    char command = MtoS_SHADER;
+    extern char *sys_errlist[];
+
+    if (ch_write (channel, &command, 1) < 1)
+    {
+	fprintf (stderr, "Error writing command to channel\t%s\n",
+		 sys_errlist[errno]);
+	return (FALSE);
+    }
+    return pio_write_string (channel, context->shader->name);
+}   /*  End Function send_shader_func  */
+
+static flag send_subcube_func (KVolumeRenderContext context, Channel channel)
+/*  [SUMMARY] Send a cube to a slave.
+    <context> The KVolumeRenderContext object.
+    <channel> The channel object.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    char command = MtoS_SUBCUBE;
+    extern char *sys_errlist[];
+
+    if (ch_write (channel, &command, 1) < 1)
+    {
+	fprintf (stderr, "Error writing command to channel\t%s\n",
+		 sys_errlist[errno]);
+	return (FALSE);
+    }
+    if ( !pio_write32 (channel, context->subcube_x_start) ) return (FALSE);
+    if ( !pio_write32 (channel, context->subcube_x_end) ) return (FALSE);
+    if ( !pio_write32 (channel, context->subcube_y_start) ) return (FALSE);
+    if ( !pio_write32 (channel, context->subcube_y_end) ) return (FALSE);
+    if ( !pio_write32 (channel, context->subcube_z_start) ) return (FALSE);
+    if ( !pio_write32 (channel, context->subcube_z_end) ) return (FALSE);
+    return (TRUE);
+}   /*  End Function send_subcube_func  */
+
+static flag send_projection_func (KVolumeRenderContext context,
+				  Channel channel)
+/*  [SUMMARY] Send a cube to a slave.
+    <context> The KVolumeRenderContext object.
+    <channel> The channel object.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    char command = MtoS_PROJECTION;
+    extern char *sys_errlist[];
+
+    if (ch_write (channel, &command, 1) < 1)
+    {
+	fprintf (stderr, "Error writing command to channel\t%s\n",
+		 sys_errlist[errno]);
+	return (FALSE);
+    }
+    return pio_write32 (channel, context->projection);
+}   /*  End Function send_projection_func  */
+
+static flag send_eye_separation_func (KVolumeRenderContext context,
+				      Channel channel)
+/*  [SUMMARY] Send a cube to a slave.
+    <context> The KVolumeRenderContext object.
+    <channel> The channel object.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    char command = MtoS_EYE_SEPARATION;
+    extern char *sys_errlist[];
+
+    if (ch_write (channel, &command, 1) < 1)
+    {
+	fprintf (stderr, "Error writing command to channel\t%s\n",
+		 sys_errlist[errno]);
+	return (FALSE);
+    }
+    return pio_write_float (channel, context->eye_separation);
+}   /*  End Function send_eye_separation_func  */
+
+static flag send_smooth_cache_func (KVolumeRenderContext context,
+				    Channel channel)
+/*  [SUMMARY] Send a cube to a slave.
+    <context> The KVolumeRenderContext object.
+    <channel> The channel object.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    char command = MtoS_SMOOTH_CACHE;
+    extern char *sys_errlist[];
+
+    if (ch_write (channel, &command, 1) < 1)
+    {
+	fprintf (stderr, "Error writing command to channel\t%s\n",
+		 sys_errlist[errno]);
+	return (FALSE);
+    }
+    return dsrw_write_flag (channel, context->smooth_cache);
+}   /*  End Function send_smooth_cache_func  */

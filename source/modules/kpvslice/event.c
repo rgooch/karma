@@ -69,8 +69,14 @@
 
     Updated by      Richard Gooch   28-OCT-1996: Changed from <abs> to <fabs>.
 
-    Last updated by Richard Gooch   30-OCT-1996: Removed requirement for a FITS
+    Updated by      Richard Gooch   30-OCT-1996: Removed requirement for a FITS
   velocity/frequency axis to be present.
+
+    Updated by      Richard Gooch   3-NOV-1996: Made use of new
+  <viewimg_track_compute> routine.
+
+    Last updated by Richard Gooch   15-NOV-1996: Added tests for <<cube_ap>> is
+  NULL.
 
 
 */
@@ -395,11 +401,12 @@ flag endpoint_position_func (KWorldCanvas canvas, double x, double y,
 	}
 	/*  Convert new endpoints in RA and DEC to cube linear world
 	    co-ordinates  */
-	wcs_astro_transform (cube_ap, 2,
-			     dx, TRUE,
-			     dy, TRUE,
-			     NULL, FALSE,
-			     0, NULL, NULL);
+	if (cube_ap != NULL)
+	    wcs_astro_transform (cube_ap, 2,
+				 dx, TRUE,
+				 dy, TRUE,
+				 NULL, FALSE,
+				 0, NULL, NULL);
 	draw_slice (cube_arr, aux_canvas, dx[0], dy[0], dx[1], dy[1],
 		    slice_centre_ra, slice_centre_dec, slice_position_angle);
 	draw_trace (aux_canvas, image_arr, ra_coord, dec_coord,
@@ -545,16 +552,16 @@ flag track_aux_canvas_event (ViewableImage vimage, double x, double y,
 {
     KWorldCanvas main_canvas = (KWorldCanvas) *f_info;
     KPixCanvasRefreshArea area;
-    unsigned int  hdim, vdim;
     unsigned int  num_restr;
+    unsigned long pointer_x_index, pointer_y_index;
     unsigned long pixel_value;
     double        offset, px, py;
     double        current_ra, current_dec;
     char          *xlabel, *ylabel;
     char          **restr_names;
     double        *restr_values;
-    array_desc    *arr_desc;
     char          txt[STRING_LENGTH];
+    char          first_track_txt[STRING_LENGTH];
     char          second_track_txt[STRING_LENGTH];
     char          third_track_txt[STRING_LENGTH];
     extern KwcsAstro cube_ap;
@@ -564,25 +571,21 @@ flag track_aux_canvas_event (ViewableImage vimage, double x, double y,
     /*static char   function_name[] = "track_aux_canvas_event";*/
 
     if (event_code != K_CANVAS_EVENT_POINTER_MOVE) return (FALSE);
+    /*  Generate the pixel, value string  */
+    viewimg_track_compute (vimage, value, value_type, x, y, x_lin, y_lin,
+			   cube_ap, first_track_txt, NULL, NULL,
+			   &pointer_x_index, &pointer_y_index);
+    track_aux_canvas_xtcoord (first_track_txt, 0);
     canvas_get_specification (viewimg_get_worldcanvas (vimage),
 			      &xlabel, &ylabel, &num_restr,
 			      &restr_names, &restr_values);
-    viewimg_get_attributes (vimage,
-			    VIEWIMG_VATT_ARRAY_DESC, &arr_desc,
-			    VIEWIMG_VATT_HDIM, &hdim,
-			    VIEWIMG_VATT_VDIM, &vdim,
-			    VIEWIMG_VATT_END);
-    /* The slice centre and angle is already displayed, in the first line */
-    /* Offset is given relative to this. */
-
     /*  Now display the world co-ordinate information. There are two sets of */
     /*  coordinates; (offset,velocity) and (RA,DEC). */
     /*  Convert x_lin (co-ordinate index along slice) to offset  */
     offset = offset_coord[(int) x_lin];
     if (cube_ap == NULL)
     {
-	sprintf (second_track_txt, "%5e %s  %5e %s  ",
-		 x, xlabel, y, ylabel);
+	sprintf (second_track_txt, "%5e %s  %5e %s  ", x, xlabel, y, ylabel);
     }
     else
     {
@@ -600,8 +603,7 @@ flag track_aux_canvas_event (ViewableImage vimage, double x, double y,
     current_dec = dec_coord[(int) x_lin];
     if (cube_ap == NULL)
     {
-	sprintf (third_track_txt, "%5e %s  %5e %s  ",
-		 x, xlabel, y, ylabel);
+	sprintf (third_track_txt, "%5e %s  %5e %s  ", x, xlabel, y, ylabel);
     }
     else
     {
@@ -614,7 +616,7 @@ flag track_aux_canvas_event (ViewableImage vimage, double x, double y,
 	track_aux_canvas_xtcoord (third_track_txt, 2);
     }
     /* update magnifier window */
-    track_aux_canvas_xtmagupd (vimage, x_lin, y_lin);
+    track_aux_canvas_xtmagupd (vimage, pointer_x_index, pointer_y_index);
     /*  Move a cursor over main canvas  */
     if (old_cursor_x > -1)
     {
@@ -845,11 +847,12 @@ static void draw_slice (iarray cube_arr, KWorldCanvas canvas,
 
     /* convert the locus points to proper world coords */
     /* store in arrays global to this module. */
-    wcs_astro_transform (cube_ap, num_points_in_slice,
-			 ra_coord, FALSE,
-			 dec_coord, FALSE,
-			 NULL, FALSE,
-			 0, NULL, NULL);
+    if (cube_ap != NULL)
+	wcs_astro_transform (cube_ap, num_points_in_slice,
+			     ra_coord, FALSE,
+			     dec_coord, FALSE,
+			     NULL, FALSE,
+			     0, NULL, NULL);
 
     /* centre is arithmetic mean of endpoints in each coord, (in proper world
        coords). It is obtained by endpoint_position_func. */

@@ -31,8 +31,11 @@
 
     Written by      Richard Gooch   14-OCT-1996: Copied from kshell/generic.c
 
-    Last updated by Richard Gooch   28-OCT-1996: Added hostname and port number
+    Updated by      Richard Gooch   28-OCT-1996: Added hostname and port number
   to title.
+
+    Last updated by Richard Gooch   3-NOV-1996: Changed <load_image> to not
+  insist that target image have no projections.
 
 
 */
@@ -120,15 +123,15 @@ void setup_comms (Display *display)
     }
 }   /*  End Function setup_comms  */
 
-flag load_image (CONST char *filename, iarray *array, KwcsAstro *ap,
+flag load_image (CONST char *filename, iarray *array, KwcsAstro *ap, flag ref,
 		 KWorldCanvas pseudo_canvas, KWorldCanvas mag_pseudo_canvas,
 		 ViewableImage *image, ViewableImage *magnified_image,
 		 double *min, double *max)
 /*  [PURPOSE] This routine will load a file and display it.
     <filename> The name of the file to load.
     <array> The image array will be written here.
-    <ap> The astronomical projection system will be written here. This may be
-    NULL.
+    <ap> The astronomical projection system will be written here.
+    <ref> If TRUE, the reference image is being loaded.
     <pseudo_canvas> The PseudoColour canvas.
     <image> If an image is loaded the ViewableImage is written here. If no
     image is loaded, NULL is written here. The value written here must be
@@ -141,36 +144,18 @@ flag load_image (CONST char *filename, iarray *array, KwcsAstro *ap,
     [RETURNS] TRUE on success, else FALSE.
 */
 {
-    KwcsAstro tmp_ap;
     unsigned int ftype;
     /*static char function_name[] = "load_image";*/
 
-    tmp_ap = (ap == NULL) ? NULL : *ap;
     if ( !foreign_read_and_setup (filename, K_CH_MAP_LOCAL, FALSE, &ftype,
 				  TRUE, 2, K_FLOAT, FALSE, array, min, max,
-				  TRUE, &tmp_ap) ) return (FALSE);
-    if (ap == NULL)
+				  TRUE, ap) ) return (FALSE);
+    if ( ref && (*ap == NULL) )
     {
-	if (tmp_ap != NULL)
-	{
-	    fprintf (stderr, "Target already has astronomical projection!\n");
-	    iarray_dealloc (*array);
-	    *array = NULL;
-	    wcs_astro_destroy (tmp_ap);
-	    return (FALSE);
-	}
-    }
-    else
-    {
-	if (tmp_ap == NULL)
-	{
-	    fprintf (stderr,
-		     "No astronomical projection found for reference\n");
-	    iarray_dealloc (*array);
-	    *array = NULL;
-	    return (FALSE);
-	}
-	*ap = tmp_ap;
+	fprintf (stderr, "No astronomical projection found for reference\n");
+	iarray_dealloc (*array);
+	*array = NULL;
+	return (FALSE);
     }
     destroy_all_vimages (image, magnified_image);
     if ( ( *image = viewimg_create_from_iarray (pseudo_canvas, *array,

@@ -31,7 +31,10 @@
 
     Written by      Richard Gooch   15-OCT-1996
 
-    Last updated by Richard Gooch   17-OCT-1996: Created <apply_coordinates>.
+    Updated by      Richard Gooch   17-OCT-1996: Created <apply_coordinates>.
+
+    Last updated by Richard Gooch   3-NOV-1996: Modify displayed information if
+  target image had an original co-ordinate system.
 
 
 */
@@ -114,11 +117,13 @@ void compute_and_store ()
 */
 {
     unsigned int count, xlen, ylen;
+    char *p1, *p2;
     char txt[STRING_LENGTH], tmp[STRING_LENGTH];
     double crval1[2], crpix1[2], cdelt1[2], crval2[2], crpix2[2], cdelt2[2];
     double crota[2];
     double pred_x[MAX_PAIRS], pred_y[MAX_PAIRS];
-    extern KwcsAstro target_ap;
+    double diff_x[MAX_PAIRS], diff_y[MAX_PAIRS];
+    extern KwcsAstro target_ap, target_original_ap;
     extern iarray tar_array;
     extern unsigned int num_reference_points;
     extern unsigned int num_target_points;
@@ -173,24 +178,45 @@ void compute_and_store ()
     {
 	pred_x[count] = reference_ra[count];
 	pred_y[count] = reference_dec[count];
+	if (target_original_ap != NULL)
+	{
+	    diff_x[count] = reference_ra[count];
+	    diff_y[count] = reference_dec[count];
+	}
     }
     wcs_astro_transform (target_ap, num_reference_points,
 			 pred_x, TRUE, pred_y, TRUE, NULL, FALSE,
 			 0, NULL, NULL);
-    fputs ("#  Ra              Dec              Tx     Ty      Px     Py      Dx     Dy\n",
-	   stderr);
+    p1 = "#  Ra              Dec              Tx     Ty      Px     Py      Dx     Dy\n";
+    p2 = "#  Ra              Dec              Tx     Ty      PDx    PDy     Dx     Dy\n";
+    if (target_original_ap == NULL) fputs (p1, stderr);
+    else
+    {
+	fputs (p2, stderr);
+	wcs_astro_transform (target_original_ap, num_reference_points,
+			     diff_x, TRUE, diff_y, TRUE, NULL, FALSE,
+			     0, NULL, NULL);
+    }
     for (count = 0; count < num_reference_points; ++count)
     {
 	fprintf (stderr, "%-3u", count);
 	wcs_astro_format_ra (txt, reference_ra[count]);
 	fprintf (stderr, "%-16s", txt);
 	wcs_astro_format_dec (txt, reference_dec[count]);
-	fprintf (stderr, "%-15s  ", txt);
-	fprintf (stderr, "%-7.1f%-8.1f%-7.1f%-8.1f%-7.1f%-.1f\n",
-		 target_x[count], target_y[count],
-		 pred_x[count], pred_y[count],
-		 target_x[count] - pred_x[count],
-		 target_y[count] - pred_y[count]);
+	fprintf (stderr, "%-15s  %-7.1f%-8.1f",
+		 txt, target_x[count], target_y[count]);
+	if (target_original_ap == NULL)
+	{
+	    fprintf (stderr, "%-7.1f%-8.1f%-7.1f%-.1f\n",
+		     pred_x[count], pred_y[count],
+		     target_x[count] - pred_x[count],
+		     target_y[count] - pred_y[count]);
+	}
+	else fprintf (stderr, "%-7.1f%-8.1f%-7.1f%-.1f\n",
+		      diff_x[count] - pred_x[count],
+		      diff_y[count] - pred_y[count],
+		      target_x[count] - pred_x[count],
+		      target_y[count] - pred_y[count]);
     }
     /*  Print header in nice format  */
     fprintf (stderr, "\nHeader information:\nProjection: ARC (rectangular)\n");

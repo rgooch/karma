@@ -31,7 +31,9 @@
 
     Written by      Richard Gooch   13-OCT-1996
 
-    Last updated by Richard Gooch   16-OCT-1996: Renamed to <koverlay>.
+    Updated by      Richard Gooch   16-OCT-1996: Renamed to <koverlay>.
+
+    Last updated by Richard Gooch   6-NO-1996: Added <title_name>.
 
 
 */
@@ -54,3 +56,5 @@ double contour_levels[MAX_CONTOUR_LEVELS];
 
 double contour_arr_min = TOOBIG;
 double contour_arr_max = -TOOBIG;
+
+char title_name[STRING_LENGTH] = "Unknown";

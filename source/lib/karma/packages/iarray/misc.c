@@ -63,9 +63,11 @@
     Updated by      Richard Gooch   29-SEP-1996: Made use of <ds_get_fits_axis>
   routine.
 
-    Last updated by Richard Gooch   17-OCT-1996: "Cosmetic" name change of
+    Updated by      Richard Gooch   17-OCT-1996: "Cosmetic" name change of
   <<template>> parameter in <iarray_create_from_template> because of stupid C++
   theft from namespace.
+
+    Last updated by Richard Gooch   2-NOV-1996: Made use of <ds_format_value>.
 
 
 */
@@ -81,12 +83,10 @@
 
 
 #define VERIFY_IARRAY(array) if (array == NULL) \
-{(void) fprintf (stderr, "NULL iarray passed\n"); \
- a_prog_bug (function_name); }
+{fprintf (stderr, "NULL iarray passed\n"); a_prog_bug (function_name); }
 #ifdef dummy
 if (array->magic_number != MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid iarray\n"); \
- a_prog_bug (function_name); }
+{fprintf (stderr, "Invalid iarray\n"); a_prog_bug (function_name); }
 #endif
 
 
@@ -137,35 +137,12 @@ flag iarray_get_data_scaling (iarray array, double *scale, double *offset)
     [RETURNS] TRUE if either the scaling or offset value were found, else FALSE
 */
 {
-    flag found = FALSE;
-    double value[2];
-    char txt[STRING_LENGTH];
     static char function_name[] = "iarray_get_data_scaling";
 
     VERIFY_IARRAY (array);
-    (void) sprintf ( txt, "%s__SCALE", iarray_value_name (array) );
-    if ( iarray_get_named_value (array, txt, NULL, value) )
-    {
-	found = TRUE;
-	*scale = value[0];
-    }
-    else
-    {
-	/*  Not found: use default  */
-	*scale = 1.0;
-    }
-    sprintf ( txt, "%s__OFFSET", iarray_value_name (array) );
-    if ( iarray_get_named_value (array, txt, NULL, value) )
-    {
-	found = TRUE;
-	*offset = value[0];
-    }
-    else
-    {
-	/*  Not found: use default  */
-	*offset = 0.0;
-    }
-    return (found);
+    return ds_get_data_scaling (iarray_value_name (array),
+				array->top_pack_desc, *array->top_packet,
+				scale, offset);
 }   /*  End Function iarray_get_data_scaling  */
 
 /*PUBLIC_FUNCTION*/
@@ -193,21 +170,21 @@ flag iarray_set_data_scaling (iarray array, double scale, double offset)
     static char function_name[] = "iarray_set_data_scaling";
 
     VERIFY_IARRAY (array);
-    (void) iarray_get_data_scaling (array, &sc, &off);
+    iarray_get_data_scaling (array, &sc, &off);
     if ( (scale == sc) && (offset == off) ) return (FALSE);
-    (void) sprintf ( txt, "%s__SCALE", iarray_value_name (array) );
+    sprintf ( txt, "%s__SCALE", iarray_value_name (array) );
     value[0] = scale;
     value[1] = 0.0;
     if ( !iarray_put_named_value (array, txt, K_DOUBLE, value) )
     {
-	(void) fprintf (stderr, "Error attaching \"%s\" element\n", txt);
+	fprintf (stderr, "Error attaching \"%s\" element\n", txt);
 	return (TRUE);
     }
     sprintf ( txt, "%s__OFFSET", iarray_value_name (array) );
     value[0] = offset;
     if ( !iarray_put_named_value (array, txt, K_DOUBLE, value) )
     {
-	(void) fprintf (stderr, "Error attaching \"%s\" element\n", txt);
+	fprintf (stderr, "Error attaching \"%s\" element\n", txt);
 	return (TRUE);
     }
     return (TRUE);
@@ -227,69 +204,11 @@ void iarray_format_value (iarray array, char string[STRING_LENGTH],
     [RETURNS] Nothing.
 */
 {
-    double scaled_value;
-    char value_str[STRING_LENGTH];
-    CONST char *value_name;
     static char function_name[] = "iarray_format_value";
 
     VERIFY_IARRAY (array);
-    if (scale >= TOOBIG)
-    {
-	(void) iarray_get_data_scaling (array, &scale, &offset);
-    }
-    /*  Compute value  */
-    scaled_value = scale * value + offset;
-    value_name = iarray_value_name (array);
-    if (strcmp (value_name, "Data Value") == 0)
-    {
-	/*  No useful unit name  */
-	if ( (scale == 1.0) && (offset == 0.0) )
-	{
-	    (void) sprintf (string, "value: %e", value);
-	}
-	else (void) sprintf (string, "raw: %e  sc: %e", value, scaled_value);
-	return;
-    }
-    /*  Have a useful value name: first check if it should be scaled and the
-	units fiddled to make (some) users happier  */
-    if (value >= TOOBIG)
-    {
-	(void) sprintf (value_str, "blank");
-    }
-    else if (strncmp (value_name, "M/S", 3) == 0)
-    {
-	(void) sprintf (value_str, "%.1f km/s", scaled_value * 1e-3);
-    }
-    else if (strncmp (value_name, "KM/S", 4) == 0)
-    {
-	(void) sprintf (value_str, "%.1f km/s", scaled_value);
-    }
-    else if (strncmp (value_name, "JY/BEAM", 7) == 0)
-    {
-	(void) sprintf (value_str, "%.1f mJy/Beam", scaled_value * 1e+3);
-    }
-    else if (strncmp (value_name, "FREQ", 4) == 0)
-    {
-	(void) sprintf (value_str, "%.3f MHz", scaled_value * 1e-6);
-    }
-    else if (strcmp (value_name, "HZ") == 0)
-    {
-	(void) sprintf (value_str, "%.3f MHz", scaled_value * 1e-6);
-    }
-    else if (strncmp (value_name, "FELO", 4) == 0)
-    {
-	(void) sprintf (value_str, "%.2f km/s", scaled_value * 1e-3);
-    }
-    else if (strncmp (value_name, "VELO", 4) == 0)
-    {
-	(void) sprintf (value_str, "%.2f km/s", scaled_value * 1e-3);
-    }
-    else (void) sprintf (value_str, "%e %s", scaled_value, value_name);
-    if ( (scale == 1.0) && (offset == 0.0) )
-    {
-	(void) sprintf (string, "value: %s", value_str);
-    }
-    else (void) sprintf (string, "raw: %e  sc: %s", value, value_str);
+    ds_format_value (string, value, iarray_value_name (array), scale, offset,
+		     array->top_pack_desc, *array->top_packet);
 }   /*  End Function iarray_format_value  */
 
 /*PUBLIC_FUNCTION*/
@@ -402,7 +321,7 @@ double iarray_get_coordinate (iarray array, unsigned int dim_index,
     }
     if (!found)
     {
-	(void) fprintf (stderr, "Could not find offset index!\n");
+	fprintf (stderr, "Could not find offset index!\n");
 	a_prog_bug (function_name);
     }
     return ( ds_get_coordinate (dim, coord_index + count) );

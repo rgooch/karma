@@ -3,7 +3,7 @@
 <center><h1>The "overlay" Package</h1></center>    These routines provide a simple interface to the recursive,
     heirarchical data structure supported in Karma, to define 2-dimensional
     (image) overlay objects. In addition, all the mechanics for drawing onto
-    world canvases (see the [<canvas>] package) is supplied automatically.
+    world canvases (see the <a href=canvas.html#canvas>canvas</a> package) is supplied automatically.
 <p><b>Library:</b> karmagraphics
 <br><b>Link With:</b> -lkarmagraphics
 <br><p><a name=overlay></a></table><h4>Functions</h4><table><tr><td><a href=overlay.html#overlay_create_list>overlay_create_list</a></td><td>Create a managed overlay object list.
@@ -41,6 +41,8 @@
 <tr><td><a href=overlay.html#overlay_remove_object>overlay_remove_object</a></td><td>Remove one object from an overlay object list.
 </td></tr>
 <tr><td><a href=overlay.html#overlay_move_object>overlay_move_object</a></td><td>Move a object in an overlay object list.
+</td></tr>
+</table><h4>Tables</h4><table><tr><td><a href=overlay.html#OVERLAY_COORDINATE_TYPES>OVERLAY_COORDINATE_TYPES</a></td><td>List of co-ordinate types
 </td></tr>
 </table><p><hr><center><h2>Functions</h2></center><hr> <a name=overlay_create_list></a> KOverlayList
  <b>overlay_create_list</b><i>    (void *info)
@@ -110,13 +112,15 @@
 <p><b>Parameters:</b><ul><li><i>olist :</i> 
     The overlay list object.
 <br><li><i>type0 :</i> 
-    The type of the first co-ordinate.
+    The type of the first co-ordinate. See
+    <a href=overlay.html#OVERLAY_COORDINATE_TYPES>OVERLAY_COORDINATE_TYPES</a> for a list of supported co-ordinate types.
 <br><li><i>x0 :</i> 
     The horizontal position of the first co-ordinate.
 <br><li><i>y0 :</i> 
     The vertical position of the first co-ordinate.
 <br><li><i>type1 :</i> 
-    The type of the second co-ordinate.
+    The type of the second co-ordinate. See
+    <a href=overlay.html#OVERLAY_COORDINATE_TYPES>OVERLAY_COORDINATE_TYPES</a> for a list of supported co-ordinate types.
 <br><li><i>x1 :</i> 
     The horizontal position of the second co-ordinate.
 <br><li><i>y1 :</i> 
@@ -138,7 +142,8 @@
     than this value.
 <br><li><i>types :</i> 
     An array of co-ordinate types. If this is NULL, all co-ordinates
-    are assumed to be world co-ordinates.
+    are assumed to be world co-ordinates. See <a href=overlay.html#OVERLAY_COORDINATE_TYPES>OVERLAY_COORDINATE_TYPES</a> for
+    a list of supported co-ordinate types.
 <br><li><i>x_arr :</i> 
     The horizontal co-ordinate values.
 <br><li><i>y_arr :</i> 
@@ -156,7 +161,8 @@
 <br><li><i>string :</i> 
     The text string.
 <br><li><i>type :</i> 
-    The type of the co-ordinate.
+    The type of the co-ordinate. See <a href=overlay.html#OVERLAY_COORDINATE_TYPES>OVERLAY_COORDINATE_TYPES</a> for a
+    list of supported co-ordinate types.
 <br><li><i>x :</i> 
     The horizontal position of the co-ordinate.
 <br><li><i>y :</i> 
@@ -178,13 +184,15 @@
 <p><b>Parameters:</b><ul><li><i>olist :</i> 
     The overlay list object.
 <br><li><i>ctype :</i> 
-    The type of the centre co-ordinate.
+    The type of the centre co-ordinate. See
+    <a href=overlay.html#OVERLAY_COORDINATE_TYPES>OVERLAY_COORDINATE_TYPES</a> for a list of supported co-ordinate types.
 <br><li><i>cx :</i> 
     The horizontal position of the centre co-ordinate.
 <br><li><i>cy :</i> 
     The vertical position of the centre co-ordinate.
 <br><li><i>rtype :</i> 
-    The type of the radius co-ordinate.
+    The type of the radius co-ordinate. See
+    <a href=overlay.html#OVERLAY_COORDINATE_TYPES>OVERLAY_COORDINATE_TYPES</a> for a list of supported co-ordinate types.
 <br><li><i>rx :</i> 
     The horizontal radius.
 <br><li><i>ry :</i> 
@@ -207,7 +215,8 @@
     The number of co-ordinates (vertices).
 <br><li><i>types :</i> 
     The array of co-ordinate type values. If this is NULL, all
-    co-ordinates are assumed to be world co-ordinates.
+    co-ordinates are assumed to be world co-ordinates. See
+    <a href=overlay.html#OVERLAY_COORDINATE_TYPES>OVERLAY_COORDINATE_TYPES</a> for a list of supported co-ordinate types.
 <br><li><i>x_arr :</i> 
     The array of horizontal co-ordinate values.
 <br><li><i>y_arr :</i> 
@@ -225,13 +234,15 @@
 <p><b>Parameters:</b><ul><li><i>olist :</i> 
     The overlay list object.
 <br><li><i>stype :</i> 
-    The type of the start co-ordinate.
+    The type of the start co-ordinate. See <a href=overlay.html#OVERLAY_COORDINATE_TYPES>OVERLAY_COORDINATE_TYPES</a>
+    for a list of supported co-ordinate types.
 <br><li><i>sx :</i> 
     The horizontal position of the start co-ordinate.
 <br><li><i>sy :</i> 
     The vertical position of the start co-ordinate.
 <br><li><i>dtype :</i> 
-    The type of the vector direction.
+    The type of the vector direction. See <a href=overlay.html#OVERLAY_COORDINATE_TYPES>OVERLAY_COORDINATE_TYPES</a>
+    for a list of supported co-ordinate types.
 <br><li><i>dx :</i> 
     The horizontal vector direction.
 <br><li><i>dy :</i> 
@@ -253,14 +264,16 @@
     The number of ellipses.
 <br><li><i>ctypes :</i> 
     The types of the centre co-ordinates. If this is NULL, all
-    co-ordinates are assumed to be world co-ordinates.
+    co-ordinates are assumed to be world co-ordinates. See
+    <a href=overlay.html#OVERLAY_COORDINATE_TYPES>OVERLAY_COORDINATE_TYPES</a> for a list of supported co-ordinate types.
 <br><li><i>cx :</i> 
     The horizontal positions of the centre co-ordinates.
 <br><li><i>cy :</i> 
     The vertical positions of the centre co-ordinates.
 <br><li><i>rtypes :</i> 
     The types of the radii co-ordinates. If this is NULL, all
-    co-ordinates are assumed to be world co-ordinates.
+    co-ordinates are assumed to be world co-ordinates. See
+    <a href=overlay.html#OVERLAY_COORDINATE_TYPES>OVERLAY_COORDINATE_TYPES</a> for a list of supported co-ordinate types.
 <br><li><i>rx :</i> 
     The horizontal radii.
 <br><li><i>ry :</i> 
@@ -284,14 +297,16 @@
     The number of segments.
 <br><li><i>types0 :</i> 
     The types of the start co-ordinates. If this is NULL, all
-    co-ordinates are assumed to be world co-ordinates.
+    co-ordinates are assumed to be world co-ordinates. See
+    <a href=overlay.html#OVERLAY_COORDINATE_TYPES>OVERLAY_COORDINATE_TYPES</a> for a list of supported co-ordinate types.
 <br><li><i>x0 :</i> 
     The horizontal positions of the start co-ordinates.
 <br><li><i>y0 :</i> 
     The vertical positions of the start co-ordinates.
 <br><li><i>types1 :</i> 
     The types of the stop co-ordinates. If this is NULL, all
-    co-ordinates are assumed to be world co-ordinates.
+    co-ordinates are assumed to be world co-ordinates. See
+    <a href=overlay.html#OVERLAY_COORDINATE_TYPES>OVERLAY_COORDINATE_TYPES</a> for a list of supported co-ordinate types.
 <br><li><i>x1 :</i> 
     The horizontal positions of the stop co-ordinates.
 <br><li><i>y1 :</i> 
@@ -313,14 +328,16 @@
     The number of vectors.
 <br><li><i>stypes :</i> 
     The types of the start co-ordinates. If this is NULL, all
-    co-ordinates are assumed to be world co-ordinates.
+    co-ordinates are assumed to be world co-ordinates. See
+    <a href=overlay.html#OVERLAY_COORDINATE_TYPES>OVERLAY_COORDINATE_TYPES</a> for a list of supported co-ordinate types.
 <br><li><i>sx :</i> 
     The horizontal positions of the start co-ordinates.
 <br><li><i>sy :</i> 
     The vertical positions of the start co-ordinates.
 <br><li><i>dtypes :</i> 
     The types of the vector directions. If this is NULL, all
-    directions are assumed to be in world co-ordinates.
+    directions are assumed to be in world co-ordinates. See
+    <a href=overlay.html#OVERLAY_COORDINATE_TYPES>OVERLAY_COORDINATE_TYPES</a> for a list of supported co-ordinate types.
 <br><li><i>dx :</i> 
     The horizontal vector directions.
 <br><li><i>dy :</i> 
@@ -363,10 +380,18 @@
     The ID of the list which created the object. If this is 0, the
     list given by <em>olist</em> is assumed.
 <br><li><i>dx :</i> 
-    The horizontal distance to move.
+    The horizontal distance to move. This is of the same co-ordinate type
+    as the original co-ordinates.
 <br><li><i>dy :</i> 
-    The vertical distance to move.
+    The vertical distance to move. This is of the same co-ordinate type
+    as the original co-ordinates.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
-<br><b>Multithreading Level:</b> Unsafe<br><p>
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Tables</h2></center><hr> <a name=OVERLAY_COORDINATE_TYPES><b>OVERLAY_COORDINATE_TYPES</b></a><p> <table><tr><td>Name                    </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>OVERLAY_COORD_PIXEL     </td><td>Pixel co-ordinates
+</td></tr><tr><td>OVERLAY_COORD_RELATIVE  </td><td>Relative to a unit canvas (0,0) to (1,1)
+</td></tr><tr><td>OVERLAY_COORD_WORLD     </td><td>True world co-ordinates
+</td></tr><tr><td>OVERLAY_COORD_LAST      </td><td>Use last co-ordinate instead
+</table><p>
 <hr><a href="../index.html">Back to Karma Home Page</a>
 <hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.ariel.com.au/">Ariel Internet Services</a></address></center></body></html>

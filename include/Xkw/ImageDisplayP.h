@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   18-DEC-1994
 
-    Last updated by Richard Gooch   21-OCT-1996
+    Last updated by Richard Gooch   6-NOV-1996
 
 */
 
@@ -86,6 +86,8 @@ typedef struct _ImageDisplayPart
     flag          set_canvases;
     Kcolourmap    pseudo_cmap;
     Kcolourmap    direct_cmap;
+    unsigned int  num_unrealised;
+    Widget        magnifier_popup;
     Widget        magnifier_pseudo_canvas;
     Widget        magnifier_direct_canvas;
     Widget        magnifier_true_canvas;

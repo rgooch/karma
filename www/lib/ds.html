@@ -68,11 +68,19 @@
 </td></tr>
 <tr><td><a href=ds.html#ds_get_fits_axis>ds_get_fits_axis</a></td><td>Get the FITS axis number of a dimension.
 </td></tr>
+<tr><td><a href=ds.html#ds_get_data_scaling>ds_get_data_scaling</a></td><td>Get the scale and offset for a data element in a packet.
+</td></tr>
 <tr><td><a href=ds.html#ds_cmap_alloc_colourmap>ds_cmap_alloc_colourmap</a></td><td>Allocate a Karma data structure to hold a colourmap.
 </td></tr>
 <tr><td><a href=ds.html#ds_cmap_find_colourmap>ds_cmap_find_colourmap</a></td><td>Search a Karma data structure for an instance of a colourmap.
 </td></tr>
 <tr><td><a href=ds.html#ds_cmap_get_all_colourmaps>ds_cmap_get_all_colourmaps</a></td><td>Search an array of Karma data structures for colourmaps.
+</td></tr>
+<tr><td><a href=ds.html#ds_compare_packet_desc>ds_compare_packet_desc</a></td><td>Recursively compare two packet descriptors.
+</td></tr>
+<tr><td><a href=ds.html#ds_compare_array_desc>ds_compare_array_desc</a></td><td>Recursively compare two array descriptors.
+</td></tr>
+<tr><td><a href=ds.html#ds_compare_dim_desc>ds_compare_dim_desc</a></td><td>Compare two dimension descriptors.
 </td></tr>
 <tr><td><a href=ds.html#ds_contour>ds_contour</a></td><td>Extract contours from a 2-dimensional array.
 </td></tr>
@@ -114,6 +122,20 @@
 </td></tr>
 <tr><td><a href=ds.html#ds_draw_polygon>ds_draw_polygon</a></td><td>Draw a polygon into a 2 dimensional array.
 </td></tr>
+<tr><td><a href=ds.html#ds_identify_name>ds_identify_name</a></td><td>Search a data structure for a name.
+</td></tr>
+<tr><td><a href=ds.html#ds_f_array_name>ds_f_array_name</a></td><td>Search a the top level of a data structure for a name.
+</td></tr>
+<tr><td><a href=ds.html#ds_f_name_in_packet>ds_f_name_in_packet</a></td><td>Recursively search for named item under a packet.
+</td></tr>
+<tr><td><a href=ds.html#ds_f_name_in_array>ds_f_name_in_array</a></td><td>Recursively search for named item under an array.
+</td></tr>
+<tr><td><a href=ds.html#ds_f_elem_in_packet>ds_f_elem_in_packet</a></td><td>Search for a named element in a packet, without recursion.
+</td></tr>
+<tr><td><a href=ds.html#ds_find_hole>ds_find_hole</a></td><td>Recursively search packet for a hole.
+</td></tr>
+<tr><td><a href=ds.html#ds_f_dim_in_array>ds_f_dim_in_array</a></td><td>Find dimension in array.
+</td></tr>
 <tr><td><a href=ds.html#ds_convert_atomic>ds_convert_atomic</a></td><td>Convert an atomic datum to a double precision value.
 </td></tr>
 <tr><td><a href=ds.html#ds_get_coordinate>ds_get_coordinate</a></td><td>Get a co-ordinate along a dimension.
@@ -131,26 +153,6 @@
 <tr><td><a href=ds.html#ds_element_is_named>ds_element_is_named</a></td><td>Test if an element is a named data type.
 </td></tr>
 <tr><td><a href=ds.html#ds_element_is_legal>ds_element_is_legal</a></td><td>Test if an element is legal.
-</td></tr>
-<tr><td><a href=ds.html#ds_identify_name>ds_identify_name</a></td><td>Search a data structure for a name.
-</td></tr>
-<tr><td><a href=ds.html#ds_f_array_name>ds_f_array_name</a></td><td>Search a the top level of a data structure for a name.
-</td></tr>
-<tr><td><a href=ds.html#ds_f_name_in_packet>ds_f_name_in_packet</a></td><td>Recursively search for named item under a packet.
-</td></tr>
-<tr><td><a href=ds.html#ds_f_name_in_array>ds_f_name_in_array</a></td><td>Recursively search for named item under an array.
-</td></tr>
-<tr><td><a href=ds.html#ds_f_elem_in_packet>ds_f_elem_in_packet</a></td><td>Search for a named element in a packet, without recursion.
-</td></tr>
-<tr><td><a href=ds.html#ds_find_hole>ds_find_hole</a></td><td>Recursively search packet for a hole.
-</td></tr>
-<tr><td><a href=ds.html#ds_compare_packet_desc>ds_compare_packet_desc</a></td><td>Recursively compare two packet descriptors.
-</td></tr>
-<tr><td><a href=ds.html#ds_compare_array_desc>ds_compare_array_desc</a></td><td>Recursively compare two array descriptors.
-</td></tr>
-<tr><td><a href=ds.html#ds_compare_dim_desc>ds_compare_dim_desc</a></td><td>Compare two dimension descriptors.
-</td></tr>
-<tr><td><a href=ds.html#ds_f_dim_in_array>ds_f_dim_in_array</a></td><td>Find dimension in array.
 </td></tr>
 <tr><td><a href=ds.html#ds_get_array_offset>ds_get_array_offset</a></td><td>Compute offset of a co-ordinate in an array.
 </td></tr>
@@ -191,6 +193,10 @@
 <tr><td><a href=ds.html#ds_list_unfragment>ds_list_unfragment</a></td><td>Unfragment a linked list.
 </td></tr>
 <tr><td><a href=ds.html#ds_list_fragment>ds_list_fragment</a></td><td>Fragment a linked list.
+</td></tr>
+<tr><td><a href=ds.html#ds_format_unit>ds_format_unit</a></td><td>Format a unit string.
+</td></tr>
+<tr><td><a href=ds.html#ds_format_value>ds_format_value</a></td><td>Format a data value into a string.
 </td></tr>
 <tr><td><a href=ds.html#ds_remove_dim_desc>ds_remove_dim_desc</a></td><td>Remove dimension from an array.
 </td></tr>
@@ -823,7 +829,8 @@
 		       unsigned int length2, uaddr *offsets2,
 		       unsigned int elem_type, unsigned int conv_type,
 		       double *min, double *max, double *mean,
-		       double *stddev, double *sum, unsigned long *npoints)
+		       double *stddev, double *sum, double *sumsq,
+		       unsigned long *npoints)
 </i><br><p>    This routine will find the minimum, maximum, mean, rms and sum of
     a single plane (element versus two dimensions).
 <p><b>Parameters:</b><ul><li><i>data :</i> 
@@ -851,6 +858,8 @@
     The standard deviation will be written here.
 <br><li><i>sum :</i> 
     The total of all values will be written here.
+<br><li><i>sumsq :</i> 
+    The total of the squares of all values will be written here.
 <br><li><i>npoints :</i> 
     The number of values used to compute statistics will be written
     here. This will differ from num_values if there are blanked pixels.
@@ -977,6 +986,34 @@
 <br><li><i>dim_name :</i> 
     The name of the dimension.
 <br></ul><b>Returns:</b>     The FITS axis number on success, else 0.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_data_scaling></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>ds_get_data_scaling</b><i>    (CONST char *elem_name, CONST packet_desc *pack_desc,
+			  CONST char *packet, double *scale, double *offset)
+</i><br><p>    This routine will determine the scale and offset for data in an
+    packet. This may be important when a floating-point array has
+    been converted to an integer array to save space. Scaling information
+    should be attached to the array so that the original data values may be
+    reconstructed (aside from quantisation effects). The following expression
+    may be used to convert scaled values to real values:
+    (output = input * scale + offset). The scaling and offset values should
+    previously have been attached to the array using an appropriate routine.
+    No low-level routine currently exists to do this, but higher-level support
+    is given by the <a href=iarray.html#iarray_set_data_scaling>iarray_set_data_scaling</a> routine.
+<p><b>Parameters:</b><ul><li><i>elem_name :</i> 
+    The name of the element.
+<br><li><i>pack_desc :</i> 
+    The packet descriptor.
+<br><li><i>packet :</i> 
+    The packet.
+<br><li><i>scale :</i> 
+    The scaling value will be written here. The name of the scaling
+    value is constructed by appending "__SCALE" to the element name. If no
+    scaling value is found, 1.0 is written here.
+<br><li><i>offset :</i> 
+    The offset value will be written here. The name of the offset
+    value is constructed by appending "__OFFSET" to the element name. If no
+    offset value is found, 0.0 is written here.
+<br></ul><b>Returns:</b>     TRUE if either the scaling or offset value were found, else FALSE
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_cmap_alloc_colourmap></a> unsigned short *
  <b>ds_cmap_alloc_colourmap</b><i>    (unsigned int size,
 					 multi_array **multi_desc,
@@ -1075,7 +1112,39 @@
     and <em>num_restr</em> set to zero. In this case, the routine will only return a
     colourmap if there is only one instance of a colourmap in the entire data
     structure.
-</ul><p><hr> <a name=ds_contour></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>unsigned int
+</ul><p><hr> <a name=ds_compare_packet_desc></a> flag
+ <b>ds_compare_packet_desc</b><i>    (CONST packet_desc *desc1,CONST packet_desc *desc2,
+			     flag recursive)
+</i><br><p>    Recursively compare two packet descriptors.
+<p><b>Parameters:</b><ul><li><i>desc1 :</i> 
+    One of the packet descriptors.
+<br><li><i>desc2 :</i> 
+    The other packet descriptor.
+<br><li><i>recursive :</i> 
+    If TRUE the routine will perform a recursive comparison of
+    sub-arrays and linked list descriptors.
+<br></ul><b>Returns:</b>     TRUE if the two packet descriptors are equal, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_compare_array_desc></a> flag
+ <b>ds_compare_array_desc</b><i>    (CONST array_desc *desc1, CONST array_desc *desc2,
+			    flag recursive)
+</i><br><p>    Recursively compare two array descriptors.
+<p><b>Parameters:</b><ul><li><i>desc1 :</i> 
+    One of the array descriptors.
+<br><li><i>desc2 :</i> 
+    The other array descriptor.
+<br><li><i>recursive :</i> 
+    If TRUE the routine will perform a recursive comparison of the
+    array packet descriptors.
+<br></ul><b>Returns:</b>     TRUE if the two array descriptors are equal, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_compare_dim_desc></a> flag
+ <b>ds_compare_dim_desc</b><i>    (CONST dim_desc *desc1, CONST dim_desc *desc2)
+</i><br><p>    Compare two dimension descriptors.
+<p><b>Parameters:</b><ul><li><i>desc1 :</i> 
+    One of the dimension descriptors.
+<br><li><i>desc2 :</i> 
+    The other dimension descriptor.
+<br></ul><b>Returns:</b>     TRUE if the two dimension descriptors are equal, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_contour></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>unsigned int
  <b>ds_contour</b><i>    (CONST char *image, unsigned int elem_type,
 			 CONST dim_desc *hdim, CONST uaddr *hoffsets,
 			 CONST dim_desc *vdim, CONST uaddr *voffsets,
@@ -1423,86 +1492,6 @@
 <br><li><i>value :</i> 
     The value to write the polygon into the array.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_convert_atomic></a> double
- <b>ds_convert_atomic</b><i>    (CONST char *datum, unsigned int datum_type,
-			  double *real_out, double *imag_out)
-</i><br><p>    Convert an atomic datum to a double precision value.
-<p><b>Parameters:</b><ul><li><i>datum :</i> 
-    The datum to be converted.
-<br><li><i>datum_type :</i> 
-    The type of the datum. See <a href=ds.html#DS_KARMA_DATA_TYPES>DS_KARMA_DATA_TYPES</a> for a list
-    of legal values. The following data types are not convertible, and the
-    routine will return the value TOOBIG:  NONE, K_ARRAY, LISTP, MULTI_ARRAY.
-<br><li><i>real_out :</i> 
-    The real component of the data is written here. If this is NULL,
-    nothing is written here. This must lie on a <em>double</em> boundary.
-<br><li><i>imag_out :</i> 
-    The imaginary component of the data is written here. If this is
-    NULL, nothing is written here. This must lie on a <em>double</em> boundary. For
-    a real value, 0.0 is written.
-<br></ul><b>Returns:</b>     The absolute magnitude of the converted value on success,
-    else TOOBIG.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_coordinate></a> double
- <b>ds_get_coordinate</b><i>    (CONST dim_desc *dimension, double coord_num)
-</i><br><p>    Get a co-ordinate along a dimension.
-<p><b>Parameters:</b><ul><li><i>dimension :</i> 
-    The dimension descriptor.
-<br><li><i>coord_num :</i> 
-    The co-ordinate index.
-<br></ul><b>Returns:</b>     The co-ordinate on success, else TOOBIG.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_element_offset></a> unsigned int
- <b>ds_get_element_offset</b><i>    (CONST packet_desc *pack_desc,
-				    unsigned int elem_num)
-</i><br><p>    Calculate the offset of the start of a data element in a packet.
-<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
-    The descriptor for the data packet.
-<br><li><i>elem_num :</i> 
-    The number of the element.
-<br></ul><b>Returns:</b>     The byte offset of the element in the packet on success, else the
-    length of the packet is returned.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_packet_size></a> unsigned int
- <b>ds_get_packet_size</b><i>    (CONST packet_desc *pack_desc)
-</i><br><p>    Calculate size in bytes of a packet.
-<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
-    The packet descriptor.
-<br></ul><b>Returns:</b>     The size in bytes.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_array_size></a> unsigned long
- <b>ds_get_array_size</b><i>    (CONST array_desc *arr_desc)
-</i><br><p>    Calculate the number of co-ordinate points in an array.
-<p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
-    The array descriptor.
-<br></ul><b>Returns:</b>     The size of the array (in co-ordinate points).
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_packet_all_data></a> flag
- <b>ds_packet_all_data</b><i>    (CONST packet_desc *pack_desc)
-</i><br><p>    This routine will determine if all the elements in a packet are
-    atomic (i.e. no sub-arrays, linked lists or strings). All element types in
-    the packet descriptor must be legal, else the routine will print an error
-    message and abort processing.
-<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
-    The packet descriptor.
-<br></ul><b>Returns:</b>     TRUE if the data elements are all atomic, else FALSE.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_element_is_atomic></a> flag
- <b>ds_element_is_atomic</b><i>    (unsigned int element_type)
-</i><br><p>    This routine will determine if an element is atomic (i.e. not a
-    sub-array, linked list or string). The element type must be legal, else the
-    routine will print an error message and abort processing.
-<p><b>Parameters:</b><ul><li><i>element_type :</i> 
-    The type of the element.
-<br></ul><b>Returns:</b>     TRUE if the element is atomic, else FALSE.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_element_is_named></a> flag
- <b>ds_element_is_named</b><i>    (unsigned int element_type)
-</i><br><p>    This routine will determine if an element is a named data type
-    (i.e. not a sub-array or linked list). The element type must be legal, else
-    the routine will print an error message and abort processing.
-<p><b>Parameters:</b><ul><li><i>element_type :</i> 
-    The type of the element.
-<br></ul><b>Returns:</b>     TRUE if the element is a named type, else FALSE.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_element_is_legal></a> flag
- <b>ds_element_is_legal</b><i>    (unsigned int element_type)
-</i><br><p>    Test if an element is legal.
-<p><b>Parameters:</b><ul><li><i>element_type :</i> 
-    The type of the element.
-<br></ul><b>Returns:</b>     TRUE if the element type is legal, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_identify_name></a> unsigned int
  <b>ds_identify_name</b><i>    (CONST multi_array *multi_desc, CONST char *name,
 			       char **encls_desc, unsigned int *index)
@@ -1603,38 +1592,6 @@
     is written here. If this is NULL, nothing is written here.
 <br></ul><b>Returns:</b>     A code indicating the status of the search. See
     <a href=ds.html#DS_IDENT_TABLE>DS_IDENT_TABLE</a> for a list of possible values.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_compare_packet_desc></a> flag
- <b>ds_compare_packet_desc</b><i>    (CONST packet_desc *desc1,CONST packet_desc *desc2,
-			     flag recursive)
-</i><br><p>    Recursively compare two packet descriptors.
-<p><b>Parameters:</b><ul><li><i>desc1 :</i> 
-    One of the packet descriptors.
-<br><li><i>desc2 :</i> 
-    The other packet descriptor.
-<br><li><i>recursive :</i> 
-    If TRUE the routine will perform a recursive comparison of
-    sub-arrays and linked list descriptors.
-<br></ul><b>Returns:</b>     TRUE if the two packet descriptors are equal, else FALSE.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_compare_array_desc></a> flag
- <b>ds_compare_array_desc</b><i>    (CONST array_desc *desc1, CONST array_desc *desc2,
-			    flag recursive)
-</i><br><p>    Recursively compare two array descriptors.
-<p><b>Parameters:</b><ul><li><i>desc1 :</i> 
-    One of the array descriptors.
-<br><li><i>desc2 :</i> 
-    The other array descriptor.
-<br><li><i>recursive :</i> 
-    If TRUE the routine will perform a recursive comparison of the
-    array packet descriptors.
-<br></ul><b>Returns:</b>     TRUE if the two array descriptors are equal, else FALSE.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_compare_dim_desc></a> flag
- <b>ds_compare_dim_desc</b><i>    (CONST dim_desc *desc1, CONST dim_desc *desc2)
-</i><br><p>    Compare two dimension descriptors.
-<p><b>Parameters:</b><ul><li><i>desc1 :</i> 
-    One of the dimension descriptors.
-<br><li><i>desc2 :</i> 
-    The other dimension descriptor.
-<br></ul><b>Returns:</b>     TRUE if the two dimension descriptors are equal, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_f_dim_in_array></a> unsigned int
  <b>ds_f_dim_in_array</b><i>    (CONST array_desc *arr_desc, CONST char *name)
 </i><br><p>    Find dimension in array.
@@ -1646,7 +1603,87 @@
 <br></ul><b>Returns:</b>     The number of the dimension in the array if it was found, else
     the number of dimensions in the array.
 <br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     If the specified name occurs twice, the program aborts.
-</ul><p><hr> <a name=ds_get_array_offset></a> unsigned long
+</ul><p><hr> <a name=ds_convert_atomic></a> double
+ <b>ds_convert_atomic</b><i>    (CONST char *datum, unsigned int datum_type,
+			  double *real_out, double *imag_out)
+</i><br><p>    Convert an atomic datum to a double precision value.
+<p><b>Parameters:</b><ul><li><i>datum :</i> 
+    The datum to be converted.
+<br><li><i>datum_type :</i> 
+    The type of the datum. See <a href=ds.html#DS_KARMA_DATA_TYPES>DS_KARMA_DATA_TYPES</a> for a list
+    of legal values. The following data types are not convertible, and the
+    routine will return the value TOOBIG:  NONE, K_ARRAY, LISTP, MULTI_ARRAY.
+<br><li><i>real_out :</i> 
+    The real component of the data is written here. If this is NULL,
+    nothing is written here. This must lie on a <em>double</em> boundary.
+<br><li><i>imag_out :</i> 
+    The imaginary component of the data is written here. If this is
+    NULL, nothing is written here. This must lie on a <em>double</em> boundary. For
+    a real value, 0.0 is written.
+<br></ul><b>Returns:</b>     The absolute magnitude of the converted value on success,
+    else TOOBIG.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_coordinate></a> double
+ <b>ds_get_coordinate</b><i>    (CONST dim_desc *dimension, double coord_num)
+</i><br><p>    Get a co-ordinate along a dimension.
+<p><b>Parameters:</b><ul><li><i>dimension :</i> 
+    The dimension descriptor.
+<br><li><i>coord_num :</i> 
+    The co-ordinate index.
+<br></ul><b>Returns:</b>     The co-ordinate on success, else TOOBIG.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_element_offset></a> unsigned int
+ <b>ds_get_element_offset</b><i>    (CONST packet_desc *pack_desc,
+				    unsigned int elem_num)
+</i><br><p>    Calculate the offset of the start of a data element in a packet.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The descriptor for the data packet.
+<br><li><i>elem_num :</i> 
+    The number of the element.
+<br></ul><b>Returns:</b>     The byte offset of the element in the packet on success, else the
+    length of the packet is returned.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_packet_size></a> unsigned int
+ <b>ds_get_packet_size</b><i>    (CONST packet_desc *pack_desc)
+</i><br><p>    Calculate size in bytes of a packet.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The packet descriptor.
+<br></ul><b>Returns:</b>     The size in bytes.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_array_size></a> unsigned long
+ <b>ds_get_array_size</b><i>    (CONST array_desc *arr_desc)
+</i><br><p>    Calculate the number of co-ordinate points in an array.
+<p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
+    The array descriptor.
+<br></ul><b>Returns:</b>     The size of the array (in co-ordinate points).
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_packet_all_data></a> flag
+ <b>ds_packet_all_data</b><i>    (CONST packet_desc *pack_desc)
+</i><br><p>    This routine will determine if all the elements in a packet are
+    atomic (i.e. no sub-arrays, linked lists or strings). All element types in
+    the packet descriptor must be legal, else the routine will print an error
+    message and abort processing.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The packet descriptor.
+<br></ul><b>Returns:</b>     TRUE if the data elements are all atomic, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_element_is_atomic></a> flag
+ <b>ds_element_is_atomic</b><i>    (unsigned int element_type)
+</i><br><p>    This routine will determine if an element is atomic (i.e. not a
+    sub-array, linked list or string). The element type must be legal, else the
+    routine will print an error message and abort processing.
+<p><b>Parameters:</b><ul><li><i>element_type :</i> 
+    The type of the element.
+<br></ul><b>Returns:</b>     TRUE if the element is atomic, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_element_is_named></a> flag
+ <b>ds_element_is_named</b><i>    (unsigned int element_type)
+</i><br><p>    This routine will determine if an element is a named data type
+    (i.e. not a sub-array or linked list). The element type must be legal, else
+    the routine will print an error message and abort processing.
+<p><b>Parameters:</b><ul><li><i>element_type :</i> 
+    The type of the element.
+<br></ul><b>Returns:</b>     TRUE if the element is a named type, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_element_is_legal></a> flag
+ <b>ds_element_is_legal</b><i>    (unsigned int element_type)
+</i><br><p>    Test if an element is legal.
+<p><b>Parameters:</b><ul><li><i>element_type :</i> 
+    The type of the element.
+<br></ul><b>Returns:</b>     TRUE if the element type is legal, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_array_offset></a> unsigned long
  <b>ds_get_array_offset</b><i>    (CONST array_desc *arr_desc,
 				   CONST unsigned long *coordinates)
 </i><br><p>    Compute offset of a co-ordinate in an array.
@@ -1983,7 +2020,41 @@
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The <em>contiguous_length</em> value in the linked list header will be
     set to 0.
-</ul><p><hr> <a name=ds_remove_dim_desc></a> flag
+</ul><p><hr> <a name=ds_format_unit></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>void
+ <b>ds_format_unit</b><i>    (char unit[STRING_LENGTH], double *scale,
+		     CONST char *value_name)
+</i><br><p>    Format a unit string.
+<p><b>Parameters:</b><ul><li><i>unit :</i> 
+    The unit string will be written here.
+<br><li><i>scale :</i> 
+    The scale value to apply to data to convert to displayed units will
+    be written here. If this is NULL nothing is written here.
+<br><li><i>value_name :</i> 
+    The name of the value to format.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_format_value></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>void
+ <b>ds_format_value</b><i>    (char string[STRING_LENGTH], double value,
+		      CONST char *value_name, double scale, double offset,
+		      CONST packet_desc *pack_desc, CONST char *packet)
+</i><br><p>    Format a data value into a string.
+<p><b>Parameters:</b><ul><li><i>string :</i> 
+    The string to write to.
+<br><li><i>value :</i> 
+    The value to format.
+<br><li><i>value_name :</i> 
+    The name of the value to format.
+<br><li><i>scale :</i> 
+    The scale value to apply to the data. If this is TOOBIG and
+    <em>pack_desc</em> and <em>packet</em> are non-NULL, the routine uses the scale and
+    offset attached to the data. See <a href=ds.html#ds_get_data_scaling>ds_get_data_scaling</a> for details.
+<br><li><i>offset :</i> 
+    The offset to apply after scaling the data.
+<br><li><i>pack_desc :</i> 
+    The packet descriptor containing associated data scaling.
+<br><li><i>packet :</i> 
+    The packet containing associated data scaling.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_remove_dim_desc></a> flag
  <b>ds_remove_dim_desc</b><i>    (array_desc *arr_desc, CONST char *dim_name)
 </i><br><p>    This routine will remove a dimension descriptor from an array
     descriptor. Tiling information is preserved, however, any address offset

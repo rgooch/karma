@@ -63,6 +63,9 @@ typedef struct miriad_data_context_type * KMiriadDataContext;
 #define FA_PPM_READ_END                0
 
 
+#define FA_PGM_READ_END                0
+
+
 #define FA_FITS_READ_HEADER_END        0
 
 #define FA_FITS_READ_DATA_END          0
@@ -126,6 +129,7 @@ typedef struct miriad_data_context_type * KMiriadDataContext;
 #define FOREIGN_FILE_FORMAT_SUNRAS  4
 #define FOREIGN_FILE_FORMAT_MIRIAD  5
 #define FOREIGN_FILE_FORMAT_GIPSY   6
+#define FOREIGN_FILE_FORMAT_PGM     7
 
 
 /*  File:   ppm_write.c   */
@@ -155,6 +159,9 @@ EXTERN_FUNCTION (flag foreign_ppm_write_rgb,
 
 /*  File:  ppm_read.c   */
 EXTERN_FUNCTION (multi_array *foreign_ppm_read, (Channel channel, ...) );
+
+/*  File:  pgm_read.c   */
+EXTERN_FUNCTION (multi_array *foreign_pgm_read, (Channel channel, ...) );
 
 /*  File:  fits_read.c   */
 EXTERN_FUNCTION (multi_array *foreign_fits_read_header,

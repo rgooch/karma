@@ -65,8 +65,10 @@
 
     Updated by      Richard Gooch   6-JUN-1996: Write 0 to K_UBYTE for blanks.
 
-    Last updated by Richard Gooch   15-OCT-1996: Added CONST declaration to
+    Updated by      Richard Gooch   15-OCT-1996: Added CONST declaration to
   <ds_put_named_element>.
+
+    Last updated by Richard Gooch   3-NOV-1996: Improved blank trapping.
 
 
 */
@@ -126,20 +128,16 @@ char *ds_put_element (char *output, unsigned int type, double input[2])
 	*(double *) out_ptr = input[0];
 	break;
       case K_BYTE:
-	if (input[0] >= toobig)
-	{
-	    *(signed char *) out_ptr = -128;
-	}
-	else
-	{
-	    *(signed char *) out_ptr = input[0];
-	}
+	if (input[0] >= toobig) *(signed char *) out_ptr = -128;
+	else *(signed char *) out_ptr = input[0];
 	break;
       case K_INT:
-	*(signed int *) out_ptr = input[0];
+	if (input[0] >= toobig) *(signed int *) out_ptr = -2147483647 - 1;
+	else *(signed int *) out_ptr = input[0];
 	break;
       case K_SHORT:
-	*(signed short *) out_ptr = input[0];
+	if (input[0] >= toobig) *(signed short *) out_ptr = -32768;
+	else *(signed short *) out_ptr = input[0];
 	break;
       case K_COMPLEX:
 	*(float *) out_ptr = input[0];
@@ -198,7 +196,7 @@ char *ds_put_element (char *output, unsigned int type, double input[2])
 	*( (unsigned long *) out_ptr + 1 ) = input[1];
 	break;
       default:
-	(void) fprintf (stderr, "Illegal data type: %u\n", type);
+	fprintf (stderr, "Illegal data type: %u\n", type);
 	a_prog_bug (function_name);
 	break;
     }
@@ -236,12 +234,12 @@ flag ds_put_elements (char *data, unsigned int data_type,
 
     if (data == NULL)
     {
-	(void) fprintf (stderr, "NULL data pointer passed\n");
+	fprintf (stderr, "NULL data pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (values == NULL)
     {
-	(void) fprintf (stderr, "NULL values storage pointer passed\n");
+	fprintf (stderr, "NULL values storage pointer passed\n");
 	a_prog_bug (function_name);
     }
 #ifdef NEED_ALIGNED_DATA
@@ -263,12 +261,10 @@ flag ds_put_elements (char *data, unsigned int data_type,
       case K_ARRAY:
       case LISTP:
       case MULTI_ARRAY:
-	(void) fprintf (stderr, "%s: Non-atomic data type: %u\n",
-			function_name, data_type);
+	fprintf (stderr, "%s: Non-atomic data type: %u\n",
+		 function_name, data_type);
 	return (FALSE);
-/*
-	break;
-*/
+	/*break;*/
       case K_FLOAT:
 	for (count = 0; count < num_values;
 	     ++count, data += data_stride, values += 2)
@@ -295,14 +291,16 @@ flag ds_put_elements (char *data, unsigned int data_type,
 	for (count = 0; count < num_values;
 	     ++count, data += data_stride, values += 2)
 	{
-	    *(signed int *) data = *values;
+	    if (*values >= toobig) *(signed int *) data = -2147483647 - 1;
+	    else *(signed int *) data = *values;
 	}
 	break;
       case K_SHORT:
 	for (count = 0; count < num_values;
 	     ++count, data += data_stride, values += 2)
 	{
-	    *(signed short *) data = *values;
+	    if (*values >= toobig) *(signed short *) data = -32768;
+	    else *(signed short *) data = *values;
 	}
 	break;
       case K_COMPLEX:
@@ -423,7 +421,7 @@ flag ds_put_elements (char *data, unsigned int data_type,
 	break;
       default:
 	/*  Unknown data type   */
-	(void) fprintf (stderr, "Illegal data type: %u\n", data_type);
+	fprintf (stderr, "Illegal data type: %u\n", data_type);
 	a_prog_bug (function_name);
 	break;
     }
@@ -460,13 +458,13 @@ flag ds_put_element_many_times (char *data, unsigned int data_type,
 
     if (data == NULL)
     {
-	(void) fprintf (stderr, "NULL data pointer passed\n");
+	fprintf (stderr, "NULL data pointer passed\n");
 	a_prog_bug (function_name);
 	return (FALSE);
     }
     if (value == NULL)
     {
-	(void) fprintf (stderr, "NULL value storage pointer passed\n");
+	fprintf (stderr, "NULL value storage pointer passed\n");
 	a_prog_bug (function_name);
 	return (FALSE);
     }
@@ -488,12 +486,9 @@ flag ds_put_element_many_times (char *data, unsigned int data_type,
       case K_ARRAY:
       case LISTP:
       case MULTI_ARRAY:
-	(void) fprintf (stderr, "Non-atomic data type: %u\n",
-			data_type);
+	fprintf (stderr, "Non-atomic data type: %u\n", data_type);
 	return (FALSE);
-/*
-	break;
-*/
+	/*break;*/
       case K_FLOAT:
 	fr = *value;
 	for (count = 0; count < num_elem; ++count, data += data_stride)
@@ -517,14 +512,16 @@ flag ds_put_element_many_times (char *data, unsigned int data_type,
 	}
 	break;
       case K_INT:
-	sir = *value;
+	if (*value >= toobig) sir = -2147483647 - 1;
+	else sir = *value;
 	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
 	    *(signed int *) data = sir;
 	}
 	break;
       case K_SHORT:
-	sir = *value;
+	if (*value >= toobig) sir = -32768;
+	else sir = *value;
 	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
 	    *(signed short *) data = sir;
@@ -658,7 +655,7 @@ flag ds_put_element_many_times (char *data, unsigned int data_type,
 	break;
       default:
 	/*  Unknown data type   */
-	(void) fprintf (stderr, "Illegal data type: %u\n", data_type);
+	fprintf (stderr, "Illegal data type: %u\n", data_type);
 	a_prog_bug (function_name);
 	break;
     }
@@ -680,9 +677,9 @@ flag ds_put_named_element (CONST packet_desc *pack_desc, char *packet,
 
     /*  Test to see if named item exists  */
     if ( ( elem_index = ds_f_elem_in_packet (pack_desc, name) )
-	>= pack_desc->num_elements )
+	 >= pack_desc->num_elements )
     {
-	(void) fprintf (stderr, "Element: \"%s\" not found\n", name);
+	fprintf (stderr, "Element: \"%s\" not found\n", name);
 	return (FALSE);
     }
     /*  Write in new data  */

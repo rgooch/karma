@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   16-APR-1993
 
-    Last updated by Richard Gooch   21-OCT-1996
+    Last updated by Richard Gooch   28-NOV-1996
 
 */
 
@@ -140,16 +140,6 @@ EXTERN_FUNCTION (flag kwin_open_gl_create_stereo,
 		  int xoff, int yoff, int width, int height,
 		  KPixCanvas *left, KPixCanvas *right) );
 
-/*  For the file: visuals.c  */
-EXTERN_FUNCTION (void kwin_xutil_get_vinfos,
-		 (Screen *screen, XVisualInfo **pseudocolour,
-		  XVisualInfo **truecolour, XVisualInfo **directcolour) );
-EXTERN_FUNCTION (void kwin_xutil_get_visuals,
-		 (Screen *screen, Visual **pseudocolour,
-		  Visual **truecolour, Visual **directcolour) );
-EXTERN_FUNCTION (XVisualInfo *kwin_xutil_get_visinfo_for_visual,
-		 (Display *dpy, Visual *visual) );
-
 #  endif  /*  X11  */
 
 /*  VX specific routines  */
@@ -172,6 +162,8 @@ EXTERN_FUNCTION (KCallbackFunc kwin_register_position_event_func,
 EXTERN_FUNCTION (flag kwin_resize, (KPixCanvas canvas, flag clear,
 				    int xoff, int yoff,
 				    int width, int height) );
+EXTERN_FUNCTION (flag kwin_refresh_if_visible,
+		 (KPixCanvas canvas, flag clear) );
 EXTERN_FUNCTION (flag kwin_partial_refresh,
 		 (KPixCanvas canvas, unsigned int num_areas,
 		  KPixCanvasRefreshArea *areas, flag clear_all) );
@@ -248,6 +240,10 @@ EXTERN_FUNCTION (flag kwin_fill_polygon, (KPixCanvas canvas,
 					  unsigned int num_vertices,
 					  unsigned long pixel_value,
 					  flag convex) );
+EXTERN_FUNCTION (flag kwin_fill_polygon_TRANSITION,
+		 (KPixCanvas canvas, double *point_x, double *point_y,
+		  unsigned int num_vertices, unsigned long pixel_value,
+		  flag convex) );
 EXTERN_FUNCTION (flag kwin_draw_string, (KPixCanvas canvas, double x, double y,
 					 CONST char *string,
 					 unsigned long pixel_value,

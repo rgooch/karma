@@ -4,6 +4,6 @@ CFLAGS = -I$(XINCLUDEPATH)
 LDFLAGS =
 DEPENDFLAGS = -I$(XINCLUDEPATH)
 
-inclibs = -L$(XLIBPATH) -lkarma -lXt -lX11 -ltermcap -lc -lm -lbsd
+inclibs = -L$(XLIBPATH) -lkarmaX11 -lkarma -lXt -lX11 -ltermcap -lc -lm -lbsd
 
 include $(KARMAROOT)/source/lib/makefiles/$(OS)/GNUmakefile.rules

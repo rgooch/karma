@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   1-OCT-1993
 
-    Last updated by Richard Gooch   28-SEP-1996
+    Last updated by Richard Gooch   23-NOV-1996
 
 */
 
@@ -90,6 +90,8 @@ EXTERN_FUNCTION (flag panel_process_command_with_stack,
 		 (char *cmd, flag (*unknown_func) (), FILE *fp) );
 EXTERN_FUNCTION (flag panel_put_history_with_stack,
 		 (multi_array *multi_desc, flag module_header) );
+EXTERN_FUNCTION (void panel_set_extra_comment_string,
+		 (KControlPanel panel, CONST char *string) );
 
 
 #endif /*  KARMA_PANEL_H  */

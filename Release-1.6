@@ -1,0 +1,260 @@
+Subject: NEW FUNCTION <ds_format_unit>
+Date: Sun, 10 Nov 1996 11:44:38 +1100
+
+SUMMARY:
+  A new experimental function <ds_format_unit> has been created.
+
+HEADER CHANGED:
+  <karma_ds.h>
+
+DESCRIPTION:
+  The <ds_format_unit> experimental function will format a unit string.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION <ds_format_value>
+Date: Sun, 10 Nov 1996 11:48:57 +1100
+
+SUMMARY:
+  The experimental <ds_format_value> function scales and formats values.
+
+HEADER CHANGED:
+  <karma_ds.h>
+
+DESCRIPTION:
+  The experimental <ds_format_value> function will apply a scale and
+an offset to a value and will format the value into string in
+human-friendly form.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION <ds_get_data_scaling>
+Date: Sun, 10 Nov 1996 11:51:58 +1100
+
+SUMMARY:
+  The experimental <ds_get_data_scaling> function has been created.
+
+HEADER CHANGED:
+  <karma_ds.h>
+
+DESCRIPTION:
+  The experimental <ds_get_data_scaling> function will find the
+scaling information for a data value in it's associated data
+structure. Scaling information is used to convert data in integer
+format to real-world units.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION <viewimg_track_compute>
+Date: Sun, 10 Nov 1996 11:58:30 +1100
+
+SUMMARY:
+  The experimental <viewimg_track_compute> function has been created.
+
+HEADER CHANGED:
+  <karma_viewimg.h>
+
+DESCRIPTION:
+  The experimental <viewimg_track_compute> function is a convenience
+routine for implementing track windows. A standard position event
+handler for the <viewimg> package simply passes many of the event
+parameters to the <viewimg_track_compute> function and is returned
+three formatted strings, containing pixel co-ordinates and data value,
+world co-ordinates and "extra" information.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <TracePopup> widget
+Date: Sun, 10 Nov 1996 12:05:50 +1100
+
+SUMMARY:
+  The <TracePopup> widget now displays co-ordinates.
+
+DESCRIPTION:
+  The <TracePopup> widget now supports astronomical world co-ordinates
+and displays the cursor position.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <ThreeDeeSlice> widget
+Date: Sun, 10 Nov 1996 12:15:07 +1100
+
+SUMMARY:
+  The <ThreeDeeSlice> widget has changed.
+
+CODE AFFECTED:
+  All code which uses the <XkwNcursorPosition> resource or receives
+<XkwNcursorCallback> callbacks will need to be changed.
+
+HEADER CHANGED:
+  <Xkw/ThreeDeeSlice.h>
+
+DESCRIPTION:
+  The <ThreeDeeSlice> widget is now capable of displaying cubes which
+are too large to show at 1:1 resolution. If a cube is too big then
+each slice is automatically subsampled.
+
+  The <XkwThreeDeeSliceSetCursor> function is now used to set the
+current cursor position.
+
+  The <ThreeDeeSlice> widget will display co-ordinate information as
+the mouse is moved over any of the three slice windows.
+
+REASON:
+  The cursor resource and callbacks changes are designed to give
+increased flexibility to applications which need to deal with
+3-dimensional cursor positions. Cursor positions may now be specified
+in data voxel index, linear or world co-ordinates. The cursor callback
+provides cursor positions in all three co-ordinate systems.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION <viewimg_set_array_attributes>
+Date: Sun, 10 Nov 1996 12:16:40 +1100
+
+SUMMARY:
+  The <viewimg_set_array_attributes> function has been created.
+
+HEADER CHANGED:
+  <karma_viewimg.h>
+
+DESCRIPTION:
+  The <viewimg_set_array_attributes> function will set a variable
+number of attributes on an array of ViewableImage objects. This allows
+the setting of attributes en masse for a sequence of images.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <viewimg> package
+Date: Sun, 10 Nov 1996 19:56:42 +1100
+
+SUMMARY:
+  New attributes for ViewableImage objects have been created.
+
+HEADER CHANGED:
+  <karma_viewimg.h>
+
+DESCRIPTION:
+  The VIEWIMG_VATT_DATA_SCALE attribute sets the default data
+multiplier which may then be used by routines such as
+<viewimg_track_compute> to convert integer image data to real-world
+values.
+
+  The VIEWIMG_VATT_DATA_OFFSET attribute sets the default data
+offset which may then be used by routines such as
+<viewimg_track_compute> to convert integer image data to real-world
+values.
+
+  The VIEWIMG_VATT_VALUE_MIN attribute allows a ViewableImage to
+override the default KWorldCanvas minimum intensity value when it
+is displayed. This allows canvas scaling to be associated with data.
+
+  The VIEWIMG_VATT_VALUE_MAX attribute allows a ViewableImage to
+override the default KWorldCanvas maximum intensity value when it
+is displayed. This allows canvas scaling to be associated with data.
+-------------------------------------------------------------------------------
+Subject: BUG FIX in <ds_copy_unique_named_element> routine
+Date: 12-NOV-1996
+
+SUMMARY:
+  The <ds_copy_unique_named_element> routine has been fixed.
+
+DESCRIPTION:
+  The <ds_copy_unique_named_element> routine would incorrectly fail
+when updating already existing elements.
+-------------------------------------------------------------------------------
+Subject: BUG FIX in <wcs> package
+Date: 14-NOV-1996
+
+SUMMARY:
+  The <wcs_astro_*> routines have been fixed.
+
+DESCRIPTION:
+  The <wcs_astro_*> routines had a 0.5 pixel offset in the Digital Sky
+Survey co-ordinate system support.
+-------------------------------------------------------------------------------
+Subject: BUG FIX in <mt> package
+Date: 15-NOV-1996
+
+SUMMARY:
+  The <mt> package no longer fails with older Linux kernels.
+
+DESCRIPTION:
+  The <mt> package would fail on older with older Linux kernels, since
+it depended on the newer format for /proc/cpuinfo (from kernel
+2.0.0). Instead of aborting, the package now just displays a warning
+message.
+-------------------------------------------------------------------------------
+Subject: BUG FIX in <wcs> package
+Date: 20-NOV-1996
+
+SUMMARY:
+  The <wcs_astro_*> routines have been fixed.
+
+DESCRIPTION:
+  The <wcs_astro_*> routines did not deal properly with fields around
+the north or south poles for the SIN, TAN, NCP and ARC projections.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <wcs> package
+Date: 20-NOV-1996
+
+SUMMARY:
+  The <wcs_astro_transform> routine has been threaded.
+
+DESCRIPTION:
+  The <wcs_astro_transform> routine has been threaded, yielding
+significant speedsups (2x to 3x on a 4 CPU HyperSPARC 90 machine).
+-------------------------------------------------------------------------------
+Subject: CHANGES to <SimpleSlider> widget
+Date: 21-NOV-1996
+
+SUMMARY:
+  The <SimpleSlider> widget can now display scaled data.
+
+DESCRIPTION:
+  The <SimpleSlider> widget has a new routine
+<XkwSimpleSliderSetScale> which will set the display scale for the
+widget. The application has the choice of displaying integer, floating
+point or both scales. The <XkwNscaledFormat> and <XkwNscaledUnit>
+resources allow may be used to control the formatting and units for
+the floating point data that is displayed.
+-------------------------------------------------------------------------------
+Subject: BUG FIX in <kwin_draw_rgb_image> routine
+Date: 22-NOV-1996
+
+SUMMARY:
+  The <kwin_draw_rgb_image> routine has been fixed.
+
+DESCRIPTION:
+  The <kwin_draw_rgb_image> routine incorrectly failed when
+redirecting from a PsuedoColour canvas to PostScript.
+-------------------------------------------------------------------------------
+Subject: BUG FIX in <kwin_draw_pc_image> routine
+Date: 22-NOV-1996
+
+SUMMARY:
+  The <kwin_draw_pc_image> routine has been fixed.
+
+DESCRIPTION:
+  The <kwin_draw_pc_image> routine did not reliably determine RGB
+values when redirecting from a TrueColour canvas to PostScript.
+-------------------------------------------------------------------------------
+Subject: BUG FIX in <iarray_get_sub_array_2D> routine
+Date: 23-NOV-1996
+
+SUMMARY:
+  The <iarray_get_sub_array_2D> routine has been fixed.
+
+DESCRIPTION:
+  The <iarray_get_sub_array_2D> routine did not copy a crucial member
+from the original array. Since this member was left uninitialised,
+results were unpredictable.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <wcs> package
+Date: 27-NOV-1996
+
+SUMMARY:
+  The ZEA (Zenithal Equal Area) projection has been added.
+
+DESCRIPTION:
+  Support for the ZEA (Zenithal Equal Area) projection has been added
+to the <wcs> package. This projection allows more than a hemisphere to
+be represented in an image.
+-------------------------------------------------------------------------------
+Subject: BUG FIX in <ExportMenu> widget
+Date: 27-NOV-1996
+
+SUMMARY:
+  A bug in writing PPM or Sun Rasterfile images has been fixed.
+
+DESCRIPTION:
+  The <ExportMenu> widget had a bug where the PseudoColour colourmap
+was being used when writing TrueColour images in PPM or Sun Rasterfile
+formats.
+-------------------------------------------------------------------------------
