@@ -1,0 +1,13 @@
+/*  Routines to manipulate X displays and colourmaps  */
+/*  This file describes the xc_ package of routines in the Karma library.
+
+    These routines are meant to provide an abstracted interface to X displays
+    and colourmaps, used in the  kclrmap_  routines.
+
+
+    Written by		Richard Gooch	25-FEB-1993
+
+    Last updated by	Richard Gooch	25-FEB-1993
+
+
+*/

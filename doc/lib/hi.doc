@@ -1,0 +1,24 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the hi_ package of routines in the Karma library.
+
+    These routines are meant to provide which a mechanism for saving and
+    restoring history (parameter) information.
+
+
+    Written by		Richard Gooch	3-OCT-1992
+
+    Last updated by	Richard Gooch	27-OCT-1992
+
+
+*/
+
+void hi_read (command_name,command_decode)
+/* Read defaults file and process */
+char *command_name;        /* name of command */
+flag (*command_decode) ();  /* Function to decode commands in defaults file */
+/*---------------------------------------------------------------------------*/
+
+void hi_write (command_name,command_decode)
+char *command_name;        /* name of command */
+flag (*command_decode) ();  /* Function to decode commands in defaults file */
+/*---------------------------------------------------------------------------*/

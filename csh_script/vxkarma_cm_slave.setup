@@ -1,0 +1,51 @@
+#! /bin/csh -f
+
+#   This C shell script is meant to be called by a remote shell invoked from
+#   the Connection Management Tool.
+
+#   Copyright (C) 1992,1993  Richard Gooch
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+#   Richard Gooch may be reached by email at  karma-request@atnf.csiro.au
+#   The postal address is:
+#     Richard Gooch, c/o ATNF, P. O. Box 76, Epping, N.S.W., 2121, Australia.
+
+if ( ("$?KARMABASE" != "0") && ("$?VXHOME" != "0") ) then
+    # User has already found Karma and VX/MVX: nice user
+    exec vxkarma_cm_slave $argv
+endif
+
+# Define Karma installed base (for ordinary users)
+setenv KARMABASE /usr/local/karma
+
+setenv KARMABINPATH ${KARMABASE}/bin
+setenv KARMALIBPATH ${KARMABASE}/lib
+setenv KARMAINCLUDEPATH ${KARMABASE}/include
+
+if ( ! -d /phoenix/vxhome) then
+    echo "/phoenix/vxhome not found"
+    exit 1
+endif
+
+setenv VXHOME /phoenix/vxhome
+setenv KARMAVXMVXBASE /phoenix/karmaVXMVX
+setenv KARMAVXMVXBINPATH $KARMAVXMVXBASE/bin
+setenv KARMAVXMVXLIBPATH $KARMAVXMVXBASE/lib
+setenv VXPATH "${KARMAVXMVXBINPATH}:."
+
+set path = (${KARMABASE}/cm_script ${KARMABASE}/csh_script $KARMABINPATH $path)
+
+exec vxkarma_cm_slave $argv

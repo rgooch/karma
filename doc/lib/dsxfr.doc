@@ -1,0 +1,145 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the dsxfr_ package of routines in the Karma
+    library.
+
+    These routines are meant to provide high level transfer of the recursive,
+    heirarchical data structure supported in Karma from and to files and
+    connections.
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	1-OCT-1992
+
+
+*/
+
+void dsxfr_register_connection_limits (max_incoming, max_outgoing)
+/*  This routine will register the maximum number of incoming (server) and
+    outgoing (client) connections for the transfer of the general data
+    structure. The protocol used is: "multi_array".
+    NOTE: this routine ONLY registers the server and client callback routines,
+    the application must first call  conn_register_managers  in all cases and
+    must call  conn_become_server  if it wishes to accept connections.
+    The maximum number of incoming connections must be given by  max_incoming
+    If this is less than 0, no connections are permitted. If this is 0, an
+    unlimited number of connections is permitted.
+    The maximum number of outgoing connections must be given by  max_outgoing
+    If this is less than 0, no connections are permitted. If this is 0, an
+    unlimited number of connections is permitted.
+    The routine returns nothing.
+*/
+int max_incoming;
+int max_outgoing;
+/*---------------------------------------------------------------------------*/
+
+flag dsxfr_put_multi (object, multi_desc)
+/*  This routine will put (write to disc, transmit over connection) a
+    multi_desc general data structure to a named object.
+    The object name must be pointed to by  object  .
+    If the object is named "connections" then the data will be transmitted to
+    all available connections with the "multi_array" protocol.
+    If the object is named "connections:<module_name>" then the data will be
+    transmitted to all available connections to modules with the name
+    <module_name> and with the "multi_array" protocol.
+    If the object is named "connections:!<module_name>" then the data will be
+    transmitted to all available connections with the "multi_array" protocol to
+    all modules except those with the name <module_name>.
+    If the object is named "connection[#]" then the data will be transmitted to
+    the "multi_array" protocol connection with index: # (starting from 0).
+    If the object is named "<filename>_connection" then the data will be
+    transmitted to all available connections with the "multi_array" protocol.
+    In all other cases the data will be written to a disc file with a filename
+    pointed to by  object  .The routine will append a ".kf" extension if not
+    already specified. If the disc file already exists, the old data file is
+    first renamed to have a trailing '~' (tilde) character.
+    The data structure must be pointed to by  multi_desc  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+char *object;
+multi_array *multi_desc;
+/*---------------------------------------------------------------------------*/
+
+multi_array *dsxfr_get_multi (object, cache, mmap_option, writeable)
+/*  This routine will get (read from disc, read from connection) a
+    multi_desc general data structure from a named object.
+    The object name must be pointed to by  object  .
+    If the object is named "connection[#]" then whatever data has been
+    previously sent over the "multi_array" protocol connection with index: #
+    (starting from 0) will be returned.
+    NOTE: reading from a connection with this routine does *not* block, if no
+    prior data was transmitted, the routine returns NULL. Multiple calls to
+    this routine will return the same data structure *until* new data is
+    received over the connection.
+    In all other cases the data will be read from a disc file with a filename
+    pointed to by  object  .The routine will append a ".kf" extension if not
+    already specified.
+    If the value of  cache  is TRUE and the data is read from a disc, the data
+    structure and filename relationship is cached. This means that a subsequent
+    attempt to read the data will not require the disc to be accessed.
+    NOTE: this relationship is lost if the data structure is destroyed.
+    ALSO: in both this case and the case where the data structure is "read"
+    from a connection, the attachment count for the data structure is
+    incremented *every time* this routine is called. Read the documentation for
+    the  ds_dealloc_multi  routine for information on attachment counts. The
+    attachment count is *not* incremented when reading a disc file without
+    adding it to the cache list.
+    If the data structure is read from disc, then it may be memory mapped from
+    disc instead, depending on the value of  mmap_option  .Legal values are:
+        K_CH_MAP_NEVER           Never map
+	K_CH_MAP_LARGE_LOCAL     Map if local filesystem and file size > 1MB
+	K_CH_MAP_LOCAL           Map if local filesystem
+	K_CH_MAP_LARGE           Map if file over 1 MByte
+	K_CH_MAP_IF_AVAILABLE    Map if operating system supports it
+	K_CH_MAP_ALWAYS          Always map, fail if not supported.
+    If the mapped structure is to be writeable, the value of  writeable  must
+    be TRUE. If this is FALSE and the structure is written to, a segmentation
+    fault occurs. If  writeable  is TRUE, and the structure data is modified,
+    then these changes will be reflected on the disc file.
+    NOTE: the shape of the data structure cannot be changed though mapping.
+    The routine returns a pointer to the data structure on success,
+    else it returns NULL.
+*/
+char *object;
+flag cache;
+unsigned int mmap_option;
+flag writeable;
+/*---------------------------------------------------------------------------*/
+
+void dsxfr_register_read_func (read_func)
+/*  This routine will register a function which is to be called when new data
+    arrives on a "multi_array" connection.
+    The interface to this function is given below:
+
+    void read_func (first_time_data)
+    *   This routine is called when new data arrives on any "multi_array"
+        connection.
+	If data appears on a connection for the first time, the value of
+	first_time_data  will be TRUE. Any subsqeuent data that appears on a
+	connection will not set this flag.
+	The routine returns nothing.
+    *
+    flag first_time_data;
+
+    The routine returns nothing.
+*/
+void (*read_func) ();
+/*---------------------------------------------------------------------------*/
+
+void dsxfr_register_close_func (close_func)
+/*  This routine will register a function which is to be called when a
+    "multi_array" connection closes.
+    The interface to this function is given below:
+
+    void close_func (data_deallocated)
+    *   This routine is called when any "multi_array" connection closes.
+        If there was a multi_array data structure already received over the
+	connection, it is deallocated and  data_deallocated  will be TRUE.
+	The routine returns nothing.
+    *
+    flag data_deallocated;
+
+    The routine returns nothing.
+*/
+void (*close_func) ();
+/*---------------------------------------------------------------------------*/

@@ -1,0 +1,44 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the va_ package of routines in the Karma library.
+
+    These routines are meant to provide a suite of arithmetic operations on
+    vectors (arrays) of data.
+    These routines are highly optimised, with many inner loops coded in
+    assembler to achieve sustained performance approaching (and in some cases
+    equalling) the rated peak performance of the hardware.
+    On some platforms, a speed improvment of over 30 times has been attained by
+    coding in assembler.
+
+
+    Written by		Richard Gooch	16-NOV-1992
+
+    Last updated by	Richard Gooch	16-NOV-1992
+
+
+*/
+
+void va_scale_float (out, out_stride, inp, inp_stride, length, scale, offset)
+/*  This routine will perform a scale and offset operation on an array of
+    floating point numbers. The arithmetic form is as follows:
+        out[i] = inp[i] * scale + offset
+    The result array will be written to the storage pointed to by  out  .
+    The stride (in floats) of consecutive elements in the output array must be
+    given by  out_stride  .
+    The input array must be pointed to by  inp_stride  .
+    The stride (in floats) of consecutive elements in the input array must be
+    given by  inp_stride  .
+    The elements of the input and output arrays must be aligned on a float
+    boundary.
+    The length of the input and output arrays must be given by  length  .
+    The scale factor must be given by  scale  .
+    The offset value must be given by  offset  .
+    The routine returns nothing.
+*/
+float *out;
+int out_stride;
+float *inp;
+int inp_stride;
+int length;
+float scale;
+float offset;
+/*---------------------------------------------------------------------------*/

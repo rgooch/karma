@@ -1,0 +1,55 @@
+#! /bin/csh -f
+
+# This C shell script will invoke the C compiler with
+#  -DMACHINE_ARCH=$MACHINE_ARCH  added to the command line.
+# The C compiler will create code to cope with misaligned data (on those
+# architectures with this problem) if the sourcefile has a line with:
+# /*MISALIGNED*/ in it.
+
+#   Copyright (C) 1992,1993  Richard Gooch
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+#   Richard Gooch may be reached by email at  karma-request@atnf.csiro.au
+#   The postal address is:
+#     Richard Gooch, c/o ATNF, P. O. Box 76, Epping, N.S.W., 2121, Australia.
+
+
+# Written by		Richard Gooch	6-OCT-1992
+
+# Last updated by	Richard Gooch	3-AUG-1993
+
+
+# Determine source filename
+set _sourcefile = "$argv[$#argv]"
+
+# Determine if misalign exemption is needed
+switch ("$MACHINE_ARCH")
+    case "SUNsparc"
+	if (`grep -c '^/\*MISALIGNED\*/$' $_sourcefile` > "0") then
+	    # Source file has code which generates misaligned data accesses
+	    set CC = "cc -misalign -PIC"
+	else
+	    # No misaligned data access:can use GCC to have function prototypes
+	    set CC = "$KARMA_CC $KARMA_CPIC"
+	endif
+	breaksw
+    case "rs6000"
+	set CC = "cc -bM\:SRE"
+	breaksw
+endsw
+
+echo "$CC -DARCH_$MACHINE_ARCH $argv"
+exec $CC -DARCH_$MACHINE_ARCH $argv

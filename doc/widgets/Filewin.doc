@@ -1,0 +1,61 @@
+
+Widget Documentation
+
+------------------------------------------------------------------------
+
+Name: Filewin
+Date: 23/7/93
+Author: Patrick Jordan (pjordan@rp.csiro.au)
+
+------------------------------------------------------------------------
+
+The Filewin widget implements a simple file selector. It allows
+the traversal of directories, and the selection of files. It sorts
+filenames first by seperating directories (marked with a #) from other
+files (marked with a +), and then sorts alphabetically within those
+groups. 
+
+The Filewin contains three parts, a scrollable list of filenames, a
+rescan button, and a cancel button. The management of the list and the
+rescan button is done internally, but the cancel button requires an
+application supplied callback function. This is to allow applications
+to leave the fileselector up at all times if they wish, or to pop it
+down on selection of a file or the cancel button.
+
+A rescan function is supplied: 
+	void XkwFilewinRescan(Widget w,XtPointer client_data,
+			      XtPointer call_data); 
+to allow the directory to be rescanned under program control. This is
+particularly useful for rescanning the directory each time the widget
+is popped up. w should be the Filewin widget, and the other two
+parameters are not used.
+
+Apart from the resources available to any PopupShellWidget, this
+widget has the following resources:
+
+*)  XkwNcancelCallback
+	This is the callback for the cancel button. The callback has
+the syntax:
+	void cancel_cbk(Widget w,XtPointer client_data,XtPointer call_data)
+where w is the cancel button widget, and the other parameters are not
+used.
+
+*)  XkwNfileSelectCallback
+	This is the callback that will be called when a file has been
+selected. Note that in the current implementation, the application is
+not called back when a directory is selected, the widget automatically
+changes to that directory and presents a new list to the user. The
+syntax for the callback is:
+	void got_one(Widget w,XtPointer client_data,XtPointer call_data)
+where char *fname = (char *)call_data gives you the file name
+selected, which includes it's path relative to the startup directory.
+
+*)  XkwNfilenameTester
+	This function is optional, but can be used to select only
+certain files for display in the list. If it is not supplied, all
+files appear in the list. The syntax is:
+	flag accept_file(KFileInfo finfo),
+and it should return TRUE if the file is to appear, FALSE otherwise.
+
+
+

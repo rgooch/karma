@@ -1,0 +1,101 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the t_ package of routines in the Karma library.
+
+    These routines are meant to provide a low level mechanism to perform
+    mathematical transformations on data. For example, low level Fast Fourier
+    Transforms are supplied in this package.
+    A higher level (more optimised) set of routines to perform FFTs is supplied
+    in the  fft_  package.
+
+
+    Written by		Richard Gooch	19-OCT-1992
+
+    Last updated by	Richard Gooch	19-OCT-1992
+
+
+*/
+
+unsigned int t_c_to_c_1D_fft_float (real, imag, length, stride, direction)
+/*  This routine will perform a complex to complex 1 dimensional FFT on an
+    array of single precision complex data.
+    The array of real components must be pointed to by  real  .
+    The array of imaginary components must be pointed to by  imag  .
+    The number of complex values in the array to transform must be given by
+    length  .
+    The stride (in bytes) of successive components must be given by  stride  .
+    The routine will perform an inverse transform (with appropriate 1 / length
+    scaling) if  direction  is KARMA_FFT_INVERSE.
+    The routine performs the transform in situ.
+    The routine returns a value indicating the success / failure status of the
+    transform.
+    This routine has been pinched from Patrick Jordan, who pinched and modified
+    the Numerical Recipes in C routine.
+*/
+float *real;
+float *imag;
+unsigned int length;
+unsigned int stride;
+unsigned int direction;
+/*---------------------------------------------------------------------------*/
+
+unsigned int t_c_to_c_many_1D_fft_float (real, imag, length, elem_stride,
+					 number, dim_stride, direction)
+/*  This routine will perform a number of complex to complex 1 dimensional FFTs
+    on an array of single precision complex data.
+    The array of real components must be pointed to by  real  .
+    The array of imaginary components must be pointed to by  imag  .
+    The number of complex values in the array to transform must be given by
+    length  .
+    The stride (in bytes) of successive components must be given by
+    elem_stride  .
+    The number of 1 dimensional FFTs to perform must be given by  number  .
+    The stride (in bytes) between successive data sets must be given by
+    dim_stride  .
+    The routine will perform an inverse transform (with appropriate 1 / length
+    scaling) if  direction  is KARMA_FFT_INVERSE.
+    The routine performs the transform in situ.
+    The routine returns a value indicating the success / failure status of the
+    transform.
+    This routine has been pinched from Patrick Jordan, who pinched and modified
+    the Numerical Recipes in C routine.
+*/
+float *real;
+float *imag;
+unsigned int length;
+unsigned int elem_stride;
+unsigned int number;
+unsigned int dim_stride;
+unsigned int direction;
+/*---------------------------------------------------------------------------*/
+
+flag t_check_power_of_2 (number)
+/*  This routine will check if a number is a power of 2.
+    The number must be given by  number  .
+    The routine returns TRUE if the number is a power of 2,
+    else it returns FALSE.
+*/
+unsigned int number;
+/*---------------------------------------------------------------------------*/
+
+unsigned int t_r_to_c_many_1D_fft_float (a, length, elem_stride, number,
+					 dim_stride, direction)
+/*  This routine will perform a real to complex or complex to real FFT.
+    The array must be pointed to by  a  .
+    The number of elements to transform must be given by  n  .
+    The stride (in floats) of sucessive data elements must be given by
+    elem_stride  .
+    The number of transforms to perform must be given by  number  .
+    The stride (in floats) between sucessive data sets must be given by
+    dim_stride  .
+    The routine will perform the forward, real to complex FFT if  direction  is
+    KARMA_FFT_FORWARD  else it will perform the inverse, complex to real FFT.
+    The routine returns a value indicating the success / failure status of the
+    transform.
+*/
+float *a;
+unsigned int length;
+unsigned int elem_stride;
+unsigned int number;
+unsigned int dim_stride;
+unsigned int direction;
+/*---------------------------------------------------------------------------*/

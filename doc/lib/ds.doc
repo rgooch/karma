@@ -1,0 +1,1982 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the ds_ package of routines in the Karma library.
+
+    These routines provide the base functionality for the recursive,
+    heirarchical data structure supported in Karma.
+    This package both defines the (transparent) data structure and the various
+    allocation, deallocation and manipulation routines.
+    Transfer of data structures to/ from disc/ connections is supplied by the
+    dsxfr_ routines.
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	1-OCT-1992
+
+
+*/
+
+multi_array *ds_alloc_multi (num_arrays)
+/*  This routine will allocate a header for  num_arrays  independent
+    multi-dimensional arrays.
+    The memory for the array of pointers to the array names, headers and
+    data arrays is also allocated.
+    The routine returns a pointer to the header. If memory could not be
+    allocated, NULL is returned.
+*/
+unsigned int num_arrays;
+/*---------------------------------------------------------------------------*/
+
+packet_desc *ds_alloc_packet_desc (num_elem)
+/*  This routine will allocate a packet descriptor  .The number of data
+    elements in the packet must be in  num_elem  .
+    The memory for the array of element types and descriptors is also
+    allocated.
+    The routine returns a pointer to the descriptor. If memory could not be
+    allocated, the routine returns NULL.
+*/
+unsigned int num_elem;
+/*---------------------------------------------------------------------------*/
+
+char *ds_alloc_data (pack_desc, clear, array_alloc)
+/*  This routine will allocate all memory required to store data in the packet
+    with descriptor pointed to by  pack_desc  .
+    The routine will recursively allocate space for packets, sub arrays of
+    packets and linked list headers.
+    The routine is quite robust, cleanly bypassing missing sections of the
+    descriptor hierarchy, and deallocating any memory allocated after an
+    error occurs.
+    If the value of  clear  is TRUE, then the routine will initialise (set to
+    zero) all the data.
+    If the value of  array_alloc  is FALSE, and an array is an atomic array,
+    then instances of that array will NOT be allocated, and a NULL pointer will
+    be written into the parent element, else the array will be allocated.
+    The routine returns a pointer to the data memory if all memory could be
+    allocated, else it retuns NULL.
+*/
+packet_desc *pack_desc;
+flag clear;
+flag array_alloc;
+/*---------------------------------------------------------------------------*/
+
+flag ds_alloc_packet_subdata (pack_desc, packet, clear, array_alloc)
+/*  This routine will recursively allocate space for sub arrays of packets and
+    linked list headers for a packet. The data space for the packet is NOT
+    allocated, it must be supplied.
+    The packet descriptor must be pointed to by  pack_desc  .
+    The packet data must be pointed to by  packet  .
+    The routine is quite robust, cleanly bypassing missing sections of the
+    descriptor hierarchy, and deallocating any memory allocated after an
+    error occurs.
+    If the value of  clear  is TRUE, then the routine will initialise (set to
+    zero) all the sub-structure data.
+    If the value of  array_alloc  is FALSE, and an array is an atomic array,
+    then instances of that array will NOT be allocated, and a NULL pointer will
+    be written into the parent element, else the array will be allocated.
+    The routine returns TRUE if all memory could be allocated,
+    else it retuns FALSE.
+*/
+packet_desc *pack_desc;
+char *packet;
+flag clear;
+flag array_alloc;
+/*---------------------------------------------------------------------------*/
+
+char *ds_alloc_packet (pack_descriptor)
+/*  This routine will allocate memory for a packet which has a descriptor
+    pointed to by  pack_descriptor  .
+    The elements of the packet will be set to zero (for all types).
+    This routine is NOT recursive (ie. sub arrays and linked lists are not
+    allocated).
+    The routine returns a pointer to the packet. If memory could not be
+    allocated, NULL is returned.
+*/
+packet_desc *pack_descriptor;
+/*---------------------------------------------------------------------------*/
+
+array_desc *ds_alloc_array_desc (num_dimensions, num_levels)
+/*  This function will allocate a header for a multi-dimensional tiled array of
+    data packets. The number of dimensions to allocate their respective
+    headers must be in  num_dimensions  .
+    The number of levels of tiling must be given by  num_levels  .If this is
+    0, the array is not tiled.
+    Note that the dimension descriptors are not allocated, however, the array
+    of pointers for them is allocated.
+    The routine returns a pointer to the header. If memory could not be
+    allocated, NULL is returned.
+*/
+unsigned int num_dimensions;
+unsigned int num_levels;
+/*---------------------------------------------------------------------------*/
+
+flag ds_alloc_tiling_info (arr_desc, num_levels)
+/*  This routine will allocate tiling information for an array descriptor which
+    does not have any existing tiling information.
+    The array descriptor must be pointed to by  arr_desc  .
+    The number of levels of tiling must be given by  num_levels  .If this is
+    0, the array is not tiled.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+array_desc *arr_desc;
+unsigned int num_levels;
+/*---------------------------------------------------------------------------*/
+
+dim_desc *ds_alloc_dim_desc (dim_name, length, min, max, regular)
+/*  This routine will allocate a header for a single dimension.
+    The name of the dimension must be pointed to by  dim_name  . The name is
+    copied, thus the input character string may be subsequently deallocated.
+    The length (number of co-ordinates) of the dimension must be in  length  .
+    The minimum and maximum values of the dimension co-ordinates must be in
+    min  and  max  ,respectively.
+    If the co-ordinates of the dimension are regularly spaced,  regular  must
+    be TRUE, else it must be FALSE.
+    If the co-ordinates are regular, then the  coordinates  field of the array
+    descriptor will be set to NULL, else it will point to an array of doubles
+    of length  length  .These co-ordinates will be set to 0.0 .
+    The routine returns a pointer to the descriptor. If memory could not be
+    allocated, NULL is returned.
+*/
+char *dim_name;
+unsigned int length;
+double min;
+double max;
+flag regular;
+/*---------------------------------------------------------------------------*/
+
+list_header *ds_alloc_list_head ()
+/*  This routine will allocate a linked list header.
+    The length of the linked list specified in the header will be 0, and the
+    contiguous_until  entry will be set to 0.
+    The  sort_type  field in the header will be set to SORT_UNDEF. This MUST
+    be set to some other value (ie. SORT_RANDOM) prior to use with other
+    library routines.
+    The  list_start  and  list_end  pointers will be set to NULL.
+    The routine returns a pointer to the header. If memory could not be
+    allocated, NULL is returned.
+*/
+/*---------------------------------------------------------------------------*/
+
+list_entry *ds_alloc_list_entry (list_desc, array_alloc)
+/*  This routine will allocate an entry in a linked list (it will NOT insert
+    it in the list: see insert_list_entry).
+    The descriptor for the linked list must be pointed to by  list_desc  .
+    The list pointers will be set to NULL.
+    The routine will initialise (set to zero) the data in the entry.
+    The routine will recursively allocate memory for sub arrays and linked
+    lists.
+    If the value of  array_alloc  is FALSE, and an array is an atomic array,
+    then instances of that array will NOT be allocated, and a NULL pointer will
+    be written into the parent element, else the array will be allocated.
+    The routine returns a pointer to the entry. If memory could not be
+    allocated, NULL is returned.
+*/
+packet_desc *list_desc;
+flag array_alloc;
+/*---------------------------------------------------------------------------*/
+
+flag ds_alloc_array (arr_desc, element, clear, array_alloc)
+/*  This routine will allocate memory for an array which has a descriptor
+    pointed to by  arr_desc  .
+    The routine will recursively allocate sub arrays and linked lists.
+    The element to write the array pointer to must be pointed to by  element  .
+    If the value of  clear  is TRUE, then the routine will initialise (set to
+    zero) all the data.
+    If the value of  array_alloc  is FALSE, and an array is an atomic array,
+    then instances of that array will NOT be allocated, and a NULL pointer will
+    be written into the parent element, else the array will be allocated.
+    Any memory which is allocated will be deallocated if an error occurs.
+    The routine returns a pointer to the array. If memory could not be
+    allocated, NULL is returned.
+*/
+array_desc *arr_desc;
+char *element;
+flag clear;
+flag array_alloc;
+/*---------------------------------------------------------------------------*/
+
+char *ds_easy_alloc_array (multi_desc, num_dim, lengths, minima, maxima, names,
+			   data_type, data_name)
+/*  This routine will allocate memory for a multi-dimensional, regular array,
+    and the required headers and the multi-array header. The array is NOT tiled
+    nor are any address offsets computed.
+    Note that this routine does NOT create a Karma arrayfile. This must be done
+    with a call to  dsxfr_put_multi  .
+    The multi-array structure pointer to the created structure will be
+    written to the storage pointed to by  multi_desc  .
+    The number of dimensions of the array must be in  num_dim  ,the lengths
+    of each dimension (axis) must be in the array pointed to by  lengths  .
+    The minimum and maximum co-ordinate values of each dimension must be in the
+    arrays pointed to by  minima  and maxima  ,respectively. If either of
+    these pointers is NULL, the range of the co-ordinates will be the lengths
+    of the dimensions minus 1. If one of the pointers is NULL, the other
+    array is used to tie one end of the range for each dimension. If both
+    pointers are NULL,the minima are 0.0 and the maxima are the lengths minus 1
+    The names of each dimension must be pointed to by the list of character
+    pointers  names  .If this is NULL, the names "Axis 0", "Axis 1", ...etc
+    will be used. Note: the character arrays are copied, so the arrays of
+    characters and the array of pointers may be subsequently deallocated.
+    The data packet that may be stored in the array is a single, atomic datum,
+    of type  data_type  .
+    The following data types are not permitted:
+        NONE, K_ARRAY, LISTP, MULTI_ARRAY.
+    The name of the data type must be pointed to by  data_name  .If this is
+    NULL, then the name "Data Value" will be used. The name string is copied,
+    thus the memory used for the input string may be subsequently deallocated.
+    The routine returns a pointer to the start of the array. If memory could
+    not be allocated, or any error occurs, NULL is returned.
+*/
+multi_array **multi_desc;
+unsigned int num_dim;
+unsigned int *lengths;
+double *minima;
+double *maxima;
+char **names;
+unsigned int data_type;
+char *data_name;
+/*---------------------------------------------------------------------------*/
+
+char *ds_easy_alloc_n_element_array (multi_desc, num_dim, lengths,
+				     minima, maxima, names,
+				     num_elements, data_types, data_names)
+/*  This routine will allocate memory for a multi-dimensional, regular array,
+    and the required headers and the multi-array header. The array is NOT tiled
+    nor are any address offsets computed.
+    Note that this routine does NOT create a Karma arrayfile. This must be done
+    with a call to  dsxfr_put_multi  .
+    The multi-array structure pointer to the created structure will be
+    written to the storage pointed to by  multi_desc  .
+    The number of dimensions of the array must be in  num_dim  ,the lengths
+    of each dimension (axis) must be in the array pointed to by  lengths  .
+    The minimum and maximum co-ordinate values of each dimension must be in the
+    arrays pointed to by  minima  and maxima  ,respectively. If either of
+    these pointers is NULL, the range of the co-ordinates will be the lengths
+    of the dimensions minus 1. If one of the pointers is NULL, the other
+    array is used to tie one end of the range for each dimension. If both
+    pointers are NULL,the minima are 0.0 and the maxima are the lengths minus 1
+    The names of each dimension must be pointed to by the list of character
+    pointers  names  .If this is NULL, the names "Axis 0", "Axis 1", ...etc
+    will be used. Note: the character arrays are copied, so the arrays of
+    characters and the array of pointers may be subsequently deallocated.
+    The data packet that may be stored in the array may contain a number of
+    atomic elements. The number of elements in this packet must be given by
+    num_elements
+    The data types of the elements must be pointed to by  data_types  .
+    The following data types are not permitted:
+        NONE, K_ARRAY, LISTP, MULTI_ARRAY.
+    The names of the elements must be pointed to by  data_names  .The name
+    strings are copied, thus the memory used for the input strings may be
+    subsequently deallocated.
+    The routine returns a pointer to the start of the array. If memory could
+    not be allocated, or any error occurs, NULL is returned.
+*/
+multi_array **multi_desc;
+unsigned int num_dim;
+unsigned int *lengths;
+double *minima;
+double *maxima;
+char **names;
+unsigned int num_elements;
+unsigned int *data_types;
+char **data_names;
+/*---------------------------------------------------------------------------*/
+
+flag ds_alloc_contiguous_list (list_desc, list_head, length, clear,array_alloc)
+/*  This routine will allocate a contiguous block of linked list entry
+    data  packets. No  list_entry  structures are allocated, they are implied.
+    The packet descriptor for the linked list must be pointed to by
+    list_desc  and the list header must be pointed to by  list_header  .
+    The number of list entries to allocate must be in  length  .
+    The routine will recursively allocate memory for sub arrays and linked
+    lists.
+    The  contiguous_length  value in the list header will be set to the list
+    length.
+    If the value of  clear  is TRUE, then the routine will initialise (set to
+    zero) all the data.
+    If the value of  array_alloc  is FALSE, and an array is an atomic array,
+    then instances of that array will NOT be allocated, and a NULL pointer will
+    be written into the parent element, else the array will be allocated.
+    The list must be empty.
+    The routine returns TRUE on success, else it returns FALSE.
+    On failure, the list header is deallocated.
+*/
+packet_desc *list_desc;
+list_header *list_head;
+unsigned int length;
+flag clear;
+flag array_alloc;
+/*---------------------------------------------------------------------------*/
+
+flag ds_find_single_extremes (data, elem_type, conv_type, dimension, stride,
+			      scan_start, scan_end, min, max)
+/*  This routine will find the extremes (minimum and maximum) of a single trace
+    (element versus a dimension).
+    The data must be pointed to by  data  .
+    The type of the element must be in  elem_type  .
+    The type of conversion to use for complex numbers must be in  conv_type  .
+    The dimension descriptor must be pointed to by  dimension  .
+    The stride of the elements in memory must be in  stride  .
+    The starting and ending co-ordinate values to scan between must be in
+    scan_start  and  scan_end  ,respectively.
+    The minimum value will be written to the storage pointed to by  min  .
+    The maximum value will be written to the storage pointed to by  max  .
+    The minimum and maximum value must be initialised to a very large positive
+    number and a very large negative number, respectively, outside of the
+    routine. In other words, the routine does not initialise these values prior
+    to testing for the minimum and maximum.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+char *data;
+unsigned int elem_type;
+unsigned int conv_type;
+dim_desc *dimension;
+unsigned int stride;
+double scan_start;
+double scan_end;
+double *min;
+double *max;
+/*---------------------------------------------------------------------------*/
+
+flag ds_find_plane_extremes (data, elem_type, conv_type,
+			     abs_dim_desc, abs_dim_stride,
+			     ord_dim_desc, ord_dim_stride,
+			     abs_scan_start, abs_scan_end,
+			     ord_scan_start, ord_scan_end,
+			     min, max)
+/*  This routine will find the extremes (minimum and maximum) of a single plane
+    (element versus two dimensions).
+    The data must be pointed to by  data  .
+    The type of the element must be in  elem_type  .
+    The type of conversion to use for complex numbers must be in  conv_type  .
+    The abscissa dimension descriptor must be pointed to by  abs_dim_desc  .
+    The abscissa dimension stride of the elements in memory must be in
+    abs_dim_stride  .
+    The ordinate dimension descriptor must be pointed to by  ord_dim_desc  .
+    The ordinate dimension stride of the elements in memory must be in
+    ord_dim_stride  .
+    The starting and ending abscissa co-ordinate values to scan between must be
+    in  abs_scan_start  and  abs_scan_end  ,respectively.
+    The starting and ending ordinate co-ordinate values to scan between must be
+    in  ord_scan_start  and  ord_scan_end  ,respectively.
+    The minimum value will be written to the storage pointed to by  min  .
+    The maximum value will be written to the storage pointed to by  max  .
+    The minimum and maximum value must be initialised to a very large positive
+    number and a very large negative number, respectively, outside of the
+    routine. In other words, the routine does not initialise these values prior
+    to testing for the minimum and maximum.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+char *data;
+unsigned int elem_type;
+unsigned int conv_type;
+dim_desc *abs_dim_desc;
+unsigned int abs_dim_stride;
+dim_desc *ord_dim_desc;
+unsigned int ord_dim_stride;
+double abs_scan_start;
+double abs_scan_end;
+double ord_scan_start;
+double ord_scan_end;
+double *min;
+double *max;
+/*---------------------------------------------------------------------------*/
+
+flag ds_put_unique_named_value (pack_desc, packet, name, type, value, update)
+/*  This routine will add a unique named value to a Karma general data
+    structure.
+    The packet descriptor to add the name to must be pointed to by  pack_desc
+    This descriptor will be modified.
+    The pointer to the unique packet which is described by  pack_desc  must be
+    pointed to by  packet  .Note that the existing packet data is copied to a
+    new packet, and a pointer to this packet is written back to the storage
+    pointed to by  packet  .
+    The name of the element must be pointed to by  name  .
+    The type of the data which is to be written must be given by  type  .
+    The value of the data must be pointed to by  value  .
+    If the value of  update  is TRUE, then the routine will allow an existing
+    named value to be updated, otherwise the routine will fail if an update
+    (rather than a create) is attempted. The  type  parameters is ignored for
+    updates (ie. you can't change the type).
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+packet_desc *pack_desc;
+char **packet;
+char *name;
+unsigned int type;
+double *value;
+flag update;
+/*---------------------------------------------------------------------------*/
+
+flag ds_put_unique_named_string (pack_desc, packet, name, string, update)
+/*  This routine will add a unique named string to a Karma general data
+    structure.
+    The packet descriptor to add the name to must be pointed to by  pack_desc
+    This descriptor will be modified.
+    The pointer to the unique packet which is described by  pack_desc  must be
+    pointed to by  packet  .Note that the existing packet data is copied to a
+    new packet, and a pointer to this packet is written back to the storage
+    pointed to by  packet  .
+    The name of the element must be pointed to by  name  .
+    The string must be pointed to by  string  .
+    If the value of  update  is TRUE, then the routine will allow an existing
+    named string to be updated, otherwise the routine will fail if an update
+    (rather than a create) is attempted.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+packet_desc *pack_desc;
+char **packet;
+char *name;
+char *string;
+flag update;
+/*---------------------------------------------------------------------------*/
+
+flag ds_get_unique_named_value (pack_desc, packet, name, type, value)
+/*  This routine will get a unique named value from a Karma general data
+    structure.
+    The packet descriptor to get the name from must be pointed to by  pack_desc
+    The unique packet which is described by  pack_desc  must be pointed to by
+    packet  .
+    The name of the element must be pointed to by  name  .
+    The type of the data found will be written to the storage pointed to by
+    type  .If this is NULL, nothing is written here.
+    The value of the data will be written to the storage pointed to by  value
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+packet_desc *pack_desc;
+char *packet;
+char *name;
+unsigned int *type;
+double *value;
+/*---------------------------------------------------------------------------*/
+
+char *ds_get_unique_named_string (pack_desc, packet, name)
+/*  This routine will get a unique named string from a Karma general data
+    structure.
+    The packet descriptor to get the name from must be pointed to by  pack_desc
+    The unique packet which is described by  pack_desc  must be pointed to by
+    packet  .
+    The name of the element must be pointed to by  name  .
+    The routine returns a pointer to a dynamically allocated copy of the string
+    on success, else it returns NULL.
+*/
+packet_desc *pack_desc;
+char *packet;
+char *name;
+/*---------------------------------------------------------------------------*/
+
+unsigned short *ds_cmap_alloc_colourmap (size, multi_desc, pack_desc, packet)
+/*  This routine will allocate a colourmap which comforms to the Karma general
+    data structure format. Note that this does NOT allocate a colourmap on an
+    X Windows server. This routine is intended to enable an application to
+    write colourmap data to a file, maintaining a flexible format.
+    The size (number of colours) of the colourmap to allocate must be given by
+    size  .
+    The pointer to the multi array header which is allocated will be written
+    to the storage pointed to by  multi_desc  .If this is NULL, then no multi
+    array header is allocated and nothing is written here.
+    The pointer to the top level packet descriptor of the general data
+    structure which contains the colourmap will be written to the storage
+    pointed to by  pack_desc  .If this is NULL, nothing is written here. Note,
+    however, that the top level packet descriptor is nevertheless allocated.
+    The pointer to the top level packet of the general data structure which
+    contains the colourmap will be written to the storage pointed to by  
+    packet  .If this is NULL, nothing is written here. Note, however, that the
+    top level packet is nevertheless allocated.
+    The general data structure that is created will contain a 1 dimensional
+    array with dimension name "Colour Number" and length equal to  size  .
+    The array will contain packets with 3 elements, each of type  K_USHORT  and
+    with the names "Red Intensity", "Blue Intensity" and "Green Intensity", in
+    that order. For compatibility with the X Window system, it is recommended
+    that these values lie in the range 0 to 65535.
+    The routine returns a pointer to the allocated colourmap on success,
+    else it returns NULL.
+*/
+unsigned int size;
+multi_array **multi_desc;
+packet_desc **pack_desc;
+char **packet;
+/*---------------------------------------------------------------------------*/
+
+unsigned short *ds_cmap_find_colourmap (top_pack_desc, top_packet, size,
+					reordering_done,
+					restr_names, restr_values, num_restr)
+/*  This routine will search a Karma general data structure for an instance of
+    a colourmap.
+    The top level packet descriptor must be pointed to by  top_pack_desc  .
+    The top level packet data must be pointed to by  top_packet  .
+    The size of the colourmap (number of colours) in the colourmap will be
+    written to the storage pointed to by  size  .
+    The routine is tolerant of incorrect ordering of the intensity elements.
+    If they are ordered incorrectly, the data will be re-ordered, and the
+    value TRUE will be written to the storage pointed to by  reordering_done  .
+    If the data is not re-ordered, or if this is NULL, then nothing is written
+    here.
+    The matched list of restrictions must be pointed to by  restr_names  and
+    restr_values  .The length of these lists must be in  num_restr  .Note that
+    NULL pointers may be passed for  restr_names  and restr_values  and
+    num_restr  set to zero. In this case, the routine will only return a
+    colourmap if there is only one instance of a colourmap in the entire data
+    structure.
+    The routine returns a pointer to a colourmap on success,
+    else it returns NULL.
+    Note that the returned colourmap will contain  *size  contiguous packets
+    which each contain first a red intensity, then a blue and then a green.
+*/
+packet_desc *top_pack_desc;
+char *top_packet;
+unsigned int *size;
+flag *reordering_done;
+char *restr_names[];
+double *restr_values;
+unsigned int num_restr;
+/*---------------------------------------------------------------------------*/
+
+unsigned int *ds_cmap_get_all_colourmaps (multi_desc, num_found,
+					  reordering_done,
+					  restr_names, restr_values, num_restr)
+/*  This routine will search an array of Karma general data structures for
+    instances of a colourmap.
+    The multi_desc header must be pointed to by  multi_desc  .
+    The number of general data structures which contain a colourmap will be
+    written to the storage pointed to by  num_found  .
+    The routine is tolerant of incorrect ordering of the intensity elements.
+    If they are ordered incorrectly, the data will be re-ordered, and the
+    value TRUE will be written to the storage pointed to by  reordering_done  ,
+    else the value of FALSE will be written here.
+    If this is NULL, nothing is written here.
+    The matched list of restrictions must be pointed to by  restr_names  and
+    restr_values  .The length of these lists must be in  num_restr  .Note that
+    NULL pointers may be passed for  restr_names  and restr_values  and
+    num_restr  set to zero. In this case, the routine will only return a
+    colourmap if there is only one instance of a colourmap in the entire data
+    structure.
+    The routine returns a pointer to an array of general data structure
+    indices on success, else it returns NULL. This array is dynamically
+    allocated, and should be freed when no longer needed.
+*/
+multi_array *multi_desc;
+unsigned int *num_found;
+flag *reordering_done;
+char *restr_names[];
+double *restr_values;
+unsigned int num_restr;
+/*---------------------------------------------------------------------------*/
+
+flag ds_copy_packet (pack_desc, dest_packet, source_packet)
+/*  This routine will copy a packet with a packet descriptor pointed to by
+    pack_desc  from the storage pointed to by  source_packet  to the
+    storage pointed to by  dest_packet  .The routine will copy only the
+    data and pointers to arrays and linked lists in the packet, not the
+    arrays and linked lists which may be pointed to.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+packet_desc *pack_desc;
+char *dest_packet;
+char *source_packet;
+/*---------------------------------------------------------------------------*/
+
+packet_desc *ds_copy_desc_until (inp_desc, name)
+/*  This routine will copy a packet descriptor pointed to by  inp_desc  until
+    the element with name pointed to by  name  is found, at which time the
+    copying process stops.
+    If  name  is NULL, then the entire data structure descriptor is copied.
+    The routine will trap such errors as multiple occurences of  name  .
+    The routine returns a pointer to the new packet descriptor.
+    If there are any errors, the routine returns NULL.
+    This routine is useful to duplicate a data structure above a certain
+    element or dimension. This simplifies the processing of data which is
+    sitting near the bottom of a complex data structure.
+    If an array or linked list pointer is one of the elements, and it is not
+    successfully copied, the routine will set the output element type to NONE
+    and the descriptor pointer for that element will be NULL.
+*/
+packet_desc *inp_desc;
+char *name;
+/*---------------------------------------------------------------------------*/
+
+array_desc *ds_copy_array_desc_until (inp_desc, name)
+/*  This routine will copy an array descriptor pointed to by  inp_desc  to
+    an array descriptor which is allocated (by this routine). All tiling
+    information and address offset arrays are also copied.
+    The routine will stop the copying process when an occurence of the name
+    pointed to by  name  is found.
+    If  name  is NULL, then the entire data structure descriptor is copied.
+    The routine recursively searches and copies the array packet descriptor.
+    The routine will return a pointer to the array descriptor created.
+    If there are any errors, the routine returns NULL.
+    If the array packet descriptor cannot be copied, the pointer to the packet
+    descriptor in the array descriptor will be set to NULL.
+*/
+array_desc *inp_desc;
+char *name;
+/*---------------------------------------------------------------------------*/
+
+dim_desc *ds_copy_dim_desc (inp_desc)
+/*  This routine will copy the dimension descriptor pointed to by  inp_desc
+    to a freshly allocated dimension descriptor.
+    The routine returns a pointer to the new dimension descriptor, if there
+    any errors, NULL is returned.
+*/
+dim_desc *inp_desc;
+/*---------------------------------------------------------------------------*/
+
+flag ds_copy_data (inp_desc, inp_data, out_desc, out_data)
+/*  This routine will copy data from one data structure to another, provided
+    the two data structures have the same format. If there are any variations
+    in the two formats, the copying process is stopped at that level.
+    If one or more elements are different, they are not copied, however, the
+    other elements are copied. This also applies to array and linked list
+    pointer elements. This condition only holds for packets with the same
+    number of elements, otherwise no elements are copied. The ordering of
+    elements must also be the same.
+    The names of elements and dimensions must be the same, as well as the
+    data types. For information on array and linked list copying, see
+    ds_copy_array  and  ds_copy_list  .
+    The input data structure descriptor must be pointed to by  inp_desc  and
+    the data must be pointed to by  inp_data  .
+    The output data structure descriptor must be pointed to by  out_desc  and
+    the output data memory allocation must be pointed to by  out_data  .
+    The routine recursively copies data in arrays and linked lists.
+    The routine returns TRUE if the two packet descriptors are identical, else
+    it returns FALSE.
+*/
+packet_desc *inp_desc;
+char *inp_data;
+packet_desc *out_desc;
+char *out_data;
+/*---------------------------------------------------------------------------*/
+
+flag ds_copy_array (inp_desc, inp_data, out_desc, out_data)
+/*  This routine will copy data from one array to another. The two arrays must
+    be the same, else the copying process will stop.
+    The routine recursively copies data in the array packet.
+    The input array descriptor must be pointed to by  inp_desc  and the output
+    array descriptor must be pointed to by  out_desc  .
+    The input data must be pointed to by  inp_data  and the output data must
+    be pointed to by  out_data  .
+    The routine returns TRUE if the arrays were identical, else it
+    returns FALSE.
+*/
+array_desc *inp_desc;
+char *inp_data;
+array_desc *out_desc;
+char *out_data;
+/*---------------------------------------------------------------------------*/
+
+flag ds_copy_list (inp_desc, inp_head, out_desc, out_head)
+/*  This routine will copy a linked list to another.
+    The input list descriptor must be pointed to by  inp_desc  and the header
+    to the list must be pointed to by  inp_head  .
+    The output list descriptor must be pointed to by  out_desc  and the header
+    to the list must be pointed to by  out_head  .
+    The linked list entries and data fields will be allocated. The entries
+    will be contiguous in memory.
+    The routine will recursively copy sub arrays and linked lists.
+    For information on the copying rules when the two list descriptors differ,
+    see the routine  ds_copy_data  .
+    The routine returns TRUE if the two packet descriptors were identical,
+    else it returns FALSE.
+*/
+packet_desc *inp_desc;
+list_header *inp_head;
+packet_desc *out_desc;
+list_header *out_head;
+/*---------------------------------------------------------------------------*/
+
+multi_array *ds_select_arrays (array_list, num_in_list, multi_desc,
+				      save_unproc, index_list)
+/*  This routine will create a multi array descriptor which contains a
+    selected number of array names.
+    The array names are copied from the input multi array descriptor pointed
+    to by  multi_desc  .
+    The array names that are copied must be in the array of strings pointed
+    to by  array_list  .The length of this array must be in  num_in_list  .
+    If this list is empty, all array names are copied.
+    If the logical  save_unproc  is TRUE, all array names are copied.
+    An array of unsigned ints will be allocated by the routine and the pointer
+    to this array will be written to the storage pointed to by  index_list  .
+    The length of this array is equal to the number of arrays in the input
+    multi array descriptor. This array contains the index of the array name
+    in the input multi array descriptor for each array name in the output
+    multi array descriptor. If there is no name match for an array, the index
+    value is equal to the number of arrays in the input multi array descriptor.
+    The routine returns a pointer to the created multi array descriptor.
+    If there are any errors, the routine returns NULL.
+*/
+char **array_list;
+unsigned int num_in_list;
+multi_array *multi_desc;
+flag save_unproc;
+unsigned int **index_list;
+/*---------------------------------------------------------------------------*/
+
+void ds_dealloc_multi (multi_desc)
+/*  This routine will deallocate all memory associated with a multi array
+    header. This includes all the descriptors and data arrays and lists in the
+    hierarchy below.
+    The routine will only deallocate the data structure when it's attachment
+    count is zero, else it decrements the attachment count and returns.
+    The routine is quite robust, deallocating in the correct order and cleanly
+    bypassing missing sections in the hierarchy.
+    The routine returns nothing.
+*/
+multi_array *multi_desc;
+/*---------------------------------------------------------------------------*/
+
+void ds_dealloc_packet (pack_desc, data)
+/*  This routine will deallocate all memory associated with a data packet.
+    This includes all the descriptors and data arrays and lists associated
+    with the packet.
+    The descriptor for the packet should be pointed to by  pack_desc  and
+    the data for the packet should by pointed to by  data  .
+    The routine is quite robust, deallocating in the correct order and cleanly
+    bypassing missing sections in the hierarchy.
+    The routine returns nothing.
+*/
+packet_desc *pack_desc;
+char *data;
+/*---------------------------------------------------------------------------*/
+
+void ds_dealloc_data (pack_desc, packet)
+/*  This routine will deallocate all memory associated with the storage of
+    data in the data packet which has a descriptor pointed to by  pack_desc
+    and a pointer  packet  to the packet.
+    Any sub-arrays or linked lists are recursively deallocated.
+    The routine is quite robust, deallocating in the correct order and cleanly
+    bypassing missing sections in the hierarchy.
+    The routine returns nothing.
+*/
+packet_desc *pack_desc;
+char *packet;
+/*---------------------------------------------------------------------------*/
+
+void ds_dealloc_packet_subdata (pack_desc, packet)
+/*  This routine will deallocate all memory associated with the storage of
+    sub structure data in the data packet which has a descriptor pointed to by
+    pack_desc and a pointer  packet  to the packet.
+    NOTE: the packet is not deallocated, only the sub-arrays and linked lists
+    are recursively deallocated.
+    The routine is quite robust, deallocating in the correct order and cleanly
+    bypassing missing sections in the hierarchy.
+    The routine returns nothing.
+*/
+packet_desc *pack_desc;
+char *packet;
+/*---------------------------------------------------------------------------*/
+
+void ds_dealloc_array_desc (arr_desc)
+/*  This routine will deallocate all header information associated with a tiled
+    array. This includes all descriptors for sub-arrays and linked lists.
+    The array descriptor must be pointed to by  arr_desc  .
+    The routine is quite robust, deallocating in the correct order and cleanly
+    bypassing missing sections in the hierarchy.
+    The routine returns nothing.
+*/
+array_desc *arr_desc;
+/*---------------------------------------------------------------------------*/
+
+void ds_dealloc_list (list_desc, list_head)
+/*  This routine will deallocate all memory associated with the storage of
+    data for the linked list with descriptor pointed to by  list_desc  .
+    The linked list header must be pointed to by  list_head  .
+    Any sub-arrays or linked lists are recursively deallocated.
+    The routine is quite robust, deallocating in the correct order and cleanly
+    bypassing missing sections in the hierarchy.
+    The list header is also deallocated.
+    The routine returns nothing.
+*/
+packet_desc *list_desc;
+list_header *list_head;
+/*---------------------------------------------------------------------------*/
+
+void ds_dealloc_list_entries (list_desc, list_head)
+/*  This routine will deallocate all memory associated with the storage of
+    data for the linked list with descriptor pointed to by  list_desc  .
+    The linked list header must be pointed to by  list_head  .
+    Any sub-arrays or linked lists are recursively deallocated.
+    The routine is quite robust, deallocating in the correct order and cleanly
+    bypassing missing sections in the hierarchy.
+    The list header is NOT deallocated.
+    The routine returns nothing.
+*/
+packet_desc *list_desc;
+list_header *list_head;
+/*---------------------------------------------------------------------------*/
+
+void ds_dealloc2_list (list_head)
+/*  This routine will deallocate the data and the list entries in a linked
+    list. The list header must be pointed to by  list_head  .This routine
+    does not recursively deallocate sub-arrays or linked lists: it will only
+    remove the list. The list header is NOT deallocated.
+    The routine returns nothing.
+*/
+list_header *list_head;
+/*---------------------------------------------------------------------------*/
+
+void ds_dealloc_array (arr_desc, arr_element)
+/*  This routine will deallocate all memory associated with the storage of
+    data for the array with descriptor pointed to by  arr_desc  .
+    The element containing the array pointer must be pointed to by
+    arr_element  .
+    Any sub-arrays or linked lists are recursively deallocated.
+    The routine is quite robust, deallocating in the correct order and cleanly
+    bypassing missing sections in the hierarchy.
+    The routine returns nothing.
+*/
+array_desc *arr_desc;
+char *arr_element;
+/*---------------------------------------------------------------------------*/
+
+flag ds_draw_ellipse (array, elem_type, abs_dim_desc, abs_stride,
+		      ord_dim_desc, ord_stride,
+		      centre_abs, centre_ord, radius_abs, radius_ord, value)
+/*  This routine will draw an ellipse into a 2 dimensional Karma array.
+    The array (plane) must be pointed to by  array  .
+    The type of the element to draw must be given by  elem_type  .
+    The abscissa dimension descriptor must be pointed to by  abs_dim_desc  .
+    The stride of abscissa co-ordinates in memory (in bytes) must be given by
+    abs_stride  .
+    The ordinate dimension descriptor must be pointed to by  ord_dim_desc  .
+    The stride of ordinate co-ordinates in memory (in bytes) must be given by
+    ord_stride  .
+    The centre of the ellipse (in abscissa and ordinate real-world
+    co-ordinates) must be given by  centre_abs  and  centre_ord  ,respectively.
+    The abscissa and ordinate radii must be given by  radius_abd  and
+    radius_ord  ,respectively. These must NOT be equal or less than 0.0
+    The value to write the ellipse into the array must be given by  value  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+char *array;
+unsigned int elem_type;
+dim_desc *abs_dim_desc;
+unsigned int abs_stride;
+dim_desc *ord_dim_desc;
+unsigned int ord_stride;
+double centre_abs;
+double centre_ord;
+double radius_abs;
+double radius_ord;
+double *value;
+/*---------------------------------------------------------------------------*/
+
+flag ds_draw_polygon (array, elem_type, abs_dim_desc, abs_stride, ord_dim_desc,
+		      ord_stride, coords, num_points, value)
+/*  This routine will draw a concave non-simple polygon into a 2
+    dimensional Karma array. The polygon can be clockwise or anti-clockwise.
+    Inside-outside test done by Jordan's rule: a point is considered inside if
+    an emanating ray intersects the polygon an odd number of times.
+    The algorithm is modified from the  Concave Polygon Scan Conversion
+    by Paul Heckbert from "Graphics Gems", Academic Press, 1990.
+    The array (plane) must be pointed to by  array  .
+    The type of the element to draw must be given by  elem_type  .
+    The abscissa dimension descriptor must be pointed to by  abs_dim_desc  .
+    The stride of abscissa co-ordinates in memory (in bytes) must be given by
+    abs_stride  .
+    The ordinate dimension descriptor must be pointed to by  ord_dim_desc  .
+    The stride of ordinate co-ordinates in memory (in bytes) must be given by
+    ord_stride  .
+    The co-ordinates must be stored in clockwise rotation order (any point to
+    start) in the array coords[num_points].
+    The value to write the parallelogram into the array must be given by
+    value  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+char *array;
+unsigned int elem_type;
+dim_desc *abs_dim_desc;
+unsigned int abs_stride;
+dim_desc *ord_dim_desc;
+unsigned int ord_stride;
+edit_coord *coords;
+unsigned int num_points;
+double *value;
+/*---------------------------------------------------------------------------*/
+
+double ds_convert_atomic (datum, datum_type, real_out, imag_out)
+/*  This routine will convert an atomic datum to a double precision value.
+    The datum to be converted must be pointed to by  datum  and the data type
+    value must be in  datum_type  .
+    Complex data types are converted to their absolute value.
+    The following data types are not convertible, and the routine will return
+    the value TOOBIG:
+        NONE, K_ARRAY, LISTP, MULTI_ARRAY.
+    The routine will write the real and imaginary components into the storage
+    pointed to by  real_out  and  imag_out  ,respectively, if these pointers
+    are not NULL. For a real value, the imaginary value is 0.0 .
+    These storages MUST lie on a  double  boundary.
+    The routine returns the converted value on success, else it returns TOOBIG.
+*/
+char *datum;
+unsigned int datum_type;
+double *real_out;
+double *imag_out;
+/*---------------------------------------------------------------------------*/
+
+double ds_get_coordinate (dimension, coord_num)
+/*  This routine will calculate or extract from a list the co-ordinate number
+    coord_num  in the dimension descriptor pointed to by  dimension  .
+    The co-ordinate is returned. If the co-ordinate is not obtainable, for
+    any reason, the value TOOBIG is returned.
+*/
+dim_desc *dimension;
+unsigned int coord_num;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ds_get_element_offset (pack_desc, elem_num)
+/*  This routine will calculate the byte offset of the start of a data element
+    in a data packet. The descriptor for the data packet must be pointed to
+    by  pack_desc  and the number of the element must be in  elem_num  .
+    If  elem_num  is greater or equal to the number of elements in the packet,
+    then the length of the packet is returned.
+    The routine returns the byte offset of the element in the packet.
+*/
+packet_desc *pack_desc;
+unsigned int elem_num;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ds_get_packet_size (pack_desc)
+/*  This routine will calculate the size (in bytes) of a data packet pointed
+    to by  pack_desc  .
+    The routine returns the size in bytes.
+*/
+packet_desc *pack_desc;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ds_get_array_size (arr_desc)
+/*  This routine will calculate the number of co-ordinate points in an array.
+    The array descriptor must be pointed to by  arr_desc  .
+    The routine returns the size of the array.
+*/
+array_desc *arr_desc;
+/*---------------------------------------------------------------------------*/
+
+flag ds_packet_all_data (pack_desc)
+/*  This routine will determine if the packet descriptor pointed to by
+    pack_desc  is composed only of atomic data elements (ie. no sub arrays
+    or linked lists or strings).
+    All element types in the packet descriptor must be legal, else the routine
+    will print an error message and abort processing.
+    The routine will return TRUE if the data elements are all atomic, else
+    it will return FALSE.
+*/
+packet_desc *pack_desc;
+/*---------------------------------------------------------------------------*/
+
+flag ds_element_is_atomic (element_type)
+/*  This routine will determine if the type of an element is atomic or not.
+    The element type must be in  element_type  .
+    The element type must be legal, else the routine will print an error
+    message and abort processing.
+    The routine returns TRUE if the element type is atomic, else
+    it returns FALSE.
+*/
+unsigned int element_type;
+/*---------------------------------------------------------------------------*/
+
+flag ds_element_is_named (element_type)
+/*  This routine will determine if an element type is named or not.
+    The element type must be in  element_type  .
+    The element type must be legal, else the routine will print an error
+    message and abort processing.
+    The routine returns TRUE if the element type is atomic, else
+    it returns FALSE.
+*/
+unsigned int element_type;
+/*---------------------------------------------------------------------------*/
+
+flag ds_element_is_legal (element_type)
+/*  This routine will determine if the element type in  element_type  is a
+    legal value.
+    The routine returns TRUE if the element type is legal, else it
+    returns FALSE.
+*/
+unsigned int element_type;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ds_identify_name (multi_desc, name, encls_desc, index)
+/*  This routine will search the multi array general data structure with
+    descriptor pointed to by  multi_desc  for an occurrence of the name
+    pointed to by  name  .
+    The routine will write a pointer to the enclosing descriptor of the item
+    to the storage pointed to by  encls_desc  .
+    The index (general data structure number, dimension number or element
+    number) of the item in the enclosing structure will be written to the
+    storage pointed to by  index  .
+    If these are NULL, nothing is written there.
+    The routine will return a code based on the type of the item with the
+    same name. These codes are defined in the file: general_struct.h
+*/
+multi_array *multi_desc;
+char *name;
+char **encls_desc;
+unsigned int *index;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ds_f_array_name (multi_desc, name, encls_desc, index)
+/*  This routine will search the multi array general data structure header
+    pointed to by  multi_desc  for an occurrence of the array name pointed
+    to by  name  .
+    If it is found, the pointer to the multi array header will be written to
+    the storage pointed to by  encls_desc  .
+    The index number of the general data structure with name pointed to by
+    name  will be written to the storage pointed to by  index  .
+    If these are NULL, nothing is written here.
+    Note that the routine will not search the packet descriptors for name
+    matches.
+    The routine will return a code based on the number of matches found.
+    These codes are defined in the file: general_struct.h
+*/
+multi_array *multi_desc;
+char *name;
+char **encls_desc;
+unsigned int *index;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ds_f_name_in_packet (pack_desc, name, encls_desc, index)
+/*  This routine will search for occurrences of the name pointed to by  name
+    in the packet descriptor pointed to by  pack_desc  .
+    If  name  is NULL, then the routine will not find anything.
+    The routine will recursively search for names in sub array and linked list
+    descriptors.
+    The pointer to the enclosing structure of the named item will be written
+    to the storage pointed to by  encls_desc  .
+    The index (dimension number or element number) of the item will be written
+    to the storage pointed to by  index  .
+    If these are NULL, nothing is written there.
+    The routine will return a code based on the type of the item with the
+    same name. These codes are defined in the file: general_struct.h
+*/
+packet_desc *pack_desc;
+char *name;
+char **encls_desc;
+unsigned int *index;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ds_f_name_in_array (arr_desc, name, encls_desc, index)
+/*  This routine will search for occurrences of the name pointed by  name
+    in the array descriptor pointed to by  arr_desc  .
+    If  name  is NULL, then the routine will not find anything.
+    The routine searches both the dimension names and the packet associated
+    with the array.
+    The routine recursively searches the array packet descriptor.
+    The pointer to the descriptor of the enclosing structure of the named item
+    is written to the storage pointed to by  encls_desc  .
+    The index (dimension number or element number) of the item will be written
+    to the storage pointed to by  index  .
+    If these are NULL, nothing is written there.
+    The routine will return a code based on the type of the item with the
+    same name. These codes are defined in the file: general_struct.h
+*/
+array_desc *arr_desc;
+char *name;
+char **encls_desc;
+unsigned int *index;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ds_f_elem_in_packet (pack_desc, name)
+/*  This routine will determine if a particular named element is in the
+    packet descriptor pointed to by  pack_desc  .The name of the element
+    to find must be pointed to by  name  .
+    If  name  is NULL, then the routine will not find anything.
+    The routine will only find named elements in this packet: it is not
+    recursive.
+    The routine returns the number of the element in the packet if it was found
+    else it returns the number of elements in the packet.
+    If the specified name occurs twice, the program aborts.
+*/
+packet_desc *pack_desc;
+char *name;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ds_find_hole (inp_desc, out_desc, elem_num)
+/*  This routine will recursively search the packet descriptor pointed to by
+    inp_desc  for a hole (element type NONE or element descriptor pointer NULL)
+    A pointer to the packet descriptor which contains the hole is written to
+    the storage pointed to by  out_desc  and the element number in that packet
+    which corresponds to the hole is written to the storage pointed to by
+    elem_num  .If these are NULL, nothing is written to them.
+    The routine returns a value indicating the status of the search. These
+    codes are defined in the file: general_struct.h
+*/
+packet_desc *inp_desc;
+packet_desc **out_desc;
+unsigned int *elem_num;
+/*---------------------------------------------------------------------------*/
+
+flag ds_compare_packet_desc (desc1, desc2, recursive)
+/*  This routine will compare two packet descriptors, pointed to by  desc1  and
+    desc2  .
+    The routine will perform a recursive comparison of sub arrays and linked
+    list descriptors if the value of  recursive  is TRUE.
+    The routine returns TRUE if the two packet descriptors are equal,
+    else it returns FALSE.
+*/
+packet_desc *desc1;
+packet_desc *desc2;
+flag recursive;
+/*---------------------------------------------------------------------------*/
+
+flag ds_compare_array_desc (desc1, desc2, recursive)
+/*  This routine will compare two array descriptors, pointed to by  desc1  and
+    desc2  .
+    The routine will perform a recursive comparison of the array packet
+    descriptors if the value of  recursive  is TRUE.
+    The routine returns TRUE if the two array descriptors are equal,
+    else it returns FALSE.
+*/
+array_desc *desc1;
+array_desc *desc2;
+flag recursive;
+/*---------------------------------------------------------------------------*/
+
+flag ds_compare_dim_desc (desc1, desc2)
+/*  This routine will compare two dimension descriptors pointed to by  desc1
+    and  desc2  .
+    The routine returns TRUE if the two descriptors are equal, else it
+    returns FALSE.
+*/
+dim_desc *desc1;
+dim_desc *desc2;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ds_f_dim_in_array (arr_desc, name)
+/*  This routine will determine if a particular dimension is in the array
+    descriptor pointed to by  arr_desc  .
+    The name of the dimension to find must be pointed to by  name  .
+    If  name  is NULL, then the routine will not find anything.
+    The routine returns the number of the dimension in the array if it was
+    found else it returns the number of dimensions in the array.
+    If the specified name occurs twice, the program aborts.
+*/
+array_desc *arr_desc;
+char *name;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ds_get_array_offset (arr_desc, coordinates)
+/*  This routine will calculate the offset in array co-odinates of a packet.
+    The array descriptor must be pointed to by  arr_desc  .
+    The array of dimension co-ordinates which specifies which packet must be
+    pointed to by  coordinates  .
+    The routine returns the offset of the packet.
+*/
+array_desc *arr_desc;
+unsigned int *coordinates;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ds_get_coord_num (dimension, coordinate, bias)
+/*  This routine will determine the co-ordinate number of a co-ordinate.
+    The dimension descriptor must be pointed to by  dimension  .
+    The co-ordinate to find the number of must be in  coordinate  .
+    If the specified co-ordinate lies between two dimension co-ordinates, then
+    the routine will find the co-ordinate which is lesser, closer or higher,
+    depending on the value of  bias  .Legal values for  bias  are:
+        SEARCH_BIAS_LOWER, SEARCH_BIAS_CLOSEST, SEARCH_BIAS_UPPER.
+    The routine returns the index number of the co-ordinate found.
+*/
+dim_desc *dimension;
+double coordinate;
+unsigned int bias;
+/*---------------------------------------------------------------------------*/
+
+flag ds_get_element (datum, datum_type, value, complex)
+/*  This routine will convert an atomic datum to a double precision complex
+    value.
+    The datum to be converted must be pointed to by  datum  and the data type
+    value must be in  datum_type  .
+    The data value will be written to the storage pointed to by  value  .
+    This storages MUST lie on a  double  boundary.
+    If the datum is a complex type, then the value of TRUE is written to the
+    storage pointed to by  complex  ,else the value FALSE is written here. If
+    this is NULL, nothing is written here.
+    The routine returns TRUE if the data was successfully converted,
+    else it returns FALSE.
+*/
+char *datum;
+unsigned int datum_type;
+double *value;
+flag *complex;
+/*---------------------------------------------------------------------------*/
+
+flag ds_get_elements (data, data_type, data_stride, values, complex,num_values)
+/*  This routine will convert many atomic data to an array of double precision
+    complex values.
+    The data to be converted must be pointed to by  data  and the data type
+    value must be in  data_type  .
+    The stride of data elements in memory (in bytes) must be given by
+    data_stride  .
+    The data values will be written to the storage pointed to by  values  .
+    These storages MUST lie on a  double  boundary.
+    If the data are a complex type, then the value of TRUE is written to the
+    storage pointed to by  complex  ,else the value FALSE is written here. If
+    this is NULL, nothing is written here.
+    The number of data values to convert must be pointed to by  num_values  .
+    The routine returns TRUE if the data was successfully converted,
+    else it returns FALSE.
+*/
+char *data;
+unsigned int data_type;
+unsigned int data_stride;
+double *values;
+flag *complex;
+unsigned int num_values;
+/*---------------------------------------------------------------------------*/
+
+double *ds_get_coordinate_array (dimension)
+/*  This routine will get a co-ordinate array for a dimension. If the dimension
+    is regularly spaced, then the co-ordinate array is computed, else if it is
+    irregularly spaced, it is copied from the dimension descriptor.
+    The routine returns a pointer to a co-ordinate array on success, else it
+    returns NULL.
+*/
+dim_desc *dimension;
+/*---------------------------------------------------------------------------*/
+
+flag ds_element_is_complex (element_type)
+/*  This routine will determine if the type of an element is complex or not.
+    The element type must be in  element_type  .
+    The element type must be atomic, else the routine will print an error
+    message and abort processing.
+    The routine returns TRUE if the element type is complex, else
+    it returns FALSE.
+*/
+unsigned int element_type;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ds_get_handle_in_packet (pack_desc, packet, item_name,
+				      restr_names, restr_values, num_restr,
+				      parent_desc, parent, parent_type, index)
+/*  This routine will find a unique occurrence of an object (sub-structure)
+    within a specified general data structure.
+    The general data structure packet descriptor must be pointed to by
+    pack_desc  and the packet must be pointed to by  packet  .
+    The name of the object that the handle is desired for must be pointed to by
+    item_name  .
+    The matched list of restrictions must be pointed to by  restr_names  and
+    restr_values  .The length of these lists must be in  num_restr  .
+    The routine writes a pointer to the item's parent descriptor on success to
+    the storage pointed to by  parent_desc  .
+    The routine writes a pointer to the item's parent on success to the
+    storage pointed to by  parent  .The following rules apply to items:
+        If the item is an atomic element, the parent is a packet.
+	If the item is a dimension, the parent is an array.
+	If the item is an atomic element in a linked list, the parent is a
+	list header.
+    The routine writes a value indicating the type of the parent to
+    parent_type  . This may be one of the following values:
+	NONE          if the item's parent is a packet.
+	K_ARRAY       if the item's parent is an array.
+	LISTP         if the item's parent is a linked list header.
+    The routine writes the index number of the item in its parent descriptor to
+    the storage pointed to by  index  .
+    The routine returns one of the following values:
+        IDENT_NOT_FOUND    if the item was not found.
+	IDENT_MULTIPLE     if the restrictions were insufficient
+	IDENT_DIMENSION    on success and the item was a dimension
+	IDENT_ELEMENT      on success and the item was an atomic element
+*/
+packet_desc *pack_desc;
+char *packet;
+char *item_name;
+char *restr_names[];
+double *restr_values;
+unsigned int num_restr;
+char **parent_desc;
+char **parent;
+unsigned int *parent_type;
+unsigned int *index;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ds_get_handle_in_array (arr_desc, array, item_name,
+				     restr_names, restr_values, num_restr,
+				     parent_desc, parent, parent_type, index)
+/*  This routine will find a unique occurrence of an object (sub-structure)
+    within a multi-dimensional array.
+    The array descriptor must be pointed to by  arr_desc  and the array must
+    be pointed to by  array  .
+    The name of the object that the handle is desired for must be pointed to by
+    item_name  .
+    The matched list of restrictions must be pointed to by  restr_names  and
+    restr_values  .The length of these lists must be in  num_restr  .
+    The routine writes a pointer to the item's parent descriptor on success to
+    the storage pointed to by  parent_desc  .
+    The routine writes a pointer to the item's parent on success to the
+    storage pointed to by  parent  .The following rules apply to items:
+        If the item is an atomic element, the parent is a packet.
+	If the item is a dimension, the parent is an array.
+	If the item is an atomic element in a linked list, the parent is a
+	list header.
+    The routine writes a value indicating the type of the parent to
+    parent_type  . This may be one of the following values:
+	NONE          if the item's parent is a packet.
+	K_ARRAY       if the item's parent is an array.
+	LISTP         if the item's parent is a linked list header.
+    The routine writes the index number of the item in it parent descriptor to
+    the storage pointed to by  index  .
+    The routine returns one of the following values:
+        IDENT_NOT_FOUND    if the item was not found.
+	IDENT_MULTIPLE     if the restrictions were insufficient
+	IDENT_DIMENSION    on success and the item was a dimension
+	IDENT_ELEMENT      on success and the item was an atomic element
+*/
+array_desc *arr_desc;
+char *array;
+char *item_name;
+char *restr_names[];
+double *restr_values;
+unsigned int num_restr;
+char **parent_desc;
+char **parent;
+unsigned int *parent_type;
+unsigned int *index;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ds_get_handle_in_list (list_desc, list_head, item_name,
+				    restr_names, restr_values, num_restr,
+				    parent_desc, parent, parent_type, index)
+/*  This routine will find a unique occurrence of an object (sub-structure)
+    within a linked list.
+    The list descriptor must be pointed to by  list_desc  and the list header
+    must be pointed to by  list_head  .
+    The name of the object that the handle is desired for must be pointed to by
+    item_name  .
+    The matched list of restrictions must be pointed to by  restr_names  and
+    restr_values  .The length of these lists must be in  num_restr  .
+    The routine writes a pointer to the item's parent descriptor on success to
+    the storage pointed to by  parent_desc  .
+    The routine writes a pointer to the item's parent on success to the
+    storage pointed to by  parent  .The following rules apply to items:
+        If the item is an atomic element, the parent is a packet.
+	If the item is a dimension, the parent is an array.
+	If the item is an atomic element in a linked list, the parent is a
+	list header.
+    The routine writes a value indicating the type of the parent to
+    parent_type  . This may be one of the following values:
+	NONE          if the item's parent is a packet.
+	K_ARRAY       if the item's parent is an array.
+	LISTP         if the item's parent is a linked list header.
+    The routine writes the index number of the item in it parent descriptor to
+    the storage pointed to by  index  .
+    The routine returns one of the following values:
+        IDENT_NOT_FOUND    if the item was not found.
+	IDENT_MULTIPLE     if the restrictions were insufficient
+	IDENT_DIMENSION    on success and the item was a dimension
+	IDENT_ELEMENT      on success and the item was an atomic element
+*/
+packet_desc *list_desc;
+list_header *list_head;
+char *item_name;
+char *restr_names[];
+double *restr_values;
+unsigned int num_restr;
+char **parent_desc;
+char **parent;
+unsigned int *parent_type;
+unsigned int *index;
+/*---------------------------------------------------------------------------*/
+
+void ds_list_insert (list_head, new_entry, entry)
+/*  This routine will insert an entry into the fragmented section of a linked
+    list. 
+    The list header must be pointed to by  list_head  .
+    The entry to be inserted must be pointed to by  new_entry  .
+    The list entry which is to be moved beyond the new entry must be pointed to
+    by  entry  .If this is NULL, the new entry is inserted at the start of the
+    fragmented section of the list.
+    Inserting an entry into a list with no entries in the fragmented section is
+    safe (however, in this case  entry  must be NULL).
+    The routine returns nothing.
+*/
+list_header *list_head;
+list_entry *new_entry;
+list_entry *entry;
+/*---------------------------------------------------------------------------*/
+
+void ds_list_append (list_head, entry)
+/*  This routine will append an entry into a linked list.
+    The list header must be pointed to by  list_head  .
+    The entry must be pointed to by  entry  .
+    The routine returns nothing.
+*/
+list_header *list_head;
+list_entry *entry;
+/*---------------------------------------------------------------------------*/
+
+void ds_list_delete (list_desc, list_head, entry)
+/*  This routine will delete an entry from the fragmented section of a linked
+    list.
+    The packet descriptor for the list entry data must be pointed to by
+    list_desc  .If this is not NULL, the routine will recursively deallocate
+    the packet data.
+    The list header must be pointed to by  list_head  .
+    The entry to be delete must be pointed to by  entry  .
+    The routine will deallocate the list entry and it's data packet.
+    The routine returns nothing.
+*/
+packet_desc *list_desc;
+list_header *list_head;
+list_entry *entry;
+/*---------------------------------------------------------------------------*/
+
+flag ds_list_unfragment (list_desc, list_head)
+/*  This routine will unfragment a linked list (ie. all the entries and data
+    packets in the linked list will be made contiguous in memory. This
+    increases the storage efficiency (no  list_entry  structures are needed to
+    link the data packets) as well as arbitrary indexing.
+    The packet descriptor for the list must be pointed to by  list_desc  .
+    The  contiguous_length  value in the linked list header pointed to by
+    list_head  will be set to the length of the list.
+    This routine, used with a sorting routine (in either order of execution),
+    can be used to speed up searching algorithms, such as  ds_list_search  .
+    If the routine is not successful in allocating the required memory, then
+    no change is effected (and the  contiguous_length  value in the list header
+    is not changed). Ie. data is not lost.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+packet_desc *list_desc;
+list_header *list_head;
+/*---------------------------------------------------------------------------*/
+
+flag ds_list_fragment (list_desc, list_head)
+/*  This routine will fragment a linked list (ie. all the contiguous data
+    packets in the linked list will be separately allocated and linked together
+    by new  list_entry  structures. This decreases the storage efficiency (now
+    list_entry  structures are needed to link the data packets) as well as
+    arbitrary indexing. However, it does provide for easy insertion of new
+    entries into any part of the list.
+    The packet descriptor for the list must be pointed to by  list_desc  .
+    The  contiguous_length  value in the linked list header pointed to by
+    list_head  will be set to 0.
+    If the routine is not successful in allocating the required memory, then
+    no change is effected (and the  contiguous_length  value in the list header
+    is not changed). Ie. data is not lost.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+packet_desc *list_desc;
+list_header *list_head;
+/*---------------------------------------------------------------------------*/
+
+flag ds_remove_dim_desc (arr_desc, dim_name)
+/*  This routine will remove a dimension descriptor from an array descriptor.
+    Tiling information is preserved, however, any address offset information is
+    removed.
+    With the exception of the dimension to be removed, the order of the
+    dimensions is unaffected.
+    The array descriptor must be pointed to by  arr_desc  .
+    The name of the dimension to be removed must be pointed to by  dim_name  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+array_desc *arr_desc;
+char *dim_name;
+/*---------------------------------------------------------------------------*/
+
+flag ds_append_dim_desc (arr_desc, dimension)
+/*  This routine will append a dimension descriptor to the list of dimensions
+    attached to an array descriptor. The appended dimension will be the LEAST
+    significant dimension (co-ordinates have lowest stride).
+    Tiling information is preserved, however, any address offset information is
+    removed. If the array is NOT tiled, the dimension length will be copied
+    into the array of bottom tile lengths.
+    The array descriptor must be pointed to by  arr_desc  .
+    The dimension descriptor must be pointed to by  dimension  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+array_desc *arr_desc;
+dim_desc *dimension;
+/*---------------------------------------------------------------------------*/
+
+flag ds_prepend_dim_desc (arr_desc, dimension)
+/*  This routine will prepend a dimension descriptor to the list of dimensions
+    attached to an array descriptor. The prepended dimension will be the MOST
+    significant dimension (co-ordinates have greatest stride).
+    Tiling information is preserved, however, any address offset information is
+    removed. If the array is NOT tiled, the dimension length will be copied
+    into the array of bottom tile lengths.
+    The array descriptor must be pointed to by  arr_desc  .
+    The dimension descriptor must be pointed to by  dimension  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+array_desc *arr_desc;
+dim_desc *dimension;
+/*---------------------------------------------------------------------------*/
+
+flag ds_compute_array_offsets (arr_desc)
+/*  This routine will compute array address offsets for each dimension in the
+    array.
+    The array descriptor must be pointed to by  arr_desc  .The array
+    descriptor is modified.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+array_desc *arr_desc;
+/*---------------------------------------------------------------------------*/
+
+void ds_remove_tiling_info (arr_desc)
+/*  This routine will remove any tiling information from an array descriptor.
+    The routine will NOT remove (or change) any offset information.
+    The array descriptor must be pointed to by  arr_desc  .
+    The routine returns nothing.
+*/
+array_desc *arr_desc;
+/*---------------------------------------------------------------------------*/
+
+flag ds_append_gen_struct (multi_desc, pack_desc, packet, existing_arrayname,
+			   append_arrayname)
+/*  This routine will append a general data structure to a multi-array general
+    data structure.
+    The multi-array general data structure must be pointed to by  multi_desc
+    The top level packet descriptor of the general data structure to append
+    must be poined to by  pack_desc  .
+    The corresponding data for the general data structure must be pointed to
+    by  packet  .
+    If the multi-array data structure previously had only one general data
+    structure, then the name pointed to by  existing_arrayname  will become
+    the arrayname for that data structure.
+    The name of the appended data structure must be pointed to by
+    append_arrayname  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+multi_array *multi_desc;
+packet_desc *pack_desc;
+char *packet;
+char *existing_arrayname;
+char *append_arrayname;
+/*---------------------------------------------------------------------------*/
+
+char *ds_put_element (output, type, input)
+/*  This routine will write out an element of data to the storage pointed to by
+    output  .
+    The type of the element must be in  type  .
+    The input data must be pointed to by  input  .
+    The routine returns the address of the next element on success, else it
+    returns NULL.
+*/
+char *output;
+unsigned int type;
+double *input;
+/*---------------------------------------------------------------------------*/
+
+flag ds_put_elements (data, data_type, data_stride, values, num_values)
+/*  This routine will convert an array of double precision complex values to
+    an array of atomic data.
+    The array of output data must be pointed to by  data  and the data type
+    value must be in  data_type  .
+    The stride of data elements in memory (in bytes) must be given by
+    data_stride  .
+    The data values will be read from the storage pointed to by  values  .
+    The number of data values to convert must be pointed to by  num_values  .
+    The routine returns TRUE if the data was successfully converted,
+    else it returns FALSE.
+*/
+char *data;
+unsigned int data_type;
+unsigned int data_stride;
+double *values;
+unsigned int num_values;
+/*---------------------------------------------------------------------------*/
+
+flag ds_put_element_many_times (data, data_type, data_stride, value, num_elem)
+/*  This routine will convert and write a double precision complex value to
+    an array of atomic data elements.
+    The array of output data must be pointed to by  data  and the data type
+    value must be in  data_type  .
+    The stride of data elements in memory (in bytes) must be given by
+    data_stride  .
+    The data value will be read from the storage pointed to by  value  .
+    The number of data elements to write to must be pointed to by  num_elem  .
+    The routine returns TRUE if the data was successfully converted,
+    else it returns FALSE.
+*/
+char *data;
+unsigned int data_type;
+unsigned int data_stride;
+double *value;
+unsigned int num_elem;
+/*---------------------------------------------------------------------------*/
+
+flag ds_put_named_element (pack_desc, packet, name, value)
+/*  This routine will write a named element into a specified packet.
+    The packet descriptor must be pointed to by  pack_desc  .
+    The packet which is described by  pack_desc  must be pointed to by
+    packet  .
+    The name of the element must be pointed to by  name  .
+    The value of the data must be pointed to by  value  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+packet_desc *pack_desc;
+char *packet;
+char *name;
+double *value;
+/*---------------------------------------------------------------------------*/
+
+flag ds_reorder_array (arr_desc, order_list, array, mod_desc)
+/*  This routine will re-order an array with descriptor pointed to by
+    arr_desc.
+    The ordering of the dimensions is specified by the array of dimension
+    numbers pointed to by  order_list  .
+    The first entry in the order list contains the number of the dimension, in
+    the old order, which is to become the most significant dimension in the new
+    ordering.
+    The array must be pointed to by  array  .If this is NULL, only the array
+    descriptor can be re-ordered (no data can be re-ordered).
+    If the value of  mod_desc  is TRUE the array descriptor will have it's
+    dimension descriptors re-ordered, else they will not be. This is useful to
+    traverse a data structure, re-ordering the data, and then finally
+    re-ordering the array descriptor to match.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+array_desc *arr_desc;
+unsigned int order_list[];
+char *array;
+flag mod_desc;
+/*---------------------------------------------------------------------------*/
+
+flag ds_foreach_occurrence (pack_desc, packet, item, as_whole, function)
+/*  This routine will traverse the general data structure with descriptor
+    pointed to by  pack_desc  with data pointed to by  data  for occurrences
+    of an item with name pointed to by  item  .
+    The routine will process each occurrence using the function pointed to by
+    function  .
+    The following rules apply if  as_whole  is FALSE:
+        If the item pointed to is the name of a dimension, then  function
+	will be called for each occurrence of that dimension (ie. the other
+	dimensions will be iterated through).
+	If the item pointed to is the name of an element, then  function  will
+	be called for each occurrence of the element in the array or linked
+	list which it is in.
+    The following rules apply if  as_whole  is TRUE:
+        If the item pointed to is the name of a dimension or an element within
+	a packet within an array,  function  is called once for each occurrence
+	of the entire array.
+	If the item pointed to is the name of an element in a linked list, then
+	function  will be called once for each occurrence of the linked list.
+    The interface to function is as follows:
+
+    flag function (encls_desc, type, data, index)
+        This routine will process an item with enclosing descriptor pointed to
+	by  encls_desc  .
+	The type of the descriptor must be in  type  .This may be one of the
+	following:
+	    NONE (for a packet descriptor),
+	    IDENT_DIMENSION (for a dimension descriptor), 
+	    K_ARRAY (for an array descriptor) or
+	    LISTP (for a linked list descriptor).
+	The pointer to the data must be in  data  .This is:
+	    A pointer to the first element (for a packet descriptor)
+	    A pointer to a portion of the array (for an array or dimension
+	    descriptor)
+	    A pointer to the linked list header (for a linked list descriptor)
+	The index number of the item in the enclosing descriptor must be in
+	index  ,for the cases where the enclosing descriptor is a packet, array
+	or linked list descriptor. For the case where the enclosing descriptor
+	is a dimension descriptor,  index  carries the stride (in bytes)
+	between consecutive co-ordinates in the dimension.
+	The routine returns TRUE on success, else it returns FALSE.
+    char *encls_desc;
+    unsigned int type;
+    char *data;
+    unsigned int index;
+    {}
+
+    If  function  returns FALSE, the routine will cease iterating and return
+    FALSE, else it returns TRUE.
+*/
+packet_desc *pack_desc;
+char *packet;
+char *item;
+flag as_whole;
+flag (*function) ();
+/*---------------------------------------------------------------------------*/
+
+flag ds_foreach_in_array (arr_desc, array, item, as_whole, function)
+/*  This routine will traverse the array with descriptor pointed to by
+    arr_desc  with data pointed to by  array  for occurrences of an item
+    with name pointed to by  item  .
+    The routine will recursively process the array packets.
+    The routine will process each occurrence using the function pointed to by
+    function  .
+    The following rules apply if  as_whole  is FALSE:
+        If the item pointed to is the name of a dimension, then  function
+	will be called for each occurrence of that dimension (ie. the other
+	dimensions will be iterated through).
+	If the item pointed to is the name of an element, then  function  will
+	be called for each occurrence of the element in the array or linked
+	list which it is in.
+    The following rules apply if  as_whole  is TRUE:
+        If the item pointed to is the name of a dimension or an element within
+	a packet within an array,  function  is called once for each occurrence
+	of the entire array.
+	If the item pointed to is the name of an element in a linked list, then
+	function  will be called once for each occurrence of the linked list.
+    The interface to function is as follows:
+
+    flag function (encls_desc, type, data, index)
+        This routine will process an item with enclosing descriptor pointed to
+	by  encls_desc  .
+	The type of the descriptor must be in  type  .This may be one of the
+	following:
+	    NONE (for a packet descriptor),
+	    IDENT_DIMENSION (for a dimension descriptor), 
+	    K_ARRAY (for an array descriptor) or
+	    LISTP (for a linked list descriptor).
+	The pointer to the data must be in  data  .This is:
+	    A pointer to the first element (for a packet descriptor)
+	    A pointer to a portion of the array (for an array or dimension
+	    descriptor)
+	    A pointer to the linked list header (for a linked list descriptor)
+	The index number of the item in the enclosing descriptor must be in
+	index  ,for the cases where the enclosing descriptor is a packet, array
+	or linked list descriptor. For the case where the enclosing descriptor
+	is a dimension descriptor,  index  carries the stride (in bytes)
+	between consecutive co-ordinates in the dimension.
+	The routine returns TRUE on success, else it returns FALSE.
+    char *encls_desc;
+    unsigned int type;
+    char *data;
+    unsigned int index;
+    {}
+
+    If  function  returns FALSE, the routine will cease iterating and return
+    FALSE, else it returns TRUE.
+*/
+array_desc *arr_desc;
+char *array;
+char *item;
+flag as_whole;
+flag (*function) ();
+/*---------------------------------------------------------------------------*/
+
+flag ds_foreach_in_list (list_desc, list_head, item, as_whole, function)
+/*  This routine will traverse the liked list with descriptor pointed to by
+    list_desc  with data pointed to by  list_head  for occurrences of an item
+    with name pointed to by  item  .
+    The routine will recursively process the linked list packets.
+    The routine will process each occurrence using the function pointed to by
+    function  .
+    The following rules apply if  as_whole  is FALSE:
+        If the item pointed to is the name of a dimension, then  function
+	will be called for each occurrence of that dimension (ie. the other
+	dimensions will be iterated through).
+	If the item pointed to is the name of an element, then  function  will
+	be called for each occurrence of the element in the array or linked
+	list which it is in.
+    The following rules apply if  as_whole  is TRUE:
+        If the item pointed to is the name of a dimension or an element within
+	a packet within an array,  function  is called once for each occurrence
+	of the entire array.
+	If the item pointed to is the name of an element in a linked list, then
+	function  will be called once for each occurrence of the linked list.
+    The interface to function is as follows:
+
+    flag function (encls_desc, type, data, index)
+        This routine will process an item with enclosing descriptor pointed to
+	by  encls_desc  .
+	The type of the descriptor must be in  type  .This may be one of the
+	following:
+	    NONE (for a packet descriptor),
+	    IDENT_DIMENSION (for a dimension descriptor), 
+	    K_ARRAY (for an array descriptor) or
+	    LISTP (for a linked list descriptor).
+	The pointer to the data must be in  data  .This is:
+	    A pointer to the first element (for a packet descriptor)
+	    A pointer to a portion of the array (for an array or dimension
+	    descriptor)
+	    A pointer to the linked list header (for a linked list descriptor)
+	The index number of the item in the enclosing descriptor must be in
+	index  ,for the cases where the enclosing descriptor is a packet, array
+	or linked list descriptor. For the case where the enclosing descriptor
+	is a dimension descriptor,  index  carries the stride (in bytes)
+	between consecutive co-ordinates in the dimension.
+	The routine returns TRUE on success, else it returns FALSE.
+    char *encls_desc;
+    unsigned int type;
+    char *data;
+    unsigned int index;
+    {}
+
+    If  function  returns FALSE, the routine will cease iterating and return
+    FALSE, else it returns TRUE.
+*/
+packet_desc *list_desc;
+list_header *list_head;
+char *item;
+flag as_whole;
+flag (*function) ();
+/*---------------------------------------------------------------------------*/
+
+flag ds_traverse_and_process (inp_desc, inp_data, out_desc, out_data, as_whole,
+			      function)
+/*  This routine will traverse a general data structure and will process
+    a sub structure for every occurence in the above lying structure.
+    The input data structure descriptor must be pointed to by  inp_desc  and
+    the input data must be pointed to by  inp_data  .
+    The output data structure descriptor must be pointed to by  out_desc  and
+    the output data must be pointed to by  out_data  .
+    Wherever there is a difference in the two data structures' descriptors,
+    the pointers to the descriptors and the data where they diverge are
+    passed to the function pointed to by  function  .
+    The following rules apply if  as_whole  is FALSE:
+        If the type or name of any element in the two packet descriptors are
+	different, the packets are deemed divergent and they are passed to
+	function  .
+	If any aspect of the two array's dimension descriptors are different,
+	then the arrays are deemed divergent and their descriptors are passed
+	to  function  .
+    The following rules apply if  as_whole  is TRUE:
+        If the type or name of any element in the two packet descriptors are
+	different, the packets are deemed divergent and they are passed to
+	function  .
+	If any aspect of the two array's dimension descriptors are different,
+	or their packet descriptors are divergent, then the arrays are deemed
+	divergent and the array descriptors are passed to  function  .
+	If the packet descriptors for linked lists are divergent, then the two
+	lists are deemed divergent and their descriptors and headers are passed
+	to  function  .
+    The interface to this function is as follows:
+
+    flag function (inp_desc, inp_type, inp_data, out_desc, out_type, out_data)
+        This routine will process an input general data structure with
+        descriptor pointed to by  inp_desc  ,the descriptor type must be in
+        inp_type  and  the input data pointed to by  inp_data  .
+        The output data structure descriptor must be pointed to by
+        out_desc  ,the type of descriptor must be in  out_type  and the
+        output data must be pointed to by  out_data  .
+	The  inp_type  and  out_type  may take the following values:
+	    NONE (for a packet descriptor)
+	    K_ARRAY (for an array descriptor)
+	    LISTP (for a linked list descriptor)
+        The routine returns TRUE on success, else it returns FALSE.
+    char *inp_desc;
+    unsigned int inp_type;
+    char *inp_data;
+    char *out_desc;
+    unsigned int out_type;
+    char *out_data;
+    {}
+
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+packet_desc *inp_desc;
+char *inp_data;
+packet_desc *out_desc;
+char *out_data;
+flag as_whole;
+flag (*function) ();
+/*---------------------------------------------------------------------------*/
+
+flag ds_traverse_array (inp_desc, inp_data, out_desc, out_data, as_whole,
+			function)
+/*  This routine will traverse a general data structure and will process
+    a sub structure for every occurence in the above lying structure.
+    The input data structure descriptor must be pointed to by  inp_desc  and
+    the input data must be pointed to by  inp_data  .
+    The output data structure descriptor must be pointed to by  out_desc  and
+    the output data must be pointed to by  out_data  .
+    Wherever there is a difference in the two data structures' descriptors,
+    the pointers to the descriptors and the data where they diverge are
+    passed to the function pointed to by  function  .
+    The following rules apply if  as_whole  is FALSE:
+        If the type or name of any element in the two packet descriptors are
+	different, the packets are deemed divergent and they are passed to
+	function  .
+	If any aspect of the two array's dimension descriptors are different,
+	then the arrays are deemed divergent and their descriptors are passed
+	to  function  .
+    The following rules apply if  as_whole  is TRUE:
+        If the type or name of any element in the two packet descriptors are
+	different, the packets are deemed divergent and they are passed to
+	function  .
+	If any aspect of the two array's dimension descriptors are different,
+	or their packet descriptors are divergent, then the arrays are deemed
+	divergent and the array descriptors are passed to  function  .
+	If the packet descriptors for linked lists are divergent, then the two
+	lists are deemed divergent and their descriptors and headers are passed
+	to  function  .
+    The interface to this function is as follows:
+
+    flag function (inp_desc, inp_type, inp_data, out_desc, out_type, out_data)
+        This routine will process an input general data structure with
+        descriptor pointed to by  inp_desc  ,the descriptor type must be in
+        inp_type  and  the input data pointed to by  inp_data  .
+        The output data structure descriptor must be pointed to by
+        out_desc  ,the type of descriptor must be in  out_type  and the
+        output data must be pointed to by  out_data  .
+	The  inp_type  and  out_type  may take the following values:
+	    NONE (for a packet descriptor)
+	    K_ARRAY (for an array descriptor)
+	    LISTP (for a linked list descriptor)
+        The routine returns TRUE on success, else it returns FALSE.
+    char *inp_desc;
+    unsigned int inp_type;
+    char *inp_data;
+    char *out_desc;
+    unsigned int out_type;
+    char *out_data;
+    {}
+
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+array_desc *inp_desc;
+char *inp_data;
+array_desc *out_desc;
+char *out_data;
+flag as_whole;
+flag (*function) ();
+/*---------------------------------------------------------------------------*/
+
+flag ds_traverse_list (inp_desc, inp_head, out_desc, out_head, as_whole,
+		       function)
+/*  This routine will traverse a general data structure and will process
+    a sub structure for every occurence in the above lying structure.
+    The input data structure descriptor must be pointed to by  inp_desc  and
+    the input list header must be pointed to by  inp_head  .
+    The output data structure descriptor must be pointed to by  out_desc  and
+    the output lsit header must be pointed to by  out_head  .
+    Wherever there is a difference in the two data structures' descriptors,
+    the pointers to the descriptors and the data where they diverge are
+    passed to the function pointed to by  function  .
+    The following rules apply if  as_whole  is FALSE:
+        If the type or name of any element in the two packet descriptors are
+	different, the packets are deemed divergent and they are passed to
+	function  .
+	If any aspect of the two array's dimension descriptors are different,
+	then the arrays are deemed divergent and their descriptors are passed
+	to  function  .
+    The following rules apply if  as_whole  is TRUE:
+        If the type or name of any element in the two packet descriptors are
+	different, the packets are deemed divergent and they are passed to
+	function  .
+	If any aspect of the two array's dimension descriptors are different,
+	or their packet descriptors are divergent, then the arrays are deemed
+	divergent and the array descriptors are passed to  function  .
+	If the packet descriptors for linked lists are divergent, then the two
+	lists are deemed divergent and their descriptors and headers are passed
+	to  function  .
+    The interface to this function is as follows:
+
+    flag function (inp_desc, inp_type, inp_data, out_desc, out_type, out_data)
+        This routine will process an input general data structure with
+        descriptor pointed to by  inp_desc  ,the descriptor type must be in
+        inp_type  and  the input data pointed to by  inp_data  .
+        The output data structure descriptor must be pointed to by
+        out_desc  ,the type of descriptor must be in  out_type  and the
+        output data must be pointed to by  out_data  .
+	The  inp_type  and  out_type  may take the following values:
+	    NONE (for a packet descriptor)
+	    K_ARRAY (for an array descriptor)
+	    LISTP (for a linked list descriptor)
+        The routine returns TRUE on success, else it returns FALSE.
+    char *inp_desc;
+    unsigned int inp_type;
+    char *inp_data;
+    char *out_desc;
+    unsigned int out_type;
+    char *out_data;
+    {}
+
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+packet_desc *inp_desc;
+list_header *inp_head;
+packet_desc *out_desc;
+list_header *out_head;
+flag as_whole;
+flag (*function) ();
+/*---------------------------------------------------------------------------*/

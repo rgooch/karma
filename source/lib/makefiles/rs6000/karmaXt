@@ -1,0 +1,57 @@
+LIB = karmaXt
+
+library = lib$(LIB).a
+shared_lib = ../lib$(LIB).a
+lintlib = ../llib-l$(LIB).ln
+
+.PRECIOUS: $(library)
+
+libdir = $(KARMAROOT)/source/lib/$(LIB)
+sourcedir = $(libdir)/master
+lintdir = $(libdir)/lint
+
+vpath %.c $(sourcedir)
+
+vpath %.h $(KARMAINCLUDEPATH)
+
+CFLAGS = -O -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) -bM\:SRE
+
+.c.o :
+	$(KARMA_CC) -DARCH_$(MACHINE_ARCH) $(CFLAGS) -c $(sourcedir)/$*.c
+
+cs = $(wildcard $(sourcedir)/*.c)
+csource = $(notdir $(wildcard $(sourcedir)/*.c))
+cobjects = $(subst .c,.o,$(csource))
+objects =  $(cobjects)
+members = ${addprefix ${library}(,${addsuffix ),${objects}}}
+
+.PHONY: all
+all:	$(shared_lib) clean
+
+
+$(shared_lib):	$(library)
+	/usr/bin/dump -g $(library) | sed -n -e 's/^[ 	]*[0-9][0-9]*[	 ]*\([^	 .][^	 ]*\)$$/\1/p' > symbols
+	ld -o shr.o $(library) -H512 -T512 -bM\:SRE -bE\:symbols  -L$(KARMALIBPATH) -L$(XLIBPATH) -lkarma -lXt -ltermcap -lc -lm -lbsd
+	rm -f $(shared_lib)
+	ar clq $(shared_lib) shr.o
+	rm shr.o symbols
+
+$(library):	$(members)
+	ranlib $(library)
+
+
+lint:	$(lintlib)
+
+$(lintlib):	$(csource)
+	(cd $(libdir) ; make_lint)
+	(cd .. ; lint -DARCH_$(MACHINE_ARCH) -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) -C$(LIB) $(lintdir)/*.c)
+
+
+clean:
+	\rm -f *~ *.bak
+
+
+depend:
+	makedepend -DARCH_$(MACHINE_ARCH) -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) -fGNUmakefile -p$(library)"(" -o'.o)' $(cs)
+
+# DO NOT DELETE THIS LINE -- make depend depends on it.

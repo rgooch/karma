@@ -1,0 +1,269 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the dsrw_ package of routines in the Karma
+    library.
+
+    These routines are meant to provide a mechanism to read and write the
+    recursive, heirarchical data structure supported in Karma from and to
+    open channels.
+    The use of these routines is NOT recommended. The dsxfr_ routines are the
+    preferred means of transferring data structures.
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	1-OCT-1992
+
+
+*/
+
+void dsrw_write_multi (channel, multi_desc)
+/*  This routine will write a binary multi_array descriptor to the channel
+    object given by  channel  .All descriptors and data, as well has history
+    strings are written.
+    The descriptor that will be sent to the channel object must be pointed to
+    by  multi_desc  .
+    The routine returns nothing.
+*/
+Channel channel;
+multi_array *multi_desc;
+/*---------------------------------------------------------------------------*/
+
+void dsrw_write_packet_desc (channel, pack_desc)
+/*  This routine will write the binary format of the packet descriptor pointed
+    to by  pack_desc  to the channel object given by  channel  .
+    The routine will also write all lower levels of array or linked list
+    descriptors.
+    The routine returns nothing.
+*/
+Channel channel;
+packet_desc *pack_desc;
+/*---------------------------------------------------------------------------*/
+
+void dsrw_write_element_desc (channel, type, desc)
+/*  This routine will write the binary format of the element of type  type  and
+    descriptor pointed to by  desc  to the channel object given by
+    channel  .
+    If the element is an array pointer or a linked list pointer, that
+    descriptor will also be written.
+    The routine returns nothing.
+*/
+Channel channel;
+unsigned int type;
+char *desc;
+/*---------------------------------------------------------------------------*/
+
+void dsrw_write_array_desc (channel, arr_desc)
+/*  This routine will write the binary representation of the array descriptor
+    pointed to by  arr_desc  to the channel object given by  channel  .
+    The packet descriptor for the array will also be written (this is a
+    recursive process).
+*/
+Channel channel;
+array_desc *arr_desc;
+/*---------------------------------------------------------------------------*/
+
+void dsrw_write_dim_desc (channel, dimension)
+/*  This routine will write the binary representation of the dimension
+    descriptor pointed to by  dimension  to the channel object given by
+    channel  .
+    The routine returns nothing.
+*/
+Channel channel;
+dim_desc *dimension;
+/*---------------------------------------------------------------------------*/
+
+void dsrw_write_packet (channel, pack_desc, packet)
+/*  This routine will write the binary representation of the data pointed to
+    by  packet  with a descriptor pointed to by  pack_desc  to the channel
+    object given by  channel  .
+    The routine will recursively write sub arrays and linked lists of packets.
+    The routine returns nothing.
+*/
+Channel channel;
+packet_desc *pack_desc;
+char *packet;
+/*---------------------------------------------------------------------------*/
+
+void dsrw_write_element (channel, type, desc, element)
+/*  This routine will write the binary representation of the element of type
+    type  and pointed to by  element  to the channel object given by
+    channel  .
+    The descriptor for the element is pointed to by  desc  .
+    If the element is a pointer to an array or a linked list, then the array
+    or linked list is recursively written to the channel object.
+    The routine returns nothing.
+*/
+Channel channel;
+unsigned int type;
+char *desc;
+char *element;
+/*---------------------------------------------------------------------------*/
+
+void dsrw_write_array (channel, arr_desc, element, pad)
+/*  This routine will write the binary representation of an array to a channel.
+    The channel must be given by  channel  .
+    The array descriptor must be pointed to by  arr_desc  .
+    The element to write the array pointer to must be pointed to by  element  .
+    The array will be padded on a selected boundary if the value of  pad  is
+    TRUE (this is the case when writing .kf files).
+    The routine will recursively write any sub arrays or linked lists of
+    packets.
+    The routine returns nothing.
+*/
+Channel channel;
+array_desc *arr_desc;
+char *element;
+flag pad;
+/*---------------------------------------------------------------------------*/
+
+void dsrw_write_list (channel, pack_desc, list_head)
+/*  This routine will write the binary representation of the data in the linked
+    list pointed to by  list_head  with a descriptor pointed to by
+    pack_desc  to the channel object given by  channel  .
+    The routine will recursively write any sub arrays or linked lists of
+    packets.
+    The routine returns nothing.
+*/
+Channel channel;
+packet_desc *pack_desc;
+list_header *list_head;
+/*---------------------------------------------------------------------------*/
+
+void dsrw_write_flag (channel, logical)
+/*  This routine will write the binary representation of the flag value in
+    logical  to the channel object given by  channel  .
+    The routine returns nothing.
+*/
+Channel channel;
+flag logical;
+/*---------------------------------------------------------------------------*/
+
+multi_array *dsrw_read_multi (channel)
+/*  This routine will read the binary representation of the multi array general
+    data structure header from the channel object given by  channel  and
+    will allocate the required descriptors. The routine will then read in the
+    data from the channel object and will write it into the data structure(s)
+    created.
+    The routine returns a pointer to the multi array header on success, else
+    it displays an error message and returns NULL.
+*/
+Channel channel;
+/*---------------------------------------------------------------------------*/
+
+packet_desc *dsrw_read_packet_desc (channel)
+/*  This routine will read the channel object given by  channel  for a
+    packet descriptor.
+    The routine will recursively read in array and linked list descriptors
+    if required.
+    The routine returns a pointer to the packet descriptor. NULL is returned
+    if an error occured (the routine prints error messages).
+*/
+Channel channel;
+/*---------------------------------------------------------------------------*/
+
+array_desc *dsrw_read_array_desc (channel, type)
+/*  This routine will read in an array descriptor from the channel object
+    given by  channel  .
+    The type of the array must be given by  type  .Legal values are:
+        ARRAYP   (old format)
+	K_ARRAY  (new format)
+    The routine will recursively read the packet descriptor for the array.
+    The routine returns a pointer to the array descriptor if there were no
+    errors in reading, else it displays an error message and returns NULL.
+*/
+Channel channel;
+unsigned int type;
+/*---------------------------------------------------------------------------*/
+
+dim_desc *dsrw_read_dim_desc (channel)
+/*  This routine will read the channel object given by  channel  for a
+    dimension descriptor.
+    The routine returns a pointer to the dimension descriptor if there were no
+    errors in reading, else it displays an error message and returns NULL.
+*/
+Channel channel;
+/*---------------------------------------------------------------------------*/
+
+flag dsrw_read_packet (channel, descriptor, packet)
+/*  This routine will read the binary representation of the data packet
+    from the channel object given by  channel  .
+    The descriptor for the packet must be pointed to by  descriptor  and the
+    data will be written to the storage pointed to by  packet  .
+    The routine will recursively read in sub arrays and linked lists.
+    The routine returns TRUE on success, else it displays an error message
+    and returns FALSE.
+*/
+Channel channel;
+packet_desc *descriptor;
+char *packet;
+/*---------------------------------------------------------------------------*/
+
+flag dsrw_read_element (channel, type, desc, element)
+/*  This routine will read the binary representation of an element from the
+    channel object given by  channel  and will write the value to the
+    storage pointed to by  element  .
+    The type of the element to read must be in  type  and the descriptor for
+    the element must be pointed to by  desc  .
+    If the element type is a pointer to an array or linked lists, the routine
+    will recursively read in the array or linked list of packets.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+Channel channel;
+unsigned int type;
+char *desc;
+char *element;
+/*---------------------------------------------------------------------------*/
+
+flag dsrw_read_array (channel, descriptor, element, pad)
+/*  This routine will read in the binary representation of an array of data
+    packets from the channel object given by  channel  .
+    The array descriptor must be pointed to by  descriptor  .
+    The element to write the array pointer to must be pointed to by  element  .
+    The array will be padded on a selected boundary if the value of  pad  is
+    TRUE (this is the case when reading .kf files).
+    The routine will recusively read in sub arrays or linked lists.
+    The routine returns TRUE on success, else it displays an error message
+    and returns FALSE.
+*/
+Channel channel;
+array_desc *descriptor;
+char *element;
+flag pad;
+/*---------------------------------------------------------------------------*/
+
+flag dsrw_read_list (channel, descriptor, header)
+/*  This routine will read in the binary representation of a linked list of
+    data from the channel object given by  channel  .
+    The descriptor for the packets must be pointed to by  descriptor  and the
+    linked list header must be pointed to by  header  .
+    The routine will recursively read in sub arrays and linked lists.
+    The linked list entries and data will be contiguous in memory.
+    The routine returns TRUE on success, else it displays an error message
+    and returns FALSE.
+*/
+Channel channel;
+packet_desc *descriptor;
+list_header *header;
+/*---------------------------------------------------------------------------*/
+
+flag dsrw_read_flag (channel, logical)
+/*  This routine will read in the binary representation of the the boolean
+    flag from the channel object given by  channel  and will write it to
+    the flag pointed to by  logical  .
+    The routine returns TRUE if the flag was read in without error, else
+    it returns FALSE.
+*/
+Channel channel;
+flag *logical;
+/*---------------------------------------------------------------------------*/
+
+flag dsrw_read_type (channel, type)
+/*  This routine will read in the binary representation of the data type from
+    the channel object given by  channel  and will write the type value
+    into the storage pointed to by  type  .
+    The routine returns TRUE if the type was read without error, else it
+    returns FALSE.
+*/
+Channel channel;
+unsigned int *type;
+/*---------------------------------------------------------------------------*/

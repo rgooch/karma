@@ -1,0 +1,15 @@
+/*  Routines to transfer data structures to/ from discs and connections  */
+/*  This file describes the dsxfr_ package of routines in the Karma
+    library.
+
+    These routines are meant to provide high level transfer of the recursive,
+    heirarchical data structure supported in Karma from and to files and
+    connections.
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	1-OCT-1992
+
+
+*/

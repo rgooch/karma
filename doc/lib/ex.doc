@@ -1,0 +1,138 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the ex_ package of routines in the Karma library.
+
+    These routines are meant to provide a simple mechanism to extract numeric
+    values and strings from strings.
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	1-OCT-1992
+
+
+*/
+
+int ex_int (str, rest)
+char *str;
+char **rest;
+/*---------------------------------------------------------------------------*/
+
+char *ex_word (str, rest)
+/* Function decodes (eXtracts) a word from str, and returns a pointer
+* to a copy of that word, with null terminator. It also 
+* returns a pointer to the next character of the string in rest.
+*
+*  Author Don McLean 1984 Sept. 6.
+*/
+char *str;
+char **rest;
+/*---------------------------------------------------------------------------*/
+
+char *ex_command (str, rest)
+/* Function decodes (eXtracts) a command from str, and returns a pointer
+ * to a copy of that word, with null terminator. It also 
+ * returns a pointer to the next character of the string in rest.
+ * Identical to ex_word() except that any of " \t/=?!" terminate a command.
+ *
+ *  Author Don McLean 1986 February 13.
+*/
+char *str;
+char **rest;
+/*---------------------------------------------------------------------------*/
+
+char *ex_word_skip (str)
+/* Skips a word in str, and returns a pointer
+ * to the next character of the string.
+ *
+ *  Author Don McLean 1984 Sept. 6.
+*/
+char *str;
+/*---------------------------------------------------------------------------*/
+
+double ex_float (str, rest)
+/* Function decodes (eXtracts) next floating point value from string and
+ * returns value as function value, and pointer to next character of string
+ * in rest.
+ *
+ * Author Don McLean 1985 January 8.
+ *
+ */
+char *str;
+char **rest;
+/*---------------------------------------------------------------------------*/
+
+double ex_hour (p, nxt)
+char *p;
+char **nxt;
+/*---------------------------------------------------------------------------*/
+
+char *ex_command_skip (str)
+/* Skips a command from str, and returns a pointer
+ * to the next character of the string.
+ * Identical to ex_word_skip() except that any of " \t/=?!" terminate a command.
+ *
+ *  Author Don McLean 1986 February 14.
+*/
+char *str;
+/*---------------------------------------------------------------------------*/
+
+int ex_on (ptr)
+/* ptr points to a text string (normally control input)
+ * On entry ptr is advanced over one (key-)word, then
+ * if next word matches "on" or "off", ptr will be advanced
+ * and function returns TRUE or FALSE. 
+ * If neither "on" nor "off" is found, pointer
+ * is not advanced, but function returns TRUE.
+ * A word matches a target if all its letters match the letters
+ * of the target: "y", "ye", "yes" all match "yes", but "yesterday"
+ * does not.
+ */
+char **ptr;
+/*---------------------------------------------------------------------------*/
+
+int ex_on_or_off (ptr)
+/* ptr points to a text string (normally control input)
+ * If next word matches "on" or "off", ptr will be advanced
+ * and function returns TRUE or FALSE. 
+ * If neither "on" nor "off" is found, pointer
+ * is not advanced, but function returns TRUE.
+ *
+ * The only difference between 'ex_on' and 'ex_on_or_off' is that
+ * 'ex_on_or_off' does not skip an initial key-word on entry.
+ *
+ * A word matches a target if all its letters match the letters
+ * of the target: "y", "ye", "yes" all match "yes", but "yesterday"
+ * does not.
+ */
+char **ptr;
+/*---------------------------------------------------------------------------*/
+
+int ex_yes (ptr, default_v)
+/* ptr points to a text string (normally control input)
+ * if next word matches "yes" or "no", ptr will be advanced
+ * and function returns TRUE or FALSE. 
+ * If neither "yes" nor "no" is found, pointer
+ * is not advanced, but function returns 'default_v'.
+ * A word matches a target if all its letters match the letters
+ * of the target: "y", "ye", "yes" all match "yes", but "yesterday"
+ * does not.
+ */
+char **ptr;
+int default_v;
+/*---------------------------------------------------------------------------*/
+
+char *ex_str (str, rest)
+/*  This routine will extract a sub-string from a string. The sub-string may be
+    delimited by any number of whitespace characters.
+    The input string must be pointed to by  str. The routine will write a
+    pointer to the next field in the input string to  rest  . If this is NULL,
+    nothing is written here.
+    The double quote character may appear anywhere in the sub-string, and will
+    force all whitespace characters except '\n' into the output string. A
+    second double quote character unquotes the previous quote. These double
+    quote characters are not copied, unless they are consecutive.
+    The routine returns a pointer to a copy of the sub-string.
+*/
+char *str;
+char **rest;
+/*---------------------------------------------------------------------------*/

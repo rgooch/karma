@@ -1,0 +1,226 @@
+/*  Link with:    -lkarmaX11  */
+/*  This file describes the ax_ package of routines in the Karma library.
+
+    These routines are meant to provide a means for drawing scaled and labelled
+    axes (ie. neat plot boxes) to an X Windows display window.
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	1-OCT-1992
+
+
+*/
+
+flag ax_plot_dressing (display, window, gc,
+		       title_string, abscissa_label, ordinate_label,
+		       title_font_name, axes_font_name, scale_font_name,
+		       win_scale, max_log_cycles, error_notify_func)
+/*  This routine will draw all the dressings required for the plot. It will
+    plot the title, axes and their labels and the scales on the axes.
+    The display and window to plot in must be given in  display  and  window  ,
+    respectively.
+    The graphics context to be used must be in  gc  .
+    The title string must be pointed to  title_string  .
+    The abscissa label string must be pointed to by  abscissa_label  .
+    The ordinate label string must be pointed to by  ordinate_label  .
+    The name of the title, axes and scale fonts must be pointed to by
+    title_font_name  ,  axes_font_name  and  scale_font_name  ,respectively.
+    The scaling information must be pointed to by  win_scale  .The entries in
+    this structure will be updated by the axis scaling routine.
+    The maximum number of log cycles to plot must be given by  max_log_cycles
+    The routine used to notify the user of errors must be pointed to by
+    error_notify_func  .If this is NULL, errors are sent to the standard error.
+    The interface to this function is described below:
+
+    void error_notify_func (error_message)
+    *   This routine will display the error message pointed to by
+        error_message  .
+	The routine returns nothing.
+    *
+    {}
+
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+Display *display;
+Window window;
+GC gc;
+char *title_string;
+char *abscissa_label;
+char *ordinate_label;
+char *title_font_name;
+char *axes_font_name;
+char *scale_font_name;
+struct win_scale_type *win_scale;
+unsigned int max_log_cycles;
+void (*error_notify_func) ();
+/*---------------------------------------------------------------------------*/
+
+flag ax_choose_scale (min, max, log, new_scale, max_log_cycles,
+		      error_notify_func)
+/*  This routine will choose a scale and decide where to put tick marks.
+    The input range must be in  min  and  max  ,respectively.
+    If the scale is logarithmic, then  log  must be TRUE.
+    The scale information is written to the structure pointed to by  new_scale
+    This routine works for either ordinate or abscissa axes.
+    The maximum number of log cycles to plot must be given by  max_log_cycles
+    The routine used to notify the user of errors must be pointed to by
+    error_notify_func  .If this is NULL, errors are sent to the standard error.
+    The interface to this function is described below:
+
+    void error_notify_func (error_message)
+    *   This routine will display the error message pointed to by
+        error_message  .
+	The routine returns nothing.
+    *
+    {}
+
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+double min;
+double max;
+flag log;
+struct scale_type *new_scale;
+unsigned int max_log_cycles;
+void (*error_notify_func) ();
+/*---------------------------------------------------------------------------*/
+
+flag ax_draw_ordinate_scale (display, window, gc, font_info, win_scale,
+			     max_log_cycles, error_notify_func)
+/*  This routine will draw the ordinate scale into the window indicated by
+    display  and  window  .
+    The graphics context to be used must be in  gc  .
+    The font information for the scale font must be pointed to by  font_info  .
+    The scaling information must be pointed to by  win_scale  .The entries in
+    this structure will be updated with values chosen by the scaling routine.
+    The maximum number of log cycles to plot must be given by  max_log_cycles
+    The routine used to notify the user of errors must be pointed to by
+    error_notify_func  .If this is NULL, errors are sent to the standard error.
+    The interface to this function is described below:
+
+    void error_notify_func (error_message)
+    *   This routine will display the error message pointed to by
+        error_message  .
+	The routine returns nothing.
+    *
+    {}
+
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+Display *display;
+Window window;
+GC gc;
+XFontStruct *font_info;
+struct win_scale_type *win_scale;
+unsigned int max_log_cycles;
+void (*error_notify_func) ();
+/*---------------------------------------------------------------------------*/
+
+flag ax_draw_abscissa_scale (display, window, gc, font_info, scale_offset,
+			     win_scale, max_log_cycles, error_notify_func)
+/*  This routine will draw the abscissa scale into the window indicated by
+    display  and  window  .
+    The graphics context to be used must be in  gc  .
+    The font information for the scale font must be pointed to by  font_info  .
+    The offset for the scale numbers must be in  scale_offset  .
+    The scaling information must be pointed to by  win_scale  .The entries in
+    this structure will be updated with values chosen by the scaling routine.
+    The maximum number of log cycles to plot must be given by  max_log_cycles
+    The routine used to notify the user of errors must be pointed to by
+    error_notify_func  .If this is NULL, errors are sent to the standard error.
+    The interface to this function is described below:
+
+    void error_notify_func (error_message)
+    *   This routine will display the error message pointed to by
+        error_message  .
+	The routine returns nothing.
+    *
+    {}
+
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+Display *display;
+Window window;
+GC gc;
+XFontStruct *font_info;
+int scale_offset;
+struct win_scale_type *win_scale;
+unsigned int max_log_cycles;
+void (*error_notify_func) ();
+/*---------------------------------------------------------------------------*/
+
+void ax_set_zoom_h_info (x1, x2, abs_zoomed, win_scale)
+/*  This routine will set the horizontal zoom information based upon the two
+    horizontal pixel locations given by  x1  and  x2  .
+    The routine modifies the  variable pointed to by  abs_zoomed  and the
+    structure pointed to by  win_scale  .
+    The routine returns nothing.
+*/
+int x1;
+int x2;
+flag *abs_zoomed;
+struct win_scale_type *win_scale;
+/*---------------------------------------------------------------------------*/
+
+void ax_set_zoom_v_info (y1, y2, ord_zoomed, win_scale)
+/*  This routine will set the vertical zoom information based upon the two
+    vertical pixel locations given by  y1  and  y2  .
+    The routine modifies the  variable pointed to by  ord_zoomed  and the
+    structure pointed to by  win_scale  .
+    The routine returns nothing.
+*/
+int y1;
+int y2;
+flag *ord_zoomed;
+struct win_scale_type *win_scale;
+/*---------------------------------------------------------------------------*/
+
+flag ax_unset_zoom_info (abs_zoomed, ord_zoomed)
+/*  This routine will unset the zoom information pointed to by  abs_zoomed  and
+    ord_zoomed  .
+    The routine returns TRUE if there was previous zoom information to undo.
+*/
+flag *abs_zoomed;
+flag *ord_zoomed;
+/*---------------------------------------------------------------------------*/
+
+flag ax_verify_crosshair_location (x, y, win_scale)
+/*  This routine will determine if the crosshair location given by  x  and  y
+    is within the plotting area.
+    The window scaling information must be pointed to by  win_scale  .
+    If the crosshair is within the plotting area, the routine will return TRUE,
+    else it will return FALSE.
+*/
+int x;
+int y;
+struct win_scale_type *win_scale;
+/*---------------------------------------------------------------------------*/
+
+double ax_choose_ord_intvl (input_interval)
+/*  This routine will choose an ordinate interval which is equal to or slightly
+    greater than the input interval specified by  input_interval  .
+    The choosen interval is determined by some sensible rules.
+    The routine returns the choosen interval.
+*/
+double input_interval;
+/*---------------------------------------------------------------------------*/
+
+double ax_pixel_to_abscissa (x, win_scale)
+/*  This routine will convert a horizontal pixel position to an abscissa value.
+    The horizontal pixel position must be given by  x  .
+    The window scaling information must be pointed to by  win_scale  .
+    The routine returns the abscissa value.
+*/
+int x;
+struct win_scale_type *win_scale;
+/*---------------------------------------------------------------------------*/
+
+double ax_pixel_to_ordinate (y, win_scale)
+/*  This routine will convert a vertical pixel position to an ordinate value.
+    The vertical pixel position must be given by  x  .
+    The window scaling information must be pointed to by  win_scale  .
+    The routine returns the ordinate value.
+*/
+int y;
+struct win_scale_type *win_scale;
+/*---------------------------------------------------------------------------*/

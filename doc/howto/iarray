@@ -1,0 +1,177 @@
+This file is intended as a "getting-started" guide to Iarrays. It
+should be used in conjuction with the iarray reference documentation,
+which documents all the functions available for working with iarrays.
+
+Purpose:
+--------
+
+The name "iarray" is a contraction of "Intelligent Array", which is
+supposed to describe the power of these arrays. Iarrays are
+n-dimensional arrays similar to ordinary C arrays, but have the
+following advantages:
+
+	+ They are dynamically allocated. This is one of their biggest
+advantages over ordinary C arrays. Dynamically allocating arrays in C
+normally requires the user to either be very clever in the method of
+allocation, or to do a multiplication at every element access
+(assuming a 2D array). Iarrays use double indirection to allow for an
+efficient and neat accessing scheme. This method also allows for
+interesting mappings of the iarray, such as taking real subarrays, or
+mapping an array onto a torus efficiently.
+
+	+ They know their own size. This removes the
+necessity for passing in dimension lengths to functions which take
+arrays as arrguments. iarray_dim_length() allows you to query an array
+for one of it's dimension lengths.
+
+	+ They can do run time bounds checking. If you compile with
+"-DDEBUG" all element accesses will be bounds checked. This is
+somewhat slower than normal, but the implementation is such that
+without bounds checking there is no performance penalty over C arrays.
+
+	+ They can have named attachments. Using iarray_put_float()
+and iarray_get_float(), named floating point values can be attached to
+and retrieved from an iarray. There are corresponding functions for
+attaching ints and strings, and a pair of generic functions for
+handling other data types. This is very useful when writing iarrays to
+disk or to a connection, as attachments are also transferred.
+
+	+ They can be written to a disk or connection very easily, and
+are written in the Karma data format, which ensures portability across
+a wide range of platforms, and ease of use with Karma modules.
+
+They have the following disadvantages:
+
+	- They use an unusual syntax for accessing elements. This is
+actually not such a problem, as in my opinion the syntax (once you get
+used to it) enhances the readability of the code, by always showing
+the type of the array being accessed. The syntax is described below.
+
+	- Currently, simple methods are in place for working with
+arrays of one two or three dimensions, comprised of floats, ints,
+bytes (chars) or unsigned bytes. Using other types is a fairly trivial
+matter, requiring only some new macros in karma_iarray.h, but using
+arrays of more dimensions also requires a generic function to be
+written for accessing elements of such arrays. This is still not
+terribly complex, but I hope to remove this requirement at some later
+stage.
+
+Syntax:
+-------
+
+	There is only one real oddity about iarrays, and that is the
+way individual elements of the array are accessed. Element access is
+done with a function notation, although normally a macro actually does
+the work for performance reasons. Functions are used when -DDEBUG is
+used on the command line. The element access function names are based
+on the type of the elements in the array, and the number of
+dimensions.  Thus, given a two dimensional floating point array called
+"a", to access element [i][j], you use the notation F2(a,i,j).
+
+	As mentioned above, this notation is currently available for
+arrays of one, two or three dimensions, with float, int, byte or
+unsigned byte elements. If other dimensions or types are required,
+macros should be written to handle these, and possibly function calls
+also. See karma_iarray.h for macros.
+
+Allocating:
+-----------
+
+An iarray must be allocated before it can be used. The simplest method
+is to use iarray_create_2D() (or the corresponding 1D or 3D versions),
+which takes the lengths of the dimensions and the type of the elements
+as parameters, and returns an iarray. So for example, to make "a" an m
+by n floating point array, use:
+
+iarray a;
+a=iarray_create_2D(m,n,K_FLOAT);
+
+The space allocated for an iarray remains allocated until specifically
+deallocated using iarray_dealloc(). Think of an array as a pointer,
+just as you would an ordinary dynamically allocated array.
+
+Disks and Connections:
+----------------------
+
+	One of the main benefits of iarrays and the karma library is
+the simplicity with which they can be written to disk or connections.
+The karma data format is portable across a number of platforms, so the
+problems of endianness and size of types is removed from the
+application programmer. 
+	
+	An iarray can be written to disk with the function
+iarray_write() which requires only the iarray to write, and the name
+of the disk file. If the name given for the file is "connections",
+then the iarray is written over any open connections (see the
+documentation for Karma communications to find out how to make iarray
+connections). 
+
+	Iarrays are read using the iarray_read_nD() function, which
+takes a number of parameters, most of which can (fortunately) be
+ignored in most cases. I normally use the following:
+a=iarray_read_nD(fname,FALSE,NULL,n,NULL,NULL,K_CH_MAP_NEVER);
+Using this as a model, you merely need to provide the filename (a
+string), and the expected number of dimensions (eg 2 for an image).
+
+Functions on iarrays:
+---------------------
+
+	An assortment of functions are provided by the Karma library
+for doing various work on iarrays. For example, there are functions to
+find the minimum and maximum values, to fill the array with some
+value, and to perform element-wise arithmetic on arrays. These
+functions should be used whenever possible, as they are generally
+tested to be correct (let us know if they aren't), perform error
+checking, and are highly optimised on some platforms.
+
+	If you create any functions that you feel are of great general
+interest, please mail them to "karma_suggestions@atnf.csiro.au".
+
+Example:
+--------
+
+The following is a simple example program showing how iarrays are used
+in practice. It creates an iarray with the multiplication table in it,
+reads another iarray from disk, and adds one to the other element
+wise. It then writes the resulting array to disk.
+
+/*------------------------------------------------------*/
+/* Iarray sample program */
+/*------------------------------------------------------*/
+
+#include <karma_iarray.h>
+
+main()
+{
+  /* Declare variables */
+  int i,j;
+  iarray a,b;
+
+  /* Create a 10x10 integer 2D iarray */
+  a=iarray_create_2D(10,10,K_INT);
+  
+  /* Read in from disk a file called "input" which contains an iarray */
+  b=iarray_read_nD("input",FALSE,NULL,2,NULL,NULL,K_CH_MAP_NEVER);
+
+  /* Check that this is also a 10x10 array */
+  if( iarray_dim_length(b,0) != 10  ||
+      iarray_dim_length(b,1) != 10) {
+    fprintf(stderr,"Input array is not 10x10\n");
+    exit(1);
+  }
+
+  /* Fill a with the multiplication table */
+  for(i=0;i<10;i++)
+    for(j=0;j<10;j++)
+      I2(a,i,j)=i*j;
+
+  /* add a to b elementwise */
+  iarray_add_and_scale(b,a,b,1.0,FALSE);
+
+  /* Write b to disk */
+  iarray_write(b,"output");
+
+  /* Deallocate both arrays */
+  iarray_dealloc(a);
+  iarray_dealloc(b);
+}

@@ -1,0 +1,149 @@
+				Installing Karma
+===============================================================================
+
+1.0	Where to get the compressed tar files
+-------------------------------------------------------------------------------
+
+  Please see the README file for instructions on getting Karma.
+
+  ALSO: read the README file for instructions on how to get on the mailing list
+  This mailing list is VERY important.
+
+1.1	What to do with the compressed tar files
+-------------------------------------------------------------------------------
+
+  The simplest way to install Karma is to ftp the binary distribution, rather
+  than trying to compile it. If there is no binary distribution for the
+  platform you want available, please Email a request to:
+    karma-suggestions@atnf.csiro.au
+  with details of you platform. You may be asked for an account on this
+  platform so I can port Karma if it hasn't been ported yet.
+  If you port it yourself, *please* Email me the details so that I can update
+  the master version.
+
+  The binary distribution tar files will create a directory  karma  which will
+  contain appropriate sub-directories for binaries, libraries, include files
+  and documentation.
+  You should change directory to  /usr/local  and untar this. If you do not
+  have system privilege or your local system administrator will not create a
+  directory or symbolic link  /usr/local/karma  then you should get the source
+  distribution and build it yourself.
+  
+  The source tar file will also create a directory  karma  which will contain
+  the source tree. This should NOT be in the same directory in which a binary
+  distribution is placed.
+
+2.0	Setting up your  ~/.cshrc  and  ~/.login
+-------------------------------------------------------------------------------
+
+  With any distribution, you should have two files:
+    karma/.cshrc
+    karma/.login
+
+  The  .cshrc  file should be sourced in a user's  ~/.cshrc  file in the
+  following manner:
+
+>- BEGIN-- sample code ---<
+# Include Karma environment
+if ("$?KARMABASE" != "0") then
+    source $KARMABASE/.cshrc
+endif
+>- END-- sample code -----<
+
+  The  .login  file should be sourced by the user's  ~/.login  file (or better
+  still, the user should use the  setpath  script, which is available at
+  CSIRO RP/AT).
+
+2.1	Environment variables required
+-------------------------------------------------------------------------------
+
+  These startup scripts require the definition of the  MACHINE_ARCH
+  environment variable. This tells Karma makefiles what platform you are on.
+  Legal values are:
+
+    SUNsparc		Sun Sparc (Solaris 1.x, Solaris 2.x)
+    convex		Convex (ConvexOS)
+    rs6000		IBM rs6000 (AIX)
+    dec			DEC Mips (Ultrix)
+    SGImips		SGI Mips (IRIX)
+    cray		Cray Y-MP (Unicos)
+    VXMVX		Vicom VX/ MVX i860 accelerator(s) for Sun Sparc
+    linux		IBM PC (Linux: free 386 Unix)
+    MS_DOS_386		IBM PC 386 in 32 bit mode (MS-DOS)
+
+  This environment variable is also used by the supplied  .login  script.
+
+  At CSIRO RP/AT, the  MACHINE_ARCH  environment variable may be determined by
+  the following in a user's  ~/.cshrc  file:
+
+>- BEGIN-- sample code ---<
+if ("$?MACHINE_ARCH" == "0") then
+    if (-r /usr/local/csh_script/machine_type) then
+	set _database_file = /usr/local/csh_script/machine_type
+    else
+	set _database_file = $HOME/csh_script/machine_type
+    endif
+    source $_database_file
+endif
+>- END-- sample code -----<
+
+2.2	Environment variables produced
+-------------------------------------------------------------------------------
+
+  The  .login  script will define a number of environment variables. Of
+  particular note are:
+
+    KARMABASE		root of the binary distribution for the platform
+    KARMAROOT		root of the source distribution
+
+  KARMABASE  is required at runtime by Karma modules in order to find some
+  crucial database files. If this is not defined, the default  /usr/local/karma
+  is used.
+  Both environment variables are used when building a runtime version from the
+  source code.
+  If you are not building and installing a runtime (binary) version of Karma
+  into  /usr/local/karma  you will need to edit the supplied  .login  to
+  reflect the locations of the Karma source tree and runtime tree.
+
+2.3	What you will need
+-------------------------------------------------------------------------------
+
+  You will need access to GNU Make Version 3.64 or later in order to build the
+  library.
+  To produce dependencies for library source code and headers, you will need
+  access to  makedepend  as shipped with the MIT X distribution, Version 11,
+  Release 5.
+  You will also need a C compiler.
+
+2.4	Making a binary distribution directory tree
+-------------------------------------------------------------------------------
+
+  You are strongly recommended to use a pre-built binary distribution rather
+  than wasting effort doing it yourself.
+  You will need the following directories (at least) under $KARMABASE:
+
+    bin			where the executables go (should go in PATH)
+    lib			where the libraries go
+    lib/karma		where the makefile for the core Karma library goes
+    lib/karma<*>	where the makefiles for the other Karma libraries go
+    doc			where the documentation goes
+    csh_script		C-shell scripts (should go in PATH)
+    cm_script		Connection Management Tool scripts (should go in PATH)
+    include		headers
+
+  You should also place the  .cshrc  and  .login  files in this directory so
+  users can source them.
+
+3.0	Building a library
+-------------------------------------------------------------------------------
+
+  The binary distributions come with the makefiles used to build the libraries.
+  There are also template makefiles in the directory  source/lib/makefiles
+  for a variety of platforms.
+  Copy the appropriate template makefiles into the  lib/karma*/  directories.
+  Use  GNUmakefile  as the filenames.
+  If everything is set up properly, you should be able to type  gmake  (or
+  gnumake  or  make) in each of these directories, and the libraries will be
+  built.
+  There should be a  Makefile  in  $KARMABASE/lib  which recursively makes in
+  each library directory. Just type  make  in this directory.

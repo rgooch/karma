@@ -1,0 +1,55 @@
+LIB = karmagraphics
+
+library = ../lib$(LIB).a
+lintlib = ../llib-l$(LIB).ln
+
+.PRECIOUS: $(library)
+
+libdir = $(KARMAROOT)/source/lib/$(LIB)
+sourcedir = $(libdir)/master
+lintdir = $(libdir)/lint
+
+vpath %.c $(sourcedir)
+vpath %.s $(sourcedir)/VXMVX
+
+vpath %.h $(KARMAINCLUDEPATH)
+
+CFLAGS = -O -I$(KARMAINCLUDEPATH)
+
+.c.o :
+	vxcc -DARCH_VXMVX $(CFLAGS) -c $(sourcedir)/$*.c
+
+.s.o :
+	asm860 -be $(sourcedir)/VXMVX/$*.s -b
+
+cs = $(wildcard $(sourcedir)/*.c)
+csource = $(notdir $(cs))
+cobjects = $(subst .c,.o,$(csource))
+ssource = $(notdir $(wildcard $(sourcedir)/VXMVX/*.s))
+sobjects = $(subst .s,.o,$(ssource))
+objects =  $(cobjects) $(sobjects)
+members = ${addprefix ${library}(,${addsuffix ),${objects}}}
+
+.PHONY: all
+all:	$(library) clean
+
+
+$(library):	$(members)
+	ranlib $(library)
+
+
+lint:	$(lintlib)
+
+$(lintlib):	$(csource)
+	(cd $(libdir) ; make_lint)
+	(cd .. ; lint -DARCH_$(MACHINE_ARCH) -I$(KARMAINCLUDEPATH) -I$(VXHOME)/include -C$(LIB) $(lintdir)/*.c)
+
+
+clean:
+	\rm -f *~ *.bak
+
+
+depend:
+	makedepend -DARCH_$(MACHINE_ARCH) -I$(KARMAINCLUDEPATH) -I$(VXHOME)/include -fGNUmakefile -p$(library)"(" -o'.o)' $(cs)
+
+# DO NOT DELETE THIS LINE -- make depend depends on it.

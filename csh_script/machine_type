@@ -1,0 +1,99 @@
+# This C-shell script will determine the type of machine one is operating on,
+# and will set the following environmental variables accordingly:
+# MACHINE_ARCH          MACHINE_NETGROUP	MACHINE_SITE
+#
+#   Copyright (C) 1991,1992,1993  Richard Gooch
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+#   Richard Gooch may be reached by email at  karma-request@atnf.csiro.au
+#   The postal address is:
+#     Richard Gooch, c/o ATNF, P. O. Box 76, Epping, N.S.W., 2121, Australia.
+
+# Written by            Richard Gooch   18-JUN-1991
+
+# Last updated by       Richard Gooch   20-MAY-1993
+
+
+# Determine full hostname
+if ("$?HOSTNAME" == "0") setenv HOSTNAME `hostname`
+if ("$?DOMAINNAME" == "0") setenv DOMAINNAME `domainname`
+set _fullname = ${HOSTNAME}.${DOMAINNAME}
+
+# See if data available from Network and Information Service (formerly YP)
+set _database_line = `ypmatch ${_fullname} machine_database >& /dev/null`
+if ("$status" == "0") then
+    # Found in NIS
+    unset _fullname
+    setenv MACHINE_ARCH ${_database_line[2]}
+    setenv MACHINE_NETGROUP ${_database_line[3]}
+    setenv MACHINE_SITE ${_database_line[4]}
+    unset _database_line
+    exit
+endif
+
+# Look for it in filename
+if ("$?_database_file" != "0") then
+    # User has specified a database file
+    if (! -r "$_database_file") then
+	# User did not specify a good database file
+	unset _database_file
+    endif
+endif
+if ("$?_database_file" == "0") then
+    # Determine the filename to read
+    if (-r /usr/local/csh_script/machine_type) then
+	set _database_file = /usr/local/csh_script/machine_type
+    else
+	if (-r ~/csh_script/machine_type) then
+	    set _database_file = ~/csh_script/machine_type
+	else
+	    echo "Database of machines not found"
+	    exit
+	endif
+    endif
+endif
+
+set _database_line = `grep -i ${_fullname} ${_database_file}`
+if ("$status" != "0") then
+    # Not found
+    unset _fullname
+    unset _database_line
+    unset _database_file
+    echo "Machine: ${HOSTNAME} in domain: ${DOMAINNAME} not found"
+    echo "Please have database of machines updated"
+    exit
+endif
+
+# Found a match
+unset _fullname
+unset _database_file
+setenv MACHINE_ARCH ${_database_line[2]}
+setenv MACHINE_NETGROUP ${_database_line[3]}
+setenv MACHINE_SITE ${_database_line[4]}
+unset _database_line
+exit
+
+
+# Hostname			Architecture	Owner		Site
+
+# Machines owned by ... (sample list only)
+ateles.rp.csiro.au		convex		AT_RP		EPPING
+crux.rp.csiro.au		SUNsparc	AT_RP		EPPING
+ampere.rp.csiro.au		rs6000		SIGPROC		EPPING
+achilles.rp.csiro.au		dec		SIGPROC		EPPING
+linux.rp.csiro.au		linux		ATRP_PRIVATE	EPPING
+cherax.jsf.csiro.au		cray		JSF		JSF
+okeefe.relx			SGImips		NCSA		NCSA

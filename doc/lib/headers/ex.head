@@ -1,0 +1,13 @@
+/*  Routines to extract data from strings  */
+/*  This file describes the ex_ package of routines in the Karma library.
+
+    These routines are meant to provide a simple mechanism to extract numeric
+    values and strings from strings.
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	1-OCT-1992
+
+
+*/

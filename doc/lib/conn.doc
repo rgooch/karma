@@ -1,0 +1,342 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the conn_ package of routines in the Karma
+    library.
+
+    These routines are meant to provide a high level mechanism to create and
+    accept connections, complete with protocols, callback functions and
+    security mechanisms.
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	1-OCT-1992
+
+
+*/
+
+void conn_register_managers (manage_func, unmanage_func, exit_schedule_func)
+/*  This routine will register the channel management functions. This routine
+    MUST be called prior to the routine:  conn_become_server  .
+    See the  chm_  routines for information on channel management.
+    The function pointer  manage_func  must refer to a function with the same
+    interface definition as the  chm_manage  function.
+    The function pointer  unmanage_func  must refer to a function with the same
+    interface definition as the  chm_unmanage  function.
+    The routine which should be called when a clean exit is to be scheduled
+    must be pointed to by  exit_schedule_func  .
+    The interface to this routine is as follows:
+
+    void exit_schedule_func ()
+    *   This routine is called when the  conn_  package wishes to schedule a
+        clean exit from the module.
+	This routine may return (ie. it need not exit).
+	The routine returns nothing.
+    *
+
+    If this is NULL, then exit(3) is called instead.
+
+    The routine returns nothing.
+*/
+flag (*manage_func) ();
+void (*unmanage_func) ();
+void (*exit_schedule_func) ();
+/*---------------------------------------------------------------------------*/
+
+void conn_register_server_protocol (protocol_name, version, max_connections,
+				    open_func, read_func, close_func)
+/*  This routine will register the support of a new Karma protocol for the
+    Karma ports which are being managed by the various routines in this file.
+    This routine may be called at any time.
+    The name of the new protocol to support must be pointed to by
+    protocol_name  .Note that this is only for incoming connections.
+    The version number for the protocol must be given by  version  .When any
+    changes to the protocol are made, this should be increased.
+    The maximum number of incoming connections to this server must be given by
+    max_connections  .If this is 0, an unlimited number of connections is
+    permitted.
+    The function which will register the opening of a connection must be
+    pointed to by  open_func  .
+    The interface to this function is given below:
+
+    flag open_func (connection, info)
+    *   This routine will register the opening of a connection.
+        The connection will be given by  connection  .
+	The routine will write any appropriate information to the pointer
+	pointed to by  info  .
+	The routine returns TRUE on successful registration,
+	else it returns FALSE (indicating the connection should be closed).
+	Note that the  close_func  will not be called if this routine returns
+	FALSE.
+    *
+    Connection connection;
+    void **info;
+
+    The function which will read data from the connection must be pointed to by
+    read_func  .
+    The interface to this function is given below:
+
+    flag read_func (connection, info)
+    *   This routine will read in data from the connection given by  connection
+        and will write any appropriate information to the pointer pointed to by
+	info  .
+	The routine returns TRUE on successful reading,
+	else it returns FALSE (indicating the connection should be closed).
+	Note that the  close_func  will be called if this routine returns FALSE
+    *
+    Connection connection;
+    void **info;
+
+    The function which will be called prior to closure of a connection must be
+    pointed to by  close_func  .
+    The interface to this function is given below:
+
+    void close_func (connection, info)
+    *   This routine will register the closure of a connection.
+	When this routine is called, this is the last chance to read any
+	buffered data from the channel associated with the connection object.
+        The connection will be given by  connection  .
+        The connection information pointer will be given by  info  .
+	The routine returns nothing.
+    *
+    Connection connection;
+    void *info;
+
+    The routine returns nothing.
+*/
+char *protocol_name;
+unsigned int version;
+unsigned int max_connections;
+flag (*open_func) ();
+flag (*read_func) ();
+void (*close_func) ();
+/*---------------------------------------------------------------------------*/
+
+void conn_register_client_protocol (protocol_name, version, max_connections,
+				    validate_func,
+				    open_func, read_func, close_func)
+/*  This routine will register the support of a new Karma protocol for outgoing
+    (client) connections.
+    This routine may be called at any time.
+    The name of the new protocol to support must be pointed to by
+    protocol_name  .Note that this is only for outgoing connections.
+    The version number for the protocol must be given by  version  .When any
+    changes to the protocol are made, this should be increased.
+    The maximum number of outgoing connections from this client must be given
+    by max_connections  .If this is 0, an unlimited number of connections is
+    permitted.
+    The function which will validate the opening of a new connection (prior to
+    any attempts to connect to the server) must be pointed to by
+    validate_func  .
+    The interface to this function is given below:
+
+    flag validate_func (info)
+    *   This routine will validate whether it is appropriate to open a
+        connection.
+	The routine will write any appropriate information to the pointer
+	pointed to by  info  .The pointer value written here will be passed
+	to the other routines.
+	The routine returns TRUE if the connection should be attempted,
+	else it returns FALSE (indicating the connection should be aborted).
+	NOTE: Even if this routine is called and returns TRUE, there is no
+	guarantee that the connection will be subsequently opened.
+    *
+    void **info;
+
+    The function which will register the opening of a connection must be
+    pointed to by  open_func  .
+    The interface to this function is given below:
+
+    flag open_func (connection, info)
+    *   This routine will register the opening of a connection.
+        The connection will be given by  connection  .
+	The routine will write any appropriate information to the pointer
+	pointed to by  info  .
+	The routine returns TRUE on successful registration,
+	else it returns FALSE (indicating the connection should be closed).
+	Note that the  close_func  will not be called if this routine returns
+	FALSE.
+    *
+    Connection connection;
+    void **info;
+
+    The function which will read data from the connection must be pointed to by
+    read_func  .
+    The interface to this function is given below:
+
+    flag read_func (connection, info)
+    *   This routine will read in data from the connection given by  connection
+        and will write any appropriate information to the pointer pointed to by
+	info  .
+	The routine returns TRUE on successful reading,
+	else it returns FALSE (indicating the connection should be closed).
+	Note that the  close_func  will be called if this routine returns FALSE
+    *
+    Connection connection;
+    void **info;
+
+    The function which will be called prior to closure of a connection must be
+    pointed to by  close_func  .
+    The interface to this function is given below:
+
+    void close_func (connection, info)
+    *   This routine will register a closure of a connection.
+	When this routine is called, this is the last chance to read any
+	buffered data from the channel associated with the connection object.
+        The connection will be given by  connection  .
+        The connection information pointer will be given by  info  .
+	The routine returns nothing.
+    *
+    Connection connection;
+    void *info;
+
+    The routine returns nothing.
+*/
+char *protocol_name;
+unsigned int version;
+unsigned int max_connections;
+flag (*validate_func) ();
+flag (*open_func) ();
+flag (*read_func) ();
+void (*close_func) ();
+/*---------------------------------------------------------------------------*/
+
+Channel conn_get_channel (connection)
+/*  This routine will extract the channel object associated with a connection.
+    The connection object must be given by  connection  .
+    The routine returns the channel object.
+*/
+Connection connection;
+/*---------------------------------------------------------------------------*/
+
+flag conn_attempt_connection (hostname, port_number, protocol_name)
+/*  This routine will attempt to make a connection to a server. The routine
+    always makes a connection using the most efficient transport layer
+    available.
+    The hostname of the machine on which the server is running must be pointed
+    to by  hostname  .
+    The Karma port number to connect to must be given by  port_number  .
+    The protocol to connect with must be pointed to by  protocol_name  .
+    The routine returns TRUE if the connection was successfull,
+    else it returns FALSE. Note that this will cause the appropriate callback
+    functions registered with  conn_register_client_protocol  to be called.
+*/
+char *hostname;
+unsigned int port_number;
+char *protocol_name;
+/*---------------------------------------------------------------------------*/
+
+flag conn_close (connection)
+/*  This routine will close a connection. This will cause the closure callback
+    routine registered to be executed.
+    The connection object must be given by  connection  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+Connection connection;
+/*---------------------------------------------------------------------------*/
+
+flag conn_become_server (port_number, retries)
+/*  This routine will allocate a Karma port for the module so that it can
+    operate as a server (able to receive network connections).
+    The port number to allocate must be pointed to by  port_number  .The
+    routine will write the actual port number allocated to this address. This
+    must point to an address which lies on an  int  boundary.
+    The number of succsessive port numbers to attempt to allocate before giving
+    up must be given by  retries  .If this is 0, then the routine will give up
+    immediately if the specified port number is in use.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+unsigned int *port_number;
+unsigned int retries;
+/*---------------------------------------------------------------------------*/
+
+unsigned int conn_get_num_serv_connections (protocol_name)
+/*  This routine will get the number of connections to the server with a
+    specified protocol.
+    The protocol name must be pointed to by  protocol_name  .
+    The routine returns the number of current connections. A return value of
+    0 indicates that the protocol is not supported or there are no current
+    connections.
+*/
+char *protocol_name;
+/*---------------------------------------------------------------------------*/
+
+unsigned int conn_get_num_client_connections (protocol_name)
+/*  This routine will get the number of connections from the client with a
+    specified protocol.
+    The protocol name must be pointed to by  protocol_name  .
+    The routine returns the number of current connections. A return value of
+    0 indicates that the protocol is not supported or there are no current
+    connections.
+*/
+char *protocol_name;
+/*---------------------------------------------------------------------------*/
+
+Connection conn_get_serv_connection (protocol_name, number)
+/*  This routine will get Nth connection to the server with a specified
+    protocol. The first connection is numbered 0.
+    The protocol name must be pointed to by  protocol_name  .
+    The number of the connection to get must be given by  number  .
+    The routine returns the connection on success, else it returns NULL.
+*/
+char *protocol_name;
+unsigned int number;
+/*---------------------------------------------------------------------------*/
+
+Connection conn_get_client_connection (protocol_name, number)
+/*  This routine will get Nth connection from the client with a specified
+    protocol. The first connection is numbered 0.
+    The protocol name must be pointed to by  protocol_name  .
+    The number of the connection to get must be given by  number  .
+    The routine returns the connection on success, else it returns NULL.
+*/
+char *protocol_name;
+unsigned int number;
+/*---------------------------------------------------------------------------*/
+
+void *conn_get_connection_info (connection)
+/*  This routine will get the arbitrary information for a connection.
+    The connection must be given by  connection  .
+    The routine aborts the process if  connection  is not valid.
+    The routine returns a pointer to the arbitrary information. This may be a
+    NULL pointer.
+*/
+Connection connection;
+/*---------------------------------------------------------------------------*/
+
+flag conn_controlled_by_cm_tool ()
+/*  This routine will determine if the module is being controlled by the
+    Connection Management tool.
+    The routine returns TRUE if the module is controlled, else it returns FALSE
+*/
+/*---------------------------------------------------------------------------*/
+
+char *conn_get_connection_module_name (connection)
+/*  This routine will get the name of the module at the other end of a
+    connection.
+    The connection must be given by  connection  .
+    The routine aborts the process if  connection  is not valid.
+    The routine returns a pointer to the module name.
+*/
+Connection connection;
+/*---------------------------------------------------------------------------*/
+
+void conn_register_cm_quiescent_func (func)
+/*  This routine will register a callback function to be called when the
+    Connection Management tool or shell is quiescent (ie. all modules have
+    started and all initial connections made). The function is ONLY called if
+    the module is running under the Connection Management tool or shell.
+    Only one callback may be registered.
+    The routine which should be called when the Connection Management tool or
+    shell is quiescent must be pointed to by  func  .
+    The interface to this routine is as follows:
+
+    void func ()
+    *   This routine is called when the Connection Management tool or
+        shell is quiescent.
+	The routine returns nothing.
+    *
+
+    The routine returns nothing.
+*/
+void (*func) ();
+/*---------------------------------------------------------------------------*/

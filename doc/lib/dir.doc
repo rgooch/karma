@@ -1,0 +1,46 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the dir_ package of routines in the Karma
+    library.
+
+    These routines are meant to provide an enhanced, portable method for
+    scanning directories and automatically obtaining file status information.
+
+
+    Written by		Richard Gooch	2-JUN-1993
+
+    Last updated by	Richard Gooch	2-JUN-1993
+
+
+*/
+
+KDir dir_open (dirname)
+/*  This routine will open a directory for reading (scanning).
+    The directory name must be pointed to by  dirname  .
+    The routine routines returns a KDir object on success, else it returns NULL
+*/
+char *dirname;
+/*---------------------------------------------------------------------------*/
+
+KFileInfo *dir_read (dir, skip_control)
+/*  This routine will read (scan) a directory for files.
+    The directory object must be given by  dir  .
+    The value of  skip_control  determines whether or not to skip the special
+    files: "." and "..". Legal values are:
+        KDIR_DOT                  Pass ".", skip ".."
+	KDIR_DOTDOT               Pass "..", skip "."
+	KDIR_DOT_AND_DOTDOT       Pass "." and ".."
+	KDIR_NO_DOTS              Skip "." and ".."
+    The routine routines returns a pointer to a  KFileInfo  structure on
+    success, else it returns NULL. The data in this structure is valid until
+    the next call to  dir_read  or  dir_close  with this directory object.
+*/
+KDir dir;
+unsigned int skip_control;
+/*---------------------------------------------------------------------------*/
+
+void dir_close (dir)
+/*  This routine will close a directory.
+    The directory object must be given by  dir  .
+*/
+KDir dir;
+/*---------------------------------------------------------------------------*/

@@ -1,0 +1,14 @@
+/*  Routines to process named objects  */
+/*  This file describes the dsproc_ package of routines in the Karma
+    library.
+
+    These routines are meant to provide high level routines to process named
+    objects (ie. disc and connection arrayfiles).
+
+
+    Written by		Richard Gooch	16-OCT-1992
+
+    Last updated by	Richard Gooch	16-OCT-1992
+
+
+*/

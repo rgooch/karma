@@ -1,0 +1,27 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the d_ package of routines in the Karma library.
+
+    These routines are meant to provide a mechanism for a process to enter
+    daemon mode (ie. to dissociate from a controlling terminal).
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	1-OCT-1992
+
+
+*/
+
+void d_enter_daemon_mode ()
+/*  This routine will cause the module to enter daemon mode. This involves
+    detatching from a terminal.
+    The routine returns nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag d_test_daemon_mode ()
+/*  This routine will test if the module is running in daemon mode.
+    The routine returns TRUE if the module is running in daemon mode,
+    else it returns FALSE.
+*/
+/*---------------------------------------------------------------------------*/

@@ -1,0 +1,59 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the chs_ package of routines in the Karma library.
+
+    These routines are meant to provide a simple method of reading (scanning)
+    channel objects for ASCII representation of floating point and integer
+    values.
+
+
+    Written by		Richard Gooch	3-DEC-1992
+
+    Last updated by	Richard Gooch	3-DEC-1992
+
+
+*/
+
+unsigned int chs_get_value (channel, string, length)
+/*  This routine will scan a channel object for a whitespace separated value.
+    The channel to read from must be given by  channel  .
+    The routine will write the value into the buffer pointed to by  string  .
+    The size of the buffer (in bytes) must be given by  length  .
+    The routine returns the length of the string scanned on success,
+    else it returns 0.
+*/
+Channel channel;
+char *string;
+unsigned int length;
+/*---------------------------------------------------------------------------*/
+
+double chs_get_float (channel)
+/*  This routine will scan a channel object for the ASCII representaion of a
+    floating point number. Any leading whitespace will be ignored.
+    The channel to read from must be given by  channel  .
+    The routine will return the value scanned.
+*/
+Channel channel;
+/*---------------------------------------------------------------------------*/
+
+int chs_get_int (channel)
+/*  This routine will scan a channel object for the ASCII representaion of a
+    integer number. Any leading whitespace will be ignored.
+    The channel to read from must be given by  channel  .
+    The routine will return the value scanned.
+*/
+Channel channel;
+/*---------------------------------------------------------------------------*/
+
+flag chs_get_line (channel, buffer, length)
+/*  This routine will read a line from a channel, stripping all comments,
+    leading and trailing whitespace. The comment character is '#'.
+    The channel must be given by  channel  .
+    The buffer to write the line into must be pointed to by  buffer  .
+    The size of the buffer must be given by  length  .
+    The routine returns TRUE on success, else it returns FALSE (indicating
+    End-Of-File).
+*/
+Channel channel;
+char *buffer;
+unsigned int length;
+/*---------------------------------------------------------------------------*/

@@ -1,0 +1,13 @@
+/*  Routines to display axes in an X Window  */
+/*  This file describes the ax_ package of routines in the Karma library.
+
+    These routines are meant to provide a means for drawing scaled and labelled
+    axes (ie. neat plot boxes) to an X Windows display window.
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	1-OCT-1992
+
+
+*/

@@ -1,0 +1,16 @@
+/*  Routines to manipulate memory blocks  */
+/*  This file describes the m_ package of routines in the Karma library.
+
+    These routines are meant to provide a better memory allocation service
+    than the malloc(3) call. The supplied allocation and deallocation routines
+    perform periodic checks to see if array boundaries have been overrun.
+    A set of memory manipulation and error message routines are also provided
+    in this package.
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	1-OCT-1992
+
+
+*/

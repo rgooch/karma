@@ -1,0 +1,94 @@
+/*  Link with:    -lkarmaX11  */
+/*  This file describes the xi_ package of routines in the Karma library.
+
+    These routines are meant to provide a more generic interface to the X
+    Windows System XImage structures.
+    These routines allow simple creation of standard and shared-memory XImage
+    data structures, as well as the transmission of these to the X server.
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	1-OCT-1992
+
+
+*/
+
+flag xi_check_shared_images_available (display)
+/*  This routine will determine if shared memory XImage structures may be used
+    with a particular server.
+    The X server must be pointed to by  display  .
+    The routine returns TRUE if shared images are available, FALSE if not.
+*/
+Display *display;
+/*---------------------------------------------------------------------------*/
+
+XImage *xi_create_image (display, window, image_width, image_height, share)
+/*  This routine will create an image structure for a window.
+    The display must be given by  display  and the window must be given by
+    window  .
+    The width of the desired image in pixels must be given by  image_width  .
+    The height of the desired image in pixels must be given by  image_height  .
+    If the value of the logical pointed to by  share  is TRUE, the routine will
+    attempt to use a shared memory segment for the image data (as per the
+    MIT-Shared Memory Extension to the X Protocol). If the routine did in fact
+    allocate a shared memory segment, the value of TRUE will be written to the
+    storage pointed to by  share  ,else FALSE will be written here.
+    Do NOT request a shared image if the routine  shared_images_available
+    did not return TRUE.
+    The routine returns a pointer to the image structure on success,
+    else it returns NULL.
+*/
+Display *display;
+Window window;
+unsigned int image_width;
+unsigned int image_height;
+flag *share;
+/*---------------------------------------------------------------------------*/
+
+void xi_destroy_image (display, ximage, shared_memory)
+/*  This routine will destroy all the memory allocated for an XImage structure.
+    The display must be pointed to by  display  .
+    The XImage structure must be pointed to by  ximage  .
+    If the value of  shared_memory  is TRUE, then the routine assumes the
+    XImage data is a shared memory segment, and will attempt to remove it.
+    The routine returns nothing.
+*/
+Display *display;
+XImage *ximage;
+flag shared_memory;
+/*---------------------------------------------------------------------------*/
+
+void xi_put_image (display, drawable, gc, ximage, src_x, src_y, dest_x, dest_y,
+		   width, height, shared_memory, wait)
+/*  This routine will write an XImage structure to a drawable.
+    The display must be pointed to by  display  .
+    The ID of the drawable must be given by  drawable  .
+    The graphics context must be given by  gc  .
+    The image structure must be pointed to by  ximage  .
+    The upper left corner of the subimage in the image must be given by  src_x
+    and  src_y  .
+    The upper left corner of the subimage will be positioned at the drawable
+    co-ordinates given by  dest_x  and  dest_y  .
+    The width and height of the subimage must be given by  width  and  height
+    ,respectively.
+    If the XImage structure resides in a shared memory segment, the value of
+    shared_memory  must be TRUE, else it should be FALSE.
+    If the XImage structure resides in a shared memory segment and the routine
+    should wait for the X server to copy the contents from the segment, then
+    the value of  wait  should be TRUE.
+    The routine returns nothing.
+*/
+Display *display;
+Drawable drawable;
+GC gc;
+XImage *ximage;
+int src_x;
+int src_y;
+int dest_x;
+int dest_y;
+unsigned int width;
+unsigned int height;
+flag shared_memory;
+flag wait;
+/*---------------------------------------------------------------------------*/

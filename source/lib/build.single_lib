@@ -1,0 +1,60 @@
+#! /bin/csh -f
+#
+#   This C-shell script will build a master directory for a library which
+#   contains symbolic links to the source code.
+#
+#   Copyright (C) 1992,1993  Richard Gooch
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+#   Richard Gooch may be reached by email at  karma-request@atnf.csiro.au
+#   The postal address is:
+#     Richard Gooch, c/o ATNF, P. O. Box 76, Epping, N.S.W., 2121, Australia.
+
+rm -f master/*.c
+rm -f master/*/*.s
+rm -f *~ >& /dev/null
+rm -f */*~ >& /dev/null
+rm -f */*/*~ >& /dev/null
+
+set arches = (SUNsparc convex rs6000 dec VXMVX linux)
+
+foreach dir (level*)
+    set dir = `echo "$dir" | sed -e "s/level//"`
+    cd level$dir
+    foreach file (*.c)
+	echo -n "level$dir/$file ..."
+	set prefix = `get_prefix $file`
+	if ("$status" == "0") then
+	    # See if file includes its prototypes
+	    if (`fgrep -c "karma_${prefix}.h" $file` < "1") then
+		echo -n "    WARNING: prototype file not included"
+	    endif
+	endif
+	ln -s ../level$dir/$file ../master/${dir}_$file
+	echo ""
+    end
+    foreach arch ($arches)
+	if (-d $arch) then
+	    cd $arch
+	    foreach file (*.s)
+		echo "level$dir/$arch/$file"
+		ln -s ../../level$dir/$arch/$file ../../master/$arch/${dir}_a_$file
+	    end
+	    cd ..
+	endif
+    end
+    cd ..
+end

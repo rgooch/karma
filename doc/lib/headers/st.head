@@ -1,0 +1,15 @@
+/*  String manipulation routines  */
+/*  This file describes the st_ package of routines in the Karma library.
+
+    These routines are meant to supplement the standard C library str* routines
+    Since each version of Unix has a different set of "extra" string functions,
+    this package is meant to bridge the gap, and provides some of the more
+    useful "extras".
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	8-OCT-1992
+
+
+*/

@@ -1,0 +1,180 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the st_ package of routines in the Karma library.
+
+    These routines are meant to supplement the standard C library str* routines
+    Since each version of Unix has a different set of "extra" string functions,
+    this package is meant to bridge the gap, and provides some of the more
+    useful "extras".
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	8-OCT-1992
+
+
+*/
+
+unsigned int st_find (string_list, list_length, string, function)
+/*  This routine will search the list of strings pointed to by  string_list
+    for an occurrence of the string  string  .The length of the string list
+    must be in  list_length  .
+    The comparison routine uses the routine pointed to by  function  .
+    The routine returns the index of the found string in the string list.
+    If no match is found, the routine returns  list_length  .
+    The routine returns on the first match.
+*/
+char **string_list;
+unsigned int list_length;
+char *string;
+int (*function) ();
+/*---------------------------------------------------------------------------*/
+
+char *st_chr (string, c)
+/*  @(#)strchr.c    1.2 */
+/*
+ * Return the ptr in string at which the character c appears;
+ * NULL if not found
+ */
+char *string;
+char c;
+/*---------------------------------------------------------------------------*/
+
+int st_cmp_wild (a,b)
+char *a;
+char *b;
+/* compare strings a & b allowing for wild cards in a but not b */
+/*---------------------------------------------------------------------------*/
+
+int st_cspn (string, charset)
+/*  @(#)strcspn.c   1.1 */
+/*
+ * Return the number of characters in the maximum leading segment
+ * of string which consists solely of characters NOT from charset.
+ */
+char *string;
+char *charset;
+/*---------------------------------------------------------------------------*/
+
+int st_icmp (string1, string2)
+/*  This routine will compare two strings pointed to by  string1  and
+    string2  .The operation of this routine is similar to that of  strcmp
+    ,except that the comparison is case insensitive.
+    The comparison value is returned.
+*/
+char *string1;
+char *string2;
+/*---------------------------------------------------------------------------*/
+
+char *st_lwr (string)
+/*  This routine will convert the string pointed to by  string  to lowercase.
+    The routine returns the address of the string.
+*/
+char *string;
+/*---------------------------------------------------------------------------*/
+
+int st_nicmp (string1, string2, str_len)
+/*  This routine will compare two strings pointed to by  string1  and
+    string2  .The string comparison is performed up to  str_len  characters
+    long. The operation of this routine is similar to that of  strncmp  ,
+    except that the comparison is case insensitive.
+    The comparison value is returned.
+*/
+char *string1;
+char *string2;
+int str_len;
+/*---------------------------------------------------------------------------*/
+
+char *st_nupr (string, str_len)
+/*  This routine will convert the string pointed to by  string  to uppercase.
+    The conversion stops at the first NULL terminator character or if  str_len
+    characters have been converted.
+    The routine returns the address of the string.
+*/
+char *string;
+int str_len;
+/*---------------------------------------------------------------------------*/
+
+char *st_nlwr (string, str_len)
+/*  This routine will convert the string pointed to by  string  to lowercase.
+    The conversion stops at the first NULL terminator character or if  str_len
+    characters have been converted.
+    The routine returns the address of the string.
+*/
+char *string;
+int str_len;
+/*---------------------------------------------------------------------------*/
+
+char *st_pbrk (string, brkset)
+/*  @(#)strpbrk.c   1.1 */
+/*
+ * Return ptr to first occurance of any character from `brkset'
+ * in the character string `string'; NULL if none exists.
+ */
+char *string;
+char *brkset;
+/*---------------------------------------------------------------------------*/
+
+char *st_rchr (string, c)
+/*  @(#)strrchr.c   1.2 */
+/*
+ * Return the ptr in string at which the character c last
+ * appears; NULL if not found
+*/
+char *string;
+char c;
+/*---------------------------------------------------------------------------*/
+
+int st_spn (string, charset)
+/*  @(#)strspn.c    1.1 */
+/*
+ * Return the number of characters in the maximum leading segment
+ * of string which consists solely of characters from charset.
+ */
+char *string;
+char *charset;
+/*---------------------------------------------------------------------------*/
+
+char *st_tok (string, sepset)
+/*  @(#)strtok.c    1.2 */
+/*
+ * uses strpbrk and strspn to break string into tokens on
+ * sequentially subsequent calls.  returns NULL when no
+ * non-separator characters remain.
+ * `subsequent' calls are calls with first argument NULL.
+ */
+char *string;
+char *sepset;
+/*---------------------------------------------------------------------------*/
+
+long st_tol (str, ptr, base)
+char *str;
+char **ptr;
+int base;
+/*---------------------------------------------------------------------------*/
+
+char *st_upr (string)
+/*  This routine will convert the string pointed to by  string  to uppercase.
+    The routine returns the address of the string.
+*/
+char *string;
+/*---------------------------------------------------------------------------*/
+
+char *st_dup (input)
+/*  This routine will make a duplicate copy of the string pointed to by  input
+    The routine returns a pointer to a copy of the string (allocated using
+    m_alloc) on success, else it returns NULL.
+*/
+char *input;
+/*---------------------------------------------------------------------------*/
+
+void st_qsort (v, left, right)
+/*  This routine will perform a quicksort on an array of strings.
+    The array of strings must be pointed to by  v  .
+    The left and right string indices must be given by  left  and  right  ,
+    respectively.
+    The routine returns nothing.
+*/
+char **v;
+int left;
+int right;
+/*---------------------------------------------------------------------------*/

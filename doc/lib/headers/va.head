@@ -1,0 +1,18 @@
+/*  Routines to perform optimised arithmetic operations on vectors (arrays)  */
+/*  This file describes the va_ package of routines in the Karma library.
+
+    These routines are meant to provide a suite of arithmetic operations on
+    vectors (arrays) of data.
+    These routines are highly optimised, with many inner loops coded in
+    assembler to achieve sustained performance approaching (and in some cases
+    equalling) the rated peak performance of the hardware.
+    On some platforms, a speed improvment of over 30 times has been attained by
+    coding in assembler.
+
+
+    Written by		Richard Gooch	16-NOV-1992
+
+    Last updated by	Richard Gooch	16-NOV-1992
+
+
+*/

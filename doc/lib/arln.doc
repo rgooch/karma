@@ -1,0 +1,86 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the arln_ package of routines in the Karma library.
+
+    These routines are meant to provide a simple to use asynchronous line
+    reading facility. When reading from pipes, connections and terminals, the
+    routines continue polling for events (using the chm_poll and cm_poll
+    routines. Hence, they are not useable in a module which also uses the
+    XView notifier.).
+
+
+    Written by		Richard Gooch	11-OCT-1992
+
+    Last updated by	Richard Gooch	11-OCT-1992
+
+
+*/
+
+flag arln_read_from_stdin (buffer, length, prompt)
+/*  This routine will read a line from the standard input without preventing
+    event processing.
+    Note that the standard input channel is internally allocated.
+    The NULL terminated string will be written to the storage pointed to by
+    buffer  . The routine will NOT copy the '\n' newline character into the
+    buffer.
+    The length of the buffer must be given by  length  .
+    The prompt which is to be displayed must be pointed to by  prompt  .Note
+    that the prompt is only displayed if the standard input is NOT a disc file.
+    The routine returns TRUE on successful reading, else it returns FALSE.
+*/
+char *buffer;
+unsigned int length;
+char *prompt;
+/*---------------------------------------------------------------------------*/
+
+float arln_read_float (prompt, default_value)
+/*  This is an input routine that accepts input of one floating point 
+    number, using a prompt. If no input is given, the routine returns a
+    default value.
+    The prompt must be pointed to by  prompt  .
+    The default value must be given by  default_value  .
+    The routine returns the value.
+*/
+char *prompt;
+float default_value;
+/*---------------------------------------------------------------------------*/
+
+int arln_read_int (prompt, default_value)
+/*  This is an input routine that accepts input of one integer number, using a
+    prompt. If no input is given, the routine returns a default value.
+    The prompt must be pointed to by  prompt  .
+    The default value must be given by  default_value  .
+    The routine returns the value.
+*/
+char *prompt;
+int default_value;
+/*---------------------------------------------------------------------------*/
+
+flag arln_read_flag (prompt, default_value)
+/*  This is an input routine that prompts for a yes/no answer.
+    If no input is given, the routine returns a default value.
+    The prompt must be pointed to by  prompt  .
+    The default value must be given by  default_value  .
+    The routine returns TRUE if "yes" was typed in, else it returns FALSE.
+*/
+char *prompt;
+flag default_value;
+/*---------------------------------------------------------------------------*/
+
+flag arln_read_line (buffer, length, prompt)
+/*  This routine will read a line from a the standard input, stripping all
+    comments, leading and trailing whitespace. The comment character is '#'.
+    The NULL terminated string will be written to the storage pointed to by
+    buffer  . The routine will NOT copy the '\n' newline character into the
+    buffer.
+    The length of the buffer must be given by  length  .
+    The prompt which is to be displayed must be pointed to by  prompt  .Note
+    that the prompt is only displayed if the standard input is NOT a disc file.
+    The routine returns TRUE on successful reading, else it returns FALSE.
+    The size of the buffer must be given by  length  .
+    The routine returns TRUE on success, else it returns FALSE (indicating
+    End-Of-File).
+*/
+char *buffer;
+unsigned int length;
+char *prompt;
+/*---------------------------------------------------------------------------*/

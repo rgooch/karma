@@ -1,0 +1,17 @@
+/*  Routines to manipulate pixel canvases in a device independent way  */
+/*  This file describes the kwin_ package of routines in the Karma
+    library.
+
+    These routines are meant to provide a high level mechanism to create and
+    manipulate pixel canvases. After creating a pixel canvas from some graphics
+    system primitive object, the canvas may be manipulated without the need to
+    use the underlying graphics system interface. This renders code much more
+    portable.
+
+
+    Written by		Richard Gooch	17-APR-1993
+
+    Last updated by	Richard Gooch	17-APR-1993
+
+
+*/

@@ -1,0 +1,93 @@
+				Karma
+
+	A Structured Package for Signal and Image Processing
+
+
+	Karma is a package for signal and image processing applications. It
+  contains KarmaLib (the structured libraries and API) and a large number of
+  modules (applications) to perform many standard tasks.
+
+  When files and directories are referred to, they are given relative to the
+  root Karma directory (environment variable KARMABASE if defined). This is
+  usually  /usr/local/karma
+  Please see the file  INSTALL  for instructions on how to install Karma.
+
+  The update policy for Karma is in the file  doc/update-policy
+
+  The  doc/lib  directory contains documentation for the Karma libraries.
+
+  The  doc/modules  directory contains documentation for the various Karma
+  modules. This directory may be a little sparse...
+
+  The  doc/howto  directory contains information on how to make good use of
+  some of the more interesting packages in KarmaLib.
+
+  The  doc/widgets  directory contains information on the Karma Widgets
+  library. This directory may be a little sparse...
+
+	Please mail any bug reports to:  karma-bugs@atnf.csiro.au
+  No warranty, express or implied should be inferred by this mailing address.
+
+	If you want to be added to the mailing list (to find out what's changed
+  with Karma), please mail the request to:  karma-request@atnf.csiro.au
+  This mailing list is VERY important: as bugs are fixed and enhancements made
+  to Karma, this is your only way of finding out about these changes.
+
+	If you have any suggestions for Karma, please mail them to:
+  karma-suggestions@atnf.csiro.au
+
+	Karma is available on anonymous ftp from:  ftp.atnf.csiro.au
+  under the  pub/karma  directory. Both the source code and binary
+  distributions are kept here. The source code is available free of charge,
+  although donations are gratefully accepted (means I can spend more time
+  developing Karma). Donations can be sent to:
+
+	Richard Gooch, c/o ATNF, P. O. Box 76, Epping, N.S.W., 2121, Australia.
+
+  You are urged to get the binary distribution if possible, as this will save
+  you the effort of building from source.
+  When connecting to the ftp server, check the modification dates on the source
+  distribution and the binary distribution. If the source distribution is newer
+  than the binary distribution you want, this means that the binary
+  distribution is out of date. Please send an Email a request to
+  karma-suggestions@atnf.csiro.au  for a rebuilt version to be made available.
+  I don't have local access to many machines, so I don't rebuild automatically
+  for every platform.
+
+
+	Karma modules use the GNU General Public License, version 2 or later.
+  For the complete text of this license, please see the file
+  doc/COPYING
+
+    These programmes are free software; you can redistribute them and/or modify
+    them under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    These programmes are distributed in the hope that they will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this software; if not, write to the Free Software
+    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+
+  KarmaLib uses the GNU Library General Public License, version 2 or later.
+  For the complete text of this license, please see the file
+  doc/COPYING.LIB
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Library General Public
+    License as published by the Free Software Foundation; either
+    version 2 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Library General Public License for more details.
+
+    You should have received a copy of the GNU Library General Public
+    License along with this library; if not, write to the Free
+    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.

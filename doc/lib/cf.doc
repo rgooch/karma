@@ -1,0 +1,240 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the cf_ package of routines in the Karma library.
+
+    These routines are meant to provide a VERY primitive mechanism to generate
+    simple colourmaps. Although these routines are made public, their use is
+    NOT recommended. The kclrmap_ package is the suggested means to create and
+    manipulate colourmaps.
+
+
+    Written by		Richard Gooch	24-FEB-1993
+
+    Last updated by	Richard Gooch	26-FEB-1993
+
+
+*/
+
+void cf_greyscale1 (num_cells, reds, greens, blues, stride, x, y, var_param)
+/*  This routine will compute a grey scale colourmap and write out the pixel
+    colours.
+    Parameters are as for cf_stripchart, except var_param, which is not used.
+    The routine returns nothing.
+*/
+unsigned int num_cells;
+unsigned short *reds;
+unsigned short *greens;
+unsigned short *blues;
+unsigned int stride;
+double x;
+double y;
+void *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_greyscale2 (num_cells, reds, greens, blues, stride, x, y, var_param)
+/*  This routine will compute a greyscale colourmap using cf_stripchart.
+    This map goes: black-grey-white.
+    This map uses the Glynn Rogers curvature function.
+    Parameters are as for cf_stripchart, except var_param, which is not used.
+    The routine returns nothing.
+*/
+unsigned int num_cells;
+unsigned short *reds;
+unsigned short *greens;
+unsigned short *blues;
+unsigned int stride;
+double x;
+double y;
+void *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_rainbow1 (num_cells, reds, greens, blues, stride, x, y, var_param)
+/*  This routine will compute a colourmap using cf_stripchart.
+    This map goes: blue-cyan-green-yellow-red-magenta.
+    This map uses the Glynn Rogers curvature function.
+    Parameters are as for cf_stripchart, except var_param, which is not used.
+    The routine returns nothing.
+*/
+unsigned int num_cells;
+unsigned short *reds;
+unsigned short *greens;
+unsigned short *blues;
+unsigned int stride;
+double x;
+double y;
+void *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_rainbow2 (num_cells, reds, greens, blues, stride, x, y, var_param)
+/*  This routine will compute a colourmap using cf_stripchart.
+    This map goes: black-blue-cyan-green-yellow-red.
+    This map uses the Glynn Rogers curvature function.
+    Parameters are as for cf_stripchart, except var_param, which is not used.
+    The routine returns nothing.
+*/
+unsigned int num_cells;
+unsigned short *reds;
+unsigned short *greens;
+unsigned short *blues;
+unsigned int stride;
+double x;
+double y;
+void *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_rainbow3 (num_cells, reds, greens, blues, stride, x, y, var_param)
+/*  This routine will compute a colourmap using cf_stripchart.
+    This map goes: black-blue-cyan-green-yellow-white.
+    This map uses the Glynn Rogers curvature function.
+    Parameters are as for cf_stripchart, except var_param, which is not used.
+    The routine returns nothing.
+*/
+unsigned int num_cells;
+unsigned short *reds;
+unsigned short *greens;
+unsigned short *blues;
+unsigned int stride;
+double x;
+double y;
+void *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_cyclic1 (num_cells, reds, greens, blues, stride, x, y, var_param)
+/*  This routine will compute a colourmap using cf_stripchart.
+    This map goes: blue-cyan-green-yellow-white.
+    This map uses the sine of the Glynn Rogers curvature function.
+    Parameters are as for cf_stripchart, except var_param, which is not used.
+    The routine returns nothing.
+*/
+unsigned int num_cells;
+unsigned short *reds;
+unsigned short *greens;
+unsigned short *blues;
+unsigned int stride;
+double x;
+double y;
+void *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_stripchart (num_cells, reds, greens, blues, stride, x, y, chart)
+/*  This routine will compute a colourmap using a strip chart, and
+    a number of methods for modifying the curvature of the chart.
+    The stride (in unsigned shorts) between intensity values in each array
+    must be given by  stride  .
+    The graph is stored in chart, which should be a stripchart struct * cast
+    to a void *.
+    The following values are used to determine the shape of the graph:
+    0 : graph is at zero for this interval
+    99 : graph is at maximum
+    1 : graph ramps up from zero to max using Glynn Rogers function
+    -1 : graph ramps down from max to zero using Glynn Rogers function
+    2 (-2) : graph ramps up (down) using the sine of Glynn Rogers function
+    The two parameters used to calculate the shape of the ramping function
+    must be given by  x  and  y  .The range for these values is 0.0 to 1.0
+    The number of pixel colours to compute must be given by  num_cells  .
+    The values are stored in the reds,greens,blues arrays. Values are between
+    zero and 65535.
+    The routine returns nothing.
+*/
+unsigned int num_cells;
+unsigned short *reds;
+unsigned short *greens;
+unsigned short *blues;
+unsigned int stride;
+double x;
+double y;
+void *chart;
+/*---------------------------------------------------------------------------*/
+
+void cf_random_grey (num_cells, reds, greens, blues, stride, x, y, var_param)
+/*  This routine will compute a random grey colourmap and will write out the
+    pixel colours.
+    The number of colour cells to modify must be given by  num_cells  .
+    The red intensity values must be pointed to by  reds  .
+    The green intensity values must be pointed to by  greens  .
+    The blue intensity values must be pointed to by  blues  .
+    The stride (in unsigned shorts) between intensity values in each array
+    must be given by  stride  .
+    The parameters used to compute the colour values must be given by
+    x  ,  y  and  var_param  .
+    The routine returns nothing.
+*/
+unsigned int num_cells;
+unsigned short *reds;
+unsigned short *greens;
+unsigned short *blues;
+unsigned int stride;
+double x;
+double y;
+void *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_random_pseudocolour (num_cells, reds, greens, blues, stride,
+			     x, y, var_param)
+/*  This routine will compute a random grey pseudocolour and will write out the
+    pixel colours.
+    The number of colour cells to modify must be given by  num_cells  .
+    The red intensity values must be pointed to by  reds  .
+    The green intensity values must be pointed to by  greens  .
+    The blue intensity values must be pointed to by  blues  .
+    The stride (in unsigned shorts) between intensity values in each array
+    must be given by  stride  .
+    The parameters used to compute the colour values must be given by
+    x  ,  y  and  var_param  .
+    The routine returns nothing.
+*/
+unsigned int num_cells;
+unsigned short *reds;
+unsigned short *greens;
+unsigned short *blues;
+unsigned int stride;
+double x;
+double y;
+void *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_velocity_compensating_tones (num_cells, reds, greens, blues, stride,
+				     x, y, var_param)
+/*  This routine will compute a Velocity (compensating tones) colourmap and
+    will write out the pixel colours.
+    The number of colour cells to modify must be given by  num_cells  .
+    The red intensity values must be pointed to by  reds  .
+    The green intensity values must be pointed to by  greens  .
+    The blue intensity values must be pointed to by  blues  .
+    The stride (in unsigned shorts) between intensity values in each array
+    must be given by  stride  .
+    The parameters used to compute the colour values must be given by
+    x  ,  y  and  var_param  .
+    The routine returns nothing.
+*/
+unsigned int num_cells;
+unsigned short *reds;
+unsigned short *greens;
+unsigned short *blues;
+unsigned int stride;
+double x;
+double y;
+void *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_compressed_colourmap_3r2g2b (num_cells, reds, greens, blues, stride,
+				     x, y, var_param)
+/*  This function will create a compressed colourmap.
+    The number of colour cells to modify must be given by  num_cells  .
+    The red intensity values must be pointed to by  reds  .
+    The green intensity values must be pointed to by  greens  .
+    The blue intensity values must be pointed to by  blues  .
+    The stride (in unsigned shorts) between intensity values in each array
+    must be given by  stride  .
+    The parameters used to compute the colour values must be given by
+    x  ,  y  and  var_param  .
+    The routine returns nothing.
+*/
+unsigned int num_cells;
+unsigned short *reds;
+unsigned short *greens;
+unsigned short *blues;
+unsigned int stride;
+double x;
+double y;
+void *var_param;
+/*---------------------------------------------------------------------------*/

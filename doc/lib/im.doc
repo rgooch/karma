@@ -1,0 +1,28 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the im_ package of routines in the Karma library.
+
+    These routines are meant to provide low level initialisation for a module.
+
+
+    Written by		Richard Gooch	3-OCT-1992
+
+    Last updated by	Richard Gooch	3-OCT-1992
+
+
+*/
+
+void im_register_module_name (name_string)
+/*  This routine will register a new name for the module.
+    The name string must be pointed to by  name_string  .
+    The routine returns nothing.
+*/
+char *name_string;
+/*---------------------------------------------------------------------------*/
+
+void im_register_module_version_date (date_string)
+/*  This routine will register a new version date for the module.
+    The date string must be pointed to by  date_string  .
+    The routine returns nothing.
+*/
+char *date_string;
+/*---------------------------------------------------------------------------*/

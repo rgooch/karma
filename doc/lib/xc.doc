@@ -1,0 +1,95 @@
+/*  Link with:    -lkarmaX11  */
+/*  This file describes the xc_ package of routines in the Karma library.
+
+    These routines are meant to provide an abstracted interface to X displays
+    and colourmaps, used in the  kclrmap_  routines.
+
+
+    Written by		Richard Gooch	25-FEB-1993
+
+    Last updated by	Richard Gooch	25-FEB-1993
+
+
+*/
+
+Kdisplay xc_get_dpy_handle (display, cmap)
+/*  This routine will generate a display handle for later use.
+    The X display must be pointed to by  display  .
+    The X colourmap ID must be given by  cmap  .
+    The routine returns a pointer to the display handle on success,
+    else it returns NULL.
+*/
+Display *display;
+Colormap cmap;
+/*---------------------------------------------------------------------------*/
+
+unsigned int xc_alloc_colours (num_cells, pixel_values, min_cells, dpy_handle)
+/*  This routine will allocate a number of colourcells in a low level
+    colourmap (eg. using the Xlib routine XAllocColorCells).
+    The number of colourcells to allocate must be given by  num_cells  .
+    The pixel values allocated will be written to the array pointed to by
+    pixel_values  .
+    The minimum number of colourcells to allocate must be given by  min_cells
+    The routine will try to allocate at least this number of colourcells.
+    The low level display handle must be pointed to by  dpy_handle  .The
+    meaning of this value depends on the lower level graphics library used.
+    The routine returns the number of colourcells allocated.
+*/
+unsigned int num_cells;
+unsigned long *pixel_values;
+unsigned int min_cells;
+Kdisplay dpy_handle;
+/*---------------------------------------------------------------------------*/
+
+void xc_free_colours (num_cells, pixel_values, dpy_handle)
+/*  This routine will free a number of colourcells in a low level colourmap
+    The number of colourcells to free must be given by  num_cells  .
+    The pixel values (colourcells) to free must be pointed to by
+    pixel_values  .
+    The low level display handle must be pointed to by  dpy_handle  .The
+    meaning of this value depends on the lower level graphics library used.
+    The routine returns nothing.
+*/
+unsigned int num_cells;
+unsigned long *pixel_values;
+Kdisplay dpy_handle;
+/*---------------------------------------------------------------------------*/
+
+void xc_store_colours (num_cells, pixel_values, reds, greens, blues, stride,
+		       dpy_handle)
+/*  This routine will store colours into a low level colourmap.
+    The number of colourcells to store must be given by  num_cells  .
+    The pixel values must be pointed to by  pixel_values  .
+    The red intensity values must be pointed to by  reds  .
+    The green intensity values must be pointed to by  greens  .
+    The blue intensity values must be pointed to by  blues  .
+    The stride (in unsigned shorts) between intensity values in each array
+    must be given by  stride  .
+    The low level display handle must be pointed to by  dpy_handle  .The
+    meaning of this value depends on the lower level graphics library used.
+    The routine returns nothing.
+*/
+unsigned int num_cells;
+unsigned long *pixel_values;
+unsigned short *reds;
+unsigned short *greens;
+unsigned short *blues;
+unsigned int stride;
+Kdisplay dpy_handle;
+/*---------------------------------------------------------------------------*/
+
+void xc_get_location (dpy_handle, serv_hostaddr, serv_display_num)
+/*  This routine will determine the location of the graphics display being
+    used.
+    The low level display handle must be given by  dpy_handle  .The meaning
+    of this value depends on the lower level graphics library used.
+    The Internet address of the host on which the display is running will
+    be written to the storage pointed to by  serv_hostaddr  .
+    The number of the display will be written to the storage pointed to by
+    serv_display_num  .
+    The routine returns nothing.
+*/
+Kdisplay dpy_handle;
+unsigned long *serv_hostaddr;
+unsigned long *serv_display_num;
+/*---------------------------------------------------------------------------*/

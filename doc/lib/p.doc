@@ -1,0 +1,132 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the p_ package of routines in the Karma library.
+
+    These routines are meant to provide a low level means of converting C data
+    types to the "network" data format (ie. big endian, IEEE 754).
+    These are memory to memory routines only. Although they are made public,
+    their use is NOT recommended.
+    When reading or writing raw data from and to files or connections, the pio_
+    routines are suggested.
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	1-OCT-1992
+
+
+*/
+
+flag p_write_buf64 (buffer, data)
+/*  This routine will write 64 bits of data to the buffer pointed to by
+    buffer  .
+    The data must be given by  data  .This must be in host natural byte order.
+    The data will be converted to network byte order prior to writing.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+char *buffer;
+unsigned long data;
+/*---------------------------------------------------------------------------*/
+
+flag p_read_buf64 (buffer, data)
+/*  This routine will read 64 bits of data from the buffer pointed to by
+    buffer  .This must be at least 8 bytes long.
+    The data will be written to the storage pointed to by  data  .This will be
+    in host natural byte order.
+    The data will be converted from network byte order after reading.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+char *buffer;
+unsigned long *data;
+/*---------------------------------------------------------------------------*/
+
+flag p_write_buf32 (buffer, data)
+/*  This routine will write 32 bits of data to the buffer pointed to by
+    buffer  .
+    The data must be given by  data  .This must be in host natural byte order.
+    The data will be converted to network byte order prior to writing.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+char *buffer;
+unsigned long data;
+/*---------------------------------------------------------------------------*/
+
+flag p_read_buf32 (buffer, data)
+/*  This routine will read 32 bits of data from the buffer pointed to by
+    buffer  .This must be at least 4 bytes long.
+    The data will be written to the storage pointed to by  data  .This will be
+    in host natural byte order.
+    The data will be converted from network byte order after reading.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+char *buffer;
+unsigned long *data;
+/*---------------------------------------------------------------------------*/
+
+flag p_write_buf16 (buffer, data)
+/*  This routine will write 16 bits of data to the buffer pointed to by
+    buffer  .
+    The data must be given by  data  .This must be in host natural byte order.
+    The data will be converted to network byte order prior to writing.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+char *buffer;
+unsigned long data;
+/*---------------------------------------------------------------------------*/
+
+flag p_read_buf16 (buffer, data)
+/*  This routine will read 16 bits of data from the buffer pointed to by
+    buffer  .This must be at least 2 bytes long.
+    The data will be written to the storage pointed to by  data  .This will be
+    in host natural byte order.
+    The data will be converted from network byte order after reading.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+char *buffer;
+unsigned long *data;
+/*---------------------------------------------------------------------------*/
+
+flag p_write_buf32s (buffer, data)
+/*  This routine will write 32 bits of signed data to the buffer pointed to by
+    buffer  .
+    The data must be given by  data  .This must be in host natural byte order.
+    The data will be converted to network byte order prior to writing.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+char *buffer;
+long data;
+/*---------------------------------------------------------------------------*/
+
+flag p_read_buf32s (buffer, data)
+/*  This routine will read 32 bits of signed data from the buffer pointed to by
+    buffer  .This must be at least 4 bytes long.
+    The data will be written to the storage pointed to by  data  .This will be
+    in host natural byte order.
+    The data will be converted from network byte order after reading.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+char *buffer;
+long *data;
+/*---------------------------------------------------------------------------*/
+
+flag p_write_buf16s (buffer, data)
+/*  This routine will write 16 bits of signed data to the buffer pointed to by
+    buffer  .
+    The data must be given by  data  .This must be in host natural byte order.
+    The data will be converted to network byte order prior to writing.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+char *buffer;
+long data;
+/*---------------------------------------------------------------------------*/
+
+flag p_read_buf16s (buffer, data)
+/*  This routine will read 16 bits of signed data from the buffer pointed to by
+    buffer  .This must be at least 2 bytes long.
+    The data will be written to the storage pointed to by  data  .This will be
+    in host natural byte order.
+    The data will be converted from network byte order after reading.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+char *buffer;
+long *data;
+/*---------------------------------------------------------------------------*/

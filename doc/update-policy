@@ -1,0 +1,30 @@
+		Update Policy for Public Releases of Karma
+
+
+1)  When a number of bugfixes and/or enhancements are made which do
+not modify the function interface definitions of routines in the
+existing public release, a new public release is placed on anonymous
+ftp. The release number is incremented. Hence, moving from one release
+to the next should not break any source code.
+A release may make incompatible changes to headers files which would
+require the recompilation of all code which references those header
+files. If such recompilation is required, there should be an item in
+the release notes specifying this.
+
+2) When an incompatible change to one or more functions is required
+(for instance, an extra parameter is needed, a package is removed or a
+package undergoes a major overhaul), a transition period will be
+entered where the old functions are unchanged and the new functions
+are created. A new public release will be made available (with the
+release number being incremented) and notice will be given in the
+release notes that the old routines are being phased out. The new
+public release will be the last release of that version. The next
+public release will have it's version number incremented, and the
+routines that were due to be phased out will be removed.
+The last release of the previous version will be moved to an archive
+directory.
+
+Notices of a new public release are made to people who have mailed to:
+karma-request@atnf.csiro.au  asking to be placed on the mailing list.
+
+This policy should be available in the file: $KARMABASE/doc/update-policy

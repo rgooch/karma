@@ -1,0 +1,57 @@
+#! /bin/csh -f
+
+# This C shell script will read many FITS files and will produce a single
+# Karma arrayfile.
+
+#   Copyright (C) 1992,1993  Richard Gooch
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+#   Richard Gooch may be reached by email at  karma-request@atnf.csiro.au
+#   The postal address is:
+#     Richard Gooch, c/o ATNF, P. O. Box 76, Epping, N.S.W., 2121, Australia.
+
+
+# Written by		Richard Gooch	29-JUN-1993
+
+# Last updated by	Richard Gooch	29-JUN-1993
+
+
+# Usage:	many_fits2karma fits_filename extension number_of_files
+
+if ("$#argv" != "3") then
+    echo "Usage:  many_fits2karma fits_filename extension number_of_files"
+    exit 1
+endif
+
+echo "WARNING: make sure  collect_struct  is running first on port 500"
+
+set tmpfile = many_fits2karma.tmp$$
+rm -f $tmpfile
+echo "//add unix 500" > $tmpfile
+
+@ count = 0
+while ("$count" < "$argv[3]")
+    echo "${argv[1]}${count}.${argv[2]}  connections" >> $tmpfile
+    @ count++
+end
+
+fits2karma /ignore_excess off /sanitise on
+fits2karma < $tmpfile
+
+rm -f $tmpfile
+echo 'Now type "/save_arrayfile <name>" in  collect_struct  and exit it'
+
+exit 0

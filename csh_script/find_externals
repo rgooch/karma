@@ -1,0 +1,64 @@
+#! /bin/csh -f
+
+# This C shell script will find all occurrences of symbols in a library which
+# are not defined in that library.
+
+#   Copyright (C) 1992,1993  Richard Gooch
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+#   Richard Gooch may be reached by email at  karma-request@atnf.csiro.au
+#   The postal address is:
+#     Richard Gooch, c/o ATNF, P. O. Box 76, Epping, N.S.W., 2121, Australia.
+
+
+# Written by		Richard Gooch	24-NOV-1991
+
+# Last updated by	Richard Gooch	17-SEP-1992
+
+
+# Usage:	find_externals library
+
+if ("$#argv" != "1") then
+    echo "Usage:	find_externals library"
+    exit
+endif
+
+if (! -r lib${argv[1]}.a) then
+    echo "Cannot read file: lib${argv[1]}.a"
+    exit
+endif
+
+nm -ug lib${argv[1]}.a | grep -v "\.o" > ${argv[1]}.undef
+nm -g lib${argv[1]}.a | grep -v "  U" > ${argv[1]}.def
+
+rm -f ${argv[1]}.missing
+touch ${argv[1]}.missing
+
+foreach i (`cat ${argv[1]}.undef`)
+    if (`grep -c "$i" ${argv[1]}.missing` < "1") then
+	# This is the first time for this symbol
+	if (`grep -c " $i" ${argv[1]}.def` < "1") then
+	    # Not defined
+	    echo "$i" >> ${argv[1]}.missing
+	endif
+    endif
+end
+
+rm ${argv[1]}.undef
+rm ${argv[1]}.def
+
+grep -v "^__" ${argv[1]}.missing | grep "^_" > ${argv[1]}.externals
+rm ${argv[1]}.missing

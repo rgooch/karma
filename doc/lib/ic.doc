@@ -1,0 +1,128 @@
+/*  Link with:    -lkarmaX11  */
+/*  This file describes the ic_ package of routines in the Karma library.
+
+    These routines are meant to provide a simple mechanism to generate standard
+    icon bitmaps in X pixmap format.
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	1-OCT-1992
+
+
+*/
+
+void ic_write_kplot_icon (display, pixmap, width, height)
+/*  This routine will write the icon pixmap required for the  kplot  module.
+    The display must be pointed to by  display  and the pixmap to write to must
+    be pointed to by  pixmap  .
+    The width of the pixmap must be given by  width  .
+    The height of the pixmap must be given by  height  .
+    The routine returns nothing.
+*/
+Display *display;
+Pixmap pixmap;
+int width;
+int height;
+/*---------------------------------------------------------------------------*/
+
+void ic_write_kscat_icon (display, pixmap, width, height)
+/*  This routine will write the icon pixmap required for the  kscat  module.
+    The display must be pointed to by  display  and the pixmap to write to must
+    be pointed to by  pixmap  .
+    The width of the pixmap must be given by  width  .
+    The height of the pixmap must be given by  height  .
+    The routine returns nothing.
+*/
+Display *display;
+Pixmap pixmap;
+int width;
+int height;
+/*---------------------------------------------------------------------------*/
+
+void ic_write_funcgen_icon (display, pixmap, width, height)
+/*  This routine will write the icon pixmap required for the  funcgen  module.
+    The display must be pointed to by  display  and the pixmap to write to must
+    be pointed to by  pixmap  .
+    The width of the pixmap must be given by  width  .
+    The height of the pixmap must be given by  height  .
+    The routine returns nothing.
+*/
+Display *display;
+Pixmap pixmap;
+int width;
+int height;
+/*---------------------------------------------------------------------------*/
+
+void ic_write_kimage_icon (display, pixmap, width, height)
+/*  This routine will write the icon pixmap required for the  kimage  module.
+    The display must be pointed to by  display  and the pixmap to write to must
+    be pointed to by  pixmap  .
+    The width of the pixmap must be given by  width  .
+    The height of the pixmap must be given by  height  .
+    The routine returns nothing.
+*/
+Display *display;
+Pixmap pixmap;
+int width;
+int height;
+/*---------------------------------------------------------------------------*/
+
+void ic_write_karma_cm_icon (display, pixmap, width, height)
+/*  This routine will write the icon pixmap required for the  karma_cm  module.
+    The display must be pointed to by  display  and the pixmap to write to must
+    be pointed to by  pixmap  .
+    The width of the pixmap must be given by  width  .
+    The height of the pixmap must be given by  height  .
+    The routine returns nothing.
+*/
+Display *display;
+Pixmap pixmap;
+int width;
+int height;
+/*---------------------------------------------------------------------------*/
+
+void ic_write_datasource_icon (display, pixmap, width, height)
+/*  This routine will write the icon pixmap required for generic data source
+    modules.
+    The display must be pointed to by  display  and the pixmap to write to must
+    be pointed to by  pixmap  .
+    The width of the pixmap must be given by  width  .
+    The height of the pixmap must be given by  height  .
+    The routine returns nothing.
+*/
+Display *display;
+Pixmap pixmap;
+int width;
+int height;
+/*---------------------------------------------------------------------------*/
+
+void ic_write_datasink_icon (display, pixmap, width, height)
+/*  This routine will write the icon pixmap required for generic data sink
+    modules.
+    The display must be pointed to by  display  and the pixmap to write to must
+    be pointed to by  pixmap  .
+    The width of the pixmap must be given by  width  .
+    The height of the pixmap must be given by  height  .
+    The routine returns nothing.
+*/
+Display *display;
+Pixmap pixmap;
+int width;
+int height;
+/*---------------------------------------------------------------------------*/
+
+void ic_write_datafilter_icon (display, pixmap, width, height)
+/*  This routine will write the icon pixmap required for generic data filter
+    modules.
+    The display must be pointed to by  display  and the pixmap to write to must
+    be pointed to by  pixmap  .
+    The width of the pixmap must be given by  width  .
+    The height of the pixmap must be given by  height  .
+    The routine returns nothing.
+*/
+Display *display;
+Pixmap pixmap;
+int width;
+int height;
+/*---------------------------------------------------------------------------*/

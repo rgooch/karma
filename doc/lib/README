@@ -1,0 +1,549 @@
+				KarmaLib
+
+	A Structured Library for Signal and Image Processing
+
+
+	Karma is a package for signal and image processing applications. It
+  contains KarmaLib (the structured library and API) and a large number of
+  modules (applications) to perform many standard tasks.
+
+  KarmaLib provides routines to simplify the interface to the operating system.
+  This includes process management and a powerful connection package.
+
+  It also provides a highly extensible, recursive, heirarchical data structure
+  with extensive library support. This data structure may be accessed in a very
+  portable, generic fashion by applications and may also be accessed directly
+  when speed is critical. By supplying powerful library routines, data
+  structures may be accessed in an abstract way, removing the need for the
+  applications programmer to write code to deal with complex data structures
+  while also allowing users to pass increasingly complex data structures to
+  modules without the need for recompiliation.
+  The applications programmer is left to concentrate on processing simple
+  sub-structures (typically 1 or 2 dimensional arrays) without incurring any
+  processing overhead. Tiling of multi dimensional arrays is supported
+  transparently, and, using special indexing techniques (also transparent to
+  the application), incur no performance overhead.
+  The library also supplies routines to allow the programmer to transfer data
+  structures as objects to and from named objects (disc files and network
+  connections) without requiring the programmer to pay any attention to data
+  formats, byte swapping machines, word sizes, etc. All data transfers are
+  highly optimised to take advantage of the features of any particular platform
+  and operating system.
+  In addition, data structures may be automatically memory mapped from disc
+  into the process address space, yielding enormous peformance increases when
+  reading large data structures from disc, and also saving swap space.
+
+	KarmaLib is structured into many "packages", which are collections of
+  routines. All the routines in each package have a designated prefix.
+  For example, the data structure manipulation routines all have the prefix:
+    ds_
+  The include file needed for each package is based on the common prefix.
+  For example:  karma_ds.h
+
+  The packages are also layered. Level 1 packages are the lowest level, and
+  depend directly on the operating system. Higher level packages are
+  dependent on one or more packages at lower levels. A package at one level is
+  not dependent on any other package at the same or higher level.
+  The number of letters in a package's prefix indicates the level of the
+  package. So, for example, the data structure manipulation routines are a
+  level 2 package.
+
+  In many cases, certain functionality is provided in packages at various
+  levels. With few exceptions, the highest level packages are recommended for
+  use, as these provide the greatest flexibility, ease of use and are also more
+  highly optimised.
+
+  The library is divided into a number of individual libraries. The "core"
+  library is linked with  -lkarma  . This library depends on the Operating
+  System and the termcap(3) library.
+  The X11 interface to Karma must be linked with:  -lkarmaX11 -lXext -lX11
+  The XView interface to Karma must be linked with:
+    -lkarmaxview -lxview -lolgx -lX11
+  The Xt interface to Karma must be linked with:
+    -lkarmaXt -lXt -lX11
+  The Karma graphics library must be linked with zero or more other libraries,
+  depending on the platform.
+    For X11 based graphics, compile with:
+      -DX11
+    and link with:
+      -lkarmagraphics -lXext -lX11
+    For VX based graphics, link with:
+      -lkarmagraphics
+
+  The Karma Widgets library is a collection of Xt widgets in alpha development:
+  the normal structure of Karma is not followed here: not sure how to
+  structure it yet. The documentation is in the source files :-)
+
+
+	Below is a brief table of all the packages and the routines which they
+  are comprised of. For the complete API for a package, see the file:
+    <prefix>.doc  in this directory.
+
+-----------------------------------------------------------------------------
+/*  Routines to print general error messages  */
+/*  Link with:    -lkarma  */
+
+a_print_abort			    a_func_abort
+a_prog_bug
+
+-----------------------------------------------------------------------------
+/*  Routines to control daemon mode  */
+/*  Link with:    -lkarma  */
+
+d_enter_daemon_mode		    d_test_daemon_mode
+
+-----------------------------------------------------------------------------
+/*  Routines to manipulate memory blocks  */
+/*  Link with:    -lkarma  */
+
+m_alloc				    m_copy
+m_free				    m_copy_blocks
+m_error_notify			    m_fill
+m_abort				    m_cmp
+m_clear
+
+-----------------------------------------------------------------------------
+/*  Low level routines to convert data  */
+/*  Link with:    -lkarma  */
+
+p_write_buf64			    p_read_buf16
+p_read_buf64			    p_write_buf32s
+p_write_buf32			    p_read_buf32s
+p_read_buf32			    p_write_buf16s
+p_write_buf16			    p_read_buf16s
+
+-----------------------------------------------------------------------------
+/*  Low level connection routines  */
+/*  Link with:    -lkarma  */
+
+r_alloc_port			    r_getenv
+r_close_dock			    r_setenv
+r_connect_to_port		    r_gethostname
+r_accept_connection_on_dock	    r_getppid
+r_close_connection		    r_get_karmabase
+r_get_bytes_readable		    r_get_service_number
+r_get_inet_addr_from_host	    r_get_host_from_display
+r_read				    r_get_display_num_from_display
+r_write				    r_get_screen_num_from_display
+r_test_input_event		    r_get_def_port
+r_open_stdin
+
+-----------------------------------------------------------------------------
+/*  Signal handling routines  */
+/*  Link with:    -lkarma  */
+
+s_block				    s_int_handler
+s_unblock			    s_term_handler
+s_unblock_all			    s_check_for_int
+s_ignore
+
+-----------------------------------------------------------------------------
+/*  Routines to generate random numbers  */
+/*  Link with:    -lkarma  */
+
+n_gaussian			    n_uniform
+
+-----------------------------------------------------------------------------
+/*  Low level Transform routines  */
+/*  Link with:    -lkarma  */
+
+t_c_to_c_1D_fft_float		    t_check_power_of_2
+t_c_to_c_many_1D_fft_float	    t_r_to_c_many_1D_fft_float
+
+-----------------------------------------------------------------------------
+/*  Routines to display axes in an X Window  */
+/*  Link with:    -lkarmaX11  */
+
+ax_plot_dressing		    ax_unset_zoom_info
+ax_choose_scale			    ax_verify_crosshair_location
+ax_draw_ordinate_scale		    ax_choose_ord_intvl
+ax_draw_abscissa_scale		    ax_pixel_to_abscissa
+ax_set_zoom_h_info		    ax_pixel_to_ordinate
+ax_set_zoom_v_info
+
+-----------------------------------------------------------------------------
+/*  Routines to manipulate channel objects  */
+/*  Link with:    -lkarma  */
+
+ch_open_and_fill_memory		    ch_close_all_channels
+ch_gets				    ch_seek
+ch_getl				    ch_get_bytes_readable
+ch_puts				    ch_get_descriptor
+ch_open_file			    ch_open_stdin
+ch_map_disc			    ch_test_for_io
+ch_open_connection		    ch_test_for_asynchronous
+ch_open_memory			    ch_test_for_connection
+ch_accept_on_dock		    ch_test_for_local_connection
+ch_alloc_port			    ch_attach_to_asynchronous_descripto
+ch_close			    ch_test_for_mmap
+ch_flush			    ch_tell
+ch_read				    ch_get_mmap_addr
+ch_write			    ch_get_mmap_access_count
+
+-----------------------------------------------------------------------------
+/*  Routines to manipulate the general data structure  */
+/*  Link with:    -lkarma  */
+
+ds_alloc_multi			    ds_get_array_size
+ds_alloc_packet_desc		    ds_packet_all_data
+ds_alloc_data			    ds_element_is_atomic
+ds_alloc_packet_subdata		    ds_element_is_named
+ds_alloc_packet			    ds_element_is_legal
+ds_alloc_array_desc		    ds_identify_name
+ds_alloc_tiling_info		    ds_f_array_name
+ds_alloc_dim_desc		    ds_f_name_in_packet
+ds_alloc_list_head		    ds_f_name_in_array
+ds_alloc_list_entry		    ds_f_elem_in_packet
+ds_alloc_array			    ds_find_hole
+ds_easy_alloc_array		    ds_compare_packet_desc
+ds_easy_alloc_n_element_array	    ds_compare_array_desc
+ds_alloc_contiguous_list	    ds_compare_dim_desc
+ds_find_single_extremes		    ds_f_dim_in_array
+ds_find_plane_extremes		    ds_get_array_offset
+ds_put_unique_named_value	    ds_get_coord_num
+ds_put_unique_named_string	    ds_get_element
+ds_get_unique_named_value	    ds_get_elements
+ds_get_unique_named_string	    ds_get_coordinate_array
+ds_cmap_alloc_colourmap		    ds_element_is_complex
+ds_cmap_find_colourmap		    ds_get_handle_in_packet
+ds_cmap_get_all_colourmaps	    ds_get_handle_in_array
+ds_copy_packet			    ds_get_handle_in_list
+ds_copy_desc_until		    ds_list_insert
+ds_copy_array_desc_until	    ds_list_append
+ds_copy_dim_desc		    ds_list_delete
+ds_copy_data			    ds_list_unfragment
+ds_copy_array			    ds_list_fragment
+ds_copy_list			    ds_remove_dim_desc
+ds_select_arrays		    ds_append_dim_desc
+ds_dealloc_multi		    ds_prepend_dim_desc
+ds_dealloc_packet		    ds_compute_array_offsets
+ds_dealloc_data			    ds_remove_tiling_info
+ds_dealloc_packet_subdata	    ds_append_gen_struct
+ds_dealloc_array_desc		    ds_put_element
+ds_dealloc_list			    ds_put_elements
+ds_dealloc_list_entries		    ds_put_element_many_times
+ds_dealloc2_list		    ds_put_named_element
+ds_dealloc_array		    ds_reorder_array
+ds_draw_ellipse			    ds_foreach_occurrence
+ds_draw_polygon			    ds_foreach_in_array
+ds_convert_atomic		    ds_foreach_in_list
+ds_get_coordinate		    ds_traverse_and_process
+ds_get_element_offset		    ds_traverse_array
+ds_get_packet_size		    ds_traverse_list
+
+-----------------------------------------------------------------------------
+/*  Routines to extract data from strings  */
+/*  Link with:    -lkarma  */
+
+ex_int				    ex_command_skip
+ex_word				    ex_on
+ex_command			    ex_on_or_off
+ex_word_skip			    ex_yes
+ex_float			    ex_str
+ex_hour
+
+-----------------------------------------------------------------------------
+/*  Routines to generate icon pixmaps  */
+/*  Link with:    -lkarmaX11  */
+
+ic_write_kplot_icon		    ic_write_karma_cm_icon
+ic_write_kscat_icon		    ic_write_datasource_icon
+ic_write_funcgen_icon		    ic_write_datasink_icon
+ic_write_kimage_icon		    ic_write_datafilter_icon
+
+-----------------------------------------------------------------------------
+/*  String manipulation routines  */
+/*  Link with:    -lkarma  */
+
+st_find				    st_pbrk
+st_chr				    st_rchr
+st_cmp_wild			    st_spn
+st_cspn				    st_tok
+st_icmp				    st_tol
+st_lwr				    st_upr
+st_nicmp			    st_dup
+st_nupr				    st_qsort
+st_nlwr
+
+-----------------------------------------------------------------------------
+/*  Routines to manipulate XImage structures  */
+/*  Link with:    -lkarmaX11  */
+
+xi_check_shared_images_available    xi_destroy_image
+xi_create_image			    xi_put_image
+
+-----------------------------------------------------------------------------
+/*  Routines to perform optimised arithmetic operations on vectors (arrays)  */
+/*  Link with:    -lkarma  */
+
+va_scale_float
+
+-----------------------------------------------------------------------------
+/*  Routines to do low level initialisation of modules  */
+/*  Link with:    -lkarma  */
+
+im_register_module_name		    im_register_module_version_date
+
+-----------------------------------------------------------------------------
+/*  Routines to manage child processes  */
+/*  Link with:    -lkarma  */
+
+cm_manage			    cm_poll
+cm_unmanage			    cm_poll_silent
+
+-----------------------------------------------------------------------------
+/*  Routines to save and restore history information  */
+/*  Link with:    -lkarma  */
+
+hi_read				    hi_write
+
+-----------------------------------------------------------------------------
+/*  Routines to compute and write RGB colour values into arrays  */
+/*  Link with:    -lkarma  */
+
+cf_greyscale1			    cf_stripchart
+cf_greyscale2			    cf_random_grey
+cf_rainbow1			    cf_random_pseudocolour
+cf_rainbow2			    cf_velocity_compensating_tones
+cf_rainbow3			    cf_compressed_colourmap_3r2g2b
+cf_cyclic1
+
+-----------------------------------------------------------------------------
+/*  Routines to manipulate X displays and colourmaps  */
+/*  Link with:    -lkarmaX11  */
+
+xc_get_dpy_handle		    xc_store_colours
+xc_alloc_colours		    xc_get_location
+xc_free_colours
+
+-----------------------------------------------------------------------------
+/*  Routines to manipulate a VX display and colourmaps  */
+/*  Link with:    -lkarmavx  */
+
+vc_get_dpy_handle		    vc_store_colours_24bit
+vc_alloc_colours		    vc_get_location
+vc_free_colours			    vc_set_visual
+vc_store_colours
+
+-----------------------------------------------------------------------------
+/*  Routines to manage channel objects  */
+/*  Link with:    -lkarma  */
+
+chm_manage			    chm_poll
+chm_unmanage
+
+-----------------------------------------------------------------------------
+/*  Routines to manage channel objects using the XView notifier  */
+/*  Link with:    -lkarmaxview  */
+
+notify_chm_manage		    notify_chm_unmanage
+
+-----------------------------------------------------------------------------
+/*  Routines to convert and transfer host data to channel objects  */
+/*  Link with:    -lkarma  */
+
+pio_write64			    pio_read_double
+pio_read64			    pio_write32s
+pio_write32			    pio_read32s
+pio_read32			    pio_write16s
+pio_write16			    pio_read16s
+pio_read16			    pio_write_swap
+pio_write_float			    pio_read_swap
+pio_read_float			    pio_write_string
+pio_write_double		    pio_read_string
+
+-----------------------------------------------------------------------------
+/*  Routines to draw data structures into XImage structures  */
+/*  Link with:    -lkarmaX11  */
+
+drw_single_plane
+
+-----------------------------------------------------------------------------
+/*  Routines to dump an ASCII representation of a data structure  */
+/*  Link with:    -lkarma  */
+
+dmp_multi_desc			    dmp_packet
+dmp_packet_desc			    dmp_element
+dmp_element_desc		    dmp_array
+dmp_array_desc			    dmp_list
+dmp_dim_desc			    dmp_flag
+dmp_multi_data
+
+-----------------------------------------------------------------------------
+/*  Routines to scan values from channel objects  */
+/*  Link with:    -lkarma  */
+
+chs_get_value			    chs_get_int
+chs_get_float			    chs_get_line
+
+-----------------------------------------------------------------------------
+/*  Routines to manage channel objects using the Xt toolkit  */
+/*  Link with:    -lkarmaXt  */
+
+xt_chm_register_app_context	    xt_chm_unmanage
+xt_chm_manage
+
+-----------------------------------------------------------------------------
+/*  Routines to convert between image formats  */
+/*  Link with:    -lkarma  */
+
+imc_24to8
+
+-----------------------------------------------------------------------------
+/*  Routines to scan directories.  */
+/*  Link with:    -lkarma  */
+
+dir_open			    dir_close
+dir_read
+
+-----------------------------------------------------------------------------
+/*  Routines to manipulate connections  */
+/*  Link with:    -lkarma  */
+
+conn_register_managers		    conn_get_num_client_connections
+conn_register_server_protocol	    conn_get_serv_connection
+conn_register_client_protocol	    conn_get_client_connection
+conn_get_channel		    conn_get_connection_info
+conn_attempt_connection		    conn_controlled_by_cm_tool
+conn_close			    conn_get_connection_module_name
+conn_become_server		    conn_register_cm_quiescent_func
+conn_get_num_serv_connections
+
+-----------------------------------------------------------------------------
+/*  Routines to read and write a data structure from/ to an open channel  */
+/*  Link with:    -lkarma  */
+
+dsrw_write_multi		    dsrw_read_multi
+dsrw_write_packet_desc		    dsrw_read_packet_desc
+dsrw_write_element_desc		    dsrw_read_array_desc
+dsrw_write_array_desc		    dsrw_read_dim_desc
+dsrw_write_dim_desc		    dsrw_read_packet
+dsrw_write_packet		    dsrw_read_element
+dsrw_write_element		    dsrw_read_array
+dsrw_write_array		    dsrw_read_list
+dsrw_write_list			    dsrw_read_flag
+dsrw_write_flag			    dsrw_read_type
+
+-----------------------------------------------------------------------------
+/*  Routines to perform asynchronous reads from the standard input  */
+/*  Link with:    -lkarma  */
+
+arln_read_from_stdin		    arln_read_flag
+arln_read_float			    arln_read_line
+arln_read_int
+
+-----------------------------------------------------------------------------
+/*  Routines to manipulate pixel canvases in a device independent way  */
+/*  Link with:    -lkarmagraphics  */
+
+kwin_create_x			    kwin_draw_cached_image
+kwin_set_gc_x			    kwin_draw_point
+kwin_create_vx			    kwin_draw_line
+kwin_register_refresh_func	    kwin_fill_ellipse
+kwin_register_position_event_func   kwin_fill_polygon
+kwin_resize			    kwin_get_size
+kwin_process_position_event	    kwin_free_cache_data
+kwin_draw_image			    kwin_convert_to_canvas_coord
+
+-----------------------------------------------------------------------------
+/*  Routines to read an ASCII data structure from an open channel  */
+/*  Link with:    -lkarma  */
+
+dsra_multi_desc			    dsra_array
+dsra_packet_desc		    dsra_list
+dsra_element_desc		    dsra_flag
+dsra_array_desc			    dsra_type
+dsra_dim_desc			    dsra_uint
+dsra_multi_data			    dsra_int
+dsra_packet			    dsra_float
+dsra_element			    dsra_double
+
+-----------------------------------------------------------------------------
+/*  Routines to transfer data structures to/ from discs and connections  */
+/*  Link with:    -lkarma  */
+
+dsxfr_register_connection_limits    dsxfr_register_read_func
+dsxfr_put_multi			    dsxfr_register_close_func
+dsxfr_get_multi
+
+-----------------------------------------------------------------------------
+/*  Routines to manipulate colourmaps  */
+/*  Link with:    -lkarma  */
+
+kcmap_init			    kcmap_get_active_func
+kcmap_add_RGB_func		    kcmap_get_pixels
+kcmap_create			    kcmap_get_pixel
+kcmap_register_resize_func	    kcmap_prepare_for_slavery
+kcmap_change			    kcmap_copy_to_struct
+kcmap_modify			    kcmap_copy_from_struct
+kcmap_list_funcs
+
+-----------------------------------------------------------------------------
+/*  Routines to manipulate 2-dimensional (image) editing instructions  */
+/*  Link with:    -lkarma  */
+
+iedit_create_list		    iedit_remove_instructions
+iedit_get_instruction_desc	    iedit_apply_instructions
+iedit_alloc_edit_coords		    iedit_get_list
+iedit_get_edit_coords		    iedit_make_list_default_master
+iedit_add_instruction		    iedit_make_list_default_slave
+
+-----------------------------------------------------------------------------
+/*  Routines to initialise and sequence modules  */
+/*  Link with:    -lkarma  */
+
+module_run
+
+-----------------------------------------------------------------------------
+/*  Routines to process named objects  */
+/*  Link with:    -lkarma  */
+
+dsproc_object
+
+-----------------------------------------------------------------------------
+/*  Routines to manipulate simple, n-dimensional data structures  */
+/*  Link with:    -lkarma  */
+
+iarray_read_nD			    iarray_sub_and_scale
+iarray_write			    iarray_dim_name
+iarray_create			    iarray_remap_torus
+iarray_get_from_multi_array	    iarray_set_world_coords
+iarray_dealloc			    iarray_get_world_coords
+iarray_put_named_value		    iarray_create_1D
+iarray_put_named_string		    iarray_create_2D
+iarray_get_named_value		    iarray_create_3D
+iarray_get_named_string		    iarray_put_float
+iarray_copy_data		    iarray_put_int
+iarray_get_element_1D		    iarray_get_float
+iarray_get_element_2D		    iarray_get_int
+iarray_get_element_3D		    iarray_fill_float
+iarray_get_sub_array_2D		    iarray_fill_int
+iarray_dim_length		    iarray_min_max_float
+iarray_fill			    iarray_min_max_int
+iarray_min_max			    iarray_scale_and_offset_float
+iarray_scale_and_offset		    iarray_scale_and_offset_int
+iarray_add_and_scale
+
+-----------------------------------------------------------------------------
+/*  Routines to manipulate world canvases in a device independent way  */
+/*  Link with:    -lkarmagraphics  */
+
+canvas_create			    canvas_get_size
+canvas_register_refresh_func	    canvas_convert_to_canvas_coord
+canvas_register_size_control_func   canvas_convert_from_canvas_coord
+canvas_register_position_event_func canvas_fill_ellipse
+canvas_resize			    canvas_fill_polygon
+canvas_draw_image		    canvas_draw_edit_list
+canvas_draw_point		    canvas_draw_edit_object
+canvas_draw_line		    canvas_create_stroke_instruction
+
+-----------------------------------------------------------------------------
+/*  Routines to manipulate viewable images in a device independent way  */
+/*  Link with:    -lkarmagraphics  */
+
+viewimg_create			    viewimg_get_active
+viewimg_create_from_iarray	    viewimg_register_position_event_fun
+viewimg_make_active		    viewimg_fill_ellipse
+viewimg_control_autoscaling	    viewimg_fill_polygon
+viewimg_register_data_change	    viewimg_draw_edit_list
+viewimg_destroy			    viewimg_draw_edit_object

@@ -1,0 +1,390 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the ch_ package of routines in the Karma library.
+
+    These routines are meant to provide an alternative to the standard C
+    library streams (FILE *).
+    The channel package provides far more powerful channels (streams),
+    especially when transferring data over connections.
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	1-OCT-1992
+
+
+*/
+
+Channel ch_open_and_fill_memory (strings)
+/*  This routine will open a memory channel with sufficient space to contain
+    a list of strings.
+    The NULL terminated array of string pointers must be pointed to by  strings
+    The strings are written with a NEWLINE character to terminate the string.
+    The NULL terminator character is not written.
+    The routine returns a channel object on success, else it returns NULL.
+*/
+char **strings;
+/*---------------------------------------------------------------------------*/
+
+flag ch_gets (channel, buffer, length)
+/*  This routine will read a character string from a channel into a buffer.
+    The channel object must be given by  channel  .
+    The buffer to write the data to must be pointed to by  buffer  .
+    The routine will write a NULL terminator character at the end of the
+    string.
+    NOTE: the newline chanacter '\n' is NOT copied into the buffer.
+    The length of the buffer must be given by  length  .If the buffer is not
+    large enough to contain the string, then the remainder of the string is NOT
+    read. See also the  ch_getl  routine.
+    The routine returns TRUE on success,
+    else it returns FALSE (indicating end-of-file was encountered).
+*/
+Channel channel;
+char *buffer;
+unsigned int length;
+/*---------------------------------------------------------------------------*/
+
+flag ch_getl (channel, buffer, length)
+/*  This routine will read a character string from a channel into a buffer.
+    The channel object must be given by  channel  .
+    The buffer to write the data to must be pointed to by  buffer  .
+    The routine will write a NULL terminator character at the end of the
+    string.
+    NOTE: the newline chanacter '\n' is NOT copied into the buffer.
+    The length of the buffer must be given by  length  .If the buffer is not
+    large enough to contain the string, then the remainder of the string
+    (including the newline character) is read in and discarded and a warning
+    message is displayed. See also the ch_gets  routine.
+    The routine returns TRUE on success,
+    else it returns FALSE (indicating end-of-file was encountered).
+*/
+Channel channel;
+char *buffer;
+unsigned int length;
+/*---------------------------------------------------------------------------*/
+
+flag ch_puts (channel, string, newline)
+/*  This routine will write a character stream to a channel.
+    The channel object must be given by  channel  .
+    The strings must be pointed to by  string  .
+    The routine will write a NEWLINE character after writing the string if the
+    value of  newline  is TRUE.
+    The routine will not write the NULL terminator character.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+Channel channel;
+char *string;
+flag newline;
+/*---------------------------------------------------------------------------*/
+
+Channel ch_open_file (filename, type)
+/*  This routine will open a file channel. The file may be a regular disc file,
+    a named FIFO or a character special device. The channel may be later tested
+    to determine what the true channel type is by calling routines such as:
+    ch_test_for_asynchronous  and  ch_test_for_io  .
+    The pathname of the file to open must be given by  filename  .
+    The mode of the file must be pointed to by  type  .The following modes are
+    allowed:
+        "r"         open for reading
+	"w"         open (truncate) or create for writing
+	"a"         open or create for writing at end of file (append)
+	"r+"        open for update (reading and writing)
+	"w+"        open for reading and writing after truncation
+	"a+"        open or create for update (reading and writing) at EOF
+    Note that for character special files and named FIFOs, these modes
+    degenerate into read-write, read-only and write-only.
+    The routine returns a channel object on success, else it returns NULL.
+*/
+char *filename;
+char *type;
+/*---------------------------------------------------------------------------*/
+
+Channel ch_map_disc (filename, option, writeable, update_on_write)
+/*  This routine will open a memory channel with the memory pages being mapped
+    from a disc file. The disc file must already exist.
+    The pathname of the file to open must be given by  filename  .
+    The channel may be opened as an ordinary disc file depending on the value
+    of  option  .Legal values for this are:
+        K_CH_MAP_NEVER           Never map
+	K_CH_MAP_LARGE_LOCAL     Map if local filesystem and file size > 1MB
+	K_CH_MAP_LOCAL           Map if local filesystem
+	K_CH_MAP_LARGE           Map if file over 1 MByte
+	K_CH_MAP_IF_AVAILABLE    Map if operating system supports it
+	K_CH_MAP_ALWAYS          Always map, fail if not supported.
+    If the file is not mapped then the routine will attempt to open an ordinary
+    disc channel, provided  option  is not equal to  K_CH_MAP_ALWAYS  .
+    If the file is opened as a disc channel the access mode is: "r".
+    If the mapped pages are to be writeable, the value of  writeable  must be
+    TRUE. If this is FALSE and the memory pages are written to, a segmentation
+    fault occurs.
+    If the disc file should be updated when the memory pages are written to,
+    the value of  update_on_write  must be TRUE. If this is FALSE, then a write
+    to a memory page causes the page to be copied into swap space and the
+    process retains a private copy of the page from this point on.
+    If  update_on_write  is FALSE and  writeable  is TRUE, then some systems
+    require the allocation of normal virtual memory equal to the size of the
+    disc file at the time of mapping, while others will dynamically allocate
+    memory from swap space as pages are written into.
+    In the latter case, some systems will cause a segmentation fault if swap
+    space is exhausted, while other systems wait for space to be freed.
+    The channel may be queried to determine if it has been memory mapped using
+    the call:  ch_test_for_mmap
+    The routine returns a channel object on success, else it returns NULL.
+*/
+char *filename;
+unsigned int option;
+flag writeable;
+flag update_on_write;
+/*---------------------------------------------------------------------------*/
+
+Channel ch_open_connection (host_addr, port_number)
+/*  This routine will open a full-duplex connection channel to a server running
+    on another host machine.
+    The Internet address of the host machine must be given by  host_addr  .
+    If this is 0 the connection is made to a server running on the same machine
+    using the most efficient transport available.
+    The port number to connect to must be given by  port_number  .This should
+    not be confused with Internet port numbers.
+    The use of this routine is not recommended: see the  conn_  package for
+    more powerful functionality.
+    The routine returns a channel object on success, else it returns NULL.
+*/
+unsigned long host_addr;
+unsigned int port_number;
+/*---------------------------------------------------------------------------*/
+
+Channel ch_open_memory (buffer, size)
+/*  This routine will open a memory channel. A memory channel behaves like a
+    disc channel with a limited (specified) file (device) size.
+    Data is undefined when reading before writing has occurred.
+    The buffer to use must be pointed to by  buffer  .If this is NULL, the
+    routine will allocate a buffer of the specified size which is automatically
+    deallocated upon closure of the channel.
+    The size of the buffer to allocate must be given by  size  .
+    The routine returns a channel object on success, else it returns NULL.
+*/
+char *buffer;
+unsigned int size;
+/*---------------------------------------------------------------------------*/
+
+Channel ch_accept_on_dock (dock, addr)
+/*  This routine will open a full-duplex connection channel to the first
+    connection to a waiting dock.
+    The dock must be given by  dock  .
+    The address of the host connecting to the dock will be written to the
+    storage pointed to by  addr  .
+    The routine returns a channel object on success, else it returns NULL.
+*/
+Channel dock;
+unsigned long *addr;
+/*---------------------------------------------------------------------------*/
+
+Channel *ch_alloc_port (port_number, retries, num_docks)
+/*  This routine will allocate a Karma port for the module so that it can
+    operate as a server (able to receive network connections).
+    The port number to allocate must be pointed to by  port_number  .The
+    routine will write the actual port number allocated to this address. This
+    must point to an address which lies on an  int  boundary.
+    The number of succsessive port numbers to attempt to allocate before giving
+    up must be given by  retries  .If this is 0, then the routine will give up
+    immediately if the specified port number is in use.
+    The routine will create a number of docks for one port. Each dock is an
+    alternative access point for other modules to connect to this port.
+    The number of docks allocated will be written to the storage pointed to by
+    num_docks  .This must point to an address which lies on an  int
+    boundary.
+    The close-on-exec flags of the docks are set such that the docks will
+    close on a call to execve(2V).
+    The docks are placed into blocking mode.
+    The routine returns a pointer to an array of channel docks on success,
+    else it returns NULL.
+*/
+unsigned int *port_number;
+unsigned int retries;
+unsigned int *num_docks;
+/*---------------------------------------------------------------------------*/
+
+flag ch_close (channel)
+/*  This routine will close a channel object. The write buffer will be flushed
+    prior to closure.
+    The channel object must be given by  channel  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+Channel channel;
+/*---------------------------------------------------------------------------*/
+
+flag ch_flush (channel)
+/*  This routine will flush the write buffer of a channel object.
+    The channel object must be given by  channel  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+Channel channel;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ch_read (channel, buffer, length)
+/*  This routine will read a number of bytes from a channel and places them
+    into a buffer.
+    The channel object must be given by  channel  .
+    The buffer to write the data into must be pointed to by  buffer  .
+    The number of bytes to read into the buffer must be pointed to by  length
+    If the channel is a connection and the number of bytes readable from the
+    connection is equal to or more than  length  the routine will NOT block.
+    The routine returns the number of bytes read.
+*/
+Channel channel;
+char *buffer;
+unsigned int length;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ch_write (channel, buffer, length)
+/*  This routine will write a number of bytes from a buffer to a channel.
+    The channel object must be given by  channel  .
+    The buffer to read the data from must be pointed to by  buffer  .
+    The number of bytes to write from the buffer must be pointed to by  length
+    The routine returns the number of bytes written.
+*/
+Channel channel;
+char *buffer;
+unsigned int length;
+/*---------------------------------------------------------------------------*/
+
+void ch_close_all_channels ()
+/*  This routine will close all open channels.
+    The routine is meant to be called from the exit(3) function.
+    The routine returns nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag ch_seek (channel, position)
+/*  This routine will position the read and write pointers for a channel.
+    The channel object must be given by  channel  .
+    The position (relative to the start of the channel data) must be given
+    by  position  .
+    This routine cannot be used for connection channels.
+    The routine returns TRUE on success,
+    else it returns FALSE (indicating a seek request beyond the channel limits)
+*/
+Channel channel;
+unsigned long position;
+/*---------------------------------------------------------------------------*/
+
+int ch_get_bytes_readable (channel)
+/*  This routine will determine the number of bytes currently readable on
+    a connection channel. This is equal to the maximum number of bytes that
+    could be read from the channel at this time without blocking waiting for
+    more input to be transmitted from the other end of the connection.
+    The channel object must be given by  channel  .
+    The routine returns the number of bytes readable on success,
+    else it returns -1 indicating error.
+*/
+Channel channel;
+/*---------------------------------------------------------------------------*/
+
+int ch_get_descriptor (channel)
+/*  This routine will get the file descriptor associated with a channel.
+    The channel object must be given by  channel  .
+    The routine returns the file descriptor on success,
+    else it returns -1 indicating error.
+*/
+Channel channel;
+/*---------------------------------------------------------------------------*/
+
+void ch_open_stdin ()
+/*  This routine will create a channel object for the standard input descriptor
+    0
+    The standard input channel will be written to the external variable
+    ch_stdin  .
+    The routine returns nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag ch_test_for_io (channel)
+/*  This routine will test if a channel object is capable of supporting reading
+    and writing operations. Most channels fall under this category. The notable
+    exceptions are the dock channel and channels created by a call to
+    ch_attach_to_asynchronous_descriptor  .
+    The channel object must be given by  channel  .
+    The routine returns TRUE if the channel is capable of reading and writing,
+    else it returns FALSE.
+*/
+Channel channel;
+/*---------------------------------------------------------------------------*/
+
+flag ch_test_for_asynchronous (channel)
+/*  This routine will test if a channel object is an asynchronous channel,
+    ie. a character special file, named FIFO, connection, a dock channel or one
+    created by a call to  ch_attach_to_asynchronous_descriptor  .
+    The channel object must be given by  channel  .
+    The routine returns TRUE if the channel is asynchronous,
+    else it returns FALSE.
+*/
+Channel channel;
+/*---------------------------------------------------------------------------*/
+
+flag ch_test_for_connection (channel)
+/*  This routine will test if a channel object is a connection channel.
+    The channel object must be given by  channel  .
+    The routine returns TRUE if the channel object is a connection,
+    else it returns FALSE.
+*/
+Channel channel;
+/*---------------------------------------------------------------------------*/
+
+flag ch_test_for_local_connection (channel)
+/*  This routine will test if a connection channel object is a local
+    connection.
+    The channel object must be given by  channel  .
+    The routine returns TRUE if the channel object is a local connection,
+    else it returns FALSE.
+*/
+Channel channel;
+/*---------------------------------------------------------------------------*/
+
+Channel ch_attach_to_asynchronous_descriptor (fd)
+/*  This routine will create a channel object from an asynchronous descriptor.
+    The descriptor must be given by  fd  .
+    The routine returns a channel object on success, else it returns NULL.
+*/
+int fd;
+/*---------------------------------------------------------------------------*/
+
+flag ch_test_for_mmap (channel)
+/*  This routine will test if a channel object is a memory mapped disc channel.
+    The channel object must be given by  channel  .
+    The routine returns TRUE if the channel object is memory mapped,
+    else it returns FALSE.
+*/
+Channel channel;
+/*---------------------------------------------------------------------------*/
+
+flag ch_tell (channel, read_pos, write_pos)
+/*  This routine will determine the read and write pointers for a channel.
+    The channel object must be given by  channel  .
+    The read position (relative to the start of the channel data) will be
+    written to the storage pointed to by  read_pos  .
+    The write position (relative to the start of the channel data) will be
+    written to the storage pointed to by  write_pos  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+Channel channel;
+unsigned long *read_pos;
+unsigned long *write_pos;
+/*---------------------------------------------------------------------------*/
+
+char *ch_get_mmap_addr (channel)
+/*  This routine will get the starting address of the data for a memory mapped
+    disc channel. The channel MUST be a memory mapped disc channel.
+    The routine returns the address of the memory mapped data.
+    NOTE: the if memory mapped address space is read-only, any attempt to write
+    to this address space will cause a segmentation fault.
+*/
+Channel channel;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ch_get_mmap_access_count (channel)
+/*  This routine will get the number of times a memory mapped disc channel has
+    been queried for the mapping address (using  ch_get_mmap_addr  ).
+    The channel MUST be a memory mapped disc channel.
+    The routine returns the number of address queries.
+*/
+Channel channel;
+/*---------------------------------------------------------------------------*/

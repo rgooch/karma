@@ -1,0 +1,15 @@
+/*  Routines to manipulate XImage structures  */
+/*  This file describes the xi_ package of routines in the Karma library.
+
+    These routines are meant to provide a more generic interface to the X
+    Windows System XImage structures.
+    These routines allow simple creation of standard and shared-memory XImage
+    data structures, as well as the transmission of these to the X server.
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	1-OCT-1992
+
+
+*/

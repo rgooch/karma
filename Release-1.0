@@ -1,0 +1,163 @@
+Subject: CHANGES to  iedit_  package
+Date: Thu, 26 Aug 93 09:17:51 EST
+
+SUMMARY:
+  The function interfaces for the  iedit_  package have changed and a new
+edit instruction callback mechanism has been implemented.
+
+CODE AFFECTED:
+  All code which makes reference to the  iedit_  routines must be changed.
+
+HEADER CHANGED:
+  karma_iedit.h
+
+DESCRIPTION:
+  The  iedit_create_desc  routine has been renamed to
+    iedit_get_instruction_desc  and the following routines have been created:
+	iedit_create_list
+	iedit_get_instruction_desc
+	iedit_add_instruction
+	iedit_remove_instructions
+	iedit_apply_instructions
+	iedit_get_list
+  In addition, other routines have been removed or had their interface
+definition changed.
+
+REASON:
+  These changes implement a major overhaul of the  iedit_  package which now
+  supports a flexible callback mechanism to manage image edit instruction lists
+  and mutual editing (communication of editing instructions).
+-------------------------------------------------------------------------------
+Subject: BUG FIX in  dsrw_read_list
+Date: Fri, 27 Aug 93 22:16:12 EST
+
+SUMMARY:
+  A bug in the  dsrw_read_list  has been fixed.
+
+DESCRIPTION:
+  The  dsrw_read_list  routine had a bug which would cause the process
+to abort when reading a zero length list. This bug only manifested
+itself on platforms with the network data format.
+-------------------------------------------------------------------------------
+Subject: BUG FIX in  conn_attempt_connection
+Date: Fri, 27 Aug 93 22:28:39 EST
+
+SUMMARY:
+  A bug in the  conn_attempt_connection  routine has been fixed.
+
+DESCRIPTION:
+  When a client makes a connection with  conn_attempt_connection  and
+the server sends some initial data (within it's  open_func  callback),
+the client  read_func  callback would not be called until control was
+returned to the polling loop. However, due to the way connection
+channels drain data from a descriptor into their read buffer, the
+polling loop was not detecting an input event on the connection
+channel (event detection is based on a level lower than channels).
+Only if the channel read buffer could not absorb all the input data
+would an input event be seen.
+This resulted in the initial burst of data not being passed to the
+connection read callback until the server sends more data at a later
+time. This problem has been fixed by calling the read callback in
+conn_attempt_connection  until the connection channel is drained.
+-------------------------------------------------------------------------------
+Subject: CHANGES to  canvas_  and  viewimg_  packages
+Date: Fri, 27 Aug 93 22:37:50 EST
+
+SUMMARY:
+  Some of the functions in the  canvas_  and  viewimg_  packages have
+had parameters removed from their interface definitions.
+
+CODE AFFECTED:
+  All code which makes reference to the  canvas_  and  viewimg_
+routines which deal with drawing 2D edit instructions must be changed.
+
+HEADER CHANGED:
+  karma_canvas.h
+  karma_viewimg.h
+
+DESCRIPTION:
+  The parameters relating to edit instruction list and edit coordinate
+list descriptors have been removed from the function interface
+definitions of these two packages. In some cases, these parameters
+have been replaced by  KImageEditList  parameters.
+
+REASON:
+  This change is part of the recent overhaul of the  iedit_  package.
+This simplfies the function interfaces for a number of routines.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTIONS  iarray_put_named_string  and  iarray_get_named_string
+Date: Sun, 5 Sep 93 23:38:27 EST
+
+SUMMARY:
+  Two new functions for attaching and extracting named strings to/
+from Intelligent Arrays have been created.
+
+HEADER CHANGED:
+  karma_iarray.h
+
+DESCRIPTION:
+  The function  iarray_put_named_string  will attach a named variable
+string element (type K_VSTRING) to an Intelligent Array.
+The  iarray_get_named_string  may be used to extract this string at a
+later date.
+-------------------------------------------------------------------------------
+Subject: CHANGES to  conn_  package
+Date: Sun, 5 Sep 93 23:48:31 EST
+
+SUMMARY:
+  The need for a protocols file has been removed.
+
+DESCRIPTION:
+  There is no longer a need to maintain a central protocols file in
+order to co-ordinate protocol allocation. The file
+$KARMABASE/etc/protocols may be deleted.
+
+REASON:
+  The previous implementation of the  conn_  package required a
+protocols file to be maintained. Whenever a new protocol was required
+by a package, module or application, the central protocols file needed
+to be edited in order to allocate a protocol number. This was
+inconvenient for applications programmers who did not have write
+access to the protocols file. In addition, remote sites wishing to
+establish connections needed to ensure that their protocols files
+corresponded.
+The internal implementation of  conn_  package has changed to avoid
+the use of protocol numbers. Protocol negotiation is now based on the
+actual protocol names.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTIONS  in  iarray_  package
+Date: Fri, 10 Sep 93 01:14:26 EST
+
+SUMMARY:
+  Two new functions for setting and getting world co-ordinates for
+Intelligent Arrays have been created.
+
+HEADER CHANGED:
+  karma_iarray.h
+
+DESCRIPTION:
+  The function  iarray_set_world_coords  will set the world
+co-ordinates (ie. minimum and maximum) for one dimension in an
+Intelligent Array.
+The function  iarray_get_world_coords  will extract the world
+co-ordinates.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  conn_register_cm_quiescent_func
+Date: Mon, 27 Sep 93 11:21:07 EST
+
+SUMMARY:
+  A new function:  conn_register_cm_quiescent_func  has been created
+which allows modules to wait for the Connection Management tool or
+shell.
+
+HEADER CHANGED:
+  karma_conn.h
+
+DESCRIPTION:
+  The  conn_register_cm_quiescent_func  registers a callback function
+which will be called when the Connection Management tool or shell has
+finished setting up the initial list of modules and connections. This
+would be useful when an application wishes to disable user input until
+the Connection Management tool or shell is quiescent (ie. all
+connections are established).
+-------------------------------------------------------------------------------

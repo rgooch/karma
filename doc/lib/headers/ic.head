@@ -1,0 +1,13 @@
+/*  Routines to generate icon pixmaps  */
+/*  This file describes the ic_ package of routines in the Karma library.
+
+    These routines are meant to provide a simple mechanism to generate standard
+    icon bitmaps in X pixmap format.
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	1-OCT-1992
+
+
+*/

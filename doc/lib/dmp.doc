@@ -1,0 +1,163 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the dmp_ package of routines in the Karma library.
+
+    These routines are meant to provide a mechanism for writing the recursive,
+    heirarchical data structure to a file in an ASCII (human readable) format.
+
+
+    Written by		Richard Gooch	3-OCT-1992
+
+    Last updated by	Richard Gooch	3-OCT-1992
+
+
+*/
+
+void dmp_multi_desc (fp, multi_desc, comments)
+/*  This routine will dump an ASCII descriptor file to the file pointed to by
+    the file pointer  fp  .The descriptor that will be sent to the file must
+    be pointed to by  multi_desc  .
+    The routine will append comments to the lines written, if the value of
+    comments  is TRUE, else it will not.
+    The routine returns nothing.
+*/
+FILE *fp;
+multi_array *multi_desc;
+flag comments;
+/*---------------------------------------------------------------------------*/
+
+void dmp_packet_desc (fp, pack_desc, comments)
+/*  This routine will dump the ASCII format of the packet descriptor pointed
+    to by  pack_desc  to the file pointed to by  fp  .
+    The routine will also dump all lower levels of array or linked list
+    descriptors.
+    The routine will append comments to the lines written, if the value of
+    comments  is TRUE, else it will not.
+    The routine returns nothing.
+*/
+FILE *fp;
+packet_desc *pack_desc;
+flag comments;
+/*---------------------------------------------------------------------------*/
+
+void dmp_element_desc (fp, type, desc, comments)
+/*  This routine will dump the ASCII format of the element of type  type  and
+    descriptor pointed to by  desc  to the file pointed to by  fp  .If the
+    element is an array pointer or a linked list pointer, that descriptor will
+    also be dumped.
+    The routine will append comments to the lines written, if the value of
+    comments  is TRUE, else it will not.
+    The routine returns nothing.
+*/
+FILE *fp;
+unsigned int type;
+char *desc;
+flag comments;
+/*---------------------------------------------------------------------------*/
+
+void dmp_array_desc (fp, arr_desc, comments)
+/*  This routine will dump the ASCII representation of the array descriptor
+    pointed to by  arr_desc  to the file pointed to by  fp  .
+    The packet descriptor for the array will also be dumped (this is a
+    recursive process).
+    The routine will append comments to the lines written, if the value of
+    comments  is TRUE, else it will not.
+    The routine returns nothing.
+*/
+FILE *fp;
+array_desc *arr_desc;
+flag comments;
+/*---------------------------------------------------------------------------*/
+
+void dmp_dim_desc (fp, dimension, comments)
+/*  This routine will dump the ASCII representation of the dimension descriptor
+    pointed to by  dimension  to the file pointed to by  fp  .
+    The routine will append comments to the lines written, if the value of
+    comments  is TRUE, else it will not.
+    The routine returns nothing.
+*/
+FILE *fp;
+dim_desc *dimension;
+flag comments;
+/*---------------------------------------------------------------------------*/
+
+void dmp_multi_data (fp, multi_desc, comments)
+/*  This routine will dump the ASCII representation of the data in the
+    multi array general data structure pointed to by  multi_desc  to the file
+    pointed to by  fp  .
+    The routine will append comments to key lines if the value of  comments
+    is TRUE, else it will not.
+    The routine returns nothing.
+*/
+FILE *fp;
+multi_array *multi_desc;
+flag comments;
+/*---------------------------------------------------------------------------*/
+
+void dmp_packet (fp, pack_desc, packet, comments)
+/*  This routine will dump the ASCII representation of the data pointed to
+    by  packet  with a descriptor pointed to by  pack_desc  to the file
+    pointed to by  fp  .
+    The routine will append comments to key lines if the value of  comments
+    is TRUE, else it will not.
+    The routine returns nothing.
+*/
+FILE *fp;
+packet_desc *pack_desc;
+char *packet;
+flag comments;
+/*---------------------------------------------------------------------------*/
+
+void dmp_element (fp, type, desc, element, comments)
+/*  This routine will dump the ASCII representation of the element of type
+    type  and pointed to by  element  to the file pointed to by  fp  .
+    The descriptor for the element is pointed to by  desc  .
+    The routine will append comments to key lines if the value of  comments
+    is TRUE, else it will not.
+    The routine returns nothing.
+*/
+FILE *fp;
+unsigned int type;
+char *desc;
+char *element;
+flag comments;
+/*---------------------------------------------------------------------------*/
+
+void dmp_array (fp, arr_desc, array, comments)
+/*  This routine will dump the ASCII representation of the array pointed to
+    by  array  with a descriptor pointed to by  arr_desc  to the file
+    pointed to by  fp  .
+    The routine will append comments to key lines if the value of  comments
+    is TRUE, else it will not.
+    The routine returns nothing.
+*/
+FILE *fp;
+array_desc *arr_desc;
+char *array;
+flag comments;
+/*---------------------------------------------------------------------------*/
+
+void dmp_list (fp, pack_desc, list_head, comments)
+/*  This routine will dump the ASCII representation of the data in the linked
+    list pointed to by  list_header  with a descriptor pointed to by
+    pack_desc  to the file pointed to by  fp  .
+    The routine will append comments to key lines if the value of  comments
+    is TRUE, else it will not.
+    The routine returns nothing.
+*/
+FILE *fp;
+packet_desc *pack_desc;
+list_header *list_head;
+flag comments;
+/*---------------------------------------------------------------------------*/
+
+void dmp_flag (fp, logical, comment_string, comments)
+/*  This routine will dump the ASCII representation of the flag value in  logical
+    to the file pointed to by  fp  .The comments string pointed to by
+    comment_string  will be printed on the line if  comments  is TRUE.
+    The routine returns nothing.
+*/
+FILE *fp;
+flag logical;
+char comment_string[];
+flag comments;
+/*---------------------------------------------------------------------------*/

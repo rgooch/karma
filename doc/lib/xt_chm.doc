@@ -1,0 +1,134 @@
+/*  Link with:    -lkarmaXt  */
+/*  This file describes the xt_chm_ package of routines in the Karma
+    library.
+
+    These routines are meant to provide a generic and simple to use channel
+    management facility (ie. event processing on pipes, connections and
+    terminals). These routines rely on the Xt toolkit event handler.
+    A similar set of routines: chm_ provide identical functionality
+    (with the addition of the polling routine), except that they rely directly
+    on Unix.
+
+
+    Written by		Richard Gooch	2-MAR-1993
+
+    Last updated by	Richard Gooch	2-MAR-1993
+
+
+*/
+
+void xt_chm_register_app_context (context)
+/*  This routine will register the application context to use for channel
+    management with the Xt toolkit. This must be called before ANY reference is
+    made to any other  xt_chm_  routines (ie. before passing to
+    conn_register_managers  ).
+    The application context must be given by  context  .
+    The routine returns nothing.
+*/
+XtAppContext context;
+/*---------------------------------------------------------------------------*/
+
+flag xt_chm_manage (channel, info, input_func, close_func, output_func,
+		    exception_func)
+/*  This routine will manage a channel for activity by registering callback
+    routines.
+    The channel object to manage must be given by  channel  .
+    An arbitrary pointer may associated with the managed channel. This pointer
+    may be modified by the callback routines. The initial value of this pointer
+    must be given by  info  .
+    The routine which is called when new input occurrs on the channel must
+    be pointed to by  input_func  .If this is NULL, no callback routine is
+    installed. The interface to this routine is as follows:
+
+    flag input_func (channel, info)
+    *   This routine is called when new input occurs on a channel.
+        The channel object is given by  channel  .
+	An arbitrary pointer may be written to the storage pointed to by  info
+	The pointer written here will persist until the channel is unmanaged
+	(or a subsequent callback routine changes it).
+	The routine returns TRUE if the channel is to remain managed and
+	open, else it returns FALSE (indicating that the channel is to be
+	unmanaged and closed). This routine MUST NOT unmanage or close the
+	channel given by  channel  .
+	Note that the  close_func  will be called if this routine returns FALSE
+    *
+    Channel channel;
+    void **info;
+
+    The routine which is called when the channel closes must be pointed to by
+    close_func  .If this is NULL, no callback routine is installed. The
+    interface to this routine is as follows:
+
+    void close_func (channel, info)
+    *   This routine is called when a channel closes.
+        The channel object is given by  channel  .The channel object MUST be
+        capable of detecting closure if this routine is supplied (ie. this
+	routine cannot be supplied for dock channels).
+        The arbitrary pointer for the channel will be pointed to by  info  .
+	This routine MUST NOT unmanage the channel pointed to by  channel  ,
+	the channel will be automatically unmanaged and deleted upon closure
+	(even if no close_func is specified).
+	Any unread buffered data in the channel will be lost upon closure. The
+	call to this function is the last chance to read this buffered data.
+	The routine returns nothing.
+    *
+    Channel channel;
+    void *info;
+
+    The routine which is called when the channel becomes ready for output
+    must be pointed to by  output_func  .If this is NULL, no callback routine
+    is installed. The interface to this routine is as follows:
+
+    flag output_func (channel, info)
+    *   This routine is called when a channel becomes ready for writing.
+	The channel object is given by  channel  .
+	An arbitrary pointer may be written to the storage pointed to by  info
+	The pointer written here will persist until the channel is unmanaged
+	(or a subsequent callback routine changes it).
+	The routine returns TRUE if the channel is to remain managed and
+	open, else it returns FALSE (indicating that the channel is to be
+	unmanaged and closed). This routine MUST NOT unmanage or close the
+	channel given by  channel  .
+	Note that the  close_func  will be called if this routine returns FALSE
+    *
+    Channel channel;
+    void **info;
+
+    The routine which is called when exceptions occurr on the channel must
+    be pointed to by  exception_func  .If this is NULL, no callback routine is
+    installed. The interface to this routine is as follows:
+
+    flag exception_func (channel, info)
+    *   This routine is called when an exception occurrs on channel.
+	The channel object is given by  channel  .
+	An arbitrary pointer may be written to the storage pointed to by  info
+	The pointer written here will persist until the channel is unmanaged
+	(or a subsequent callback routine changes it).
+	The routine returns TRUE if the channel is to remain managed and
+	open, else it returns FALSE (indicating that the channel is to be
+	unmanaged and closed). This routine MUST NOT unmanage or close the
+	channel given by  channel  .
+	Note that the  close_func  will be called if this routine returns FALSE
+    *
+    Channel channel;
+    void **info;
+
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+Channel channel;
+void *info;
+flag (*input_func) ();
+void (*close_func) ();
+flag (*output_func) ();
+flag (*exception_func) ();
+/*---------------------------------------------------------------------------*/
+
+void xt_chm_unmanage (channel)
+/*  This routine will terminate the management of a channel for activity.
+    The channel to unmanage must be given by  channel  .
+    The routine will NOT close the channel (nor does it assume the channel is
+    open).
+    The routine returns nothing.
+*/
+Channel channel;
+/*---------------------------------------------------------------------------*/

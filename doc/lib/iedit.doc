@@ -1,0 +1,173 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the iedit_ package of routines in the Karma library.
+
+    These routines provide a simple interface to the recursive,
+    heirarchical data structure supported in Karma, to define 2-dimensional
+    (image) editing instructions.
+
+
+    Written by		Richard Gooch	27-MAR-1993
+
+    Last updated by	Richard Gooch	27-MAR-1993
+
+
+*/
+
+KImageEditList iedit_create_list (add_func, loss_func, apply_func, info)
+/*  This routine will create a managed image edit instruction list.
+    The function which will be called when a new instruction has been added to
+    the list must be pointed to by  add_func  .
+    The interface to this routine is as follows:
+
+    void add_func (ilist, instruction, info)
+    *   This routine will process a single edit instruction which has been
+        added to  a managed image edit instruction list.
+        The managed image edit instruction list will be given by  ilist  .
+	The edit instruction must be pointed to by  instruction  .
+	The arbitrary information pointer for the list will be pointed to by
+	info  .
+	The routine returns nothing.
+    *
+    KImageEditList ilist;
+    list_entry *instruction;
+    void **info;
+
+    The function which will be called when an instruction has been removed from
+    the list must be pointed to by  loss_func  .
+    The interface to this routine is as follows:
+
+    void loss_func (ilist, info)
+    *   This routine will process the loss of an edit instruction from a
+        managed image edit instruction list.
+        The managed image edit instruction list will be given by  ilist  .
+	The arbitrary information pointer for the list will be pointed to by
+	info  .
+	The routine returns nothing.
+    *
+    KImageEditList ilist;
+    void **info;
+
+    The function which will be called when the edit instructions are to be
+    applied (prior to clearing of the list) must be pointed to by  apply_func
+    The interface to this routine is as follows:
+
+    void apply_func (ilist, info)
+    *   This routine will apply (commit) an edit list prior to the list being
+        cleared.
+        The managed image edit instruction list will be given by  ilist  .
+	The arbitrary information pointer for the list will be pointed to by
+	info  .
+	The routine returns nothing.
+    *
+    KImageEditList ilist;
+    void **info;
+
+    The arbitrary information pointer for the edit list must be pointed to by
+    info  .This may be NULL.
+    The routine returns a KImageEditList object on success,
+    else it returns NULL.
+*/
+void (*add_func) ();
+void (*loss_func) ();
+void (*apply_func) ();
+void *info;
+/*---------------------------------------------------------------------------*/
+
+packet_desc *iedit_get_instruction_desc ()
+/*  This routine will get the list descriptor for image edit instructions.
+    The routine returns a pointer to the descriptor.
+*/
+/*---------------------------------------------------------------------------*/
+
+edit_coord *iedit_alloc_edit_coords (num_coords)
+/*  This routine will allocate an array of edit co-ordinates.
+    The number of co-ordinates to allocate must be given by  num_coords  .
+    The routine returns a pointer to a statically allocated array of
+    co-ordinate structures on success, else it returns NULL.
+*/
+unsigned int num_coords;
+/*---------------------------------------------------------------------------*/
+
+flag iedit_get_edit_coords (list_head, coords)
+/*  This routine will get a number of editing co-ordinates from a co-ordinate
+    list.
+    The routine will extract all co-ordinates in the list.
+    The list header must be pointed to by  list_head  .
+    The pointer to an internally allocated array of extracted co-ordinates is
+    written to the storage pointed to by  coords  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+list_header *list_head;
+edit_coord **coords;
+/*---------------------------------------------------------------------------*/
+
+flag iedit_add_instruction (ilist, instruction_code, coords, num_coords,
+			    intensity)
+/*  This routine will add a single edit instruction to a managed image edit
+    instruction list. The  add_func  function registered for this instruction
+    list will be called at a future time with a copy of the instruction to be
+    added.
+    The instruction list must be given by  ilist  .
+    The instruction code must be given by  instruction_code  .
+    The instruction co-ordinates must be pointed to by  coords  .
+    The number of co-ordinates must be given by  num_coords  .
+    The intensity value of the instruction must be pointed to by  intensity  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+KImageEditList ilist;
+unsigned int instruction_code;
+edit_coord *coords;
+unsigned int num_coords;
+double intensity[2];
+/*---------------------------------------------------------------------------*/
+
+flag iedit_remove_instructions (ilist, num_to_remove)
+/*  This routine will remove a number of edit instructions from a managed
+    image edit instruction list. The  loss_func  function registered for this
+    instruction list will be called at a future time.
+    The instruction list must be given by  ilist  .
+    The number of instructions to remove must be given by  num_to_remove  .If
+    this is 0, all instructions are removed.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+KImageEditList ilist;
+unsigned int num_to_remove;
+/*---------------------------------------------------------------------------*/
+
+flag iedit_apply_instructions (ilist)
+/*  This routine will issue an apply (commit) request for a managed image edit
+    instruction list. The  apply_func  function registered for this
+    instruction list will be called at a future time. Some time after this,
+    the  loss_func  registered will also be called.
+    The instruction list must be given by  ilist  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+KImageEditList ilist;
+/*---------------------------------------------------------------------------*/
+
+list_header *iedit_get_list (ilist)
+/*  This routine will get the list of edit instructions associated with a
+    managed image edit instruction list.
+    The managed list must be given by  ilist  .
+    The routine returns the list of edit instructions.
+*/
+KImageEditList ilist;
+/*---------------------------------------------------------------------------*/
+
+void iedit_make_list_default_master (ilist)
+/*  This routine will make a managed image edit instruction list the default
+    list for accepting slave list connections.
+    The managed list must be given by  ilist  .
+    The routine returns nothing.
+*/
+KImageEditList ilist;
+/*---------------------------------------------------------------------------*/
+
+void iedit_make_list_default_slave (ilist)
+/*  This routine will make a managed image edit instruction list the default
+    list for making slave list connections.
+    The managed list must be given by  ilist  .
+    The routine returns nothing.
+*/
+KImageEditList ilist;
+/*---------------------------------------------------------------------------*/

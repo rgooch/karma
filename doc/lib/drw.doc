@@ -1,0 +1,46 @@
+/*  Link with:    -lkarmaX11  */
+/*  This file describes the drw_ package of routines in the Karma library.
+
+    These routines are meant to provide a variety of drawing routines for
+    XImage structures and data structures.
+
+
+    Written by		Richard Gooch	3-OCT-1992
+
+    Last updated by	Richard Gooch	3-OCT-1992
+
+
+*/
+
+flag drw_single_plane (ximage, num_pixels, pixel_values,
+		       data, elem_type, conv_type,
+		       abs_dim_desc, abs_dim_stride,
+		       ord_dim_desc, ord_dim_stride, win_scale)
+/*  This routine will display a single plane of an element.
+    The image structure to write to must be pointed to by  ximage  .
+    The number of pixel values to use must be given by  num_pixels  .
+    The pixel values to use must be in the array pointed to by  pixel_values  .
+    The data must be pointed to by  data  .
+    The type of the element must be in  elem_type  .
+    The conversion to be used for complex numbers must be in  conv_type  .
+    The abscissa dimension descriptor must be pointed to by  abs_dim_desc  .
+    The abscissa dimension stride of the elements in memory must be in
+    abs_dim_stride  .
+    The ordinate dimension descriptor must be pointed to by  ord_dim_desc  .
+    The ordinate dimension stride of the elements in memory must be in
+    ord_dim_stride  .
+    The window scaling information must be pointed to by  win_scale  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+XImage *ximage;
+unsigned int num_pixels;
+unsigned long *pixel_values;
+char *data;
+unsigned int elem_type;
+unsigned int conv_type;
+dim_desc *abs_dim_desc;
+unsigned int abs_dim_stride;
+dim_desc *ord_dim_desc;
+unsigned int ord_dim_stride;
+struct win_scale_type *win_scale;
+/*---------------------------------------------------------------------------*/

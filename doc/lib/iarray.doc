@@ -1,0 +1,681 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the iarray_ package of routines in the Karma library.
+
+    These routines provide a simple interface to the recursive,
+    heirarchical data structure supported in Karma, when only n-dimensional
+    data is to be represented.
+
+
+    Written by		Richard Gooch	17-NOV-1992
+
+    Last updated by	Richard Gooch	17-NOV-1992
+
+
+*/
+
+iarray iarray_read_nD (object, cache, arrayname, num_dim, dim_names, elem_name,
+		       mmap_option)
+/*  This routine will read in a Karma arrayfile and will extract information
+    relevent to Patrick Jordan's "Intelligent Arrays".
+    The name of the arrayfile to read must be pointed to by  object  .This
+    parameter is passed directly to the  dsxfr_get_multi  routine. In order to
+    understand the operation of the  iarray_read_nD  routine, the operation of
+    the  dsxfr_get_multi  routine must be understood.
+    The value of  cache  is passed directly to the  dsxfr_get_multi  routine.
+    This controls whether disc arrayfiles are cached in memory for later use.
+    The name of the general data structure in the arrayfile to search for must
+    be pointed to by  arrayname  .If this is NULL, the routine searches for
+    the default name "Intelligent Array". If the arrayfile has only one
+    general data structure, then this parameter is ignored.
+    The routine searches for an n-dimensional array with a single atomic
+    element at each point in multi-dimensional space.
+    If  num_dim  is greater than 0, the routine will only return an array with
+    num_dim  dimensions. If  num_dim  is 0, then the routine will return an
+    n-dimensional array.
+    If  num_dim  is not 0, then if  dim_names  is NULL, the routine will search
+    for and return an array with the default dimension names (see iarray_create
+    for a list of these) if more than one n-dimensional, single element array
+    exists in the general data structure, or the only n-dimensional array with
+    the specified number of dimensions. If the routine can't find an adequate
+    default, it will not return an array.
+    If  num_dim  is not 0, and  dim_names  points to an array of strings, then
+    the routine will only return an array which matches the specified dimension
+    names. The first name in the array of strings must be the highest order
+    dimension.
+    If  elem_name  is NULL, the routine will ignore the element name of the
+    array which is located, else it will insist on the array element name
+    matching the name pointed to by  elem_name  .
+    The  mmap_option  parameter is passed directly to the  dsxfr_get_multi
+    routine. This parameter controls the memory mapping of disc arrayfiles.
+    If the data structure is likely to be subsequently modified, the value of
+    must be K_CH_MAP_NEVER, otherwise the data may be read-only memory mapped
+    and writing to it will cause a segmentation fault.
+    The routine returns a dynamically allocated intelligent array on success,
+    else it prints an error message to the standard output and returns NULL.
+*/
+char *object;
+flag cache;
+char *arrayname;
+unsigned int num_dim;
+char **dim_names;
+char *elem_name;
+unsigned int mmap_option;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_write (array, arrayfile)
+/*  This routine will write an "Intelligent Array" in the Karma data format.
+    The "Intelligent Array" must be given by  array  .
+    The name of the arrayfile to write must be pointed to by  arrayfile  .
+    See  dsxfr_put_multi  for details on the interpretation of  arrayfile  .
+    The routine returns TRUE on success, else it prints an error message to the
+    standard output and returns FALSE.
+*/
+iarray array;
+char *arrayfile;
+/*---------------------------------------------------------------------------*/
+
+iarray iarray_create (type, num_dim, dim_names, dim_lengths, elem_name,
+		      old_array)
+/*  This routine will create an "Intelligent Array", using the Karma general
+    data structure format as the underlying data format.
+    If the environment variable "IARRAY_ALLOC_DEBUG" is set to "TRUE" then the
+    routine will print allocation debugging information.
+    The type of the data must be given by  type  .Legal values for this are:
+        K_FLOAT, K_DOUBLE, K_BYTE, K_INT, K_SHORT, K_COMPLEX, K_DCOMPLEX,
+	K_BCOMPLEX, K_ICOMPLEX,
+        K_SCOMPLEX, K_LONG, K_LCOMPLEX, K_UBYTE, K_UINT, K_USHORT, K_ULONG,
+	K_UBCOMPLEX,
+        K_UICOMPLEX, K_USCOMPLEX, K_ULCOMPLEX.
+    The number of dimensions the array must have must be given by  num_dim  .
+    The names of the dimensions must be pointed to by  dim_names  .If this is
+    NULL, the default names: "Axis 0", "Axis 1", etc. are used.
+    The lengths of the dimensions must be pointed to by  dim_lengths  .
+    The first entry in both  dim_names  and  dim_lengths  refers to the most
+    significant dimension (ie. the dimension with the greatest stride in
+    memory).
+    The name of the element must be given by  elem_name  .If this is NULL, the
+    default name: "Data Value" is choosen.
+    Any auxilary information not representable with "Intelligent Arrays" which
+    is to be included in the Karma data format is copied from the array pointed
+    to by  old_array  .If this is NULL, no auxilary information is copied.
+    The routine returns a dynamically allocated intelligent array on success,
+    else it prints an error message to the standard output and returns NULL.
+*/
+unsigned int type;
+unsigned int num_dim;
+char **dim_names;
+unsigned int *dim_lengths;
+char *elem_name;
+iarray old_array;
+/*---------------------------------------------------------------------------*/
+
+iarray iarray_get_from_multi_array (multi_desc, arrayname, num_dim, dim_names,
+				    elem_name)
+/*  This routine will extract information relevent to Patrick Jordan's
+    "Intelligent Arrays" from a multi array Karma general data structure.
+    The multi array header must be pointed to by  multi_desc  .The attachment
+    count is incremented on successful completion of this routine.
+    The name of the general data structure in the arrayfile to search for must
+    be pointed to by  arrayname  .If this is NULL, the routine searches for
+    the default name "Intelligent Array". If the arrayfile has only one
+    general data structure, then this parameter is ignored.
+    The routine searches for an n-dimensional array with a single atomic
+    element at each point in multi-dimensional space.
+    If  num_dim  is greater than 0, the routine will only return an array with
+    num_dim  dimensions. If  num_dim  is 0, then the routine will return an
+    n-dimensional array.
+    If  num_dim  is not 0, then if  dim_names  is NULL, the routine will search
+    for and return an array with the default dimension names (see iarray_create
+    for a list of these) if more than one n-dimensional, single element array
+    exists in the general data structure, or the only n-dimensional array with
+    the specified number of dimensions. If the routine can't find an adequate
+    default, it will not return an array.
+    If  num_dim  is not 0, and  dim_names  points to an array of strings, then
+    the routine will only return an array which matches the specified dimension
+    names. The first name in the array of strings must be the highest order
+    dimension.
+    If  elem_name  is NULL, the routine will ignore the element name of the
+    array which is located, else it will insist on the array element name
+    matching the name pointed to by  elem_name  .
+    The routine returns a dynamically allocated intelligent array on success,
+    else it prints an error message to the standard output and returns NULL.
+*/
+multi_array *multi_desc;
+char *arrayname;
+unsigned int num_dim;
+char **dim_names;
+char *elem_name;
+/*---------------------------------------------------------------------------*/
+
+void iarray_dealloc (array)
+/*  This routine will deallocate an "Intelligent Array".
+    If the environment variable "IARRAY_ALLOC_DEBUG" is set to "TRUE" then the
+    routine will print deallocation debugging information.
+    The array  must be given by  array  .
+    The routine returns nothing.
+*/
+iarray array;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_put_named_value (array, name, type, value)
+/*  This routine will add a unique named value to the underlying Karma general
+    data structure of an "Intelligent Array".
+    The array must be given by  array  .
+    The name of the element must be pointed to by  name  .
+    The type of the data which is to be written must be given by  type  .
+    The value of the data must be pointed to by  value  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray array;
+char *name;
+unsigned int type;
+double *value;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_put_named_string (array, name, string)
+/*  This routine will add a unique named string to the underlying Karma general
+    data structure of an "Intelligent Array".
+    The array must be given by  array  .
+    The name of the element must be pointed to by  name  .
+    The string must be pointed to by  string  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray array;
+char *name;
+char *string;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_get_named_value (array, name, type, value)
+/*  This routine will get a unique named value from the underlying Karma
+    general data structure of an "Intelligent Array".
+    The array must be given by  array  .
+    The name of the element must be pointed to by  name  .
+    The type of the data found will be written to the storage pointed to by
+    type  .If this is NULL, nothing is written here.
+    The value of the data will be written to the storage pointed to by  value
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray array;
+char *name;
+unsigned int *type;
+double *value;
+/*---------------------------------------------------------------------------*/
+
+char *iarray_get_named_string (array, name)
+/*  This routine will get a unique named string from the underlying Karma
+    general data structure of an "Intelligent Array".
+    The array must be given by  array  .
+    The name of the element must be pointed to by  name  .
+    The routine returns a pointer to a dynamically allocated copy of the string
+    on success, else it returns NULL.
+*/
+iarray array;
+char *name;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_copy_data (output, input, magnitude)
+/*  This routine will copy data from one "Intelligent Array" to another. The
+    sizes of the two arrays must be identical.
+    The output array must be given by  output  .
+    The input array must be given by  input  .
+    The routine will automatically perform type conversions if necessary.
+    If the value of  magnitude  is  TRUE  then when converting from a complex
+    to a real data type, the magnitude is taken, else the real component is
+    copied.
+    Note that when converting from a real to a complex data type, the imaginary
+    component is set to zero.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray output;
+iarray input;
+flag magnitude;
+/*---------------------------------------------------------------------------*/
+
+char *iarray_get_element_1D (array, type, x)
+/*  This routine will get an element from a simple 1 dimensional array.
+    The array must be pointed to by  array  .
+    The type of the element in the array must be given by  type  (this is used
+    to enforce type checking).
+    The lower array index must be given by  x  .
+    The routine returns a pointer to the element.
+*/
+iarray array;
+unsigned int type;
+int x;
+/*---------------------------------------------------------------------------*/
+
+char *iarray_get_element_2D (array, type, y, x)
+/*  This routine will get an element from a simple 2 dimensional array.
+    The array must be pointed to by  array  .
+    The type of the element in the array must be given by  type  (this is used
+    to enforce type checking).
+    The upper array index must be given by  y  .
+    The lower array index must be given by  x  .
+    The routine returns a pointer to the element.
+*/
+iarray array;
+unsigned int type;
+int y;
+int x;
+/*---------------------------------------------------------------------------*/
+
+char *iarray_get_element_3D (array, type, z, y, x)
+/*  This routine will get an element from a simple 3 dimensional array.
+    The array must be pointed to by  array  .
+    The type of the element in the array must be given by  type  (this is used
+    to enforce type checking).
+    The upper array index must be given by  z  .
+    The middle array index must be given by  y  .
+    The lower array index must be given by  x  .
+    The routine returns a pointer to the element.
+*/
+iarray array;
+unsigned int type;
+int z;
+int y;
+int x;
+/*---------------------------------------------------------------------------*/
+
+iarray iarray_get_sub_array_2D (array, starty, startx, ylen, xlen)
+/*  This function will create an "Intelligent Array" which is an alias or a
+    sub-array of another "Intelligent Array". Subsequent modification of the
+    sub-array will modify the data of the original array. Sub-arrays may be
+    created from other sub-arrays. The attachment count of the underlying
+    multi_array  data structure is incremented on successful completion.
+    The original array must be given by  array  .
+    The starting y (row) and x (column) indices which will indicate the origin
+    of the new array must be given by  starty  and  startx  ,respectively.
+    The size of the aliased array must be given by  ylen  and  xlen  .
+    The routine returns a dynamically allocated intelligent array on success,
+    else it returns NULL.
+    NOTE: sub-arrays cannot be saved to disc.
+*/
+iarray array;
+int starty;
+int startx;
+unsigned int ylen;
+unsigned int xlen;
+/*---------------------------------------------------------------------------*/
+
+unsigned int iarray_dim_length (array, index)
+/*  This routine will get the length of a specified dimension in a simple,
+    n-dimensional array.
+    The array must be given by  array  .
+    The index of the dimension must be given by  index  .
+    The routine returns the length of the specified dimension.
+*/
+iarray array;
+unsigned int index;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_fill (array, value)
+/*  This routine will fill an "Intelligent Array" with a single value.
+    The array must be given by  array  .
+    The fill value must be pointed to by  value  .
+    If filling a complex array, only the real component of the fill value will
+    be used.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray array;
+double *value;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_min_max (array, conv_type, min, max)
+/*  This routine will determine the minimum and maximum value of an
+    "Intelligent Array".
+    The array must be given by  array  .
+    The conversion type to use for complex numbers must be given by  conv_type
+    Legal value for this include:
+        CONV1_REAL        CONV1_IMAG        CONV1_ABS        CONV1_SQUARE_ABS
+	CONV1_PHASE       CONV1_CONT_PHASE  CONV1_ENVELOPE
+    The routine will write the minimum value to the storage pointed to by  min
+    The routine will write the maximum value to the storage pointed to by  max
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray array;
+unsigned int conv_type;
+double *min;
+double *max;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_scale_and_offset (out, inp, scale, offset, magnitude)
+/*  This routine will perform a scale and offset on every element in an
+    "Intelligent Array".
+    The output array must be given by  out  .
+    The input array must be given by  inp  .
+    NOTE: the input and output arrays MUST be the same size (though not
+    necessarily the same type).
+    The complex scale value must be pointed to by  scale  .
+    The complex offset value must be pointed to by  offset  .
+    When converting from a complex to a real array, the magnitude of the
+    complex data (after scale and offset have been applied) is used if
+    magnitude  is TRUE, else the real component of the complex scaled data is
+    used.
+    When converting from a real to a complex array, the imaginary component of
+    the output array is unaffected (NOTE: it is NOT set to 0).
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray out;
+iarray inp;
+double *scale;
+double *offset;
+flag magnitude;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_add_and_scale (out, inp1, inp2, scale, magnitude)
+/*  This routine will add two "Intelligent Array" to each other and scales the
+    result. The sizes of the two input arrays and the output must be identical.
+    The output array must be given by  out  .
+    The first input array must be given by  inp1  .
+    The second input array must be given by  inp2  .
+    The complex scale value must be pointed to by  scale  .
+    The routine performs the following computation:
+        OUT = INP1 + INP2 * scale
+    The routine will automatically perform type conversions if necessary.
+    If the value of  magnitude  is  TRUE  then when converting from a complex
+    to a real data type, the magnitude is taken, else the real component is
+    copied.
+    Note that when converting from a real to a complex data type, the imaginary
+    component is set to zero.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray out;
+iarray inp1;
+iarray inp2;
+double *scale;
+flag magnitude;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_sub_and_scale (out, inp1, inp2, scale, magnitude)
+/*  This routine will subtract two "Intelligent Array" from each other and
+    scales the result. The sizes of the two input arrays and the output must be
+    identical.
+    The output array must be given by  out  .
+    The first input array must be given by  inp1  .
+    The second input array must be given by  inp2  .
+    The complex scale value must be pointed to by  scale  .
+    The routine performs the following computation:
+        OUT = INP1 - INP2 * scale
+    The routine will automatically perform type conversions if necessary.
+    If the value of  magnitude  is  TRUE  then when converting from a complex
+    to a real data type, the magnitude is taken, else the real component is
+    copied.
+    Note that when converting from a real to a complex data type, the imaginary
+    component is set to zero.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray out;
+iarray inp1;
+iarray inp2;
+double *scale;
+flag magnitude;
+/*---------------------------------------------------------------------------*/
+
+char *iarray_dim_name (array, index)
+/*  This routine will get the name of a specified dimension in a simple,
+    n-dimensional array.
+    The array must be given by  array  .
+    The index of the dimension must be given by  index  .
+    The routine returns a pointer to the name of the specified dimension.
+*/
+iarray array;
+unsigned int index;
+/*---------------------------------------------------------------------------*/
+
+void iarray_remap_torus (array, boundary_width)
+/*  This routine will remap an N-dimensional "Intelligent Array" to a pseudo
+    toroidal array.
+    The array must be given by  array  .
+    The width of the array boundary within which the array appears to be
+    toroidal must be given by  boundary_width  .
+    The routine returns nothing.
+*/
+iarray array;
+unsigned int boundary_width;
+/*---------------------------------------------------------------------------*/
+
+void iarray_set_world_coords (array, index, minimum, maximum)
+/*  This routine will set the world co-ordinates of a specified dimension in a
+    simple, n-dimensional array.
+    The array must be given by  array  .
+    The index of the dimension must be given by  index  .
+    The minimum real world co-ordinate must be given by  minimum  .
+    The maximum real world co-ordinate must be given by  maximum  .
+    The routine returns nothing.
+*/
+iarray array;
+unsigned int index;
+double minimum;
+double maximum;
+/*---------------------------------------------------------------------------*/
+
+void iarray_get_world_coords (array, index, minimum, maximum)
+/*  This routine will get the world co-ordinates of a specified dimension in a
+    simple, n-dimensional array.
+    The array must be given by  array  .
+    The index of the dimension must be given by  index  .
+    The minimum real world co-ordinate will be written to the storage pointed
+    to by  minimum  .
+    The maximum real world co-ordinate will be written to the storage pointed
+    to by  maximum  .
+    The routine returns nothing.
+*/
+iarray array;
+unsigned int index;
+double *minimum;
+double *maximum;
+/*---------------------------------------------------------------------------*/
+
+iarray iarray_create_1D (xlen, type)
+/*  This routine will create a 1-dimensional "Intelligent Array", using the
+    Karma general data structure format as the underlying data format.
+    The length of the dimension must be given by  xlen  .
+    The name of the dimension will be the default: "Axis 0".
+    The type of the data must be given by  type  .Legal values for this are:
+        K_FLOAT, K_DOUBLE, K_BYTE, K_INT, K_SHORT, K_COMPLEX, K_DCOMPLEX,
+	K_BCOMPLEX, K_ICOMPLEX,
+        K_SCOMPLEX, K_LONG, K_LCOMPLEX, K_UBYTE, K_UINT, K_USHORT, K_ULONG,
+	K_UBCOMPLEX,
+        K_UICOMPLEX, K_USCOMPLEX, K_ULCOMPLEX.
+    The name of the element will be the default name: "Intensity".
+    The routine returns a dynamically allocated intelligent array on success,
+    else it prints an error message to the standard output and returns NULL.
+*/
+unsigned int xlen;
+unsigned int type;
+/*---------------------------------------------------------------------------*/
+
+iarray iarray_create_2D (ylen, xlen, type)
+/*  This routine will create a 2-dimensional "Intelligent Array", using the
+    Karma general data structure format as the underlying data format.
+    The length of the most significant dimension (ie. the dimension with the
+    greates stride in memory) must be given by  ylen  .
+    The length of the least significant dimension must be given by  xlen  .
+    The names of the dimensions will be the defaults: "Axis 0" and "Axis 1",
+    respectively.
+    The type of the data must be given by  type  .Legal values for this are:
+        K_FLOAT, K_DOUBLE, K_BYTE, K_INT, K_SHORT, K_COMPLEX, K_DCOMPLEX,
+	K_BCOMPLEX, K_ICOMPLEX,
+        K_SCOMPLEX, K_LONG, K_LCOMPLEX, K_UBYTE, K_UINT, K_USHORT, K_ULONG,
+	K_UBCOMPLEX,
+        K_UICOMPLEX, K_USCOMPLEX, K_ULCOMPLEX.
+    The name of the element will be the default name: "Intensity".
+    The routine returns a dynamically allocated intelligent array on success,
+    else it prints an error message to the standard output and returns NULL.
+*/
+unsigned int ylen;
+unsigned int xlen;
+unsigned int type;
+/*---------------------------------------------------------------------------*/
+
+iarray iarray_create_3D (zlen, ylen, xlen, type)
+/*  This routine will create a 3-dimensional "Intelligent Array", using the
+    Karma general data structure format as the underlying data format.
+    The length of the most significant dimension (ie. the dimension with the
+    greates stride in memory) must be given by  zlen  .
+    The length of the middle dimension must be given by  ylen  .
+    The length of the least significant dimension must be given by  xlen  .
+    The names of the dimensions will be the defaults: "Axis 0", "Axis 1" and
+    "Axis 2",
+    respectively.
+    The type of the data must be given by  type  .Legal values for this are:
+        K_FLOAT, K_DOUBLE, K_BYTE, K_INT, K_SHORT, K_COMPLEX, K_DCOMPLEX,
+	K_BCOMPLEX, K_ICOMPLEX,
+        K_SCOMPLEX, K_LONG, K_LCOMPLEX, K_UBYTE, K_UINT, K_USHORT, K_ULONG,
+	K_UBCOMPLEX,
+        K_UICOMPLEX, K_USCOMPLEX, K_ULCOMPLEX.
+    The name of the element will be the default name: "Intensity".
+    The routine returns a dynamically allocated intelligent array on success,
+    else it prints an error message to the standard output and returns NULL.
+*/
+unsigned int zlen;
+unsigned int ylen;
+unsigned int xlen;
+unsigned int type;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_put_float (array, name, value)
+/*  This routine will put a unique named float value into the underlying Karma
+    general data structure of an "Intelligent Array".
+    The array must be given by  array  .
+    The name of the element must be pointed to by  name  .
+    The value of the data must be given by  value  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray array;
+char *name;
+float value;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_put_int (array, name, value)
+/*  This routine will put a unique named integer value into the underlying
+    Karma general data structure of an "Intelligent Array".
+    The array must be given by  array  .
+    The name of the element must be pointed to by  name  .
+    The value of the data must be given by  value  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray array;
+char *name;
+int value;
+/*---------------------------------------------------------------------------*/
+
+float iarray_get_float (array, name)
+/*  This routine will get a unique named float value from the underlying Karma
+    general data structure of an "Intelligent Array".
+    The array must be given by  array  .
+    The name of the element must be pointed to by  name  .
+    The routine returns the value on success, else it aborts the process on
+    error.
+*/
+iarray array;
+char *name;
+/*---------------------------------------------------------------------------*/
+
+int iarray_get_int (array, name)
+/*  This routine will get a unique named integer value into the underlying
+    Karma general data structure of an "Intelligent Array".
+    The array must be given by  array  .
+    The name of the element must be pointed to by  name  .
+    The routine returns the value on success, else it aborts the process on
+    error.
+*/
+iarray array;
+char *name;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_fill_float (array, value)
+/*  This routine will fill an "Intelligent Array" with a single float value.
+    The array must be given by  array  .
+    The fill value must be given by  value  .
+    If filling a complex array, both the real and imaginary components are
+    filled with the fill value.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray array;
+float value;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_fill_int (array, value)
+/*  This routine will fill an "Intelligent Array" with a single integer value.
+    The array must be given by  array  .
+    The fill value must be given by  array  .
+    If filling a complex array, both the real and imaginary components are
+    filled with the fill value.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray array;
+int value;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_min_max_float (array, min, max)
+/*  This routine will determine the minimum and maximum value of an
+    "Intelligent Array".
+    The array must be given by  array  .
+    If the array is a complex array, then the routine computes the minimum and
+    maximum magnitudes.
+    The routine will write the minimum value to the storage pointed to by  min
+    The routine will write the maximum value to the storage pointed to by  max
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray array;
+float *min;
+float *max;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_min_max_int (array, min, max)
+/*  This routine will determine the minimum and maximum value of an
+    "Intelligent Array".
+    The array must be given by  array  .
+    If the array is a complex array, then the routine computes the minimum and
+    maximum magnitudes.
+    The routine will write the minimum value to the storage pointed to by  min
+    The routine will write the maximum value to the storage pointed to by  max
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray array;
+int *min;
+int *max;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_scale_and_offset_float (out, inp, scale, offset)
+/*  This routine will perform a scale and offset on every element in an
+    "Intelligent Array".
+    The output array must be given by  out  .
+    The input array must be given by  inp  .
+    NOTE: the input and output arrays MUST be the same size (though not
+    necessarily the same type).
+    The scale value must be pointed to by  scale  .
+    The offset value must be pointed to by  offset  .
+    When converting from a complex to a real array, the magnitude is scaled
+    and offset.
+    When converting from a real to a complex array, the imaginary component of
+    the output array is unaffected (NOTE: it is NOT set to 0).
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray out;
+iarray inp;
+float scale;
+float offset;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_scale_and_offset_int (out, inp, scale, offset)
+/*  This routine will perform a scale and offset on every element in an
+    "Intelligent Array".
+    The output array must be given by  out  .
+    The input array must be given by  inp  .
+    NOTE: the input and output arrays MUST be the same size (though not
+    necessarily the same type).
+    The scale value must be pointed to by  scale  .
+    The offset value must be pointed to by  offset  .
+    When converting from a complex to a real array, the magnitude is scaled
+    and offset.
+    When converting from a real to a complex array, the imaginary component of
+    the output array is unaffected (NOTE: it is NOT set to 0).
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray out;
+iarray inp;
+int scale;
+int offset;
+/*---------------------------------------------------------------------------*/

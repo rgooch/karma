@@ -1,0 +1,12 @@
+/*  Routines to convert between image formats  */
+/*  This file describes the imc_ package of routines in the Karma library.
+
+    These routines are provide a number of image conversion routines.
+
+
+    Written by		Richard Gooch	19-SEP-1993
+
+    Last updated by	Richard Gooch	19-SEP-1993
+
+
+*/

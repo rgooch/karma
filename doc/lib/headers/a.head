@@ -1,0 +1,13 @@
+/*  Routines to print general error messages  */
+/*  This file describes the a_ package of routines in the Karma library.
+
+    These routines are meant to provide an easy way of printing error messages
+    prior to function and process termination.
+
+
+    Written by		Richard Gooch	1-OCT-1992
+
+    Last updated by	Richard Gooch	1-OCT-1992
+
+
+*/
