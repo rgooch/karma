@@ -3,7 +3,7 @@
 
     This code provides Karma port number allocation and calculation routines.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -52,8 +52,11 @@
     Updated by      Richard Gooch   14-SEP-1993: Modified  r_get_service_number
   to use hashing function instead of services file.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to
+    Updated by      Richard Gooch   26-NOV-1994: Moved to
   packages/r/port_number.c
+
+    Last updated by Richard Gooch   13-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -75,8 +78,8 @@
 
 /*PUBLIC_FUNCTION*/
 char *r_get_karmabase ()
-/*  This routine will get the pathname of the installed runtime Karma.
-    The routine returns the pathname.
+/*  [SUMMARY] Get the pathname of the installed runtime Karma.
+    [RETURNS] The pathname.
 */
 {
     char *karmabase;
@@ -92,12 +95,13 @@ char *r_get_karmabase ()
 }   /*  End Function r_get_karmabase  */
 
 /*PUBLIC_FUNCTION*/
-int r_get_service_number (module_name)
-/*  This routine uses a hashing function to determine the service number of the
-    module with name pointed to by  module_name  .
-    The routine will return the service number.
+int r_get_service_number (CONST char *module_name)
+/*  [SUMMARY] Get service number for a module.
+    [PURPOSE] This routine uses a hashing function to determine the service
+    number of a module.
+    <module_name> The name of the module.
+    [RETURNS] The service number.
 */
-char *module_name;
 {
     int num = 1;
     int count;
@@ -121,16 +125,16 @@ char *module_name;
 }   /*  End Function r_get_service_number  */
 
 /*PUBLIC_FUNCTION*/
-char *r_get_host_from_display (display)
-/*  This routine will get the host to connect to from the string pointed to by
-    display  .If this is NULL, the host "unix" is returned.
-    The syntax for  display  is the same as for the X Windows system  DISPLAY
-    environmental variable.
-    The routine returns a pointer to a statically allocated string which will
-    contain the host name on success, else it returns NULL.
+char *r_get_host_from_display (CONST char *display)
+/*  [SUMMARY] Get the hostname in a display string.
+    [PURPOSE] This routine will get the hostname from a display string.
+    The syntax for the display string is the same as for the X Windows system
+    DISPLAY environmental variable.
+    <display> The display string. If this is NULL, the host "unix" is returned.
+    [RETURNS] A pointer to a statically allocated string which will contain the
+    host name on success, else NULL.
 
 */
-char *display;
 {
     char *char_ptr;
     static char host[STRING_LENGTH];
@@ -167,14 +171,15 @@ char *display;
 }   /*  End Function r_get_host_from_display  */
 
 /*PUBLIC_FUNCTION*/
-int r_get_display_num_from_display (display)
-/*  This routine will get the display number from the string pointed to by
-    display  (following the X Windows system syntax for the  DISPLAY
-    environmental variable).
-    If  display  is a NULL pointer, the display number defaults to 0
-    The routine returns the display number on success, else it returns -1
+int r_get_display_num_from_display (CONST char *display)
+/*  [SUMMARY] Get display number from a display string.
+    [PURPOSE] This routine will get the display number from a display string
+    (following the X Windows system syntax for the DISPLAY environmental
+    variable).
+    <display> The display string. If this is NULL, the display number defaults
+    to 0.
+    [RETURNS] The display number on success, else -1.
 */
-char *display;
 {
     int display_num;
     char *char_ptr;
@@ -208,14 +213,15 @@ char *display;
 }   /*  End Function r_get_display_num_from_display  */
 
 /*PUBLIC_FUNCTION*/
-int r_get_screen_num_from_display (display)
-/*  This routine will get the screen number from the string pointed to by
-    display  (following the X Windows system syntax for the  DISPLAY
-    environmental variable).
-    If  display  is a NULL pointer, the screen number defaults to 0
-    The routine returns the display number on success, else it returns -1
+int r_get_screen_num_from_display (CONST char *display)
+/*  [SUMMARY] Get the screen number in a display string.
+    [PURPOSE] This routine will get the screen number from a display string
+    (following the X Windows system syntax for the DISPLAY environmental
+    variable).
+    <display> The display string. If this is NULL, the screen number defaults
+    to 0.
+    [RETURNS] The display number on success, else -1.
 */
-char *display;
 {
     int screen_num;
     char *char_ptr;
@@ -253,19 +259,16 @@ char *display;
 }   /*  End Function r_get_screen_num_from_display  */
 
 /*PUBLIC_FUNCTION*/
-int r_get_def_port (module_name, display)
-/*  This routine will get the default Karma port number for the module with
-    name pointed to by  module_name  .
-    If  display  is not a NULL pointer, the display number entry in the string
-    it points to is also used to compute the port number. The syntax for this
-    string is the same as for the X Windows system  DISPLAY environmental
-    variable.
-    This routine does not resolve multiple port numbers residing on the same
-    machine.
-    The routine returns the default port number on success, else it returns -1
+int r_get_def_port (CONST char *module_name, CONST char *display)
+/*  [SUMMARY] Get the default Karma port number for a module.
+    <module_name> The module name.
+    <display> The display string. The display number entry in the string is
+    also used to compute the port number. The syntax for this string is the
+    same as for the X Windows system DISPLAY environmental variable.
+    [NOTE] This routine does not resolve multiple port numbers residing on the
+    same machine.
+    [RETURNS] The default port number on success, else -1.
 */
-char *module_name;
-char *display;
 {
     int display_num;
     int service_num;

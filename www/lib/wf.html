@@ -1,0 +1,109 @@
+<html><head><title>Package: wf</title></head> 
+<body>
+<center><h1>The "wf" Package</h1></center>    These routines are meant to provide support for work functions. Work
+    functions are similar to threads in that they allow background processing
+    to be done, but require no threading support from the Operating System.
+    Work functions are only executed while the application would otherwise be
+    idle.
+    NOTE: THIS PACKAGE IS WORK IN PROGRESS. THE INTERFACE MAY CHANGE IN THE
+    NEXT RELEASE, POSSIBLY WITHOUT NOTICE.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=wf></a></table><h4>Functions</h4><table><tr><td><a href=wf.html#wf_test_supported>wf_test_supported</a></td><td>Test if application supports work functions.
+</td></tr>
+<tr><td><a href=wf.html#wf_register_support>wf_register_support</a></td><td>Register support for work functions.
+</td></tr>
+<tr><td><a href=wf.html#wf_register_notify_func>wf_register_notify_func</a></td><td>Register new work function callback.
+</td></tr>
+<tr><td><a href=wf.html#wf_work_to_be_done>wf_work_to_be_done</a></td><td>Test for pending work functions waiting to be called.
+</td></tr>
+<tr><td><a href=wf.html#wf_do_work>wf_do_work</a></td><td>Do some work.
+</td></tr>
+<tr><td><a href=wf.html#wf_register_func>wf_register_func</a></td><td>Register a work function.
+</td></tr>
+<tr><td><a href=wf.html#wf_unregister_func>wf_unregister_func</a></td><td>Unregister a work function.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=wf.html#WF_PROTO_new_func>WF_PROTO_new_func</a></td><td>New work function callback.
+</td></tr>
+<tr><td><a href=wf.html#WF_PROTO_work_func>WF_PROTO_work_func</a></td><td>Work function.
+</td></tr>
+</table><h4>Tables</h4><table><tr><td><a href=wf.html#WF_PRIORITIES>WF_PRIORITIES</a></td><td>List work function priorities
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=wf_test_supported></a> flag
+ <b>wf_test_supported</b><i>    ()
+</i><br><p>    This routine will determine if work functions have been supported
+    by the application.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     TRUE if work functions are supported, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wf_register_support></a> void
+ <b>wf_register_support</b><i>    ()
+</i><br><p>    This routine will inform the package that the application will
+    support work functions. This routine may only be called once.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wf_register_notify_func></a> KCallbackFunc
+ <b>wf_register_notify_func</b><i>    (void (*func) (void *info), void *info)
+</i><br><p>    This routine will register a routine which is called whenever a
+    new work function is registered.
+<p><b>Parameters:</b><ul><li><i>func :</i> 
+    The function that is called when a new work function is registered.
+    The prototype function is <a href=wf.html#WF_PROTO_new_func>WF_PROTO_new_func</a>.
+<br><li><i>info :</i> 
+    The initial arbitrary information pointer.
+<br></ul><b>Returns:</b>     A KCallbackFunc object. On failure, the process aborts.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wf_work_to_be_done></a> flag
+ <b>wf_work_to_be_done</b><i>    ()
+</i><br><p>    This routine will determine if there are any pending work
+    functions waiting to be called.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     TRUE if any work functions are pending, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wf_do_work></a> flag
+ <b>wf_do_work</b><i>    ()
+</i><br><p>    This routine will call any pending work functions. The work
+    function at the top of the list is called once only.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     TRUE if more work is left to be done, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wf_register_func></a> KWorkFunc
+ <b>wf_register_func</b><i>    (flag (*func) (void **info), void *info,
+			    unsigned int priority)
+</i><br><p>    This routine will register a work function. The work function at
+    the top of the list is the one that is always called. Only when the work
+    function at the top of the list is unregistered will the next work function
+    be called.
+<p><b>Parameters:</b><ul><li><i>func :</i> 
+    The routine to be called. The prototype function is
+    <a href=wf.html#WF_PROTO_work_func>WF_PROTO_work_func</a>.
+<br><li><i>info :</i> 
+    The initial arbitrary work function information pointer.
+<br><li><i>priority :</i> 
+    The priority level of the work function. See <a href=wf.html#WF_PRIORITIES>WF_PRIORITIES</a>
+    for a list of legal values.
+<br></ul><b>Returns:</b>     A KWorkFunc object. On failure, the process aborts.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wf_unregister_func></a> void
+ <b>wf_unregister_func</b><i>    (KWorkFunc wf)
+</i><br><p>    This routine will unregister a work function. The second function
+    in the list will moved to the top of the list. A work function cannot
+    unregister itself in this manner.
+<p><b>Parameters:</b><ul><li><i>wf :</i> 
+    The KWorkFunc object.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=WF_PROTO_new_func></a> void
+ <b>WF_PROTO_new_func</b><i>    (void *info)
+</i><br><p>    This routine is called whenever a new work function is
+    registered.
+<p><b>Parameters:</b><ul><li><i>info :</i> 
+    An arbitrary information pointer.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=WF_PROTO_work_func></a> flag
+ <b>WF_PROTO_work_func</b><i>    (void **info)
+</i><br><p>    This routine is called to perform some work.
+<p><b>Parameters:</b><ul><li><i>info :</i> 
+    A pointer to the arbitrary work function information pointer.
+<br></ul><b>Returns:</b>     TRUE if the work function should be called again, else FALSE
+    indicating that the work function is to be unregistered.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Tables</h2></center><hr> <a name=WF_PRIORITIES><b>WF_PRIORITIES</b></a><p> <table><tr><td>Name                    </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>KWF_PRIORITY_HIGHEST    </td><td>Place function at top of list, any work
+                        </td><td>functions registered while this one is running
+                        </td><td>will be placed second in the list
+</td></tr><tr><td>KWF_PRIORITY_HIGH       </td><td>Place function at top of list, any work
+                        </td><td>functions registered while this one is running
+                        </td><td>will be placed at the top of the list
+</td></tr><tr><td>KWF_PRIORITY_LOWEST     </td><td>Place function at bottom of the list
+</table><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

@@ -1,45 +1,64 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the dir_ package of routines in the Karma
-    library.
-
+$PACKAGE          dir
+$SUMMARY          Routines to scan directories
+$PURPOSE
     These routines are meant to provide an enhanced, portable method for
     scanning directories and automatically obtaining file status information.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
+$FUNCTION         dir_open
+$RETURN_TYPE      KDir
+$PARAMETER_LIST
+    (CONST char *dirname)
+$SUMMARY          Open a directory for reading (scanning).
+$PURPOSE
+    Open a directory for reading (scanning).
+$PARAMETER        dirname :
+    The directory name.
+$RETURNS
+    A KDir object on success, else NULL.
+$END
 
-    Written by		Richard Gooch	5-Jun-1995
+$FUNCTION         dir_read
+$RETURN_TYPE      KFileInfo *
+$PARAMETER_LIST
+    (KDir dir, unsigned int skip_control)
+$SUMMARY          Read (scan) a directory for files.
+$PURPOSE
+    Read (scan) a directory for files.
+$PARAMETER        dir :
+    The directory object.
+$PARAMETER        skip_control :
+    Determines whether or not to skip the special files: "."
+    and "..". See <-DIR_SKIP_VALUES-> for a list of legal values.
+$RETURNS
+    A pointer to a <<KFileInfo>> structure on success, else NULL.
+    The data in this structure is valid until the next call to <-dir_read-> or
+    <-dir_close-> with this directory object.
+$END
 
-    Last updated by	Richard Gooch	5-Jun-1995
+$FUNCTION         dir_close
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (KDir dir)
+$SUMMARY          Close a directory.
+$PURPOSE
+    Close a directory.
+$PARAMETER        dir :
+    The directory object.
+$RETURNS
+    Nothing.
+$END
 
+$TABLE            DIR_SKIP_VALUES
+$COLUMNS          2
+$SUMMARY          List of defined skip control values
+$TABLE_DATA
+|.Mode                      |,Meaning
 
-*/
-
-KDir dir_open (CONST char *dirname)
-/*  This routine will open a directory for reading (scanning).
-    The directory name must be pointed to by  dirname  .
-    The routine routines returns a KDir object on success, else it returns NULL
-*/
-/*---------------------------------------------------------------------------*/
-
-KFileInfo *dir_read (dir, skip_control)
-/*  This routine will read (scan) a directory for files.
-    The directory object must be given by  dir  .
-    The value of  skip_control  determines whether or not to skip the special
-    files: "." and "..". Legal values are:
-        KDIR_DOT                  Pass ".", skip ".."
-	KDIR_DOTDOT               Pass "..", skip "."
-	KDIR_DOT_AND_DOTDOT       Pass "." and ".."
-	KDIR_NO_DOTS              Skip "." and ".."
-    The routine routines returns a pointer to a  KFileInfo  structure on
-    success, else it returns NULL. The data in this structure is valid until
-    the next call to  dir_read  or  dir_close  with this directory object.
-*/
-KDir dir;
-unsigned int skip_control;
-/*---------------------------------------------------------------------------*/
-
-void dir_close (dir)
-/*  This routine will close a directory.
-    The directory object must be given by  dir  .
-*/
-KDir dir;
-/*---------------------------------------------------------------------------*/
+|.KDIR_DOT                  |,Pass ".", skip ".."
+|.KDIR_DOTDOT               |,Pass "..", skip "."
+|.KDIR_DOT_AND_DOTDOT       |,Pass "." and ".."
+|.KDIR_NO_DOTS              |,Skip "." and ".."
+$END

@@ -3,7 +3,7 @@
 
     This code provides XImage creation and manipulation routines.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -58,7 +58,16 @@
     Updated by      Richard Gooch   15-DEC-1994: Added notice when shared
   memory XImages are disabled by the XI_DISABLE_SHM environment variable.
 
-    Last updated by Richard Gooch   8-SEP-1995: Created <xi_create_shm_image>.
+    Updated by      Richard Gooch   8-SEP-1995: Created <xi_create_shm_image>.
+
+    Updated by      Richard Gooch   21-FEB-1996: Only display message about
+  XI_DISABLE_SHM environment variable once.
+
+    Updated by      Richard Gooch   16-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -68,17 +77,20 @@
 #include <string.h>
 #include <sys/types.h>
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
 #include <karma_xi.h>
 #include <os.h>
 #ifdef HAS_SYSV_SHARED_MEMORY
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <X11/extensions/XShm.h>
+#  include <sys/ipc.h>
+#  include <sys/shm.h>
+#  include <X11/extensions/XShm.h>
 #endif
 #include <errno.h>
 #include <karma.h>
 #include <karma_r.h>
 #include <karma_m.h>
+#include <karma_a.h>
+
 
 #define SHARED_MEMORY_TEST_BUFFER_SIZE 16384
 
@@ -86,6 +98,8 @@
 #ifdef OS_SunOS
 extern char *shmat ();
 #endif
+EXTERN_FUNCTION (int XShmGetEventBase, (Display *display) );
+
 
 /*  Private functions  */
 #ifdef HAS_SYSV_SHARED_MEMORY
@@ -99,13 +113,11 @@ STATIC_FUNCTION (XImage *create_unshared_image,
 /*  Public routines follow  */
 
 /*PUBLIC_FUNCTION*/
-flag xi_check_shared_images_available (display)
-/*  This routine will determine if shared memory XImage structures may be used
-    with a particular server.
-    The X server must be pointed to by  display  .
-    The routine returns TRUE if shared images are available, FALSE if not.
+flag xi_check_shared_images_available (Display *display)
+/*  [SUMMARY] Test if shared memory XImages may be use with an X server.
+    <display> The X server.
+    [RETURNS] TRUE if shared images are available, else FALSE.
 */
-Display *display;
 {
 #ifdef HAS_SYSV_SHARED_MEMORY
     flag local;
@@ -114,15 +126,23 @@ Display *display;
     XShmSegmentInfo shminfo;
     extern char *sys_errlist[];
     static char *env_name = "XI_DISABLE_SHM";
+    static flag first_time = TRUE;
+    static flag env_disable = FALSE;
     static char function_name[] = "xi_check_shared_images_available";
 
-    if (r_getenv (env_name) != NULL)
+    if (first_time)
     {
-	(void) fprintf (stderr,
-			"Environment variable: \"%s\" found: SHM XImages disabled\n",
-			env_name);
-	return (FALSE);
+	first_time = FALSE;
+	if (r_getenv (env_name) != NULL)
+	{
+	    (void) fprintf (stderr,
+			    "Environment variable: \"%s\" found: SHM XImages disabled\n",
+			    env_name);
+	    env_disable = TRUE;
+	    return (FALSE);
+	}
     }
+    if (env_disable) return (FALSE);
     /*  Check if X server is running on the same machine  */
     if ( ( display_string = DisplayString (display) ) == NULL )
     {
@@ -174,24 +194,21 @@ Display *display;
 XImage *xi_create_image (Display *display, Window window,
 			 unsigned int image_width, unsigned int image_height,
 			 flag *share)
-/*  This routine will create an image structure for a window.
-    The display must be given by  display  and the window must be given by
-    window  .
-    The width of the desired image in pixels must be given by  image_width  .
-    The height of the desired image in pixels must be given by  image_height  .
-    If the value of the logical pointed to by  share  is TRUE, the routine will
-    attempt to use a shared memory segment for the image data (as per the
-    MIT-Shared Memory Extension to the X Protocol). If the routine did in fact
-    allocate a shared memory segment, the value of TRUE will be written to the
-    storage pointed to by  share  ,else FALSE will be written here.
-    Do NOT request a shared image if the routine  xi_shared_images_available
-    did not return TRUE.
-    The routine returns a pointer to the image structure on success,
-    else it returns NULL.
+/*  [SUMMARY] Create an XImage structure for a window.
+    <display> The X display.
+    <window> The X window ID.
+    <image_width> The width of the desired image in pixels.
+    <image_height> The height of the desired image in pixels.
+    <share> If this points to the value TRUE, the routine will attempt to use
+    a shared memory segment for the image data (as per the MIT-Shared Memory
+    Extension to the X Protocol). If the routine did in fact
+    allocate a shared memory segment, the value of TRUE will be written here,
+    else FALSE will be written here.
+    [NOTE] Do NOT request a shared image if the routine
+    [<xi_shared_images_available>] did not return TRUE.
+    [RETURNS] A pointer to the image structure on success, else NULL.
 */
 {
-    unsigned int image_bytes;
-    char *image_data;
     XImage *ximage;
     XWindowAttributes window_attributes;
     extern char *sys_errlist[];
@@ -227,19 +244,18 @@ XImage *xi_create_image (Display *display, Window window,
 XImage *xi_create_shm_image (Display *display, Visual *visual, int depth,
 			     unsigned int width, unsigned int height,
 			     flag quiet)
-/*  [PURPOSE] This routine will create a shared-memory XImage structure.
+/*  [SUMMARY] Create a shared-memory XImage structure.
     <display> The X11 display handle.
     <visual> The Visual pointer.
     <depth> The depth.
     <width> The width of the image.
     <height> The height of the image.
-    <quiet> If TRUE, no error messages are display if no shared memory XImage
+    <quiet> If TRUE, no error messages are displayed if no shared memory XImage
     could be created.
     [RETURNS] An XImage pointer on success, else NULL.
 */
 {
     unsigned int image_bytes;
-    char *image_data;
     XImage *ximage;
 #ifdef HAS_SYSV_SHARED_MEMORY
     XShmSegmentInfo *shminfo;
@@ -359,17 +375,14 @@ XImage *xi_create_shm_image (Display *display, Visual *visual, int depth,
 }   /*  End Function xi_create_shm_image  */
 
 /*PUBLIC_FUNCTION*/
-void xi_destroy_image (display, ximage, shared_memory)
-/*  This routine will destroy all the memory allocated for an XImage structure.
-    The display must be pointed to by  display  .
-    The XImage structure must be pointed to by  ximage  .
-    If the value of  shared_memory  is TRUE, then the routine assumes the
-    XImage data is a shared memory segment, and will attempt to remove it.
-    The routine returns nothing.
+void xi_destroy_image (Display *display, XImage *ximage, flag shared_memory)
+/*  [SUMMARY] Destroy all the memory allocated for an XImage structure.
+    <display> The X display.
+    <ximage> A pointer to the XImage structure.
+    <shared_memory> If TRUE, then the routine assumes the XImage data is a
+    shared memory segment, and will attempt to remove it.
+    [RETURNS] Nothing.
 */
-Display *display;
-XImage *ximage;
-flag shared_memory;
 {
 #ifdef HAS_SYSV_SHARED_MEMORY
     XShmSegmentInfo *shminfo;
@@ -399,7 +412,7 @@ flag shared_memory;
 	if (shmdt ( shminfo->shmaddr ) != 0)
 	{
 	    (void) fprintf (stderr,
-			    "Error detaching shared memory segment at address: %x\t%s\n",
+			    "Error detaching shared memory segment at address: %p\t%s\n",
 			    shminfo->shmaddr, sys_errlist[errno]);
 	}
 	m_free ( (char *) shminfo );
@@ -417,7 +430,7 @@ flag shared_memory;
     else
     {
 	/*  Regular image  */
-	(void) fprintf (stderr, "Ximage being destroyed: %x\n", ximage);
+	(void) fprintf (stderr, "Ximage being destroyed: %p\n", ximage);
 	m_free ( (char *) ximage->data );
 	ximage->data = NULL;
 	XDestroyImage (ximage);
@@ -425,44 +438,37 @@ flag shared_memory;
 }   /*  End Function xi_destroy_image  */
 
 /*PUBLIC_FUNCTION*/
-void xi_put_image (display, drawable, gc, ximage, src_x, src_y, dest_x, dest_y,
-		   width, height, shared_memory, wait)
-/*  This routine will write an XImage structure to a drawable.
-    The display must be pointed to by  display  .
-    The ID of the drawable must be given by  drawable  .
-    The graphics context must be given by  gc  .
-    The image structure must be pointed to by  ximage  .
-    The upper left corner of the subimage in the image must be given by  src_x
-    and  src_y  .
-    The upper left corner of the subimage will be positioned at the drawable
-    co-ordinates given by  dest_x  and  dest_y  .
-    The width and height of the subimage must be given by  width  and  height
-    ,respectively.
-    If the XImage structure resides in a shared memory segment, the value of
-    shared_memory  must be TRUE, else it should be FALSE.
-    If the XImage structure resides in a shared memory segment and the routine
-    should wait for the X server to copy the contents from the segment, then
-    the value of  wait  should be TRUE.
-    The routine returns nothing.
+void xi_put_image (Display *display, Drawable drawable, GC gc, XImage *ximage,
+		   int src_x, int src_y, int dest_x, int dest_y,
+		   unsigned int width, unsigned int height, flag shared_memory,
+		   flag wait)
+/*  [SUMMARY] Write an XImage structure to a drawable.
+    <display> The X display.
+    <drawable> The ID of the drawable.
+    <gc> The graphics context.
+    <ximage> The image structure.
+    <src_x> The horizontal position of the upper left corner of the subimage.
+    <src_y> The vertical position of the upper left corner of the subimage.
+    <dest_x> The horizontal position in the drawable where the upper left
+    corner will be drawn.
+    <dest_y> The vertical position in the drawable where the upper left
+    corner will be drawn.
+    <width> The width of the subimage.
+    <height> The height of the subimage.
+    <shared_memory> If TRUE the routine assmumes the XImage structure resides
+    in a shared memory segment.
+    <wait> If TRUE and the XImage structure resides in a shared memory segment
+    the routine will wait for the X server to copy the contents from the
+    segment.
+    [RETURNS] Nothing.
 */
-Display *display;
-Drawable drawable;
-GC gc;
-XImage *ximage;
-int src_x;
-int src_y;
-int dest_x;
-int dest_y;
-unsigned int width;
-unsigned int height;
-flag shared_memory;
-flag wait;
 {
 #ifdef HAS_SYSV_SHARED_MEMORY
     XEvent event;
     static int CompletionType = -1;
-#endif
+#else
     static char function_name[] = "xi_put_image";
+#endif
 
 #ifdef HAS_SYSV_SHARED_MEMORY
     if (CompletionType == -1)
@@ -485,7 +491,7 @@ flag wait;
     }
 
 #else  /*  HAS_SYSV_SHARED_MEMORY  */
-    if (shared_memory == TRUE)
+    if (shared_memory)
     {
 	(void) fprintf (stderr,
 			"Operating system does not have shared memory segments\n");

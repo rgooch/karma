@@ -1,0 +1,105 @@
+<html><head><title>Package: t</title></head> 
+<body>
+<center><h1>The "t" Package</h1></center>    These routines are meant to provide a low level mechanism to perform
+    mathematical transformations on data. For example, low level Fast Fourier
+    Transforms are supplied in this package.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=t></a></table><h4>Functions</h4><table><tr><td><a href=t.html#t_c_to_c_1D_fft_float>t_c_to_c_1D_fft_float</a></td><td>Compute a 1D complex to complex single precision FFT.
+</td></tr>
+<tr><td><a href=t.html#t_c_to_c_many_1D_fft_float>t_c_to_c_many_1D_fft_float</a></td><td>Compute many 1D complex to complex single precision FFTs.
+</td></tr>
+<tr><td><a href=t.html#t_check_power_of_2>t_check_power_of_2</a></td><td>Check if a number is a power of 2.
+</td></tr>
+<tr><td><a href=t.html#t_r_to_c_many_1D_fft_float>t_r_to_c_many_1D_fft_float</a></td><td>Compute many 1D real to complex single precision FFTs.
+</td></tr>
+</table><h4>Tables</h4><table><tr><td><a href=t.html#T_FFT_STATUS>T_FFT_STATUS</a></td><td>List of FFT status values
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=t_c_to_c_1D_fft_float></a> unsigned int
+ <b>t_c_to_c_1D_fft_float</b><i>    (float *real, float *imag,
+				    unsigned int length, unsigned int stride,
+				    int direction)
+</i><br><p>    This routine will perform a complex to complex 1 dimensional FFT
+    on an array of single precision complex data.
+    The routine performs the transform in situ.
+<p><b>Parameters:</b><ul><li><i>real :</i> 
+    The array of real components. This is modified.
+<br><li><i>imag :</i> 
+    The array of imaginary components. This is modified.
+<br><li><i>length :</i> 
+    The number of complex values in the array to transform.
+<br><li><i>stride :</i> 
+    The stride (in bytes) of successive components.
+<br><li><i>direction :</i> 
+    If the value is KARMA_FFT_FORWARD, the forward transform is
+    performed. If the value is KARMA_FFT_INVERSE, the inverse transform is
+    performed.
+<br></ul><b>Returns:</b>     A value indicating the success / failure status of the transform.
+    See <a href=t.html#T_FFT_STATUS>T_FFT_STATUS</a> for a list of possible values.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=t_c_to_c_many_1D_fft_float></a> unsigned int
+ <b>t_c_to_c_many_1D_fft_float</b><i>    (float *real, float *imag,
+					 unsigned int length,
+					 unsigned int elem_stride,
+					 unsigned int number,
+					 unsigned int dim_stride,
+					 int direction)
+</i><br><p>    This routine will perform a number of complex to complex 1
+    dimensional FFTs on an array of single precision complex data.
+    The routine performs the transforms in situ.
+<p><b>Parameters:</b><ul><li><i>real :</i> 
+    The array of real components.
+<br><li><i>imag :</i> 
+    The array of imaginary components.
+<br><li><i>length :</i> 
+    The number of complex values in the array to transform.
+<br><li><i>elem_stride :</i> 
+    The stride (in bytes) of successive components.
+<br><li><i>number :</i> 
+    The number of 1 dimensional FFTs to perform.
+<br><li><i>dim_stride :</i> 
+    The stride (in bytes) between successive data sets.
+<br><li><i>direction :</i> 
+    If the value is KARMA_FFT_FORWARD, the forward transform is
+    performed. If the value is KARMA_FFT_INVERSE, the inverse transform is
+    performed.
+<br></ul><b>Returns:</b>     A value indicating the success / failure status of the transform.
+    See <a href=t.html#T_FFT_STATUS>T_FFT_STATUS</a> for a list of possible values.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=t_check_power_of_2></a> flag
+ <b>t_check_power_of_2</b><i>    (unsigned int number)
+</i><br><p>    Check if a number is a power of 2.
+<p><b>Parameters:</b><ul><li><i>number :</i> 
+    The number.
+<br></ul><b>Returns:</b>     TRUE if the number is a power of 2, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=t_r_to_c_many_1D_fft_float></a> unsigned int
+ <b>t_r_to_c_many_1D_fft_float</b><i>    (float *a, unsigned int length,
+					 unsigned int elem_stride,
+					 unsigned int number,
+					 unsigned int dim_stride,
+					 int direction)
+</i><br><p>    This routine will perform a real to complex or complex to real
+    FFT.
+<p><b>Parameters:</b><ul><li><i>a :</i> 
+    The array.
+<br><li><i>n :</i> 
+    The number of elements to transform.
+<br><li><i>elem_stride :</i> 
+    The stride (in floats) of sucessive data elements.
+<br><li><i>number :</i> 
+    The number of transforms to perform.
+<br><li><i>dim_stride :</i> 
+    The stride (in floats) between sucessive data sets.
+<br><li><i>direction :</i> 
+    If the value is KARMA_FFT_FORWARD, the forward, real to complex
+    transform is performed. If the value is KARMA_FFT_INVERSE, the inverse,
+    complex to real transform is performed.
+<br></ul><b>Returns:</b>     A value indicating the success / failure status of the transform.
+    See <a href=t.html#T_FFT_STATUS>T_FFT_STATUS</a> for a list of possible values.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Tables</h2></center><hr> <a name=T_FFT_STATUS><b>T_FFT_STATUS</b></a><p> <table><tr><td>Name                              </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>KARMA_FFT_OK                      </td><td>Transform successful
+</td></tr><tr><td>KARMA_FFT_BAD_LENGTH              </td><td>Bad length supplied
+</td></tr><tr><td>KARMA_FFT_BAD_TYPE                </td><td>Bad data type
+</td></tr><tr><td>KARMA_FFT_ALLOC_ERROR             </td><td>Internal allocation error
+</td></tr><tr><td>KARMA_FFT_METHOD_NOT_AVAILABLE    </td><td>Method not available
+</td></tr><tr><td>KARMA_FFT_BAD_STRIDE              </td><td>Bad stride
+</table><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

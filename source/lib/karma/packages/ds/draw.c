@@ -3,7 +3,7 @@
 
     This code provides routines to draw objects into Karma data structures.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -58,7 +58,15 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/ds/draw.c
 
-    Last updated by Richard Gooch   19-APR-1995: Cleaned some code.
+    Updated by      Richard Gooch   19-APR-1995: Cleaned some code.
+
+    Updated by      Richard Gooch   20-FEB-1996: Show that values are complex.
+
+    Updated by      Richard Gooch   9-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   3-JUN-1996: Took account of new fields in
+  dimension descriptor for first and last co-ordinate.
 
 
 */
@@ -101,36 +109,26 @@ static int compare_ind(), compare_active();
 
 
 /*PUBLIC_FUNCTION*/
-flag ds_draw_ellipse (array, elem_type, abs_dim_desc, abs_stride,
-		      ord_dim_desc, ord_stride,
-		      centre_abs, centre_ord, radius_abs, radius_ord, value)
-/*  This routine will draw an ellipse into a 2 dimensional Karma array.
-    The array (plane) must be pointed to by  array  .
-    The type of the element to draw must be given by  elem_type  .
-    The abscissa dimension descriptor must be pointed to by  abs_dim_desc  .
-    The stride of abscissa co-ordinates in memory (in bytes) must be given by
-    abs_stride  .
-    The ordinate dimension descriptor must be pointed to by  ord_dim_desc  .
-    The stride of ordinate co-ordinates in memory (in bytes) must be given by
-    ord_stride  .
-    The centre of the ellipse (in abscissa and ordinate real-world
-    co-ordinates) must be given by  centre_abs  and  centre_ord  ,respectively.
-    The abscissa and ordinate radii must be given by  radius_abd  and
-    radius_ord  ,respectively. These must NOT be equal or less than 0.0
-    The value to write the ellipse into the array must be given by  value  .
-    The routine returns TRUE on success, else it returns FALSE.
+flag ds_draw_ellipse (char *array, unsigned int elem_type,
+		      dim_desc *abs_dim_desc, unsigned int abs_stride,
+		      dim_desc *ord_dim_desc, unsigned int ord_stride,
+		      double centre_abs, double centre_ord,
+		      double radius_abs, double radius_ord,
+		      double value[2])
+/*  [SUMMARY] Draw an ellipse into a 2 dimensional Karma array.
+    <array> The start of the array (plane) data.
+    <elem_type> The type of the element to draw.
+    <abs_dim_desc> The abscissa dimension descriptor.
+    <abs_stride> The stride of abscissa co-ordinates in memory (in bytes).
+    <ord_dim_desc> The ordinate dimension descriptor.
+    <ord_stride> The stride of ordinate co-ordinates in memory (in bytes).
+    <centre_abs> The centre of the ellipse in abscissa real-world co-ordinates.
+    <centre_ord> The centre of the ellipse in ordinate real-world co-ordinates.
+    <radius_abs> The abscissa radius. This must be greater than 0.0.
+    <radius_ord> The ordinate radius. This must be greater than 0.0.
+    <value> The value to write the ellipse into the array.
+    [RETURNS] TRUE on success, else FALSE.
 */
-char *array;
-unsigned int elem_type;
-dim_desc *abs_dim_desc;
-unsigned int abs_stride;
-dim_desc *ord_dim_desc;
-unsigned int ord_stride;
-double centre_abs;
-double centre_ord;
-double radius_abs;
-double radius_ord;
-double *value;
 {
     double x, y, scale;
     static char function_name[] = "ds_draw_ellipse";
@@ -151,8 +149,8 @@ double *value;
 	(void) fprintf (stderr, "Illegal ordinate radius: %e\n", radius_ord);
 	a_prog_bug (function_name);
     }
-    scale = ( ( (*ord_dim_desc).maximum - (*ord_dim_desc).minimum ) /
-	     ( (*ord_dim_desc).length - 1) );
+    scale = ( fabs (ord_dim_desc->last_coord - ord_dim_desc->first_coord) /
+	      (ord_dim_desc->length - 1) );
 
     for (y = 0; y <= radius_ord; y += scale)
     {
@@ -172,37 +170,30 @@ double *value;
 
 
 /*PUBLIC_FUNCTION*/
-flag ds_draw_polygon (array, elem_type, abs_dim_desc, abs_stride, ord_dim_desc,
-		      ord_stride, coords, num_points, value)
-/*  This routine will draw a concave non-simple polygon into a 2
+flag ds_draw_polygon (char *array, unsigned int elem_type,
+		      dim_desc *abs_dim_desc, unsigned int abs_stride,
+		      dim_desc *ord_dim_desc, unsigned int ord_stride,
+		      edit_coord *coords, unsigned int num_points,
+		      double value[2])
+/*  [SUMMARY] Draw a polygon into a 2 dimensional array.
+    [PURPOSE] This routine will draw a concave non-simple polygon into a 2
     dimensional Karma array. The polygon can be clockwise or anti-clockwise.
     Inside-outside test done by Jordan's rule: a point is considered inside if
     an emanating ray intersects the polygon an odd number of times.
     The algorithm is modified from the  Concave Polygon Scan Conversion
     by Paul Heckbert from "Graphics Gems", Academic Press, 1990.
-    The array (plane) must be pointed to by  array  .
-    The type of the element to draw must be given by  elem_type  .
-    The abscissa dimension descriptor must be pointed to by  abs_dim_desc  .
-    The stride of abscissa co-ordinates in memory (in bytes) must be given by
-    abs_stride  .
-    The ordinate dimension descriptor must be pointed to by  ord_dim_desc  .
-    The stride of ordinate co-ordinates in memory (in bytes) must be given by
-    ord_stride  .
-    The co-ordinates must be stored in clockwise rotation order (any point to
-    start) in the array coords[num_points].
-    The value to write the parallelogram into the array must be given by
-    value  .
-    The routine returns TRUE on success, else it returns FALSE.
+    <array> The start of the array (plane) data.
+    <elem_type> The type of the element to draw.
+    <abs_dim_desc> The abscissa dimension descriptor.
+    <abs_stride> The stride of abscissa co-ordinates in memory (in bytes).
+    <ord_dim_desc> The ordinate dimension descriptor.
+    <ord_stride> The stride of ordinate co-ordinates in memory (in bytes).
+    <coords> The co-ordinate array for the vertices. The co-ordinates must be
+    stored in clockwise rotation order (any point to start).
+    <num_points> The number of vertices.
+    <value> The value to write the polygon into the array.
+    [RETURNS] TRUE on success, else FALSE.
 */
-char *array;
-unsigned int elem_type;
-dim_desc *abs_dim_desc;
-unsigned int abs_stride;
-dim_desc *ord_dim_desc;
-unsigned int ord_stride;
-edit_coord *coords;
-unsigned int num_points;
-double *value;
 {
     Point2 *point;
     int bias=SEARCH_BIAS_LOWER;
@@ -339,15 +330,26 @@ double line_num;
 double line_scale;
 double seg_start;
 double seg_end;
-double *value;
+double value[2];
 unsigned int abs_bias;
 {
     int co;
+    double min, max;
 
+    if (line_dim_desc->first_coord < line_dim_desc->last_coord)
+    {
+	min = line_dim_desc->first_coord;
+	max = line_dim_desc->last_coord;
+    }
+    else
+    {
+	min = line_dim_desc->last_coord;
+	max = line_dim_desc->first_coord;
+    }
     /* Check for out of bounds and return */
     line_scale = line_scale / 2.0;
-    if (line_num-line_scale >= line_dim_desc->maximum) return;
-    if (line_num+line_scale <= line_dim_desc->minimum) return;
+    if (line_num - line_scale >= max) return;
+    if (line_num + line_scale <= min) return;
 
     co = ds_get_coord_num (line_dim_desc, line_num, SEARCH_BIAS_CLOSEST);
     put_segment (data + linestride * co, data_type, segstride, seg_dim_desc,
@@ -372,7 +374,7 @@ unsigned int stride;
 dim_desc *seg_dim_desc;
 double seg_start;
 double seg_end;
-double *value;
+double value[2];
 unsigned int bias;
 {
     unsigned int st_co, end_co, num_els;

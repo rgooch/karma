@@ -3,7 +3,7 @@
 
     This code provides data structure allocation routines.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -107,8 +107,20 @@
 
     Updated by      Richard Gooch   19-APR-1995: Cleaned some code.
 
-    Last updated by Richard Gooch   4-AUG-1995: Added more tests for misaligned
+    Updated by      Richard Gooch   4-AUG-1995: Added more tests for misaligned
   data.
+
+    Updated by      Richard Gooch   7-APR-1996: Changed to new documentation
+  format.
+
+    Updated by      Richard Gooch   3-JUN-1996: Took account of new fields in
+  dimension descriptor for first and last co-ordinate.
+
+    Updated by      Richard Gooch   14-JUN-1996: Changed more pointers to
+  CONST.
+
+    Last updated by Richard Gooch   28-JUN-1996: Changed more pointers to
+  CONST.
 
 
 */
@@ -125,15 +137,14 @@
 
 
 /*PUBLIC_FUNCTION*/
-multi_array *ds_alloc_multi (num_arrays)
-/*  This routine will allocate a header for  num_arrays  independent
-    multi-dimensional arrays.
-    The memory for the array of pointers to the array names, headers and
-    data arrays is also allocated.
-    The routine returns a pointer to the header. If memory could not be
-    allocated, NULL is returned.
+multi_array *ds_alloc_multi (unsigned int num_arrays)
+/*  [SUMMARY] Allocate a multi_array descriptor.
+    [PURPOSE] This routine will allocate a multi_array descriptor. The memory
+    for the array of pointers to the array names, headers and data arrays is
+    also allocated.
+    <num_arrays> The number of independent general data structures arrays.
+    [RETURNS] A pointer to the header on success, else NULL.
 */
-unsigned int num_arrays;
 {
     unsigned int count = 0;
     multi_array *return_value;
@@ -201,15 +212,13 @@ unsigned int num_arrays;
 }   /*  End Function ds_alloc_multi  */
 
 /*PUBLIC_FUNCTION*/
-packet_desc *ds_alloc_packet_desc (num_elem)
-/*  This routine will allocate a packet descriptor  .The number of data
-    elements in the packet must be in  num_elem  .
-    The memory for the array of element types and descriptors is also
-    allocated.
-    The routine returns a pointer to the descriptor. If memory could not be
-    allocated, the routine returns NULL.
+packet_desc *ds_alloc_packet_desc (unsigned int num_elem)
+/*  [SUMMARY] Allocate a packet descriptor.
+    [PURPOSE] This routine will allocate a packet descriptor. The memory for
+    the array of element types and descriptors is also allocated.
+    <num_elem> The number of elements to allocate.
+    [RETURNS] A pointer to the descriptor on success, else NULL.
 */
-unsigned int num_elem;
 {
     unsigned int element_count = 0;
     packet_desc *return_value;
@@ -246,25 +255,23 @@ unsigned int num_elem;
 }   /*  End Function ds_alloc_packet_desc  */
 
 /*PUBLIC_FUNCTION*/
-char *ds_alloc_data (pack_desc, clear, array_alloc)
-/*  This routine will allocate all memory required to store data in the packet
-    with descriptor pointed to by  pack_desc  .
-    The routine will recursively allocate space for packets, sub arrays of
-    packets and linked list headers.
+char *ds_alloc_data (packet_desc *pack_desc, flag clear, flag array_alloc)
+/*  [SUMMARY] Allocate packet data recursively.
+    [PURPOSE] This routine will allocate all memory required to store data in a
+    packet. The routine will recursively allocate space for packets, sub arrays
+    of packets and linked list headers.
     The routine is quite robust, cleanly bypassing missing sections of the
     descriptor hierarchy, and deallocating any memory allocated after an
     error occurs.
-    If the value of  clear  is TRUE, then the routine will initialise (set to
-    zero) all the data.
-    If the value of  array_alloc  is FALSE, and an array is an atomic array,
-    then instances of that array will NOT be allocated, and a NULL pointer will
-    be written into the parent element, else the array will be allocated.
-    The routine returns a pointer to the data memory if all memory could be
-    allocated, else it retuns NULL.
+    <pack_desc> The packet descriptor.
+    <clear> If TRUE, then the routine will initialise (set to zero) all the
+    data.
+    <array_alloc> If FALSE, and an array is an atomic array, then instances of
+    that array will NOT be allocated, and a NULL pointer will be written into
+    the parent element, else the array will be allocated.
+    [RETURNS] A pointer to the data memory if all memory could be allocated,
+    else NULL.
 */
-packet_desc *pack_desc;
-flag clear;
-flag array_alloc;
 {
     char *return_value;
     static char function_name[] = "ds_alloc_data";
@@ -291,27 +298,24 @@ flag array_alloc;
 }   /*  End Function ds_alloc_data  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_alloc_packet_subdata (pack_desc, packet, clear, array_alloc)
-/*  This routine will recursively allocate space for sub arrays of packets and
-    linked list headers for a packet. The data space for the packet is NOT
-    allocated, it must be supplied.
-    The packet descriptor must be pointed to by  pack_desc  .
-    The packet data must be pointed to by  packet  .
+flag ds_alloc_packet_subdata (CONST packet_desc *pack_desc, char *packet,
+			      flag clear, flag array_alloc)
+/*  [SUMMARY] Allocate packet sub-data.
+    [PURPOSE] This routine will recursively allocate space for sub arrays of
+    packets and linked list headers for a packet. The data space for the packet
+    is NOT allocated, it must be supplied.
     The routine is quite robust, cleanly bypassing missing sections of the
     descriptor hierarchy, and deallocating any memory allocated after an
     error occurs.
-    If the value of  clear  is TRUE, then the routine will initialise (set to
-    zero) all the sub-structure data.
-    If the value of  array_alloc  is FALSE, and an array is an atomic array,
-    then instances of that array will NOT be allocated, and a NULL pointer will
-    be written into the parent element, else the array will be allocated.
-    The routine returns TRUE if all memory could be allocated,
-    else it retuns FALSE.
+    <pack_desc> The packet descriptor.
+    <packet> The packet data.
+    <clear> If TRUE, then the routine will initialise (set to zero) all the
+    sub-structure data.
+    <array_alloc> If FALSE, and an array is an atomic array, then instances of
+    that array will NOT be allocated, and a NULL pointer will be written into
+    the parent element, else the array will be allocated.
+    [RETURNS] TRUE if all memory could be allocated, else FALSE.
 */
-packet_desc *pack_desc;
-char *packet;
-flag clear;
-flag array_alloc;
 {
     unsigned int elem_count;
     unsigned int type;
@@ -380,16 +384,14 @@ flag array_alloc;
 }   /*  End Function ds_alloc_packet_subdata  */
 
 /*PUBLIC_FUNCTION*/
-char *ds_alloc_packet (pack_desc)
-/*  This routine will allocate memory for a packet which has a descriptor
-    pointed to by  pack_desc  .
+char *ds_alloc_packet (packet_desc *pack_desc)
+/*  [SUMMARY] Allocate packet.
+    [PURPOSE] This routine will allocate memory for a packet. This routine is
+    NOT recursive (i.e. sub arrays and linked lists are not allocated).
     The elements of the packet will be set to zero (for all types).
-    This routine is NOT recursive (ie. sub arrays and linked lists are not
-    allocated).
-    The routine returns a pointer to the packet. If memory could not be
-    allocated, NULL is returned.
+    <pack_desc> The packet descriptor.
+    [RETURNS] A pointer to the packet on success, else NULL.
 */
-packet_desc *pack_desc;
 {
     unsigned int packet_size;
 #ifndef CAN_ZERO_CLEAR
@@ -518,19 +520,18 @@ packet_desc *pack_desc;
 }   /*  End Function ds_alloc_packet  */
 
 /*PUBLIC_FUNCTION*/
-array_desc *ds_alloc_array_desc (num_dimensions, num_levels)
-/*  This function will allocate a header for a multi-dimensional tiled array of
-    data packets. The number of dimensions to allocate their respective
-    headers must be in  num_dimensions  .
-    The number of levels of tiling must be given by  num_levels  .If this is
-    0, the array is not tiled.
-    Note that the dimension descriptors are not allocated, however, the array
-    of pointers for them is allocated.
-    The routine returns a pointer to the header. If memory could not be
-    allocated, NULL is returned.
+array_desc *ds_alloc_array_desc (unsigned int num_dimensions,
+				 unsigned int num_levels)
+/*  [SUMMARY] Allocate array descriptor.
+    [PURPOSE] This function will allocate a header for a multi-dimensional
+    tiled array of data packets.
+    <num_dimensions> The number of dimensions in the array.
+    <num_levels> The number of levels of tiling. If this is 0, the array is not
+    tiled.
+    [NOTE] Note that the dimension descriptors are not allocated, however, the
+    array of pointers for them is allocated.
+    [RETURNS] A pointer to the descriptor on success, else NULL.
 */
-unsigned int num_dimensions;
-unsigned int num_levels;
 {
     unsigned int dim_count;
     array_desc *return_value;
@@ -593,16 +594,15 @@ unsigned int num_levels;
 }   /*  End Function ds_alloc_array_desc  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_alloc_tiling_info (arr_desc, num_levels)
-/*  This routine will allocate tiling information for an array descriptor which
-    does not have any existing tiling information.
-    The array descriptor must be pointed to by  arr_desc  .
-    The number of levels of tiling must be given by  num_levels  .If this is
-    0, the array is not tiled.
-    The routine returns TRUE on success, else it returns FALSE.
+flag ds_alloc_tiling_info (array_desc *arr_desc, unsigned int num_levels)
+/*  [SUMMARY] Allocate array tiling information.
+    [PURPOSE] This routine will allocate tiling information for an array
+    descriptor which does not have any existing tiling information.
+    <arr_desc> The array descriptor.
+    <num_levels> The number of levels of tiling. If this is 0, the array is not
+    tiled.
+    [RETURNS] TRUE on success, else FALSE.
 */
-array_desc *arr_desc;
-unsigned int num_levels;
 {
     unsigned int dim_count;
     static char function_name[] = "ds_alloc_tiling_info";
@@ -645,23 +645,22 @@ unsigned int num_levels;
 
 /*PUBLIC_FUNCTION*/
 dim_desc *ds_alloc_dim_desc (CONST char *dim_name, uaddr length,
-			     double min, double max, flag regular)
-/*  This routine will allocate a header for a single dimension.
-    The name of the dimension must be pointed to by  dim_name  . The name is
-    copied, thus the input character string may be subsequently deallocated.
-    The length (number of co-ordinates) of the dimension must be in  length  .
-    The minimum and maximum values of the dimension co-ordinates must be in
-    min  and  max  ,respectively.
-    If the co-ordinates of the dimension are regularly spaced,  regular  must
-    be TRUE, else it must be FALSE.
-    If the co-ordinates are regular, then the  coordinates  field of the array
-    descriptor will be set to NULL, else it will point to an array of doubles
-    of length  length  .These co-ordinates will be set to 0.0 .
-    The routine returns a pointer to the descriptor. If memory could not be
-    allocated, NULL is returned.
+			     double first, double last, flag regular)
+/*  [SUMMARY] Allocate a dimension descriptor.
+    <dim_name> The name of the dimension. The name is copied, thus the input
+    character string may be subsequently deallocated.
+    <length> The length (number of co-ordinates) of the dimension.
+    <first> The first dimension co-ordinate.
+    <last> The last dimension co-ordinate.
+    <regular> If TRUE the co-ordinates of the dimension are regularly spaced,
+    else the co-ordinates are not regularly spaced. If the co-ordinates are
+    regularly spaced the <<coordinates>> field of the array descriptor will be
+    set to NULL, else it will point to an array of doubles of length <<length>>
+    These co-ordinates will be set to 0.0.
+    [RETURNS] A pointer to the descriptor on success, else NULL.
 */
 {
-    unsigned int count = 0;
+    unsigned int count;
     dim_desc *return_value;
     static char function_name[] = "ds_alloc_dim_desc";
 
@@ -690,8 +689,18 @@ dim_desc *ds_alloc_dim_desc (CONST char *dim_name, uaddr length,
         return (NULL);
     }
     return_value->length = length;
-    return_value->minimum = min;
-    return_value->maximum = max;
+    return_value->first_coord = first;
+    return_value->last_coord = last;
+    if (first < last)
+    {
+	return_value->minimum = first;
+	return_value->maximum = last;
+    }
+    else
+    {
+	return_value->minimum = last;
+	return_value->maximum = first;
+    }
     if ( regular || (length < 1) )
     {
 	return_value->coordinates = NULL;
@@ -705,25 +714,24 @@ dim_desc *ds_alloc_dim_desc (CONST char *dim_name, uaddr length,
         m_error_notify (function_name, "coordinate array");
         return (NULL);
     }
-    while (count < length)
+    for (count = 0; count < length; ++count)
     {
 	return_value->coordinates[count] = 0.0;
-        ++count;
     }
     return (return_value);
 }   /*  End Function ds_alloc_dim_desc */
 
 /*PUBLIC_FUNCTION*/
 list_header *ds_alloc_list_head ()
-/*  This routine will allocate a linked list header.
+/*  [SUMMARY] Allocate a linked list header.
+    [PURPOSE] This routine will allocate a linked list header.
     The length of the linked list specified in the header will be 0, and the
-    contiguous_until  entry will be set to 0.
-    The  sort_type  field in the header will be set to SORT_UNDEF. This MUST
-    be set to some other value (ie. SORT_RANDOM) prior to use with other
+    <<contiguous_until>> entry will be set to 0.
+    The <<sort_type>> field in the header will be set to SORT_UNDEF. This MUST
+    be set to some other value (i.e. SORT_RANDOM) prior to use with other
     library routines.
-    The  list_start  and  list_end  pointers will be set to NULL.
-    The routine returns a pointer to the header. If memory could not be
-    allocated, NULL is returned.
+    The <<list_start>> and <<list_end>> pointers will be set to NULL.
+    [RETURNS] A pointer to the header on success, else NULL.
 */
 {
     list_header *return_value;
@@ -747,22 +755,20 @@ list_header *ds_alloc_list_head ()
 }   /*  End Function ds_alloc_list_head  */
 
 /*PUBLIC_FUNCTION*/
-list_entry *ds_alloc_list_entry (list_desc, array_alloc)
-/*  This routine will allocate an entry in a linked list (it will NOT insert
-    it in the list: see ds_list_insert).
-    The descriptor for the linked list must be pointed to by  list_desc  .
+list_entry *ds_alloc_list_entry (packet_desc *list_desc, flag array_alloc)
+/*  [SUMMARY] Allocate a linked list entry.
+    [PURPOSE] This routine will allocate an entry in a linked list (it will
+    NOT insert it in the list: see [<ds_list_insert>]).
     The list pointers will be set to NULL.
     The routine will initialise (set to zero) the data in the entry.
     The routine will recursively allocate memory for sub arrays and linked
     lists.
-    If the value of  array_alloc  is FALSE, and an array is an atomic array,
-    then instances of that array will NOT be allocated, and a NULL pointer will
-    be written into the parent element, else the array will be allocated.
-    The routine returns a pointer to the entry. If memory could not be
-    allocated, NULL is returned.
+    <list_desc> The descriptor for the linked list.
+    <array_alloc> If FALSE, and an array is an atomic array, then instances of
+    that array will NOT be allocated, and a NULL pointer will be written into
+    the parent element, else the array will be allocated.
+    [RETURNS] A pointer to the entry on success, else NULL.
 */
-packet_desc *list_desc;
-flag array_alloc;
 {
     list_entry *return_value;
     static char function_name[] = "ds_alloc_list_entry";
@@ -792,24 +798,21 @@ flag array_alloc;
 }   /*  End Function ds_alloc_list_entry  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_alloc_array (arr_desc, element, clear, array_alloc)
-/*  This routine will allocate memory for an array which has a descriptor
-    pointed to by  arr_desc  .
-    The routine will recursively allocate sub arrays and linked lists.
-    The element to write the array pointer to must be pointed to by  element  .
-    If the value of  clear  is TRUE, then the routine will initialise (set to
-    zero) all the data.
-    If the value of  array_alloc  is FALSE, and an array is an atomic array,
-    then instances of that array will NOT be allocated, and a NULL pointer will
-    be written into the parent element, else the array will be allocated.
+flag ds_alloc_array (CONST array_desc *arr_desc, char *element, flag clear,
+		     flag array_alloc)
+/*  [SUMMARY] Allocate an array.
+    [PURPOSE] This routine will allocate memory for an array. The routine will
+    recursively allocate sub arrays and linked lists.
     Any memory which is allocated will be deallocated if an error occurs.
-    The routine returns a pointer to the array. If memory could not be
-    allocated, NULL is returned.
+    <arr_desc> The array descriptor.
+    <element> The element to write the array pointer.
+    <clear> If TRUE, then the routine will initialise (set to zero) all the
+    data.
+    <array_alloc> If FALSE, and an array is an atomic array, then instances of
+    that array will NOT be allocated, and a NULL pointer will be written into
+    the parent element, else the array will be allocated.
+    [RETURNS] A pointer to the array on success, else NULL.
 */
-array_desc *arr_desc;
-char *element;
-flag clear;
-flag array_alloc;
 {
     flag atomic;
     unsigned int data_bytes;
@@ -902,37 +905,38 @@ flag array_alloc;
 
 /*PUBLIC_FUNCTION*/
 char *ds_easy_alloc_array (multi_array **multi_desc, unsigned int num_dim,
-			   uaddr *lengths, double *minima, double *maxima,
-			   char **names, unsigned int data_type,
+			   CONST uaddr *lengths, CONST double *first_arr,
+			   CONST double *last_arr,
+			   CONST char **names, unsigned int data_type,
 			   CONST char *data_name)
-/*  This routine will allocate memory for a multi-dimensional, regular array,
-    and the required headers and the multi-array header. The array is NOT tiled
-    nor are any address offsets computed.
-    Note that this routine does NOT create a Karma arrayfile. This must be done
-    with a call to  dsxfr_put_multi  .
-    The multi-array structure pointer to the created structure will be
-    written to the storage pointed to by  multi_desc  .
-    The number of dimensions of the array must be in  num_dim  ,the lengths
-    of each dimension (axis) must be in the array pointed to by  lengths  .
-    The minimum and maximum co-ordinate values of each dimension must be in the
-    arrays pointed to by  minima  and maxima  ,respectively. If either of
-    these pointers is NULL, the range of the co-ordinates will be the lengths
-    of the dimensions minus 1. If one of the pointers is NULL, the other
-    array is used to tie one end of the range for each dimension. If both
-    pointers are NULL,the minima are 0.0 and the maxima are the lengths minus 1
-    The names of each dimension must be pointed to by the list of character
-    pointers  names  .If this is NULL, the names "Axis 0", "Axis 1", ...etc
-    will be used. Note: the character arrays are copied, so the arrays of
-    characters and the array of pointers may be subsequently deallocated.
-    The data packet that may be stored in the array is a single, atomic datum,
-    of type  data_type  .
-    The following data types are not permitted:
-        NONE, K_ARRAY, LISTP, MULTI_ARRAY.
-    The name of the data type must be pointed to by  data_name  .If this is
-    NULL, then the name "Data Value" will be used. The name string is copied,
-    thus the memory used for the input string may be subsequently deallocated.
-    The routine returns a pointer to the start of the array. If memory could
-    not be allocated, or any error occurs, NULL is returned.
+/*  [SUMMARY] Allocate a data structure with a simple array.
+    [PURPOSE] This routine will allocate memory for a multi-dimensional,
+    regular array, and the required headers and the multi-array header. The
+    array is NOT tiled nor are any address offsets computed. The data packet
+    that may be stored in the array is a single, atomic datum.
+    [NOTE] This routine does NOT create a Karma arrayfile. This must be done
+    with a call to [<dsxfr_put_multi>].
+    <multi_desc> The multi-array structure pointer to the created structure is
+    written here.
+    <num_dim> The number of dimensions of the array.
+    <lengths> The array of dimension lengths.
+    <first_arr> An array of first co-ordinate values for each dimension.
+    <last_arr> An array of last co-ordinate values for each dimension.
+    [NOTE] If either of <<first_arr>> or <<last_arr>> is NULL, the range of the
+    co-ordinates will be the lengths of the dimensions minus 1. If one of the
+    pointers is NULL, the other array is used to tie one end of the range for
+    each dimension. If both pointers are NULL,the minima are 0.0 and the maxima
+    are the lengths minus 1.
+    <names> The array of dimension names. If this is NULL, the names "Axis 0",
+    "Axis 1", ...etc will be used. The character arrays are copied, so the
+    arrays of characters and the array of pointers may be subsequently
+    deallocated.
+    <data_type> The type of the elements in the array. See
+    [<DS_KARMA_DATA_TYPES>] for a list of legal values.
+    <data_name> The name of the data type. If this is NULL, then the name
+    "Data Value" will be used. The name string is copied, thus the memory used
+    for the input string may be subsequently deallocated.
+    [RETURNS] A pointer to the start of the array on success, else NULL.
 */
 {
     static char *def_data_name = "Data Value";
@@ -948,48 +952,49 @@ char *ds_easy_alloc_array (multi_array **multi_desc, unsigned int num_dim,
 	data_name = def_data_name;
     }
     return ( ds_easy_alloc_n_element_array (multi_desc, num_dim, lengths,
-					    minima, maxima, names,
+					    first_arr, last_arr, names,
 					    1, &data_type,
-					    (char **) &data_name) );
+					    (CONST char **) &data_name) );
 }   /*  End Function ds_easy_alloc_array  */
 
 /*PUBLIC_FUNCTION*/
 char *ds_easy_alloc_n_element_array (multi_array **multi_desc,
-				     unsigned int num_dim, uaddr *lengths,
-				     double *minima, double *maxima,
-				     char **names, unsigned int num_elements,
-				     unsigned int *data_types,
-				     char **data_names)
-/*  This routine will allocate memory for a multi-dimensional, regular array,
-    and the required headers and the multi-array header. The array is NOT tiled
-    nor are any address offsets computed.
-    Note that this routine does NOT create a Karma arrayfile. This must be done
-    with a call to  dsxfr_put_multi  .
-    The multi-array structure pointer to the created structure will be
-    written to the storage pointed to by  multi_desc  .
-    The number of dimensions of the array must be in  num_dim  ,the lengths
-    of each dimension (axis) must be in the array pointed to by  lengths  .
-    The minimum and maximum co-ordinate values of each dimension must be in the
-    arrays pointed to by  minima  and maxima  ,respectively. If either of
-    these pointers is NULL, the range of the co-ordinates will be the lengths
-    of the dimensions minus 1. If one of the pointers is NULL, the other
-    array is used to tie one end of the range for each dimension. If both
-    pointers are NULL,the minima are 0.0 and the maxima are the lengths minus 1
-    The names of each dimension must be pointed to by the list of character
-    pointers  names  .If this is NULL, the names "Axis 0", "Axis 1", ...etc
-    will be used. Note: the character arrays are copied, so the arrays of
-    characters and the array of pointers may be subsequently deallocated.
-    The data packet that may be stored in the array may contain a number of
-    atomic elements. The number of elements in this packet must be given by
-    num_elements
-    The data types of the elements must be pointed to by  data_types  .
-    The following data types are not permitted:
-        NONE, K_ARRAY, LISTP, MULTI_ARRAY.
-    The names of the elements must be pointed to by  data_names  .The name
-    strings are copied, thus the memory used for the input strings may be
-    subsequently deallocated.
-    The routine returns a pointer to the start of the array. If memory could
-    not be allocated, or any error occurs, NULL is returned.
+				     unsigned int num_dim,
+				     CONST uaddr *lengths,
+				     CONST double *first_arr,
+				     CONST double *last_arr,
+				     CONST char **names,
+				     unsigned int num_elements,
+				     CONST unsigned int *data_types,
+				     CONST char **data_names)
+/*  [SUMMARY] Allocate a data structure with a simple, multi element array.
+    [PURPOSE] This routine will allocate memory for a multi-dimensional,
+    regular array, and the required headers and the multi-array header. The
+    array is NOT tiled nor are any address offsets computed. The data packet
+    that may be stored in the array contains many atomic data.
+    [NOTE] This routine does NOT create a Karma arrayfile. This must be done
+    with a call to [<dsxfr_put_multi>].
+    <multi_desc> The multi-array structure pointer to the created structure is
+    written here.
+    <num_dim> The number of dimensions of the array.
+    <lengths> The array of dimension lengths.
+    <first_arr> An array of first co-ordinate values for each dimension.
+    <last_arr> An array of last co-ordinate values for each dimension.
+    [NOTE] If either of <<first_arr>> or <<last_arr>> is NULL, the range of the
+    co-ordinates will be the lengths of the dimensions minus 1. If one of the
+    pointers is NULL, the other array is used to tie one end of the range for
+    each dimension. If both pointers are NULL,the minima are 0.0 and the maxima
+    are the lengths minus 1.
+    <names> The array of dimension names. If this is NULL, the names "Axis 0",
+    "Axis 1", ...etc will be used. The character arrays are copied, so the
+    arrays of characters and the array of pointers may be subsequently
+    deallocated.
+    <num_elements> The number of elements in the array packets.
+    <data_types> The types of the elements in the array. See
+    [<DS_KARMA_DATA_TYPES>] for a list of legal values.
+    <data_names> The names of the data type. The name strings are copied, thus
+    the memory used for the input string may be subsequently deallocated.
+    [RETURNS] A pointer to the start of the array on success, else NULL.
 */
 {
     char *array;
@@ -1003,7 +1008,7 @@ char *ds_easy_alloc_n_element_array (multi_array **multi_desc,
     }
     if ( ( *multi_desc =
 	  ds_wrap_preallocated_n_element_array (NULL, num_dim, lengths,
-						minima, maxima, NULL,
+						first_arr, last_arr, NULL,
 						names, num_elements,
 						data_types, data_names) )
 	== NULL ) return (NULL);
@@ -1012,52 +1017,45 @@ char *ds_easy_alloc_n_element_array (multi_array **multi_desc,
 }   /*  End Function ds_easy_alloc_n_element_array  */
 
 /*PUBLIC_FUNCTION*/
-multi_array *ds_wrap_preallocated_n_element_array (char *array,
-						   unsigned int num_dim,
-						   uaddr *lengths,
-						   double *minima,
-						   double *maxima,
-						   double **coordinates,
-						   char **names,
-						   unsigned int num_elements,
-						   unsigned int *data_types,
-						   char **data_names)
-/*  This routine will "wrap" an externally allocated array by allocating memory
-    for a multi-dimensional, regular array, and the required headers and the
-    multi-array header. No address offsets are computed.
-    Note that this routine does NOT create a Karma arrayfile. This must be done
-    with a call to  dsxfr_put_multi  .
-    The externally allocated array data must be pointed to by  array  .This
-    data must be externally deallocated when no longer needed. If  array  is
-    NULL, then the array data is internally allocated (and should not be
-    externally deallocated).
-    The number of dimensions of the array must be in  num_dim  ,the lengths
-    of each dimension (axis) must be in the array pointed to by  lengths  .
-    The minimum and maximum co-ordinate values of each dimension must be in the
-    arrays pointed to by  minima  and maxima  ,respectively. If either of
-    these pointers is NULL, the range of the co-ordinates will be the lengths
-    of the dimensions minus 1. If one of the pointers is NULL, the other
-    array is used to tie one end of the range for each dimension. If both
-    pointers are NULL,the minima are 0.0 and the maxima are the lengths minus 1
-    The array of co-ordinate array pointers must be pointed to by  coordinates
-    If this is NULL, all dimensions are assumed to be regularly spaced. If any
-    co-ordinate array pointer is NULL, the corresponding dimension is assumed
-    to be regularly spaced.
-    The names of each dimension must be pointed to by the list of character
-    pointers  names  .If this is NULL, the names "Axis 0", "Axis 1", ...etc
-    will be used. Note: the character arrays are copied, so the arrays of
-    characters and the array of pointers may be subsequently deallocated.
-    The data packet that may be stored in the array may contain a number of
-    atomic elements. The number of elements in this packet must be given by
-    num_elements
-    The data types of the elements must be pointed to by  data_types  .
-    The following data types are not permitted:
-        NONE, K_ARRAY, LISTP, MULTI_ARRAY.
-    The names of the elements must be pointed to by  data_names  .The name
-    strings are copied, thus the memory used for the input strings may be
-    subsequently deallocated.
-    The routine returns a multi-array structure pointer on success,
-    else NULL is returned.
+multi_array *ds_wrap_preallocated_n_element_array
+    (char *array, unsigned int num_dim, CONST uaddr *lengths,
+     CONST double *first_arr, CONST double *last_arr,
+     CONST double **coordinates, CONST char **names,
+     unsigned int num_elements, CONST unsigned int *data_types,
+     CONST char **data_names)
+/*  [SUMMARY] Wrap a data structure around an array.
+    [PURPOSE] This routine will "wrap" an externally allocated array by
+    allocating the required descriptors. The array is NOT tiled nor are any
+    address offsets computed. The data packet that may be stored in the array
+    contains many atomic data.
+    [NOTE] This routine does NOT create a Karma arrayfile. This must be done
+    with a call to [<dsxfr_put_multi>].
+    <array> The externally allocated array. This data must be externally
+    deallocated when no longer needed. If this is NULL, then the array data is
+    internally allocated (and should not be externally deallocated).
+    <num_dim> The number of dimensions of the array.
+    <lengths> The array of dimension lengths.
+    <first_arr> An array of first co-ordinate values for each dimension.
+    <last_arr> An array of last co-ordinate values for each dimension.
+    [NOTE] If either of <<first_arr>> or <<last_arr>> is NULL, the range of the
+    co-ordinates will be the lengths of the dimensions minus 1. If one of the
+    pointers is NULL, the other array is used to tie one end of the range for
+    each dimension. If both pointers are NULL,the minima are 0.0 and the maxima
+    are the lengths minus 1.
+    <coordinates> The array of co-ordinate array pointers. If this is NULL,
+    all dimensions are assumed to be regularly spaced. If any co-ordinate array
+    pointer is NULL, the corresponding dimension is assumed to be regularly
+    spaced.
+    <names> The array of dimension names. If this is NULL, the names "Axis 0",
+    "Axis 1", ...etc will be used. The character arrays are copied, so the
+    arrays of characters and the array of pointers may be subsequently
+    deallocated.
+    <num_elements> The number of elements in the array packets.
+    <data_types> The types of the elements in the array. See
+    [<DS_KARMA_DATA_TYPES>] for a list of legal values.
+    <data_names> The names of the data type. The name strings are copied, thus
+    the memory used for the input string may be subsequently deallocated.
+    [RETURNS] A pointer the multi_array descriptor on success, else NULL.
 */
 {
     multi_array *multi_desc;
@@ -1078,7 +1076,7 @@ multi_array *ds_wrap_preallocated_n_element_array (char *array,
     }
     multi_desc->headers[0] = pack_desc;
     if ( ( arr_desc = ds_easy_alloc_array_desc (num_dim, lengths,
-						minima, maxima,
+						first_arr, last_arr,
 						coordinates, names,
 						num_elements, data_types,
 						data_names) ) == NULL )
@@ -1104,18 +1102,22 @@ multi_array *ds_wrap_preallocated_n_element_array (char *array,
 }   /*  End Function ds_wrap_preallocated_n_element_array  */
 
 /*PUBLIC_FUNCTION*/
-array_desc *ds_easy_alloc_array_desc (unsigned int num_dim, uaddr *lengths,
-				      double *minima, double *maxima,
-				      double **coordinates, char **names,
+array_desc *ds_easy_alloc_array_desc (unsigned int num_dim,
+				      CONST uaddr *lengths,
+				      CONST double *first_arr,
+				      CONST double *last_arr,
+				      CONST double **coordinates,
+				      CONST char **names,
 				      unsigned int num_elements,
-				      unsigned int *data_types,
-				      char **data_names)
-/*  [PURPOSE] This routine will allocate an array descriptor and it's
+				      CONST unsigned int *data_types,
+				      CONST char **data_names)
+/*  [SUMMARY] Allocate a simple array descriptor.
+    [PURPOSE] This routine will allocate an array descriptor and its
     associated packet descriptor.
     <num_dim> The number of dimensions in the array.
     <lengths> An array of lengths for each dimension (axis).
-    <minima> An array of minimum co-ordinate values for each dimension.
-    <maxima> An array of maximum co-ordinate values for each dimension.
+    <first_arr> An array of first co-ordinate values for each dimension.
+    <last_arr> An array of last co-ordinate values for each dimension.
     If either of these pointers is NULL, the range of the co-ordinates will be
     the lengths of the dimensions minus 1. If one of the pointers is NULL, the
     other array is used to tie one end of the range for each dimension. If both
@@ -1129,9 +1131,8 @@ array_desc *ds_easy_alloc_array_desc (unsigned int num_dim, uaddr *lengths,
     character arrays are copied, so the arrays of characters and the array of
     pointers may be subsequently deallocated.
     <num_elements> The number of atomic elements in the array packet.
-    <data_types> The array of data types. The following data types are not
-    permitted:
-        NONE, K_ARRAY, LISTP, MULTI_ARRAY.
+    <data_types> The types of the elements in the array. See
+    [<DS_KARMA_DATA_TYPES>] for a list of legal values.
     <data_names> The array of element names. The name strings are copied, thus
     the memory used for the input strings may be subsequently deallocated.
     [RETURNS] An array descriptor pointer on success, else NULL.
@@ -1140,9 +1141,8 @@ array_desc *ds_easy_alloc_array_desc (unsigned int num_dim, uaddr *lengths,
     flag this_dim_has_coords;
     unsigned int dim_count;
     unsigned int elem_count;
-    double minimum;
-    double maximum;
-    char *tmp_pointer;
+    double first_coord, last_coord;
+    CONST char *tmp_pointer;
     packet_desc *pack_desc;
     array_desc *arr_desc;
     dim_desc *dimension;
@@ -1197,46 +1197,46 @@ array_desc *ds_easy_alloc_array_desc (unsigned int num_dim, uaddr *lengths,
         }
 	if (this_dim_has_coords)
 	{
-	    minimum = coordinates[dim_count][0];
-	    maximum = coordinates[dim_count][lengths[dim_count] - 1];
+	    first_coord = coordinates[dim_count][0];
+	    last_coord = coordinates[dim_count][lengths[dim_count] - 1];
 	}
 	else
 	{
-	    if ( (minima == NULL) && (maxima == NULL) )
+	    if ( (first_arr == NULL) && (last_arr == NULL) )
 	    {
 		/*  Range is from  0.0  to  lengths - 1  */
-		minimum = 0.0;
-		maximum = (lengths[dim_count] - 1);
+		first_coord = 0.0;
+		last_coord = (lengths[dim_count] - 1);
 	    }
 	    else
 	    {
 		/*  Range has at least one boundary supplied  */
-		if (minima == NULL)
+		if (first_arr == NULL)
 		{
-		    /*  Maximum only supplied  */
-		    maximum = maxima[dim_count];
-		    minimum = maximum - (lengths[dim_count] - 1);
+		    /*  Last co-ords only supplied  */
+		    last_coord = last_arr[dim_count];
+		    first_coord = last_coord - (lengths[dim_count] - 1);
 		}
 		else
 		{
-		    /*  Minimum supplied  */
-		    minimum = minima[dim_count];
-		    if (maxima == NULL)
+		    /*  First co-ords supplied  */
+		    first_coord = first_arr[dim_count];
+		    if (last_arr == NULL)
 		    {
-			/*  Minimum only supplied  */
-			maximum = minimum + (lengths[dim_count] - 1);
+			/*  First co-ords only supplied  */
+			last_coord = first_coord + (lengths[dim_count] - 1);
 		    }
 		    else
 		    {
-			/*  Maximum also supplied  */
-			maximum = maxima[dim_count];
+			/*  Last co-ords also supplied  */
+			last_coord = last_arr[dim_count];
 		    }
 		}
 	    }
 	}
         if ( ( dimension =
 	      ds_alloc_dim_desc (tmp_pointer, lengths[dim_count],
-				 minimum, maximum,
+				 first_coord, last_coord,
 				 this_dim_has_coords ? FALSE : TRUE) )
 	    == NULL )
         {
@@ -1290,30 +1290,27 @@ array_desc *ds_easy_alloc_array_desc (unsigned int num_dim, uaddr *lengths,
 }   /*  End Function ds_easy_alloc_array_desc  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_alloc_contiguous_list (list_desc, list_head, length, clear,array_alloc)
-/*  This routine will allocate a contiguous block of linked list entry
-    data  packets. No  list_entry  structures are allocated, they are implied.
-    The packet descriptor for the linked list must be pointed to by
-    list_desc  and the list header must be pointed to by  list_header  .
-    The number of list entries to allocate must be in  length  .
-    The routine will recursively allocate memory for sub arrays and linked
-    lists.
-    The  contiguous_length  value in the list header will be set to the list
+flag ds_alloc_contiguous_list (CONST packet_desc *list_desc,
+			       list_header *list_head, unsigned int length,
+			       flag clear, flag array_alloc)
+/*  [SUMMARY] Allocate a contiguous list of linked list entries.
+    [PURPOSE] This routine will allocate a contiguous block of linked list
+    entry data  packets. No <<list_entry>> structures are allocated, they are
+    implied. The routine will recursively allocate memory for sub arrays and
+    linked lists. The list must be empty.
+    The <<contiguous_length>> value in the list header will be set to the list
     length.
-    If the value of  clear  is TRUE, then the routine will initialise (set to
-    zero) all the data.
-    If the value of  array_alloc  is FALSE, and an array is an atomic array,
-    then instances of that array will NOT be allocated, and a NULL pointer will
-    be written into the parent element, else the array will be allocated.
-    The list must be empty.
-    The routine returns TRUE on success, else it returns FALSE.
-    On failure, the list header is deallocated.
+    <list_desc> The packet descriptor for the linked list.
+    <list_head> The list header.
+    <length> The number of list entries to allocate.
+    <clear> If TRUE, then the routine will initialise (set to zero) all the
+    data.
+    <array_alloc> If FALSE, and an array is an atomic array, then instances of
+    that array will NOT be allocated, and a NULL pointer will be written into
+    the parent element, else the array will be allocated.
+    [RETURNS] TRUE on success, else FALSE.
+    [NOTE] On failure, the list header is deallocated.
 */
-packet_desc *list_desc;
-list_header *list_head;
-unsigned int length;
-flag clear;
-flag array_alloc;
 {
     unsigned int count;
     unsigned int pack_size;

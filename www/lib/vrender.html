@@ -1,0 +1,300 @@
+<html><head><title>Package: vrender</title></head> 
+<body>
+<center><h1>The "vrender" Package</h1></center>    These routines are meant to provide support for volume rendering. Most of
+    the hard work in setting up the geometry, projections and making use of
+    multiple CPUs is done in the package. The application "just" needs to
+    provide the user interface, display canvas and shading algorithms.
+    NOTE: THIS PACKAGE IS WORK IN PROGRESS. THE INTERFACE MAY CHANGE IN THE
+    NEXT RELEASE, POSSIBLY WITHOUT NOTICE.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=vrender></a></table><h4>Functions</h4><table><tr><td><a href=vrender.html#vrender_create_context>vrender_create_context</a></td><td>Create a context for volume rendering.
+</td></tr>
+<tr><td><a href=vrender.html#vrender_set_context_attributes>vrender_set_context_attributes</a></td><td>Set the attributes for a volume rendering context.
+</td></tr>
+<tr><td><a href=vrender.html#vrender_get_context_attributes>vrender_get_context_attributes</a></td><td>Get the attributes for a volume rendering context.
+</td></tr>
+<tr><td><a href=vrender.html#vrender_register_shader>vrender_register_shader</a></td><td>Register a shader function.
+</td></tr>
+<tr><td><a href=vrender.html#vrender_change_shader_blank_packet>vrender_change_shader_blank_packet</a></td><td>Change blank value for a particular shader.
+</td></tr>
+<tr><td><a href=vrender.html#vrender_get_shaders>vrender_get_shaders</a></td><td>Get the names of all registered shaders.
+</td></tr>
+<tr><td><a href=vrender.html#vrender_to_buffer>vrender_to_buffer</a></td><td>Render a scene in a volume rendering context to a buffer.
+</td></tr>
+<tr><td><a href=vrender.html#vrender_collect_ray>vrender_collect_ray</a></td><td>Collect a ray projected from an image plane into a volume.
+</td></tr>
+<tr><td><a href=vrender.html#vrender_project_3d>vrender_project_3d</a></td><td>Project a point in 3-dimensional space onto a view plane.
+</td></tr>
+<tr><td><a href=vrender.html#vrender_compute_caches>vrender_compute_caches</a></td><td>Compute cache for volume rendering context.
+</td></tr>
+<tr><td><a href=vrender.html#vrender_image_desc_notify_func>vrender_image_desc_notify_func</a></td><td>Register image descriptor change callback.
+</td></tr>
+<tr><td><a href=vrender.html#vrender_cache_notify_func>vrender_cache_notify_func</a></td><td>Register cache computed callback.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=vrender.html#VRENDER_PROTO_render_notify_func>VRENDER_PROTO_render_notify_func</a></td><td>Volume rendering completed callback.
+</td></tr>
+<tr><td><a href=vrender.html#VRENDER_PROTO_image_desc_notify_func>VRENDER_PROTO_image_desc_notify_func</a></td><td>Image descriptor changed callback.
+</td></tr>
+<tr><td><a href=vrender.html#VRENDER_PROTO_cache_notify_func>VRENDER_PROTO_cache_notify_func</a></td><td>Cache computed callback.
+</td></tr>
+</table><h4>Tables</h4><table><tr><td><a href=vrender.html#VRENDER_ATTRIBUTES>VRENDER_ATTRIBUTES</a></td><td>List of attributes volume rendering contexts
+</td></tr>
+<tr><td><a href=vrender.html#VRENDER_EYES>VRENDER_EYES</a></td><td>List of eye views
+</td></tr>
+<tr><td><a href=vrender.html#VRENDER_EYE_MASKS>VRENDER_EYE_MASKS</a></td><td>List of eye view masks
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=vrender_create_context></a> KVolumeRenderContext
+ <b>vrender_create_context</b><i>    (void *info, ...)
+</i><br><p>    Create a context for volume rendering.
+<p><b>Parameters:</b><ul><li><i>info :</i> 
+    An arbitrary information pointer associated with the context.
+<br><li><i>... :</i> 
+    The optional list of parameter attribute-key attribute-value
+    pairs must follow. This list must be terminated with the value
+    VRENDER_CONTEXT_ATT_END. See <a href=vrender.html#VRENDER_ATTRIBUTES>VRENDER_ATTRIBUTES</a> for a list of defined
+    attributes.
+<br></ul><b>Returns:</b>     A KVolumeRenderContext on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=vrender_set_context_attributes></a> flag
+ <b>vrender_set_context_attributes</b><i>    (KVolumeRenderContext context, ...)
+</i><br><p>    Set the attributes for a volume rendering context.
+<p><b>Parameters:</b><ul><li><i>context :</i> 
+    The volume rendering context.
+<br><li><i>... :</i> 
+    The optional list of parameter attribute-key attribute-value
+    pairs must follow. This list must be terminated with the value
+    VRENDER_CONTEXT_ATT_END. See <a href=vrender.html#VRENDER_ATTRIBUTES>VRENDER_ATTRIBUTES</a> for a list of defined
+    attributes.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=vrender_get_context_attributes></a> flag
+ <b>vrender_get_context_attributes</b><i>    (KVolumeRenderContext context, ...)
+</i><br><p>    Get the attributes for a volume rendering context.
+<p><b>Parameters:</b><ul><li><i>context :</i> 
+    The volume rendering context.
+<br><li><i>... :</i> 
+    The optional list of parameter attribute-key attribute-value-ptr
+    pairs must follow. This list must be terminated with the value
+    VRENDER_CONTEXT_ATT_END. See <a href=vrender.html#VRENDER_ATTRIBUTES>VRENDER_ATTRIBUTES</a> for a list of defined
+    attributes.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=vrender_register_shader></a> void
+ <b>vrender_register_shader</b><i>    (void (*slow_func) (), void (*fast_func) (),
+			      CONST char *name,
+			      packet_desc *pack_desc, CONST char *blank_packet,
+			      void *info, flag front)
+</i><br><p>    Register a shader function.
+<p><b>Parameters:</b><ul><li><i>slow_func :</i> 
+    The slow shader function.
+<br><li><i>fast_func :</i> 
+    The fast shader function. If this is NULL the slow function
+    will always be used.
+<br><li><i>name :</i> 
+    The name of the shader function.
+<br><li><i>pack_desc :</i> 
+    The packet descriptor describing the output image pixels. A
+    copy is made, hence the original may be deallocated.
+<br><li><i>blank_packet :</i> 
+    A pointer to a sample packet containing blank data.
+<br><li><i>info :</i> 
+    An arbitrary information pointer associated with the shader.
+<br><li><i>front :</i> 
+    If TRUE, the new shader is placed at the front of the list, else
+    it is placed at the back of the list.
+<br></ul><b>Returns:</b>     Nothing. The process aborts on error.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=vrender_change_shader_blank_packet></a> void
+ <b>vrender_change_shader_blank_packet</b><i>    (CONST char *name,
+					 CONST char *blank_packet)
+</i><br><p>    This routine will change the data used to write blank values for
+    a particular shader.
+<p><b>Parameters:</b><ul><li><i>name :</i> 
+    The name of the shader.
+<br><li><i>blank_packet :</i> 
+    A pointer to a sample packet containing blank data.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=vrender_get_shaders></a> CONST char **
+ <b>vrender_get_shaders</b><i>    (unsigned int *num_shaders)
+</i><br><p>    Get the names of all registered shaders.
+<p><b>Parameters:</b><ul><li><i>num_shaders :</i> 
+    The number of registered shaders is written here.
+<br></ul><b>Returns:</b>     An array of shader names on success, else NULL. This array must
+    be deallocated when no longer needed. The individual names must NOT be
+    deallocated.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=vrender_to_buffer></a> flag
+ <b>vrender_to_buffer</b><i>    (KVolumeRenderContext context, char *left_buffer,
+			char *right_buffer, double *min, double *max,
+			void (*notify_func) (void *info), void *info)
+</i><br><p>    Render a scene in a volume rendering context to a buffer.
+<p><b>Parameters:</b><ul><li><i>context :</i> 
+    The volume rendering context.
+<br><li><i>left_buffer :</i> 
+    The left eye buffer to render into. This must be correctly
+    allocated.
+<br><li><i>right_buffer :</i> 
+    The right eye buffer to render into. If this is NULL no
+    right eye view is rendered and a monoscopic image is rendered into the left
+    eye buffer.
+<br><li><i>min :</i> 
+    The minimum value in the rendered images(s) is written here.
+<br><li><i>max :</i> 
+    The maximum value in the rendered images(s) is written here.
+<br><li><i>notify_func :</i> 
+    The function that is called when the rendering is completed.
+    If this is NULL this routine blocks. Note that even if this function is
+    specified, the routine may still block until the render completes if the
+    operating system does not have thread support. The prototype function is
+    <a href=vrender.html#VRENDER_PROTO_render_notify_func>VRENDER_PROTO_render_notify_func</a>.
+<br><li><i>info :</i> 
+    The arbitrary information pointer.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe per context.
+<br><p><hr> <a name=vrender_collect_ray></a> CONST signed char *
+ <b>vrender_collect_ray</b><i>    (KVolumeRenderContext context,
+					unsigned int eye_view,
+					Kcoord_2d pos_2d, Kcoord_3d *ray_start,
+					Kcoord_3d *direction, float *t_enter,
+					unsigned int *ray_length)
+</i><br><p>    Collect a ray projected from an image plane into a volume.
+<p><b>Parameters:</b><ul><li><i>context :</i> 
+    The volume rendering context. This specifies the volume and view
+    information.
+<br><li><i>eye_view :</i> 
+    The eye which sees the ray. See <a href=vrender.html#VRENDER_EYES>VRENDER_EYES</a> for a list of
+    legal values.
+<br><li><i>pos_2d :</i> 
+    The 2-dimensional position in the image plane to project from.
+<br><li><i>ray_start :</i> 
+    The 3-dimensional position of the starting point of the ray is
+    written here. This point lies on the raster plane.
+<br><li><i>direction :</i> 
+    The 3-dimensional direction vector of the ray is written here.
+    This is not normalised.
+<br><li><i>t_enter :</i> 
+    The distance down the ray corresponding to the first voxel is
+    written here.
+<br><li><i>ray_length :</i> 
+    The length of the ray through the volume is written here. If
+    the ray does not intersect the volume, 0 is written here.
+<br></ul><b>Returns:</b>     A pointer to the collected ray. This is a statically allocated
+    array per context which is updated on each call. On error NULL is returned.
+<br><b>Multithreading Level:</b> Unsafe per context.
+<br><p><hr> <a name=vrender_project_3d></a> flag
+ <b>vrender_project_3d</b><i>    (KVolumeRenderContext context, unsigned int eye_view,
+			 Kcoord_3d point_3d, Kcoord_2d *point_2d,
+			 flag test_visible)
+</i><br><p>    Project a point in 3-dimensional space onto a view plane.
+<p><b>Parameters:</b><ul><li><i>context :</i> 
+    The volume render context which determines the view information.
+<br><li><i>eye_view :</i> 
+    The eye which will see the point. See <a href=vrender.html#VRENDER_EYES>VRENDER_EYES</a> for a
+    list of legal values.
+<br><li><i>point_3d :</i> 
+    The 3 dimensional point to be projected.
+<br><li><i>point_2d :</i> 
+    The projected 2 dimensional point will be written here.
+<br><li><i>test_visible :</i> 
+    If TRUE, the point is tested for visibility.
+<br></ul><b>Returns:</b>     TRUE if the point is visible, else FALSE if it would be obscured
+    by the volume or <em>test_visible</em> is FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=vrender_compute_caches></a> void
+ <b>vrender_compute_caches</b><i>    (KVolumeRenderContext context, unsigned int eyes,
+			     flag notify)
+</i><br><p>    This routine will compute the caches for the specified eyes. This
+    speeds up subsequent rendering several times. Nothing is done if the
+    cache(s) are already computed.
+<p><b>Parameters:</b><ul><li><i>context :</i> 
+    The volume render context.
+<br><li><i>eyes :</i> 
+    A bitmask specifying which eye views to compute. The bitmask may be
+    constructed by ORing some values. See <a href=vrender.html#VRENDER_EYE_MASKS>VRENDER_EYE_MASKS</a> for a list of
+    masks.
+<br><li><i>notify :</i> 
+    If TRUE any functions registered with
+    <a href=vrender.html#vrender_cache_notify_func>vrender_cache_notify_func</a> will be called.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=vrender_image_desc_notify_func></a> KCallbackFunc
+ <b>vrender_image_desc_notify_func</b><i>    (KVolumeRenderContext context,
+     void (*func) (KVolumeRenderContext context, void **info),
+     void *info)
+</i><br><p>    This routine will register a function which should be called
+    whenever the output image descriptor is changed.
+<p><b>Parameters:</b><ul><li><i>context :</i> 
+    The volume render context.
+<br><li><i>func :</i> 
+    The routine to be called. The prototype function is
+    <a href=vrender.html#VRENDER_PROTO_image_desc_notify_func>VRENDER_PROTO_image_desc_notify_func</a>
+<br><li><i>info :</i> 
+    The initial arbitrary information pointer.
+<br></ul><b>Returns:</b>     A KCallbackFunc object on success. On failure, the process aborts
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=vrender_cache_notify_func></a> KCallbackFunc
+ <b>vrender_cache_notify_func</b><i>    (KVolumeRenderContext context,
+     void (*func) (KVolumeRenderContext context, void **info, uaddr eyes),
+     void *info)
+</i><br><p>    This routine will register a function which should be called
+    whenever the cache for one or more eye views is computed.
+<p><b>Parameters:</b><ul><li><i>context :</i> 
+    The volume render context.
+<br><li><i>func :</i> 
+    The routine to be called. The The prototype function is
+    <a href=vrender.html#VRENDER_PROTO_cache_notify_func>VRENDER_PROTO_cache_notify_func</a>
+<br><li><i>info :</i> 
+    The initial arbitrary information pointer.
+<br></ul><b>Returns:</b>     A KCallbackFunc object on success. On failure, the process aborts
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=VRENDER_PROTO_render_notify_func></a> void
+ <b>VRENDER_PROTO_render_notify_func</b><i>    (void *info)
+</i><br><p>    This routine registers the completion of a volume render
+    request.
+<p><b>Parameters:</b><ul><li><i>info :</i> 
+    The arbitrary information pointer.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=VRENDER_PROTO_image_desc_notify_func></a> void
+ <b>VRENDER_PROTO_image_desc_notify_func</b><i>    (KVolumeRenderContext context,
+					   void **info)
+</i><br><p>    This routine is called when the output image descriptor is
+    changed.
+<p><b>Parameters:</b><ul><li><i>context :</i> 
+    The volume render context.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary information pointer.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=VRENDER_PROTO_cache_notify_func></a> void
+ <b>VRENDER_PROTO_cache_notify_func</b><i>    (KVolumeRenderContext context,
+				      void **info, uaddr eyes)
+</i><br><p>    This routine is called when the cache for one or more eye
+    views is computed.
+<p><b>Parameters:</b><ul><li><i>context :</i> 
+    The volume render context.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary information pointer.
+<br><li><i>eyes :</i> 
+    A bitmask specifying which eye views to compute. The bitmask may be
+    constructed by ORing some values. See <a href=vrender.html#VRENDER_EYE_MASKS>VRENDER_EYE_MASKS</a> for a list of
+    masks.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Tables</h2></center><hr> <a name=VRENDER_ATTRIBUTES><b>VRENDER_ATTRIBUTES</b></a><p> <table><tr><td>Name                                 </td><td>Get Type             </td><td>Set Type             </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>VRENDER_CONTEXT_ATT_END              </td><td>                     </td><td>                     </td><td>End of varargs list
+</td></tr><tr><td>VRENDER_CONTEXT_ATT_CUBE             </td><td>iarray *             </td><td>iarray               </td><td>Volume
+</td></tr><tr><td>VRENDER_CONTEXT_ATT_VIEW             </td><td>view_specification * </td><td>view_specification * </td><td>Current view
+</td></tr><tr><td>VRENDER_CONTEXT_ATT_SHADER           </td><td>                     </td><td>CONST char *         </td><td>Shader name
+</td></tr><tr><td>VRENDER_CONTEXT_ATT_SUBCUBE_X_START  </td><td>unsigned long *      </td><td>unsigned long        </td><td>X start
+</td></tr><tr><td>VRENDER_CONTEXT_ATT_SUBCUBE_X_END    </td><td>unsigned long *      </td><td>unsigned long        </td><td>X end
+</td></tr><tr><td>VRENDER_CONTEXT_ATT_SUBCUBE_Y_START  </td><td>unsigned long *      </td><td>unsigned long        </td><td>Y start
+</td></tr><tr><td>VRENDER_CONTEXT_ATT_SUBCUBE_Y_END    </td><td>unsigned long *      </td><td>unsigned long        </td><td>Y end
+</td></tr><tr><td>VRENDER_CONTEXT_ATT_SUBCUBE_Z_START  </td><td>unsigned long *      </td><td>unsigned long        </td><td>Z start
+</td></tr><tr><td>VRENDER_CONTEXT_ATT_SUBCUBE_Z_END    </td><td>unsigned long *      </td><td>unsigned long        </td><td>Z end
+</td></tr><tr><td>VRENDER_CONTEXT_ATT_IMAGE_DESC       </td><td>array_desc *         </td><td>                     </td><td>Image descriptor
+</td></tr><tr><td>VRENDER_CONTEXT_ATT_VALID_IMAGE_DESC </td><td>flag *               </td><td>flag                 </td><td>Valid image descriptor
+</td></tr><tr><td>VRENDER_CONTEXT_ATT_PROJECTION       </td><td>                     </td><td>unsigned int         </td><td>Projection code
+</td></tr><tr><td>VRENDER_CONTEXT_ATT_EYE_SEPARATION   </td><td>                     </td><td>double               </td><td>Distance between eyes
+</td></tr><tr><td>VRENDER_CONTEXT_ATT_SMOOTH_CACHE     </td><td>                     </td><td>flag                 </td><td>Produce smooth cache
+</table><p><hr> <a name=VRENDER_EYES><b>VRENDER_EYES</b></a><p> <table><tr><td>Name                        </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>VRENDER_EYE_CHOICE_CYCLOPS  </td><td>Single eye (monoscopic vision)
+</td></tr><tr><td>VRENDER_EYE_CHOICE_LEFT     </td><td>Left eye (stereoscopic vision)
+</td></tr><tr><td>VRENDER_EYE_CHOICE_RIGHT    </td><td>Right eye (stereoscopic vision)
+</table><p><hr> <a name=VRENDER_EYE_MASKS><b>VRENDER_EYE_MASKS</b></a><p> <table><tr><td>Name                       </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>VRENDER_EYE_MASK_CYCLOPS   </td><td>Single eye (monoscopic vision) 
+</td></tr><tr><td>VRENDER_EYE_MASK_LEFT      </td><td>Left eye (stereoscopic vision)
+</td></tr><tr><td>VRENDER_EYE_MASK_RIGHT     </td><td>Right eye (stereoscopic vision)
+</table><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

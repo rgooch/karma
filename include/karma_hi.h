@@ -1,8 +1,8 @@
 /*  karma_hi.h
 
-    Header for  _  package.
+    Header for  hi_  package.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   3-OCT-1992
 
-    Last updated by Richard Gooch   7-APR-1995
+    Last updated by Richard Gooch   20-FEB-1996
 
 */
 
@@ -48,12 +48,12 @@
 
 
 /*  For the file: history.c  */
-EXTERN_FUNCTION (void hi_read, (char *command_name,
-				flag (*command_decode) (char *command,
-						       FILE *fp) ) );
-EXTERN_FUNCTION (void hi_write, (char *command_name,
-				 flag (*command_decode) (char *command,
-							FILE *fp) ) );
+EXTERN_FUNCTION (void hi_read,
+		 (CONST char *command_name,
+		  flag (*command_decode) (CONST char *command, FILE *fp) ) );
+EXTERN_FUNCTION (void hi_write,
+		 (CONST char *command_name,
+		  flag (*command_decode) (CONST char *command, FILE *fp) ) );
 
 
 #endif /*  KARMA_HI_H  */

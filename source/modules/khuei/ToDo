@@ -1,0 +1,39 @@
+	List of things to do and those done for the khuei module
+	--------------------------------------------------------
+
+TODO:
+=====
+
+FEATURE: Make use of Dataclip widget so that user can select range of
+data values to map into huei/intensity ranges
+
+FEATURE: Do not clear canvas when not needed (i.e. when a slider is
+moved or a new file of the same size is loaded). Perhaps move over to
+the <viewimg> package to save work
+
+FEATURE: Properly deal with blank values (set unsigned 8 bit scaled
+image to value 0)
+
+FEATURE: Allow user to zoom in (and expand) on a region
+
+FEATURE: Provide control so that user can choose to have images
+smaller than canvas fill the canvas (perhaps should not be the default
+since image expansion is an expensive operation and hence interactive
+performance will be lost)
+
+FEATURE: Allow user to view single image in intensity (useful when
+interactively setting clip limits with the Dataclip widget)
+
+FEATURE: Add PostScript output
+
+
+DONE:
+=====
+
+BUG: loading "File 1" twice in a row or "File 2" twice in a row
+(i.e. without loading the other file in between) causes a programme
+bug which is noted in <iarray_dealloc>
+
+FEATURE: Add support for Miriad files
+
+FEATURE: Add colour wedge (probably 256*64)

@@ -3,7 +3,7 @@
 
     This code provides miscellaneous routines for the X Intrinsics toolkit
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -30,7 +30,8 @@
 
     Written by      Richard Gooch   30-DEC-1995
 
-    Last updated by Richard Gooch   30-DEC-1995
+    Last updated by Richard Gooch   16-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -53,7 +54,8 @@
 
 /*PUBLIC_FUNCTION*/
 void xtmisc_popup_cbk (Widget w, XtPointer client_data, XtPointer call_data)
-/*  [PURPOSE] This routine will pop up a popup widget. This routine is a
+/*  [SUMMARY] Pop up a popup widget.
+    [PURPOSE] This routine will pop up a popup widget. This routine is a
     convenience routine to be used as a callback.
     <w> The widget on which the event occurred. This is ignored.
     <client_data> The callback client data. This must be the popup widget.
@@ -67,7 +69,8 @@ void xtmisc_popup_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 /*PUBLIC_FUNCTION*/
 void xtmisc_exclusive_popup_cbk (Widget w, XtPointer client_data,
 				 XtPointer call_data)
-/*  [PURPOSE] This routine will pop up a popup widget. This routine is a
+/*  [SUMMARY] Pop up a popup widget with exclusive grab.
+    [PURPOSE] This routine will pop up a popup widget. This routine is a
     convenience routine to be used as a callback. An exclusive grab is
     performed on the popped up widget.
     <w> The widget on which the event occurred. This is ignored.
@@ -81,7 +84,8 @@ void xtmisc_exclusive_popup_cbk (Widget w, XtPointer client_data,
 
 /*PUBLIC_FUNCTION*/
 void xtmisc_popdown_cbk (Widget w, XtPointer client_data, XtPointer call_data)
-/*  [PURPOSE] This routine will pop down a popup widget. This routine is a
+/*  [SUMMARY] Pop down a popup widget.
+    [PURPOSE] This routine will pop down a popup widget. This routine is a
     convenience routine to be used as a callback.
     <w> The widget on which the event occurred. This is ignored.
     <client_data> The callback client data. This must be the popup widget.

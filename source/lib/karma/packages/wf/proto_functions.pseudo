@@ -1,0 +1,17 @@
+/*PROTOTYPE_FUNCTION*/  /*
+void WF_PROTO_new_func (void *info)
+    [SUMMARY] New work function callback.
+    [PURPOSE] This routine is called whenever a new work function is
+    registered.
+    <info> An arbitrary information pointer.
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+flag WF_PROTO_work_func (void **info)
+    [SUMMARY] Work function.
+    [PURPOSE] This routine is called to perform some work.
+    <info> A pointer to the arbitrary work function information pointer.
+    [RETURNS] TRUE if the work function should be called again, else FALSE
+    indicating that the work function is to be unregistered.
+*/

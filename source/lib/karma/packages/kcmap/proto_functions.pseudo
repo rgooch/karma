@@ -1,0 +1,113 @@
+/*PROTOTYPE_FUNCTION*/  /*
+unsigned int KCMAP_PROTO_alloc_func (unsigned int num_cells,
+				     unsigned long *pixel_values,
+				     unsigned int min_cells,
+				     Kdisplay dpy_handle)
+    [SUMMARY] Allocate colourcells.
+    [PURPOSE] This routine will allocate a number of colourcells in a low
+    level colourmap (e.g. using the Xlib routine XAllocColorCells).
+    <num_cells> The number of colourcells to allocate.
+    <pixel_values> The array ofpixel values allocated will be written here.
+    <min_cells> The minimum number of colourcells to allocate. The routine
+    will try to allocate at least this number of colourcells.
+    <dpy_handle> The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+    [RETURNS] The number of colourcells allocated.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void KCMAP_PROTO_free_func (unsigned int num_cells,
+			    unsigned long *pixel_values, Kdisplay dpy_handle)
+    [SUMMARY] Free colourcells.
+    [PURPOSE] This routine will free a number of colourcells in a low
+    level colourmap.
+    <num_cells> The number of colourcells to free.
+    <pixel_values> The array of pixel values (colourcells) to free.
+    <dpy_handle> The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void KCMAP_PROTO_store_func (unsigned int num_cells,
+			     unsigned long *pixel_values,
+			     unsigned short *reds, unsigned short *greens,
+			     unsigned short *blues, unsigned int stride,
+			     Kdisplay dpy_handle)
+    [SUMMARY] This routine will store colours into a low level colourmap.
+    <num_cells> The number of colourcells to store.
+    <pixel_values> The array of pixel values.
+    <reds> The array of red intensity values.
+    <greens> The array of green intensity values.
+    <blues> The array of blue intensity values.
+    <stride> The stride (in unsigned shorts) between intensity values in
+    each array.
+    <dpy_handle> The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void KCMAP_PROTO_location_func (Kdisplay dpy_handle,
+				unsigned long *serv_hostaddr,
+				unsigned long *serv_display_num)
+    [SUMMARY] Get location of display.
+    [PURPOSE] This routine will determine the location of the graphics
+    display being used.
+    <dpy_handle> The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+    <serv_hostaddr> The Internet address of the host to which the display
+    is connected will be written here.
+    <serv_display_num> The number of the display will be written here.
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void KCMAP_PROTO_colour_func (unsigned int num_cells, unsigned short *reds,
+			      unsigned short *greens, unsigned short *blues,
+			      unsigned int stride, double x, double y,
+			      void *var_param)
+    [SUMMARY] Modify colour values.
+    [PURPOSE] This routine will write RGB colour intensity values to a
+    number of colourcells. This routine is called in response to a call to
+    [<kcmap_modify>].
+    <num_cells> The number of colour cells to modify.
+    <reds> The array of red intensity values.
+    <greens> The array of green intensity values.
+    <blues> The array of blue intensity values.
+    <stride> The stride (in unsigned shorts) between intensity values in
+    each array.
+    <x> A parameter used to compute the colour values.
+    <y> A parameter used to compute the colour values.
+    <max_cells> A parameter used to compute the colour values.
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void KCMAP_PROTO_grey_func (unsigned int num_cells, unsigned short *reds,
+			      unsigned short *greens, unsigned short *blues,
+			      unsigned int stride, double x, double y,
+			      void *var_param)
+    [SUMMARY] Modify greyscale colour values.
+    [PURPOSE] This routine will write greyscale intensity values to a
+    number of colourcells. This routine is called in response to a call to
+    [<kcmap_modify>].
+    <num_cells> The number of colour cells to modify.
+    <reds> The array of red intensity values. This may be NULL.
+    <greens> The array of green intensity values. This may be NULL.
+    <blues> The array of blue intensity values. This may be NULL.
+    <stride> The stride (in unsigned shorts) between intensity values in the
+    array.
+    <x> A parameter used to compute the colour values.
+    <y> A parameter used to compute the colour values.
+    <max_cells> A parameter used to compute the colour values.
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void KCMAP_PROTO_resize_func (Kcolourmap cmap, void **info)
+    [SUMMARY] This routine registers a change in the size of a colourmap.
+    <cmap> The colourmap.
+    <info> A pointer to the arbitrary colourmap information pointer.
+    [RETURNS] Nothing.
+*/

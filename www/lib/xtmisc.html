@@ -1,0 +1,86 @@
+<html><head><title>Package: xtmisc</title></head> 
+<body>
+<center><h1>The "xtmisc" Package</h1></center>    These routines are meant to provide miscellaneuos Xt support.
+    NOTE: THIS PACKAGE IS WORK IN PROGRESS. THE INTERFACE MAY CHANGE IN THE
+    NEXT RELEASE, POSSIBLY WITHOUT NOTICE.
+<p><b>Library:</b> karmaXt
+<br><b>Link With:</b> -lkarmaXt
+<br><p><a name=xtmisc></a></table><h4>Functions</h4><table><tr><td><a href=xtmisc.html#xtmisc_set_icon>xtmisc_set_icon</a></td><td>Create an icon for an application's top level widget.
+</td></tr>
+<tr><td><a href=xtmisc.html#xtmisc_popup_cbk>xtmisc_popup_cbk</a></td><td>Pop up a popup widget.
+</td></tr>
+<tr><td><a href=xtmisc.html#xtmisc_exclusive_popup_cbk>xtmisc_exclusive_popup_cbk</a></td><td>Pop up a popup widget with exclusive grab.
+</td></tr>
+<tr><td><a href=xtmisc.html#xtmisc_popdown_cbk>xtmisc_popdown_cbk</a></td><td>Pop down a popup widget.
+</td></tr>
+<tr><td><a href=xtmisc.html#xtmisc_support_work_funcs>xtmisc_support_work_funcs</a></td><td>Register support for work functions within an Xt application.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=xtmisc.html#XTMISC_PROTO_icon_func>XTMISC_PROTO_icon_func</a></td><td>Write an icon pixmap.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=xtmisc_set_icon></a> void
+ <b>xtmisc_set_icon</b><i>    ( Widget top_level,
+		       void (*icon_func) (Display *display, Pixmap pixmap,
+					  int width, int height) )
+</i><br><p>    Create an icon for an application's top level widget.
+<p><b>Parameters:</b><ul><li><i>top_level :</i> 
+    The top level widget.
+<br><li><i>icon_func :</i> 
+    The function to use when writing the icon. The prototype
+    function is <a href=xtmisc.html#XTMISC_PROTO_icon_func>XTMISC_PROTO_icon_func</a>.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=xtmisc_popup_cbk></a> void
+ <b>xtmisc_popup_cbk</b><i>    (Widget w, XtPointer client_data, XtPointer call_data)
+</i><br><p>    This routine will pop up a popup widget. This routine is a
+    convenience routine to be used as a callback.
+<p><b>Parameters:</b><ul><li><i>w :</i> 
+    The widget on which the event occurred. This is ignored.
+<br><li><i>client_data :</i> 
+    The callback client data. This must be the popup widget.
+<br><li><i>call_data :</i> 
+    The callback call data. This is ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=xtmisc_exclusive_popup_cbk></a> void
+ <b>xtmisc_exclusive_popup_cbk</b><i>    (Widget w, XtPointer client_data,
+				 XtPointer call_data)
+</i><br><p>    This routine will pop up a popup widget. This routine is a
+    convenience routine to be used as a callback. An exclusive grab is
+    performed on the popped up widget.
+<p><b>Parameters:</b><ul><li><i>w :</i> 
+    The widget on which the event occurred. This is ignored.
+<br><li><i>client_data :</i> 
+    The callback client data. This must be the popup widget.
+<br><li><i>call_data :</i> 
+    The callback call data. This is ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=xtmisc_popdown_cbk></a> void
+ <b>xtmisc_popdown_cbk</b><i>    (Widget w, XtPointer client_data, XtPointer call_data)
+</i><br><p>    This routine will pop down a popup widget. This routine is a
+    convenience routine to be used as a callback.
+<p><b>Parameters:</b><ul><li><i>w :</i> 
+    The widget on which the event occurred. This is ignored.
+<br><li><i>client_data :</i> 
+    The callback client data. This must be the popup widget.
+<br><li><i>call_data :</i> 
+    The callback call data. This is ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=xtmisc_support_work_funcs></a> void
+ <b>xtmisc_support_work_funcs</b><i>    (XtAppContext app_context)
+</i><br><p>    This routine will register Xt support for work functions using
+    the <a href=wf.html#wf>wf</a> package.
+<p><b>Parameters:</b><ul><li><i>app_context :</i> 
+    The Xt application context.
+<br></ul><b>Returns:</b>     Nothing. On failure the process aborts.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=XTMISC_PROTO_icon_func></a> void
+ <b>XTMISC_PROTO_icon_func</b><i>    (Display *display, Pixmap pixmap,
+			     int width, int height)
+</i><br><p>    Write an icon pixmap.
+<p><b>Parameters:</b><ul><li><i>display :</i> 
+    The display pointer.
+<br><li><i>pixmap :</i> 
+    The pixmap to write to.
+<br><li><i>width :</i> 
+    The width of the pixmap.
+<br><li><i>height :</i> 
+    The height of the pixmap.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

@@ -1,0 +1,7 @@
+$SUMMARY          Routines to asynchronously read from the standard input
+$PURPOSE
+    These routines are meant to provide a simple to use asynchronous line
+    reading facility. When reading from pipes, connections and terminals, the
+    routines continue polling for events (using the chm_poll and cm_poll
+    routines). They are not usable in a module which also uses an alternative
+    event management scheme (such as Xt Intrinsics or the XView notifier).

@@ -1,91 +1,130 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the t_ package of routines in the Karma library.
-
+$PACKAGE          t
+$SUMMARY          Low level Transform routines
+$PURPOSE
     These routines are meant to provide a low level mechanism to perform
     mathematical transformations on data. For example, low level Fast Fourier
     Transforms are supplied in this package.
-    A higher level (more optimised) set of routines to perform FFTs is supplied
-    in the  fft_  package.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
-
-    Written by		Richard Gooch	5-Jun-1995
-
-    Last updated by	Richard Gooch	5-Jun-1995
-
-
-*/
-
-unsigned int t_c_to_c_1D_fft_float (float *real, float *imag,
+$FUNCTION         t_c_to_c_1D_fft_float
+$RETURN_TYPE      unsigned int
+$PARAMETER_LIST
+    (float *real, float *imag,
 				    unsigned int length, unsigned int stride,
 				    int direction)
-/*  This routine will perform a complex to complex 1 dimensional FFT on an
-    array of single precision complex data.
-    The array of real components must be pointed to by  real  .
-    The array of imaginary components must be pointed to by  imag  .
-    The number of complex values in the array to transform must be given by
-    length  .
-    The stride (in bytes) of successive components must be given by  stride  .
-    The routine will perform an inverse transform (with appropriate 1 / length
-    scaling) if  direction  is KARMA_FFT_INVERSE.
+$SUMMARY          Compute a 1D complex to complex single precision FFT.
+$PURPOSE
+    This routine will perform a complex to complex 1 dimensional FFT
+    on an array of single precision complex data.
     The routine performs the transform in situ.
-    The routine returns a value indicating the success / failure status of the
-    transform.
-    This routine has been pinched from Patrick Jordan, who pinched and modified
-    the Numerical Recipes in C routine.
-*/
-/*---------------------------------------------------------------------------*/
+$PARAMETER        real :
+    The array of real components. This is modified.
+$PARAMETER        imag :
+    The array of imaginary components. This is modified.
+$PARAMETER        length :
+    The number of complex values in the array to transform.
+$PARAMETER        stride :
+    The stride (in bytes) of successive components.
+$PARAMETER        direction :
+    If the value is KARMA_FFT_FORWARD, the forward transform is
+    performed. If the value is KARMA_FFT_INVERSE, the inverse transform is
+    performed.
+$RETURNS
+    A value indicating the success / failure status of the transform.
+    See <-T_FFT_STATUS-> for a list of possible values.
+$END
 
-unsigned int t_c_to_c_many_1D_fft_float (float *real, float *imag,
+$FUNCTION         t_c_to_c_many_1D_fft_float
+$RETURN_TYPE      unsigned int
+$PARAMETER_LIST
+    (float *real, float *imag,
 					 unsigned int length,
 					 unsigned int elem_stride,
 					 unsigned int number,
 					 unsigned int dim_stride,
 					 int direction)
-/*  This routine will perform a number of complex to complex 1 dimensional FFTs
-    on an array of single precision complex data.
-    The array of real components must be pointed to by  real  .
-    The array of imaginary components must be pointed to by  imag  .
-    The number of complex values in the array to transform must be given by
-    length  .
-    The stride (in bytes) of successive components must be given by
-    elem_stride  .
-    The number of 1 dimensional FFTs to perform must be given by  number  .
-    The stride (in bytes) between successive data sets must be given by
-    dim_stride  .
-    The routine will perform an inverse transform (with appropriate 1 / length
-    scaling) if  direction  is KARMA_FFT_INVERSE.
-    The routine performs the transform in situ.
-    The routine returns a value indicating the success / failure status of the
-    transform.
-    This routine has been pinched from Patrick Jordan, who pinched and modified
-    the Numerical Recipes in C routine.
-*/
-/*---------------------------------------------------------------------------*/
+$SUMMARY          Compute many 1D complex to complex single precision FFTs.
+$PURPOSE
+    This routine will perform a number of complex to complex 1
+    dimensional FFTs on an array of single precision complex data.
+    The routine performs the transforms in situ.
+$PARAMETER        real :
+    The array of real components.
+$PARAMETER        imag :
+    The array of imaginary components.
+$PARAMETER        length :
+    The number of complex values in the array to transform.
+$PARAMETER        elem_stride :
+    The stride (in bytes) of successive components.
+$PARAMETER        number :
+    The number of 1 dimensional FFTs to perform.
+$PARAMETER        dim_stride :
+    The stride (in bytes) between successive data sets.
+$PARAMETER        direction :
+    If the value is KARMA_FFT_FORWARD, the forward transform is
+    performed. If the value is KARMA_FFT_INVERSE, the inverse transform is
+    performed.
+$RETURNS
+    A value indicating the success / failure status of the transform.
+    See <-T_FFT_STATUS-> for a list of possible values.
+$END
 
-flag t_check_power_of_2 (unsigned int number)
-/*  This routine will check if a number is a power of 2.
-    The number must be given by  number  .
-    The routine returns TRUE if the number is a power of 2,
-    else it returns FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         t_check_power_of_2
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (unsigned int number)
+$SUMMARY          Check if a number is a power of 2.
+$PURPOSE
+    Check if a number is a power of 2.
+$PARAMETER        number :
+    The number.
+$RETURNS
+    TRUE if the number is a power of 2, else FALSE.
+$END
 
-unsigned int t_r_to_c_many_1D_fft_float (float *a, unsigned int length,
+$FUNCTION         t_r_to_c_many_1D_fft_float
+$RETURN_TYPE      unsigned int
+$PARAMETER_LIST
+    (float *a, unsigned int length,
 					 unsigned int elem_stride,
 					 unsigned int number,
 					 unsigned int dim_stride,
 					 int direction)
-/*  This routine will perform a real to complex or complex to real FFT.
-    The array must be pointed to by  a  .
-    The number of elements to transform must be given by  n  .
-    The stride (in floats) of sucessive data elements must be given by
-    elem_stride  .
-    The number of transforms to perform must be given by  number  .
-    The stride (in floats) between sucessive data sets must be given by
-    dim_stride  .
-    The routine will perform the forward, real to complex FFT if  direction  is
-    KARMA_FFT_FORWARD  else it will perform the inverse, complex to real FFT.
-    The routine returns a value indicating the success / failure status of the
-    transform.
-*/
-/*---------------------------------------------------------------------------*/
+$SUMMARY          Compute many 1D real to complex single precision FFTs.
+$PURPOSE
+    This routine will perform a real to complex or complex to real
+    FFT.
+$PARAMETER        a :
+    The array.
+$PARAMETER        n :
+    The number of elements to transform.
+$PARAMETER        elem_stride :
+    The stride (in floats) of sucessive data elements.
+$PARAMETER        number :
+    The number of transforms to perform.
+$PARAMETER        dim_stride :
+    The stride (in floats) between sucessive data sets.
+$PARAMETER        direction :
+    If the value is KARMA_FFT_FORWARD, the forward, real to complex
+    transform is performed. If the value is KARMA_FFT_INVERSE, the inverse,
+    complex to real transform is performed.
+$RETURNS
+    A value indicating the success / failure status of the transform.
+    See <-T_FFT_STATUS-> for a list of possible values.
+$END
+
+$TABLE            T_FFT_STATUS
+$COLUMNS          2
+$SUMMARY          List of FFT status values
+$TABLE_DATA
+|.Name                              |,Meaning
+|.
+|.KARMA_FFT_OK                      |,Transform successful
+|.KARMA_FFT_BAD_LENGTH              |,Bad length supplied
+|.KARMA_FFT_BAD_TYPE                |,Bad data type
+|.KARMA_FFT_ALLOC_ERROR             |,Internal allocation error
+|.KARMA_FFT_METHOD_NOT_AVAILABLE    |,Method not available
+|.KARMA_FFT_BAD_STRIDE              |,Bad stride
+$END

@@ -2,7 +2,7 @@
 
     Source file for  convert  (data type conversion module).
 
-    Copyright (C) 1993,1994  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -49,15 +49,20 @@
     Updated by      Richard Gooch   29-JUN-1994: Explained precedence of
   factor  and  offset  .
 
-    Last updated by Richard Gooch   7-AUG-1994: Removed  blank_value  parameter
+    Updated by      Richard Gooch   7-AUG-1994: Removed  blank_value  parameter
   since  panel_  package did not faithfully maintain the value (besides, the
   parameter was not that useful anyway).
+
+    Last updated by Richard Gooch   30-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
 #include <stdio.h>
 #include <math.h>
 #include <karma.h>
+#include <karma_module.h>
+#include <karma_dsproc.h>
 #include <karma_panel.h>
 #include <karma_dsxfr.h>
 #include <karma_ds.h>
@@ -65,6 +70,7 @@
 #include <karma_ex.h>
 #include <karma_a.h>
 #include <karma_m.h>
+
 
 #define VERSION "1.1"
 
@@ -139,9 +145,7 @@ static double saturate_max = TOOBIG;
 static int log_cycle_limit = DEFAULT_LOG_CYCLES;
 
 
-main (argc, argv)
-int argc;       /*  Count of parameters on command line */
-char **argv;    /*  List of command line parameters     */
+int main (int argc, char **argv)
 {
     KControlPanel panel;
     extern char *array_names[NUMARRAYS];
@@ -198,9 +202,7 @@ char **argv;    /*  List of command line parameters     */
     return (RV_OK);
 }   /*  End Function main   */
 
-convert (p, fp)
-char *p;
-FILE *fp;
+flag convert (char *p, FILE *fp)
 {
     double tmp;
     char *arrayfile;
@@ -626,16 +628,16 @@ char *out_desc;
 unsigned int out_type;
 char *out_data;
 {
-    unsigned int array_size;
+    unsigned int array_size = 0;  /*  Initialised to keep compiler happy  */
     unsigned int inp_offset;
     unsigned int out_offset;
     unsigned int out_pack_size;
     char *out_ptr;
-    list_header *list_head_inp;
-    list_header *list_head_out;
+    list_header *list_head_inp = NULL; /* Initialised to keep compiler happy */
+    list_header *list_head_out = NULL; /* Initialised to keep compiler happy */
     list_entry *list_entry_inp;
-    packet_desc *pack_desc_inp;
-    packet_desc *pack_desc_out;
+    packet_desc *pack_desc_inp = NULL; /* Initialised to keep compiler happy */
+    packet_desc *pack_desc_out = NULL; /* Initialised to keep compiler happy */
     extern unsigned int elem_index;
     extern int type;
     extern char *data_type_names[NUMTYPES];

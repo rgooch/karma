@@ -1,0 +1,4 @@
+$SUMMARY          Routines to manage a thread pool (MultiThreading support)
+$PURPOSE
+    These routines are meant to provide management of a pool of threads which
+    may execute concurrently.

@@ -2,7 +2,7 @@
 /*  main.c
     This code implements low level communications.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -122,8 +122,17 @@
     Updated by      Richard Gooch   16-JUL-1995: Disabled NIS lookup of Karma
   port number base.
 
-    Last updated by Richard Gooch   10-AUG-1995: Cope with Unix socket not
+    Updated by      Richard Gooch   10-AUG-1995: Cope with Unix socket not
   existing in <connect_unix>.
+
+    Updated by      Richard Gooch   19-FEB-1996: Cope with yet another error
+  code from Slowass 2 in <connect_unix>.
+
+    Updated by      Richard Gooch   13-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   3-JUN-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -244,7 +253,7 @@ STATIC_FUNCTION (int accept_connection_on_dock,
 STATIC_FUNCTION (flag close_connection, (int connection) );
 STATIC_FUNCTION (int get_bytes_readable, (int connection) );
 STATIC_FUNCTION (unsigned long get_inet_addr_from_host,
-		 (char *host, flag *local) );
+		 (CONST char *host, flag *local) );
 static unsigned long conv_hostname_to_addr ();
 static int open_stdin ();
 #endif
@@ -276,29 +285,27 @@ char **environ = NULL;
 /*  Public routines follow  */
 
 /*PUBLIC_FUNCTION*/
-int *r_alloc_port (port_number, retries, num_docks)
-/*  This routine will allocate a Karma port for the module so that it can
-    operate as a server (able to receive network connections).
-    The port number to allocate must be pointed to by  port_number  .The
-    routine will write the actual port number allocated to this address. This
-    must point to an address which lies on an  int  boundary.
-    The number of succsessive port numbers to attempt to allocate before giving
-    up must be given by  retries  .If this is 0, then the routine will give up
-    immediately if the specified port number is in use.
+int *r_alloc_port (unsigned int *port_number, unsigned int retries,
+		   unsigned int *num_docks)
+/*  [SUMMARY] Allocate a Karma port whic can receive connections.
+    [PURPOSE] This routine will allocate a Karma port for the module so that it
+    can operate as a server (able to receive network connections).
     The routine will create a number of docks for one port. Each dock is an
     alternative access point for other modules to connect to this port.
-    The number of docks allocated will be written to the storage pointed to by
-    num_docks  .This must point to an address which lies on an  int
-    boundary.
     The close-on-exec flags of the docks are set such that the docks will
     close on a call to execve(2V).
     The docks are placed into non-blocking mode.
-    The routine returns a pointer to a statically allocated array of docks on
-    success, else it returns NULL.
+    <port_number> A pointer to the port number to allocate. The routine will
+    write the actual port number allocated to this address. This must point to
+    an address which lies on an <<int>> boundary.
+    <retries> The number of succsessive port numbers to attempt to allocate
+    before giving up. If this is 0, then the routine will give up immediately
+    if the specified port number is in use.
+    <num_docs> The number of docks allocated will be written here. This must
+    point to an address which lies on an <<int>> boundary.
+    [RETURNS] A pointer to a statically allocated array of docks on success,
+    else NULL.
 */
-unsigned int *port_number;
-unsigned int retries;
-unsigned int *num_docks;
 {
     extern unsigned int num_docks_open;
     static char function_name[] = "r_alloc_port";
@@ -334,13 +341,14 @@ unsigned int *num_docks;
 }   /*  End Function r_alloc_port  */
 
 /*PUBLIC_FUNCTION*/
-void r_close_dock (dock)
-/*  This routine will close a dock. If the dock was the last open dock for the
-    port, then the entire port is closed and a new port may be allocated.
-    The dock to close must be given by  dock  .
-    The routine returns nothing.
+void r_close_dock (int dock)
+/*  [SUMMARY] Close a dock.
+    [PURPOSE] This routine will close a dock. If the dock was the last open
+    dock for the port, then the entire port is closed and a new port may be
+    allocated.
+    <dock> The dock to close.
+    [RETURNS] Nothing.
 */
-int dock;
 {
     unsigned int dock_count;
     extern int docks[NUM_DOCKS];
@@ -375,23 +383,19 @@ int dock;
 }  /*  End Function r_close_dock  */
 
 /*PUBLIC_FUNCTION*/
-int r_connect_to_port (addr, port_number, local)
-/*  This routine will connect to a server module running on the machine
-    with Internet address given by  addr  .
-    If the value of 0 is supplied for the address, the connection is made to a
-    Karma server running on the local machine.
-    The port number to connect to must given by  port_number  .
-    If the connection is made to a port on the local host, then the value TRUE
-    will be written to the storage pointed to by  local  ,else the value FALSE
-    will be written here.
-    The close-on-exec flags of the socket is set such that the socket will
-    close on a call to execve(2V).
-    The routine returns the file descriptor of the opened connection on
-    success, else it returns -1
+int r_connect_to_port (unsigned long addr, unsigned int port_number,
+		       flag *local)
+/*  [SUMMARY] Make a connection to a Karma port on some machine.
+    <addr> The address of the machine to connect to. If the value of 0 is
+    supplied for the address, the connection is made to a Karma server running
+    on the local machine.
+    <port_number> The port number to connect to.
+    <local> If the connection is made to a port on the local host, then the
+    value TRUE will be written here, else the value FALSE will be written here.
+    [NOTE] The close-on-exec flags of the socket is set such that the socket
+    will close on a call to execve(2V).
+    [RETURNS] The file descriptor of the opened connection on success, else -1.
 */
-unsigned long addr;
-unsigned int port_number;
-flag *local;
 {
 #ifdef COMMUNICATIONS_AVAILABLE
     flag local_flag;
@@ -446,14 +450,12 @@ flag *local;
 
 /*PUBLIC_FUNCTION*/
 int r_accept_connection_on_dock (int dock, unsigned long *addr, flag *local)
-/*  This routine will accept a connection on a dock.
-    The dock must be given by  dock  .
-    The address of the host connecting to the dock will be written to the
-    storage pointed to by  addr  .
-    If the connection is a local connection, then the routine will write the
-    value TRUE to the storage pointed to by  local  ,else it will write
-    the value FALSE.
-    The routine returns a connection on success, else it returns -1
+/*  [SUMMARY] Accept a connection on a dock.
+    <dock> The dock.
+    <addr> The address of the host connecting to the dock will be written here.
+    <local> If the connection is a local connection, then the routine will
+    write the value TRUE here, else it will write the value FALSE.
+    [RETURNS] A connection on success, else -1.
 */
 {
 #ifdef COMMUNICATIONS_AVAILABLE
@@ -486,9 +488,9 @@ int r_accept_connection_on_dock (int dock, unsigned long *addr, flag *local)
 
 /*PUBLIC_FUNCTION*/
 flag r_close_connection (int connection)
-/*  This routine will close a connection.
-    The connection to close must be given by  connection  .
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Close a connection.
+    <connection> The connection to close.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
 #ifdef COMMUNICATIONS_AVAILABLE
@@ -507,11 +509,11 @@ flag r_close_connection (int connection)
 
 /*PUBLIC_FUNCTION*/
 int r_get_bytes_readable (int connection)
-/*  This routine will determine the minimum number of bytes readable on a
-    connection. There may be more bytes readable than indicated.
-    The connection should be given by  connection  .
-    The routine returns the number of bytes readable on success,
-    else it returns -1
+/*  [SUMMARY] Get bytes readable on a connection.
+    [PURPOSE] This routine will determine the minimum number of bytes readable
+    on a connection. There may be more bytes readable than indicated.
+    <connection> The connection.
+    [RETURNS] The number of bytes readable on success, else -1.
 */
 {
 #ifdef COMMUNICATIONS_AVAILABLE
@@ -524,14 +526,13 @@ int r_get_bytes_readable (int connection)
 }   /*  End Function r_get_bytes_readable  */
 
 /*PUBLIC_FUNCTION*/
-unsigned long r_get_inet_addr_from_host (char *host, flag *local)
-/*  This routine will get the first listed Internet address from the hostname
-    string pointed to by  host  .
-    If the specified host is the local machine, then the routine will write
-    the value TRUE to the storage pointed to by  local  ,else it will write
-    the value FALSE here. If this is NULL, nothing is written here.
-    The routine returns the Internet address on success (in host byte order),
-    else it returns 0.
+unsigned long r_get_inet_addr_from_host (CONST char *host, flag *local)
+/*  [SUMMARY] Get the first listed Internet address of a hostname.
+    <host> The hostname.
+    <local> If the specified host is the local machine, then the routine will
+    write the value TRUE here, else it will write the value FALSE here. If
+    this is NULL, nothing is written here.
+    [RETURNS] The Internet address on success (in host byte order), else 0.
 */
 {
 #ifdef COMMUNICATIONS_AVAILABLE
@@ -545,17 +546,18 @@ unsigned long r_get_inet_addr_from_host (char *host, flag *local)
 
 /*PUBLIC_FUNCTION*/
 int r_read (int fd, char *buf, int nbytes)
-/*  This routine is similar to the system  read(2)  call, except that the
-    number of bytes requested is always returned (except on error or closure).
-    Hence, if the descriptor references a socket, the routine will read as much
-    data as was requested, rather than a lesser amount due to packetisation or
-    interrupted system calls.
-    The file descriptor to read from must be given by  fd  .This descriptor
-    must NOT be set to non-blocking IO.
-    The buffer in which to write the data must be pointed to by  buf  .
-    The number of bytes to read must be given by  nbytes  .
-    The routine returns the number of bytes requested on success,
-    the number of bytes read on end of file (or closure) and -1 on error.
+/*  [SUMMARY] Read bytes from a file descriptor.
+    [PURPOSE] This routine is similar to the system <<read(2)>> call, except
+    that the number of bytes requested is always returned (except on error or
+    closure). Hence, if the descriptor references a socket, the routine will
+    read as much data as was requested, rather than a lesser amount due to
+    packetisation or interrupted system calls.
+    <fd> The file descriptor to read from. This descriptor must NOT be set to
+    non-blocking IO.
+    <buf> The buffer in which to write the data.
+    <nbytes> The number of bytes to read.
+    [RETURNS] The number of bytes requested on success, the number of bytes
+    read on end of file (or closure) and -1 on error.
 */
 {
 #ifdef COMMUNICATIONS_AVAILABLE
@@ -601,18 +603,19 @@ int r_read (int fd, char *buf, int nbytes)
 
 /*PUBLIC_FUNCTION*/
 int r_write (int fd, CONST char *buf, int nbytes)
-/*  This routine is similar to the system  write(2)  call, except that the
-    number of bytes requested is always returned (except on error). Hence, if
-    the descriptor references a socket, the routine will write as much data as
-    was requested, rather than a lesser amount due to packetisation or
-    interrupted system calls.
-    The file descriptor to write from must be given by  fd  .This descriptor
-    must NOT be set to non-blocking IO.
-    The buffer in which to write the data must be pointed to by  buf  .
-    The number of bytes to write must be given by  nbytes  .
-    NOTE: the routine will force  SIGPIPE  to be ignored.
-    The routine returns the number of bytes requested on success,
-    else it returns -1 indicating error.
+/*  [SUMMARY] Write bytes to a file descriptor.
+    [PURPOSE] This routine is similar to the system <<write(2)>> call, except
+    that the number of bytes requested is always returned (except on error).
+    Hence, if the descriptor references a socket, the routine will write as
+    much data as was requested, rather than a lesser amount due to
+    packetisation or interrupted system calls.
+    <fd> The file descriptor to write to. This descriptor must NOT be set to
+    non-blocking IO.
+    <buf> The buffer in which to write the data.
+    <nbytes> The number of bytes to write.
+    [NOTE] The routine will force  SIGPIPE  to be ignored.
+    [RETURNS] The number of bytes requested on success, else -1 indicating
+    error.
 */
 {
 #ifdef COMMUNICATIONS_AVAILABLE
@@ -662,17 +665,16 @@ int r_write (int fd, CONST char *buf, int nbytes)
 }   /*  End Function r_write  */
 
 /*PUBLIC_FUNCTION*/
-flag r_test_input_event (connection)
-/*  This routine will test if there is input activity on a connection. This
-    activity also covers the case of connection closure.
-    The connection descriptor must be given by  connection  .
-    NOTE: this routine is only available on platforms which emulate the
+flag r_test_input_event (int connection)
+/*  [SUMMARY] Test for activity on a connection.
+    [PURPOSE] This routine will test if there is input activity on a
+    connection. This activity also covers the case of connection closure. The
+    connection descriptor must be given by  connection  .
+    [NOTE] This routine is only available on platforms which emulate the
     communications facilities of Unix. It is NOT available on standard Unix
     systems.
-    The routine returns TRUE if there is some input activity,
-    else it returns FALSE.
+    [RETURNS] TRUE if there is some input activity, else FALSE.
 */
-int connection;
 {
     static char function_name[] = "r_test_input_event";
 #ifdef OS_VXMVX
@@ -686,7 +688,7 @@ int connection;
 			connection + DESCRIPTOR_OFFSET);
 	prog_bug (function_name);
     }
-    if (descriptors[connection].open != TRUE)
+    if (!descriptors[connection].open)
     {
 	(void) fprintf (stderr, "Descriptor: %d not open\n",
 			connection + DESCRIPTOR_OFFSET);
@@ -718,13 +720,12 @@ int connection;
 }   /*  End Function r_test_input_event  */
 
 /*PUBLIC_FUNCTION*/
-int r_open_stdin (disc)
-/*  This routine will open the standard input.
-    The routine will write the value TRUE to the storage pointed to by  disc
-    if the standard input is a disc, else it will write FALSE.
-    The routine returns the descriptor on success, else it returns -1
+int r_open_stdin (flag *disc)
+/*  [SUMMARY] Open the standard input.
+    <disc> The routine will write the value TRUE here if the standard input is
+    a disc, else it will write FALSE.
+    [RETURNS] The descriptor on success, else -1.
 */
-flag *disc;
 {
 #ifdef COMMUNICATIONS_AVAILABLE
     return ( open_stdin (disc) );
@@ -736,13 +737,11 @@ flag *disc;
 }   /*  End Function r_open_stdin  */
 
 /*PUBLIC_FUNCTION*/
-char *r_getenv (name)
-/*  This routine will get the value of the environment variable with name
-    pointed to by  name  .
-    The routine returns a pointer to the value string if present,
-    else it returns NULL.
+char *r_getenv (CONST char *name)
+/*  [SUMMARY] Get the value of an environment variable.
+    <name> The name of the environment variable.
+    [RETURNS] A pointer to the value string if present, else NULL.
 */
-CONST char *name;
 {
 #ifdef HAS_ENVIRON
     return ( getenv (name) );
@@ -778,17 +777,16 @@ CONST char *name;
 }   /*  End Function r_getenv  */
 
 /*PUBLIC_FUNCTION*/
-int r_setenv (env_name, env_value)
-/*  This routine will provide a consistent interface to set environment
-    variables. This is necessary because the "standard" C library routines:
-    putenv  or  setenv  (depending on the particular standard C library
-    supplied with the operating system) are in fact not standard.
-    The environment variable to create or change must be named by  env_name  .
-    The string value to set the variable to must be pointed to by  env_value  .
-    The routine returns 0 on success, else it returns -1.
+int r_setenv (CONST char *env_name, CONST char *env_value)
+/*  [SUMMARY] Set an environment variable.
+    [PURPOSE] This routine will provide a consistent interface to set
+    environment variables. This is necessary because the "standard" C library
+    routines: <<putenv>> or <<setenv>> (depending on the particular standard
+    C library supplied with the operating system) are in fact not standard.
+    <env_name> The environment variable to create or change.
+    <env_value> The string value to set the variable to.
+    [RETURNS] 0 on success, else -1.
 */
-CONST char *env_name;
-CONST char *env_value;
 {
     int num_strings, len;
     char **env;
@@ -824,7 +822,7 @@ CONST char *env_value;
 
 /*PUBLIC_FUNCTION*/
 void r_gethostname (char *name, unsigned int namelen)
-/*  [PURPOSE] This routine will determine the local hostname.
+/*  [SUMMARY] This routine will determine the local hostname.
     <name> The hostname will be written here. It is guaranteed to be null
     terminated.
     <namelen> The size of the buffer.
@@ -850,7 +848,7 @@ void r_gethostname (char *name, unsigned int namelen)
 
 /*PUBLIC_FUNCTION*/
 flag r_get_fq_hostname (char *name, unsigned int namelen)
-/*  [PURPOSE] This routine will get the fully qualified local hostname.
+/*  [SUMMARY] This routine will get the fully qualified local hostname.
     <name> The hostname will be written here. It is guaranteed to be null
     terminated.
     <namelen> The size of the buffer.
@@ -874,8 +872,8 @@ flag r_get_fq_hostname (char *name, unsigned int namelen)
 
 /*PUBLIC_FUNCTION*/
 int r_getppid ()
-/*  This routine will determine the parent process ID.
-    The routine returns the parent process ID.
+/*  [SUMMARY] Get the parent process ID.
+    [RETURNS] The parent process ID.
 */
 {
 #ifdef COMMUNICATIONS_AVAILABLE
@@ -899,7 +897,8 @@ int r_getppid ()
 /*PUBLIC_FUNCTION*/
 int r_open_file (CONST char *filename, int flags, int mode,
 		 unsigned int *filetype, unsigned int *blocksize)
-/*  [PURPOSE] This routine will open a file. The file may be a regular disc
+/*  [SUMMARY] Open a named file.
+    [PURPOSE] This routine will open a file. The file may be a regular disc
     file, a named FIFO, a character special device, a Unix domain socket or a
     TCP/IP connection (where supported). This routine provides an enhanced
     interface to the <<open(2)>>, <<socket(2)>> and <<connect(2)>> routines.
@@ -1074,6 +1073,7 @@ int r_open_file (CONST char *filename, int flags, int mode,
 	    (void) fprintf (stderr,
 			    "Illegal file mode: %d (should be regular file)\n",
 			    statbuf.st_mode);
+	    (void) close (fd);
 	    return (-1);
 	}
     }
@@ -1081,18 +1081,16 @@ int r_open_file (CONST char *filename, int flags, int mode,
 }   /*  End Function r_open_file  */
 
 /*PUBLIC_FUNCTION*/
-int r_create_pipe (read_fd, write_fd)
-/*  This routine will create an un-named pipe.
-    This routine provides an enhanced interface to the  pipe(2)  routine.
-    The file descriptor corresponding to the read end of the pipe will be
-    written to the storage pointed to by  read_fd  .
-    The file descriptor corresponding to the write end of the pipe will be
-    written to the storage pointed to by  write_fd  .
-    The routine returns 0 on success, else it returns -1 and sets  errno  with
-    the error code.
+int r_create_pipe (int *read_fd, int *write_fd)
+/*  [SUMMARY] Create an un-named pipe.
+    [PURPOSE] This routine will create an un-named pipe. This routine provides
+    an enhanced interface to the <<pipe(2)>> routine.
+    <read_fd> The file descriptor corresponding to the read end of the pipe
+    will be written here.
+    <write_fd> The file descriptor corresponding to the write end of the pipe
+    will be written here.
+    [RETURNS] 0 on success, else -1 and sets <<errno>> with the error code.
 */
-int *read_fd;
-int *write_fd;
 {
 #ifdef HAS_SOCKETS
     int retval;
@@ -1117,7 +1115,7 @@ int *write_fd;
 /*  Private functions follow  */
 
 #ifdef HAS_SOCKETS
-static unsigned long get_inet_addr_from_host (char *host, flag *local)
+static unsigned long get_inet_addr_from_host (CONST char *host, flag *local)
 /*  This routine will get the first listed Internet address from the hostname
     string pointed to by  host  .
     IF the specified host is the local machine, then the routine will write
@@ -1168,7 +1166,7 @@ static unsigned long conv_hostname_to_addr (host)
 */
 char *host;
 {
-    unsigned long addr;
+    unsigned long addr = 0;  /*  Initialised to keep compiler happy  */
     struct hostent *host_ptr;
     extern char *sys_errlist[];
     static char function_name[] = "__r_conv_hostname_to_addr";
@@ -1230,7 +1228,9 @@ static int *alloc_port (unsigned int *port_number, unsigned int retries,
 {
     flag bound;
     unsigned int retry_number;
+#ifdef DISABLED
     struct servent *service_entry;
+#endif
     extern int tcp_port_offset;
     extern int docks[NUM_DOCKS];
     extern unsigned int num_docks_open;
@@ -1541,7 +1541,7 @@ static int connect_unix (CONST char *filename)
     if (connect (fd, (struct sockaddr *) &un_addr, (int) sizeof un_addr) != 0)
     {
 	/*  No connection made  */
-	if ( (errno != ECONNREFUSED) && (errno != ENOENT) )
+	if ( (errno != ECONNREFUSED) && (errno != ENOENT) && (errno != ENXIO) )
 	{
 	    (void) fprintf (stderr,
 			    "Error connecting to Unix socket\t%s\n",
@@ -1660,7 +1660,9 @@ static int connect_to_port (unsigned long addr, unsigned int port_number)
     success, else it returns -1
 */
 {
+#ifdef DISABLED
     struct servent *service_entry;
+#endif
     char filename[STRING_LENGTH];
     extern int tcp_port_offset;
     extern char *sys_errlist[];
@@ -2488,7 +2490,7 @@ static int get_bytes_readable (int connection)
     return (descriptors[connection].msg_len - descriptors[connection].msg_pos);
 }  /*  End Function get_bytes_readable  */
 
-static unsigned long get_inet_addr_from_host (char *host, flag *local)
+static unsigned long get_inet_addr_from_host (CONST char *host, flag *local)
 /*  This routine will get the first listed Internet address from the hostname
     string pointed to by  host  .
     IF the specified host is the local machine, then the routine will write

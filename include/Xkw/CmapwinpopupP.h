@@ -6,14 +6,14 @@
 #include <X11/ShellP.h>
 #include <X11/StringDefs.h>
 
-#include <Xkw/CmapwinP.h>
-
 #include <Xkw/Cmapwinpopup.h>
 
 typedef struct _CmapwinpopupPart
 {
     /*  Public resources  */
     Kcolourmap cmap;
+    Visual *colourbarVisual;
+    Bool simpleColourbar;
     /*  Private resources  */
     Widget cmapwin;
     Widget save_dialog;

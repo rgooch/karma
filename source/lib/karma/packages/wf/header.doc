@@ -1,0 +1,9 @@
+$SUMMARY          Routines to support work functions
+$PURPOSE
+    These routines are meant to provide support for work functions. Work
+    functions are similar to threads in that they allow background processing
+    to be done, but require no threading support from the Operating System.
+    Work functions are only executed while the application would otherwise be
+    idle.
+    NOTE: THIS PACKAGE IS WORK IN PROGRESS. THE INTERFACE MAY CHANGE IN THE
+    NEXT RELEASE, POSSIBLY WITHOUT NOTICE.

@@ -2,7 +2,7 @@
 
     Header for  kcmap_  package.
 
-    Copyright (C) 1993,1994,1995  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   24-FEB-1993
 
-    Last updated by Richard Gooch   28-OCT-1995
+    Last updated by Richard Gooch   5-JUN-1996
 
 */
 
@@ -47,11 +47,16 @@
 #define KARMA_KCMAP_H
 
 
-#define KCMAP_ATT_END        0  /*  End of varargs list                 */
-#define KCMAP_ATT_REVERSE    1  /*  G:(flag *)            S:(flag)      */
-#define KCMAP_ATT_INVERT     2  /*  G:(flag *)            S:(flag)      */
-#define KCMAP_ATT_SOFTWARE   3  /*  G:(flag *)            S:illegal     */
-#define KCMAP_ATT_DPY_HANDLE 4  /*  G:(Kdisplay *)        S:illegal     */
+#define KCMAP_ATT_END           0
+#define KCMAP_ATT_REVERSE       1
+#define KCMAP_ATT_INVERT        2
+#define KCMAP_ATT_SOFTWARE      3
+#define KCMAP_ATT_DPY_HANDLE    4
+#define KCMAP_ATT_DIRECT_VISUAL 5
+#define KCMAP_ATT_SIZE          6
+#define KCMAP_ATT_RED_SCALE     7
+#define KCMAP_ATT_GREEN_SCALE   8
+#define KCMAP_ATT_BLUE_SCALE    9
 
 
 typedef struct colourmap_type * Kcolourmap;
@@ -65,7 +70,7 @@ typedef struct kdisplay_handle_type * Kdisplay;
 
 /*  File:   kcmap.c   */
 EXTERN_FUNCTION (Kcolourmap kcmap_va_create,
-		 (char *name, unsigned int num_cells, flag tolerant,
+		 (CONST char *name, unsigned int num_cells, flag tolerant,
 		  Kdisplay dpy_handle, unsigned int (*alloc_func) (),
 		  void (*free_func) (), void (*store_func) (),
 		  void (*location_func) (), ...) );
@@ -74,27 +79,41 @@ EXTERN_FUNCTION (void kcmap_init, (unsigned int (*alloc_func) (),
 				   void (*store_func) (),
 				   void (*location_func) () ) );
 EXTERN_FUNCTION (void kcmap_add_RGB_func,
-		 (char *name,
+		 (CONST char *name,
 		  void (*func) (unsigned int num_cells, unsigned short *reds,
 				unsigned short *greens, unsigned short *blues,
 				unsigned int stride,
 				double x, double y, void *var_param),
 		  unsigned int min_cells, unsigned int max_cells) );
-EXTERN_FUNCTION (Kcolourmap kcmap_create, (char *name,
+EXTERN_FUNCTION (void kcmap_add_grey_func,
+		 (CONST char *name,
+		  void (*func) (unsigned int num_cells, unsigned short *reds,
+				unsigned short *greens, unsigned short *blues,
+				unsigned int stride,
+				double x, double y, void *var_param),
+		  unsigned int min_cells, unsigned int max_cells) );
+EXTERN_FUNCTION (Kcolourmap kcmap_create, (CONST char *name,
 					   unsigned int num_cells,
 					   flag tolerant,
 					   Kdisplay dpy_handle) );
 EXTERN_FUNCTION (KCallbackFunc kcmap_register_resize_func,
 		 (Kcolourmap cmap, void (*resize_func) (), void *info) );
-EXTERN_FUNCTION (flag kcmap_change, (Kcolourmap cmap, char *new_name,
+EXTERN_FUNCTION (flag kcmap_change, (Kcolourmap cmap, CONST char *new_name,
 				     unsigned int num_cells,
 				     flag tolerant) );
 EXTERN_FUNCTION (void kcmap_modify, (Kcolourmap cmap, double x, double y,
 				     void *var_param) );
-EXTERN_FUNCTION (char **kcmap_list_funcs, () );
-EXTERN_FUNCTION (char *kcmap_get_active_func, (Kcolourmap cmap) );
+EXTERN_FUNCTION (void kcmap_modify_direct_type,
+		 (Kcolourmap cmap,
+		  double red_x, double red_y, void *red_var_param,
+		  double green_x, double green_y, void *green_var_param,
+		  double blue_x, double blue_y, void *blue_var_param) );
+EXTERN_FUNCTION (CONST char **kcmap_list_funcs, () );
+EXTERN_FUNCTION (CONST char **kcmap_get_funcs_for_cmap, (Kcolourmap cmap) );
+EXTERN_FUNCTION (CONST char *kcmap_get_active_func, (Kcolourmap cmap) );
 EXTERN_FUNCTION (unsigned int kcmap_get_pixels,
 		 (Kcolourmap cmap, unsigned long **pixel_values) );
+EXTERN_FUNCTION (void kcmap_notify_pixels_changed, (Kcolourmap cmap) );
 EXTERN_FUNCTION (unsigned long kcmap_get_pixel,
 		 (Kcolourmap cmap, unsigned int index) );
 EXTERN_FUNCTION (void kcmap_prepare_for_slavery, (Kcolourmap cmap) );

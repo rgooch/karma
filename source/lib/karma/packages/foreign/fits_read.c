@@ -3,7 +3,7 @@
 
     This code provides a FITS read facility.
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -49,9 +49,26 @@
     Updated by      Richard Gooch   18-JUL-1995: Translate '\0' characters to
   ' ' characters.
 
-    Last updated by Richard Gooch   31-JUL-1995: Made use of
+    Updated by      Richard Gooch   31-JUL-1995: Made use of
   <pio_read_float_nantrap> and <pio_read_double_nantrap> and junked massive
   #if blocks testing for NaN.
+
+    Updated by      Richard Gooch   29-FEB-1996: Cope with multiple instances
+  of keywords if at all possible.
+
+    Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
+
+    Updated by      Richard Gooch   3-JUN-1996: No longer fiddle reversed axes.
+
+    Updated by      Richard Gooch   15-JUN-1996: Add *__SCALE and *__OFFSET
+  keywords if necessary.
+
+    Updated by      Richard Gooch   17-JUN-1996: Subtracted 1.0 from CRPIXn
+  values.
+
+    Last updated by Richard Gooch   24-JUN-1996: Trapped "NAXISn" and other
+  "?????n" keywords coming before "NAXIS" keyword.
 
 
 */
@@ -97,8 +114,8 @@ struct card_info_type
     flag have_blank;
     int naxis;
     int *dim_lengths;
-    char **dim_names;
-    double *crpix;
+    char **dim_names;  /*  Trailing whitespace is removed      */
+    double *crpix;     /*  1.0 is substracted from FITS value  */
     double *crval;
     double *cdelta;
     char *elem_name;
@@ -139,7 +156,8 @@ STATIC_FUNCTION (flag process_keywords,
 multi_array *foreign_fits_read_header (Channel channel, flag data_alloc,
 				       flag convert_int_to_float,
 				       flag sanitise, ...)
-/*  [PURPOSE] This routine will read the header of a FITS file from a channel.
+/*  [SUMMARY] Read a FITS header.
+    [PURPOSE] This routine will read the header of a FITS file from a channel.
     The data section is NOT read.
     <channel> The channel to read from.
     <data_alloc> If TRUE, the data space is allocated.
@@ -148,8 +166,9 @@ multi_array *foreign_fits_read_header (Channel channel, flag data_alloc,
     <sanitise> If TRUE, FITS axes with length 1 are ignored. This is highly
     recommended.
     [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be FA_FITS_READ_HEADER_END.
-    The attributes are passed using varargs.
+    attribute-value pairs. This list must be terminated with
+    FA_FITS_READ_HEADER_END. See [<FOREIGN_ATT_FITS_READ_HEADER>] for a list of
+    defined attributes.
     [RETURNS] A pointer to the multi_array data structure on success, else
     NULL.
 */
@@ -162,13 +181,14 @@ multi_array *foreign_fits_read_header (Channel channel, flag data_alloc,
     unsigned int dim_count;
     unsigned int elem_type;
     unsigned int card_count;
+    double value[2];
     struct card_info_type finfo;
     char dummy_array;
+    char txt[STRING_LENGTH];
     char card[CARD_LENGTH][CARD_WIDTH];
     char *array;
     uaddr *dim_lengths;
-    double *dim_minima;
-    double *dim_maxima;
+    double *first_arr, *last_arr;
     char **dim_names;
     multi_array *multi_desc;
     static char def_elem_name[] = "Data Value";
@@ -222,7 +242,7 @@ multi_array *foreign_fits_read_header (Channel channel, flag data_alloc,
 	    return (NULL);
 	}
 	++card_count;
-	if ( !extract_info_from_header (card, &finfo, sanitise) )
+	if ( !extract_info_from_header (card, &finfo, TRUE) )
 	{
 	    (void) fprintf (stderr,
 			    "Error extracting information from header card\n");
@@ -311,21 +331,21 @@ multi_array *foreign_fits_read_header (Channel channel, flag data_alloc,
 	free_keywords (finfo.unknown_keywords);
 	return (NULL);
     }
-    /*  Compute dimension minima and maxima  */
-    if ( ( dim_minima = (double *) m_alloc (sizeof *dim_minima * num_dim) )
+    /*  Compute dimension first and last co-ordinates  */
+    if ( ( first_arr = (double *) m_alloc (sizeof *first_arr * num_dim) )
 	== NULL )
     {
-	m_error_notify (function_name, "dimension minima");
+	m_error_notify (function_name, "dimension first_arr");
 	m_free ( (char *) dim_lengths );
 	free_keywords (finfo.unknown_keywords);
 	return (NULL);
     }
-    if ( ( dim_maxima = (double *) m_alloc (sizeof *dim_maxima * num_dim) )
+    if ( ( last_arr = (double *) m_alloc (sizeof *last_arr * num_dim) )
 	== NULL )
     {
-	m_error_notify (function_name, "dimension maxima");
+	m_error_notify (function_name, "dimension last_arr");
 	m_free ( (char *) dim_lengths );
-	m_free ( (char *) dim_minima );
+	m_free ( (char *) first_arr );
 	free_keywords (finfo.unknown_keywords);
 	return (NULL);
     }
@@ -335,8 +355,8 @@ multi_array *foreign_fits_read_header (Channel channel, flag data_alloc,
     {
 	m_error_notify (function_name, "dimension name pointers");
 	m_free ( (char *) dim_lengths );
-	m_free ( (char *) dim_minima );
-	m_free ( (char *) dim_maxima );
+	m_free ( (char *) first_arr );
+	m_free ( (char *) last_arr );
 	free_keywords (finfo.unknown_keywords);
 	return (NULL);
     }
@@ -348,36 +368,69 @@ multi_array *foreign_fits_read_header (Channel channel, flag data_alloc,
 	    continue;
 	}
 	dim_lengths[num_dim] = finfo.dim_lengths[dim_count];
-	dim_minima[num_dim] = (finfo.crval[dim_count] -
-			       finfo.crpix[dim_count]*finfo.cdelta[dim_count]);
-	dim_maxima[num_dim] = ( dim_minima[num_dim] +
-			       fabs (finfo.cdelta[dim_count]) *
-			       (double) (finfo.dim_lengths[dim_count] -1) );
+	first_arr[num_dim] = (finfo.crval[dim_count] -
+			      finfo.crpix[dim_count] *finfo.cdelta[dim_count]);
+	last_arr[num_dim] = ( first_arr[num_dim] + finfo.cdelta[dim_count] *
+			      (double) (finfo.dim_lengths[dim_count] - 1) );
 	if (finfo.dim_names[dim_count] == NULL) all_dim_names_given = FALSE;
 	dim_names[num_dim] = finfo.dim_names[dim_count];
 	++num_dim;
     }
     /*  Now allocate the Karma data structure descriptors  */
     if ( ( multi_desc = ds_wrap_preallocated_n_element_array
-	  (array, num_dim, dim_lengths, dim_minima, dim_maxima,
-	   (double **) NULL, all_dim_names_given ? dim_names : NULL,
-	   1, &elem_type, &finfo.elem_name) ) == NULL )
+	  (array, num_dim, dim_lengths, first_arr, last_arr,
+	   NULL, (CONST char **) (all_dim_names_given ? dim_names : NULL),
+	   1, &elem_type, (CONST char **) &finfo.elem_name) ) == NULL )
     {
 	m_free ( (char *) dim_lengths );
-	m_free ( (char *) dim_minima );
-	m_free ( (char *) dim_maxima );
+	m_free ( (char *) first_arr );
+	m_free ( (char *) last_arr );
 	m_free ( (char *) dim_names );
 	free_keywords (finfo.unknown_keywords);
 	return (NULL);
     }
     m_free ( (char *) dim_lengths );
-    m_free ( (char *) dim_minima );
-    m_free ( (char *) dim_maxima );
+    m_free ( (char *) first_arr );
+    m_free ( (char *) last_arr );
     m_free ( (char *) dim_names );
     if (!data_alloc)
     {
 	*(char **) multi_desc->data[0] = NULL;
     }
+    /*  Add element scaling information if necessary. If the output type is
+	floating point, the scaling information has already been applied  */
+    if ( (elem_type != K_FLOAT) && (elem_type != K_DOUBLE) )
+    {
+	/*  Take bzero and bscale information  */
+	if ( (finfo.bzero != 0.0) && (finfo.bscale != 1.0) )
+	{
+	    (void) sprintf (txt, "%s__SCALE", finfo.elem_name);
+	    value[0] = finfo.bscale;
+	    value[1] = 0.0;
+	    if ( !ds_put_unique_named_value (multi_desc->headers[0],
+					     &multi_desc->data[0],
+					     txt, K_DOUBLE,
+					     value, FALSE) )
+	    {
+		free_keywords (finfo.unknown_keywords);
+		ds_dealloc_multi (multi_desc);
+		return (NULL);
+	    }
+	    (void) sprintf (txt, "%s__OFFSET", finfo.elem_name);
+	    value[0] = finfo.bzero;
+	    value[1] = 0.0;
+	    if ( !ds_put_unique_named_value (multi_desc->headers[0],
+					     &multi_desc->data[0],
+					     txt, K_DOUBLE,
+					     value, FALSE) )
+	    {
+		free_keywords (finfo.unknown_keywords);
+		ds_dealloc_multi (multi_desc);
+		return (NULL);
+	    }
+	}
+    }
+    /*  Add FITS keywords to top-level packet  */
     if ( !process_keywords (finfo.unknown_keywords, multi_desc) )
     {
 	free_keywords (finfo.unknown_keywords);
@@ -392,7 +445,8 @@ multi_array *foreign_fits_read_header (Channel channel, flag data_alloc,
 /*PUBLIC_FUNCTION*/
 flag foreign_fits_read_data (Channel channel, multi_array *multi_desc,
 			     char *data, uaddr num_values, ...)
-/*  [PURPOSE] This routine will read the data of a FITS file from a channel.
+/*  [SUMMARY] Read data in a FITS file.
+    [PURPOSE] This routine will read the data of a FITS file from a channel.
     The header section is NOT read.
     <channel> The channel to read from.
     <multi_desc> The Karma data structure to write the data into.
@@ -401,8 +455,9 @@ flag foreign_fits_read_data (Channel channel, multi_array *multi_desc,
     <num_values> The number of values to write into the data array. This is
     only used when data is not NULL.
     [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be FA_FITS_READ_DATA_END.
-    The attributes are passed using varargs.
+    attribute-value pairs. This list must be terminated with
+    FA_FITS_READ_DATA_END. See [<FOREIGN_ATT_FITS_READ_DATA>] for a list of
+    defined attributes.
     [RETURNS] TRUE on success, else FALSE.
 */
 {
@@ -677,16 +732,18 @@ static flag extract_info_from_header (char card[CARD_LENGTH][CARD_WIDTH],
     flag quote;
     flag keep_searching;
     flag blank_keyword;
+    flag redeclared_keyword;
     char *line;
     char *char_ptr;
     char *value_ptr;
     unsigned int line_count, char_count;
     int dim_count;
-    struct keyword_type *new_keyword;
+    struct keyword_type *new_keyword, *curr;
     static char function_name[] = "extract_info_from_header";
 
     for (line_count = 0; line_count < CARD_LENGTH; ++line_count)
     {
+	redeclared_keyword = FALSE;
 	line = &card[line_count][0];
 	/*  Change any '\0' characters to ' '  */
 	for (char_count = 0; char_count < CARD_WIDTH - 1; ++char_count)
@@ -726,9 +783,10 @@ static flag extract_info_from_header (char card[CARD_LENGTH][CARD_WIDTH],
 	{
 	    line[CARD_WIDTH] = '\0';
 	    (void) fprintf (stderr,
-			    "Expected '=' at column: %u in line: \"%s\"\n",
+			    "WARNING: Expected '=' at column: %u in line: \"%s\"\n",
 			    EQUALS_POSITION, line);
-	    return (FALSE);
+	    (void) fprintf (stderr, "Skipping line\n");
+	    continue;
 	}
 	line[EQUALS_POSITION] = '\0';
 	char_ptr = line + EQUALS_POSITION - 1;
@@ -787,7 +845,8 @@ static flag extract_info_from_header (char card[CARD_LENGTH][CARD_WIDTH],
 	    if ( (info->simple == TRUE) || (info->simple == FALSE) )
 	    {
 		redeclaration_message (line);
-		return (FALSE);
+		redeclared_keyword = TRUE;
+		continue;
 	    }
 	    if (*value_ptr == 'T')
 	    {
@@ -800,7 +859,8 @@ static flag extract_info_from_header (char card[CARD_LENGTH][CARD_WIDTH],
 	    else
 	    {
 		conversion_error_message (line, value_ptr);
-		return (FALSE);
+		info->simple = FALSE;
+		continue;
 	    }
 	}
 	else if (strcmp (line, "BITPIX") == 0)
@@ -808,7 +868,7 @@ static flag extract_info_from_header (char card[CARD_LENGTH][CARD_WIDTH],
 	    if (info->bitpix != 0)
 	    {
 		redeclaration_message (line);
-		return (FALSE);
+		redeclared_keyword = TRUE;
 	    }
 	    if (sscanf (value_ptr, "%d", &info->bitpix) != 1)
 	    {
@@ -821,12 +881,13 @@ static flag extract_info_from_header (char card[CARD_LENGTH][CARD_WIDTH],
 	    if (info->bzero != TOOBIG)
 	    {
 		redeclaration_message (line);
-		return (FALSE);
+		redeclared_keyword = TRUE;
 	    }
 	    if (sscanf (value_ptr, "%le", &info->bzero) != 1)
 	    {
 		conversion_error_message (line, value_ptr);
-		return (FALSE);
+		info->bzero = 0.0;
+		continue;
 	    }
 	}
 	else if (strcmp (line, "BSCALE") == 0)
@@ -834,12 +895,12 @@ static flag extract_info_from_header (char card[CARD_LENGTH][CARD_WIDTH],
 	    if (info->bscale != TOOBIG)
 	    {
 		redeclaration_message (line);
-		return (FALSE);
+		redeclared_keyword = TRUE;
 	    }
 	    if (sscanf (value_ptr, "%le", &info->bscale) != 1)
 	    {
 		conversion_error_message (line, value_ptr);
-		return (FALSE);
+		info->bscale = 1.0;
 	    }
 	}
 	else if (strcmp (line, "BUNIT") == 0)
@@ -847,13 +908,12 @@ static flag extract_info_from_header (char card[CARD_LENGTH][CARD_WIDTH],
 	    if (info->elem_name != NULL)
 	    {
 		redeclaration_message (line);
-		return (FALSE);
+		redeclared_keyword = TRUE;
 	    }
 	    if ( ( info->elem_name = ex_str (value_ptr, (char **) NULL) )
 		== NULL )
 	    {
 		m_abort (function_name, "element name");
-		return (FALSE);
 	    }
 	    if (strip_trailing_whitespace)
 	    {
@@ -865,57 +925,62 @@ static flag extract_info_from_header (char card[CARD_LENGTH][CARD_WIDTH],
 	    if (sscanf (value_ptr, "%ld", &info->blank) != 1)
 	    {
 		conversion_error_message (line, value_ptr);
-		return (FALSE);
+		continue;
 	    }
 	    info->have_blank = TRUE;
 	}
 	else if (strcmp (line, "NAXIS") == 0)
 	{
-	    if (info->naxis != -1)
-	    {
-		redeclaration_message (line);
-		return (FALSE);
-	    }
-	    if (sscanf (value_ptr, "%d", &info->naxis) != 1)
+	    int new_naxis;
+
+	    if (sscanf (value_ptr, "%d", &new_naxis) != 1)
 	    {
 		conversion_error_message (line, value_ptr);
 		return (FALSE);
 	    }
+	    if (info->naxis != -1)
+	    {
+		redeclaration_message (line);
+		redeclared_keyword = TRUE;
+		if (info->naxis != new_naxis)
+		{
+		    (void) fprintf (stderr,
+				    "NAXIS: old value: %d  new value: %d\n",
+				    info->naxis, new_naxis);
+		    continue;
+		}
+	    }
+	    info->naxis = new_naxis;
 	    /*  Allocate dimension info arrays  */
 	    if ( ( info->dim_lengths = (int *)
 		  m_alloc (sizeof *info->dim_lengths * info->naxis) )
 		== NULL )
 	    {
 		m_abort (function_name, "dimension lengths");
-		return (FALSE);
 	    }
 	    if ( ( info->dim_names = (char **)
 		  m_alloc (sizeof *info->dim_names * info->naxis) )
 		== NULL )
 	    {
 		m_abort (function_name, "dimension names");
-		return (FALSE);
 	    }
 	    if ( ( info->crpix = (double *)
 		  m_alloc (sizeof *info->crpix * info->naxis) )
 		== NULL )
 	    {
 		m_abort (function_name, "CRPIX array");
-		return (FALSE);
 	    }
 	    if ( ( info->crval = (double *)
 		  m_alloc (sizeof *info->crval * info->naxis) )
 		== NULL )
 	    {
 		m_abort (function_name, "CRVAL array");
-		return (FALSE);
 	    }
 	    if ( ( info->cdelta = (double *)
 		  m_alloc (sizeof *info->cdelta * info->naxis) )
 		== NULL )
 	    {
 		m_abort (function_name, "CDELT? array");
-		return (FALSE);
 	    }
 	    /*  Clear dimension lengths and set minima and maxima  */
 	    for (dim_count = 0; dim_count < info->naxis; ++dim_count)
@@ -929,18 +994,25 @@ static flag extract_info_from_header (char card[CARD_LENGTH][CARD_WIDTH],
 	}
 	else if (strncmp (line, "NAXIS", 5) == 0)
 	{
+	    if (info->dim_lengths == NULL)
+	    {
+		(void) fprintf (stderr,
+				"Keyword: \"%s\" came before \"NAXIS\"\n",
+				line);
+		return (FALSE);
+	    }
 	    /*  Get info for this dimension  */
 	    if (sscanf (line + 5, "%d", &dim_count) != 1)
 	    {
 		conversion_error_message (line, line + 5);
-		return (FALSE);
+		continue;
 	    }
 	    if ( (dim_count = info->naxis - dim_count) >= 0 )
 	    {
 		if (info->dim_lengths[dim_count] > -1)
 		{
 		    redeclaration_message (line);
-		    return (FALSE);
+		    redeclared_keyword = TRUE;
 		}
 		if (sscanf (value_ptr, "%d", &info->dim_lengths[dim_count])
 		    != 1)
@@ -952,40 +1024,55 @@ static flag extract_info_from_header (char card[CARD_LENGTH][CARD_WIDTH],
 	}
 	else if (strncmp (line, "CRPIX", 5) == 0)
 	{
+	    if (info->crpix == NULL)
+	    {
+		(void) fprintf (stderr,
+				"Keyword: \"%s\" came before \"NAXIS\"\n",
+				line);
+		return (FALSE);
+	    }
 	    /*  Get info for this dimension  */
 	    if (sscanf (line + 5, "%d", &dim_count) != 1)
 	    {
 		conversion_error_message (line, line + 5);
-		return (FALSE);
+		continue;
 	    }
 	    if ( (dim_count = info->naxis - dim_count) >= 0 )
 	    {
 		if (info->crpix[dim_count] != 0.0)
 		{
 		    redeclaration_message (line);
-		    return (FALSE);
+		    redeclared_keyword = TRUE;
 		}
 		if (sscanf (value_ptr, "%le", &info->crpix[dim_count]) != 1)
 		{
 		    conversion_error_message (line, value_ptr);
 		    return (FALSE);
 		}
+		info->crpix[dim_count] -= 1.0;
 	    }
 	}
 	else if (strncmp (line, "CRVAL", 5) == 0)
 	{
+	    if (info->crval == NULL)
+	    {
+		(void) fprintf (stderr,
+				"Keyword: \"%s\" came before \"NAXIS\"\n",
+				line);
+		return (FALSE);
+	    }
 	    /*  Get info for this dimension  */
 	    if (sscanf (line + 5, "%d", &dim_count) != 1)
 	    {
 		conversion_error_message (line, line + 5);
-		return (FALSE);
+		continue;
 	    }
 	    if ( (dim_count = info->naxis - dim_count) >= 0 )
 	    {
 		if (info->crval[dim_count] < TOOBIG)
 		{
 		    redeclaration_message (line);
-		    return (FALSE);
+		    redeclared_keyword = TRUE;
 		}
 		if (sscanf (value_ptr, "%le", &info->crval[dim_count]) != 1)
 		{
@@ -996,18 +1083,25 @@ static flag extract_info_from_header (char card[CARD_LENGTH][CARD_WIDTH],
 	}
 	else if (strncmp (line, "CDELT", 5) == 0)
 	{
+	    if (info->cdelta == NULL)
+	    {
+		(void) fprintf (stderr,
+				"Keyword: \"%s\" came before \"NAXIS\"\n",
+				line);
+		return (FALSE);
+	    }
 	    /*  Get info for this dimension  */
 	    if (sscanf (line + 5, "%d", &dim_count) != 1)
 	    {
 		conversion_error_message (line, line + 5);
-		return (FALSE);
+		continue;
 	    }
 	    if ( (dim_count = info->naxis - dim_count) >= 0 )
 	    {
 		if (info->cdelta[dim_count] < TOOBIG)
 		{
 		    redeclaration_message (line);
-		    return (FALSE);
+		    redeclared_keyword = TRUE;
 		}
 		if (sscanf (value_ptr, "%le", &info->cdelta[dim_count]) != 1)
 		{
@@ -1018,18 +1112,25 @@ static flag extract_info_from_header (char card[CARD_LENGTH][CARD_WIDTH],
 	}
 	else if (strncmp (line, "CTYPE", 5) == 0)
 	{
+	    if (info->dim_names == NULL)
+	    {
+		(void) fprintf (stderr,
+				"Keyword: \"%s\" came before \"NAXIS\"\n",
+				line);
+		return (FALSE);
+	    }
 	    /*  Get info for this dimension  */
 	    if (sscanf (line + 5, "%d", &dim_count) != 1)
 	    {
 		conversion_error_message (line, line + 5);
-		return (FALSE);
+		continue;
 	    }
 	    if ( (dim_count = info->naxis - dim_count) >= 0 )
 	    {
 		if (info->dim_names[dim_count] != NULL)
 		{
 		    redeclaration_message (line);
-		    return (FALSE);
+		    redeclared_keyword = TRUE;
 		}
 		if ( ( info->dim_names[dim_count] = ex_str (value_ptr,
 							    (char **) NULL) )
@@ -1045,10 +1146,29 @@ static flag extract_info_from_header (char card[CARD_LENGTH][CARD_WIDTH],
 	    }
 	}
 	/*  Save all keywords  */
-	if ( ( new_keyword = (struct keyword_type *)
-	      m_alloc (sizeof *new_keyword) ) == NULL )
+	/*  If keyword is duplicated, update  */
+	new_keyword = NULL;
+	for (curr = info->unknown_keywords;
+	     (curr != NULL) && (new_keyword == NULL);
+	     curr = curr->next)
 	{
-	    m_abort (function_name, "keyword struct");
+	    if (strcmp (line, curr->keyword) == 0) new_keyword = curr;
+	}
+	if (new_keyword == NULL)
+	{
+	    if ( ( new_keyword = (struct keyword_type *)
+		   m_alloc (sizeof *new_keyword) ) == NULL )
+	    {
+		m_abort (function_name, "keyword struct");
+	    }
+	    /*  Add to list only if this is a new keyword  */
+	    new_keyword->next = info->unknown_keywords;
+	    info->unknown_keywords = new_keyword;
+	}
+	else
+	{
+	    m_free (new_keyword->keyword);
+	    m_free (new_keyword->value);
 	}
 	if ( ( new_keyword->keyword = st_dup (line) ) == NULL )
 	{
@@ -1057,10 +1177,7 @@ static flag extract_info_from_header (char card[CARD_LENGTH][CARD_WIDTH],
 	if ( ( new_keyword->value = st_dup (value_ptr) ) == NULL )
 	{
 	    m_abort (function_name, "keyword value");
-	    return (FALSE);
 	}
-	new_keyword->next = info->unknown_keywords;
-	info->unknown_keywords = new_keyword;
 	/*  Scan next line  */
     }
     return (TRUE);
@@ -1170,7 +1287,7 @@ static flag process_keywords (struct keyword_type *keywords,
 				keywords->value);
 		return (FALSE);
 	    }
-	    /*  String trailing whitespace  */
+	    /*  Strip trailing whitespace  */
 	    for (ptr = string + strlen (string) - 1;
 		 isspace (*ptr) && ptr >= string; --ptr) *ptr = '\0';
 	    if ( !ds_put_unique_named_string (multi_desc->headers[0],
@@ -1201,9 +1318,9 @@ static flag process_keywords (struct keyword_type *keywords,
 	    /*  Drop through  */
 	  case '-':
 	  case '.':
-	    /*  Check for 'E' (indicates float value)  */
+	    /*  Check for 'E' or '.' (indicates float value)  */
 	    if ( (strchr (keywords->value, 'E') == NULL) &&
-		(strchr (keywords->value, '.') == NULL) )
+		 (strchr (keywords->value, '.') == NULL) )
 	    {
 		/*  Integer  */
 		value[0] = ex_int (keywords->value, &ptr);
@@ -1215,11 +1332,11 @@ static flag process_keywords (struct keyword_type *keywords,
 		continue;
 	    }
 	    /*  Floating point  */
-	    value[0] = ex_float (keywords->value, &ptr);
+	    (void) sscanf (keywords->value, "%le", value);
 	    value[1] = 0.0;
 	    if ( !ds_put_unique_named_value (multi_desc->headers[0],
 					     &multi_desc->data[0],
-					     keywords->keyword, K_FLOAT,
+					     keywords->keyword, K_DOUBLE,
 					     value, FALSE) ) return (FALSE);
 	    break;
 	}

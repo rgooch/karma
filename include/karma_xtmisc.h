@@ -56,5 +56,11 @@ EXTERN_FUNCTION (void xtmisc_exclusive_popup_cbk,
 EXTERN_FUNCTION (void xtmisc_popdown_cbk,
 		 (Widget w, XtPointer client_data, XtPointer call_data) );
 
+/*  File:  icon.c  */
+EXTERN_FUNCTION (void xtmisc_set_icon,
+		 ( Widget top_level,
+		   void (*icon_func) (Display *display, Pixmap pixmap,
+				      int width, int height) ) );
+
 
 #endif /*  KARMA_XTMISC_H  */

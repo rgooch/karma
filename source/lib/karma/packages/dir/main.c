@@ -3,7 +3,7 @@
 
     This code provides enhanced directory scanning routines.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -50,7 +50,16 @@
 
     Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
 
-    Last updated by Richard Gooch   6-MAY-1995: Placate gcc -Wall
+    Updated by      Richard Gooch   6-MAY-1995: Placate gcc -Wall
+
+    Updated by      Richard Gooch   7-APR-1996: Changed to new documentation
+  format.
+
+    Updated by      Richard Gooch   3-JUN-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   24-JUN-1996: Added <dirname> field to
+  KFileInfo structure.
 
 
 */
@@ -58,6 +67,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -106,9 +116,9 @@ struct dir_type
 
 /*PUBLIC_FUNCTION*/
 KDir dir_open (CONST char *dirname)
-/*  This routine will open a directory for reading (scanning).
-    The directory name must be pointed to by  dirname  .
-    The routine routines returns a KDir object on success, else it returns NULL
+/*  [SUMMARY] Open a directory for reading (scanning).
+    <dirname> The directory name.
+    [RETURNS] A KDir object on success, else NULL.
 */
 {
     KDir dir;
@@ -135,25 +145,20 @@ KDir dir_open (CONST char *dirname)
     }
     dir->magic_number = MAGIC_NUMBER;
     dir->dirp = dirp;
+    dir->file.dirname = dir->dirname;
     return (dir);
 }   /*  End Function dir_open  */
 
 /*PUBLIC_FUNCTION*/
-KFileInfo *dir_read (dir, skip_control)
-/*  This routine will read (scan) a directory for files.
-    The directory object must be given by  dir  .
-    The value of  skip_control  determines whether or not to skip the special
-    files: "." and "..". Legal values are:
-        KDIR_DOT                  Pass ".", skip ".."
-	KDIR_DOTDOT               Pass "..", skip "."
-	KDIR_DOT_AND_DOTDOT       Pass "." and ".."
-	KDIR_NO_DOTS              Skip "." and ".."
-    The routine routines returns a pointer to a  KFileInfo  structure on
-    success, else it returns NULL. The data in this structure is valid until
-    the next call to  dir_read  or  dir_close  with this directory object.
+KFileInfo *dir_read (KDir dir, unsigned int skip_control)
+/*  [SUMMARY] Read (scan) a directory for files.
+    <dir> The directory object.
+    <skip_control> Determines whether or not to skip the special files: "."
+    and "..". See [<DIR_SKIP_VALUES>] for a list of legal values.
+    [RETURNS] A pointer to a <<KFileInfo>> structure on success, else NULL.
+    The data in this structure is valid until the next call to [<dir_read>] or
+    [<dir_close>] with this directory object.
 */
-KDir dir;
-unsigned int skip_control;
 {
     flag scan_another = TRUE;
     flag other = TRUE;
@@ -387,11 +392,11 @@ unsigned int skip_control;
 }   /*  End Function dir_read  */
 
 /*PUBLIC_FUNCTION*/
-void dir_close (dir)
-/*  This routine will close a directory.
-    The directory object must be given by  dir  .
+void dir_close (KDir dir)
+/*  [SUMMARY] Close a directory.
+    <dir> The directory object.
+    [RETURNS] Nothing.
 */
-KDir dir;
 {
     extern char *sys_errlist[];
     static char function_name[] = "dir_close";

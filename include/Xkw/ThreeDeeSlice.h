@@ -12,6 +12,7 @@
  canvasVisual            Visual            Pointer         CopyFromParent
  verbose                 Verbose           Bool            False
  XkwNcursorCallback      Callback          Callback        NULL
+ XkwNcursorPosition      CursorPosition    Kcoord_3d       NULL
 
 */    
 /*----------------------------------------------------------------------*/
@@ -42,12 +43,14 @@ typedef struct _ThreeDeeSliceRec *ThreeDeeSliceWidget;
 #define XkwNcanvasVisual "canvasVisual"
 #define XkwNverbose "verbose"
 #define XkwNcursorCallback "cursorCallback"
+#define XkwNcursorPosition "cursorPosition"
 
 #define XkwCIarray "Iarray"
 #define XkwCKarmaColourmap "KarmaColourmap"
 #define XkwCMinPtr "MinPtr"
 #define XkwCMaxPtr "MaxPtr"
 #define XkwCVerbose "Verbose"
+#define XkwCCursorPosition "CursorPosition"
 
 EXTERN_FUNCTION (void XkwThreeDeeSlicePrecompute,
 		 (Widget w, XtPointer client_data, XtPointer call_data) );

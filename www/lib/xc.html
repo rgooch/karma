@@ -1,0 +1,99 @@
+<html><head><title>Package: xc</title></head> 
+<body>
+<center><h1>The "xc" Package</h1></center>    These routines are meant to provide an abstracted interface to X displays
+    and colourmaps, used in the <a href=kcmap.html#kcmap>kcmap</a> routines.
+<p><b>Library:</b> karmaX11
+<br><b>Link With:</b> -lkarmaX11
+<br><p><a name=xc></a></table><h4>Functions</h4><table><tr><td><a href=xc.html#xc_get_dpy_handle>xc_get_dpy_handle</a></td><td>Generate a display handle for later use.
+</td></tr>
+<tr><td><a href=xc.html#xc_alloc_colours>xc_alloc_colours</a></td><td>Allocate colourcells.
+</td></tr>
+<tr><td><a href=xc.html#xc_free_colours>xc_free_colours</a></td><td>Free a number of colourcells in a low level colourmap.
+</td></tr>
+<tr><td><a href=xc.html#xc_store_colours>xc_store_colours</a></td><td>Store colours into a low level colourmap.
+</td></tr>
+<tr><td><a href=xc.html#xc_get_location>xc_get_location</a></td><td>Determine the location of the graphics display being used.
+</td></tr>
+<tr><td><a href=xc.html#xc_get_cmap>xc_get_cmap</a></td><td>Get the X11 colourmap for a display handle.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=xc_get_dpy_handle></a> Kdisplay
+ <b>xc_get_dpy_handle</b><i>    (Display *display, Colormap cmap)
+</i><br><p>    Generate a display handle for later use.
+<p><b>Parameters:</b><ul><li><i>display :</i> 
+    The X display.
+<br><li><i>cmap :</i> 
+    The X colourmap ID.
+<br></ul><b>Returns:</b>     A pointer to the display handle on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=xc_alloc_colours></a> unsigned int
+ <b>xc_alloc_colours</b><i>    (unsigned int num_cells,
+			       unsigned long *pixel_values,
+			       unsigned int min_cells, Kdisplay dpy_handle)
+</i><br><p>    This routine will allocate a number of colourcells in a low level
+    colourmap (e.g. using the Xlib routine XAllocColorCells).
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colourcells to allocate.
+<br><li><i>pixel_values :</i> 
+    A pointer to the array where the pixel values allocated will
+    be written.
+<br><li><i>min_cells :</i> 
+    The minimum number of colourcells to allocate. The routine will
+    try to allocate at least this number of colourcells.
+<br><li><i>dpy_handle :</i> 
+    The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+<br></ul><b>Returns:</b>     The number of colourcells allocated.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=xc_free_colours></a> void
+ <b>xc_free_colours</b><i>    (unsigned int num_cells, unsigned long *pixel_values,
+		      Kdisplay dpy_handle)
+</i><br><p>    Free a number of colourcells in a low level colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colourcells to free.
+<br><li><i>pixel_values :</i> 
+    The array of pixel values (colourcells) to free.
+<br><li><i>dpy_handle :</i> 
+    The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=xc_store_colours></a> void
+ <b>xc_store_colours</b><i>    (unsigned int num_cells, unsigned long *pixel_values,
+		       unsigned short *reds, unsigned short *greens,
+		       unsigned short *blues, unsigned int stride,
+		       Kdisplay dpy_handle)
+</i><br><p>    Store colours into a low level colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colourcells to store.
+<br><li><i>pixel_values :</i> 
+    The array of pixel values.
+<br><li><i>reds :</i> 
+    The array of red intensity values.
+<br><li><i>greens :</i> 
+    The array of green intensity values.
+<br><li><i>blues :</i> 
+    The array of blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values in each
+    array.
+<br><li><i>dpy_handle :</i> 
+    The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=xc_get_location></a> void
+ <b>xc_get_location</b><i>    (Kdisplay dpy_handle, unsigned long *serv_hostaddr,
+		      unsigned long *serv_display_num)
+</i><br><p>    Determine the location of the graphics display being used.
+<p><b>Parameters:</b><ul><li><i>dpy_handle :</i> 
+    The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+<br><li><i>serv_hostaddr :</i> 
+    The Internet address of the host on which the display is
+    running will be written here.
+<br><li><i>serv_display_num :</i> 
+    The number of the display will be written here.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=xc_get_cmap></a> Colormap
+ <b>xc_get_cmap</b><i>    (Kdisplay dpy_handle)
+</i><br><p>    Get the X11 colourmap for a display handle.
+<p><b>Parameters:</b><ul><li><i>dpy_handle :</i> 
+    The display handle.
+<br></ul><b>Returns:</b>     The X11 colourmap.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

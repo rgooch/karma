@@ -3,7 +3,7 @@
 
     This code provides memory allocation routines which check for array overrun
 
-    Copyright (C) 1994,1995  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -66,8 +66,14 @@
 
     Updated by      Richard Gooch   9-JUN-1995: Attempt to fix for crayPVP.
 
-    Last updated by Richard Gooch   1-JAN-1996: Documented M_ALLOC_FAST
+    Updated by      Richard Gooch   1-JAN-1996: Documented M_ALLOC_FAST
   environment variable.
+
+    Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   5-MAY-1996: Added notification of
+  allocation failure when M_ALLOC_DEBUG is TRUE.
 
 
 */
@@ -170,7 +176,7 @@ char c;
 
 /*PUBLIC_FUNCTION*/
 char *m_alloc (uaddr size)
-/*  [PURPOSE] Allocate Virtual Memory.
+/*  [SUMMARY] Allocate Virtual Memory.
     <size> The number of bytes to allocate.
     [MT-LEVEL] Safe under Solaris 2.
     [RETURNS] A pointer to the memory on success, else NULL.
@@ -211,7 +217,14 @@ char *m_alloc (uaddr size)
     /*  Check fast flag  */
     if ( fast_alloc_required () )
     {
-	return ( CHAR_MALLOC (size) );
+	if ( ( ptr = CHAR_MALLOC (size) ) == NULL )
+	{
+	    if ( !debug_required () ) return (NULL);
+	    (void) fprintf (stderr, "Allocation failure for: %lu bytes\n",
+			    size);
+	    return (NULL);
+	}
+	return (ptr);
     }
     (void) m_verify_memory_integrity (FALSE);
     pad_bytes = MIN_HEAD_SIZE % MIN_BOUNDARY_SIZE;
@@ -250,7 +263,7 @@ char *m_alloc (uaddr size)
 
 /*PUBLIC_FUNCTION*/
 void m_free (char *ptr)
-/*  [PURPOSE] Free Virtual Memory.
+/*  [SUMMARY] Free Virtual Memory.
     <ptr> The start of a previously allocated block of memory to be freed.
     [MT-LEVEL] Safe.
     [RETURNS] Nothing.
@@ -350,6 +363,11 @@ void m_free (char *ptr)
 
 /*PUBLIC_FUNCTION*/
 void m_error_notify (char *function_name, char *purpose)
+/*  [SUMMARY] Print memory error notification message.
+    <function_name> The name of the function requesting the memory.
+    <purpose> The purpose for the memory allocation.
+    [RETURNS] Nothing.
+*/
 {
     (void) fprintf (stderr,
 		    "Error allocating memory for: %s in function: %s\n",
@@ -358,6 +376,11 @@ void m_error_notify (char *function_name, char *purpose)
 
 /*PUBLIC_FUNCTION*/
 void m_abort (char *name, char *reason)
+/*  [SUMMARY] Print memory error notification message and abort.
+    <function_name> The name of the function requesting the memory.
+    <reason> The reason for the memory allocation.
+    [RETURNS] Nothing. The process aborts.
+*/
 {
     static char function_name[] = "m_abort";
 
@@ -380,7 +403,7 @@ void m_abort (char *name, char *reason)
 
 /*PUBLIC_FUNCTION*/
 unsigned int m_verify_memory_integrity (flag force)
-/*  [PURPOSE] This routine will periodically verify memory integrity.
+/*  [SUMMARY] Periodically verify memory integrity.
     <force> If TRUE, the check is forced, else the check is made periodically.
     [MT-LEVEL] Safe.
     [RETURNS] The number of corrupted blocks.

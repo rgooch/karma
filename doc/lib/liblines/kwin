@@ -1,2 +1,0 @@
-/*  Routines to manipulate pixel canvases in a device independent way  */
-/*  Link with:    -lkarmagraphics  */

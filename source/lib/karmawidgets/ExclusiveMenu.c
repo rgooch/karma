@@ -3,7 +3,7 @@
 
     This code provides a simple exclusive menu widget for Xt.
 
-    Copyright (C) 1994,1995  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -38,7 +38,10 @@
     Updated by      Richard Gooch   14-DEC-1994: Removed unneccessary call to
   XtParent in Initialise.
 
-    Last updated by Richard Gooch   4-JAN-1995: Cosmetic changes.
+    Updated by      Richard Gooch   4-JAN-1995: Cosmetic changes.
+
+    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -81,7 +84,6 @@ STATIC_FUNCTION (void Initialise, (Widget request, Widget new) );
 STATIC_FUNCTION (void Destroy, (Widget w) );
 STATIC_FUNCTION (Boolean SetValues,
 		 (Widget current, Widget request, Widget new) );
-STATIC_FUNCTION (void ConstraintInitialise, (Widget request, Widget new) );
 STATIC_FUNCTION (void item_cbk, (Widget w, XtPointer client_data,
 				 XtPointer call_data) );
 
@@ -171,7 +173,7 @@ WidgetClass exclusiveMenuWidgetClass = (WidgetClass) &exclusiveMenuClassRec;
 static void Initialise (Widget Request, Widget New)
 {
     int count, width, tmp;
-    ExclusiveMenuWidget request = (ExclusiveMenuWidget) Request;
+    /*ExclusiveMenuWidget request = (ExclusiveMenuWidget) Request;*/
     ExclusiveMenuWidget new = (ExclusiveMenuWidget) New;
     Widget menu, menu_entry;
     char **names;
@@ -231,9 +233,9 @@ static void Destroy (Widget W)
 
 static Boolean SetValues (Widget Current, Widget Request, Widget New)
 {
-    ExclusiveMenuWidget current = (ExclusiveMenuWidget) Current;
-    ExclusiveMenuWidget request = (ExclusiveMenuWidget) Request;
-    ExclusiveMenuWidget new = (ExclusiveMenuWidget) New;
+    /*ExclusiveMenuWidget current = (ExclusiveMenuWidget) Current;
+      ExclusiveMenuWidget request = (ExclusiveMenuWidget) Request;
+      ExclusiveMenuWidget new = (ExclusiveMenuWidget) New;*/
 
     return True;
 }   /*  End Function SetValues  */

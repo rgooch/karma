@@ -1,0 +1,3 @@
+$SUMMARY          Routines to interface with PGP
+$PURPOSE
+    These routines are meant to provide a simple interface to PGP.

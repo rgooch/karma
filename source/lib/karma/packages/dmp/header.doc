@@ -1,0 +1,4 @@
+$SUMMARY          Routines to dump an ASCII representation of a data structure
+$PURPOSE
+    These routines are meant to provide a mechanism for writing the recursive,
+    heirarchical data structure to a file in an ASCII (human readable) format.

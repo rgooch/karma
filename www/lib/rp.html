@@ -1,0 +1,123 @@
+<html><head><title>Package: rp</title></head> 
+<body>
+<center><h1>The "rp" Package</h1></center>    These routines are meant to provide management of cryptographically strong
+    random pools of bytes. Partially random data (entropy) may be added and
+    extracted from a pool. As data is added, the pool is stirred to randomly
+    distribute the bits. Data extracted from a random pool may be used in the
+    generation of unpredictable (secure) session keys for cryptographic
+    algorithms.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=rp></a></table><h4>Functions</h4><table><tr><td><a href=rp.html#rp_create>rp_create</a></td><td>Create a pool of random bytes.
+</td></tr>
+<tr><td><a href=rp.html#rp_add_bytes>rp_add_bytes</a></td><td>Add bytes (entropy) to a random pool.
+</td></tr>
+<tr><td><a href=rp.html#rp_get_bytes>rp_get_bytes</a></td><td>Get bytes of data from a random pool.
+</td></tr>
+<tr><td><a href=rp.html#rp_destroy>rp_destroy</a></td><td>Destroy a random pool of bytes, erasing all information.
+</td></tr>
+<tr><td><a href=rp.html#rp_destroy_all>rp_destroy_all</a></td><td>Destroy all randpools.
+</td></tr>
+<tr><td><a href=rp.html#rp_add_time_noise>rp_add_time_noise</a></td><td>Add time-based entropy to a randpool.
+</td></tr>
+<tr><td><a href=rp.html#rp_register_destroy_func>rp_register_destroy_func</a></td><td>Register randpool destroy callback.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=rp.html#RP_PROTO_hash_func>RP_PROTO_hash_func</a></td><td>Hash callback.
+</td></tr>
+<tr><td><a href=rp.html#RP_PROTO_destroy_func>RP_PROTO_destroy_func</a></td><td>Destroy callback.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=rp_create></a> RandPool
+ <b>rp_create</b><i>    ( unsigned int size, unsigned int hash_digest_size,
+		    unsigned int hash_block_size, void (*hash_func) () )
+</i><br><p>    This routine will create a random pool of bytes to which random
+    data may be subsequently added or extracted. The pool is initialised with
+    pseudo-random data (which is *not* cryptographically secure). When data is
+    added to the pool, the pool is stirred using a supplied hash function.
+    Bytes extracted from the pool should be cryptographically secure.
+<p><b>Parameters:</b><ul><li><i>size :</i> 
+    The size of the pool.
+<br><li><i>hash_digest_size :</i> 
+    The size of the hash buffer.
+<br><li><i>hash_block_size :</i> 
+    The size of the hash block.
+<br><li><i>hash_func :</i> 
+    The hash function. The prototype function is
+    <a href=rp.html#RP_PROTO_hash_func>RP_PROTO_hash_func</a>.
+<br></ul><b>Returns:</b>     A RandPool object on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=rp_add_bytes></a> void
+ <b>rp_add_bytes</b><i>    (RandPool rp, CONST unsigned char *buf, unsigned int length)
+</i><br><p>    This routine will add bytes of data (entropy) into a pool. The
+    pool is then stirred using it's registered hash function in order to
+    distribute the bits.
+<p><b>Parameters:</b><ul><li><i>rp :</i> 
+    The random pool.
+<br><li><i>buf :</i> 
+    The bytes to add to the pool.
+<br><li><i>length :</i> 
+    The number of bytes to add to the pool.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=rp_get_bytes></a> void
+ <b>rp_get_bytes</b><i>    (RandPool rp, unsigned char *buf, unsigned int length)
+</i><br><p>    Get bytes of data from a random pool.
+<p><b>Parameters:</b><ul><li><i>rp :</i> 
+    The random pool.
+<br><li><i>buf :</i> 
+    The bytes to get from the pool will be written here. These bytes
+    should be random an cryptographically secure.
+<br><li><i>length :</i> 
+    The number of bytes to get from the pool.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=rp_destroy></a> void
+ <b>rp_destroy</b><i>    (RandPool rp)
+</i><br><p>    Destroy a random pool of bytes, erasing all information.
+<p><b>Parameters:</b><ul><li><i>rp :</i> 
+    The random pool.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=rp_destroy_all></a> void
+ <b>rp_destroy_all</b><i>    ()
+</i><br><p>    This routine will destroy all randpools. The routine is meant to
+    be called from the <em>exit(3)</em> function. It should also be called by the
+    application prior to <em>execve(2)</em>.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=rp_add_time_noise></a> void
+ <b>rp_add_time_noise</b><i>    (RandPool rp)
+</i><br><p>    This routine will add bytes of data (entropy) into a pool,
+    derived from the system time. It is suggested that this routine be called
+    by various callback routines to assist in the addition of entropy.
+<p><b>Parameters:</b><ul><li><i>rp :</i> 
+    The random pool.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=rp_register_destroy_func></a> void
+ <b>rp_register_destroy_func</b><i>    (RandPool rp, void (*destroy_func) (),void *info)
+</i><br><p>    This routine will register a routine which should be called when
+    a random pool is destroyed.
+<p><b>Parameters:</b><ul><li><i>rp :</i> 
+    The random pool.
+<br><li><i>destroy_func :</i> 
+    The function which is called when the random pool is
+    destroyed. The prototype function is <a href=rp.html#RP_PROTO_destroy_func>RP_PROTO_destroy_func</a>.
+    Multiple destroy functions may be registered, with the first one registered
+    being the first one called upon destroy.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary information passed to the destroy
+    function. This may be NULL.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=RP_PROTO_hash_func></a> void
+ <b>RP_PROTO_hash_func</b><i>    (unsigned char buffer[hash_digest_size],
+			 CONST unsigned char block[hash_block_size];)
+</i><br><p>    This routine is called when a hash buffer must be scrambled with
+    a block of data.
+<p><b>Parameters:</b><ul><li><i>buffer :</i> 
+    The hash buffer.
+<br><li><i>block :</i> 
+    The block to add to the hash buffer data.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=RP_PROTO_destroy_func></a> void
+ <b>RP_PROTO_destroy_func</b><i>    (RandPool rp, void *info)
+</i><br><p>    This routine is called when a random pool is destroyed.
+<p><b>Parameters:</b><ul><li><i>rp :</i> 
+    The random pool.
+<br><li><i>info :</i> 
+    The arbitrary information pointer.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

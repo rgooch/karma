@@ -3,7 +3,7 @@
 
     This code provides signal blocking routines.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -52,7 +52,10 @@
     Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
 
-    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Last updated by Richard Gooch   13-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -78,14 +81,14 @@ static flag initialised = FALSE;
 static sigset_t blocked_mask;
 
 /*PUBLIC_FUNCTION*/
-void s_block (signal)
-/*  This routine will cause a signal to be blocked until a subsequent call to
-    s_unblock  or  s_unblock_all  .If the signal is already blocked,
-    no action is taken.
-    The signal to block must be given by  signal  .
-    The routine returns nothing.
+void s_block (int signal)
+/*  [SUMMARY] Block a signal.
+    [PURPOSE] This routine will cause a signal to be blocked until a subsequent
+    call to [<s_unblock>] or [<s_unblock_all>]. If the signal is already
+    blocked, no action is taken.
+    <signal> The signal to block.
+    [RETURNS] Nothing.
 */
-int signal;
 {
 #ifdef CAN_FORK
     sigset_t old_mask;
@@ -170,15 +173,15 @@ int signal;
 }   /*  End Function s_block  */
 
 /*PUBLIC_FUNCTION*/
-void s_unblock (signal)
-/*  This routine will cause a signal to be unblocked. If the signal is not
-    already blocked, no action is taken.
-    The signal to unblock must be given by  signal  .
-    Note that the signal will only be unblocked if previously blocked by a call
-    to  s_block  .
-    The routine returns nothing.
+void s_unblock (int signal)
+/*  [SUMMARY] Unblock a signal.
+    [PURPOSE] This routine will cause a signal to be unblocked. If the signal
+    is not already blocked, no action is taken.
+    <signal> The signal to unblock.
+    [NOTE] The signal will only be unblocked if previously blocked by a call
+    to [<s_block>].
+    [RETURNS] Nothing.
 */
-int signal;
 {
 #ifdef CAN_FORK
     sigset_t old_mask;
@@ -274,9 +277,10 @@ int signal;
 
 /*PUBLIC_FUNCTION*/
 void s_unblock_all ()
-/*  This routine will cause all signals blocked by  s_block  to be
+/*  [SUMMARY] Unblock all signals.
+    [PURPOSE] This routine will cause all signals blocked by [<s_block>] to be
     unblocked. If no signals were blocked, no action is taken.
-    The routine returns nothing.
+    [RETURNS] Nothing.
 */
 {
 #ifdef CAN_FORK
@@ -312,12 +316,11 @@ void s_unblock_all ()
 }   /*  End Function s_unblock_all  */
 
 /*PUBLIC_FUNCTION*/
-void *s_ignore (sig)
-/*  This routine will cause a signal to be ignored.
-    The signal to ignore must be given by  sig  .
-    The routine returns the previous signal handler.
+void *s_ignore (int sig)
+/*  [SUMMARY] Cause a signal to be ignored.
+    <sig> The signal to ignore.
+    [RETURNS] The previous signal handler.
 */
-int sig;
 {
 #ifdef CAN_FORK
     extern char *sys_errlist[];

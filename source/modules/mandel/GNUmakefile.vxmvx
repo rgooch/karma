@@ -1,0 +1,55 @@
+CC = $(KARMA_CC)
+LD = $(KARMA_LD)
+# The  -O3  options causes problems, use  -O2  instead
+KOPTIMISE = -O
+CFLAGS = $(KOPTIMISE) -I$(KARMABASE)/include -DOS_$(OS) -DMACHINE_$(MACHINE)
+
+LDFLAGS = $(KOPTIMISE)
+
+vpath %.o
+vpath %.o $(machine_dir)
+
+%.o : %.c
+	$(CC) $(CFLAGS) -c $*.c -o $(machine_dir)/$*.o
+
+$(machine_dir)/%.o : %.c
+	$(CC) $(CFLAGS) -c $*.c -o $(machine_dir)/$*.o
+
+%.o : %.s
+	cc -E -Qoption cpp -B $*.s | grep -v '^#' | grep -v '^[ 	]*$$' > $*.S
+	asm860 -be $*.S -o $(machine_dir)/$*.o -b
+	rm $*.S
+
+$(machine_dir)/%.o : %.s
+	cc -E -Qoption cpp -B $*.s | grep -v '^#' | grep -v '^[ 	]*$$' > $*.S
+	asm860 -be $*.S -o $(machine_dir)/$*.o -b
+	rm $*.S
+
+CLIBS =	$(LIBS)
+FLIBS = $(LIBS)
+
+LIBS =	-L$(KARMALIBPATH) -lkarmavx -lkarma -ltask -lwm  -lm $(OS_LIBS)
+
+
+TARGETS =	$(KARMABINPATH)/mandel
+
+all:	$(TARGETS)	generic_clean
+
+
+MANDEL =	mandel.c	compute_line.c	compute_line_vxmvx.s
+MANDELO =	mandel.o	compute_line.o	compute_line_vxmvx.o
+
+$(KARMABINPATH)/mandel:	$(MANDELO) $(KDEPLIB_KARMA)
+	cd $(machine_dir); $(LD) $(LDFLAGS) -o tmpmandel $(MANDELO) $(CLIBS)
+	install -s $(machine_dir)/tmpmandel $(KARMABINPATH)/mandel
+	chmod u=rwx,go=x $(KARMABINPATH)/mandel
+
+
+depend:
+	makedepend -DMAKEDEPEND -D__$(MACHINE)__ -I$(KARMAINCLUDEPATH) -f$(machine_dir)/depend *.c
+
+
+remove:
+	\rm -f $(TARGETS)
+
+include $(machine_dir)/depend

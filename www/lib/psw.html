@@ -1,0 +1,396 @@
+<html><head><title>Package: psw</title></head> 
+<body>
+<center><h1>The "psw" Package</h1></center>    These routines provide PostScript generation facilities.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=psw></a></table><h4>Functions</h4><table><tr><td><a href=psw.html#psw_va_create>psw_va_create</a></td><td>Create a PostScriptPage object.
+</td></tr>
+<tr><td><a href=psw.html#psw_mono_image>psw_mono_image</a></td><td>Write a monochrome image to a PostScriptPage object.
+</td></tr>
+<tr><td><a href=psw.html#psw_pseudocolour_image>psw_pseudocolour_image</a></td><td>Write a pseudocolour image to a PostScriptPage object.
+</td></tr>
+<tr><td><a href=psw.html#psw_rgb_image>psw_rgb_image</a></td><td>Write a truecolour image to a PostScriptPage object.
+</td></tr>
+<tr><td><a href=psw.html#psw_directcolour_image>psw_directcolour_image</a></td><td>Write a directcolour image to a PostScriptPage object.
+</td></tr>
+<tr><td><a href=psw.html#psw_close>psw_close</a></td><td>Close a PostScriptPage object.
+</td></tr>
+<tr><td><a href=psw.html#psw_finish>psw_finish</a></td><td>Close a PostScriptPage object.
+</td></tr>
+<tr><td><a href=psw.html#psw_rgb_line>psw_rgb_line</a></td><td>Write a colour line to a PostScriptPage object.
+</td></tr>
+<tr><td><a href=psw.html#psw_rgb_polygon>psw_rgb_polygon</a></td><td>Write a colour polygon to a PostScriptPage object.
+</td></tr>
+<tr><td><a href=psw.html#psw_rgb_ellipse>psw_rgb_ellipse</a></td><td>Write a colour ellipse to a PostScriptPage object.
+</td></tr>
+<tr><td><a href=psw.html#psw_rgb_text>psw_rgb_text</a></td><td>Write a colour string to a PostScriptPage object.
+</td></tr>
+<tr><td><a href=psw.html#psw_set_attributes>psw_set_attributes</a></td><td>Set the attributes for a PostScriptPage object.
+</td></tr>
+</table><h4>Tables</h4><table><tr><td><a href=psw.html#PSW_ATTRIBUTES>PSW_ATTRIBUTES</a></td><td>List of attributes for PostScriptPage object
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=psw_va_create></a> PostScriptPage
+ <b>psw_va_create</b><i>    (Channel channel, double hoffset, double voffset,
+			      double hsize, double vsize, flag portrait,
+			      flag eps, ...)
+</i><br><p>    This routine will create a PostScriptPage object ready for
+    writing PostScript commands to. The routine automatically writes the
+    PostScript header.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel to write to.
+<br><li><i>hoffset :</i> 
+    The horizontal offset (in centimeters) of the co-ordinate origin.
+<br><li><i>voffset :</i> 
+    The vertical offset (in centimeters) of the co-ordinate origin.
+<br><li><i>hsize :</i> 
+    The desired horizontal size of the co-ordinate system (in
+    centimeters).
+<br><li><i>vsize :</i> 
+    The desired vertical size of the co-ordinate system (in
+    centimeters).
+<br><li><i>portrait :</i> 
+    If TRUE, objects will be drawn in portrait mode (i.e. the x-axis
+    will be horizontal), else they will be drawn in landscape mode (i.e. the
+    x-axis will be vertical).
+<br><li><i>eps :</i> 
+    If TRUE the file format will be Encapsulated PostScript, else
+    regular PostScript is written.
+<br><li><i>... :</i> 
+    The optional list of parameter attribute-key attribute-value
+    pairs must follow. This list must be terminated with the value
+    PSW_ATT_END. See <a href=psw.html#PSW_ATTRIBUTES>PSW_ATTRIBUTES</a> for a list of defined attributes.
+<br></ul><b>Returns:</b>     A PostScriptPage object on success, else NULL
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     All subsequent objects drawn must lie in the range (0.0, 0.0) to
+    (1.0, 1.0)
+</ul><p><hr> <a name=psw_mono_image></a> flag
+ <b>psw_mono_image</b><i>    (PostScriptPage pspage, CONST unsigned char *image,
+		     unsigned int xlen, unsigned int ylen,
+		     CONST uaddr *xoffsets, CONST uaddr *yoffsets,
+		     CONST unsigned char imap[256],
+		     double xstart, double ystart, double xend, double yend)
+</i><br><p>    Write a monochrome image to a PostScriptPage object.
+<p><b>Parameters:</b><ul><li><i>pspage :</i> 
+    The PostScriptPage object.
+<br><li><i>image :</i> 
+    The image.
+<br><li><i>xlen :</i> 
+    The horizontal size of the image (in pixels).
+<br><li><i>ylen :</i> 
+    The vertical size of the image (in pixels).
+<br><li><i>xoffsets :</i> 
+    The horizontal offset array. If this is NULL, the image data is
+    assumed to be contiguous in memory.
+<br><li><i>yoffsets :</i> 
+    The vertical offset array. If this is NULL, the image data is
+    assumed to be contiguous in memory.
+<br><li><i>imap :</i> 
+    The intensity mapping to use. If this is NULL, a linear mapping is
+    used (0 = black, 255 = white).
+<br><li><i>xstart :</i> 
+    The x starting point (scaled from 0.0 to 1.0).
+<br><li><i>ystart :</i> 
+    The y starting point (scaled from 0.0 to 1.0).
+<br><li><i>xend :</i> 
+    The x ending point (scaled from 0.0 to 1.0).
+<br><li><i>yend :</i> 
+    The y ending point (scaled from 0.0 to 1.0).
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=psw_pseudocolour_image></a> flag
+ <b>psw_pseudocolour_image</b><i>    (PostScriptPage pspage, CONST unsigned char *image,
+			     unsigned int xlen, unsigned int ylen,
+			     CONST uaddr *xoffsets, CONST uaddr *yoffsets,
+			     CONST unsigned char imap_red[256],
+			     CONST unsigned char imap_green[256],
+			     CONST unsigned char imap_blue[256],
+			     double xstart, double ystart,
+			     double xend, double yend)
+</i><br><p>    Write a pseudocolour image to a PostScriptPage object.
+<p><b>Parameters:</b><ul><li><i>pspage :</i> 
+    The PostScriptPage object.
+<br><li><i>image :</i> 
+    The image.
+<br><li><i>xlen :</i> 
+    The horizontal size of the image (in pixels).
+<br><li><i>ylen :</i> 
+    The vertical size of the image (in pixels).
+<br><li><i>xoffsets :</i> 
+    The horizontal offset array. If this is NULL, the image data is
+    assumed to be contiguous in memory.
+<br><li><i>yoffsets :</i> 
+    The vertical offset array. If this is NULL, the image data is
+    assumed to be contiguous in memory.
+<br><li><i>imap_red :</i> 
+    The red component colourmap entries.
+<br><li><i>imap_green :</i> 
+    The green component colourmap entries.
+<br><li><i>imap_blue :</i> 
+    The blue component colourmap entries.
+<br><li><i>xstart :</i> 
+    The x starting point (scaled from 0.0 to 1.0).
+<br><li><i>ystart :</i> 
+    The y starting point (scaled from 0.0 to 1.0).
+<br><li><i>xend :</i> 
+    The x ending point (scaled from 0.0 to 1.0).
+<br><li><i>yend :</i> 
+    The y ending point (scaled from 0.0 to 1.0).
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=psw_rgb_image></a> flag
+ <b>psw_rgb_image</b><i>    (PostScriptPage pspage, CONST unsigned char *image_reds,
+		    CONST unsigned char *image_greens,
+		    CONST unsigned char *image_blues,
+		    unsigned int xlen, unsigned int ylen,
+		    CONST uaddr *xoffsets_red, CONST uaddr *yoffsets_red,
+		    CONST uaddr *xoffsets_green, CONST uaddr *yoffsets_green,
+		    CONST uaddr *xoffsets_blue, CONST uaddr *yoffsets_blue,
+		    uaddr stride,
+		    double xstart, double ystart, double xend, double yend)
+</i><br><p>    Write a truecolour image to a PostScriptPage object.
+<p><b>Parameters:</b><ul><li><i>pspage :</i> 
+    The PostScriptPage object.
+<br><li><i>image_red :</i> 
+    The red component image.
+<br><li><i>image_green :</i> 
+    The green component image.
+<br><li><i>image_blue :</i> 
+    The blue component image.
+<br><li><i>xlen :</i> 
+    The horizontal size of the image (in pixels).
+<br><li><i>ylen :</i> 
+    The vertical size of the image (in pixels).
+<br><li><i>xoffsets_red :</i> 
+    The horizontal offset array for the red component image. If
+    this is NULL, the image data is assumed to be contiguous in memory.
+<br><li><i>yoffsets_red :</i> 
+    The vertical offset array for the red component image. If
+    this is NULL, the image data is assumed to be contiguous in memory.
+<br><li><i>xoffsets_green :</i> 
+    The horizontal offset array for the green component image.
+    If this is NULL, the image data is assumed to be contiguous in memory.
+<br><li><i>yoffsets_green :</i> 
+    The vertical offset array for the green component image.
+    If this is NULL, the image data is assumed to be contiguous in memory.
+<br><li><i>xoffsets_blue :</i> 
+    The horizontal offset array for the blue component image.
+    If this is NULL, the image data is assumed to be contiguous in memory.
+<br><li><i>yoffsets_blue :</i> 
+    The vertical offset array for the blue component image. If
+    this is NULL, the image data is assumed to be contiguous in memory.
+<br><li><i>stride :</i> 
+    The stride of successive component values. This is ignored if
+    both offset arrays are supplied for a component image.
+<br><li><i>xstart :</i> 
+    The x starting point (scaled from 0.0 to 1.0).
+<br><li><i>ystart :</i> 
+    The y starting point (scaled from 0.0 to 1.0).
+<br><li><i>xend :</i> 
+    The x ending point (scaled from 0.0 to 1.0).
+<br><li><i>yend :</i> 
+    The y ending point (scaled from 0.0 to 1.0).
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=psw_directcolour_image></a> flag
+ <b>psw_directcolour_image</b><i>    (PostScriptPage pspage,
+			     CONST unsigned char *image_reds,
+			     CONST unsigned char *image_greens,
+			     CONST unsigned char *image_blues,
+			     unsigned int xlen, unsigned int ylen,
+			     CONST uaddr *xoffsets_red,
+			     CONST uaddr *yoffsets_red,
+			     CONST uaddr *xoffsets_green,
+			     CONST uaddr *yoffsets_green,
+			     CONST uaddr *xoffsets_blue,
+			     CONST uaddr *yoffsets_blue,
+			     uaddr stride,
+			     CONST unsigned char imap_red[256],
+			     CONST unsigned char imap_green[256],
+			     CONST unsigned char imap_blue[256],
+			     double xstart, double ystart,
+			     double xend, double yend)
+</i><br><p>    Write a directcolour image to a PostScriptPage object.
+<p><b>Parameters:</b><ul><li><i>pspage :</i> 
+    The PostScriptPage object.
+<br><li><i>image_red :</i> 
+    The red component image.
+<br><li><i>image_green :</i> 
+    The green component image.
+<br><li><i>image_blue :</i> 
+    The blue component image.
+<br><li><i>xlen :</i> 
+    The horizontal size of the image (in pixels).
+<br><li><i>ylen :</i> 
+    The vertical size of the image (in pixels).
+<br><li><i>xoffsets_red :</i> 
+    The horizontal offset array for the red component image. If
+    this is NULL, the image data is assumed to be contiguous in memory.
+<br><li><i>yoffsets_red :</i> 
+    The vertical offset array for the red component image. If
+    this is NULL, the image data is assumed to be contiguous in memory.
+<br><li><i>xoffsets_green :</i> 
+    The horizontal offset array for the green component image.
+    If this is NULL, the image data is assumed to be contiguous in memory.
+<br><li><i>yoffsets_green :</i> 
+    The vertical offset array for the green component image.
+    If this is NULL, the image data is assumed to be contiguous in memory.
+<br><li><i>xoffsets_blue :</i> 
+    The horizontal offset array for the blue component image.
+    If this is NULL, the image data is assumed to be contiguous in memory.
+<br><li><i>yoffsets_blue :</i> 
+    The vertical offset array for the blue component image. If
+    this is NULL, the image data is assumed to be contiguous in memory.
+<br><li><i>stride :</i> 
+    The stride of successive component values. This is ignored if
+    both offset arrays are supplied for a component image.
+<br><li><i>imap_red :</i> 
+    The red component colourmap entries.
+<br><li><i>imap_green :</i> 
+    The green component colourmap entries.
+<br><li><i>imap_blue :</i> 
+    The blue component colourmap entries.
+<br><li><i>xstart :</i> 
+    The x starting point (scaled from 0.0 to 1.0).
+<br><li><i>ystart :</i> 
+    The y starting point (scaled from 0.0 to 1.0).
+<br><li><i>xend :</i> 
+    The x ending point (scaled from 0.0 to 1.0).
+<br><li><i>yend :</i> 
+    The y ending point (scaled from 0.0 to 1.0).
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=psw_close></a> flag
+ <b>psw_close</b><i>    (PostScriptPage pspage, flag flush, flag close)
+</i><br><p>    This routine will write a tail to a PostScriptPage object and
+    will deallocate the object.
+<p><b>Parameters:</b><ul><li><i>pspage :</i> 
+    The PostScriptPage object.
+<br><li><i>flush :</i> 
+    If TRUE, the underlying channel obect is flushed.
+<br><li><i>close :</i> 
+    If TRUE, the underlying channel obect is closed.
+<br></ul><b>Returns:</b>     TRUE on succes, else FALSE. In either case, the PostScriptPage
+    object is deallocated (and closed if <em>close</em> is TRUE).
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=psw_finish></a> flag
+ <b>psw_finish</b><i>    (PostScriptPage pspage, flag eps, flag flush, flag close)
+</i><br><p>    This routine will write a tail to a PostScriptPage object and
+    will deallocate the object.
+<p><b>Parameters:</b><ul><li><i>pspage :</i> 
+    The PostScriptPage object.
+<br><li><i>eps :</i> 
+    If TRUE the file format should be Encapsulated PostScript, else
+    regular PostScript is written.
+<br><li><i>flush :</i> 
+    If TRUE, the underlying channel obect is flushed.
+<br><li><i>close :</i> 
+    If TRUE, the underlying channel obect is closed.
+<br></ul><b>Returns:</b>     TRUE on succes, else FALSE. In either case, the PostScriptPage
+    object is deallocated (and closed if <em>close</em> is TRUE).
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=psw_rgb_line></a> flag
+ <b>psw_rgb_line</b><i>    (PostScriptPage pspage, double red, double green,double blue,
+		   double xstart, double ystart, double xend, double yend)
+</i><br><p>    Write a colour line to a PostScriptPage object.
+<p><b>Parameters:</b><ul><li><i>pspage :</i> 
+    The PostScriptPage object.
+<br><li><i>red :</i> 
+    The red component value. The range is: 0.0 (dark) to 1.0 (light)
+<br><li><i>green :</i> 
+    The green component value. The range is: 0.0 (dark) to 1.0 (light)
+<br><li><i>blue :</i> 
+    The blue component value. The range is: 0.0 (dark) to 1.0 (light)
+<br><li><i>xstart :</i> 
+    The x starting point (scaled from 0.0 to 1.0).
+<br><li><i>ystart :</i> 
+    The y starting point (scaled from 0.0 to 1.0).
+<br><li><i>xend :</i> 
+    The x ending point (scaled from 0.0 to 1.0).
+<br><li><i>yend :</i> 
+    The y ending point (scaled from 0.0 to 1.0).
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=psw_rgb_polygon></a> flag
+ <b>psw_rgb_polygon</b><i>    (PostScriptPage pspage,
+		      double red, double green, double blue,
+		      CONST double *x_arr, CONST double *y_arr,
+		      unsigned int num_points, flag fill)
+</i><br><p>    Write a colour polygon to a PostScriptPage object.
+<p><b>Parameters:</b><ul><li><i>pspage :</i> 
+    The PostScriptPage object.
+<br><li><i>red :</i> 
+    The red component value. The range is: 0.0 (dark) to 1.0 (light)
+<br><li><i>green :</i> 
+    The green component value. The range is: 0.0 (dark) to 1.0 (light)
+<br><li><i>blue :</i> 
+    The blue component value. The range is: 0.0 (dark) to 1.0 (light)
+<br><li><i>x_arr :</i> 
+    The array of x vertices. This is scaled from 0.0 to 1.0
+<br><li><i>y_arr :</i> 
+    The array of y vertices. This is scaled from 0.0 to 1.0
+<br><li><i>num_points :</i> 
+    The number of vertices.
+<br><li><i>fill :</i> 
+    If TRUE, the polygon is filled.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=psw_rgb_ellipse></a> flag
+ <b>psw_rgb_ellipse</b><i>    (PostScriptPage pspage,
+		      double red, double green, double blue,
+		      double cx, double cy, double rx, double ry, flag fill)
+</i><br><p>    Write a colour ellipse to a PostScriptPage object.
+<p><b>Parameters:</b><ul><li><i>pspage :</i> 
+    The PostScriptPage object.
+<br><li><i>red :</i> 
+    The red component value. The range is: 0.0 (dark) to 1.0 (light)
+<br><li><i>green :</i> 
+    The green component value. The range is: 0.0 (dark) to 1.0 (light)
+<br><li><i>blue :</i> 
+    The blue component value. The range is: 0.0 (dark) to 1.0 (light)
+<br><li><i>cx :</i> 
+    The x centre. This is scaled from 0.0 to 1.0
+<br><li><i>cy :</i> 
+    The y centre. This is scaled from 0.0 to 1.0
+<br><li><i>rx :</i> 
+    The x radius. This is scaled from 0.0 to 1.0
+<br><li><i>ry :</i> 
+    The y radius. This is scaled from 0.0 to 1.0
+<br><li><i>fill :</i> 
+    If TRUE, the ellipse is filled.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=psw_rgb_text></a> flag
+ <b>psw_rgb_text</b><i>    (PostScriptPage pspage, double red, double green,double blue,
+		   CONST char *string, CONST char *fontname,
+		   unsigned int fontsize,
+		   double xstart, double ystart, double angle)
+</i><br><p>    Write a colour string to a PostScriptPage object.
+<p><b>Parameters:</b><ul><li><i>pspage :</i> 
+    The PostScriptPage object.
+<br><li><i>red :</i> 
+    The red component value. The range is: 0.0 (dark) to 1.0 (light)
+<br><li><i>green :</i> 
+    The green component value. The range is: 0.0 (dark) to 1.0 (light)
+<br><li><i>blue :</i> 
+    The blue component value. The range is: 0.0 (dark) to 1.0 (light)
+<br><li><i>string :</i> 
+    The string.
+<br><li><i>fontname :</i> 
+    The fontname to use. If this is NULL, the default font will be
+    used.
+<br><li><i>fontsize :</i> 
+    The size of the font (in millimeters).
+<br><li><i>xstart :</i> 
+    The x starting point (scaled from 0.0 to 1.0).
+<br><li><i>ystart :</i> 
+    The y starting point (scaled from 0.0 to 1.0).
+<br><li><i>angle :</i> 
+    The angle to rotate the text through (in degrees). Positive angles
+    rotate counter-clockwise from horizontal.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=psw_set_attributes></a> flag
+ <b>psw_set_attributes</b><i>    (PostScriptPage pspage, ...)
+</i><br><p>    Set the attributes for a PostScriptPage object.
+<p><b>Parameters:</b><ul><li><i>pspage :</i> 
+    The PostScriptPage object.
+<br><li><i>... :</i> 
+    The optional list of parameter attribute-key attribute-value
+    pairs must follow. This list must be terminated with the value
+    PSW_ATT_END. See <a href=psw.html#PSW_ATTRIBUTES>PSW_ATTRIBUTES</a> for the list of attributes.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Tables</h2></center><hr> <a name=PSW_ATTRIBUTES><b>PSW_ATTRIBUTES</b></a><p> <table><tr><td>Name                        </td><td>Set Type  </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>PSW_ATT_END                 </td><td>          </td><td>End of varargs list     
+</td></tr><tr><td>PSW_ATT_LINEWIDTH_MM        </td><td>double    </td><td>Linewidth in mm
+</td></tr><tr><td>PSW_ATT_LINEWIDTH_RELATIVE  </td><td>double    </td><td>Linewidth scaled to page size
+</table><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

@@ -1,0 +1,4 @@
+$SUMMARY          Routines to process named objects
+$PURPOSE
+    These routines are meant to provide high level routines to process named
+    objects (i.e. disc and connection arrayfiles).

@@ -3,8 +3,24 @@
 # usage: switch-karma  production|experimental
 
 if ("$#argv" != "1") then
-    echo "switch-karma  production|experimental"
+    echo "Usage: switch-karma  production|experimental"
     exit 1
+endif
+
+if ("$?HOSTNAME" == "0") then
+    # Find out hostname: so many ways...
+    if (-x /bin/uname) then
+	setenv HOSTNAME `/bin/uname -n`
+    else if (-x /usr/bin/uname) then
+	setenv HOSTNAME `/usr/bin/uname -n`
+    else if (-x /bin/hostname) then
+	setenv HOSTNAME `/bin/hostname`
+    else if (-x /usr/bin/hostname) then
+	setenv HOSTNAME `/usr/bin/hostname`
+    else
+	echo "I don't know how to find out your hostname. Not another way!"
+	exit 1
+    endif
 endif
 
 if ("$argv[1]" == "production") then
@@ -16,14 +32,14 @@ if ("$argv[1]" == "production") then
 	case "phoenix":
 	    set oldroot = /phoenix/karma
 	    set oldbase = ${oldroot}/${MACHINE_OS}
-	    set newroot = /nfs/applic/karma
+	    set newroot = /applic/karma
 	    set newbase = /usr/local/karma
 	    echo "Using production version of sparc_Solaris Karma"
 	    breaksw
 	case "deepthought":
 	    set oldroot = /disk1/karma
 	    set oldbase = ${oldroot}/${MACHINE_OS}
-	    set newroot = /nfs/applic/karma
+	    set newroot = /applic/karma
 	    set newbase = /usr/local/karma
 	    echo "Using production version of sparc_Solaris Karma"
 	    breaksw
@@ -36,7 +52,7 @@ endif
 if ("$argv[1]" == "experimental") then
     switch ("$HOSTNAME")
 	case "phoenix":
-	    set oldroot = /nfs/applic/karma
+	    set oldroot = /applic/karma
 	    set oldbase = /usr/local/karma
 	    set newroot = /phoenix/karma
 	    set newbase = ${newroot}/${MACHINE_OS}
@@ -47,7 +63,7 @@ if ("$argv[1]" == "experimental") then
 	    echo "Using experimental version of sparc_Solaris Karma"
 	    breaksw
 	case "deepthought":
-	    set oldroot = /nfs/applic/karma
+	    set oldroot = /applic/karma
 	    set oldbase = /usr/local/karma
 	    set newroot = /disk1/karma
 	    set newbase = ${newroot}/${MACHINE_OS}

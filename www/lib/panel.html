@@ -1,0 +1,118 @@
+<html><head><title>Package: panel</title></head> 
+<body>
+<center><h1>The "panel" Package</h1></center>    These routines are meant to provide high level definition and processing of
+    command lines.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=panel></a></table><h4>Functions</h4><table><tr><td><a href=panel.html#panel_create>panel_create</a></td><td>Create a control panel object.
+</td></tr>
+<tr><td><a href=panel.html#panel_create_group>panel_create_group</a></td><td>Create a panel to contain a group.
+</td></tr>
+<tr><td><a href=panel.html#panel_add_item>panel_add_item</a></td><td>Add an item to a panel.
+</td></tr>
+<tr><td><a href=panel.html#panel_push_onto_stack>panel_push_onto_stack</a></td><td>Push a control panel object onto the control panel stack.
+</td></tr>
+<tr><td><a href=panel.html#panel_pop_from_stack>panel_pop_from_stack</a></td><td>Pop last pushed control panel object from control panel stack.
+</td></tr>
+<tr><td><a href=panel.html#panel_process_command_with_stack>panel_process_command_with_stack</a></td><td>Process a command.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=panel.html#PANEL_PROTO_decode_func>PANEL_PROTO_decode_func</a></td><td>Command line decode callback.
+</td></tr>
+</table><h4>Tables</h4><table><tr><td><a href=panel.html#PANEL_ATTRIBUTES>PANEL_ATTRIBUTES</a></td><td>List of attributes for panel item objects
+</td></tr>
+<tr><td><a href=panel.html#PANEL_ITEM_TYPES>PANEL_ITEM_TYPES</a></td><td>List of Karma data types
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=panel_create></a> KControlPanel
+ <b>panel_create</b><i>    (flag blank)
+</i><br><p>    Create a control panel object.
+<p><b>Parameters:</b><ul><li><i>blank :</i> 
+    If TRUE, then the routine will create a blank form, else it will
+    add some internally defined panel items.
+<br></ul><b>Returns:</b>     A KControlPanel object on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=panel_create_group></a> KControlPanel
+ <b>panel_create_group</b><i>    ()
+</i><br><p>    This routine will create a control panel object which is a
+    container for a group of items. Panel items may be added to this panel
+    object, and the panel object itself may be later added as panel item to
+    another panel object (of type PIT_GROUP).
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     A KControlPanel object on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=panel_add_item></a> void
+ <b>panel_add_item</b><i>    (KControlPanel panel, char *name, char *comment,
+		     unsigned int type, void *value_ptr, ...)
+</i><br><p>    This routine will add a panel item to a KControlPanel object.
+    Each panel item has a number of "attributes". First come the "core"
+    attributes, follwed by the optional attributes.
+    Below are the core attributes:
+<p><b>Parameters:</b><ul><li><i>panel :</i> 
+    The control panel to add to.
+<br><li><i>name :</i> 
+    The name of the panel item.
+<br><li><i>comment :</i> 
+    the comment (eg. name of the units: "(km/sec)").
+<br><li><i>type :</i> 
+    The type of the panel item. See <a href=ds.html#DS_KARMA_DATA_TYPES>DS_KARMA_DATA_TYPES</a> and
+    <a href=panel.html#PANEL_ITEM_TYPES>PANEL_ITEM_TYPES</a> for legal values.
+<br><li><i>value_ptr :</i> 
+    A pointer to the panel item data storage.
+<br><li><i>... :</i> 
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with the value PIA_END.
+    See <a href=panel.html#PANEL_ATTRIBUTES>PANEL_ATTRIBUTES</a> for a list of defined attributes.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=panel_push_onto_stack></a> void
+ <b>panel_push_onto_stack</b><i>    (KControlPanel panel)
+</i><br><p>    Push a control panel object onto the control panel stack.
+<p><b>Parameters:</b><ul><li><i>panel :</i> 
+    The control panel.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=panel_pop_from_stack></a> void
+ <b>panel_pop_from_stack</b><i>    ()
+</i><br><p>    Pop last pushed control panel object from control panel stack.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=panel_process_command_with_stack></a> flag
+ <b>panel_process_command_with_stack</b><i>    (char *cmd, flag (*unknown_func) (),
+				       FILE *fp)
+</i><br><p>    This routine will process a command, using the top control panel
+    on the stack to interpret it.
+<p><b>Parameters:</b><ul><li><i>cmd :</i> 
+    The command.
+<br><li><i>unknown_func :</i> 
+    The function that is called when the command is not
+    understood. If this is NULL, then a message is displayed if the command is
+    not understood. The prototype function is <a href=panel.html#PANEL_PROTO_decode_func>PANEL_PROTO_decode_func</a>.
+<br><li><i>fp :</i> 
+    Output messages are directed here.
+<br></ul><b>Returns:</b>     TRUE if more commands should be processed, else FALSE, indicating
+    that the control panel's "exit" command was entered.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=PANEL_PROTO_decode_func></a> flag
+ <b>PANEL_PROTO_decode_func</b><i>    (char *command, FILE *fp)
+</i><br><p>    This function is called whenever a command string is to be
+    processed.
+<p><b>Parameters:</b><ul><li><i>command :</i> 
+    The command string.
+<br><li><i>fp :</i> 
+    The output file.
+<br></ul><b>Returns:</b>     TRUE if more commands should be processed, else FALSE,
+    indicating that the "exit" command was entered.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Tables</h2></center><hr> <a name=PANEL_ATTRIBUTES><b>PANEL_ATTRIBUTES</b></a><p> <table><tr><td>Name                    </td><td>Type            </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>PIA_END                 </td><td>                </td><td>End of varargs list
+</td></tr><tr><td>PIA_NUM_CHOICE_STRINGS  </td><td>unsigned int    </td><td>Number of choice strings
+</td></tr><tr><td>PIA_CHOICE_STRINGS      </td><td>char **         </td><td>Choice strings
+</td></tr><tr><td>PIA_ARRAY_LENGTH        </td><td>unsigned int *  </td><td>Current array length
+</td></tr><tr><td>PIA_ARRAY_MIN_LENGTH    </td><td>unsigned int    </td><td>Minimum array length
+</td></tr><tr><td>PIA_ARRAY_MAX_LENGTH    </td><td>unsigned int    </td><td>Maximum array length
+</td></tr><tr><td>PIA_CHOICE_COMMENTS     </td><td>char **         </td><td>Choice string comments
+</td></tr><tr><td>PIA_MIN_VALUE           </td><td>double          </td><td>Minimum value
+</td></tr><tr><td>PIA_MAX_VALUE           </td><td>double          </td><td>Maximum value
+</td></tr><tr><td>PIA_TOP_OF_PANEL        </td><td>flag            </td><td>Place item at top of panel
+</table><p><hr> <a name=PANEL_ITEM_TYPES><b>PANEL_ITEM_TYPES</b></a><p> <table><tr><td>Name              </td><td>value_ptr type     </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>PIT_FUNCTION      </td><td>void (*) (char *)  </td><td>Execute function
+</td></tr><tr><td>PIT_EXIT_FORM     </td><td>                   </td><td>Exit form
+</td></tr><tr><td>PIT_FLAG          </td><td>flag *             </td><td>Flag type
+</td></tr><tr><td>PIT_CHOICE_INDEX  </td><td>unsigned int *     </td><td>Choice index (requires:
+                                     PIA_NUM_CHOICE_STRINGS and
+                                     PIA_CHOICE_STRINGS)
+</td></tr><tr><td>PIT_GROUP         </td><td>KControlPanel      </td><td>Group item
+</table><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

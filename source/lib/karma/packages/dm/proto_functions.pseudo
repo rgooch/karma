@@ -1,0 +1,58 @@
+/*PROTOTYPE_FUNCTION*/  /*
+flag DM_PROTO_input_func (int fd, void **info)
+    [SUMMARY] Input event callback.
+    [PURPOSE] This routine is called when new input occurs on a descriptor.
+    <fd> The file descriptor.
+    <info> A pointer to the arbitrary information pointer. The pointer
+    written here will persist until the descriptor is unmanaged (or a
+    subsequent callback routine changes it).
+    [RETURNS] TRUE if the descriptor is to remain managed and open, else it
+    returns FALSE (indicating that the descriptor is to be unmanaged and
+    closed). This routine MUST NOT unmanage or close the descriptor.
+    [NOTE] The <<close_func>> will be called if this routine returns FALSE
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void DM_PROTO_close_func (int fd, void *info)
+    [SUMMARY] Close event callback.
+    [PURPOSE] This routine is called when a descriptor closes.
+    <fd> The file descriptor. The descriptor MUST be capable of detecting
+    closure if this routine is supplied (ie. this routine cannot be
+    supplied for docks).
+    <info> The arbitrary pointer for the managed descriptor.
+    [NOTE] This routine MUST NOT unmanage the descriptor. The descriptor
+    will be automatically unmanaged and deleted upon closure (even if no
+    <<close_func>> is specified).
+    [NOTE] Any unread data in the descriptor will be lost upon closure. The
+    call to this function is the last chance to read this data.
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+flag DM_PROTO_output_func (int fd, void **info)
+    [SUMMARY] Output event callback.
+    [PURPOSE] This routine is called when a descriptor becomes ready for
+    writing.
+    <fd> The file descriptor.
+    <info> A pointer to the arbitrary information pointer. The pointer
+    written here will persist until the descriptor is unmanaged (or a
+    subsequent callback routine changes it).
+    [RETURNS] TRUE if the descriptor is to remain managed and open, else it
+    returns FALSE (indicating that the descriptor is to be unmanaged and
+    closed). This routine MUST NOT unmanage or close the descriptor.
+    [NOTE] The <<close_func>> will be called if this routine returns FALSE
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+flag DM_PROTO_exception_func (int fd, void **info)
+    [SUMMARY] Exception event callback.
+    [PURPOSE] This routine is called when an exception occurrs on a descriptor.
+    <fd> The file descriptor.
+    <info> A pointer to the arbitrary information pointer. The pointer
+    written here will persist until the descriptor is unmanaged (or a
+    subsequent callback routine changes it).
+    [RETURNS] TRUE if the descriptor is to remain managed and open, else it
+    returns FALSE (indicating that the descriptor is to be unmanaged and
+    closed). This routine MUST NOT unmanage or close the descriptor.
+    [NOTE] The <<close_func>> will be called if this routine returns FALSE
+*/

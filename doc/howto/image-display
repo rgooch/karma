@@ -85,9 +85,9 @@ A number of routines allow drawing onto a pixel canvas. These routines
 have generic interfaces (i.e. no reference to the graphics system such
 as X). This allows an application to be written that can easily be
 ported to a non-X environment (provided the Karma graphics library
-supports the new graphics system). Note that these drawing routines do
-NOT perform any "clipping". If an object is drawn outside the pixel
-canvas boundaries, it is not necessarily clipped. It is the
+supports the new graphics system). Note that these drawing routines
+generally do NOT perform any "clipping". If an object is drawn outside
+the pixel canvas boundaries, it is not necessarily clipped. It is the
 responsibility of the underlying graphics system (i.e. X) to handle
 this. The reason for this is that it is not my purpose to reinvent X,
 but rather to ease the porting of image display applications to
@@ -244,7 +244,7 @@ a different set of overlay objects is automatically drawn.
 Tutorial:
 ---------
 
-A quite powerful image display tool is <kview_2d>. The power user is
+A quite powerful image display tool is <kview>. The power user is
 urged to use this module and then read the source code to see how much
 functionality may be packed into so few lines of code, using the image
 display support in the Karma library.
@@ -321,9 +321,10 @@ iarray array;
     /*  Initialise colourmap  */
     XGetWindowAttributes (display, win, &window_attributes);
     dpy_handle = xc_get_dpy_handle (display, window_attributes.colormap);
-    kcmap_init (xc_alloc_colours, xc_free_colours, xc_store_colours,
-		xc_get_location);
-    cmap = kcmap_create (DEFAULT_COLOURMAP_NAME, MAX_COLOURS, TRUE,dpy_handle);
+    cmap = kcmap_va_create (DEFAULT_COLOURMAP_NAME, MAX_COLOURS, TRUE,
+			    dpy_handle, xc_alloc_colours, xc_free_colours,
+			    xc_store_colours, xc_get_location,
+			    KCMAP_ATT_END);
     /*  Create the pixel canvas  */
     pixcanvas = kwin_create_x (display, window, gc,
 			       0, 0, win_width, win_height);
@@ -336,15 +337,15 @@ iarray array;
     win_scale.blank_pixel = BlackPixel (display, DefaultScreen (display));
     worldcanvas = canvas_create (pixcanvas, cmap, &win_scale);
     /*  Create the viewable image from the Intelligent Array  */
-    viewimg_init (image_worldcanvas);
+    viewimg_init (worldcanvas);
     vimage = viewimg_create_from_iarray (worldcanvas, array, FALSE);
     /*  Make this viewable image active (or else we see nothing)  */
     viewimg_make_active (vimage);
 }   /*  End Function setup_window  */
 
 void process_refresh (win_width, win_height)
-/*  This routine will process a refresh/ resize event on the X window 
-    associated with the pixel canvas.
+/*  This routine will process a refresh/ resize event on an X window and will
+    refresh the associated pixel canvas.
     The window width must be given by  win_width  .
     The window height must be given by  win_height  .
     The routine returns nothing.
@@ -354,6 +355,7 @@ int win_height;
 {
     extern KPixCanvas pixcanvas;
 
+    /*  Cause the pixel canvas to be refreshed  */
     kwin_resize (pixcanvas, FALSE, 0, 0, win_width, win_height);
 }   /*  End Function process_refresh  */
 
@@ -361,7 +363,7 @@ int win_height;
   =========
 
 The following example expands on the previous one by adding mouse
-tracking (ie. the position of the pointer is displayed, as well as the
+tracking (i.e. the position of the pointer is displayed, as well as the
 value of the image data at that point) and dynamic colourmap control.
 
 
@@ -418,15 +420,17 @@ iarray array;
     /*  Initialise colourmap  */
     XGetWindowAttributes (display, win, &window_attributes);
     dpy_handle = xc_get_dpy_handle (display, window_attributes.colormap);
-    kcmap_init (xc_alloc_colours, xc_free_colours, xc_store_colours,
-		xc_get_location);
-    cmap = kcmap_create (DEFAULT_COLOURMAP_NAME, MAX_COLOURS, TRUE,dpy_handle);
+    cmap = kcmap_va_create (DEFAULT_COLOURMAP_NAME, MAX_COLOURS, TRUE,
+			    dpy_handle, xc_alloc_colours, xc_free_colours,
+			    xc_store_colours, xc_get_location,
+			    KCMAP_ATT_END);
     /*  Create the pixel canvas  */
     pixcanvas = kwin_create_x (display, window, gc, 0, 0,win_width,win_height);
     /*  Create the unit world canvas (for colourmap change events)  */
     /*  Initialise the  win_scale  structure  */
     canvas_init_win_scale (&win_scale, K_WIN_SCALE_MAGIC_NUMBER);
     unit_worldcanvas = canvas_create (image_pixcanvas, image_cmap, &win_scale);
+    /*  Register event handler which allows user to change colourmap  */
     canvas_register_position_event_func (unit_worldcanvas,
 					 unit_canvas_position_func,
 					 (void *) cmap);
@@ -439,6 +443,7 @@ iarray array;
     /*  Create the viewable image from the Intelligent Array  */
     viewimg_init (image_worldcanvas);
     vimage = viewimg_create_from_iarray (worldcanvas, array, FALSE);
+    /*  Register event handler which allows user to see image values  */
     viewimg_register_position_event_func (image_worldcanvas,
 					  track_canvas_event,
 					  (void *) image_worldcanvas);
@@ -447,8 +452,8 @@ iarray array;
 }   /*  End Function setup_window  */
 
 void process_refresh (win_width, win_height)
-/*  This routine will process a refresh/ resize event on the X window 
-    associated with the pixel canvas.
+/*  This routine will process a refresh/ resize event on an X window and will
+    refresh the associated pixel canvas.
     The window width must be given by  win_width  .
     The window height must be given by  win_height  .
     The routine returns nothing.
@@ -458,6 +463,7 @@ int win_height;
 {
     extern KPixCanvas pixcanvas;
 
+    /*  Cause the pixel canvas to be refreshed  */
     kwin_resize (pixcanvas, FALSE, 0, 0, win_width, win_height);
 }   /*  End Function process_refresh  */
 
@@ -490,8 +496,8 @@ int y;
       default:
 	return;
     }
-    if (kwin_process_position_event (pixcanvas, x, y, TRUE, event_code,
-				     (void *) NULL) != TRUE)
+    if ( !kwin_process_position_event (pixcanvas, x, y, TRUE, event_code,
+				       (void *) NULL) )
     {
 	(void) fprintf (stderr, "Paint window event not consumed\n");
     }

@@ -1,0 +1,33 @@
+
+$TABLE            PANEL_ATTRIBUTES
+$COLUMNS          3
+$SUMMARY          List of attributes for panel item objects
+$TABLE_DATA
+|.Name                    |,Type            |,Meaning
+|.
+|.PIA_END                 |,                |,End of varargs list
+|.PIA_NUM_CHOICE_STRINGS  |,unsigned int    |,Number of choice strings
+|.PIA_CHOICE_STRINGS      |,char **         |,Choice strings
+|.PIA_ARRAY_LENGTH        |,unsigned int *  |,Current array length
+|.PIA_ARRAY_MIN_LENGTH    |,unsigned int    |,Minimum array length
+|.PIA_ARRAY_MAX_LENGTH    |,unsigned int    |,Maximum array length
+|.PIA_CHOICE_COMMENTS     |,char **         |,Choice string comments
+|.PIA_MIN_VALUE           |,double          |,Minimum value
+|.PIA_MAX_VALUE           |,double          |,Maximum value
+|.PIA_TOP_OF_PANEL        |,flag            |,Place item at top of panel
+$END
+
+$TABLE            PANEL_ITEM_TYPES
+$COLUMNS          3
+$SUMMARY          List of Karma data types
+$TABLE_DATA
+|.Name              |,value_ptr type     |,Meaning
+|.
+|.PIT_FUNCTION      |,void (*) (char *)  |,Execute function
+|.PIT_EXIT_FORM     |,                   |,Exit form
+|.PIT_FLAG          |,flag *             |,Flag type
+|.PIT_CHOICE_INDEX  |,unsigned int *     |,Choice index (requires:
+|~                  |~                   |~PIA_NUM_CHOICE_STRINGS and
+|~                  |~                   |~PIA_CHOICE_STRINGS)
+|.PIT_GROUP         |,KControlPanel      |,Group item
+$END

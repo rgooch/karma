@@ -1,7 +1,0 @@
-rp_create
-rp_add_bytes
-rp_get_bytes
-rp_destroy
-rp_destroy_all
-rp_add_time_noise
-rp_register_destroy_func

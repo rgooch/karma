@@ -1,0 +1,113 @@
+<html><head><title>Package: xi</title></head> 
+<body>
+<center><h1>The "xi" Package</h1></center>    These routines are meant to provide a more generic interface to the X
+    Windows System XImage structures.
+    These routines allow simple creation of standard and shared-memory XImage
+    data structures, as well as the transmission of these to the X server.
+<p><b>Library:</b> karmaX11
+<br><b>Link With:</b> -lkarmaX11
+<br><p><a name=xi></a></table><h4>Functions</h4><table><tr><td><a href=xi.html#xi_check_shared_images_available>xi_check_shared_images_available</a></td><td>Test if shared memory XImages may be use with an X server.
+</td></tr>
+<tr><td><a href=xi.html#xi_create_image>xi_create_image</a></td><td>Create an XImage structure for a window.
+</td></tr>
+<tr><td><a href=xi.html#xi_create_shm_image>xi_create_shm_image</a></td><td>Create a shared-memory XImage structure.
+</td></tr>
+<tr><td><a href=xi.html#xi_destroy_image>xi_destroy_image</a></td><td>Destroy all the memory allocated for an XImage structure.
+</td></tr>
+<tr><td><a href=xi.html#xi_put_image>xi_put_image</a></td><td>Write an XImage structure to a drawable.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=xi_check_shared_images_available></a> flag
+ <b>xi_check_shared_images_available</b><i>    (Display *display)
+</i><br><p>    Test if shared memory XImages may be use with an X server.
+<p><b>Parameters:</b><ul><li><i>display :</i> 
+    The X server.
+<br></ul><b>Returns:</b>     TRUE if shared images are available, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=xi_create_image></a> XImage *
+ <b>xi_create_image</b><i>    (Display *display, Window window,
+			 unsigned int image_width, unsigned int image_height,
+			 flag *share)
+</i><br><p>    Create an XImage structure for a window.
+<p><b>Parameters:</b><ul><li><i>display :</i> 
+    The X display.
+<br><li><i>window :</i> 
+    The X window ID.
+<br><li><i>image_width :</i> 
+    The width of the desired image in pixels.
+<br><li><i>image_height :</i> 
+    The height of the desired image in pixels.
+<br><li><i>share :</i> 
+    If this points to the value TRUE, the routine will attempt to use
+    a shared memory segment for the image data (as per the MIT-Shared Memory
+    Extension to the X Protocol). If the routine did in fact
+    allocate a shared memory segment, the value of TRUE will be written here,
+    else FALSE will be written here.
+<br></ul><b>Returns:</b>     A pointer to the image structure on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     Do NOT request a shared image if the routine
+    <a href=xi.html#xi_shared_images_available>xi_shared_images_available</a> did not return TRUE.
+</ul><p><hr> <a name=xi_create_shm_image></a> XImage *
+ <b>xi_create_shm_image</b><i>    (Display *display, Visual *visual, int depth,
+			     unsigned int width, unsigned int height,
+			     flag quiet)
+</i><br><p>    Create a shared-memory XImage structure.
+<p><b>Parameters:</b><ul><li><i>display :</i> 
+    The X11 display handle.
+<br><li><i>visual :</i> 
+    The Visual pointer.
+<br><li><i>depth :</i> 
+    The depth.
+<br><li><i>width :</i> 
+    The width of the image.
+<br><li><i>height :</i> 
+    The height of the image.
+<br><li><i>quiet :</i> 
+    If TRUE, no error messages are displayed if no shared memory XImage
+    could be created.
+<br></ul><b>Returns:</b>     An XImage pointer on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=xi_destroy_image></a> void
+ <b>xi_destroy_image</b><i>    (Display *display, XImage *ximage, flag shared_memory)
+</i><br><p>    Destroy all the memory allocated for an XImage structure.
+<p><b>Parameters:</b><ul><li><i>display :</i> 
+    The X display.
+<br><li><i>ximage :</i> 
+    A pointer to the XImage structure.
+<br><li><i>shared_memory :</i> 
+    If TRUE, then the routine assumes the XImage data is a
+    shared memory segment, and will attempt to remove it.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=xi_put_image></a> void
+ <b>xi_put_image</b><i>    (Display *display, Drawable drawable, GC gc, XImage *ximage,
+		   int src_x, int src_y, int dest_x, int dest_y,
+		   unsigned int width, unsigned int height, flag shared_memory,
+		   flag wait)
+</i><br><p>    Write an XImage structure to a drawable.
+<p><b>Parameters:</b><ul><li><i>display :</i> 
+    The X display.
+<br><li><i>drawable :</i> 
+    The ID of the drawable.
+<br><li><i>gc :</i> 
+    The graphics context.
+<br><li><i>ximage :</i> 
+    The image structure.
+<br><li><i>src_x :</i> 
+    The horizontal position of the upper left corner of the subimage.
+<br><li><i>src_y :</i> 
+    The vertical position of the upper left corner of the subimage.
+<br><li><i>dest_x :</i> 
+    The horizontal position in the drawable where the upper left
+    corner will be drawn.
+<br><li><i>dest_y :</i> 
+    The vertical position in the drawable where the upper left
+    corner will be drawn.
+<br><li><i>width :</i> 
+    The width of the subimage.
+<br><li><i>height :</i> 
+    The height of the subimage.
+<br><li><i>shared_memory :</i> 
+    If TRUE the routine assmumes the XImage structure resides
+    in a shared memory segment.
+<br><li><i>wait :</i> 
+    If TRUE and the XImage structure resides in a shared memory segment
+    the routine will wait for the X server to copy the contents from the
+    segment.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

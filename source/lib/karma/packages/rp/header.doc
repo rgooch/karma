@@ -1,0 +1,8 @@
+$SUMMARY          Routines to manage cryptographically strong random pools
+$PURPOSE
+    These routines are meant to provide management of cryptographically strong
+    random pools of bytes. Partially random data (entropy) may be added and
+    extracted from a pool. As data is added, the pool is stirred to randomly
+    distribute the bits. Data extracted from a random pool may be used in the
+    generation of unpredictable (secure) session keys for cryptographic
+    algorithms.

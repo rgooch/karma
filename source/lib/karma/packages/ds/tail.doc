@@ -1,0 +1,91 @@
+
+$TABLE            DS_COMPLEX_CONVERSIONS
+$COLUMNS          2
+$SUMMARY          List of complex conversion types
+$TABLE_DATA
+|.Name                         |,Meaning
+|.
+|.CONV_CtoR_REAL               |,Take the real component
+|.CONV_CtoR_IMAG               |,Take the imaginary component
+|.CONV_CtoR_ABS                |,Take the absolute value
+|.CONV_CtoR_SQUARE_ABS         |,Take the square of the absolute value
+|.CONV_CtoR_PHASE              |,Take the phase
+|.CONV_CtoR_CONT_PHASE         |,Take the continuous phase
+|.CONV_CtoR_ENVELOPE           |,Use the positive and negative of the
+                                   absolute value
+$END
+
+$TABLE            DS_KARMA_DATA_TYPES
+$COLUMNS          3
+$SUMMARY          List of Karma data types
+$TABLE_DATA
+|.Name         |,Meaning                              |,C data type
+|.
+|.K_FLOAT      |,Single precision floating point      |,float
+|.K_DOUBLE     |,Double precision floating point      |,double
+|.K_BYTE       |,Signed byte (character)              |,signed char
+|.K_INT        |,Signed integer                       |,signed int
+|.K_SHORT      |,Signed short integer                 |,signed short
+|.K_COMPLEX    |,Complex float                        |,float[2]
+|.K_DCOMPLEX   |,Complex double                       |,double[2]
+|.K_BCOMPLEX   |,Complex signed byte                  |,signed char[2]
+|.K_ICOMPLEX   |,Complex signed integer               |,signed int[2]
+|.K_SCOMPLEX   |,Complex signed short integer         |,signed short[2]
+|.K_LONG       |,Signed long integer                  |,signed long
+|.K_LCOMPLEX   |,Complex signed long integer          |,signed long[2]
+|.K_UBYTE      |,Unsigned byte                        |,unsigned char
+|.K_UINT       |,Unsigned integer                     |,unsigned int
+|.K_USHORT     |,Unsigned short integer               |,unsigned short
+|.K_ULONG      |,Unsigned long integer                |,unsigned long
+|.K_UBCOMPLEX  |,Complex unsigned byte                |,unsigned char[2]
+|.K_UICOMPLEX  |,Complex unsigned integer             |,unsigned int[2]
+|.K_USCOMPLEX  |,Complex unsigned short integer       |,unsigned short[2]
+|.K_ULCOMPLEX  |,Complex unsigned long integer        |,unsigned long[2]
+$END
+
+$TABLE            DS_IDENT_TABLE
+$COLUMNS          2
+$SUMMARY          List of identification codes
+$TABLE_DATA
+|.Name              |,Meaning
+|.
+|.IDENT_NOT_FOUND   |,Name not found
+|.IDENT_GEN_STRUCT  |,Name of general data structure
+|.IDENT_DIMENSION   |,Name of dimension
+|.IDENT_ELEMENT     |,Name of atomic data element
+|.IDENT_MULTIPLE    |,Name has multiple occurrences
+$END
+
+$TABLE            DS_SEARCH_BIASES
+$COLUMNS          2
+$SUMMARY          List of co-ordinate search biases
+$TABLE_DATA
+|.Name                   |,Meaning
+|.
+|.SEARCH_BIAS_LOWER      |,Pick lower co-ordinate
+|.SEARCH_BIAS_CLOSEST    |,Pick closest co-ordinate
+|.SEARCH_BIAS_UPPER      |,Pick upper co-ordinate
+$END
+
+$TABLE            DS_HANDLE_TYPES
+$COLUMNS          2
+$SUMMARY          List of handle types
+$TABLE_DATA
+|.Name                   |,Meaning
+|.
+|.NONE                   |,if the item's parent is a packet.
+|.K_ARRAY                |,if the item's parent is an array.
+|.LISTP                  |,if the item's parent is a linked list header.
+$END
+
+$TABLE            DS_PARENT_TYPES
+$COLUMNS          2
+$SUMMARY          List of parent descriptor types
+$TABLE_DATA
+|.Name              |,Meaning
+|.
+|.NONE              |,parent is a packet descriptor
+|.IDENT_DIMENSION   |,parent is a dimension descriptor
+|.K_ARRAY           |,parent is an array descriptor
+|.LISTP             |,parent is a linked list descriptor
+$END

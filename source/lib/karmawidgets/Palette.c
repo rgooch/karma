@@ -3,7 +3,7 @@
 
     This code provides a colour palette widget for Xt.
 
-    Copyright (C) 1993,1994,1995  Patrick Jordan
+    Copyright (C) 1993-1996  Patrick Jordan
     Incorporated into Karma by permission.
 
     This library is free software; you can redistribute it and/or
@@ -40,8 +40,11 @@
     Updated by      Richard Gooch   26-JUL-1995: Fixed bugs pointed out by SGI
   compiler.
 
-    Last updated by Richard Gooch   28-OCT-1995: Allow Kcolourmap to be
+    Updated by      Richard Gooch   28-OCT-1995: Allow Kcolourmap to be
   specified upon creation and multiple times.
+
+    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -57,6 +60,9 @@
 #include <math.h>
 #include <varargs.h>
 #include <stdio.h>
+
+#include <karma.h>
+#include <karma_c.h>
 
 #include <Xkw/PaletteP.h>
 
@@ -286,7 +292,6 @@ static void Initialise (Widget Request, Widget New)
     XGCValues gcValues;
     XtGCMask value, dynamic, dontcare;
     Display *display;
-    XWindowAttributes window_attributes;
 
     display = XtDisplay (new);
     if (new->palette.dcm == NULL)
@@ -369,12 +374,10 @@ static void Destroy(Widget W)
 
 static void DrawColourBar(Widget W)
 {
-  PaletteWidget w = (PaletteWidget) W;
-  int i,clr;
-  float scale;
-  GC gc;
-  int numpix;
-  unsigned long *pixvals;
+    PaletteWidget w = (PaletteWidget) W;
+    int i,clr;
+    int numpix;
+    unsigned long *pixvals;
 
   if (!XtIsRealized(W))
     return;
@@ -442,10 +445,9 @@ static void Redisplay(Widget W,XEvent *event,Region region)
 static Boolean SetValues(Widget Current,Widget Request,Widget New)
 {
     PaletteWidget current = (PaletteWidget) Current;
-    PaletteWidget request = (PaletteWidget) Request;
+    /*PaletteWidget request = (PaletteWidget) Request;*/
     PaletteWidget new = (PaletteWidget) New;
     Boolean redisplay = FALSE;
-    Display *display = XtDisplay(new);
     Boolean newErase = FALSE;
     XGCValues eraseGCValues, gcVal;
     int eraseMask = 0;
@@ -555,12 +557,11 @@ static void Set(Widget W,XEvent *event,String *argv,int *argc)
 
 static void Drag(Widget W,XMotionEvent *xme)
 {
-  PaletteWidget w = (PaletteWidget) W;
-  XButtonEvent xe;
+    XButtonEvent xe;
 
-  xe.type = ButtonPress;
-  xe.x = xme->x;
-  xe.y = xme->y;
+    xe.type = ButtonPress;
+    xe.x = xme->x;
+    xe.y = xme->y;
 
-  Set(W, (XEvent *)&xe, NULL, NULL);
+    Set (W, (XEvent *) &xe, NULL, NULL);
 }

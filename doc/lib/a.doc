@@ -1,41 +1,50 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the a_ package of routines in the Karma library.
-
+$PACKAGE          a
+$SUMMARY          Routines to print general error messages
+$PURPOSE
     These routines are meant to provide an easy way of printing error messages
     prior to function and process termination.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
+$FUNCTION         a_print_abort
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    ()
+$SUMMARY          Print an abort message.
+$PURPOSE
+    This routine will print the message "Aborting.\n" to the standard
+    error and will then abort the process.
+$RETURNS
+    The routine does not return. The process is aborted.
+$END
 
-    Written by		Richard Gooch	2-Jan-1995
+$FUNCTION         a_prog_bug
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (char *function_name)
+$SUMMARY          Print a bug message.
+$PURPOSE
+    This routine will print an error message to the standard error
+    indicating that a bug occurred.
+$PARAMETER        function_name :
+    The name of the function in which the bug was noted.
+$RETURNS
+    The routine does not return. The process is aborted.
+$END
 
-    Last updated by	Richard Gooch	2-Jan-1995
-
-
-*/
-
-void a_print_abort ()
-/*  This routine will print the message "Aborting.\n" to the standard output
-    and will then abort the process.
-    The routine does not return.
-*/
-/*---------------------------------------------------------------------------*/
-
-void a_prog_bug (function_name)
-/*  This routine will print an error message to the standard error indicating
-    that a bug occurred.
-    The name of the function in which the bug was noted must be pointed to by
-    function_name  .
-    The routine returns nothing. The process is aborted.
-*/
-char *function_name;
-/*---------------------------------------------------------------------------*/
-
-void a_func_abort (function_name, reason)
-/*  This routine will print an error message to the standard error indicating
-    that a function is terminating abnormally.
-    The name of the function must be pointed to by  function_name  .
-    The reason for the function aborting must be pointed to by  reason  .
-    The routine returns nothing.
-*/
-char *function_name;
-char *reason;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         a_func_abort
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (char *function_name, char *reason)
+$SUMMARY          Print a warning message.
+$PURPOSE
+    This routine will print an error message to the standard error
+    indicating that a function is terminating abnormally.
+$PARAMETER        function_name :
+    The name of the function.
+$PARAMETER        reason :
+    The reason for the function aborting.
+$RETURNS
+    Nothing.
+$END

@@ -4,14 +4,19 @@ Widget Documentation
 ------------------------------------------------------------------------
 
 Name: Value
-Date: 8-OCT-1995
+Class name: valueWidgetClass
+Superclass: formWidgetClass
+Date: 5-MAY-1996
 Author: Richard Gooch (rgooch@atnf.csiro.au)
 
 ------------------------------------------------------------------------
 
 The Value widget implements a simple value control. It allows the user
 to increment or decrement an integer value. The integer value is
-displayed and dynamically updated. It contains 4 buttons:
+displayed and dynamically updated. The programmer interface to this
+widget is similar to the SimpleSlider widget, but looks quite
+different (not as nice).
+The value may be manipulated by pressing one of 4 buttons:
 
 <<	Decrement fast (10x faster than the "<" button)
 <	Decrement

@@ -3,7 +3,7 @@
 
     This code provides routines to put data into Karma data structures.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -56,9 +56,14 @@
     Updated by      Richard Gooch   5-JUN-1995: Added code to cope with
   misaligned data accesses on sensitive platforms.
 
-    Last updated by Richard Gooch   9-JUN-1995: Explicitly declared integer
+    Updated by      Richard Gooch   9-JUN-1995: Explicitly declared integer
   data types to be signed: crayPVP does not have compile switch to treat all
   "char" types as signed.
+
+    Updated by      Richard Gooch   9-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   6-JUN-1996: Write 0 to K_UBYTE for blanks.
 
 
 */
@@ -72,16 +77,13 @@
 
 
 /*PUBLIC_FUNCTION*/
-char *ds_put_element (output, type, input)
-/*  [PURPOSE] This routine will write out an element of data.
+char *ds_put_element (char *output, unsigned int type, double input[2])
+/*  [SUMMARY] Write out an element of data.
     <output> A pointer to the output storage.
     <type> The type of the element to be written.
     <input> The input data.
     [RETURNS] The address of the next element on success, else NULL.
 */
-char *output;
-unsigned int type;
-double *input;
 {
     int datum_size;
     double toobig = TOOBIG;
@@ -164,7 +166,8 @@ double *input;
 	*( (signed long *) out_ptr + 1 ) = input[1];
 	break;
       case K_UBYTE:
-	*(unsigned char *) out_ptr = input[0];
+	if (input[0] >= toobig) *(unsigned char *) out_ptr = 0;
+	else *(unsigned char *) out_ptr = input[0];
 	break;
       case K_UINT:
 	*(unsigned int *) out_ptr = input[0];
@@ -207,23 +210,19 @@ double *input;
 }   /*  End Function ds_put_element  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_put_elements (data,  data_type, data_stride, values, num_values)
-/*  This routine will convert an array of double precision complex values to
-    an array of atomic data.
-    The array of output data must be pointed to by  data  and the data type
-    value must be in  data_type  .
-    The stride of data elements in memory (in bytes) must be given by
-    data_stride  .
-    The data values will be read from the storage pointed to by  values  .
-    The number of data values to convert must be pointed to by  num_values  .
-    The routine returns TRUE if the data was successfully converted,
-    else it returns FALSE.
+flag ds_put_elements (char *data, unsigned int data_type,
+		      unsigned int data_stride, double *values,
+		      unsigned int num_values)
+/*  [SUMMARY] Convert array of double precision complex data to atomic data.
+    [PURPOSE] This routine will convert an array of double precision complex
+    values to an array of atomic data.
+    <data> The array of output data.
+    <data_type> The type of the data.
+    <data_stride> The stride of data elements in memory (in bytes).
+    <values> The data values will be read from here.
+    <num_values> The number of data values to convert.
+    [RETURNS] TRUE if the data was successfully converted, else FALSE.
 */
-char *data;
-unsigned int data_type;
-unsigned int data_stride;
-double *values;
-unsigned int num_values;
 {
     unsigned int count;
     double toobig = TOOBIG;
@@ -362,7 +361,8 @@ unsigned int num_values;
 	for (count = 0; count < num_values;
 	     ++count, data += data_stride, values += 2)
 	{
-	    *(unsigned char *) data = *values;
+	    if (*values >= toobig) *(unsigned char *) data = 0;
+	    else *(unsigned char *) data = *values;
 	}
 	break;
       case K_UINT:
@@ -428,23 +428,19 @@ unsigned int num_values;
 }   /*  End Function ds_put_elements  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_put_element_many_times (data,  data_type, data_stride, value, num_elem)
-/*  This routine will convert and write a double precision complex value to
-    an array of atomic data elements.
-    The array of output data must be pointed to by  data  and the data type
-    value must be in  data_type  .
-    The stride of data elements in memory (in bytes) must be given by
-    data_stride  .
-    The data value will be read from the storage pointed to by  value  .
-    The number of data elements to write to must be pointed to by  num_elem  .
-    The routine returns TRUE if the data was successfully converted,
-    else it returns FALSE.
+flag ds_put_element_many_times (char *data, unsigned int data_type,
+				unsigned int data_stride, double value[2],
+				unsigned int num_elem)
+/*  [SUMMARY] Write a double precision complex value to atomic data many times.
+    [PURPOSE] This routine will convert and write a double precision complex
+    value to an array of atomic data elements.
+    <data> The array of output data.
+    <data_type> The type of the data.
+    <data_stride> The stride of data elements in memory (in bytes).
+    <value> The data value will be read from here.
+    <num_elem> The number of data elements to write.
+    [RETURNS] TRUE if the data was successfully converted, else FALSE.
 */
-char *data;
-unsigned int data_type;
-unsigned int data_stride;
-double *value;
-unsigned int num_elem;
 {
     signed int sir, sii;
     signed long slr, sli;
@@ -593,7 +589,8 @@ unsigned int num_elem;
 	}
 	break;
       case K_UBYTE:
-	uir = *value;
+	if (*value >= toobig) uir = 0;
+	else uir = *value;
 	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
 	    *(unsigned char *) data = uir;
@@ -666,19 +663,15 @@ unsigned int num_elem;
 }   /*  End Function ds_put_element_many_times  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_put_named_element (pack_desc, packet, name, value)
-/*  This routine will write a named element into a specified packet.
-    The packet descriptor must be pointed to by  pack_desc  .
-    The packet which is described by  pack_desc  must be pointed to by
-    packet  .
-    The name of the element must be pointed to by  name  .
-    The value of the data must be pointed to by  value  .
-    The routine returns TRUE on success, else it returns FALSE.
+flag ds_put_named_element (packet_desc *pack_desc, char *packet,
+			   CONST char *name, double value[2])
+/*  [SUMMARY] Update a named element in a specified packet.
+    <pack_desc> The packet descriptor.
+    <packet> The packet.
+    <name> The name of the element to update.
+    <value> The value of the data.
+    [RETURNS] TRUE on success, else FALSE.
 */
-packet_desc *pack_desc;
-char *packet;
-CONST char *name;
-double *value;
 {
     unsigned int elem_index;
 

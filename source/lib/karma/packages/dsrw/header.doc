@@ -1,0 +1,7 @@
+$SUMMARY          Routines to read and write a data structure from/to channels
+$PURPOSE
+    These routines are meant to provide a mechanism to read and write the
+    recursive, heirarchical data structure supported in Karma from and to
+    open channels.
+    The use of these routines is NOT recommended. The <-dsxfr-> routines are
+    the preferred means of transferring data structures.

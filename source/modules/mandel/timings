@@ -1,0 +1,75 @@
+Paremeters:
+num_iterations      1000                #number
+output              ""                  #filename
+x_min               -2.000000e+00       #co-ordinate
+x_max               2.000000e+00        #co-ordinate
+x_pixels            512                 #number
+y_min               -2.000000e+00       #co-ordinate
+y_max               2.000000e+00        #co-ordinate
+y_pixels            512                 #number
+
+alpha 21164@266MHz 2M cache (siamang):
+Realtime: 2088 ms	CPUtime MFLOPS: 110	realtime MFLOPS: 109
+
+Sparc Ultra 170E (cc -fast -xO5):
+Realtime: 2271 ms				realtime MFLOPS: 101
+
+Sparc Ultra 140:
+Realtime: 2490 ms				realtime MFLOPS: 92
+
+Sparc 10 HyperSPARC150 (SunOS 4.1.4):
+Realtime: 2630 ms				realtime MFLOPS: 87
+
+Sparc 20 HyperSPARC150:
+Realtime: 2719 ms				realtime MFLOPS: 84
+
+PentiumPro/180, EDO RAM:
+Realtime: 2907 ms	CPUtime MFLOPS: 78	realtime MFLOPS: 78
+
+Dec alpha (kaputar):
+Realtime: 3100 ms	CPUtime MFLOPS: 74	realtime MFLOPS: 74
+
+Sparc 4/670 HyperSPARC90:
+Realtime: 4384 ms                               realtime MFLOPS: 52
+
+hp9000/755:
+Realtime: 4406 ms				realtime MFLOPS: 52
+
+hp9000/J200:
+Realtime: 4604 ms				realtime MFLOPS: 49
+
+Power Challenge XL/r8000 75 MHz:
+Realtime: 5613 ms       CPUtime MFLOPS: 41      realtime MFLOPS: 40
+
+P120/256 kByte L2 cache:
+Realtime: 6835 ms       CPUtime MFLOPS: 33      realtime MFLOPS: 33
+
+P100/512 kByte L2 cache:
+Realtime: 8180 ms       CPUtime MFLOPS: 28      realtime MFLOPS: 28
+
+P100/256 kByte L2 cache:
+Realtime: 8311 ms       CPUtime MFLOPS: 27      realtime MFLOPS: 27
+
+Sparc 10/51:
+Realtime: 9803 ms       CPUtime MFLOPS: 23      realtime MFLOPS: 23
+
+Sparc 5/110:
+Realtime: 9733 ms				realtime MFLOPS: 23
+
+Sparc 5/85:
+Realtime: 12619 ms				realtime MFLOPS: 18
+
+Sparc 2/Weitek:
+Realtime: 12983 ms      CPUtime MFLOPS: 18      realtime MFLOPS: 17
+
+hp9000/715-33:
+Realtime: 14060 ms				realtime MFLOPS: 16
+
+Cyrix 5x86/100 Laptop:
+Realtime: 37587 ms	CPUtime: 37580 ms	realtime MFLOPS: 6
+
+Sparc IPC:
+Realtime: 52734 ms      CPUtime MFLOPS: 4       realtime MFLOPS: 4
+
+486DX2-66/256 kBytes L2 cache:
+Realtime: 54473 ms      CPUtime MFLOPS: 4       realtime MFLOPS: 4

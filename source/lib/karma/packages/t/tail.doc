@@ -1,0 +1,14 @@
+
+$TABLE            T_FFT_STATUS
+$COLUMNS          2
+$SUMMARY          List of FFT status values
+$TABLE_DATA
+|.Name                              |,Meaning
+|.
+|.KARMA_FFT_OK                      |,Transform successful
+|.KARMA_FFT_BAD_LENGTH              |,Bad length supplied
+|.KARMA_FFT_BAD_TYPE                |,Bad data type
+|.KARMA_FFT_ALLOC_ERROR             |,Internal allocation error
+|.KARMA_FFT_METHOD_NOT_AVAILABLE    |,Method not available
+|.KARMA_FFT_BAD_STRIDE              |,Bad stride
+$END

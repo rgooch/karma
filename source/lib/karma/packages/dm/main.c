@@ -3,7 +3,7 @@
 
     This code provides file descriptor Management routines.
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -30,12 +30,17 @@
 
     Written by      Richard Gooch   3-OCT-1995
 
-    Last updated by Richard Gooch   3-OCT-1995
+    Updated by      Richard Gooch   7-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   3-JUN-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
 #include <stdio.h>
 #include <ctype.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <errno.h>
 #include <os.h>
@@ -87,7 +92,8 @@ STATIC_FUNCTION (void close_fd, (struct managed_fd_type *entry) );
 flag dm_manage ( int fd, void *info, flag (*input_func) (),
 		void (*close_func) (), flag (*output_func) (),
 		flag (*exception_func) () )
-/*  [PURPOSE] This routine will manage a file descriptor for activity by
+/*  [SUMMARY] Manage a file descriptor for events.
+    [PURPOSE] This routine will manage a file descriptor for activity by
     registering callback routines. Only one set of callbacks may be registered
     per file descriptor.
     <fd> The file descriptor to manage.
@@ -95,71 +101,16 @@ flag dm_manage ( int fd, void *info, flag (*input_func) (),
     managed descriptor. This pointer may be modified by the callback routines.
     <input_func> The routine which is called when new input occurrs on the
     descriptor. If this is NULL, no callback routine is installed. The
-    interface to this routine is as follows:
-    [<pre>]
-    flag input_func (int fd, void **info)
-    *   [PURPOSE] This routine is called when new input occurs on a descriptor.
-        <fd> The file descriptor.
-	<info> A pointer to the arbitrary information pointer. The pointer
-	written here will persist until the descriptor is unmanaged (or a
-	subsequent callback routine changes it).
-	[RETURNS] TRUE if the descriptor is to remain managed and open, else it
-	returns FALSE (indicating that the descriptor is to be unmanaged and
-	closed). This routine MUST NOT unmanage or close the descriptor.
-	[NOTE] The <<close_func>> will be called if this routine returns FALSE
-    *
-    [</pre>]
+    prototype function is [<DM_PROTO_input_func>].
     <close_func> The routine which is called when the descriptor closes. If
-    this is NULL, no callback routine is installed. The interface to this
-    routine is as follows:
-    [<pre>]
-    void close_func (int fd, void *info)
-    *   [PURPOSE] This routine is called when a descriptor closes.
-        <fd> The file descriptor. The descriptor MUST be capable of detecting
-	closure if this routine is supplied (ie. this routine cannot be
-	supplied for docks).
-	<info> The arbitrary pointer for the managed descriptor.
-	[NOTE] This routine MUST NOT unmanage the descriptor. The descriptor
-	will be automatically unmanaged and deleted upon closure (even if no
-	<<close_func>> is specified).
-	[NOTE] Any unread data in the descriptor will be lost upon closure. The
-	call to this function is the last chance to read this data.
-	[RETURNS] Nothing.
-    *
-    [</pre>]
+    this is NULL, no callback routine is installed. The prototype function is
+    [<DM_PROTO_close_func>].
     <output_func> The routine which is called when the descriptor becomes ready
     for output. If this is NULL, no callback routine is installed. The
-    interface to this routine is as follows:
-    [<pre>]
-    flag output_func (int fd, void **info)
-    *   [PURPOSE] This routine is called when a descriptor becomes ready for
-        writing.
-	<fd> The file descriptor.
-	<info> A pointer to the arbitrary information pointer. The pointer
-	written here will persist until the descriptor is unmanaged (or a
-	subsequent callback routine changes it).
-	[RETURNS] TRUE if the descriptor is to remain managed and open, else it
-	returns FALSE (indicating that the descriptor is to be unmanaged and
-	closed). This routine MUST NOT unmanage or close the descriptor.
-	[NOTE] The <<close_func>> will be called if this routine returns FALSE
-    *
-    [</pre>]
+    prototype function is [<DM_PROTO_output_func>].
     <exception_func> The routine which is called when exceptions occurr on the
     descriptor. If this is NULL, no callback routine is installed. The
-    interface to this routine is as follows:
-    [<pre>]
-    flag exception_func (int fd, void **info)
-    *   This routine is called when an exception occurrs on a descriptor.
-	<fd> The file descriptor.
-	<info> A pointer to the arbitrary information pointer. The pointer
-	written here will persist until the descriptor is unmanaged (or a
-	subsequent callback routine changes it).
-	[RETURNS] TRUE if the descriptor is to remain managed and open, else it
-	returns FALSE (indicating that the descriptor is to be unmanaged and
-	closed). This routine MUST NOT unmanage or close the descriptor.
-	[NOTE] The <<close_func>> will be called if this routine returns FALSE
-    *
-    [</pre>]
+    prototype function is [<DM_PROTO_exception_func>].
     [RETURNS] TRUE on success, else FALSE.
 */
 {
@@ -271,9 +222,9 @@ flag dm_manage ( int fd, void *info, flag (*input_func) (),
 
 /*PUBLIC_FUNCTION*/
 void dm_unmanage (int fd)
-/*  [PURPOSE] This routine will terminate the management of a file descriptor
-    for activity. The routine will NOT close the descriptor (nor does it assume
-    the descriptor is open).
+/*  [SUMMARY] Terminate the management of a file descriptor for activity.
+    [NOTE] The routine will NOT close the descriptor (nor does it assume the
+    descriptor is open).
     <fd> The descriptor to unmanage.
     [RETURNS] Nothing.
 */
@@ -313,7 +264,7 @@ void dm_unmanage (int fd)
 
 /*PUBLIC_FUNCTION*/
 void dm_poll (long timeout_ms)
-/*  [PURPOSE] This routine will poll all managed descriptors for any activity.
+/*  [SUMMARY] Poll all managed descriptors for any activity.
     <timeout_ms> The time (in milliseconds) to poll. If this is less than 0
     the routine will poll forever (until some activity occurs or a signal is
     caught).
@@ -565,7 +516,6 @@ static void close_fd (struct managed_fd_type *entry)
     [RETURNS] Nothing.
 */
 {
-    unsigned int type;
     extern char *sys_errlist[];
 /*
     static char function_name[] = "close_fd";

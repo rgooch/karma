@@ -1,0 +1,151 @@
+<html><head><title>Package: vc</title></head> 
+<body>
+<center><h1>The "vc" Package</h1></center>    These routines are meant to provide an abstracted interface to a VX display
+    and colourmaps, used in the <a href=kcmap.html#kcmap>kcmap</a> routines.
+<p><b>Library:</b> karmavx
+<br><b>Link With:</b> -lkarmavx
+<br><p><a name=vc></a></table><h4>Functions</h4><table><tr><td><a href=vc.html#vc_get_dpy_handle>vc_get_dpy_handle</a></td><td>Generate a display handle for later use.
+</td></tr>
+<tr><td><a href=vc.html#vc_alloc_colours>vc_alloc_colours</a></td><td>Allocate colourcells.
+</td></tr>
+<tr><td><a href=vc.html#vc_free_colours>vc_free_colours</a></td><td>Free a number of colourcells in a low level colourmap.
+</td></tr>
+<tr><td><a href=vc.html#vc_store_colours>vc_store_colours</a></td><td>Store colours into a low level colourmap.
+</td></tr>
+<tr><td><a href=vc.html#vc_store_colours_24bit>vc_store_colours_24bit</a></td><td>Store colours into a low level colourmap.
+</td></tr>
+<tr><td><a href=vc.html#vc_get_location>vc_get_location</a></td><td>Determine the location of the graphics display being used.
+</td></tr>
+<tr><td><a href=vc.html#vc_set_visualtype>vc_set_visualtype</a></td><td>Set the current visual of the viewable colourmap.
+</td></tr>
+<tr><td><a href=vc.html#vc_get_visualtype>vc_get_visualtype</a></td><td>Get the current visual of the viewable colourmap.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=vc_get_dpy_handle></a> Kdisplay
+ <b>vc_get_dpy_handle</b><i>    ()
+</i><br><p>    Generate a display handle for later use.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     A pointer to the display handle on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=vc_alloc_colours></a> unsigned int
+ <b>vc_alloc_colours</b><i>    (unsigned int num_cells,
+			       unsigned long *pixel_values,
+			       unsigned int min_cells, Kdisplay dpy_handle)
+</i><br><p>    This routine will allocate a number of colourcells in a low level
+    colourmap (e.g. using the Xlib routine XAllocColorCells).
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colourcells to allocate.
+<br><li><i>pixel_values :</i> 
+    A pointer to the array where the pixel values allocated will
+    be written.
+<br><li><i>min_cells :</i> 
+    The minimum number of colourcells to allocate. The routine will
+    try to allocate at least this number of colourcells.
+<br><li><i>dpy_handle :</i> 
+    The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+<br></ul><b>Returns:</b>     The number of colourcells allocated.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=vc_free_colours></a> void
+ <b>vc_free_colours</b><i>    (unsigned int num_cells, unsigned long *pixel_values,
+		      Kdisplay dpy_handle)
+</i><br><p>    Free a number of colourcells in a low level colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colourcells to free.
+<br><li><i>pixel_values :</i> 
+    The array of pixel values (colourcells) to free.
+<br><li><i>dpy_handle :</i> 
+    The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=vc_store_colours></a> void
+ <b>vc_store_colours</b><i>    (unsigned int num_cells, unsigned long *pixel_values,
+		       unsigned short *reds, unsigned short *greens,
+		       unsigned short *blues, unsigned int stride,
+		       Kdisplay dpy_handle)
+</i><br><p>    Store colours into a low level colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colourcells to store.
+<br><li><i>pixel_values :</i> 
+    The array of pixel values.
+<br><li><i>reds :</i> 
+    The array of red intensity values.
+<br><li><i>greens :</i> 
+    The array of green intensity values.
+<br><li><i>blues :</i> 
+    The array of blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values in each
+    array.
+<br><li><i>dpy_handle :</i> 
+    The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=vc_store_colours_24bit></a> void
+ <b>vc_store_colours_24bit</b><i>    (unsigned int num_cells,
+			     unsigned long *pixel_values, unsigned short *reds,
+			     unsigned short *greens, unsigned short *blues,
+			     unsigned int stride, Kdisplay dpy_handle)
+</i><br><p>    This routine will store colours into a low level colourmap. The
+    colours are stored for the DirectColour (24 bit) visual type.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colourcells to store.
+<br><li><i>pixel_values :</i> 
+    The array of pixel values.
+<br><li><i>reds :</i> 
+    The array of red intensity values.
+<br><li><i>greens :</i> 
+    The array of green intensity values.
+<br><li><i>blues :</i> 
+    The array of blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values in each
+    array.
+<br><li><i>dpy_handle :</i> 
+    The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=vc_get_location></a> void
+ <b>vc_get_location</b><i>    (Kdisplay dpy_handle, unsigned long *serv_hostaddr,
+		      unsigned long *serv_display_num)
+</i><br><p>    Determine the location of the graphics display being used.
+<p><b>Parameters:</b><ul><li><i>dpy_handle :</i> 
+    The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+<br><li><i>serv_hostaddr :</i> 
+    The Internet address of the host on which the display is
+    running will be written here.
+<br><li><i>serv_display_num :</i> 
+    The number of the display will be written here.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=vc_set_visualtype></a> void
+ <b>vc_set_visualtype</b><i>    (Kdisplay dpy_handle, unsigned int visual, flag overlay)
+</i><br><p>    Set the current visual of the viewable colourmap.
+<p><b>Parameters:</b><ul><li><i>dpy_handle :</i> 
+    The low level display handle.
+<br><li><i>visual :</i> 
+    The visual type for the canvas. Legal values are:
+    VC_VX_VISUAL_PSEUDOCOLOUR0    8  bits deep (alpha/overlay channel)
+    VC_VX_VISUAL_PSEUDOCOLOUR1    8  bits deep (blue channel)
+    VC_VX_VISUAL_PSEUDOCOLOUR2    8  bits deep (green channel)
+    VC_VX_VISUAL_PSEUDOCOLOUR3    8  bits deep (red channel)
+    VC_VX_VISUAL_DIRECTCOLOUR     24 bits deep
+<br><li><i>overlay :</i> 
+    If TRUE and PseudoColour channel 0 is NOT selected, the overlay
+    channel is displayed. A non-zero pixel in the overlay channel will override
+    the PseudoColour/DirectColour pixel.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     PseudoColour channels 1, 2 and 3 occupy the same area of screen
+    memory as the DirectColour channel. When viewing a PseudoColour canvas,
+    the lower appropriate 8 bits are used. When viewing a DirectColour
+    canvas, the lower 24 bits (big endian) are used. Bits 0-7, 8-15
+    and 16-23 contain the red, green and blue components, respectively.
+</ul><p><hr> <a name=vc_get_visualtype></a> void
+ <b>vc_get_visualtype</b><i>    (Kdisplay dpy_handle, unsigned int *visual,
+			flag *overlay)
+</i><br><p>    Get the current visual of the viewable colourmap.
+<p><b>Parameters:</b><ul><li><i>dpy_handle :</i> 
+    The low level display handle.
+<br><li><i>visual :</i> 
+    The visual type for the canvas will be written here.
+<br><li><i>overlay :</i> 
+    If the overlay channel is visible, the value TRUE will be written
+    here, else the value FALSE will be written here.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

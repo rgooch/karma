@@ -1,0 +1,193 @@
+<html><head><title>Package: m</title></head> 
+<body>
+<center><h1>The "m" Package</h1></center>    These routines are meant to provide a better memory allocation service
+    than the malloc(3) call. The supplied allocation and deallocation routines
+    perform periodic checks to see if array boundaries have been overrun.
+    A set of memory manipulation and error message routines are also provided
+    in this package.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=m></a></table><h4>Functions</h4><table><tr><td><a href=m.html#m_alloc>m_alloc</a></td><td>Allocate Virtual Memory.
+</td></tr>
+<tr><td><a href=m.html#m_free>m_free</a></td><td>Free Virtual Memory.
+</td></tr>
+<tr><td><a href=m.html#m_error_notify>m_error_notify</a></td><td>Print memory error notification message.
+</td></tr>
+<tr><td><a href=m.html#m_abort>m_abort</a></td><td>Print memory error notification message and abort.
+</td></tr>
+<tr><td><a href=m.html#m_verify_memory_integrity>m_verify_memory_integrity</a></td><td>Periodically verify memory integrity.
+</td></tr>
+<tr><td><a href=m.html#m_clear>m_clear</a></td><td>Clear a block of memory
+</td></tr>
+<tr><td><a href=m.html#m_copy>m_copy</a></td><td>Copy a block of memory.
+</td></tr>
+<tr><td><a href=m.html#m_copy_blocks>m_copy_blocks</a></td><td>Copy multiple blocks of data.
+</td></tr>
+<tr><td><a href=m.html#m_copy_and_swap_blocks>m_copy_and_swap_blocks</a></td><td>Copy and byte-swap multiple blocks of data.
+</td></tr>
+<tr><td><a href=m.html#m_fill>m_fill</a></td><td>Fill memory blocks with a specified value.
+</td></tr>
+<tr><td><a href=m.html#m_cmp>m_cmp</a></td><td>Compare two blocks of memory.
+</td></tr>
+<tr><td><a href=m.html#m_dup>m_dup</a></td><td>Duplicate a block of memory into a freshly allocated block.
+</td></tr>
+<tr><td><a href=m.html#m_alloc_scratch>m_alloc_scratch</a></td><td>Allocate a block of scratch memory.
+</td></tr>
+<tr><td><a href=m.html#m_free_scratch>m_free_scratch</a></td><td>Free the scratch memory.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=m_alloc></a> char *
+ <b>m_alloc</b><i>    (uaddr size)
+</i><br><p>    Allocate Virtual Memory.
+<p><b>Parameters:</b><ul><li><i>size :</i> 
+    The number of bytes to allocate.
+<br></ul><b>Returns:</b>     A pointer to the memory on success, else NULL.
+<br><b>Multithreading Level:</b> Safe under Solaris 2.
+<br><b>Note:</b><ul> <li>     If the environment variable "M_ALLOC_DEBUG" is set to "TRUE" then
+    the routine will print allocation debugging information.
+<li>     If the environment variable "M_ALLOC_FAST" is set to "TRUE" then NO
+    periodic integrity check of memory is performed and no debugging
+    information will be printed.
+</ul><p><hr> <a name=m_free></a> void
+ <b>m_free</b><i>    (char *ptr)
+</i><br><p>    Free Virtual Memory.
+<p><b>Parameters:</b><ul><li><i>ptr :</i> 
+    The start of a previously allocated block of memory to be freed.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Safe.
+<br><b>Note:</b><ul> <li>     If the environment variable "M_ALLOC_DEBUG" is set to "TRUE" then
+    the routine will print deallocation debugging information.
+</ul><p><hr> <a name=m_error_notify></a> void
+ <b>m_error_notify</b><i>    (char *function_name, char *purpose)
+</i><br><p>    Print memory error notification message.
+<p><b>Parameters:</b><ul><li><i>function_name :</i> 
+    The name of the function requesting the memory.
+<br><li><i>purpose :</i> 
+    The purpose for the memory allocation.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=m_abort></a> void
+ <b>m_abort</b><i>    (char *name, char *reason)
+</i><br><p>    Print memory error notification message and abort.
+<p><b>Parameters:</b><ul><li><i>function_name :</i> 
+    The name of the function requesting the memory.
+<br><li><i>reason :</i> 
+    The reason for the memory allocation.
+<br></ul><b>Returns:</b>     Nothing. The process aborts.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=m_verify_memory_integrity></a> unsigned int
+ <b>m_verify_memory_integrity</b><i>    (flag force)
+</i><br><p>    Periodically verify memory integrity.
+<p><b>Parameters:</b><ul><li><i>force :</i> 
+    If TRUE, the check is forced, else the check is made periodically.
+<br></ul><b>Returns:</b>     The number of corrupted blocks.
+<br><b>Multithreading Level:</b> Safe.
+<br><p><hr> <a name=m_clear></a> void
+ <b>m_clear</b><i>    (char *memory, uaddr length)
+</i><br><p>    Clear a block of memory
+<p><b>Parameters:</b><ul><li><i>memory :</i> 
+    The memory block to clear.
+<br><li><i>length :</i> 
+    The length of the block (in bytes) to clear.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The memory is cleared in long integers and chars.
+</ul><p><hr> <a name=m_copy></a> void
+ <b>m_copy</b><i>    (char *dest, CONST char *source, uaddr length)
+</i><br><p>    Copy a block of memory.
+<p><b>Parameters:</b><ul><li><i>dest :</i> 
+    The destination block of memory.
+<br><li><i>source :</i> 
+    The source block of memory.
+<br><li><i>length :</i> 
+    The number of bytes to transfer. If this is zero, it is
+    permissable for <em>source</em> and <em>dest</em> to be NULL.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The routine copies long integers and chars.
+</ul><p><hr> <a name=m_copy_blocks></a> void
+ <b>m_copy_blocks</b><i>    (char *dest, CONST char *source, unsigned int dest_stride,
+		    unsigned int source_stride, unsigned int block_size,
+		    unsigned int num_blocks)
+</i><br><p>    Copy multiple blocks of data.
+<p><b>Parameters:</b><ul><li><i>dest :</i> 
+    The destination for the first block copy.
+<br><li><i>source :</i> 
+    The source for the first block copy.
+<br><li><i>dest_stride :</i> 
+    The spacing (in bytes) between destintion blocks.
+<br><li><i>source_stride :</i> 
+    The spacing (in bytes) between source blocks.
+<br><li><i>block_size :</i> 
+    The size of each block (in bytes).
+<br><li><i>num_blocks :</i> 
+    The number of blocks to copy.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=m_copy_and_swap_blocks></a> void
+ <b>m_copy_and_swap_blocks</b><i>    (char *dest, CONST char *source, uaddr dest_stride,
+			     uaddr source_stride, uaddr block_size,
+			     uaddr num_blocks)
+</i><br><p>    Copy and byte-swap multiple blocks of data.
+<p><b>Parameters:</b><ul><li><i>dest :</i> 
+    The destination for the first block copy.
+<br><li><i>source :</i> 
+    The source for the first block copy. If this is NULL or the same
+    as <em>dest</em> the swap is performed in-situ, and <em>source_stride</em> is ignored
+<br><li><i>dest_stride :</i> 
+    The spacing (in bytes) between destintion blocks.
+<br><li><i>source_stride :</i> 
+    The spacing (in bytes) between source blocks.
+<br><li><i>block_size :</i> 
+    The size of each block (in bytes).
+<br><li><i>num_blocks :</i> 
+    The number of blocks to copy and swap.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=m_fill></a> void
+ <b>m_fill</b><i>    (char *dest, uaddr stride, CONST char *source,
+	     uaddr size, unsigned int num)
+</i><br><p>    Fill memory blocks with a specified value.
+<p><b>Parameters:</b><ul><li><i>dest :</i> 
+    The destination.
+<br><li><i>stride :</i> 
+    The stride (in bytes) of destination blocks.
+<br><li><i>source :</i> 
+    The fill block.
+<br><li><i>size :</i> 
+    The size (in bytes) of the fill value block.
+<br><li><i>num :</i> 
+    The number of destination blocks to fill.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=m_cmp></a> flag
+ <b>m_cmp</b><i>    (CONST char *block1, CONST char *block2, uaddr length)
+</i><br><p>    Compare two blocks of memory.
+<p><b>Parameters:</b><ul><li><i>block1 :</i> 
+    The first memory block.
+<br><li><i>block2 :</i> 
+    The second memory block.
+<br><li><i>length :</i> 
+    The number of bytes to compare.
+<br></ul><b>Returns:</b>     TRUE if the blocks are equal, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The routine compares long integers and chars.
+</ul><p><hr> <a name=m_dup></a> char *
+ <b>m_dup</b><i>    (CONST char *original, uaddr size)
+</i><br><p>    Duplicate a block of memory into a freshly allocated block.
+<p><b>Parameters:</b><ul><li><i>original :</i> 
+    The original block of memory.
+<br><li><i>size :</i> 
+    The size in bytes of the block.
+<br></ul><b>Returns:</b>     A pointer to a freshly allocated block which contains identical
+    data as the orginal on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=m_alloc_scratch></a> char *
+ <b>m_alloc_scratch</b><i>    (uaddr size, char *function_name)
+</i><br><p>    This routine will allocate a block of scratch memory, which may
+    be re-used by many different routines. The block is reserved until a call
+    is made to <a href=m.html#m_free_scratch>m_free_scratch</a>.
+<p><b>Parameters:</b><ul><li><i>size :</i> 
+    The minimum size in bytes of the scratch block.
+<br><li><i>function_name :</i> 
+    If the memory block is already reserved and this is not
+    NULL the string is printed and the process aborts.
+    If the memory block is already reserved and this is NULL the routine fails
+    normally.
+<br></ul><b>Returns:</b>     A pointer on success to a dynamically allocated block of memory
+    which is valid until the next call to this routine, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=m_free_scratch></a> void
+ <b>m_free_scratch</b><i>    ()
+</i><br><p>    Free the scratch memory.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

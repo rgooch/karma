@@ -5,11 +5,10 @@
  Name		         Class            RepType         Default Value
  ----		         -----            -------         -------------
  iarray                  Iarray           Pointer         NULL
- intensityScaleCallback  Callback         Callback        NULL
  maxDataRegions          MaxDataRegions   int             1
- showIscaleButton        ShowIscaleButton Bool            False
  regionCallback          Callback         Callback        NULL
- autoValueScale          AutoValueScale   Bool            True
+ showBlankControl        ShowBlankControl Bool            False
+ fixedOutputType         FixedOutputType  Cardinal        NONE
  verbose                 Verbose          Bool            False
 ------------------------------------------------------------------------*/
 
@@ -24,6 +23,7 @@ typedef struct _DataclipRec *DataclipWidget;
 
 typedef struct
 {
+    flag blank_data_outside_regions;
     unsigned int num_regions;
     double *minima;
     double *maxima;
@@ -32,17 +32,16 @@ typedef struct
 #define XtIsDataclip(w) XtIsSubclass((w), dataclipWidgetClass)
 
 #define XkwNiarray "iarray"
-#define XkwNintensityScaleCallback "intensityScaleCallback"
 #define XkwNmaxDataRegions "maxDataRegions"
-#define XkwNshowIscaleButton "showIscaleButton"
 #define XkwNregionCallback "regionCallback"
-#define XkwNautoValueScale "autoValueScale"
+#define XkwNshowBlankControl "showBlankControl"
+#define XkwNfixedOutputType "fixedOutputType"
 #define XkwNverbose "verbose"
 
 #define XkwCIarray "Iarray"
 #define XkwCMaxDataRegions "MaxDataRegions"
-#define XkwCShowIscaleButton "ShowIscaleButton"
-#define XkwCAutoValueScale "AutoValueScale"
+#define XkwCShowBlankControl "ShowBlankControl"
+#define XkwCFixedOutputType "FixedOutputType"
 #define XkwCVerbose "Verbose"
 
 #endif

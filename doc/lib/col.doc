@@ -1,38 +1,48 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the col_ package of routines in the Karma library.
-
+$PACKAGE          col
+$SUMMARY          Routines to convert between colour spaces
+$PURPOSE
     These routines are meant to provide basic conversions between colours in
     different colour spaces.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
-
-    Written by		Richard Gooch	31-Dec-1995
-
-    Last updated by	Richard Gooch	31-Dec-1995
-
-
-*/
-
-void col_hsb_slice_to_rgb_array (unsigned long rgb_array[65536],
+$FUNCTION         col_hsb_slice_to_rgb_array
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (unsigned long rgb_array[65536],
 				 unsigned long red_mask,
 				 unsigned long green_mask,
 				 unsigned long blue_mask,
 				 float min_brightness, float max_brightness,
 				 float start_hue, float stop_hue,
 				 float saturation)
-/*  [PURPOSE] This routine will convert a slice in HSB (Hue, Saturation and
+$SUMMARY          Generate a table of RGB values from a slice of HSB space.
+$PURPOSE
+    This routine will convert a slice in HSB (Hue, Saturation and
     Brightness) colour space to a 2-dimensional array of RGB (Red, Green and
     Blue) values. The HSB slice covers a range of hue and brightness at a fixed
     satutation.
-    <rgb_array> The 256*256 array of RGB values will be written here. The upper
+$PARAMETER        rgb_array :
+    The 256*256 array of RGB values will be written here. The upper
     dimension will map to brightness and the lower dimension will map to hue.
-    <red_mask> The bitmask used when writing the red colour component.
-    <green_mask> The bitmask used when writing the green colour component.
-    <blue_mask> The bitmask used when writing the blue colour component.
-    <min_brightness> The minimum brightness. The valid range is 0.0 to 1.0
-    <max_brightness> The maximum brightness. The valid range is 0.0 to 1.0
-    <start_hue> The start hue. The valid range is 0.0 to just under 6.0
-    <stop_hue> The end hue. The valid range is 0.0 to just under 6.0
-    <saturation> The saturation value. The valid range is 0.0 to 1.0
-    [RETURNS] Nothing.
-*/
-/*---------------------------------------------------------------------------*/
+$PARAMETER        red_mask :
+    The bitmask used when writing the red colour component.
+$PARAMETER        green_mask :
+    The bitmask used when writing the green colour component.
+$PARAMETER        blue_mask :
+    The bitmask used when writing the blue colour component.
+$PARAMETER        min_brightness :
+    The minimum brightness. The valid range is 0.0 to 1.0
+$PARAMETER        max_brightness :
+    The maximum brightness. The valid range is 0.0 to 1.0
+$PARAMETER        start_hue :
+    The start hue. The valid range is 0.0 to just under 6.0
+$PARAMETER        stop_hue :
+    The end hue. The valid range is 0.0 to just under 6.0
+$PARAMETER        saturation :
+    The saturation value. The valid range is 0.0 to 1.0
+$MT-LEVEL         Safe.
+$RETURNS
+    Nothing.
+$END

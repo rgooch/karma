@@ -1,0 +1,45 @@
+
+$TABLE            VRENDER_ATTRIBUTES
+$COLUMNS          4
+$SUMMARY          List of attributes volume rendering contexts
+$TABLE_DATA
+|.Name                                 |,Get Type             |,Set Type             |,Meaning
+|.
+|.VRENDER_CONTEXT_ATT_END              |,                     |,                     |,End of varargs list
+|.VRENDER_CONTEXT_ATT_CUBE             |,iarray *             |,iarray               |,Volume
+|.VRENDER_CONTEXT_ATT_VIEW             |,view_specification * |,view_specification * |,Current view
+|.VRENDER_CONTEXT_ATT_SHADER           |,                     |,CONST char *         |,Shader name
+|.VRENDER_CONTEXT_ATT_SUBCUBE_X_START  |,unsigned long *      |,unsigned long        |,X start
+|.VRENDER_CONTEXT_ATT_SUBCUBE_X_END    |,unsigned long *      |,unsigned long        |,X end
+|.VRENDER_CONTEXT_ATT_SUBCUBE_Y_START  |,unsigned long *      |,unsigned long        |,Y start
+|.VRENDER_CONTEXT_ATT_SUBCUBE_Y_END    |,unsigned long *      |,unsigned long        |,Y end
+|.VRENDER_CONTEXT_ATT_SUBCUBE_Z_START  |,unsigned long *      |,unsigned long        |,Z start
+|.VRENDER_CONTEXT_ATT_SUBCUBE_Z_END    |,unsigned long *      |,unsigned long        |,Z end
+|.VRENDER_CONTEXT_ATT_IMAGE_DESC       |,array_desc *         |,                     |,Image descriptor
+|.VRENDER_CONTEXT_ATT_VALID_IMAGE_DESC |,flag *               |,flag                 |,Valid image descriptor
+|.VRENDER_CONTEXT_ATT_PROJECTION       |,                     |,unsigned int         |,Projection code
+|.VRENDER_CONTEXT_ATT_EYE_SEPARATION   |,                     |,double               |,Distance between eyes
+|.VRENDER_CONTEXT_ATT_SMOOTH_CACHE     |,                     |,flag                 |,Produce smooth cache
+$END
+
+$TABLE            VRENDER_EYES
+$COLUMNS          2
+$SUMMARY          List of eye views
+$TABLE_DATA
+|.Name                        |,Meaning
+|.
+|.VRENDER_EYE_CHOICE_CYCLOPS  |,Single eye (monoscopic vision)
+|.VRENDER_EYE_CHOICE_LEFT     |,Left eye (stereoscopic vision)
+|.VRENDER_EYE_CHOICE_RIGHT    |,Right eye (stereoscopic vision)
+$END
+
+$TABLE            VRENDER_EYE_MASKS
+$COLUMNS          2
+$SUMMARY          List of eye view masks
+$TABLE_DATA
+|.Name                       |,Meaning
+|.
+|.VRENDER_EYE_MASK_CYCLOPS   |,Single eye (monoscopic vision) 
+|.VRENDER_EYE_MASK_LEFT      |,Left eye (stereoscopic vision)
+|.VRENDER_EYE_MASK_RIGHT     |,Right eye (stereoscopic vision)
+$END

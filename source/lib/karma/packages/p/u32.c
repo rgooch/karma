@@ -3,7 +3,7 @@
 
     This code provides conversion between host and cannonical data formats.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -60,9 +60,12 @@
 
     Updated by      Richard Gooch   27-FEB-1994: Improved portability.
 
-    Last updated by Richard Gooch   9-JUN-1995: Changed to NEED_ALIGNED_DATA
+    Updated by      Richard Gooch   9-JUN-1995: Changed to NEED_ALIGNED_DATA
   and removed assumption that all little endian platforms have a 32 bit
   unsigned integer.
+
+    Last updated by Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -77,7 +80,7 @@
 
 /*PUBLIC_FUNCTION*/
 flag p_write_buf32 (char *buffer, unsigned long data)
-/*  [PURPOSE] This routine will write 32 bits of unsigned data to a buffer,
+/*  [SUMMARY] Write 32 bits of unsigned data to a buffer,
     <buffer> A pointer to the buffer. This buffer must be at least 4 bytes long
     <data> The data. This must be in host natural byte order. The data will be
     converted to network byte order prior to writing.
@@ -139,7 +142,7 @@ flag p_write_buf32 (char *buffer, unsigned long data)
 
 /*PUBLIC_FUNCTION*/
 flag p_read_buf32 (char *buffer, unsigned long *data)
-/*  [PURPOSE] This routine will read 32 bits of unsigned data from a buffer.
+/*  [SUMMARY] Read 32 bits of unsigned data from a buffer.
     <buffer> A pointer to the buffer. This buffer must be at least 4 bytes long
     <data> The output data will be written here. This will be in host natural
     byte order. The data will be converted from network byte order after

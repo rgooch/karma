@@ -3,7 +3,7 @@
 
     This code provides Channel Management routines.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -66,7 +66,10 @@
 
     Updated by      Richard Gooch   2-JAN-1995: Fixed some comments.
 
-    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Last updated by Richard Gooch   1-APR-1996: Moved remaing functions to new
+  documentation style.
 
 
 */
@@ -122,99 +125,31 @@ static void close_channel ();
 /*  Public functions follow  */
 
 /*PUBLIC_FUNCTION*/
-flag chm_manage (channel, info, input_func, close_func, output_func,
-		 exception_func)
-/*  This routine will manage a channel for activity by registering callback
-    routines.
-    The channel object to manage must be given by  channel  .
-    An arbitrary pointer may associated with the managed channel. This pointer
-    may be modified by the callback routines. The initial value of this pointer
-    must be given by  info  .
-    The routine which is called when new input occurrs on the channel must
-    be pointed to by  input_func  .If this is NULL, no callback routine is
-    installed. The interface to this routine is as follows:
-
-    flag input_func (channel, info)
-    *   This routine is called when new input occurs on a channel.
-        The channel object is given by  channel  .
-	An arbitrary pointer may be written to the storage pointed to by  info
-	The pointer written here will persist until the channel is unmanaged
-	(or a subsequent callback routine changes it).
-	The routine returns TRUE if the channel is to remain managed and
-	open, else it returns FALSE (indicating that the channel is to be
-	unmanaged and closed). This routine MUST NOT unmanage or close the
-	channel given by  channel  .
-	Note that the  close_func  will be called if this routine returns FALSE
-    *
-    Channel channel;
-    void **info;
-
-    The routine which is called when the channel closes must be pointed to by
-    close_func  .If this is NULL, no callback routine is installed. The
-    interface to this routine is as follows:
-
-    void close_func (channel, info)
-    *   This routine is called when a channel closes.
-        The channel object is given by  channel  .The channel object MUST be
-        capable of detecting closure if this routine is supplied (ie. this
-	routine cannot be supplied for dock channels).
-        The arbitrary pointer for the channel will be pointed to by  info  .
-	This routine MUST NOT unmanage the channel pointed to by  channel  ,
-	the channel will be automatically unmanaged and deleted upon closure
-	(even if no close_func is specified).
-	Any unread buffered data in the channel will be lost upon closure. The
-	call to this function is the last chance to read this buffered data.
-	The routine returns nothing.
-    *
-    Channel channel;
-    void *info;
-
-    The routine which is called when the channel becomes ready for output
-    must be pointed to by  output_func  .If this is NULL, no callback routine
-    is installed. The interface to this routine is as follows:
-
-    flag output_func (channel, info)
-    *   This routine is called when a channel becomes ready for writing.
-	The channel object is given by  channel  .
-	An arbitrary pointer may be written to the storage pointed to by  info
-	The pointer written here will persist until the channel is unmanaged
-	(or a subsequent callback routine changes it).
-	The routine returns TRUE if the channel is to remain managed and
-	open, else it returns FALSE (indicating that the channel is to be
-	unmanaged and closed). This routine MUST NOT unmanage or close the
-	channel given by  channel  .
-	Note that the  close_func  will be called if this routine returns FALSE
-    *
-    Channel channel;
-    void **info;
-
-    The routine which is called when exceptions occurr on the channel must
-    be pointed to by  exception_func  .If this is NULL, no callback routine is
-    installed. The interface to this routine is as follows:
-
-    flag exception_func (channel, info)
-    *   This routine is called when an exception occurrs on channel.
-	The channel object is given by  channel  .
-	An arbitrary pointer may be written to the storage pointed to by  info
-	The pointer written here will persist until the channel is unmanaged
-	(or a subsequent callback routine changes it).
-	The routine returns TRUE if the channel is to remain managed and
-	open, else it returns FALSE (indicating that the channel is to be
-	unmanaged and closed). This routine MUST NOT unmanage or close the
-	channel given by  channel  .
-	Note that the  close_func  will be called if this routine returns FALSE
-    *
-    Channel channel;
-    void **info;
-
-    The routine returns TRUE on success, else it returns FALSE.
+flag chm_manage ( Channel channel, void *info, flag (*input_func) (),
+		  void (*close_func) (), flag (*output_func) (),
+		  flag (*exception_func) () )
+/*  [SUMMARY] Manage a channel for activity by registering callback routines.
+    <channel> The channel object to manage.
+    <info> The arbitrary information pointer associated with the managed
+    channel. This pointer may be modified by the callback routines.
+    <input_func> This routine is called when new input occurs on the channel.
+    If this is NULL, no callback routine is installed. The prototype function
+    is [<CHM_PROTO_input_func>].
+    <close_func> This routine is called when the channel closes. If this is
+    NULL, no callback routine is installed. The prototype function is
+    [<CHM_PROTO_close_func>]. The channel object MUST be capable of detecting
+    closure if this routine is supplied (i.e. this routine cannot be supplied
+    for dock channels). Any unread buffered data in the channel will be lost
+    upon closure. The call to this function is the last chance to read this
+    buffered data.
+    <output_func> This routine is called when the channel becomes ready for
+    output. If this is NULL, no callback routine is installed. The prototype
+    function is [<CHM_PROTO_output_func>].
+    <exception_func> This routine is called when exceptions occur on the
+    channel. If this is NULL, no callback routine is installed. The prototype
+    function is [<CHM_PROTO_exception_func>].
+    [RETURNS] TRUE on success, else FALSE.
 */
-Channel channel;
-void *info;
-flag (*input_func) ();
-void (*close_func) ();
-flag (*output_func) ();
-flag (*exception_func) ();
 {
 #ifdef COMMUNICATIONS_AVAILABLE
 #  ifdef HAS_SOCKETS___dummy
@@ -330,14 +265,13 @@ flag (*exception_func) ();
 }   /*  End Function chm_manage  */
 
 /*PUBLIC_FUNCTION*/
-void chm_unmanage (channel)
-/*  This routine will terminate the management of a channel for activity.
-    The channel to unmanage must be given by  channel  .
-    The routine will NOT close the channel (nor does it assume the channel is
-    open).
-    The routine returns nothing.
+void chm_unmanage (Channel channel)
+/*  [SUMMARY] Terminate the management of a channel for activity.
+    <channel> The channel object to unmanage.
+    [NOTE] This routine will NOT close the channel (nor does it assume the
+    channel is open).
+    [RETURNS] Nothing.
 */
-Channel channel;
 {
     struct managed_channel_type *entry;
     extern struct managed_channel_type *managed_channel_list;
@@ -374,14 +308,13 @@ Channel channel;
 }   /*  End Function chm_unmanage  */
 
 /*PUBLIC_FUNCTION*/
-void chm_poll (timeout_ms)
-/*  This routine will poll all managed channels for any activity.
-    The time (in milliseconds) to poll must be given by  timeout_ms  .If this
-    is less than 0 the routine will poll forever (until some activity occurs
-    or a signal is caught).
-    The routine returns nothing.
+void chm_poll (long timeout_ms)
+/*  [SUMMARY] Poll all managed channels for any activity.
+    <timeout_ms> The time (in milliseconds) to poll. If this is less than 0 the
+    routine will poll forever (until some activity occurs or a signal is
+    caught).
+    [RETURNS] Nothing.
 */
-long timeout_ms;
 {
 #ifdef COMMUNICATIONS_AVAILABLE
 #  ifdef HAS_SOCKETS
@@ -401,6 +334,7 @@ long timeout_ms;
 	(void) fprintf (stderr, "Code non-reentrant\n");
 	a_prog_bug (function_name);
     }
+    locked = TRUE;
 #  ifdef HAS_SOCKETS
     FD_ZERO (&input_fds);
     FD_ZERO (&output_fds);
@@ -439,6 +373,7 @@ long timeout_ms;
 		     timeout_ptr) )
     {
       case 0:
+	locked = FALSE;
 	return;
 /*
 	break;
@@ -446,6 +381,7 @@ long timeout_ms;
       case -1:
 	if (errno == EINTR)
 	{
+	    locked = FALSE;
 	    return;
 	}
 	/*  Failure  */
@@ -524,6 +460,7 @@ long timeout_ms;
     (void) fprintf (stderr,
 		    "Operating system does not support communications\n");
 #endif  /*  COMMUNICATIONS_AVAILABLE  */
+    locked = FALSE;
 }   /*  End Function chm_poll  */
 
 

@@ -63,8 +63,11 @@
     Updated by      Richard Gooch   9-AUG-1995: Added support for "hog_request"
   protocol.
 
-    Last updated by Richard Gooch   29-JAN-1996: Added call to
+    Updated by      Richard Gooch   29-JAN-1996: Added call to
   <im_register_lib_version>.
+
+    Last updated by Richard Gooch   1-JUN-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -81,9 +84,13 @@
 #include <karma_dsxfr.h>
 #include <karma_conn.h>
 #include <karma_ex.h>
+#include <karma_ds.h>
 #include <karma_im.h>
 #include <karma_ch.h>
 #include <karma_a.h>
+#include <karma_s.h>
+#include <karma_m.h>
+
 
 #define BUF_SIZE 16384
 
@@ -98,9 +105,7 @@ static int num_iterations = 1;
 
 #define VERSION "1.1"
 
-main (argc, argv)
-int argc;       /*  Count of parameters on command line */
-char **argv;    /*  List of command line parameters     */
+int main (int argc, char **argv)
 {
     KControlPanel panel;
     static char function_name[] = "main";
@@ -118,7 +123,7 @@ char **argv;    /*  List of command line parameters     */
 	m_abort (function_name, "control panel");
     }
     panel_add_item (panel, "spray", "spray specified number of bytes",
-		    PIT_FUNCTION, write_spray,
+		    PIT_FUNCTION, (void *) write_spray,
 		    PIA_END);
     panel_add_item (panel, "num_iterations", "number", K_INT, &num_iterations,
 		    PIA_END);

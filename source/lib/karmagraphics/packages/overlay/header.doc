@@ -1,0 +1,6 @@
+$SUMMARY          Routines to manipulate 2-dimensional (image) overlay objects
+$PURPOSE
+    These routines provide a simple interface to the recursive,
+    heirarchical data structure supported in Karma, to define 2-dimensional
+    (image) overlay objects. In addition, all the mechanics for drawing onto
+    world canvases (see the [<canvas>] package) is supplied automatically.

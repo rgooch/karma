@@ -1,54 +1,117 @@
-/*  Link with:    -lkarmaXt  */
-/*  This file describes the xtmisc_ package of routines in the Karma library.
-
+$PACKAGE          xtmisc
+$SUMMARY          Routines to provide miscellaneous Xt support
+$PURPOSE
     These routines are meant to provide miscellaneuos Xt support.
     NOTE: THIS PACKAGE IS WORK IN PROGRESS. THE INTERFACE MAY CHANGE IN THE
     NEXT RELEASE, POSSIBLY WITHOUT NOTICE.
+$LIBRARY          karmaXt
+$LINKWITH         -lkarmaXt
+$END
 
+$FUNCTION         xtmisc_set_icon
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    ( Widget top_level,
+		       void (*icon_func) (Display *display, Pixmap pixmap,
+					  int width, int height) )
+$SUMMARY          Create an icon for an application's top level widget.
+$PURPOSE
+    Create an icon for an application's top level widget.
+$PARAMETER        top_level :
+    The top level widget.
+$PARAMETER        icon_func :
+    The function to use when writing the icon. The prototype
+    function is <-XTMISC_PROTO_icon_func->.
+$RETURNS
+    Nothing.
+$END
 
-    Written by		Richard Gooch	27-Jan-1996
-
-    Last updated by	Richard Gooch	27-Jan-1996
-
-
-*/
-
-void xtmisc_popup_cbk (Widget w, XtPointer client_data, XtPointer call_data)
-/*  [PURPOSE] This routine will pop up a popup widget. This routine is a
+$FUNCTION         xtmisc_popup_cbk
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (Widget w, XtPointer client_data, XtPointer call_data)
+$SUMMARY          Pop up a popup widget.
+$PURPOSE
+    This routine will pop up a popup widget. This routine is a
     convenience routine to be used as a callback.
-    <w> The widget on which the event occurred. This is ignored.
-    <client_data> The callback client data. This must be the popup widget.
-    <call_data> The callback call data. This is ignored.
-    [RETURNS] Nothing.
-*/
-/*---------------------------------------------------------------------------*/
+$PARAMETER        w :
+    The widget on which the event occurred. This is ignored.
+$PARAMETER        client_data :
+    The callback client data. This must be the popup widget.
+$PARAMETER        call_data :
+    The callback call data. This is ignored.
+$RETURNS
+    Nothing.
+$END
 
-void xtmisc_exclusive_popup_cbk (Widget w, XtPointer client_data,
+$FUNCTION         xtmisc_exclusive_popup_cbk
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (Widget w, XtPointer client_data,
 				 XtPointer call_data)
-/*  [PURPOSE] This routine will pop up a popup widget. This routine is a
+$SUMMARY          Pop up a popup widget with exclusive grab.
+$PURPOSE
+    This routine will pop up a popup widget. This routine is a
     convenience routine to be used as a callback. An exclusive grab is
     performed on the popped up widget.
-    <w> The widget on which the event occurred. This is ignored.
-    <client_data> The callback client data. This must be the popup widget.
-    <call_data> The callback call data. This is ignored.
-    [RETURNS] Nothing.
-*/
-/*---------------------------------------------------------------------------*/
+$PARAMETER        w :
+    The widget on which the event occurred. This is ignored.
+$PARAMETER        client_data :
+    The callback client data. This must be the popup widget.
+$PARAMETER        call_data :
+    The callback call data. This is ignored.
+$RETURNS
+    Nothing.
+$END
 
-void xtmisc_popdown_cbk (Widget w, XtPointer client_data, XtPointer call_data)
-/*  [PURPOSE] This routine will pop down a popup widget. This routine is a
+$FUNCTION         xtmisc_popdown_cbk
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (Widget w, XtPointer client_data, XtPointer call_data)
+$SUMMARY          Pop down a popup widget.
+$PURPOSE
+    This routine will pop down a popup widget. This routine is a
     convenience routine to be used as a callback.
-    <w> The widget on which the event occurred. This is ignored.
-    <client_data> The callback client data. This must be the popup widget.
-    <call_data> The callback call data. This is ignored.
-    [RETURNS] Nothing.
-*/
-/*---------------------------------------------------------------------------*/
+$PARAMETER        w :
+    The widget on which the event occurred. This is ignored.
+$PARAMETER        client_data :
+    The callback client data. This must be the popup widget.
+$PARAMETER        call_data :
+    The callback call data. This is ignored.
+$RETURNS
+    Nothing.
+$END
 
-void xtmisc_support_work_funcs (XtAppContext app_context)
-/*  [PURPOSE] This routine will register Xt support for work functions using
-    the <<wf_>> package.
-    <app_context> The Xt application context.
-    [RETURNS] Nothing. On failure the process aborts.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         xtmisc_support_work_funcs
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (XtAppContext app_context)
+$SUMMARY          Register support for work functions within an Xt application.
+$PURPOSE
+    This routine will register Xt support for work functions using
+    the <-wf-> package.
+$PARAMETER        app_context :
+    The Xt application context.
+$RETURNS
+    Nothing. On failure the process aborts.
+$END
+
+$PROTO_FUNC       XTMISC_PROTO_icon_func
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (Display *display, Pixmap pixmap,
+			     int width, int height)
+$SUMMARY          Write an icon pixmap.
+$PURPOSE
+    Write an icon pixmap.
+$PARAMETER        display :
+    The display pointer.
+$PARAMETER        pixmap :
+    The pixmap to write to.
+$PARAMETER        width :
+    The width of the pixmap.
+$PARAMETER        height :
+    The height of the pixmap.
+$RETURNS
+    Nothing.
+$END

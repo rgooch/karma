@@ -3,7 +3,7 @@
 
     This code provides routines to create X icons for some modules.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,13 @@
 
     Updated by      Richard Gooch   4-FEB-1993
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/ic/main.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/ic/main.c
+
+    Updated by      Richard Gooch   16-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -59,20 +65,16 @@
 static GC gc = 0;
 
 /*PUBLIC_FUNCTION*/
-void ic_write_kplot_icon (display, pixmap, width, height)
-/*  This routine will write the icon pixmap required for the  kplot  module.
-    The display must be pointed to by  display  and the pixmap to write to must
-    be pointed to by  pixmap  .
-    The width of the pixmap must be given by  width  .
-    The height of the pixmap must be given by  height  .
-    The routine returns nothing.
+void ic_write_kplot_icon (Display *display, Pixmap pixmap,
+			  int width, int height)
+/*  [SUMMARY] Write the icon pixmap required for the <<kplot>> module.
+    <display> The X display.
+    <pixmap> The pixmap to write to.
+    <width> The width of the icon.
+    <height> The height of the icon.
+    [RETURNS] Nothing.
 */
-Display *display;
-Pixmap pixmap;
-int width;
-int height;
 {
-    static char function_name[] = "ic_write_kplot_icon";
     int icon_x;
     int icon_y;
     int old_x;
@@ -82,6 +84,7 @@ int height;
     double y;
     XGCValues gcvalues;
     extern GC gc;
+    /*static char function_name[] = "ic_write_kplot_icon";*/
 
     if (gc == 0)
     {
@@ -125,20 +128,16 @@ int height;
 }   /*  End Function ic_write_kplot_icon  */
 
 /*PUBLIC_FUNCTION*/
-void ic_write_kscat_icon (display, pixmap, width, height)
-/*  This routine will write the icon pixmap required for the  kscat  module.
-    The display must be pointed to by  display  and the pixmap to write to must
-    be pointed to by  pixmap  .
-    The width of the pixmap must be given by  width  .
-    The height of the pixmap must be given by  height  .
-    The routine returns nothing.
+void ic_write_kscat_icon (Display *display, Pixmap pixmap,
+			  int width, int height)
+/*  [SUMMARY] Write the icon pixmap required for the <<kscat>> module.
+    <display> The X display.
+    <pixmap> The pixmap to write to.
+    <width> The width of the icon.
+    <height> The height of the icon.
+    [RETURNS] Nothing.
 */
-Display *display;
-Pixmap pixmap;
-int width;
-int height;
 {
-    static char function_name[] = "ic_write_kscat_icon";
     int icon_x;
     int icon_y;
     int x_count;
@@ -147,6 +146,7 @@ int height;
     double y;
     XGCValues gcvalues;
     extern GC gc;
+    /*static char function_name[] = "ic_write_kscat_icon";*/
 
     if (gc == 0)
     {
@@ -186,24 +186,21 @@ int height;
 }   /*  End Function ic_write_kscat_icon  */
 
 /*PUBLIC_FUNCTION*/
-void ic_write_funcgen_icon (display, pixmap, width, height)
-/*  This routine will write the icon pixmap required for the  funcgen  module.
-    The display must be pointed to by  display  and the pixmap to write to must
-    be pointed to by  pixmap  .
-    The width of the pixmap must be given by  width  .
-    The height of the pixmap must be given by  height  .
-    The routine returns nothing.
+void ic_write_funcgen_icon (Display *display, Pixmap pixmap,
+			    int width, int height)
+/*  [SUMMARY] Write the icon pixmap required for the <<kfuncgen>> module.
+    <display> The X display.
+    <pixmap> The pixmap to write to.
+    <width> The width of the icon.
+    <height> The height of the icon.
+    [RETURNS] Nothing.
 */
-Display *display;
-Pixmap pixmap;
-int width;
-int height;
 {
-    static char function_name[] = "ic_write_funcgen_icon";
     int cycle_count;
     double seg_width;
     XGCValues gcvalues;
     extern GC gc;
+    /*static char function_name[] = "ic_write_funcgen_icon";*/
 
     if (gc == 0)
     {
@@ -247,25 +244,22 @@ int height;
 }   /*  End Function ic_write_funcgen_icon  */
 
 /*PUBLIC_FUNCTION*/
-void ic_write_kimage_icon (display, pixmap, width, height)
-/*  This routine will write the icon pixmap required for the  kimage  module.
-    The display must be pointed to by  display  and the pixmap to write to must
-    be pointed to by  pixmap  .
-    The width of the pixmap must be given by  width  .
-    The height of the pixmap must be given by  height  .
-    The routine returns nothing.
+void ic_write_kimage_icon (Display *display, Pixmap pixmap,
+			   int width, int height)
+/*  [SUMMARY] Write the icon pixmap required for the <<kview>> module.
+    <display> The X display.
+    <pixmap> The pixmap to write to.
+    <width> The width of the icon.
+    <height> The height of the icon.
+    [RETURNS] Nothing.
 */
-Display *display;
-Pixmap pixmap;
-int width;
-int height;
 {
-    static char function_name[] = "ic_write_kimage_icon";
     int x;
     int y;
     int diameter;
     XGCValues gcvalues;
     extern GC gc;
+    /*static char function_name[] = "ic_write_kimage_icon";*/
 
     if (gc == 0)
     {
@@ -317,21 +311,19 @@ struct line_type
 };
 
 /*PUBLIC_FUNCTION*/
-void ic_write_karma_cm_icon (display, pixmap, width, height)
-/*  This routine will write the icon pixmap required for the  karma_cm  module.
-    The display must be pointed to by  display  and the pixmap to write to must
-    be pointed to by  pixmap  .
-    The width of the pixmap must be given by  width  .
-    The height of the pixmap must be given by  height  .
-    The routine returns nothing.
+void ic_write_karma_cm_icon (Display *display, Pixmap pixmap,
+			     int width, int height)
+/*  [SUMMARY] Write the icon pixmap required for the <<karma_cm>> module.
+    <display> The X display.
+    <pixmap> The pixmap to write to.
+    <width> The width of the icon.
+    <height> The height of the icon.
+    [RETURNS] Nothing.
 */
-Display *display;
-Pixmap pixmap;
-int width;
-int height;
 {
-    static char function_name[] = "ic_write_karma_cm_icon";
     unsigned int line_count;
+    XGCValues gcvalues;
+    extern GC gc;
     static struct line_type lines[KARMA_CM_LINES] =
     {
 	{0, 4, 2, 4},
@@ -353,8 +345,7 @@ int height;
 	{6, 2, 6, 1},
 	{10, 4, 12, 4}
     };
-    XGCValues gcvalues;
-    extern GC gc;
+    /*static char function_name[] = "ic_write_karma_cm_icon";*/
 
     if (gc == 0)
     {
@@ -386,27 +377,23 @@ int height;
 }   /*  End Function ic_write_karma_cm_icon  */
 
 /*PUBLIC_FUNCTION*/
-void ic_write_datasource_icon (display, pixmap, width, height)
-/*  This routine will write the icon pixmap required for generic data source
-    modules.
-    The display must be pointed to by  display  and the pixmap to write to must
-    be pointed to by  pixmap  .
-    The width of the pixmap must be given by  width  .
-    The height of the pixmap must be given by  height  .
-    The routine returns nothing.
+void ic_write_datasource_icon (Display *display, Pixmap pixmap,
+			       int width, int height)
+/*  [SUMMARY] Write the icon pixmap required for generic data source modules.
+    <display> The X display.
+    <pixmap> The pixmap to write to.
+    <width> The width of the icon.
+    <height> The height of the icon.
+    [RETURNS] Nothing.
 */
-Display *display;
-Pixmap pixmap;
-int width;
-int height;
 {
-    static char function_name[] = "ic_write_datasource_icon";
     int x1;
     int y1;
     int x2;
     int y2;
     XGCValues gcvalues;
     extern GC gc;
+    /*static char function_name[] = "ic_write_datasource_icon";*/
 
     if (gc == 0)
     {
@@ -438,27 +425,23 @@ int height;
 }   /*  End Function ic_write_datasource_icon  */
 
 /*PUBLIC_FUNCTION*/
-void ic_write_datasink_icon (display, pixmap, width, height)
-/*  This routine will write the icon pixmap required for generic data sink
-    modules.
-    The display must be pointed to by  display  and the pixmap to write to must
-    be pointed to by  pixmap  .
-    The width of the pixmap must be given by  width  .
-    The height of the pixmap must be given by  height  .
-    The routine returns nothing.
+void ic_write_datasink_icon (Display *display, Pixmap pixmap,
+			     int width, int height)
+/*  [SUMMARY] Write the icon pixmap required for generic data sink modules.
+    <display> The X display.
+    <pixmap> The pixmap to write to.
+    <width> The width of the icon.
+    <height> The height of the icon.
+    [RETURNS] Nothing.
 */
-Display *display;
-Pixmap pixmap;
-int width;
-int height;
 {
-    static char function_name[] = "ic_write_datasink_icon";
     int x1;
     int y1;
     int x2;
     int y2;
     XGCValues gcvalues;
     extern GC gc;
+    /*static char function_name[] = "ic_write_datasink_icon";*/
 
     if (gc == 0)
     {
@@ -490,27 +473,23 @@ int height;
 }   /*  End Function ic_write_datasink_icon  */
 
 /*PUBLIC_FUNCTION*/
-void ic_write_datafilter_icon (display, pixmap, width, height)
-/*  This routine will write the icon pixmap required for generic data filter
-    modules.
-    The display must be pointed to by  display  and the pixmap to write to must
-    be pointed to by  pixmap  .
-    The width of the pixmap must be given by  width  .
-    The height of the pixmap must be given by  height  .
-    The routine returns nothing.
+void ic_write_datafilter_icon (Display *display, Pixmap pixmap,
+			       int width, int height)
+/*  [SUMMARY] Write the icon pixmap required for generic data filter modules.
+    <display> The X display.
+    <pixmap> The pixmap to write to.
+    <width> The width of the icon.
+    <height> The height of the icon.
+    [RETURNS] Nothing.
 */
-Display *display;
-Pixmap pixmap;
-int width;
-int height;
 {
-    static char function_name[] = "ic_write_datafilter_icon";
     int x1;
     int y1;
     int x2;
     int y2;
     XGCValues gcvalues;
     extern GC gc;
+    /*static char function_name[] = "ic_write_datafilter_icon";*/
 
     if (gc == 0)
     {

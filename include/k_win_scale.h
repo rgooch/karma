@@ -1,7 +1,7 @@
 /*
     Definition of  win_scale  structure.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -26,7 +26,7 @@
 
     Written by      Richard Gooch   17-NOV-1992
 
-    Last updated by Richard Gooch   30-APR-1995
+    Last updated by Richard Gooch   4-JUN-1996
 
 */
 
@@ -69,10 +69,17 @@ struct win_scale_type
     unsigned long blank_pixel;   /* These fields relate to intensity mapping */
     unsigned long min_sat_pixel;
     unsigned long max_sat_pixel;
-    double x_min;                /* And these relate to co-ordinate mapping  */
+#ifdef NEW_WIN_SCALE             /* And these relate to co-ordinate mapping  */
+    double left_x;
+    double right_x;
+    double bottom_y;
+    double top_y;
+#else
+    double x_min;
     double x_max;
     double y_min;
     double y_max;
+#endif
     flag x_log;                  /* These 2 will be removed in Karma v2.0    */
     flag y_log;
     double z_min;                /* Back to intensity mapping                */

@@ -3,7 +3,7 @@
 
     This code provides asynchronous command line reading routines.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -61,7 +61,9 @@
     Updated by      Richard Gooch   26-NOV-1994: Split and moved to
   packages/arln/read_raw.c
 
-    Last updated by Richard Gooch   7-DEC-1994: Stripped declaration of  errno
+    Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
+
+    Last updated by Richard Gooch   31-MAR-1996: Changed documentation style.
 
 
 */
@@ -100,116 +102,21 @@ static linetype *nextline = NULL;
 static flag stdin_closed = FALSE;
 
 
-/*  Private functions follow  */
-
-static flag stdin_input_func (Channel channel, void **info)
-/*  This routine will process input on the standard input channel.
-    The channel object is given by  channel  .
-    An arbitrary pointer may be written to the storage pointed to by  info
-    The pointer written here will persist until the channel is unmanaged
-    (or a subsequent callback routine changes it).
-    The routine returns TRUE if the channel is to remain managed and
-    open, else it returns FALSE (indicating that the channel is to be
-    unmanaged and closed). This routine MUST NOT unmanage or close the
-    channel given by  channel  .
-*/
-{
-    int bytes_readable;
-    extern linetype *nextline;
-    static linetype *newline = NULL;
-    static linetype *lastline = NULL;
-    static char function_name[] = "stdin_input_func";
-
-    if ( ( bytes_readable = ch_get_bytes_readable (channel) ) < 0 )
-    {
-	(void) fprintf (stderr,
-			"Error getting bytes readable on standard input\n");
-	return (FALSE);
-    }
-    if (newline == NULL)
-    {
-	/*  Allocate storage for another line  */
-	if ( ( newline = (linetype *) m_alloc (sizeof *newline) ) == NULL )
-	{
-	    m_abort (function_name, "newline");
-	}
-	(*newline).pos = 0;
-	(*newline).next = NULL;
-    }
-    while (bytes_readable > 0)
-    {
-	/*  Pull in another character  */
-	if (ch_read (channel, (*newline).buffer + (*newline).pos, 1) < 1)
-	{
-	    (void) fprintf (stderr, "Error reading from standard input\n");
-	    m_free ( (char *) newline );
-	    newline = NULL;
-	    return (FALSE);
-	}
-	if ( (*newline).buffer[(*newline).pos] == '\n' )
-	{
-	    /*  End of line reached  */
-	    (*newline).buffer[(*newline).pos] = '\0';
-	    if (nextline == NULL)
-	    {
-		/*  Create list  */
-		nextline = newline;
-		lastline = newline;
-	    }
-	    else
-	    {
-		/*  Append to list  */
-		(*lastline).next = newline;
-		lastline = newline;
-	    }
-	    newline = NULL;
-	    return (TRUE);
-	}
-	if (++(*newline).pos > LINE_BUF_LENGTH)
-	{
-	    (void) fprintf (stderr, "Too many characters for line buffer\n");
-	    (void) fprintf (stderr, "Discarding: %u characters\n",
-			    LINE_BUF_LENGTH);
-	    (*newline).pos = 0;
-	}
-	--bytes_readable;
-    }
-    /*  Not enough data yet  */
-    return (TRUE);
-}   /*  End Function stdin_input_func  */
-
-static void stdin_close_func (Channel channel, void *info)
-/*  This routine will process the closure of the standard input channel.
-    The channel object is given by  channel  .
-    The arbitrary pointer for the channel will be pointed to by  info  .
-    This routine MUST NOT unmanage the channel pointed to by  channel  ,
-    the channel will be automatically unmanaged and deleted upon closure
-    (even if no close_func is specified).
-    Any unread buffered data in the channel will be lost upon closure. The
-    call to this function is the last chance to read this buffered data.
-    The routine returns nothing.
-*/
-{
-    extern flag stdin_closed;
-
-    stdin_closed = TRUE;
-}   /*  End Function stdin_close_func  */
-
-
 /*  Public functions follow  */
 
 /*PUBLIC_FUNCTION*/
-flag arln_read_from_stdin (char *buffer, unsigned int length, char *prompt)
-/*  This routine will read a line from the standard input without preventing
-    event processing.
-    Note that the standard input channel is internally allocated.
-    The NULL terminated string will be written to the storage pointed to by
-    buffer  . The routine will NOT copy the '\n' newline character into the
-    buffer.
-    The length of the buffer must be given by  length  .
-    The prompt which is to be displayed must be pointed to by  prompt  .Note
-    that the prompt is only displayed if the standard input is NOT a disc file.
-    The routine returns TRUE on successful reading, else it returns FALSE.
+flag arln_read_from_stdin (char *buffer, unsigned int length,
+			   CONST char *prompt)
+/*  [SUMMARY] Read a line from the user.
+    [PURPOSE] This routine will read a line from the standard input without
+    preventing event processing. The standard input channel is internally
+    allocated.
+    <buffer> The NULL terminated string will be written here. The routine will
+    NOT copy the '\n' newline character into the buffer.
+    <length> The length of the buffer.
+    <prompt> The prompt which is to be displayed. Note that the prompt is only
+    displayed if the standard input is NOT a disc file.
+    [RETURNS] TRUE on successful reading, else FALSE.
 */
 {
     unsigned int buf_pos;
@@ -283,21 +190,21 @@ flag arln_read_from_stdin (char *buffer, unsigned int length, char *prompt)
 	    return (FALSE);
 	}
 	/*  Have a line  */
-	if ( (*nextline).pos < length )
+	if (nextline->pos < length)
 	{
 	    /*  Will fit into buffer  */
-	    m_copy (buffer, (*nextline).buffer, (*nextline).pos + 1);
+	    m_copy (buffer, nextline->buffer, nextline->pos + 1);
 	    line = nextline;
-	    nextline = (*nextline).next;
+	    nextline = nextline->next;
 	    m_free ( (char *) line );
 	    locked = FALSE;
 	    return (TRUE);
 	}
 	/*  Will have to trim  */
-	m_copy (buffer, (*nextline).buffer, length - 1);
+	m_copy (buffer, nextline->buffer, length - 1);
 	buffer[length] = '\0';
 	line = nextline;
-	nextline = (*nextline).next;
+	nextline = nextline->next;
 	m_free ( (char *) line );
 	locked = FALSE;
 	return (TRUE);
@@ -326,3 +233,99 @@ flag arln_read_from_stdin (char *buffer, unsigned int length, char *prompt)
     locked = FALSE;
     return (FALSE);
 }   /*  End Function arln_read_stdin  */
+
+
+/*  Private functions follow  */
+
+static flag stdin_input_func (Channel channel, void **info)
+/*  This routine will process input on the standard input channel.
+    The channel object is given by  channel  .
+    An arbitrary pointer may be written to the storage pointed to by  info
+    The pointer written here will persist until the channel is unmanaged
+    (or a subsequent callback routine changes it).
+    The routine returns TRUE if the channel is to remain managed and
+    open, else it returns FALSE (indicating that the channel is to be
+    unmanaged and closed). This routine MUST NOT unmanage or close the
+    channel given by  channel  .
+*/
+{
+    int bytes_readable;
+    extern linetype *nextline;
+    static linetype *newline = NULL;
+    static linetype *lastline = NULL;
+    static char function_name[] = "stdin_input_func";
+
+    if ( ( bytes_readable = ch_get_bytes_readable (channel) ) < 0 )
+    {
+	(void) fprintf (stderr,
+			"Error getting bytes readable on standard input\n");
+	return (FALSE);
+    }
+    if (newline == NULL)
+    {
+	/*  Allocate storage for another line  */
+	if ( ( newline = (linetype *) m_alloc (sizeof *newline) ) == NULL )
+	{
+	    m_abort (function_name, "newline");
+	}
+	newline->pos = 0;
+	newline->next = NULL;
+    }
+    while (bytes_readable > 0)
+    {
+	/*  Pull in another character  */
+	if (ch_read (channel, newline->buffer + newline->pos, 1) < 1)
+	{
+	    (void) fprintf (stderr, "Error reading from standard input\n");
+	    m_free ( (char *) newline );
+	    newline = NULL;
+	    return (FALSE);
+	}
+	if (newline->buffer[newline->pos] == '\n')
+	{
+	    /*  End of line reached  */
+	    newline->buffer[newline->pos] = '\0';
+	    if (nextline == NULL)
+	    {
+		/*  Create list  */
+		nextline = newline;
+		lastline = newline;
+	    }
+	    else
+	    {
+		/*  Append to list  */
+		lastline->next = newline;
+		lastline = newline;
+	    }
+	    newline = NULL;
+	    return (TRUE);
+	}
+	if (++newline->pos > LINE_BUF_LENGTH)
+	{
+	    (void) fprintf (stderr, "Too many characters for line buffer\n");
+	    (void) fprintf (stderr, "Discarding: %u characters\n",
+			    LINE_BUF_LENGTH);
+	    newline->pos = 0;
+	}
+	--bytes_readable;
+    }
+    /*  Not enough data yet  */
+    return (TRUE);
+}   /*  End Function stdin_input_func  */
+
+static void stdin_close_func (Channel channel, void *info)
+/*  This routine will process the closure of the standard input channel.
+    The channel object is given by  channel  .
+    The arbitrary pointer for the channel will be pointed to by  info  .
+    This routine MUST NOT unmanage the channel pointed to by  channel  ,
+    the channel will be automatically unmanaged and deleted upon closure
+    (even if no close_func is specified).
+    Any unread buffered data in the channel will be lost upon closure. The
+    call to this function is the last chance to read this buffered data.
+    The routine returns nothing.
+*/
+{
+    extern flag stdin_closed;
+
+    stdin_closed = TRUE;
+}   /*  End Function stdin_close_func  */

@@ -2,7 +2,7 @@
 
     Source file for  kftpd  (file transfer daemon module).
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -30,24 +30,35 @@
 
     Updated by      Richard Gooch   5-MAY-1994
 
-    Last updated by Richard Gooch   21-MAY-1994: Added  #include <karma_ch.h>
+    Updated by      Richard Gooch   21-MAY-1994: Added  #include <karma_ch.h>
+
+    Updated by      Richard Gooch   1-JUN-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   12-JUL-1996: Switched to utime() call.
 
 
 */
 #include <stdio.h>
 #include <math.h>
+#include <unistd.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <utime.h>
 #include <karma.h>
 #include <karma_conn.h>
 #include <karma_chm.h>
 #include <karma_pio.h>
 #include <karma_ch.h>
+#include <karma_im.h>
 #include <karma_a.h>
 #include <karma_r.h>
 #include <karma_d.h>
+#include <karma_m.h>
 #include "kftp.h"
+
 
 #define VERSION "1.0"
 
@@ -58,18 +69,13 @@ STATIC_FUNCTION (flag copy_channels, (Channel dest, Channel source,
 				      unsigned int length) );
 
 
-main (argc, argv)
-int argc;
-char **argv;
+int main (int argc, char **argv)
 {
-    int arg_count;
     int def_port_number;
     unsigned int server_port_number;
-    char prompt[STRING_LENGTH + 3];
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     extern char module_name[STRING_LENGTH + 1];
-    static char function_name[] = "main";
+    /*static char function_name[] = "main";*/
 
     /*  Fork  */
     switch ( fork () )
@@ -105,7 +111,7 @@ char **argv;
 	exit (RV_UNDEF_ERROR);
     }
     server_port_number = def_port_number;
-    if (conn_become_server (&server_port_number, CONN_MAX_INSTANCES) != TRUE)
+    if ( !conn_become_server (&server_port_number, CONN_MAX_INSTANCES) )
     {
 	(void) fprintf (stderr, "Error becoming server\n");
 	exit (RV_UNDEF_ERROR);
@@ -140,27 +146,26 @@ void **info;
     char dummy = '\0';
     char *filename;
     struct stat statbuf;
-    struct timeval tvp[2];
-    ERRNO_TYPE errno;
+    struct utimbuf ut;
 
     channel = conn_get_channel (connection);
-    if (pio_read32 (channel, &command) != TRUE) return (FALSE);
+    if ( !pio_read32 (channel, &command) ) return (FALSE);
     switch (command)
     {
       case KFTP_REQUEST_SEND:
 	if ( ( filename = pio_read_string (channel, &name_len) )
 	    == NULL ) return (FALSE);
-	if (pio_read32 (channel, &length) != TRUE)
+	if ( !pio_read32 (channel, &length) )
 	{
 	    m_free (filename);
 	    return (FALSE);
 	}
-	if (pio_read32 (channel, &mode) != TRUE)
+	if ( !pio_read32 (channel, &mode) )
 	{
 	    m_free (filename);
 	    return (FALSE);
 	}
-	if (pio_read32 (channel, &mtime) != TRUE)
+	if ( !pio_read32 (channel, &mtime) )
 	{
 	    m_free (filename);
 	    return (FALSE);
@@ -168,29 +173,25 @@ void **info;
 	if ( ( fch = ch_open_file (filename, "w") ) == NULL )
 	{
 	    m_free (filename);
-	    if (pio_write32 (channel, KFTP_RESPONSE_FAILED)
-		!= TRUE) return (FALSE);
-	    if (pio_write32 (channel, errno) != TRUE) return (FALSE);
+	    if ( !pio_write32 (channel, KFTP_RESPONSE_FAILED) ) return (FALSE);
+	    if ( !pio_write32 (channel, errno) ) return (FALSE);
 	    return ( ch_flush (channel) );
 	}
 	if (fchmod (ch_get_descriptor (fch), mode) != 0)
 	{
-	    if (pio_write32 (channel, KFTP_RESPONSE_FAILED)
-		!= TRUE) return (FALSE);
-	    if (pio_write32 (channel, errno) != TRUE) return (FALSE);
+	    if ( !pio_write32 (channel, KFTP_RESPONSE_FAILED) ) return (FALSE);
+	    if ( !pio_write32 (channel, errno) ) return (FALSE);
 	    return ( ch_flush (channel) );
 	}
-	if (pio_write32 (channel, KFTP_RESPONSE_OK) != TRUE) return (FALSE);
-	if (ch_flush (channel) != TRUE) return (FALSE);
-	if (copy_channels (fch, channel, length) != TRUE) return (FALSE);
+	if ( !pio_write32 (channel, KFTP_RESPONSE_OK) ) return (FALSE);
+	if ( !ch_flush (channel) ) return (FALSE);
+	if ( !copy_channels (fch, channel, length) ) return (FALSE);
 	(void) ch_close (fch);
-	tvp[0].tv_sec = mtime;
-	tvp[0].tv_usec = 0;
-	tvp[1].tv_sec = mtime;
-	tvp[1].tv_usec = 0;
-	(void) utimes (filename, tvp);
+	ut.actime = mtime;
+	ut.modtime = mtime;
+	(void) utime (filename, &ut);
 	if (ch_write (channel, &dummy, 1) < 1) return (FALSE);
-	if (ch_flush (channel) != TRUE) return (FALSE);
+	if ( !ch_flush (channel) ) return (FALSE);
 	break;
       case KFTP_REQUEST_GET:
 	if ( ( filename = pio_read_string (channel, &name_len) )
@@ -198,25 +199,23 @@ void **info;
 	if (stat (filename, &statbuf) != 0)
 	{
 	    m_free (filename);
-	    if (pio_write32 (channel, KFTP_RESPONSE_FAILED)
-		!= TRUE) return (FALSE);
-	    if (pio_write32 (channel, errno) != TRUE) return (FALSE);
+	    if ( !pio_write32 (channel, KFTP_RESPONSE_FAILED) ) return (FALSE);
+	    if ( !pio_write32 (channel, errno) ) return (FALSE);
 	    return ( ch_flush (channel) );
 	}
 	length = statbuf.st_size;
 	if ( ( fch = ch_open_file (filename, "r") ) == NULL )
 	{
 	    m_free (filename);
-	    if (pio_write32 (channel, KFTP_RESPONSE_FAILED)
-		!= TRUE) return (FALSE);
-	    if (pio_write32 (channel, errno) != TRUE) return (FALSE);
+	    if ( !pio_write32 (channel, KFTP_RESPONSE_FAILED) ) return (FALSE);
+	    if ( !pio_write32 (channel, errno) ) return (FALSE);
 	    return ( ch_flush (channel) );
 	}
-	if (pio_write32 (channel, KFTP_RESPONSE_OK) != TRUE) return (FALSE);
-	if (pio_write32 (channel, length) != TRUE) return (FALSE);
-	if (pio_write32 (channel, statbuf.st_mode) != TRUE) return (FALSE);
-	if (pio_write32 (channel, statbuf.st_mtime) != TRUE) return (FALSE);
-	if (copy_channels (channel, fch, length) != TRUE) return (FALSE);
+	if ( !pio_write32 (channel, KFTP_RESPONSE_OK) ) return (FALSE);
+	if ( !pio_write32 (channel, length) ) return (FALSE);
+	if ( !pio_write32 (channel, statbuf.st_mode) ) return (FALSE);
+	if ( !pio_write32 (channel, statbuf.st_mtime) ) return (FALSE);
+	if ( !copy_channels (channel, fch, length) ) return (FALSE);
 	(void) ch_close (fch);
 	break;
       default:

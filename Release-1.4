@@ -1,0 +1,326 @@
+Subject: Partial refresh support added
+Date: 19-FEB-1996
+
+SUMMARY:
+  Experimental partial refresh support has been added.
+
+HEADERS CHANGED:
+  <karma_kwin.h>
+  <karma_viewimg.h>
+
+DESCRIPTION:
+  The <kwin_partial_refresh> and <viewimg_partial_refresh> routines
+have been created to allow a pixel canvas to be partially refreshed. A
+list of regions to be refreshed is passed to these routines.
+
+REASON:
+  Partial refresh support is required to support "damage repair",
+which provides a fast way to "undraw" objects in complex scenes.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <kwin> package
+Date: 1-MAR-1996
+
+SUMMARY:
+  The <kwin_draw_points> routine has been created.
+
+HEADER CHANGED:
+  <karma_kwin.h>
+
+DESCRIPTION:
+  The <kwin_draw_points> will draw many points. This routine is more
+efficient than drawing points one at a time using <kwin_draw_point>.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <psw> package
+Date: 19-APR-1996
+
+SUMMARY:
+  The <psw_set_attributes> routine has been created.
+
+HEADER CHANGED:
+  <karma_psw.h>
+
+DESCRIPTION:
+  The <psw_set_attributes> routine will set various attributes for
+a PostScriptPage object.
+
+REASON:
+  This routine will allow the introduction of greater control over a
+PostScriptPage object, such as setting the linewidth.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <kwin> package
+Date: Sun, 21 Apr 1996 00:33:59 +1000
+
+SUMMARY:
+  The <KWIN_ATT_LINEWIDTH> attribute has been created.
+
+HEADER CHANGED:
+  <karma_kwin.h>
+
+DESCRIPTION:
+  Changing the <KWIN_ATT_LINEWIDTH> attribute will change the line
+width of lines drawn on a particular pixel canvas.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <kcmap> package
+Date: 30-APR-1996
+
+SUMMARY:
+  Support for DirectColour colourmaps has been added.
+
+HEADER CHANGED:
+  <karma_kcmap.h>
+
+DESCRIPTION:
+  The <KCMAP_ATT_DIRECT_VISUAL> attribute may now be passed when
+creating a colourmap. The <kcmap_modify_direct_type> modifies the
+colours in a DirectColour colourmap.
+-------------------------------------------------------------------------------
+Subject: BUG FIX in <foreign_miriad_read> function
+Date: Wed, 8 May 1996 14:49:37 +1000
+
+SUMMARY:
+  The <foreign_miriad_read> function now reads pixel masks.
+
+DESCRIPTION:
+  Previously, the <foreign_miriad_read> function ignored the presence
+of the "mask" file in a Miriad Image dataset. Any existing Karma files
+converted with the <miriad2karma> module will have data values which
+are not blanked (if the Miriad dataset had a mask file).
+The mask file is now correctly processed and applied to the data as it
+is read in.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <viewimg> package
+Date: 12-MAY-1996
+
+SUMMARY:
+  Non-integral zooming is now supported.
+
+DESCRIPTION:
+  It is now possible to zoom in an image by a non-integral
+factor. Integral zooming remains the default behaviour because
+non-integral zooming can introduce artefacts (these are most often
+visible along hard edges in an image). With non-integral zooming it is
+possible to make an image exactly fill a window.
+To enable non-integral zooming the <viewimg_set_canvas_attributes>
+routine should be used.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <canvas> package
+Date: 19-MAY-1996
+
+SUMMARY:
+  The <canvas_get_size> routine is deprecated.
+
+DESCRIPTION:
+  The <canvas_get_size> routine will be removed in Karma version
+2.0. Use the <canvas_get_attributes> routine instead.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <ds> package
+Date: 3-JUN-1996
+
+SUMMARY:
+  Decreasing co-ordinate systems are now supported.
+
+HEADER CHANGED:
+  <karma_ds.h>
+
+DESCRIPTION:
+  Dimension descriptors now support decreasing co-ordinate
+systems. The <first_coord> and <last_coord> fields have been added to
+the dimension descriptor. The <minimum> and <maximum> fields will be
+removed in Karma v2.0.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <canvas> package
+Date: 4-JUN-1996
+
+SUMMARY:
+  Support for decreasing world co-ordinates added.
+
+DESCRIPTION:
+  World canvases may now define decreasing co-ordinate
+systems. Co-ordinate endpoints should no longer be defined in terms of
+min and max X and Y but rather leftX, RightX, bottomY and topY.
+Four new attributes for <canvas_set_attributes> have been created:
+  CANVAS_ATT_LEFT_X  CANVAS_ATT_RIGHT_X  CANVAS_ATT_BOTTOM_Y  CANVAS_ATT_TOP_Y
+
+The following four attributes will be removed in Karma v2.0:
+  CANVAS_ATT_X_MIN  CANVAS_ATT_X_MAX  CANVAS_ATT_Y_MIN  CANVAS_ATT_Y_MAX
+-------------------------------------------------------------------------------
+Subject: CHANGES to <viewimg> package
+Date: 10-JUN-1996
+
+SUMMARY:
+  Panning support has been added.
+
+HEADER CHANGED:
+  <karma_viewimg.h>
+
+DESCRIPTION:
+  Images may now be interactively panned. The panned image is
+magnified a specified amount relative to the original image size. Four
+new attributes for <viewimg_set_canvas_attributes> have been created
+to allow easy manipulation of the panning parameters.
+-------------------------------------------------------------------------------
+Subject: NEW PACKAGE <wcs> for world co-ordinate support
+Date: 12-JUN-1996
+
+SUMMARY:
+  The <wcs> packages adds support for proper (non-linear) world
+co-ordinates.
+
+HEADER CREATED:
+  <karma_wcs.h>
+
+DESCRIPTION:
+  The <wcs> packages contains support for astronomical
+sky-projections. This allows proper conversion between projected
+co-ordinates and spherical sky co-ordinates.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <canvas> package
+Date: 15-JUN-1996
+
+SUMMARY:
+  The <canvas_register_transforms_func> routine has been created. The
+<canvas_register_transform_func> routine has been deprecated.
+
+HEADER CHANGED:
+  <karma_canvas.h>
+
+DESCRIPTION:
+  The <canvas_register_transforms_func> routine allows a co-ordinate
+transformation function to be registered which can transform many
+co-ordinates in one call.
+The routine registered with <canvas_register_transform_func> can only
+transform one co-ordinate per call, and hence this is less
+efficient. The <canvas_register_transform_func> routine will be
+removed in Karma v2.0.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION <m_copy_and_swap_blocks>
+Date: 15-JUN-1996
+
+SUMMARY:
+  The <m_copy_and_swap_blocks> routine will swap-copy blocks of data.
+
+DESCRIPTION:
+  The <m_copy_and_swap_blocks> routine will copy many blocks of data,
+swapping the bytes as it writes them.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <iarray> package
+Date: 16-JUN-1996
+
+SUMMARY:
+  The <iarray_get_data_scaling> and <iarray_set_data_scaling> routines
+manipulate scaling information for atomic data.
+
+HEADER CHANGED:
+  <karma_iarray.h>
+
+DESCRIPTION:
+  The <iarray_get_data_scaling> and <iarray_set_data_scaling> routines
+are convenience routines to allow information about how array data has
+been scaled to be associated with the array.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <dsrw> package
+Date: 16-JUN-1996
+
+SUMMARY:
+  The <dsrw_read_array> routine has been optimised.
+
+DESCRIPTION:
+  When reading non-byte data on machines which only require
+byte-swapping to convert data between network and host format, 
+-------------------------------------------------------------------------------
+Subject: CHANGES to <canvas> package
+Date: 17-JUN-1996
+
+SUMMARY:
+  The <canvas_convert_to_canvas_coords> routine has been created. The
+<canvas_convert_to_canvas_coord> has been deprecated.
+
+HEADER CHANGED:
+  <karma_canvas.h>
+
+DESCRIPTION:
+  The <canvas_convert_to_canvas_coords> routine can convert many
+co-ordinates in one call. The <canvas_convert_to_canvas_coord> can
+only convert a single co-ordinate per call and hence is less
+efficient. The <canvas_convert_to_canvas_coord> routine will be
+removed in Karma v2.0.
+-------------------------------------------------------------------------------
+Subject: BUG FIXES in <foreign> package
+Date: 17-JUN-1996
+
+SUMMARY:
+  Bug fixes in FITS and Miriad Image readers.
+
+DESCRIPTION:
+  Co-ordinate information is now handled properly when the Karma
+descriptors are constructed. Previously, decreasing co-ordinate
+systems were not translated correctly.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <viewimg> package
+Date: 21-JUN-1996
+
+SUMMARY:
+  The <viewimg_get_worldcanvas> routine has been created.
+
+HEADER CHANGED:
+  <karma_viewimg.h>
+
+DESCRIPTION:
+  The <viewimg_get_worldcanvas> routine gets the world canvas
+associated with a viewable image object.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <foreign> package
+Date: 23-JUN-1996
+
+SUMMARY:
+  GIPSY format files are now supported.
+
+HEADER CHANGED:
+  <karma_foreign.h>
+
+DESCRIPTION:
+  GIPSY (Groningen Image Processing SYstem) format files may now be
+read directly.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <dsrw> package
+Date: 28-JUN-1996
+
+SUMMARY:
+  The <dsrw_read_packets> routine has been created and is used in the
+<dsrw_read_array> and <dsrw_read_list> routines.
+
+HEADER CHANGED:
+  <karma_dsrw.h>
+
+DESCRIPTION:
+  The <dsrw_read_packets> contains the optimised and slow code
+employed in the <dsrw_read_array> and <dsrw_read_list> routines to
+read contiguous packets.
+
+REASON:
+  This change allows the <dsrw_read_list> to take advantage of the
+recent optimisations added to the <dsrw_read_array> routine.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <dsrw> package
+Date: 29-JUN-1996
+
+SUMMARY:
+  The <dsrw_write_packets> routine has been created and is used in the
+<dsrw_write_array> and <dsrw_write_list> routines.
+A bug in <dsrw_write_list> has been fixed.
+
+HEADER CHANGED:
+  <karma_dsrw.h>
+
+DESCRIPTION:
+  The <dsrw_write_packets> contains optimised and slow code similar to
+that employed in the <dsrw_read_packets> routine to write contiguous
+packets.
+The <dsrw_write_list> had a bug which could prevent the fragmented
+portion of a linked list to be written.
+
+REASON:
+  This change allows the <dsrw_write_array> and <dsrw_write_list>
+routines to take advantage of the recent optimisations added to the
+<dsrw_read_array> routine.
+-------------------------------------------------------------------------------

@@ -3,7 +3,7 @@
 
     This code provides simple colourmap generation routines.
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -34,7 +34,9 @@
 
     Updated by      Richard Gooch   31-JAN-1995
 
-    Last updated by Richard Gooch   20-APR-1995: Cosmetic changes.
+    Updated by      Richard Gooch   20-APR-1995: Cosmetic changes.
+
+    Last updated by Richard Gooch   31-MAR-1996: Changed documentation style.
 
 
 */
@@ -51,17 +53,16 @@
 /*PUBLIC_FUNCTION*/
 void cf_mandelbrot (unsigned int num_cells, unsigned short *reds,
 		    unsigned short *greens, unsigned short *blues,
-		    unsigned int stride, double x, double y,
-		    void *var_param)
-/*  [PURPOSE] This routine will compute a mandelbrot colourmap.
+		    unsigned int stride, double x, double y, void *var_param)
+/*  [SUMMARY] Compute a mandelbrot colourmap.
     <num_cells> The number of colour cells to modify.
     <reds> The red intensity values.
     <greens> The green intensity values.
     <blues> The blue intensity values.
     <stride> The stride (in unsigned shorts) between intensity values.
-    <x> A parameter used to compute the colour values.
-    <y> A parameter used to compute the colour values.
-    <var_param> A parameter used to compute the colour values.
+    <x> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <y> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <var_param> A parameter used to compute the colour values. Ignored.
     [RETURNS] Nothing.
 */
 {

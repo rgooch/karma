@@ -1,0 +1,10 @@
+/*PROTOTYPE_FUNCTION*/  /*
+void XTMISC_PROTO_icon_func (Display *display, Pixmap pixmap,
+			     int width, int height)
+    [SUMMARY] Write an icon pixmap.
+    <display> The display pointer.
+    <pixmap> The pixmap to write to.
+    <width> The width of the pixmap.
+    <height> The height of the pixmap.
+    [RETURNS] Nothing.
+*/

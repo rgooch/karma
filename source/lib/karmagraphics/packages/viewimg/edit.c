@@ -3,7 +3,7 @@
 
     This code provides routines to draw edit objects onto Karma data structures
 
-    Copyright (C) 1993,1994  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -45,8 +45,14 @@
   routine which prevented ellipses with negative centre co-ordinates from being
   drawn.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to
+    Updated by      Richard Gooch   26-NOV-1994: Moved to
   packages/viewimg/edit.c
+
+    Updated by      Richard Gooch   15-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -70,15 +76,14 @@ static flag draw_polygon (/* vimage, coord_list_head, value */);
 /*  Public functions follow  */
 
 /*PUBLIC_FUNCTION*/
-flag viewimg_draw_edit_list (vimage, ilist)
-/*  This routine will draw a list of edit objects to the 2-dimensional data
-    associated with a viewable image object.
-    The viewable image must be given by  vimage  .
-    The list of edit objects must be given by  ilist  .
-    The routine returns TRUE on success, else it returns FALSE.
+flag viewimg_draw_edit_list (ViewableImage vimage, KImageEditList ilist)
+/*  [SUMMARY] Draw edit list into array associated with viewable image.
+    [PURPOSE] This routine will draw a list of edit objects to the
+    2-dimensional data associated with a viewable image object.
+    <vimage> The viewable image.
+    <ilist> The list of edit objects.
+    [RETURNS] TRUE on success, else FALSE.
 */
-ViewableImage vimage;
-KImageEditList ilist;
 {
     unsigned int count;
     unsigned int pack_size;
@@ -95,7 +100,7 @@ KImageEditList ilist;
     }
     edit_list_desc = iedit_get_instruction_desc ();
     list_head = iedit_get_list (ilist);
-    if ( (*list_head).magic != MAGIC_LIST_HEADER )
+    if (list_head->magic != MAGIC_LIST_HEADER)
     {
 	(void) fprintf (stderr, "List header has bad magic number\n");
 	a_prog_bug (function_name);
@@ -103,20 +108,16 @@ KImageEditList ilist;
     /*  Process instructions  */
     /*  Process contiguous section of list  */
     pack_size = ds_get_packet_size (edit_list_desc);
-    for (count = 0, data = (*list_head).contiguous_data;
-	 count < (*list_head).contiguous_length; ++count, data += pack_size)
+    for (count = 0, data = list_head->contiguous_data;
+	 count < list_head->contiguous_length; ++count, data += pack_size)
     {
-	if (viewimg_draw_edit_object (vimage, data)
-	    != TRUE)
-	{
-	    return (FALSE);
-	}
+	if ( !viewimg_draw_edit_object (vimage, data) ) return (FALSE);
     }
     /*  Process fragmented section of list  */
-    for (curr_entry = (*list_head).first_frag_entry; curr_entry != NULL;
-	 curr_entry = (*curr_entry).next)
+    for (curr_entry = list_head->first_frag_entry; curr_entry != NULL;
+	 curr_entry = curr_entry->next)
     {
-	if (viewimg_draw_edit_object (vimage, (*curr_entry).data) != TRUE)
+	if ( !viewimg_draw_edit_object (vimage, curr_entry->data) )
 	{
 	    return (FALSE);
 	}
@@ -125,17 +126,14 @@ KImageEditList ilist;
 }   /*  End Function viewimg_draw_edit_list  */
 
 /*PUBLIC_FUNCTION*/
-flag viewimg_draw_edit_object (vimage, object)
-/*  This routine will draw one edit object to the 2-dimensional data
+flag viewimg_draw_edit_object (ViewableImage vimage, char *object)
+/*  [SUMMARY] Draw edit object into array associated with viewable image.
+    [PURPOSE] This routine will draw one edit object to the 2-dimensional data
     associated with a viewable image object.
-    The viewable image must be given by  vimage  .
-    The first element in the instruction entry which is a pointer to a linked
-    list must be the linked list of co-ordinates.
-    The routine will draw the edit object pointed to by  object  .
-    The routine returns TRUE on success, else it returns FALSE.
+    <vimage> The viewable image.
+    <object> The edit object.
+    [RETURNS] TRUE on success, else FALSE.
 */
-ViewableImage vimage;
-char *object;
 {
     unsigned int instruction_code;
     unsigned int elem_count;
@@ -153,33 +151,33 @@ char *object;
     edit_list_desc = iedit_get_instruction_desc ();
     /*  Find first linked list (should be the co-ordinate list)  */
     for (elem_count = 0,
-	 edit_coord_list_index = (*edit_list_desc).num_elements;
-	 elem_count < (*edit_list_desc).num_elements;
+	 edit_coord_list_index = edit_list_desc->num_elements;
+	 elem_count < edit_list_desc->num_elements;
 	 ++elem_count)
     {
-	if (LISTP == (*edit_list_desc).element_types[elem_count])
+	if (LISTP == edit_list_desc->element_types[elem_count])
 	{
 	    edit_coord_list_index = elem_count;
 	}
     }
-    if (edit_coord_list_index >= (*edit_list_desc).num_elements)
+    if (edit_coord_list_index >= edit_list_desc->num_elements)
     {
 	(void) fprintf (stderr, "No linked list found\n");
 	a_prog_bug (function_name);
     }
     /*  Get instruction code  */
-    if (ds_get_unique_named_value (edit_list_desc, object,
-				   "Edit Instruction",
-				   (unsigned int *) NULL, value) != TRUE)
+    if ( !ds_get_unique_named_value (edit_list_desc, object,
+				     "Edit Instruction",
+				     (unsigned int *) NULL, value) )
     {
 	(void) fprintf (stderr, "Error getting edit instruction code\n");
 	return (FALSE);
     }
     instruction_code = (unsigned int) value[0];
     /*  Get data value and convert to pixel value  */
-    if (ds_get_unique_named_value (edit_list_desc, object,
-				   "Edit Object Value",
-				   (unsigned int *) NULL, value) != TRUE)
+    if ( !ds_get_unique_named_value (edit_list_desc, object,
+				     "Edit Object Value",
+				     (unsigned int *) NULL, value) )
     {
 	(void) fprintf (stderr, "Error getting edit object value\n");
 	return (FALSE);
@@ -188,7 +186,7 @@ char *object;
 		       ( object +
 			ds_get_element_offset (edit_list_desc,
 					       edit_coord_list_index) ) );
-    if ( (*coord_list_head).magic != MAGIC_LIST_HEADER )
+    if (coord_list_head->magic != MAGIC_LIST_HEADER)
     {
 	(void) fprintf (stderr,
 			"Co-ordinate list header has bad magic number\n");
@@ -197,19 +195,19 @@ char *object;
     switch (instruction_code)
     {
       case EDIT_INSTRUCTION_DAB:
-	if (draw_dab (vimage, coord_list_head, value) != TRUE)
+	if ( !draw_dab (vimage, coord_list_head, value) )
 	{
 	    return (FALSE);
 	}
 	break;
       case EDIT_INSTRUCTION_STROKE:
-	if (draw_stroke (vimage, coord_list_head, value) != TRUE)
+	if ( !draw_stroke (vimage, coord_list_head, value) )
 	{
 	    return (FALSE);
 	}
 	break;
       case EDIT_INSTRUCTION_FPOLY:
-	if (draw_polygon (vimage, coord_list_head, value) != TRUE)
+	if ( !draw_polygon (vimage, coord_list_head, value) )
 	{
 	    return (FALSE);
 	}
@@ -256,21 +254,16 @@ ViewableImage vimage;
 list_header *coord_list_head;
 double value[2];
 {
-    int cx;
-    int cy;
-    int rx;
-    int ry;
     edit_coord *coords;
-    static char function_name[] = "draw_dab";
+    /*static char function_name[] = "draw_dab";*/
 
-    if ( (*coord_list_head).length != 2 )
+    if (coord_list_head->length != 2)
     {
-	(void) fprintf (stderr, "Dab requires 2 points, got: %u\n",
-			(*coord_list_head).length);
+	(void) fprintf (stderr, "Dab requires 2 points, got: %lu\n",
+			coord_list_head->length);
 	return (FALSE);
     }
-    if (iedit_get_edit_coords (coord_list_head, &coords)
-	!= TRUE)
+    if ( !iedit_get_edit_coords (coord_list_head, &coords) )
     {
 	(void) fprintf (stderr, "Error getting co-ordinates\n");
 	return (FALSE);
@@ -297,18 +290,16 @@ ViewableImage vimage;
 list_header *coord_list_head;
 double value[2];
 {
-    unsigned int coord_count;
     edit_coord *coords;
-    static char function_name[] = "draw_stroke";
+    /*static char function_name[] = "draw_stroke";*/
 
-    if ( (*coord_list_head).length != 4 )
+    if (coord_list_head->length != 4)
     {
-	(void) fprintf (stderr, "Stroke requires 4 points, got: %u\n",
-			(*coord_list_head).length);
+	(void) fprintf (stderr, "Stroke requires 4 points, got: %lu\n",
+			coord_list_head->length);
 	return (FALSE);
     }
-    if (iedit_get_edit_coords (coord_list_head, &coords)
-	!= TRUE)
+    if ( !iedit_get_edit_coords (coord_list_head, &coords) )
     {
 	(void) fprintf (stderr, "Error getting co-ordinates\n");
 	return (FALSE);
@@ -327,15 +318,14 @@ ViewableImage vimage;
 list_header *coord_list_head;
 double value[2];
 {
-    unsigned int coord_count;
     edit_coord *coords;
-    static char function_name[] = "draw_polygon";
+    /*static char function_name[] = "draw_polygon";*/
 
-    if (iedit_get_edit_coords (coord_list_head, &coords)!= TRUE)
+    if ( !iedit_get_edit_coords (coord_list_head, &coords) )
     {
 	(void) fprintf (stderr, "Error getting co-ordinates\n");
 	return (FALSE);
     }
-    return ( viewimg_fill_polygon (vimage, coords, (*coord_list_head).length,
+    return ( viewimg_fill_polygon (vimage, coords, coord_list_head->length,
 				   value) );
 }   /*  End Function draw_polygon  */

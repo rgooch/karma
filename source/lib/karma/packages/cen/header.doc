@@ -1,0 +1,5 @@
+$SUMMARY          Routines to provide channel encryption
+$PURPOSE
+    These routines are meant to provide strong encryption for channel objects.
+    For greater efficiency and better security, data passed through should be
+    compressed.

@@ -31,7 +31,11 @@
 
     Written by      Patrick Jordan  19-AUG-1994
 
-    Last updated by Patrick Jordan  19-AUG-1994
+    Updated by      Patrick Jordan  19-AUG-1994
+
+    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
+
 
 */
 
@@ -172,17 +176,17 @@ static void cancel_cbk(Widget w,XtPointer client_data,XtPointer call_data)
 
 static void Initialize(Widget Request,Widget New)
 {
-  DialogpopupWidget request = (DialogpopupWidget) Request;
-  DialogpopupWidget new = (DialogpopupWidget) New;
+    /*DialogpopupWidget request = (DialogpopupWidget) Request;*/
+    DialogpopupWidget new = (DialogpopupWidget) New;
 
-  new->dialogpopup.dialog=XtVaCreateManagedWidget
-    ("dialog",dialogWidgetClass,(Widget)new,
-     XtNlabel,new->dialogpopup.label,
-     XtNvalue,"",
-     NULL);
+    new->dialogpopup.dialog = XtVaCreateManagedWidget
+	("dialog", dialogWidgetClass, (Widget)new,
+	 XtNlabel, new->dialogpopup.label,
+	 XtNvalue, "",
+	 NULL);
 
-  XawDialogAddButton(new->dialogpopup.dialog,"cancel",cancel_cbk,new);
-  XawDialogAddButton(new->dialogpopup.dialog,"ok",ok_cbk,new);
+    XawDialogAddButton (new->dialogpopup.dialog, "cancel", cancel_cbk, new);
+    XawDialogAddButton (new->dialogpopup.dialog, "ok", ok_cbk, new);
 }
 
 /*----------------------------------------------------------------------*/
@@ -200,13 +204,13 @@ static void Destroy(Widget W)
 
 static Boolean SetValues(Widget Current,Widget Request,Widget New)
 {
-  DialogpopupWidget current = (DialogpopupWidget) Current;
-  DialogpopupWidget request = (DialogpopupWidget) Request;
-  DialogpopupWidget new = (DialogpopupWidget) New;
+    /*DialogpopupWidget current = (DialogpopupWidget) Current;
+      DialogpopupWidget request = (DialogpopupWidget) Request;*/
+    DialogpopupWidget new = (DialogpopupWidget) New;
 
-  XtVaSetValues(new->dialogpopup.dialog,
-		XtNlabel,new->dialogpopup.label,
-		NULL);
+    XtVaSetValues (new->dialogpopup.dialog,
+		   XtNlabel, new->dialogpopup.label,
+		   NULL);
   return True;
 }
 

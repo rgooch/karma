@@ -2,7 +2,7 @@
 
     Header for  overlay_  package.
 
-    Copyright (C) 1993,1994,1995  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   2-DEC-1993
 
-    Last updated by Richard Gooch   7-APR-1995
+    Last updated by Richard Gooch   28-FEB-1996
 
 */
 
@@ -39,8 +39,8 @@
 #  include <karma_canvas.h>
 #endif
 
-#if !defined(KARMA_IARRAY_H) || defined(MAKEDEPEND)
-#  include <karma_iarray.h>
+#if !defined(KARMA_IARRAY_DEF_H) || defined(MAKEDEPEND)
+#  include <karma_iarray_def.h>
 #endif
 
 #ifndef KARMA_OVERLAY_H

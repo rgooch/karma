@@ -5,8 +5,8 @@
  *
    Resources:               Type:                Defaults:
 
-   fileSelectCallback       Callback             NULL
-   filenameTester           Callback             NULL
+   XkwNfileSelectCallback   Callback             NULL
+   XkwNfilenameTester       Callback             NULL
 
  *----------------------------------------------------------------------*/
 
@@ -15,6 +15,10 @@
 
 #if !defined(KARMA_C_DEF_H) || defined(MAKEDEPEND)
 #  include <karma_c_def.h>
+#endif
+
+#if !defined(KARMA_DIR_H) || defined(MAKEDEPEND)
+#  include <karma_dir.h>
 #endif
 
 extern WidgetClass filewinWidgetClass;
@@ -37,5 +41,8 @@ EXTERN_FUNCTION (KCallbackFunc XkwFilewinRegisterDirCbk,
 		 (Widget w,
 		  flag (*callback) (Widget w, void *info, CONST char *dirname),
 		  void *info) );
+EXTERN_FUNCTION (flag XkwFilewinStandardFileTester_nD, (KFileInfo finfo) );
+EXTERN_FUNCTION (flag XkwFilewinStandardFileTester_3D, (KFileInfo finfo) );
+
 
 #endif

@@ -1,0 +1,474 @@
+<html><head><title>Package: kcmap</title></head> 
+<body>
+<center><h1>The "kcmap" Package</h1></center>    These routines are meant to provide a high level mechanism to create and
+    manipulate colourmaps, complete with colourmap sharing, dynamic allocation
+    and event management.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=kcmap></a></table><h4>Functions</h4><table><tr><td><a href=kcmap.html#kcmap_va_create>kcmap_va_create</a></td><td>Create a high level colourmap.
+</td></tr>
+<tr><td><a href=kcmap.html#kcmap_add_RGB_func>kcmap_add_RGB_func</a></td><td>Register a new colourmap function.
+</td></tr>
+<tr><td><a href=kcmap.html#kcmap_register_resize_func>kcmap_register_resize_func</a></td><td>Register a colourmap resize function.
+</td></tr>
+<tr><td><a href=kcmap.html#kcmap_change>kcmap_change</a></td><td>Change active colourmap function.
+</td></tr>
+<tr><td><a href=kcmap.html#kcmap_modify>kcmap_modify</a></td><td>Change colours in a colourmap.
+</td></tr>
+<tr><td><a href=kcmap.html#kcmap_modify_direct_type>kcmap_modify_direct_type</a></td><td>Change colours in a colourmap.
+</td></tr>
+<tr><td><a href=kcmap.html#kcmap_list_funcs>kcmap_list_funcs</a></td><td>Get list of colourmap functions.
+</td></tr>
+<tr><td><a href=kcmap.html#kcmap_get_funcs_for_cmap>kcmap_get_funcs_for_cmap</a></td><td>Get list of colourmap functions compatible with a colourmap.
+</td></tr>
+<tr><td><a href=kcmap.html#kcmap_get_active_func>kcmap_get_active_func</a></td><td>Get active colourmap function.
+</td></tr>
+<tr><td><a href=kcmap.html#kcmap_get_pixels>kcmap_get_pixels</a></td><td>Get pixel values in a colourmap.
+</td></tr>
+<tr><td><a href=kcmap.html#kcmap_notify_pixels_changed>kcmap_notify_pixels_changed</a></td><td>Notify that pixel values have been changed.
+</td></tr>
+<tr><td><a href=kcmap.html#kcmap_get_pixel>kcmap_get_pixel</a></td><td>This routine will get a numbered pixel value from a colourmap.
+</td></tr>
+<tr><td><a href=kcmap.html#kcmap_prepare_for_slavery>kcmap_prepare_for_slavery</a></td><td>Allow colourmap to be slaved.
+</td></tr>
+<tr><td><a href=kcmap.html#kcmap_copy_to_struct>kcmap_copy_to_struct</a></td><td>Copy colour data from a colourmap.
+</td></tr>
+<tr><td><a href=kcmap.html#kcmap_copy_from_struct>kcmap_copy_from_struct</a></td><td>Copy colour data into a colourmap.
+</td></tr>
+<tr><td><a href=kcmap.html#kcmap_get_rgb_values>kcmap_get_rgb_values</a></td><td>Get colour data from a colourmap.
+</td></tr>
+<tr><td><a href=kcmap.html#kcmap_get_attributes>kcmap_get_attributes</a></td><td>This routine will get the attributes for a colourmap.
+</td></tr>
+<tr><td><a href=kcmap.html#kcmap_set_attributes>kcmap_set_attributes</a></td><td>This routine will set the attributes for a colourmap.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=kcmap.html#KCMAP_PROTO_alloc_func>KCMAP_PROTO_alloc_func</a></td><td>Allocate colourcells.
+</td></tr>
+<tr><td><a href=kcmap.html#KCMAP_PROTO_free_func>KCMAP_PROTO_free_func</a></td><td>Free colourcells.
+</td></tr>
+<tr><td><a href=kcmap.html#KCMAP_PROTO_store_func>KCMAP_PROTO_store_func</a></td><td>This routine will store colours into a low level colourmap.
+</td></tr>
+<tr><td><a href=kcmap.html#KCMAP_PROTO_location_func>KCMAP_PROTO_location_func</a></td><td>Get location of display.
+</td></tr>
+<tr><td><a href=kcmap.html#KCMAP_PROTO_colour_func>KCMAP_PROTO_colour_func</a></td><td>Modify colour values.
+</td></tr>
+<tr><td><a href=kcmap.html#KCMAP_PROTO_grey_func>KCMAP_PROTO_grey_func</a></td><td>Modify greyscale colour values.
+</td></tr>
+<tr><td><a href=kcmap.html#KCMAP_PROTO_resize_func>KCMAP_PROTO_resize_func</a></td><td>This routine registers a change in the size of a colourmap.
+</td></tr>
+</table><h4>Tables</h4><table><tr><td><a href=kcmap.html#KCMAP_ATTRIBUTES>KCMAP_ATTRIBUTES</a></td><td>List of attributes for Kcolourmap objects
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=kcmap_va_create></a> Kcolourmap
+ <b>kcmap_va_create</b><i>    (CONST char *name, unsigned int num_cells,
+			    flag tolerant,
+			    Kdisplay dpy_handle, unsigned int (*alloc_func) (),
+			    void (*free_func) (), void (*store_func) (),
+			    void (*location_func) (), ...)
+</i><br><p>    This routine will create a high level colourmap. The colourmap
+    may be associated with a hardware colourmap, or it may be a software-only
+    colourmap. In either case, storage for an array of pixel values and arrays
+    of colour components is maintained within the colourmap object.
+<p><b>Parameters:</b><ul><li><i>name :</i> 
+    The name of the function used to initialise the colour values. If
+    this is NULL, the default "Greyscale1" function is used.
+<br><li><i>num_cells :</i> 
+    The initial number of colourcells to allocate. This must not be
+    less than 2.
+<br><li><i>tolerant :</i> 
+    If TRUE the routine will try to allocate as many colourcells as
+    possible (up to <em>num_cells</em>), else it will fail if it could not
+    allocate all required colourcells.
+<br><li><i>dpy_handle :</i> 
+    The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+<br><li><i>alloc_func :</i> 
+    The function which must be called in order to allocate
+    colourcells. See the <a href=xc.html#xc>xc</a> routines for examples. The prototype function
+    is <a href=kcmap.html#KCMAP_PROTO_alloc_func>KCMAP_PROTO_alloc_func</a>.
+<br><li><i>free_func :</i> 
+    The function which must be called to free colourcells. The
+    The prototype function is <a href=kcmap.html#KCMAP_PROTO_free_func>KCMAP_PROTO_free_func</a>.
+<br><li><i>store_func :</i> 
+    The function which is used to store colours into a low level
+    colourmap. The prototype function is <a href=kcmap.html#KCMAP_PROTO_store_func>KCMAP_PROTO_store_func</a>.
+<br><li><i>location_func :</i> 
+    The function which is used to determine the location of a
+    display. The prototype function is <a href=kcmap.html#KCMAP_PROTO_location_func>KCMAP_PROTO_location_func</a>.
+<br><li><i>... :</i> 
+    The optional list of parameter attribute-key attribute-value
+    pairs must follow. This list must be terminated with the value
+    KCMAP_ATT_END. See <a href=kcmap.html#KCMAP_ATTRIBUTES>KCMAP_ATTRIBUTES</a> for a list of defined attributes.
+<br></ul><b>Returns:</b>     A colourmap on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     If the above routines are NULL, the colourmap created is assumed to
+    be a software colourmap, otherwise it is considered to be a
+    hardware/virtual colourmap. A software colourmap, while maintaining storage
+    for an array of pixel values, does not generate the pixel values. The
+    <a href=kcmap.html#kcmap_get_pixels>kcmap_get_pixels</a> routine may be used to modify the array of pixel
+    values in a software colourmap.
+</ul><p><hr> <a name=kcmap_add_RGB_func></a> void
+ <b>kcmap_add_RGB_func</b><i>    (CONST char *name, void (*func) (),
+			 unsigned int min_cells, unsigned int max_cells)
+</i><br><p>    This routine will register a named function which will compute
+    RGB intensity values for a colourmap. This function is typically called in
+    response to a call to <a href=kcmap.html#kcmap_modify>kcmap_modify</a>.
+<p><b>Parameters:</b><ul><li><i>name :</i> 
+    The name of the colourmap function.
+<br><li><i>func :</i> 
+    The function which is used to compute the RGB values. The prototype
+    function is <a href=kcmap.html#KCMAP_PROTO_colour_func>KCMAP_PROTO_colour_func</a>.
+<br><li><i>min_cells :</i> 
+    The minimum number of colourcells that must be allocated for
+    this function to work. If this is less than 2, no minimum is defined.
+<br><li><i>max_cells :</i> 
+    The maximum number of colourcells that may be allocated for
+    this function to work. If this is less than 2, no maximum is defined.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kcmap_register_resize_func></a> KCallbackFunc
+ <b>kcmap_register_resize_func</b><i>    (Kcolourmap cmap,
+					  void (*resize_func) (), void *info)
+</i><br><p>    This routine will register a resize function for a high level
+    colourmap. The resize function will be called whenever the colourmap is
+    resized. If the colourmap is a software colourmap, the resize function is
+    called whenever the colour values change.
+    Many resize functions may be registered per colourmap. The first
+    function registered is the first function called upon resize.
+<p><b>Parameters:</b><ul><li><i>cmap :</i> 
+    The colourmap.
+<br><li><i>resize_func :</i> 
+    The function which is called when the colourmap is resized.
+    The prototype function is <a href=kcmap.html#KCMAP_PROTO_resize_func>KCMAP_PROTO_resize_func</a>.
+<br><li><i>info :</i> 
+    The initial arbitrary colourmap information pointer.
+<br></ul><b>Returns:</b>     A KCallbackFunc object.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kcmap_change></a> flag
+ <b>kcmap_change</b><i>    (Kcolourmap cmap, CONST char *new_name,
+		   unsigned int num_cells, flag tolerant)
+</i><br><p>    This routine will change the active function (algorithm) used to
+    calculate the colours in a colourmap and the size of the colourmap.
+<p><b>Parameters:</b><ul><li><i>cmap :</i> 
+    The colourmap object.
+<br><li><i>new_name :</i> 
+    The new function name. If this is NULL then the active function
+    is not changed.
+<br><li><i>num_cells :</i> 
+    The number of colourcells required for the colourmap. If this
+    is less then 2 the number of cells is not changed.
+<br><li><i>tolerant :</i> 
+    If TRUE, then the routine will try to allocate as many
+    colourcells as possible (up to  num_cells  ), else it will fail if it could
+    not allocatate all required colourcells.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kcmap_modify></a> void
+ <b>kcmap_modify</b><i>    (Kcolourmap cmap, double x, double y, void *var_param)
+</i><br><p>    This routine will call the active colour compute function to
+    change the colourmap colours in a colourmap.
+<p><b>Parameters:</b><ul><li><i>cmap :</i> 
+    The colourmap object.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     If the REVERSE attribute for the colourmap is set, the colourmap is
+    reversed.
+</ul><p><hr> <a name=kcmap_modify_direct_type></a> void
+ <b>kcmap_modify_direct_type</b><i>    (Kcolourmap cmap,
+			       double red_x, double red_y, void *red_var_param,
+			       double green_x, double green_y,
+			       void *green_var_param,
+			       double blue_x, double blue_y,
+			       void *blue_var_param)
+</i><br><p>    This routine will call the active colour compute function to
+    change the colourmap colours in a colourmap.
+<p><b>Parameters:</b><ul><li><i>cmap :</i> 
+    The colourmap object.
+<br><li><i>red_x :</i> 
+    A parameter used to compute the red component colour values.
+<br><li><i>red_y :</i> 
+    A parameter used to compute the red component colour values.
+<br><li><i>red_var_param :</i> 
+    A parameter used to compute the red component colour
+    values.
+<br><li><i>green_x :</i> 
+    A parameter used to compute the green component colour values.
+<br><li><i>green_y :</i> 
+    A parameter used to compute the green component colour values.
+<br><li><i>green_var_param :</i> 
+    A parameter used to compute the green component colour
+    values.
+<br><li><i>blue_x :</i> 
+    A parameter used to compute the blue component colour values.
+<br><li><i>blue_y :</i> 
+    A parameter used to compute the blue component colour values.
+<br><li><i>blue_var_param :</i> 
+    A parameter used to compute the blue component colour
+    values.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     If the REVERSE attribute for the colourmap is set, the colourmap is
+    reversed.
+</ul><p><hr> <a name=kcmap_list_funcs></a> CONST char **
+ <b>kcmap_list_funcs</b><i>    ()
+</i><br><p>    This routine will get the array of supported colour function
+    names. This array is dynamically allocated, and should be freed using
+    <a href=m.html#m_free>m_free</a>. The array is terminated with a NULL pointer.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     A pointer to the array.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The names in the array are statically allocated.
+</ul><p><hr> <a name=kcmap_get_funcs_for_cmap></a> CONST char **
+ <b>kcmap_get_funcs_for_cmap</b><i>    (Kcolourmap cmap)
+</i><br><p>    This routine will get the array of supported colour function
+    names. This array is dynamically allocated, and should be freed using
+    <a href=m.html#m_free>m_free</a>. The array is terminated with a NULL pointer. Only functions
+    which are compatible with the colourmap are returned.
+<p><b>Parameters:</b><ul><li><i>cmap :</i> 
+    The colourmap object.
+<br></ul><b>Returns:</b>     A pointer to the array.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The names in the array are statically allocated.
+</ul><p><hr> <a name=kcmap_get_active_func></a> CONST char *
+ <b>kcmap_get_active_func</b><i>    (Kcolourmap cmap)
+</i><br><p>    This routine will get the name of the active colour function for
+    a colourmap.
+<p><b>Parameters:</b><ul><li><i>cmap :</i> 
+    The colourmap object.
+<br></ul><b>Returns:</b>     A pointer to the name of the colour function. This name must not
+    be freed.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kcmap_get_pixels></a> unsigned int
+ <b>kcmap_get_pixels</b><i>    (Kcolourmap cmap, unsigned long **pixel_values)
+</i><br><p>    This routine will determine the number of colourcells in a
+    colourmap and the pixel values allocated.
+<p><b>Parameters:</b><ul><li><i>cmap :</i> 
+    The colourmap object.
+<br><li><i>pixel_values :</i> 
+    A pointer to the array of pixel values will be written here.
+    If this is NULL, nothing is written here. The pixel values may be modified
+    if the colourmap is a software colourmap. If the pixel values are changed,
+    the <a href=kcmap.html#kcmap_notify_pixels_changed>kcmap_notify_pixels_changed</a> routine should be called.
+<br></ul><b>Returns:</b>     The number of colourcells allocated.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kcmap_notify_pixels_changed></a> void
+ <b>kcmap_notify_pixels_changed</b><i>    (Kcolourmap cmap)
+</i><br><p>    This routine posts a notification that the pixel values in a
+    software colourmap have changed. The resize functions registered with
+    <a href=kcmap.html#kcmap_register_resize_func>kcmap_register_resize_func</a> are usually called.
+<p><b>Parameters:</b><ul><li><i>cmap :</i> 
+    The colourmap object. This must be a software colourmap.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kcmap_get_pixel></a> unsigned long
+ <b>kcmap_get_pixel</b><i>    (Kcolourmap cmap, unsigned int index)
+</i><br><p>    This routine will get a numbered pixel value from a colourmap.
+<p><b>Parameters:</b><ul><li><i>cmap :</i> 
+    The colourmap object.
+<br><li><i>index :</i> 
+    The index of the pixel.
+<br></ul><b>Returns:</b>     The pixel value.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kcmap_prepare_for_slavery></a> void
+ <b>kcmap_prepare_for_slavery</b><i>    (Kcolourmap cmap)
+</i><br><p>    This routine will register a colourmap to be the choosen
+    colourmap for subsequent attempts to open a slave colourmap connection. In
+    order to make the colourmap a slave, a subsequent call to
+    <a href=conn.html#conn_attempt_connection>conn_attempt_connection</a> must be made.
+<p><b>Parameters:</b><ul><li><i>cmap :</i> 
+    The colourmap object.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kcmap_copy_to_struct></a> flag
+ <b>kcmap_copy_to_struct</b><i>    (Kcolourmap cmap, packet_desc **top_pack_desc,
+			   char **top_packet)
+</i><br><p>    This routine will copy the colour data in a colourmap into a
+    newly allocated Karma data structure. This data structure may be
+    subsequently deallocated.
+<p><b>Parameters:</b><ul><li><i>cmap :</i> 
+    The colourmap object.
+<br><li><i>top_pack_desc :</i> 
+    The pointer to the top level packet descriptor that is
+    allocated will be written here.
+<br><li><i>top_packet :</i> 
+    The pointer to the top level packet that is allocated will be
+    written here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kcmap_copy_from_struct></a> flag
+ <b>kcmap_copy_from_struct</b><i>    (Kcolourmap cmap, packet_desc *top_pack_desc,
+			     char *top_packet)
+</i><br><p>    This routine will copy the colour data in a Karma data structure
+    into a colourmap. If the colourmap changes size, then the <em>resize_func</em>
+    registered is called.
+<p><b>Parameters:</b><ul><li><i>cmap :</i> 
+    The colourmap object.
+<br><li><i>top_pack_desc :</i> 
+    The top level packet descriptor.
+<br><li><i>top_packet :</i> 
+    The top level packet.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kcmap_get_rgb_values></a> unsigned short *
+ <b>kcmap_get_rgb_values</b><i>    (Kcolourmap cmap, unsigned int *size)
+</i><br><p>    This routine will return the RGB values in a colourmap. The
+    colour values are arranged in packets of Red, Green and Blue values.
+<p><b>Parameters:</b><ul><li><i>cmap :</i> 
+    The colourmap object.
+<br><li><i>size :</i> 
+    The routine will write the size of the colourmap here.
+<br></ul><b>Returns:</b>     A pointer to a dynamically allocated array. This must be freed
+    with <a href=m.html#m_free>m_free</a>. On failure it returns NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kcmap_get_attributes></a> void
+ <b>kcmap_get_attributes</b><i>    (Kcolourmap cmap, ...)
+</i><br><p>    This routine will get the attributes for a colourmap.
+<p><b>Parameters:</b><ul><li><i>cmap :</i> 
+    The colourmap.
+<br><li><i>... :</i> 
+    The optional list of parameter attribute-key attribute-value
+    pairs must follow. This list must be terminated with the value
+    KCMAP_ATT_END. See <a href=kcmap.html#KCMAP_ATTRIBUTES>KCMAP_ATTRIBUTES</a> for a list of defined attributes.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kcmap_set_attributes></a> void
+ <b>kcmap_set_attributes</b><i>    (Kcolourmap cmap, ...)
+</i><br><p>    This routine will set the attributes for a colourmap.
+<p><b>Parameters:</b><ul><li><i>cmap :</i> 
+    The colourmap.
+<br><li><i>... :</i> 
+    The optional list of parameter attribute-key attribute-value
+    pairs must follow. This list must be terminated with the value
+    KCMAP_ATT_END. See <a href=kcmap.html#KCMAP_ATTRIBUTES>KCMAP_ATTRIBUTES</a> for a list of defined attributes.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The colourmap is not recomputed: the effect is delayed.
+</ul><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=KCMAP_PROTO_alloc_func></a> unsigned int
+ <b>KCMAP_PROTO_alloc_func</b><i>    (unsigned int num_cells,
+				     unsigned long *pixel_values,
+				     unsigned int min_cells,
+				     Kdisplay dpy_handle)
+</i><br><p>    This routine will allocate a number of colourcells in a low
+    level colourmap (e.g. using the Xlib routine XAllocColorCells).
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colourcells to allocate.
+<br><li><i>pixel_values :</i> 
+    The array ofpixel values allocated will be written here.
+<br><li><i>min_cells :</i> 
+    The minimum number of colourcells to allocate. The routine
+    will try to allocate at least this number of colourcells.
+<br><li><i>dpy_handle :</i> 
+    The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+<br></ul><b>Returns:</b>     The number of colourcells allocated.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=KCMAP_PROTO_free_func></a> void
+ <b>KCMAP_PROTO_free_func</b><i>    (unsigned int num_cells,
+			    unsigned long *pixel_values, Kdisplay dpy_handle)
+</i><br><p>    This routine will free a number of colourcells in a low
+    level colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colourcells to free.
+<br><li><i>pixel_values :</i> 
+    The array of pixel values (colourcells) to free.
+<br><li><i>dpy_handle :</i> 
+    The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=KCMAP_PROTO_store_func></a> void
+ <b>KCMAP_PROTO_store_func</b><i>    (unsigned int num_cells,
+			     unsigned long *pixel_values,
+			     unsigned short *reds, unsigned short *greens,
+			     unsigned short *blues, unsigned int stride,
+			     Kdisplay dpy_handle)
+</i><br><p>    This routine will store colours into a low level colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colourcells to store.
+<br><li><i>pixel_values :</i> 
+    The array of pixel values.
+<br><li><i>reds :</i> 
+    The array of red intensity values.
+<br><li><i>greens :</i> 
+    The array of green intensity values.
+<br><li><i>blues :</i> 
+    The array of blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values in
+    each array.
+<br><li><i>dpy_handle :</i> 
+    The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=KCMAP_PROTO_location_func></a> void
+ <b>KCMAP_PROTO_location_func</b><i>    (Kdisplay dpy_handle,
+				unsigned long *serv_hostaddr,
+				unsigned long *serv_display_num)
+</i><br><p>    This routine will determine the location of the graphics
+    display being used.
+<p><b>Parameters:</b><ul><li><i>dpy_handle :</i> 
+    The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+<br><li><i>serv_hostaddr :</i> 
+    The Internet address of the host to which the display
+    is connected will be written here.
+<br><li><i>serv_display_num :</i> 
+    The number of the display will be written here.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=KCMAP_PROTO_colour_func></a> void
+ <b>KCMAP_PROTO_colour_func</b><i>    (unsigned int num_cells, unsigned short *reds,
+			      unsigned short *greens, unsigned short *blues,
+			      unsigned int stride, double x, double y,
+			      void *var_param)
+</i><br><p>    This routine will write RGB colour intensity values to a
+    number of colourcells. This routine is called in response to a call to
+    <a href=kcmap.html#kcmap_modify>kcmap_modify</a>.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The array of red intensity values.
+<br><li><i>greens :</i> 
+    The array of green intensity values.
+<br><li><i>blues :</i> 
+    The array of blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values in
+    each array.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values.
+<br><li><i>max_cells :</i> 
+    A parameter used to compute the colour values.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=KCMAP_PROTO_grey_func></a> void
+ <b>KCMAP_PROTO_grey_func</b><i>    (unsigned int num_cells, unsigned short *reds,
+			      unsigned short *greens, unsigned short *blues,
+			      unsigned int stride, double x, double y,
+			      void *var_param)
+</i><br><p>    This routine will write greyscale intensity values to a
+    number of colourcells. This routine is called in response to a call to
+    <a href=kcmap.html#kcmap_modify>kcmap_modify</a>.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The array of red intensity values. This may be NULL.
+<br><li><i>greens :</i> 
+    The array of green intensity values. This may be NULL.
+<br><li><i>blues :</i> 
+    The array of blue intensity values. This may be NULL.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values in the
+    array.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values.
+<br><li><i>max_cells :</i> 
+    A parameter used to compute the colour values.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=KCMAP_PROTO_resize_func></a> void
+ <b>KCMAP_PROTO_resize_func</b><i>    (Kcolourmap cmap, void **info)
+</i><br><p>    This routine registers a change in the size of a colourmap.
+<p><b>Parameters:</b><ul><li><i>cmap :</i> 
+    The colourmap.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary colourmap information pointer.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Tables</h2></center><hr> <a name=KCMAP_ATTRIBUTES><b>KCMAP_ATTRIBUTES</b></a><p> <table><tr><td>Name                    </td><td>Get Type         </td><td>Set Type       </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>KCMAP_ATT_END           </td><td>                 </td><td>               </td><td>End of varargs list
+</td></tr><tr><td>KCMAP_ATT_REVERSE       </td><td>flag *           </td><td>flag           </td><td>Reverse pixel order
+</td></tr><tr><td>KCMAP_ATT_INVERT        </td><td>flag *           </td><td>flag           </td><td>Invert intensities
+</td></tr><tr><td>KCMAP_ATT_SOFTWARE      </td><td>flag *           </td><td>               </td><td>Test if software
+                                                        colourmap
+</td></tr><tr><td>KCMAP_ATT_DPY_HANDLE    </td><td>Kdisplay *       </td><td>               </td><td>Get display handle
+</td></tr><tr><td>KCMAP_ATT_DIRECT_VISUAL </td><td>flag *           </td><td>flag           </td><td>Handle colourmap as for
+                                                        a direct visual type
+</td></tr><tr><td>KCMAP_ATT_RED_SCALE     </td><td>unsigned short * </td><td>unsigned short </td><td>Red scale
+</td></tr><tr><td>KCMAP_ATT_GREEN_SCALE   </td><td>unsigned short * </td><td>unsigned short </td><td>Green scale
+</td></tr><tr><td>KCMAP_ATT_BLUE_SCALE    </td><td>unsigned short * </td><td>unsigned short </td><td>Blue scale
+</table><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

@@ -1,0 +1,29 @@
+/*PROTOTYPE_FUNCTION*/  /*
+flag VIEWIMG_PROTO_position_func (ViewableImage vimage, double x, double y,
+				  void *value, unsigned int event_code,
+				  void *e_info, void **f_info,
+				  double x_lin, double y_lin,
+				  unsigned int value_type)
+    [SUMMARY] Position event callback.
+    [PURPOSE] This routine is a position event consumer for a world canvas
+    which has a number of ViewableImage objects associated with it.
+    <viewimg> The active viewable image.
+    <x> The horizontal world co-ordinate of the event.
+    <y> The vertical world co-ordinate of the event.
+    These values will have been transformed by the registered transform
+    function (see [<canvas_register_transform_func>]) for the associated
+    world canvas.
+    <value> A pointer to the data value in the viewable image corresponding
+    to the event co-ordinates.
+    <event_code> The arbitrary event code.
+    <e_info> The arbitrary event information.
+    <f_info> The arbitrary function information pointer.
+    <x_lin> The linear horizontal world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+    <y_lin> The linear vertical world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+    <value_type> The type of the data value. This may be K_DCOMPLEX or
+    K_UB_RGB.
+    [RETURNS] TRUE if the event was consumed, else FALSE indicating that
+    the event is still to be processed.
+*/

@@ -1,0 +1,5 @@
+$SUMMARY          Routines to transfer data structures over connections
+$PURPOSE
+    These routines are meant to provide high level transfer of the recursive,
+    heirarchical data structure supported in Karma from and to files and
+    connections.

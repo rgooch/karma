@@ -1,0 +1,4 @@
+$SUMMARY          Routines to manipulate X displays and colourmaps
+$PURPOSE
+    These routines are meant to provide an abstracted interface to X displays
+    and colourmaps, used in the <-kcmap-> routines.

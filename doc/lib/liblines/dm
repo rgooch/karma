@@ -1,2 +1,0 @@
-/*  Routines to manage events on (file) descriptors  */
-/*  Link with:    -lkarma  */

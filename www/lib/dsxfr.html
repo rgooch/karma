@@ -1,0 +1,131 @@
+<html><head><title>Package: dsxfr</title></head> 
+<body>
+<center><h1>The "dsxfr" Package</h1></center>    These routines are meant to provide high level transfer of the recursive,
+    heirarchical data structure supported in Karma from and to files and
+    connections.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=dsxfr></a></table><h4>Functions</h4><table><tr><td><a href=dsxfr.html#dsxfr_register_connection_limits>dsxfr_register_connection_limits</a></td><td>Register connection limits for "multi_array" protocol.
+</td></tr>
+<tr><td><a href=dsxfr.html#dsxfr_put_multi>dsxfr_put_multi</a></td><td>Write a multi_array data structure.
+</td></tr>
+<tr><td><a href=dsxfr.html#dsxfr_get_multi>dsxfr_get_multi</a></td><td>Read a multi_array data structure.
+</td></tr>
+<tr><td><a href=dsxfr.html#dsxfr_register_read_func>dsxfr_register_read_func</a></td><td>Register callback for new "multi_array" data.
+</td></tr>
+<tr><td><a href=dsxfr.html#dsxfr_register_close_func>dsxfr_register_close_func</a></td><td>Register callback for closed "multi_array" connection.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=dsxfr.html#DSXFR_PROTO_read_func>DSXFR_PROTO_read_func</a></td><td>New "multi_array" data callback.
+</td></tr>
+<tr><td><a href=dsxfr.html#DSXFR_PROTO_close_func>DSXFR_PROTO_close_func</a></td><td>Callback for "multi_array" connection closures.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=dsxfr_register_connection_limits></a> void
+ <b>dsxfr_register_connection_limits</b><i>    (int max_incoming, int max_outgoing)
+</i><br><p>    This routine will register the maximum number of incoming
+    (server) and outgoing (client) connections for the transfer of the general
+    data structure. The protocol used is: "multi_array".
+<p><b>Parameters:</b><ul><li><i>max_incoming :</i> 
+    The maximum number of incoming connections. If this is less
+    than 0, no connections are permitted. If this is 0, an unlimited number of
+    connections is permitted.
+<br><li><i>max_outgoing :</i> 
+    The maximum number of outgoing connections. If this is less
+    than 0, no connections are permitted. If this is 0, an unlimited number of
+    connections is permitted.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine ONLY registers the server and client callback routines,
+    the application must first call <conn_register_managers> in all cases and
+    must call <conn_become_server> if it wishes to accept connections.
+</ul><p><hr> <a name=dsxfr_put_multi></a> flag
+ <b>dsxfr_put_multi</b><i>    (CONST char *object, multi_array *multi_desc)
+</i><br><p>    This routine will put (write to disc, transmit over connection) a
+    multi_desc general data structure to a named object.
+<p><b>Parameters:</b><ul><li><i>object :</i> 
+    The object name. If the object is named "connections" then the
+    data will be transmitted to all available connections with the
+    "multi_array" protocol. If the object is named "connections:{module_name}"
+    then the data will be transmitted to all available connections to modules
+    with the name {module_name} and with the "multi_array" protocol.
+    If the object is named "connections:!{module_name}" then the data will be
+    transmitted to all available connections with the "multi_array" protocol to
+    all modules except those with the name {module_name}.
+    If the object is named "connection[#]" then the data will be transmitted to
+    the "multi_array" protocol connection with index: # (starting from 0).
+    If the object is named "{filename}_connection" then the data will be
+    transmitted to all available connections with the "multi_array" protocol.
+    In all other cases the data will be written to a disc file. The routine
+    will append a ".kf" extension if not already specified. If the disc file
+    already exists, the old data file is first renamed to have a trailing '~'
+    (tilde) character.
+<br><li><i>multi_desc :</i> 
+    A pointer to the data structure.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsxfr_get_multi></a> multi_array *
+ <b>dsxfr_get_multi</b><i>    (CONST char *object, flag cache,
+			      unsigned int mmap_option, flag writeable)
+</i><br><p>    This routine will get (read from disc, read from connection) a
+    multi_desc general data structure from a named object.
+<p><b>Parameters:</b><ul><li><i>object :</i> 
+    The object name. If the object is named "connection[#]" then
+    whatever data has been previously sent over the "multi_array" protocol
+    connection with index: # (starting from 0) will be returned.
+    In all other cases the data will be read from a disc file. The routine will
+    append a ".kf" extension if not already specified.
+<br><li><i>cache :</i> 
+    If TRUE and the data is read from a disc, the data structure and
+    filename relationship is cached. This means that a subsequent attempt to
+    read the data will not require the disc to be accessed. This relationship
+    is lost if the data structure is destroyed. Also, in both this case and the
+    case where the data structure is "read" from a connection, the attachment
+    count for the data structure is incremented *every time* this routine is
+    called. Read the documentation for the <ds_dealloc_multi> routine for
+    information on attachment counts. The attachment count is *not* incremented
+    when reading a disc file without adding it to the cache list.
+<br><li><i>mmap_option :</i> 
+    Option to control memory mapping when reading from disc. See
+    <a href=ch.html#CH_MAP_CONTROLS>CH_MAP_CONTROLS</a> for a list of legal values.
+<br><li><i>writeable :</i> 
+    If TRUE, the mapped structure will be writeable. When the data
+    structure data is modified these changes will be reflected in the disc
+    file. The shape of the data structure cannot be changed though mapping.
+    If FALSE and the structure is written to, a segmentation fault occurs.
+<br></ul><b>Returns:</b>     A pointer to the data structure on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     Reading from a connection with this routine does *not* block, if no
+    prior data was transmitted, the routine returns NULL. Multiple calls to
+    this routine will return the same data structure *until* new data is
+    received over the connection.
+</ul><p><hr> <a name=dsxfr_register_read_func></a> void
+ <b>dsxfr_register_read_func</b><i>    (void (*read_func) ())
+</i><br><p>    This routine will register a function which is to be called when
+    new data arrives on a "multi_array" connection.
+<p><b>Parameters:</b><ul><li><i>read_func :</i> 
+    A pointer to the function. The prototype function is
+    <a href=dsxfr.html#DSXFR_PROTO_read_func>DSXFR_PROTO_read_func</a>.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsxfr_register_close_func></a> void
+ <b>dsxfr_register_close_func</b><i>    ( void (*close_func) () )
+</i><br><p>    This routine will register a function which is to be called when
+    a "multi_array" connection closes.
+<p><b>Parameters:</b><ul><li><i>close_func :</i> 
+    A pointer to the function. The prototype function is
+    <a href=dsxfr.html#DSXFR_PROTO_close_func>DSXFR_PROTO_close_func</a>.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=DSXFR_PROTO_read_func></a> void
+ <b>DSXFR_PROTO_read_func</b><i>    (flag first_time_data, unsigned int connection_num)
+</i><br><p>    This routine is called when new data arrives on any "multi_array"
+    connection.
+<p><b>Parameters:</b><ul><li><i>first_time_data :</i> 
+    If data appears on a connection for the first time, this
+    will be TRUE. Any subsqeuent data that appears on a connection will not set
+    this flag.
+<br><li><i>connection_num :</i> 
+    The index number of the connection.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=DSXFR_PROTO_close_func></a> void
+ <b>DSXFR_PROTO_close_func</b><i>    (flag data_deallocated)
+</i><br><p>    This routine is called when any "multi_array" connection closes.
+<p><b>Parameters:</b><ul><li><i>data_deallocated :</i> 
+    If there was a multi_array data structure already
+    received over the connection, it is deallocated and this is TRUE.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

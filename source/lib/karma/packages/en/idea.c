@@ -3,7 +3,7 @@
 
     This code provides support for the IDEA cipher.
 
-    Copyright (C) 1994,1995  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     Based on code obtained from Colin Plumb  (colin@nyx10.cs.du.edu)
 
@@ -75,7 +75,10 @@
     Updated by      Richard Gooch   27-FEB-1995: Changed to MACHINE_BIG_ENDIAN
   macro.
 
-    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Last updated by Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -402,15 +405,16 @@ struct idea_cipher_status_type  /*  Must come after the IDEA code  */
 /*PUBLIC_FUNCTION*/
 idea_status en_idea_init (char key[EN_IDEA_KEY_SIZE], flag decrypt,
 			  char init_vector[EN_IDEA_BLOCK_SIZE], flag clear)
-/*  This routine will initialise the IDEA cipher in Cipher Feed Back mode for
-    a stream of data. The stream is uni-directional.
-    The 16 byte IDEA key must be pointed to by  key  .
-    If the stream is to be decrypted, the value of  decrypt  must be TRUE.
-    The 8 byte initialisation vector must be pointed to by  init_vector  .
-    If the value of  clear  is TRUE the key and initialisation vector will be
-    cleared after use (highly recommended if they will not be needed again).
-    The routine returns an IDEA cipher status which may be sebsequently used by
-    en_idea_cfb  on success, else it returns NULL.
+/*  [SUMMARY] Create stream for IDEA encryption.
+    [PURPOSE] This routine will initialise the IDEA cipher in Cipher Feed Back
+    mode for a stream of data. The stream is uni-directional.
+    <key> The 16 byte IDEA key.
+    <decrypt> If TRUE the stream is to be decrypted.
+    <init_vector> The 8 byte initialisation vector.
+    <clear> If TRUE the key and initialisation vector will be cleared after use
+    (highly recommended if they will not be needed again).
+    [RETURNS] An IDEA cipher status which may be sebsequently used by
+    [<en_idea_cfb>] on success, else NULL.
 */
 {
     int count;
@@ -455,12 +459,13 @@ idea_status en_idea_init (char key[EN_IDEA_KEY_SIZE], flag decrypt,
 
 /*PUBLIC_FUNCTION*/
 void en_idea_cfb (idea_status status, char *buffer, unsigned int length)
-/*  This routine will encrypt (or decrypt) a sequence of bytes using the IDEA
-    cipher in Cipher Feed Back mode.
-    The IDEA cipher status must be given by  status  .
-    The data to encrypt must be pointed to by  buffer  .
-    The number of bytes to encrypt (or decrypt) must be given by  length  .
-    The routine returns nothing.
+/*  [SUMMARY] Encrypt bytes using the IDEA cipher.
+    [PURPOSE] This routine will encrypt (or decrypt) a sequence of bytes using
+    the IDEA cipher in Cipher Feed Back mode.
+    <status> The IDEA cipher status.
+    <buffer> The data to encrypt. This is modified.
+    <length> The number of bytes to encrypt (or decrypt).
+    [RETURNS] Nothing.
 */
 {
     char new_ch;
@@ -500,10 +505,11 @@ void en_idea_cfb (idea_status status, char *buffer, unsigned int length)
 
 /*PUBLIC_FUNCTION*/
 void en_idea_close (idea_status status)
-/*  This routine will clean up an IDEA cipher status, removing sensitive key
-    information.
-    The IDEA cipher status must be given by  status  .
-    The routine returns nothing.
+/*  [SUMMARY] Close a cipher stream.
+    [PURPOSE] This routine will clean up an IDEA cipher status, removing
+    sensitive key information.
+    <status> The IDEA cipher status.
+    [RETURNS] Nothing.
 */
 {
     static char function_name[] = "en_idea_close";

@@ -1,8 +1,8 @@
-/*  Canvaskarma_conn.h
+/*  Canvas.h
 
     Public header for  Canvas  widget class.
 
-    Copyright (C) 1994,1995  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   17-JUL-1994
 
-    Last updated by Richard Gooch   28-DEC-1995
+    Last updated by Richard Gooch   4-MAY-1996
 
 */
 
@@ -64,6 +64,8 @@
  y		     Position		Position	0
  visual              Visual             Pointer         CopyFromParent
  stereoMode          StereoMode         Int             XkwSTEREO_MODE_MONO
+ verticalSplit       VerticalSplit      Bool            False
+ splitSeparation     SplitSeparation    Int             0
  monoPixCanvas       PixCanvas          Pointer         NULL
  leftPixCanvas       PixCanvas          Pointer         NULL
  rightPixCanvas      PixCanvas          Pointer         NULL
@@ -73,11 +75,14 @@
  forceNewCmap	     ForceNewCmap	Bool   		False
  retainFgBg	     RetainFgBg		Bool   		False
  realiseCallback     Callback           Callback        NULL
+ font                Font               String          NULL
  verbose             Verbose            Bool            False
 
 */
 
 #define XkwNstereoMode "stereoMode"
+#define XkwNverticalSplit "verticalSplit"
+#define XkwNsplitSeparation "splitSeparation"
 #define XkwNmonoPixCanvas "monoPixCanvas"
 #define XkwNleftPixCanvas "leftPixCanvas"
 #define XkwNrightPixCanvas "rightPixCanvas"
@@ -90,6 +95,8 @@
 #define XkwNverbose "verbose"
 
 #define XkwCStereoMode "StereoMode"
+#define XkwCVerticalSplit "VerticalSplit"
+#define XkwCSplitSeparation "SplitSeparation"
 #define XkwCPixCanvas "PixCanvas"
 #define XkwCClipEvents "ClipEvents"
 #define XkwCSilenceUnconsumed "SilenceUnconsumed"

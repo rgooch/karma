@@ -1,0 +1,6 @@
+$SUMMARY          String manipulation routines
+$PURPOSE
+    These routines are meant to supplement the standard C library str* routines
+    Since each version of Unix has a different set of "extra" string functions,
+    this package is meant to bridge the gap, and provides some of the more
+    useful "extras".

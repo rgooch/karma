@@ -2,7 +2,7 @@
 
     Source file for  raw_grey2karma  (convert raw data to Karma format).
 
-    Copyright (C) 1993,1994  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,8 +35,11 @@
 
     Updated by      Richard Gooch   13-OCT-1993: Moved  main  into this file.
 
-    Last updated by Richard Gooch   22-MAY-1994: Changed over to  panel_
+    Updated by      Richard Gooch   22-MAY-1994: Changed over to  panel_
   package.
+
+    Last updated by Richard Gooch   30-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -44,6 +47,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
 #include <karma.h>
 #include <karma_module.h>
 #include <karma_panel.h>
@@ -74,9 +78,7 @@ static flag ignore_excess = FALSE;
 static flag invert_flag = TRUE;
 
 
-main (argc, argv)
-int argc;
-char **argv;
+int main (int argc, char **argv)
 {
     KControlPanel panel, group;
     extern char *data_type_names[];
@@ -191,9 +193,8 @@ unsigned int elem_type;
     extern char *names[MAX_DIMENSIONS];
     extern char *elem_name;
     extern char host_type_sizes[NUMTYPES];
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
-    static char function_name[] = "generate_file";
+    /*static char function_name[] = "generate_file";*/
 
     /*  Determine array size (in co-ordinates)  */
     array_size = 1;
@@ -202,7 +203,7 @@ unsigned int elem_type;
 	if (lengths[dim_count] < 1)
 	{
 	    (void) fprintf (stderr,
-			    "\nDimension: %u has length: %d: must be greater than 0",
+			    "Dimension: %u has length: %lu: must be greater than 0\n",
 			    dim_count, lengths[dim_count]);
 	    return;
 	}
@@ -220,25 +221,25 @@ unsigned int elem_type;
 	(unsigned) host_type_sizes[elem_type])
     {
 	(void) fprintf (stderr,
-			"\nFile: \"%s\" is: %u bytes which is smaller than specified: %u bytes",
+			"File: \"%s\" is: %lu bytes which is smaller than specified: %u bytes\n",
 			inp_filename, stat_buf.st_size,
 			array_size * 
-			(unsigned) host_type_sizes[elem_type]);
+			(unsigned int) host_type_sizes[elem_type]);
 	return;
     }
     if (stat_buf.st_size >
 	array_size * (unsigned) host_type_sizes[elem_type])
     {
-	if (ignore_excess == TRUE)
+	if (ignore_excess)
 	{
-	    (void) fprintf (stderr, "\nIgnored: %u excess bytes",
+	    (void) fprintf (stderr, "Ignored: %lu excess bytes\n",
 			    stat_buf.st_size - array_size *
 			    (unsigned) host_type_sizes[elem_type]);
 	}
 	else
 	{
 	    (void) fprintf (stderr,
-			    "\nFile: \"%s\" is: %u bytes which is larger than specified: %u bytes",
+			    "\nFile: \"%s\" is: %lu bytes which is larger than specified: %u bytes",
 			    inp_filename, stat_buf.st_size,
 			    array_size *
 			    (unsigned) host_type_sizes[elem_type]);
@@ -254,7 +255,8 @@ unsigned int elem_type;
     }
     if ( ( array = ds_easy_alloc_array (&multi_desc,
 					(unsigned int) num_dimensions,
-					lengths, minima, maxima, names,
+					lengths, minima, maxima,
+					(CONST char **) names,
 					elem_type, elem_name) )
 	== NULL )
     {

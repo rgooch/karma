@@ -1,0 +1,46 @@
+<html><head><title>Package: en</title></head> 
+<body>
+<center><h1>The "en" Package</h1></center>    These routines are meant to provide strong encryption.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=en></a></table><h4>Functions</h4><table><tr><td><a href=en.html#en_idea_init>en_idea_init</a></td><td>Create stream for IDEA encryption.
+</td></tr>
+<tr><td><a href=en.html#en_idea_cfb>en_idea_cfb</a></td><td>Encrypt bytes using the IDEA cipher.
+</td></tr>
+<tr><td><a href=en.html#en_idea_close>en_idea_close</a></td><td>Close a cipher stream.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=en_idea_init></a> idea_status
+ <b>en_idea_init</b><i>    (char key[EN_IDEA_KEY_SIZE], flag decrypt,
+			  char init_vector[EN_IDEA_BLOCK_SIZE], flag clear)
+</i><br><p>    This routine will initialise the IDEA cipher in Cipher Feed Back
+    mode for a stream of data. The stream is uni-directional.
+<p><b>Parameters:</b><ul><li><i>key :</i> 
+    The 16 byte IDEA key.
+<br><li><i>decrypt :</i> 
+    If TRUE the stream is to be decrypted.
+<br><li><i>init_vector :</i> 
+    The 8 byte initialisation vector.
+<br><li><i>clear :</i> 
+    If TRUE the key and initialisation vector will be cleared after use
+    (highly recommended if they will not be needed again).
+<br></ul><b>Returns:</b>     An IDEA cipher status which may be sebsequently used by
+    <a href=en.html#en_idea_cfb>en_idea_cfb</a> on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=en_idea_cfb></a> void
+ <b>en_idea_cfb</b><i>    (idea_status status, char *buffer, unsigned int length)
+</i><br><p>    This routine will encrypt (or decrypt) a sequence of bytes using
+    the IDEA cipher in Cipher Feed Back mode.
+<p><b>Parameters:</b><ul><li><i>status :</i> 
+    The IDEA cipher status.
+<br><li><i>buffer :</i> 
+    The data to encrypt. This is modified.
+<br><li><i>length :</i> 
+    The number of bytes to encrypt (or decrypt).
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=en_idea_close></a> void
+ <b>en_idea_close</b><i>    (idea_status status)
+</i><br><p>    This routine will clean up an IDEA cipher status, removing
+    sensitive key information.
+<p><b>Parameters:</b><ul><li><i>status :</i> 
+    The IDEA cipher status.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

@@ -1,0 +1,59 @@
+/*PROTOTYPE_FUNCTION*/  /*
+void KWIN_PROTO_refresh_func (KPixCanvas canvas, int width, int height,
+			      void **info, PostScriptPage pspage,
+			      unsigned int num_areas,
+			      KPixCanvasRefreshArea *areas,
+			      flag *honoured_areas)
+    [SUMMARY] Process a refresh event for a pixel canvas.
+    <canvas> The pixel canvas.
+    <width> The width of the canvas in pixels.
+    <height> The height of the canvas in pixels.
+    <info> A pointer to the arbitrary canvas information pointer.
+    <pspage> If not NULL, the PostScriptPage object the refresh is
+    redirected to.
+    <num_areas> The number of areas that need to be refreshed. If this is
+    0 then the entire pixel canvas needs to be refreshed.
+    <areas> The list of areas that need to be refreshed.
+    <honoured_areas> If the value TRUE is written here it is assumed the
+    routine honoured the list of refresh areas and did not write outside
+    these areas and hence the list of areas will be passed to subsequent
+    registered refresh routines. If FALSE is written here (or nothing is
+    written here), implying the routine refreshed the entire pixel canvas,
+    subsequent refresh routines will be told to refresh the entire canvas.
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+flag KWIN_PROTO_position_func (KPixCanvas canvas, int x, int y,
+			       unsigned int event_code, void *e_info,
+			       void **f_info)
+    [SUMMARY] Process a position event on a pixel canvas.
+    <canvas> The pixel canvas on which the event occurred.
+    <x> The horizontal position of the event, relative to the canvas origin
+    <y> The vertical position of the event, relative to the canvas origin.
+    <event_code> The arbitrary event code.
+    <e_info> A pointer to arbitrary event information.
+    <f_info> A pointer to an arbitrary function information pointer.
+    [RETURNS] TRUE if the event was consumed, else FALSE indicating that
+    the event is still to be processed.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+flag KWIN_PROTO_iscale_func (double *out, unsigned int out_stride,
+			     double *inp, unsigned int inp_stride,
+			     unsigned int num_values,
+			     double i_min, double i_max, void *info)
+    [SUMMARY] Intensity scale function.
+    [PURPOSE] This routine will perform an arbitrary intensity scaling on
+    an array of values. This routine may be called many times to scale an
+    image.
+    <out> The output array.
+    <out_stride> The stride (in doubles) of the output array.
+    <inp> The input array.
+    <inp_stride> The stride (in doubles) of the input array.
+    <num_values> The number of values to scale.
+    <i_min> The minimum intensity value.
+    <i_max> The maximum intensity value.
+    <info> A pointer to arbitrary information.
+    [RETURNS] TRUE on success, else FALSE.
+*/

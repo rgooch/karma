@@ -3,7 +3,7 @@
 
     This code provides routines to read ASCII data structures from Channels.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -46,7 +46,13 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/dsra/misc.c
 
-    Last updated by Richard Gooch   19-APR-1995: Cleaned some code.
+    Updated by      Richard Gooch   19-APR-1995: Cleaned some code.
+
+    Updated by      Richard Gooch   10-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   3-JUN-1996: Took account of new fields in
+  dimension descriptor for first and last co-ordinate.
 
 
 */
@@ -67,16 +73,15 @@
 
 
 /*PUBLIC_FUNCTION*/
-multi_array *dsra_multi_desc (channel)
-/*  This routine will read the ASCII representation of the multi array general
-    data structure header from the channel object given by  channel  and
-    will allocate the required descriptors.
-    NOTE: this routine will NOT allocate space for data, nor will it read any
+multi_array *dsra_multi_desc (Channel channel)
+/*  [SUMMARY] Read ASCII representation of a multi_array data structure.
+    [PURPOSE] This routine will read the ASCII representation of a multi_array
+    data structure descriptor from a channel object.
+    [NOTE] The routine will NOT allocate space for data, nor will it read any
     data.
-    The routine returns a pointer to the multi array header on success, else
-    it displays an error message and returns NULL.
+    <channel> The channel object to read from.
+    [RETURNS] A pointer to the multi array header on success, else NULL.
 */
-Channel channel;
 {
     unsigned int num_arrays;
     unsigned int array_count;
@@ -124,7 +129,7 @@ Channel channel;
             ds_dealloc_multi (multi_desc);
             return (NULL);
         }
-        (void) strcpy ( multi_desc->array_names[array_count], temp_line );
+        (void) strcpy (multi_desc->array_names[array_count], temp_line );
     }
     if (chs_get_line (channel, temp_line, STRING_LENGTH) == FALSE)
     {
@@ -155,15 +160,14 @@ Channel channel;
 }   /*  End Function dsra_multi_desc */
 
 /*PUBLIC_FUNCTION*/
-packet_desc *dsra_packet_desc (channel)
-/*  This routine will read the channel object given by  channel  for
-    a packet descriptor.
-    The routine will recursively read in array and linked list descriptors
-    if required.
-    The routine returns a pointer to the packet descriptor. NULL is returned
-    if an error occured (the routine prints error messages).
+packet_desc *dsra_packet_desc (Channel channel)
+/*  [SUMMARY] Read ASCII representation of a packet descriptor.
+    [PURPOSE] This routine will read the ASCII representation of a packet
+    descriptor from a channel object. The routine will recursively read in
+    array and linked list descriptors if required.
+    <channel> The channel object to read from.
+    [RETURNS] A pointer to the packet descriptor on success, else NULL.
 */
-Channel channel;
 {
     unsigned int num_elements = 0;
     unsigned int element_count = 0;
@@ -265,16 +269,14 @@ Channel channel;
 }   /*  End Function dsra_packet_desc  */
 
 /*PUBLIC_FUNCTION*/
-flag dsra_element_desc (channel, type, name)
-/*  This routine will read the channel object given by  channel  for an element
-    descriptor. The type of the element is written to the storage pointed to
-    by  type  and the name is written to the character string  name  .
-    The routine returns TRUE if a valid element descriptor was read, else
-    it displays an error message and returns FALSE.
+flag dsra_element_desc (Channel channel, unsigned int *type, char name[])
+/*  [SUMMARY] Read ASCII representation of an element descriptor.
+    <channel> The channel object to read from.
+    <type> The type of the element is written here.
+    <name> The name of the element is written here. The length of the buffer
+    must be <<STRING_LENGTH>> bytes.
+    [RETURNS] TRUE if a valid element descriptor was read, else FALSE.
 */
-Channel channel;
-unsigned int *type;
-char name[];
 {
     char temp_line[STRING_LENGTH];
 
@@ -328,16 +330,13 @@ char name[];
 }   /*  End Function dsra_element_desc  */
 
 /*PUBLIC_FUNCTION*/
-array_desc *dsra_array_desc (channel, type)
-/*  This routine will read in an array descriptor from the channel given by
-    channel  .
-    The type of the array must be given by  type  .Legal values for this are:
+array_desc *dsra_array_desc (Channel channel, unsigned int type)
+/*  [SUMMARY] Read ASCII representation of an array descriptor.
+    <channel> The channel object to read from.
+    <type> The type of the array. Legal values for this are:
         ARRAYP    K_ARRAY
-    The routine returns a pointer to the array descriptor if there were no
-    errors in reading, else it displays an error message and returns NULL.
+    [RETURNS] A pointer to the array descriptor on success, else NULL.
 */
-Channel channel;
-unsigned int type;
 {
     unsigned int num_levels = 0;
     unsigned int num_dim = 0;
@@ -444,7 +443,7 @@ unsigned int type;
 	    product *= arr_desc->tile_lengths[dim_count][level_count];
 	}
 	/*  Check if tile lengths appropriate  */
-	if ( dimension->length % product != 0 )
+	if (dimension->length % product != 0 )
 	{
 	    (void) fprintf (stderr,
 			    "Tile product: %u not a factor of length: %lu\n",
@@ -466,18 +465,15 @@ unsigned int type;
 }   /*  End Function dsra_array_desc */
 
 /*PUBLIC_FUNCTION*/
-dim_desc *dsra_dim_desc (channel)
-/*  This routine will read the channel object given by  channel  for
-    a dimension descriptor.
-    The routine returns a pointer to the dimension descriptor if there were no
-    errors in reading, else it displays an error message and returns NULL.
+dim_desc *dsra_dim_desc (Channel channel)
+/*  [SUMMARY] Read ASCII representation of a dimension descriptor.
+    <channel> The channel object to read from.
+    [RETURNS] A pointer to the dimension descriptor on success, else NULL.
 */
-Channel channel;
 {
     unsigned int dim_length = 0;
     unsigned int coord_count = 0;
-    double minimum;
-    double maximum;
+    double first_coord, last_coord;
     double coordinate;
     char dim_name[STRING_LENGTH];
     char temp_line[STRING_LENGTH];
@@ -518,16 +514,16 @@ Channel channel;
     if (st_icmp (temp_line, "REGULAR") == 0)
     {
 	/*  Dimension co-ordinates are regularly spaced */
-        /*  Get minimum */
-        if (dsra_double (channel, &minimum) == FALSE)
+        /*  Get first co-ordinate */
+        if (dsra_double (channel, &first_coord) == FALSE)
         {
-	    (void) fprintf (stderr, "Error reading minimum co-ordinate\n");
+	    (void) fprintf (stderr, "Error reading first co-ordinate\n");
             return (NULL);
         }
-        /*  Get maximum */
-        if (dsra_double (channel, &maximum) == FALSE)
+        /*  Get last co-ordinate  */
+        if (dsra_double (channel, &last_coord) == FALSE)
         {
-	    (void) fprintf (stderr, "Error reading maximum co-ordinate\n");
+	    (void) fprintf (stderr, "Error reading last co-ordinate\n");
             return (NULL);
         }
         /*  Get "END"  */
@@ -537,8 +533,9 @@ Channel channel;
 	    (void) fprintf (stderr, "\"END\" not found\n");
             return (NULL);
         }
-        if ( ( dimension = ds_alloc_dim_desc (dim_name, dim_length, minimum,
-					      maximum, TRUE) ) == NULL )
+        if ( ( dimension = ds_alloc_dim_desc (dim_name, dim_length,
+					      first_coord, last_coord,
+					      TRUE) ) == NULL )
         {
 	    m_error_notify (function_name, "dimension descriptor");
             return (NULL);
@@ -548,45 +545,45 @@ Channel channel;
     if (st_icmp (temp_line, "RANDOM") == 0)
     {
 	/*  Dimension co-ordinates are to be supplied  */
-        if ( ( dimension = ds_alloc_dim_desc (dim_name, dim_length, minimum,
-					      maximum, FALSE) ) == NULL )
+        if ( ( dimension = ds_alloc_dim_desc (dim_name, dim_length,
+					      0.0, 1.0, FALSE) ) == NULL )
         {
 	    m_error_notify (function_name, "dimension descriptor");
             return (NULL);
         }
-        /*  Get co-ordinates and compute minimum and maximum  */
-        minimum = TOOBIG;
-        maximum = -TOOBIG;
+        /*  Get co-ordinates  */
         while (coord_count < dim_length)
         {
-	    if (dsra_double (channel, &coordinate) == FALSE)
+	    if ( !dsra_double (channel, &coordinate) )
             {
 		(void) fprintf (stderr,
 				"Error reading Co-ordinate number: %u\n",
 				coord_count);
-                m_free ( dimension->name );
+                m_free (dimension->name );
                 m_free ( (char *) dimension->coordinates );
                 m_free ( (char *) dimension );
                 return (NULL);
             }
             dimension->coordinates[coord_count] = coordinate;
-            if (coordinate < minimum)
-            {
-		minimum = coordinate;
-            }
-            if (coordinate > maximum)
-            {
-		maximum = coordinate;
-            }
             ++coord_count;
         }
-        dimension->minimum = minimum;
-        dimension->maximum = maximum;
+	dimension->first_coord = first_coord;
+	dimension->last_coord = last_coord;
+	if (first_coord < last_coord)
+	{
+	    dimension->minimum = first_coord;
+	    dimension->maximum = last_coord;
+	}
+	else
+	{
+	    dimension->minimum = last_coord;
+	    dimension->maximum = first_coord;
+	}
         if ( (chs_get_line (channel, temp_line, STRING_LENGTH) == FALSE) ||
             (st_icmp (temp_line, "END") != 0) )
         {
 	    (void) fprintf (stderr, "\"END\" not found\n");
-            m_free ( dimension->name );
+            m_free (dimension->name );
             m_free ( (char *) dimension->coordinates );
             m_free ( (char *) dimension );
             return (NULL);
@@ -598,17 +595,15 @@ Channel channel;
 }   /*  End Function dsra_dim_desc  */
 
 /*PUBLIC_FUNCTION*/
-flag dsra_multi_data (channel, multi_desc)
-/*  This routine will read the ASCII representation of the data in a multi
-    array general data structure header from the channel object given by
-    channel  and will write the data into the multi_array structure pointed to
-    by  multi_desc  .
-    NOTE: this routine will only allocate space for linked list as it reads
+flag dsra_multi_data (Channel channel, multi_array *multi_desc)
+/*  [SUMMARY] READ ASCII representation of data in a multi_array descriptor.
+    <channel> The channel object to read from.
+    <multi_desc> The multi_array descriptor to store the data in. This is
+    modified.
+    [NOTE] The routine will only allocate space for linked list as it reads
     them.
-    The routine returns TRUE on success, else it returns FALSE.
+    [RETURNS] TRUE on success, else FALSE.
 */
-Channel channel;
-multi_array *multi_desc;
 {
     unsigned int array_count;
 
@@ -629,18 +624,16 @@ multi_array *multi_desc;
 }   /*  End Function dsra_multi_data  */
 
 /*PUBLIC_FUNCTION*/
-flag dsra_packet (channel, descriptor, packet)
-/*  This routine will read the ASCII representation of the data packet
-    from the channel object given by  channel  .
-    The descriptor for the packet must be pointed to by  descriptor  and the
-    data will be written to the storage pointed to by  packet  .
+flag dsra_packet (Channel channel, packet_desc *descriptor, char *packet)
+/*  [SUMMARY] Read ASCII representation of a data packet.
+    [PURPOSE] This routine will read the ASCII representation of a data packet.
     The routine will recursively read in sub arrays and linked lists.
-    The routine returns TRUE on success, else it displays an error message
-    and returns FALSE.
+    <channel> The channel object to read from.
+    <descriptor> The packet descriptor.
+    <packet> The packet data will be written here. The packet storage must
+    already have been allocated.
+    [RETURNS] TRUE on success, else FALSE.
 */
-Channel channel;
-packet_desc *descriptor;
-char *packet;
 {
     unsigned int elem_count = 0;
     unsigned int type;
@@ -677,17 +670,15 @@ char *packet;
 }   /*  End Function dsra_packet */
 
 /*PUBLIC_FUNCTION*/
-flag dsra_element (channel, type, desc, element)
-/*  This routine will read the ASCII representation of an element from the
-    channel object given by  channel  and will write the value to the storage
-    pointed to by  element  .The type of the element to read must be in  type
-    and the descriptor for the element must be pointed to by  desc  .
-    The routine returns TRUE on success, else it returns FALSE.
+flag dsra_element (Channel channel, unsigned int type, char *desc,
+		   char *element)
+/*  [SUMMARY] Read ASCII representation of an element.
+    <channel> The channel object to read from.
+    <type> The type of the element.
+    <desc> The descriptor for the element.
+    <element> The element data will be written here.
+    [RETURNS] TRUE on success, else FALSE.
 */
-Channel channel;
-unsigned int type;
-char *desc;
-char *element;
 {
     FString *fstring;
     int b_value_r;
@@ -886,7 +877,7 @@ char *element;
 	break;
       case K_FSTRING:
 	fstring = (FString *) element;
-	if ( ( fstring->max_len > 0 ) || ( fstring->string != NULL ) )
+	if ( (fstring->max_len > 0 ) || (fstring->string != NULL ) )
 	{
 	    (void) fprintf (stderr, "Fixed string already allocated\n");
 	    a_prog_bug (function_name);
@@ -907,7 +898,7 @@ char *element;
 	    m_error_notify (function_name, "fixed string");
 	    return (FALSE);
 	}
-	(void) strcpy ( fstring->string, temp_line );
+	(void) strcpy (fstring->string, temp_line );
 	fstring->max_len = fstring_len;
 	break;
       case K_ARRAY:
@@ -934,17 +925,13 @@ char *element;
 }   /*  End Function dsra_element  */
 
 /*PUBLIC_FUNCTION*/
-flag dsra_array (channel, descriptor, array)
-/*  This routine will read in the ASCII representation of an array of data
-    packets from the channel object given by  channel  .
-    The array descriptor must be pointed to by  descriptor  and the data will
-    be written to the storage pointed to by  array  .
-    The routine returns TRUE on success, else it displays an error message
-    and returns FALSE.
+flag dsra_array (Channel channel, array_desc *descriptor, char *array)
+/*  [SUMMARY] Read ASCII representation of an array of data packets.
+    <channel> The channel object to read from.
+    <descriptor> The array descriptor.
+    <array> The array data will be written here.
+    [RETURNS] TRUE on success, else FALSE.
 */
-Channel channel;
-array_desc *descriptor;
-char *array;
 {
     unsigned int array_count = 0;
     unsigned int array_size;
@@ -981,19 +968,17 @@ char *array;
 }   /*  End Function dsra_array  */
 
 /*PUBLIC_FUNCTION*/
-flag dsra_list (channel, descriptor, header)
-/*  This routine will read in the ASCII representation of a linked list of
-    data from the channel object given by  channel  .
-    The descriptor for the packets must be pointed to by  descriptor  and the
-    linked list header must be pointed to by  header  .
-    The routine will recursively read in sub arrays and linked lists.
-    The linked list entries will be contiguous in memory.
-    The routine returns TRUE on success, else it displays an error message
-    and returns FALSE.
+flag dsra_list (Channel channel, packet_desc *descriptor, list_header *header)
+/*  [SUMMARY] Read ASCII represention of a linked list.
+    [PURPOSE] This routine will read in the ASCII representation of a linked
+    list of data from a channel object. The routine will recursively read in
+    sub arrays and linked lists.
+    <channel> The channel object to read from.
+    <descriptor> The descriptor for the list packets.
+    <header> The linked list header. This is modified. The linked list entries
+    will be contiguous in memory.
+    [RETURNS] TRUE on success, else FALSE.
 */
-Channel channel;
-packet_desc *descriptor;
-list_header *header;
 {
     unsigned int length;
     unsigned int pack_size;
@@ -1084,15 +1069,12 @@ list_header *header;
 }   /*  End Function dsra_list  */
 
 /*PUBLIC_FUNCTION*/
-flag dsra_flag (channel, logical)
-/*  This routine will read in the ASCII representation of the the boolean
-    flag from the channel object given by  channel  and will write it to the
-    flag pointed to by  logical  .
-    The routine returns TRUE if the flag was read in without error, else
-    it returns FALSE.
+flag dsra_flag (Channel channel, flag *logical)
+/*  [SUMMARY] Read ASCII representation of a boolean value.
+    <channel> The channel object to read from.
+    <logical> The boolean value will be written here.
+    [RETURNS] TRUE if the flag was read in without error, else FALSE.
 */
-Channel channel;
-flag *logical;
 {
     char temp_line[STRING_LENGTH];
 
@@ -1116,15 +1098,12 @@ flag *logical;
 }   /*  End Function dsra_flag  */
 
 /*PUBLIC_FUNCTION*/
-flag dsra_type (channel, type)
-/*  This routine will read in the ASCII representation of the data type from
-    the channel object given by  channel  and will write the type value into
-    the storage pointed to by  type  .
-    The routine returns TRUE if the type was read without error, else it
-    returns FALSE.
+flag dsra_type (Channel channel, unsigned int *type)
+/*  [SUMMARY] Read ASCII representation of a data type.
+    <channel> The channel object to read from.
+    <type> The type value will be written here.
+    [RETURNS] TRUE if the type was read without error, else FALSE.
 */
-Channel channel;
-unsigned int *type;
 {
     char temp_line[STRING_LENGTH];
 
@@ -1275,15 +1254,12 @@ unsigned int *type;
 }   /*  End Function dsra_type  */
 
 /*PUBLIC_FUNCTION*/
-flag dsra_uint (channel, value)
-/*  This routine will read the ASCII representation of an unsigned integer
-    value from the channel object given by  channel  .
-    The result is written into the storage pointed to by  value  .
-    The routine returns TRUE if successful, else it displays an error message
-    and returns FALSE.
+flag dsra_uint (Channel channel, unsigned int *value)
+/*  [SUMMARY] Read the ASCII representation of an unsigned integer.
+    <channel> The channel object to read from.
+    <value> The result is written here.
+    [RETURNS] TRUE if successful, else FALSE.
 */
-Channel channel;
-unsigned int *value;
 {
     char temp_line[STRING_LENGTH];
 
@@ -1303,15 +1279,12 @@ unsigned int *value;
 }   /*  End Function dsra_uint  */
 
 /*PUBLIC_FUNCTION*/
-flag dsra_int (channel, value)
-/*  This routine will read the ASCII representation of a signed integer
-    value from the channel object given by  channel  .
-    The result is written into the storage pointed to by  value  .
-    The routine returns TRUE if successful, else it displays an error message
-    and returns FALSE.
+flag dsra_int (Channel channel, int *value)
+/*  [SUMMARY] Read the ASCII representation of a signed integer.
+    <channel> The channel object to read from.
+    <value> The result is written here.
+    [RETURNS] TRUE if successful, else FALSE.
 */
-Channel channel;
-int *value;
 {
     char temp_line[STRING_LENGTH];
 
@@ -1331,15 +1304,12 @@ int *value;
 }   /*  End Function dsra_int  */
 
 /*PUBLIC_FUNCTION*/
-flag dsra_float (channel, value)
-/*  This routine will read the ASCII representation of a floating point
-    value from the channel object given by  channel  .
-    The result is written into the storage pointed to by  value  .
-    The routine returns TRUE if successful, else it displays an error message
-    and returns FALSE.
+flag dsra_float (Channel channel, float *value)
+/*  [SUMMARY] Read the ASCII representation of a floating point value.
+    <channel> The channel object to read from.
+    <value> The result is written here.
+    [RETURNS] TRUE if successful, else FALSE.
 */
-Channel channel;
-float *value;
 {
     char temp_line[STRING_LENGTH];
 
@@ -1359,15 +1329,12 @@ float *value;
 }   /*  End Function dsra_float  */
 
 /*PUBLIC_FUNCTION*/
-flag dsra_double (channel, value)
-/*  This routine will read the ASCII representation of a double floating point
-    value from the channel object given by  channel  .
-    The result is written into the storage pointed to by  value  .
-    The routine returns TRUE if successful, else it displays an error message
-    and returns FALSE.
+flag dsra_double (Channel channel, double *value)
+/*  [SUMMARY] Read ASCII representation of a double floating point value.
+    <channel> The channel object to read from.
+    <value> The result is written here.
+    [RETURNS] TRUE if successful, else FALSE.
 */
-Channel channel;
-double *value;
 {
     char temp_line[STRING_LENGTH];
 

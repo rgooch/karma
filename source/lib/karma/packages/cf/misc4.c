@@ -3,7 +3,7 @@
 
     This code provides simple colourmap generation routines.
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -34,7 +34,9 @@
 
     Updated by      Richard Gooch   5-MAY-1994
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/cf/misc4.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/cf/misc4.c
+
+    Last updated by Richard Gooch   31-MAR-1996: Changed documentation style.
 
 
 */
@@ -889,50 +891,65 @@ static Colour_struct smooth[LUT_SIZE] =
 };
 
 /*PUBLIC_FUNCTION*/
-void cf_random (num_cells, reds, greens, blues, stride, x, y, var_param)
-unsigned int          num_cells;
-unsigned short        *reds;
-unsigned short        *greens;
-unsigned short        *blues;
-unsigned int          stride;
-double                x;
-double                y;
-void                  *var_param;
+void cf_random (unsigned int num_cells, unsigned short *reds,
+		unsigned short *greens, unsigned short *blues,
+		unsigned int stride, double x, double y, void *var_param)
+/*  [SUMMARY] Compute a rainbow colourmap.
+    <num_cells> The number of colour cells to modify.
+    <reds> The red intensity values.
+    <greens> The green intensity values.
+    <blues> The blue intensity values.
+    <stride> The stride (in unsigned shorts) between intensity values.
+    <x> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <y> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <var_param> A parameter used to compute the colour values. Ignored.
+    [RETURNS] Nothing.
+*/
 {
     extern Colour_struct   random_colour_table[];
 
     colour_table (num_cells, reds, greens, blues, stride, x, y,
 		  random_colour_table);
-}
+}   /*  End Function cf_random  */
 
 /*PUBLIC_FUNCTION*/
-void cf_rgb (num_cells, reds, greens, blues, stride, x, y, var_param)
-unsigned int          num_cells;
-unsigned short        *reds;
-unsigned short        *greens;
-unsigned short        *blues;
-unsigned int          stride;
-double                x;
-double                y;
-void                  *var_param;
+void cf_rgb (unsigned int num_cells, unsigned short *reds,
+	     unsigned short *greens, unsigned short *blues,
+	     unsigned int stride, double x, double y, void *var_param)
+/*  [SUMMARY] Compute an rainbow colourmap.
+    <num_cells> The number of colour cells to modify.
+    <reds> The red intensity values.
+    <greens> The green intensity values.
+    <blues> The blue intensity values.
+    <stride> The stride (in unsigned shorts) between intensity values.
+    <x> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <y> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <var_param> A parameter used to compute the colour values. Ignored.
+    [RETURNS] Nothing.
+*/
 {
     extern Colour_struct   rgb[];
 
     colour_table (num_cells, reds, greens, blues, stride, x, y, rgb);
-}
+}   /*  End Function cf_rgb  */
 
 /*PUBLIC_FUNCTION*/
-void cf_smooth (num_cells, reds, greens, blues, stride, x, y, var_param)
-unsigned int          num_cells;
-unsigned short        *reds;
-unsigned short        *greens;
-unsigned short        *blues;
-unsigned int          stride;
-double                x;
-double                y;
-void                  *var_param;
+void cf_smooth (unsigned int num_cells, unsigned short *reds,
+		unsigned short *greens, unsigned short *blues,
+		unsigned int stride, double x, double y, void *var_param)
+/*  [SUMMARY] Compute a rainbow colourmap.
+    <num_cells> The number of colour cells to modify.
+    <reds> The red intensity values.
+    <greens> The green intensity values.
+    <blues> The blue intensity values.
+    <stride> The stride (in unsigned shorts) between intensity values.
+    <x> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <y> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <var_param> A parameter used to compute the colour values. Ignored.
+    [RETURNS] Nothing.
+*/
 {
     extern Colour_struct   smooth[];
 
     colour_table (num_cells, reds, greens, blues, stride, x, y, smooth);
-}
+}   /*  End Function cf_smooth  */

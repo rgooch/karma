@@ -1,1 +1,0 @@
-../packages/kwin/stub_open_gl.c

@@ -2,7 +2,7 @@
 
     Header for  pio_  package.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   13-SEP-1992
 
-    Last updated by Richard Gooch   31-JUL-1995
+    Last updated by Richard Gooch   12-APR-1996
 
 */
 
@@ -67,13 +67,14 @@ EXTERN_FUNCTION (flag pio_write32s, (Channel channel, long data) );
 EXTERN_FUNCTION (flag pio_read32s, (Channel channel, long *data) );
 EXTERN_FUNCTION (flag pio_write16s, (Channel channel, long data) );
 EXTERN_FUNCTION (flag pio_read16s, (Channel channel, long *data) );
-EXTERN_FUNCTION (flag pio_write_swap, (Channel channel, char *data,
+EXTERN_FUNCTION (flag pio_write_swap, (Channel channel, CONST char *data,
 				       unsigned int length) );
 EXTERN_FUNCTION (flag pio_read_swap, (Channel channel, char *data,
 				      unsigned int length) );
-EXTERN_FUNCTION (flag pio_write_string, (Channel channel, char *string) );
-EXTERN_FUNCTION (char *pio_read_string, (Channel channel,
-					 unsigned int *length) );
+EXTERN_FUNCTION (flag pio_write_string,
+		 (Channel channel, CONST char *string) );
+EXTERN_FUNCTION (char *pio_read_string,
+		 (Channel channel, unsigned int *length) );
 
 
 #endif /*  KARMA_PIO_H  */

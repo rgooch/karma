@@ -1,0 +1,6 @@
+$SUMMARY          Routines to manipulate channel objects
+$PURPOSE
+    These routines are meant to provide an alternative to the standard C
+    library streams (FILE *).
+    The channel package provides far more powerful channels (streams),
+    especially when transferring data over connections.

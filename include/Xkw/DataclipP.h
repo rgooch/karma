@@ -14,13 +14,12 @@ typedef struct _DataclipPart
 {
     /*  Public resources  */
     iarray          array;
-    XtCallbackList  intensityScaleCallback;
     XtCallbackList  regionCallback;
-    int             max_regions;
-    Bool            show_intensity_scale_button;
-    Bool            auto_v;
+    int             maxRegions;
     int             pad;
     Bool            verbose;
+    Bool            showBlankControl;
+    Cardinal        fixedOutputType;
     /*  Private resources: must start on a  double  boundary  */
     double data_min;
     double data_max;
@@ -36,10 +35,15 @@ typedef struct _DataclipPart
     unsigned hist_buf_length;
     flag immediate_apply;
     flag last_was_left;
+    flag blank_data;
     Widget min_label;
     Widget max_label;
+    Widget lower_label;
+    Widget upper_label;
+    Widget dialog;
     Widget cnv;
     flag popped_up;
+    unsigned int output_type;
 } DataclipPart, *DataclipPartPtr;
 
 typedef struct _DataclipRec
@@ -55,7 +59,9 @@ typedef struct _DataclipRec
 
 typedef struct _DataclipClassPart
 {
-    int empty;
+    unsigned int type_index_to_type[NUMTYPES];
+    char *type_names[NUMTYPES];
+    unsigned int num_types;
 } DataclipClassPart;
 
 typedef struct _DataclipClassRec

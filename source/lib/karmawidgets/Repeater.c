@@ -28,7 +28,7 @@
  * Modified:  Richard Gooch  rgooch@atnf.csiro.au  Add timer before calling
  *                                                 callbacks.
  *
- * Modified:  Richard Gooch  rgooch@atnf.csiro.au  Added enable_timer flag.
+ * Modified:  Richard Gooch  rgooch@atnf.csiro.au  Added allow_timer flag.
  * 
  * This widget is used for press-and-hold style buttons.
  */
@@ -238,7 +238,7 @@ static Boolean SetValues (Widget gcur, Widget greq, Widget gnew)
 {
     RepeaterWidget cur = (RepeaterWidget) gcur;
     RepeaterWidget new = (RepeaterWidget) gnew;
-    RepeaterWidget req = (RepeaterWidget) greq;
+    /*RepeaterWidget req = (RepeaterWidget) greq;*/
     Boolean redisplay = FALSE;
 
     if (cur->repeater.minimum_delay != new->repeater.minimum_delay) {

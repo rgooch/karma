@@ -2,7 +2,7 @@
 
     Slave process file for Connection Management tool and shell.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -42,8 +42,11 @@
     Updated by      Richard Gooch   14-MAR-1995: Changed to send fully
   qualified hostname to CM tool.
 
-    Last updated by Richard Gooch   16-JUN-1995: Made use of
+    Updated by      Richard Gooch   16-JUN-1995: Made use of
   <r_get_fq_hostname>.
+
+    Last updated by Richard Gooch   1-JUN-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
     Usage:   karma_cm_slave host port display [args...]
@@ -57,19 +60,22 @@
 #include <karma.h>
 #include <karma_conn.h>
 #include <karma_pio.h>
-#include <karma_ex.h>
+#include <karma_chm.h>
+#include <karma_cm.h>
 #include <karma_ch.h>
+#include <karma_ex.h>
 #include <karma_a.h>
 #include <karma_m.h>
+#include <karma_r.h>
 
 
 /*  Private functions  */
-static flag open_func ();
-static flag read_func ();
-static void close_func ();
-static void stop_func ();
-static void term_func ();
-static void exit_func ();
+STATIC_FUNCTION (flag open_func, (Connection connection, void **info) );
+STATIC_FUNCTION (flag read_func, (Connection connection, void **info) );
+STATIC_FUNCTION (void close_func, (Connection connection, void *info) );
+STATIC_FUNCTION (void stop_func, (int pid, int sig) );
+STATIC_FUNCTION (void term_func, (int pid, int sig, void *rusage) );
+STATIC_FUNCTION (void exit_func, (int pid, int value, void *rusage) );
 
 
 /*  External functions  */
@@ -78,14 +84,15 @@ EXTERN_FUNCTION (int slave_setup, (int argc, char *argv[],
 				   unsigned long *cm_host_addr,
 				   flag (*open_func) (), flag (*read_func) (),
 				   void (*close_func) () ) );
+EXTERN_FUNCTION (int fork_cm_client_module,
+		 (char *module_name, unsigned long cm_host_addr,
+		  unsigned int cm_port, int x, int y, char *args) );
 
 
 static unsigned long cm_host_addr = 0;
 static unsigned int cm_port_number;
 
-void main (argc, argv)
-int argc;
-char *argv[];
+void main (int argc, char **argv)
 {
     extern unsigned int cm_port_number;
     extern unsigned long cm_host_addr;
@@ -100,7 +107,7 @@ char *argv[];
     }
 }   /*  End Function main  */
 
-static flag open_func (connection, info)
+static flag open_func (Connection connection, void **info)
 /*  This routine will register the opening of the connection to the Connection
     Management tool.
     The connection will be given by  connection  .
@@ -110,13 +117,9 @@ static flag open_func (connection, info)
     else it returns FALSE (indicating the connection should be closed).
     Note that the  close_func  will not be called upon connection closure.
 */
-Connection connection;
-void **info;
 {
     Channel channel;
-    char *keyword;
     char my_hostname[STRING_LENGTH];
-    char txt[STRING_LENGTH];
     extern char *sys_errlist[];
 
     (void) fprintf (stderr, "SLAVE: open_func...\n");
@@ -143,7 +146,7 @@ void **info;
     return (TRUE);
 }   /*  End Function open_func  */
 
-static flag read_func (connection, info)
+static flag read_func (Connection connection, void **info)
 /*  This routine will read from the connection to the Connection Management
     tool.
     The connection will be given by  connection  .
@@ -153,8 +156,6 @@ static flag read_func (connection, info)
     else it returns FALSE (indicating the connection should be closed).
     Note that the  close_func  will not be called upon connection closure.
 */
-Connection connection;
-void **info;
 {
     long x;
     long y;
@@ -220,54 +221,44 @@ void **info;
     return (TRUE);
 }   /*  End Function read_func  */
 
-static void close_func (connection, info)
+static void close_func (Connection connection, void *info)
 /*  This routine will register the closing of the connection to the Connection
     Management tool.
     The connection will be given by  connection  .
     The connection information pointer will be given by  info  .
     The routine returns nothing.
 */
-Connection connection;
-void *info;
 {
     (void) fprintf (stderr,
 		    "SLAVE: Lost connection to Connection Management tool\n");
     exit (RV_OK);
 }   /*  End Function close_func  */
 
-static void stop_func (pid, sig)
+static void stop_func (int pid, int sig)
 /*  This routine is called when a child process is stopped.
     The process ID is given by  pid  and the signal which stopped the process
     is given by  sig  .
     The routine returns nothing.
 */
-int pid;
-int sig;
 {
 }   /*  End Function stop_func  */
 
-static void term_func (pid, sig, rusage)
+static void term_func (int pid, int sig, void *rusage)
 /*  This routine is called when a child process is killed.
     The process ID is given by  pid  and the signal which killed the process is
     given by  sig  .
     The resource usage information will be pointed to by  rusage  .
     The routine returns nothing.
 */
-int pid;
-int sig;
-struct rusage *rusage;
 {
 }   /*  End Function term_func  */
 
-static void exit_func (pid, value, rusage)
+static void exit_func (int pid, int value, void *rusage)
 /*  This routine is called when a child process exits.
     The process ID is given by  pid  and the value passed to  _exit  by the
     process is given by  value  .
     The resource usage information will be pointed to by  rusage  .
     The routine returns nothing.
 */
-int pid;
-int value;
-struct rusage *rusage;
 {
 }   /*  End Function exit_func  */

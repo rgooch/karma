@@ -1,0 +1,45 @@
+<html><head><title>Package: md</title></head> 
+<body>
+<center><h1>The "md" Package</h1></center>    These routines are meant to provide message digests (secure hash functions)
+    These have application in message authentication/verification.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=md></a></table><h4>Functions</h4><table><tr><td><a href=md.html#md_md5_init>md_md5_init</a></td><td>Initialise MD5 context.
+</td></tr>
+<tr><td><a href=md.html#md_md5_update>md_md5_update</a></td><td>Add data to an MD5 context.
+</td></tr>
+<tr><td><a href=md.html#md_md5_final>md_md5_final</a></td><td>Close an MD5 context.
+</td></tr>
+<tr><td><a href=md.html#md_md5_transform>md_md5_transform</a></td><td>Run the core MD5 transform over a block of data.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=md_md5_init></a> MD5Context
+ <b>md_md5_init</b><i>    ()
+</i><br><p>    Initialise MD5 context.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     An MD5 context.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=md_md5_update></a> void
+ <b>md_md5_update</b><i>    (MD5Context ctx, CONST unsigned char *buf, unsigned int len)
+</i><br><p>    Add data to an MD5 context.
+<p><b>Parameters:</b><ul><li><i>ctx :</i> 
+    The MD5 context.
+<br><li><i>buf :</i> 
+    The block of bytes to add.
+<br><li><i>len :</i> 
+    The length of the block.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=md_md5_final></a> void
+ <b>md_md5_final</b><i>    (MD5Context ctx, unsigned char digest[16])
+</i><br><p>    Close an MD5 context.
+<p><b>Parameters:</b><ul><li><i>ctx :</i> 
+    The MD5 context.
+<br><li><i>digest :</i> 
+    The message digest is written here.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=md_md5_transform></a> void
+ <b>md_md5_transform</b><i>    (unsigned char buf[16], CONST unsigned char in[64])
+</i><br><p>    Run the core MD5 transform over a block of data.
+<p><b>Parameters:</b><ul><li><i>buf :</i> 
+    The digest accumulation buffer.
+<br><li><i>in :</i> 
+    The block of data.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

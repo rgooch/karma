@@ -3,9 +3,9 @@
 
     This code provides a postscript control widget for Xt.
 
-    PostScript code Copyright (C) 1994,1995  Richard Gooch
+    PostScript code Copyright (C) 1994-1996  Richard Gooch
 
-    Widget code Copyright (C) 1994  Patrick Jordan
+    Widget code Copyright (C) 1994-1996  Patrick Jordan
     Incorporated into Karma by permission.
 
     This library is free software; you can redistribute it and/or
@@ -53,8 +53,20 @@
     Updated by      Richard Gooch   30-JUL-1995: Made use of XkwNvaluePtr
   resource for ValueWidgetClass.
 
-    Last updated by Richard Gooch   23-SEP-1995: Coped with NULL name pointer
+    Updated by      Richard Gooch   23-SEP-1995: Coped with NULL name pointer
   to <XkwPostscriptRegisterImageAndName>
+
+    Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
+
+    Updated by      Richard Gooch   7-JUN-1996: Added dialog widget for output
+  filename.
+
+    Updated by      Richard Gooch   28-JUN-1996: Created XkwNautoIncrement
+  resource.
+
+    Last updated by Richard Gooch   1-JUL-1996: Switched to <psw_va_create> and
+  <psw_close> routines.
 
 
 */
@@ -72,22 +84,28 @@
 #include <X11/Xaw/Form.h>
 #include <X11/Xaw/Label.h>
 #include <X11/Xaw/Box.h>
+#include <X11/Xaw/Dialog.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <varargs.h>
-
-#include <Xkw/Value.h>
-
+#include <sys/stat.h>
+#include <unistd.h>
+#include <errno.h>
 #include <sys/wait.h>
 #include <signal.h>
-#include <errno.h>
+#include <varargs.h>
+#include <karma.h>
+#include <karma_m.h>
+#include <karma_xtmisc.h>
 #include <karma_kwin.h>
 #include <karma_psw.h>
 #include <karma_st.h>
 #include <karma_ch.h>
 #include <karma_r.h>
+#include <Xkw/Value.h>
+#include <Xkw/Ktoggle.h>
+#include <Xkw/ExclusiveMenu.h>
 
 /*----------------------------------------------------------------------*/
 /* Function prototypes*/
@@ -95,9 +113,14 @@
 
 /* Methods*/
 
-static void Initialize(Widget request,Widget new);
-static void Destroy(Widget w);
-static Boolean SetValues(Widget current,Widget request,Widget new);
+STATIC_FUNCTION (void orientation_cbk, (Widget w, XtPointer client_data,
+					XtPointer call_data) );
+STATIC_FUNCTION (void Postscript__Initialise, (Widget request, Widget new) );
+STATIC_FUNCTION (void Destroy, (Widget w) );
+STATIC_FUNCTION (Boolean SetValues,
+		 (Widget current, Widget request, Widget new) );
+STATIC_FUNCTION (void auto_increment_cbk, (Widget w, XtPointer client_data,
+					   XtPointer call_data) );
 
 /*----------------------------------------------------------------------*/
 /* Default Resources*/
@@ -117,6 +140,8 @@ static XtResource PostscriptResources[] =
      TheOffset (hsize), XtRImmediate, (XtPointer) 180},
     {XkwNpageVerticalSize, XkwCPageVerticalSize, XtRInt, sizeof (int),
      TheOffset (vsize), XtRImmediate, (XtPointer) 180},
+    {XkwNautoIncrement, XkwCAutoIncrement, XtRBool, sizeof (Bool),
+     TheOffset (autoIncrement), XtRImmediate, (XtPointer) FALSE},
     {XtNcallback, XtCCallback, XtRCallback, sizeof (caddr_t),
      TheOffset (callback), XtRCallback, (caddr_t) NULL},
 };
@@ -133,11 +158,11 @@ PostscriptClassRec postscriptClassRec =
     (WidgetClass)&topLevelShellClassRec,  /* superclass */
     "Postscript",                     /* class_name */
     sizeof(PostscriptRec),            /* widget_size */
-    NULL,                          /* class_initialize */
-    NULL,                          /* class_part_initialize */
+    NULL,                          /* class_initialise */
+    NULL,                          /* class_part_initialise */
     FALSE,                         /* class_init */
-    (XtInitProc)Initialize,        /* initialize */
-    NULL,                          /* initialize_hook */
+    (XtInitProc)Postscript__Initialise,        /* initialise */
+    NULL,                          /* initialise_hook */
     XtInheritRealize,              /* realize */
     NULL,                          /* actions */
     0,                             /* num_actions */
@@ -185,14 +210,24 @@ PostscriptClassRec postscriptClassRec =
 
 WidgetClass postscriptWidgetClass = (WidgetClass) &postscriptClassRec;
 
+
+/*  Orientation choices  */
+#define ORIENT_PORTRAIT  0
+#define ORIENT_LANDSCAPE 1
+#define NUM_ORIENTATIONS 2
+
+static char *orientations[NUM_ORIENTATIONS] =
+{   "portrait", "landscape"};
+
+
 /*----------------------------------------------------------------------*/
 /* check that a widget is actually a PostscriptWidget                      */
 /*----------------------------------------------------------------------*/
 
-static int check_type (Widget w,char *function_name)
+static int check_type (Widget w, char *function_name)
 {
-    static char func_name[] = "Postscript.check_type";
     int fl;
+    /*static char func_name[] = "Postscript.check_type";*/
 
     fl = XtIsSubclass (w, postscriptWidgetClass);
     if (!fl)
@@ -218,18 +253,19 @@ static flag write_ps (PostscriptWidget w, Channel channel,flag colour,flag eps)
 
   check_type((Widget)w,function_name);
   FLAG_VERIFY (colour);
-  pspage = psw_create (channel, (double) w->postscript.hoffset / 10.0,
-		       (double) w->postscript.voffset / 10.0,
-		       (double) w->postscript.hsize / 10.0,
-		       (double) w->postscript.vsize / 10.0,
-		       w->postscript.portrait);
+  pspage = psw_va_create (channel, (double) w->postscript.hoffset / 10.0,
+			  (double) w->postscript.voffset / 10.0,
+			  (double) w->postscript.hsize / 10.0,
+			  (double) w->postscript.vsize / 10.0,
+			  w->postscript.portrait, eps,
+			  PSW_ATT_END);
   if(pspage == NULL ) return (FALSE);
   if(w->postscript.pixcanvas==NULL) {
     fprintf(stderr,"Postscript Widget: NULL Canvas passed - No PS written\n");
     return FALSE;
   }
   if ( kwin_write_ps (w->postscript.pixcanvas, pspage) )  {
-    return ( psw_finish (pspage, eps, FALSE, FALSE) );
+    return ( psw_close (pspage, FALSE, FALSE) );
   }
   return (TRUE);
 }
@@ -248,7 +284,7 @@ static void send_to_queue (Widget w, XtPointer client_data,XtPointer call_data)
   Channel read_ch, write_ch;
   int pid;
   int statusp;
-  flag colour = (flag)client_data;
+  flag colour = (uaddr) client_data;
   PostscriptWidget pw=(PostscriptWidget)XtParent(XtParent(XtParent(w)));
   char *postscript;
   char txt[STRING_LENGTH];
@@ -317,35 +353,60 @@ static void send_to_queue (Widget w, XtPointer client_data,XtPointer call_data)
 
 static void write_to_file (Widget w, XtPointer client_data,XtPointer call_data)
 {
-  Channel channel;
-  char filename[STRING_LENGTH];
-  extern char *sys_errlist[];
-  static char function_name[] = "write_to_file";
-  flag eps = (flag) client_data;
-  PostscriptWidget pw=(PostscriptWidget)XtParent(XtParent(XtParent(w)));
+    Channel channel;
+    flag check = TRUE;
+    flag eps = (uaddr) client_data;
+    unsigned int sequence_number = 0;
+    struct stat statbuf;
+    char filename[STRING_LENGTH];
+    char basefile[STRING_LENGTH];
+    String dialog_name;
+    extern char *sys_errlist[];
+    static char function_name[] = "write_to_file";
+    PostscriptWidget pw = (PostscriptWidget) XtParent(XtParent(XtParent(w)));
 
-  XtCallCallbacks((Widget)pw,XtNcallback,NULL);
-  FLAG_VERIFY (eps);
-  if (pw->postscript.arrayfile_name == NULL) {
-    sprintf (filename, "kview_2d.%s", eps ? "eps" : "ps");
-  } else {
-    sprintf (filename, "%s.%s", pw->postscript.arrayfile_name,
-	     eps ? "eps" : "ps");
-  }
-  if ( ( channel = ch_open_file (filename, "w") ) == NULL )  {
-    fprintf(stderr,
-	    "Error opening file: \"%s\"\t%s\n",filename,sys_errlist[errno]);
-    return;
-  }
-  if(write_ps(pw,channel,TRUE,eps)) {
-    if ( ch_close (channel) )  {
-      fprintf (stderr, "Wrote PostScript file: \"%s\"\n",filename);
-      return;
+    XtCallCallbacks((Widget)pw,XtNcallback,NULL);
+    FLAG_VERIFY (eps);
+    XtVaGetValues (pw->postscript.name_dialog,
+		   XtNvalue, &dialog_name,
+		   NULL);
+    if ( (dialog_name == NULL) || (*dialog_name == '\n') )
+    {
+	(void) strcpy (basefile, "fred");
     }
-  }
-  fprintf (stderr, "Error writing PostScript\n");
-  ch_close (channel);
-  unlink (filename);
+    else (void) strcpy (basefile, dialog_name);
+    while (check)
+    {
+	if ( pw->postscript.autoIncrement && (sequence_number > 0) )
+	{
+	    (void) sprintf (filename, "%s.%u.%s",
+			    basefile, sequence_number, eps ? "eps" : "ps");
+	}
+	else
+	{
+	    (void) sprintf (filename, "%s.%s", basefile, eps ? "eps" : "ps");
+	}
+	if (pw->postscript.autoIncrement)
+	{
+	    ++sequence_number;
+	    if (stat (filename, &statbuf) != 0) check = FALSE;
+	}
+	else check = FALSE;
+    }
+    if ( ( channel = ch_open_file (filename, "w") ) == NULL )  {
+	fprintf (stderr, "Error opening file: \"%s\"\t%s\n",
+		 filename, sys_errlist[errno]);
+	return;
+    }
+    if(write_ps(pw,channel,TRUE,eps)) {
+	if ( ch_close (channel) )  {
+	    fprintf (stderr, "Wrote PostScript file: \"%s\"\n",filename);
+	    return;
+	}
+    }
+    fprintf (stderr, "Error writing PostScript\n");
+    ch_close (channel);
+    unlink (filename);
 }
 
 /*----------------------------------------------------------------------*/
@@ -355,46 +416,35 @@ static void write_to_file (Widget w, XtPointer client_data,XtPointer call_data)
 void XkwPostscriptRegisterImageAndName (Widget w, KPixCanvas image, char *name)
 {
     PostscriptWidget pw = (PostscriptWidget) w;
-    static char *default_name = "fred";
     static char fn_name[] = "XkwPostscriptRegisterImageAndName";
 
     check_type (w, fn_name);
     pw->postscript.pixcanvas = image;
-    if (pw->postscript.arrayfile_name != NULL)
+    if ( (name == NULL) || (*name == '\0') ) return;
+    XtVaSetValues (pw->postscript.name_dialog,
+		   XtNvalue, name,
+		   NULL);
+}   /*  End Function XkwPostscriptRegisterImageAndName  */
+
+static void orientation_cbk (Widget w, XtPointer client_data,
+			     XtPointer call_data)
+{
+    unsigned int orientation = *(int *) call_data;
+    PostscriptWidget top = (PostscriptWidget) client_data;
+
+    switch (orientation)
     {
-	m_free (pw->postscript.arrayfile_name);
+      case ORIENT_PORTRAIT:
+	top->postscript.portrait = TRUE;
+	break;
+      case ORIENT_LANDSCAPE:
+	top->postscript.portrait = FALSE;
+	break;
+      default:
+	(void) fprintf (stderr, "Illegal orientation: %u\n", orientation);
+	break;
     }
-    if ( (name == NULL) || (*name == '\0') ) name = default_name;
-    pw->postscript.arrayfile_name = st_dup (name);
-}
-
-/*----------------------------------------------------------------------*/
-/* Callback for portrait/landscape button                               */
-/*----------------------------------------------------------------------*/
-
-static void portrait_cbk (Widget w, char *client_data, char *call_data)
-{
-    flag *portrait = (flag *) client_data;
-    char label[20];
-
-    if(*portrait==TRUE) {
-	sprintf(label,"Landscape");
-	*portrait=FALSE;
-    } else {
-	sprintf(label,"Portrait");
-	*portrait=TRUE;
-    } 
-    XtVaSetValues(w,XtNlabel,label,NULL);		
-}
-
-/*----------------------------------------------------------------------*/
-/* Callback for close button                                            */
-/*----------------------------------------------------------------------*/
-
-static void close_cbk (Widget w, XtPointer client_data, XtPointer call_data)
-{
-  XtPopdown (XtParent (XtParent (w) ) );
-}
+}   /*  End Function orientation_cbk  */
 
 /*----------------------------------------------------------------------*/
 /* Create the Value widgets                                             */
@@ -407,7 +457,7 @@ static Widget create_value (Widget parent, char *name, int *valuepointer)
     w = XtVaCreateManagedWidget (name, valueWidgetClass, parent,
 				 XkwNmodifier, 1,
 				 XkwNminimum, 0,
-				 XkwNmaximum, 200,
+				 XkwNmaximum, 300,
 				 XtNvalue, *valuepointer,
 				 XtNborderWidth, 0,
 				 XtNlabel, name,
@@ -436,52 +486,61 @@ static void create_text_btn (Widget *btn, char *name,char *cbk_val,
 /* Initialisation method                                                */
 /*----------------------------------------------------------------------*/
 
-static void Initialize (Widget Request, Widget New)
+static void Postscript__Initialise (Widget Request, Widget New)
 {
-    PostscriptWidget request = (PostscriptWidget) Request;
+    /*PostscriptWidget request = (PostscriptWidget) Request;*/
     PostscriptWidget new = (PostscriptWidget) New;
-    Widget form,box2,hoffsetdial,voffsetdial,hsizedial,vsizedial;
-    Widget psbtn,epsbtn,qcolourbtn,portraitbtn,closebtn;
+    Widget form, box2, hoffsetdial, voffsetdial, hsizedial, vsizedial;
+    Widget psbtn, epsbtn, qcolourbtn, inc_tgl, orient_menu, closebtn, name_dlg;
     char *def_orientation;
 
     def_orientation = new->postscript.portrait ? "Portrait " : "Landscape";
-    new->postscript.arrayfile_name = NULL;
+    form = XtVaCreateManagedWidget ("form", boxWidgetClass, (Widget) new,
+				    XtNborderWidth, 0,
+				    NULL);
 
-    form=XtVaCreateManagedWidget
-    ("form",boxWidgetClass,(Widget)new,
-     XtNborderWidth,0,
-     NULL);
+    box2 = XtVaCreateManagedWidget ("box2", boxWidgetClass, (Widget) form,
+				    XtNborderWidth, 0,
+				    XtNorientation, XtorientHorizontal,
+				    NULL);
 
-    box2=XtVaCreateManagedWidget
-    ("box2",boxWidgetClass,(Widget)form,
-     XtNborderWidth,0,
-     XtNorientation,XtorientHorizontal,
-     NULL);
-
+    closebtn = XtVaCreateManagedWidget ("closeButton", commandWidgetClass,box2,
+					XtNlabel, "close",
+					XtNhorizDistance, 5,
+					XtNvertDistance, 5,
+					NULL);
+    XtAddCallback (closebtn, XtNcallback, xtmisc_popdown_cbk, New);
     create_text_btn(&psbtn,"save .ps",(char *)FALSE,write_to_file,box2);
     create_text_btn(&epsbtn,"save .eps",(char *)TRUE,write_to_file,box2);
     create_text_btn(&qcolourbtn,"print",(char *)TRUE,send_to_queue,box2);
+    orient_menu = XtVaCreateManagedWidget ("menuButton",
+					   exclusiveMenuWidgetClass, form,
+					   XtNmenuName, "orientationMenu",
+					   XkwNchoiceName, "Orientation",
+					   XkwNnumItems, NUM_ORIENTATIONS,
+					   XkwNitemStrings, orientations,
+					   NULL);
+    XtAddCallback (orient_menu, XkwNselectCallback, orientation_cbk, New);
+    inc_tgl = XtVaCreateManagedWidget ("incToggle", ktoggleWidgetClass, form,
+				       XtNlabel, "Auto Increment",
+				       XtNstate, new->postscript.autoIncrement,
+				       XkwNcrosses, FALSE,
+				       NULL);
+    XtAddCallback (inc_tgl, XtNcallback, auto_increment_cbk, (XtPointer) New);
+    hoffsetdial = create_value (form, "hoffset (mm)",
+				&(new->postscript.hoffset));
+    voffsetdial = create_value (form, "voffset (mm)",
+				&(new->postscript.voffset));
+    hsizedial = create_value (form, "hsize (mm)", &(new->postscript.hsize));
+    vsizedial = create_value (form, "vsize (mm)", &(new->postscript.vsize));
 
-    portraitbtn=XtVaCreateManagedWidget
-    ("toggle",commandWidgetClass,box2,
-     XtNlabel, def_orientation,
-     NULL);
-    XtAddCallback(portraitbtn,XtNcallback,(XtCallbackProc)portrait_cbk,
-		  (char *)&new->postscript.portrait);
-
-    hoffsetdial = create_value (form, "hoffset", &(new->postscript.hoffset));
-    voffsetdial = create_value (form, "voffset", &(new->postscript.voffset));
-    hsizedial = create_value (form, "hsize", &(new->postscript.hsize));
-    vsizedial = create_value (form, "vsize", &(new->postscript.vsize));
-
-    closebtn=XtVaCreateManagedWidget
-    ("closeButton",commandWidgetClass,form,
-     XtNlabel,"close",
-     XtNhorizDistance,5,
-     XtNvertDistance,5,
-     NULL);
-    XtAddCallback(closebtn,XtNcallback,close_cbk,NULL);
-}
+    name_dlg = XtVaCreateManagedWidget ("nameDialog", dialogWidgetClass, form,
+					XtNlabel, "Output file:",
+					XtNwidth, 400,
+					XtNvalue, "fred",
+					NULL);
+    new->postscript.name_dialog = name_dlg;
+}  /*  End Function Initialise  */
 
 /*----------------------------------------------------------------------*/
 /* Destroy method                                                       */
@@ -498,11 +557,20 @@ static void Destroy (Widget W)
 
 static Boolean SetValues (Widget Current, Widget Request, Widget New)
 {
-  PostscriptWidget current = (PostscriptWidget) Current;
-  PostscriptWidget request = (PostscriptWidget) Request;
-  PostscriptWidget new = (PostscriptWidget) New;
+    /*PostscriptWidget current = (PostscriptWidget) Current;
+      PostscriptWidget request = (PostscriptWidget) Request;
+      PostscriptWidget new = (PostscriptWidget) New;*/
 
-  /* Not needed at the moment */
+    /* Not needed at the moment */
 
-  return True;
+    return True;
 }
+
+static void auto_increment_cbk (Widget w, XtPointer client_data,
+				XtPointer call_data)
+{
+    flag bool = (uaddr) call_data;
+    PostscriptWidget top = (PostscriptWidget) client_data;
+
+    top->postscript.autoIncrement = bool;
+}   /*  End Function auto_increment_cbk  */

@@ -3,7 +3,7 @@
 
     This code provides asynchronous command line reading routines.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -58,8 +58,10 @@
     Updated by      Richard Gooch   6-AUG-1994: Moved to full ASCII function
   declaration syntax. Had to do this because of the confused Dec Alpha compiler
 
-    Last updated by Richard Gooch   26-NOV-1994: Split and moved to
+    Updated by      Richard Gooch   26-NOV-1994: Split and moved to
   packages/arln/misc.c
+
+    Last updated by Richard Gooch   31-MAR-1996: Changed documentation style.
 
 
 */
@@ -70,24 +72,21 @@
 #include <karma.h>
 #include <karma_arln.h>
 #include <karma_chm.h>
-#include <karma_ch.h>
-#include <karma_cm.h>
 #include <karma_ex.h>
 #include <karma_a.h>
 #include <karma_m.h>
-#include <karma_s.h>
 
 
 /*  Public functions follow  */
 
 /*PUBLIC_FUNCTION*/
-float arln_read_float (char *prompt, float default_value)
-/*  This is an input routine that accepts input of one floating point 
-    number, using a prompt. If no input is given, the routine returns a
-    default value.
-    The prompt must be pointed to by  prompt  .
-    The default value must be given by  default_value  .
-    The routine returns the value.
+float arln_read_float (CONST char *prompt, float default_value)
+/*  [SUMMARY] Read a floating point value from the user.
+    [PURPOSE] This routine will prompt the user for a single floating point
+    number. If no input is given, the routine returns a default value.
+    <prompt> The prompt.
+    <default_value> The default value.
+    [RETURNS] The point value.
 */
 {
     char string[STRING_LENGTH];
@@ -110,12 +109,13 @@ float arln_read_float (char *prompt, float default_value)
 }   /*  End Function arln_read_float  */
 
 /*PUBLIC_FUNCTION*/
-int arln_read_int (char *prompt, int default_value)
-/*  This is an input routine that accepts input of one integer number, using a
-    prompt. If no input is given, the routine returns a default value.
-    The prompt must be pointed to by  prompt  .
-    The default value must be given by  default_value  .
-    The routine returns the value.
+int arln_read_int (CONST char *prompt, int default_value)
+/*  [SUMMARY] Read an integer value from the user.
+    [PURPOSE] This routine will prompt the user for a single integer number.
+    If no input is given, the routine returns a default value.
+    <prompt> The prompt.
+    <default_value> The default value.
+    [RETURNS] The value.
 */
 {
     char string[STRING_LENGTH];
@@ -138,12 +138,13 @@ int arln_read_int (char *prompt, int default_value)
 }   /*  End Function arln_read_int  */
 
 /*PUBLIC_FUNCTION*/
-flag arln_read_flag (char *prompt, flag default_value)
-/*  This is an input routine that prompts for a yes/no answer.
+flag arln_read_flag (CONST char *prompt, flag default_value)
+/*  [SUMMARY] Read a boolean value from the user.
+    [PURPOSE] This routine will prompt the user for a single boolean value.
     If no input is given, the routine returns a default value.
-    The prompt must be pointed to by  prompt  .
-    The default value must be given by  default_value  .
-    The routine returns TRUE if "yes" was typed in, else it returns FALSE.
+    <prompt> The prompt.
+    <default_value> The default value.
+    [RETURNS] TRUE if "yes" was typed in, else FALSE.
 */
 {
     char string[STRING_LENGTH];
@@ -167,19 +168,17 @@ flag arln_read_flag (char *prompt, flag default_value)
 }   /*  End Function arln_read_flag  */
 
 /*PUBLIC_FUNCTION*/
-flag arln_read_line (char *buffer, unsigned int length, char *prompt)
-/*  This routine will read a line from a the standard input, stripping all
-    comments, leading and trailing whitespace. The comment character is '#'.
-    The NULL terminated string will be written to the storage pointed to by
-    buffer  . The routine will NOT copy the '\n' newline character into the
-    buffer.
-    The length of the buffer must be given by  length  .
-    The prompt which is to be displayed must be pointed to by  prompt  .Note
-    that the prompt is only displayed if the standard input is NOT a disc file.
-    The routine returns TRUE on successful reading, else it returns FALSE.
-    The size of the buffer must be given by  length  .
-    The routine returns TRUE on success, else it returns FALSE (indicating
-    End-Of-File).
+flag arln_read_line (char *buffer, unsigned int length, CONST char *prompt)
+/*  [SUMMARY] Read a string from the user.
+    [PURPOSE] This routine will read a line from a the standard input,
+    stripping all comments, leading and trailing whitespace. The comment
+    character is '#'.
+    <buffer> The NULL terminated string will be written here. The routine will
+    NOT copy the '\n' newline character into the buffer.
+    <length> The length of the buffer.
+    <prompt> The prompt which is to be displayed. The prompt is only displayed
+    if the standard input is NOT a disc file.
+    [RETURNS] TRUE on successful reading, else FALSE (indicating End-Of-File).
 */
 {
     int len;

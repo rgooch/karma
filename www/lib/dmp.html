@@ -1,0 +1,180 @@
+<html><head><title>Package: dmp</title></head> 
+<body>
+<center><h1>The "dmp" Package</h1></center>    These routines are meant to provide a mechanism for writing the recursive,
+    heirarchical data structure to a file in an ASCII (human readable) format.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=dmp></a></table><h4>Functions</h4><table><tr><td><a href=dmp.html#dmp_multi_desc>dmp_multi_desc</a></td><td>Dump a multi_array descriptor to a file.
+</td></tr>
+<tr><td><a href=dmp.html#dmp_packet_desc>dmp_packet_desc</a></td><td>Dump a packet descriptor to a file.
+</td></tr>
+<tr><td><a href=dmp.html#dmp_element_desc>dmp_element_desc</a></td><td>Dump an element descriptor to a file.
+</td></tr>
+<tr><td><a href=dmp.html#dmp_array_desc>dmp_array_desc</a></td><td>Dump an array descriptor to a file.
+</td></tr>
+<tr><td><a href=dmp.html#dmp_dim_desc>dmp_dim_desc</a></td><td>Dump a dimension descriptor to a file.
+</td></tr>
+<tr><td><a href=dmp.html#dmp_multi_data>dmp_multi_data</a></td><td>Dump the data in a multi_array descriptor to a file.
+</td></tr>
+<tr><td><a href=dmp.html#dmp_packet>dmp_packet</a></td><td>Dump a packet to a file.
+</td></tr>
+<tr><td><a href=dmp.html#dmp_element>dmp_element</a></td><td>Dump an element to a file.
+</td></tr>
+<tr><td><a href=dmp.html#dmp_array>dmp_array</a></td><td>Dump an array to a file.
+</td></tr>
+<tr><td><a href=dmp.html#dmp_list>dmp_list</a></td><td>Dump a linked list to a file.
+</td></tr>
+<tr><td><a href=dmp.html#dmp_flag>dmp_flag</a></td><td>Dump a flag value to a file.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=dmp_multi_desc></a> void
+ <b>dmp_multi_desc</b><i>    (FILE *fp, multi_array *multi_desc, flag comments)
+</i><br><p>    This routine will dump a multi_array descriptor to a file,
+    writing in ASCII format.
+<p><b>Parameters:</b><ul><li><i>fp :</i> 
+    The file pointer.
+<br><li><i>multi_desc :</i> 
+    The descriptor.
+<br><li><i>comments :</i> 
+    If TRUE, the routine will append comments to the lines written,
+    else it will not.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dmp_packet_desc></a> void
+ <b>dmp_packet_desc</b><i>    (FILE *fp, packet_desc *pack_desc, flag comments)
+</i><br><p>    This routine will dump a packet descriptor to a file,
+    writing in ASCII format.
+<p><b>Parameters:</b><ul><li><i>fp :</i> 
+    The file pointer.
+<br><li><i>pack_desc :</i> 
+    The descriptor.
+<br><li><i>comments :</i> 
+    If TRUE, the routine will append comments to the lines written,
+    else it will not.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dmp_element_desc></a> void
+ <b>dmp_element_desc</b><i>    (FILE *fp, unsigned int type, char *desc, flag comments)
+</i><br><p>    This routine will dump an element descriptor to a file, writing
+    in ASCII.
+<p><b>Parameters:</b><ul><li><i>fp :</i> 
+    The file.
+<br><li><i>type :</i> 
+    The type of the element.
+<br><li><i>desc :</i> 
+    The element descriptor. If the element is an array pointer or a
+    linked list pointer, that descriptor will also be dumped.
+<br><li><i>comments :</i> 
+    If TRUE, the routine will append comments to the lines written,
+    else it will not.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dmp_array_desc></a> void
+ <b>dmp_array_desc</b><i>    (FILE *fp, array_desc *arr_desc, flag comments)
+</i><br><p>    This routine will dump an array descriptor to a file,
+    writing in ASCII format. The packet descriptor for the array will also be
+    dumped (this is a recursive process).
+<p><b>Parameters:</b><ul><li><i>fp :</i> 
+    The file pointer.
+<br><li><i>array_desc :</i> 
+    The descriptor.
+<br><li><i>comments :</i> 
+    If TRUE, the routine will append comments to the lines written,
+    else it will not.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dmp_dim_desc></a> void
+ <b>dmp_dim_desc</b><i>    (FILE *fp, dim_desc *dimension, flag comments)
+</i><br><p>    This routine will dump a dimension descriptor to a file,
+    writing in ASCII format. The packet descriptor for the array will also be
+    dumped (this is a recursive process).
+<p><b>Parameters:</b><ul><li><i>fp :</i> 
+    The file pointer.
+<br><li><i>dimension :</i> 
+    The descriptor.
+<br><li><i>comments :</i> 
+    If TRUE, the routine will append comments to the lines written,
+    else it will not.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dmp_multi_data></a> void
+ <b>dmp_multi_data</b><i>    (FILE *fp, multi_array *multi_desc, flag comments)
+</i><br><p>    This routine will dump the data in a multi_array descriptor to a
+    file, writing in ASCII format.
+<p><b>Parameters:</b><ul><li><i>fp :</i> 
+    The file pointer.
+<br><li><i>multi_desc :</i> 
+    The descriptor.
+<br><li><i>comments :</i> 
+    If TRUE, the routine will append comments to the lines written,
+    else it will not.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dmp_packet></a> void
+ <b>dmp_packet</b><i>    (FILE *fp, packet_desc *pack_desc, char *packet, flag comments)
+</i><br><p>    This routine will dump a packet to a file, writing in ASCII
+    format.
+<p><b>Parameters:</b><ul><li><i>fp :</i> 
+    The file pointer.
+<br><li><i>pack_desc :</i> 
+    The descriptor.
+<br><li><i>packet :</i> 
+    The packet.
+<br><li><i>comments :</i> 
+    If TRUE, the routine will append comments to the lines written,
+    else it will not.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dmp_element></a> void
+ <b>dmp_element</b><i>    (FILE *fp, unsigned int type, char *desc, char *element,
+		  flag comments)
+</i><br><p>    This routine will dump an element to a file, writing in ASCII
+    format.
+<p><b>Parameters:</b><ul><li><i>fp :</i> 
+    The file.
+<br><li><i>type :</i> 
+    The type of the element.
+<br><li><i>desc :</i> 
+    The element descriptor. If the element is an array pointer or a
+    linked list pointer, that data will also be dumped.
+<br><li><i>element :</i> 
+    The element.
+<br><li><i>comments :</i> 
+    If TRUE, the routine will append comments to the lines written,
+    else it will not.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dmp_array></a> void
+ <b>dmp_array</b><i>    (FILE *fp, array_desc *arr_desc, char *array, flag comments)
+</i><br><p>    This routine will dump an array to a file, writing in ASCII
+    format.
+<p><b>Parameters:</b><ul><li><i>fp :</i> 
+    The file pointer.
+<br><li><i>array_desc :</i> 
+    The descriptor.
+<br><li><i>array :</i> 
+    The array.
+<br><li><i>comments :</i> 
+    If TRUE, the routine will append comments to the lines written,
+    else it will not.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dmp_list></a> void
+ <b>dmp_list</b><i>    (FILE *fp, packet_desc *pack_desc, list_header *list_head,
+	       flag comments)
+</i><br><p>    This routine will dump an array descriptor to a file,
+    writing in ASCII format.
+<p><b>Parameters:</b><ul><li><i>fp :</i> 
+    The file pointer.
+<br><li><i>pack_desc :</i> 
+    The list descriptor.
+<br><li><i>list_head :</i> 
+    A pointer to the list header.
+<br><li><i>comments :</i> 
+    If TRUE, the routine will append comments to the lines written,
+    else it will not.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dmp_flag></a> void
+ <b>dmp_flag</b><i>    (FILE *fp, flag logical, char *comment_string, flag comments)
+</i><br><p>    This routine will dump the ASCII representation of a flag value
+    to a file.
+<p><b>Parameters:</b><ul><li><i>fp :</i> 
+    The file.
+<br><li><i>logical :</i> 
+    The flag value.
+<br><li><i>comment_string :</i> 
+    The comment string.
+<br><li><i>comments :</i> 
+    If TRUE, the comment string is written.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

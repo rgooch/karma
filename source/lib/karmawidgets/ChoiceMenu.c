@@ -3,7 +3,7 @@
 
     This code provides a simple choice menu widget for Xt.
 
-    Copyright (C) 1994,1995  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -38,7 +38,12 @@
     Updated by      Richard Gooch   14-DEC-1994: Removed unneccessary call to
   XtParent in Initialise.
 
-    Last updated by Richard Gooch   4-JAN-1995: Cosmetic changes.
+    Updated by      Richard Gooch   4-JAN-1995: Cosmetic changes.
+
+    Updated by      Richard Gooch   4-MAY-1996: Added small leftBitmap.
+
+    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -82,7 +87,6 @@ STATIC_FUNCTION (void Initialise, (Widget request, Widget new) );
 STATIC_FUNCTION (void Destroy, (Widget w) );
 STATIC_FUNCTION (Boolean SetValues,
 		 (Widget current, Widget request, Widget new) );
-STATIC_FUNCTION (void ConstraintInitialise, (Widget request, Widget new) );
 STATIC_FUNCTION (void item_cbk, (Widget w, XtPointer client_data,
 				 XtPointer call_data) );
 
@@ -105,6 +109,12 @@ static XtResource ChoiceMenuResources[] =
 };
 
 #undef TheOffset
+
+#define bitmap_width 10
+#define bitmap_height 10
+static unsigned char bitmap_bits[] = {
+   0xff, 0x03, 0x01, 0x02, 0x03, 0x03, 0x02, 0x01, 0x86, 0x01, 0x84, 0x00,
+   0xcc, 0x00, 0x48, 0x00, 0x48, 0x00, 0x30, 0x00};
 
 /*----------------------------------------------------------------------*/
 /* Core class values*/
@@ -172,13 +182,28 @@ WidgetClass choiceMenuWidgetClass = (WidgetClass) &choiceMenuClassRec;
 static void Initialise (Widget Request, Widget New)
 {
     int count;
-    ChoiceMenuWidget request = (ChoiceMenuWidget) Request;
+    /*ChoiceMenuWidget request = (ChoiceMenuWidget) Request;*/
     ChoiceMenuWidget new = (ChoiceMenuWidget) New;
+    Pixmap pixmap;
     Widget menu, menu_entry;
     char **names;
     struct item_data_type *item_data;
+    Display *dpy;
+    Screen *screen;
     static char function_name[] = "ChoiceMenu::Initialise";
 
+    dpy = XtDisplay (New);
+    screen = XtScreen (New);
+    /*  Create bitmap  */
+    if ( ( pixmap = XCreateBitmapFromData (dpy, RootWindowOfScreen (screen),
+					   (char *) bitmap_bits, bitmap_width,
+					   bitmap_height) ) == 0 )
+    {
+	m_abort (function_name, "bitmap");
+    }
+    XtVaSetValues (New,
+		   XtNleftBitmap, pixmap,
+		   NULL);
     menu = XtVaCreatePopupShell (new->menuButton.menu_name,
 				 simpleMenuWidgetClass, New,
 				 XtNlabel, new->choiceMenu.menuTitle,
@@ -223,9 +248,9 @@ static void Destroy (Widget W)
 
 static Boolean SetValues (Widget Current, Widget Request, Widget New)
 {
-    ChoiceMenuWidget current = (ChoiceMenuWidget) Current;
-    ChoiceMenuWidget request = (ChoiceMenuWidget) Request;
-    ChoiceMenuWidget new = (ChoiceMenuWidget) New;
+    /*ChoiceMenuWidget current = (ChoiceMenuWidget) Current;
+      ChoiceMenuWidget request = (ChoiceMenuWidget) Request;
+      ChoiceMenuWidget new = (ChoiceMenuWidget) New;*/
 
     return True;
 }   /*  End Function SetValues  */

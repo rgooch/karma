@@ -2,7 +2,7 @@
 
     Header for  foreign_  package.
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   15-APR-1995
 
-    Last updated by Richard Gooch   6-SEP-1995
+    Last updated by Richard Gooch   23-JUN-1996
 
 */
 
@@ -46,33 +46,49 @@
 #ifndef KARMA_FOREIGN_H
 #define KARMA_FOREIGN_H
 
-
-#define FA_PPM_WRITE_END             0 /*  End of varargs list               */
-
-
-#define FA_PPM_READ_END              0 /*  End of varargs list               */
+typedef struct miriad_data_context_type * KMiriadDataContext;
 
 
-#define FA_FITS_READ_HEADER_END      0 /*  End of varargs list               */
-
-#define FA_FITS_READ_DATA_END        0 /*  End of varargs list               */
-#define FA_FITS_READ_DATA_NUM_BLANKS 1 /*  (unsigned long *)                 */
+#define FA_PPM_WRITE_END               0
 
 
-#define FA_MIRIAD_READ_HEADER_END    0 /*  End of varargs list               */
-
-#define FA_MIRIAD_READ_END           0 /*  End of varargs list               */
+#define FA_PPM_READ_END                0
 
 
-#define FA_GUESS_READ_END            0 /*  End of varargs list               */
-#define FA_GUESS_READ_FITS_TO_FLOAT  1 /*  (flag)                            */
+#define FA_FITS_READ_HEADER_END        0
+
+#define FA_FITS_READ_DATA_END          0
+#define FA_FITS_READ_DATA_NUM_BLANKS   1
 
 
-#define FA_SUNRAS_READ_END           0 /*  End of varargs list               */
+#define FA_MIRIAD_READ_HEADER_END      0
+
+#define FA_MIRIAD_READ_DATA_END        0
+#define FA_MIRIAD_READ_DATA_NUM_BLANKS 1
+#define FA_MIRIAD_READ_DATA_NUM_MASKED 2
+
+#define FA_MIRIAD_READ_END             0
+#define FA_MIRIAD_READ_NUM_BLANKS      1
 
 
-#define FA_SUNRAS_WRITE_END          0 /*  End of varargs list               */
-#define FA_SUNRAS_WRITE_NO_IMAGE     1 /*  (flag *)                          */
+#define FA_GIPSY_READ_HEADER_END       0
+
+#define FA_GIPSY_READ_DATA_END         0
+#define FA_GIPSY_READ_DATA_NUM_BLANKS  1
+
+#define FA_GIPSY_READ_END              0
+#define FA_GIPSY_READ_NUM_BLANKS       1
+
+
+#define FA_GUESS_READ_END              0
+#define FA_GUESS_READ_FITS_TO_FLOAT    1
+
+
+#define FA_SUNRAS_READ_END             0
+
+
+#define FA_SUNRAS_WRITE_END            0
+#define FA_SUNRAS_WRITE_NO_IMAGE       1
 
 
 #define FOREIGN_FILE_FORMAT_KARMA   0
@@ -81,11 +97,33 @@
 #define FOREIGN_FILE_FORMAT_FITS    3
 #define FOREIGN_FILE_FORMAT_SUNRAS  4
 #define FOREIGN_FILE_FORMAT_MIRIAD  5
+#define FOREIGN_FILE_FORMAT_GIPSY   6
 
 
 /*  File:   ppm_write.c   */
 EXTERN_FUNCTION (flag foreign_ppm_write,
 		 (Channel channel, multi_array *multi_desc,flag binary, ...) );
+EXTERN_FUNCTION (flag foreign_ppm_write_pseudo,
+		 (Channel channel, flag binary,
+		  CONST char *image, unsigned int type,
+		  uaddr *hoffsets, uaddr *voffsets,
+		  unsigned int width, unsigned int height,
+		  CONST unsigned short *cmap_reds,
+		  CONST unsigned short *cmap_greens,
+		  CONST unsigned short *cmap_blues,
+		  unsigned int cmap_size, unsigned int cmap_stride,
+		  double i_min, double i_max) );
+EXTERN_FUNCTION (flag foreign_ppm_write_rgb,
+		 (Channel channel, flag binary,
+		  CONST unsigned char *image_red,
+		  CONST unsigned char *image_green,
+		  CONST unsigned char *image_blue,
+		  uaddr *hoffsets, uaddr *voffsets,
+		  unsigned int width, unsigned int height,
+		  CONST unsigned short *cmap_red,
+		  CONST unsigned short *cmap_green,
+		  CONST unsigned short *cmap_blue,
+		  unsigned int cmap_stride) );
 
 /*  File:   ppm_read.c   */
 EXTERN_FUNCTION (multi_array *foreign_ppm_read, (Channel channel, ...) );
@@ -99,11 +137,28 @@ EXTERN_FUNCTION (flag foreign_fits_read_data,
 		  uaddr num_values, ...) );
 
 /*  File:  miriad_read.c  */
+EXTERN_FUNCTION (flag foreign_miriad_test, (CONST char *dirname) );
 EXTERN_FUNCTION (multi_array *foreign_miriad_read_header,
 		 (Channel channel, flag data_alloc, flag sanitise, ...) );
 EXTERN_FUNCTION (multi_array *foreign_miriad_read,
 		 (CONST char *dirname, flag sanitise, ...) );
-EXTERN_FUNCTION (flag foreign_miriad_test, (CONST char *dirname) );
+EXTERN_FUNCTION (KMiriadDataContext foreign_miriad_create_data_context,
+		 (CONST char *dirname) );
+EXTERN_FUNCTION (flag foreign_miriad_read_data,
+		 (KMiriadDataContext context, multi_array *multi_desc,
+		  char *data, uaddr num_values, ...) );
+EXTERN_FUNCTION (void foreign_miriad_close_data_context,
+		 (KMiriadDataContext context) );
+
+/*  File:  gipsy_read.c  */
+EXTERN_FUNCTION (flag foreign_gipsy_test, (CONST char *filename) );
+EXTERN_FUNCTION (multi_array *foreign_gipsy_read_header,
+		 (Channel channel, flag data_alloc, flag sanitise, ...) );
+EXTERN_FUNCTION (flag foreign_gipsy_read_data,
+		 (Channel channel, multi_array *multi_desc,
+		  char *data, uaddr num_values, ...) );
+EXTERN_FUNCTION (multi_array *foreign_gipsy_read,
+		 (CONST char *filename, flag sanitise, ...) );
 
 /*  File:   sunras_read.c   */
 EXTERN_FUNCTION (multi_array *foreign_sunras_read, (Channel channel, ...) );
@@ -125,7 +180,10 @@ EXTERN_FUNCTION (flag foreign_sunras_write_rgb,
 		  CONST unsigned char *image_green,
 		  CONST unsigned char *image_blue,
 		  uaddr *hoffsets, uaddr *voffsets,
-		  unsigned int width, unsigned int height) );
+		  unsigned int width, unsigned int height,
+		  CONST unsigned short *cmap_red,
+		  CONST unsigned short *cmap_green,
+		  CONST unsigned short *cmap_blue, unsigned int cmap_stride) );
 
 
 /*  File: misc.c  */
@@ -136,6 +194,8 @@ EXTERN_FUNCTION (unsigned int foreign_guess_format_from_filename,
 EXTERN_FUNCTION (multi_array *foreign_guess_and_read,
 		 (CONST char *filename, unsigned int mmap_option,
 		  flag writeable, unsigned int *ftype, ...) );
+EXTERN_FUNCTION (multi_array *foreign_gipsy_read,
+		 (CONST char *filename, flag sanitise, ...) );
 
 
 #endif /*  KARMA_FOREIGN_H  */

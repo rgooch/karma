@@ -3,7 +3,7 @@
 
     This code provides an animation control widget for Xt.
 
-    Copyright (C) 1994,1995  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -54,51 +54,53 @@
     Last updated by Richard Gooch   31-AUG-1995: As above, but cope with
   numFrames set to 0.
 
+    Updated by      Richard Gooch   19-MAY-1996: Changed from using window
+  scale structure to using <canvas_set_attributes>.
+
+    Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   4-JUN-1996: Switched to left-right
+  bottom-top co-ordinate specification instead of min-max x and y.
+
 
 */
-
-/*----------------------------------------------------------------------*/
-/* Include files*/
-/*----------------------------------------------------------------------*/
-
-#define X11
-#include <Xkw/AnimateControlP.h>
-
-#include <X11/Xos.h>
-#include <X11/StringDefs.h>
-
-#include <X11/Xaw/Command.h>
-#include <X11/Xaw/Form.h>
-#include <X11/Xaw/Label.h>
-#include <X11/Xaw/Box.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <varargs.h>
-
+#include <sys/wait.h>
+#include <signal.h>
+#include <X11/Xos.h>
+#include <X11/IntrinsicP.h>
+#include <X11/StringDefs.h>
+#include <X11/Xaw/Command.h>
+#include <X11/Xaw/Form.h>
+#include <X11/Xaw/Label.h>
+#include <X11/Xaw/Box.h>
+#ifndef X11
+#  define X11
+#endif
 #include <karma.h>
+#define NEW_WIN_SCALE
+#include <k_event_codes.h>
+#include <karma_m.h>
+#include <karma_a.h>
+#include <Xkw/AnimateControlP.h>
 #include <Xkw/Value.h>
 #include <Xkw/ExclusiveMenu.h>
 #include <Xkw/Canvas.h>
 #include <Xkw/Repeater.h>
 
-#include <sys/wait.h>
-#include <signal.h>
-#include <k_event_codes.h>
-#include <karma_m.h>
-#include <karma_a.h>
 
+/*  Private functions  */
 
-/*----------------------------------------------------------------------*/
-/* Function prototypes*/
-/*----------------------------------------------------------------------*/
-
-/* Methods */
-
-STATIC_FUNCTION (void Initialise, (Widget request, Widget new) );
-STATIC_FUNCTION (void Destroy, (Widget w) );
-STATIC_FUNCTION (Boolean SetValues,
+STATIC_FUNCTION (void AnimateControl__Initialise,
+		 (Widget request, Widget new) );
+STATIC_FUNCTION (void cnv_realise_cbk, (Widget w, XtPointer client_data,
+					XtPointer call_data) );
+STATIC_FUNCTION (Boolean AnimateControl__SetValues,
 		 (Widget current, Widget request, Widget new) );
 STATIC_FUNCTION (void popdown_cbk, (Widget w, XtPointer client_data,
 				    XtPointer call_data) );
@@ -115,8 +117,6 @@ STATIC_FUNCTION (void store_cbk, (Widget w, XtPointer client_data,
 STATIC_FUNCTION (void timer_cbk, (XtPointer client_data, XtIntervalId *id) );
 STATIC_FUNCTION (void goto_frame_cbk, (Widget w, XtPointer client_data,
 				       XtPointer call_data) );
-STATIC_FUNCTION (void cnv_realise_cbk, (Widget w, XtPointer client_data,
-					XtPointer call_data) );
 STATIC_FUNCTION (flag position_func,
 		 (KWorldCanvas canvas, double x, double y,
 		  unsigned int event_code, void *e_info,
@@ -140,10 +140,6 @@ static char *mode_choices[NUM_MODE_CHOICES] =
 };
 
 
-/*----------------------------------------------------------------------*/
-/* Default Resources*/
-/*----------------------------------------------------------------------*/
-
 #define offset(field) XtOffset(AnimateControlWidget, animateControl.field)
 
 static XtResource AnimateControlResources[] = 
@@ -160,10 +156,6 @@ static XtResource AnimateControlResources[] =
 
 #undef TheOffset
 
-/*----------------------------------------------------------------------*/
-/* Core class values*/
-/*----------------------------------------------------------------------*/
-
 AnimateControlClassRec animateControlClassRec = 
 {
   {
@@ -174,7 +166,7 @@ AnimateControlClassRec animateControlClassRec =
       NULL,                                /* class_initialise */
       NULL,                                /* class_part_initialise */
       FALSE,                               /* class_init */
-      (XtInitProc)Initialise,              /* initialise */
+      (XtInitProc) AnimateControl__Initialise,/* initialise */
       NULL,                                /* initialise_hook */
       XtInheritRealize,                    /* realise */
       NULL,                                /* actions */
@@ -186,10 +178,10 @@ AnimateControlClassRec animateControlClassRec =
       TRUE,                                /* compress_exposure */
       TRUE,                                /* compress_enterleave */
       TRUE,                                /* visible_interest */
-      Destroy,                             /* destroy */
+      NULL,                                /* destroy */
       XtInheritResize,                     /* resize */
       NULL,                                /* expose */
-      (XtSetValuesFunc)SetValues,          /* set_values */
+      (XtSetValuesFunc) AnimateControl__SetValues,  /* set_values */
       NULL,                                /* set_values_hook */
       XtInheritSetValuesAlmost,            /* set_values_almost */
       NULL,                                /* get_values_hook */
@@ -223,35 +215,15 @@ AnimateControlClassRec animateControlClassRec =
 
 WidgetClass animateControlWidgetClass = (WidgetClass) &animateControlClassRec;
 
-/*----------------------------------------------------------------------*/
-/* check that a widget is actually an AnimateControlWidget              */
-/*----------------------------------------------------------------------*/
-
-static int check_type (Widget w, char *function_name)
+static void AnimateControl__Initialise (Widget Request, Widget New)
 {
-  static char func_name[] = "AnimateControl.check_type";
-  int fl;
-  fl=XtIsSubclass(w,animateControlWidgetClass);
-  if(!fl)
-    fprintf(stderr,
-    "ERROR: Widget passed to %s is not a AnimateControlWidget\n",
-	    function_name);
-  return fl;
-}
-
-/*----------------------------------------------------------------------*/
-/* Initialisation method                                                */
-/*----------------------------------------------------------------------*/
-
-static void Initialise (Widget Request, Widget New)
-{
-    AnimateControlWidget request = (AnimateControlWidget) Request;
+    /*AnimateControlWidget request = (AnimateControlWidget) Request;*/
     AnimateControlWidget new = (AnimateControlWidget) New;
     Widget form, w;
     Widget close_btn, start_btn, stop_btn, prev_btn, next_btn, goto_btn;
     Widget interval_sld, inc_sld;
     Widget cnv, mode_menu;
-    static char function_name[] = "AnimateControl::Initialise";
+    /*static char function_name[] = "AnimateControlWidget::Initialise";*/
 
     new->animateControl.running_movie = FALSE;
     new->animateControl.interval_ms = 100;
@@ -374,30 +346,48 @@ static void Initialise (Widget Request, Widget New)
 				 NULL);
     new->animateControl.end_frame_sld = w;
     XtAddCallback (w, XkwNvalueChangeCallback, set_limits_cbk,(XtPointer) new);
-}
+}   /*  End Function Initialise  */
 
-/*----------------------------------------------------------------------*/
-/* Destroy method                                                       */
-/*----------------------------------------------------------------------*/
-
-static void Destroy(Widget W)
+static void cnv_realise_cbk (w, client_data, call_data)
+/*  This is the canvas realise callback.
+*/
+Widget w;
+XtPointer client_data;
+XtPointer call_data;
 {
-  /* Nothing to destroy */
-}
+    KPixCanvas pixcanvas = (KPixCanvas) call_data;
+    KWorldCanvas wc;
+    double left_x, right_x;
+    struct win_scale_type win_scale;
+    AnimateControlWidget top = (AnimateControlWidget) client_data;
+    static char function_name[] = "AnimateControlWidget::cnv_realise_cbk";
 
-/*----------------------------------------------------------------------*/
-/* SetValues method                                                     */
-/*----------------------------------------------------------------------*/
+    canvas_init_win_scale (&win_scale, K_WIN_SCALE_MAGIC_NUMBER);
+    left_x = top->animateControl.startFrame;
+    right_x = top->animateControl.endFrame;
+    if (right_x <= left_x) right_x = left_x + 1.0;
+    win_scale.left_x = left_x;
+    win_scale.right_x = right_x;
+    if ( ( wc = canvas_create (pixcanvas, NULL, &win_scale) ) == NULL )
+    {
+	m_abort (function_name, "world canvas");
+    }
+    top->animateControl.position_wc = wc;
+    (void) canvas_register_position_event_func (wc, position_func,
+						(void *) top);
+    (void) canvas_register_refresh_func (wc, refresh_func, (void *) top);
+}   /*  End Function cnv_realise_cbk   */
 
-static Boolean SetValues(Widget Current, Widget Request, Widget New)
+static Boolean AnimateControl__SetValues (Widget Current, Widget Request,
+					  Widget New)
 {
-    int num_frames, width, height, dummy;
-    double x_min, x_max;
+    int num_frames;
+    double left_x, right_x;
     char txt[STRING_LENGTH];
     AnimateControlWidget current = (AnimateControlWidget) Current;
-    AnimateControlWidget request = (AnimateControlWidget) Request;
+    /*AnimateControlWidget request = (AnimateControlWidget) Request;*/
     AnimateControlWidget new = (AnimateControlWidget) New;
-    static char function_name[] = "AnimateControl::SetValues";
+    /*static char function_name[] = "AnimateControlWidget::SetValues";*/
 
     if (new->animateControl.numFrames != current->animateControl.numFrames)
     {
@@ -423,15 +413,19 @@ static Boolean SetValues(Widget Current, Widget Request, Widget New)
 		       XkwNmaximum, num_frames - 1,
 		       XtNvalue, num_frames - 1,
 		       NULL);
-	x_min = new->animateControl.startFrame;
-	x_max = new->animateControl.endFrame;
-	if (x_max <= x_min) x_max = x_min + 1.0;
-	canvas_set_attributes (new->animateControl.position_wc,
-			       CANVAS_ATT_X_MIN, x_min,
-			       CANVAS_ATT_X_MAX, x_max,
-			       CANVAS_ATT_END);
-	(void) kwin_resize (canvas_get_pixcanvas (new->animateControl.position_wc),
-			    TRUE, 0, 0, 0, 0);
+	if (new->animateControl.position_wc != NULL)
+	{
+	    left_x = new->animateControl.startFrame;
+	    right_x = new->animateControl.endFrame;
+	    if (right_x <= left_x) right_x = left_x + 1.0;
+	    canvas_set_attributes (new->animateControl.position_wc,
+				   CANVAS_ATT_LEFT_X, left_x,
+				   CANVAS_ATT_RIGHT_X, right_x,
+				   CANVAS_ATT_END);
+	    (void) kwin_resize (canvas_get_pixcanvas
+				(new->animateControl.position_wc),
+				TRUE, 0, 0, 0, 0);
+	}
     }
     return False;
 }   /*  End Function SetValues  */
@@ -452,10 +446,6 @@ XtPointer call_data;
     }
     XtPopdown ( (Widget) top );
 }   /*  End Function popdown_cbk   */
-
-/*----------------------------------------------------------------------*/
-/* Callback for Auto/Manual button                                      */
-/*----------------------------------------------------------------------*/
 
 static void start_movie_cbk (w, client_data, call_data)
 /*  This is the start movie callback.
@@ -683,30 +673,6 @@ XtPointer call_data;
 		     (XtPointer) &frame_number );
 }   /*  End Function goto_frame_cbk   */
 
-static void cnv_realise_cbk (w, client_data, call_data)
-/*  This is the canvas realise callback.
-*/
-Widget w;
-XtPointer client_data;
-XtPointer call_data;
-{
-    KPixCanvas pixcanvas = (KPixCanvas) call_data;
-    KWorldCanvas wc;
-    struct win_scale_type win_scale;
-    AnimateControlWidget top = (AnimateControlWidget) client_data;
-    static char function_name[] = "AnimateControl::cnv_realise_cbk";
-
-    canvas_init_win_scale (&win_scale, K_WIN_SCALE_MAGIC_NUMBER);
-    if ( ( wc = canvas_create (pixcanvas, NULL, &win_scale) ) == NULL )
-    {
-	m_abort (function_name, "world canvas");
-    }
-    top->animateControl.position_wc = wc;
-    (void) canvas_register_position_event_func (wc, position_func,
-						(void *) top);
-    (void) canvas_register_refresh_func (wc, refresh_func, (void *) top);
-}   /*  End Function cnv_realise_cbk   */
-
 static flag position_func (KWorldCanvas canvas, double x, double y,
 			   unsigned int event_code, void *e_info,
 			   void **f_info, double x_lin, double y_lin)
@@ -781,6 +747,7 @@ static void refresh_func (KWorldCanvas canvas, int width, int height,
 {
     unsigned long pixel_value;
     AnimateControlWidget top = (AnimateControlWidget) *info;
+    /*static char function_name[] = "AnimateControlWidget::refresh_func";*/
 
     if ( !canvas_get_colour (canvas, "white", &pixel_value,
 			     (unsigned short *) NULL,
@@ -798,12 +765,8 @@ Widget w;
 XtPointer client_data;
 XtPointer call_data;
 {
-    int width, height, dummy;
     AnimateControlWidget top = (AnimateControlWidget) client_data;
-    struct win_scale_type win_scale;
 
-    canvas_get_size (top->animateControl.position_wc, &dummy, &dummy,
-		     &win_scale);
     if (top->animateControl.endFrame <= top->animateControl.startFrame)
     {
 	top->animateControl.endFrame = top->animateControl.startFrame + 1;
@@ -819,7 +782,11 @@ XtPointer call_data;
 		       XtNvalue, top->animateControl.endFrame,
 		       NULL);
     }
-    win_scale.x_min = top->animateControl.startFrame;
-    win_scale.x_max = top->animateControl.endFrame;
-    (void) canvas_resize (top->animateControl.position_wc, &win_scale, TRUE);
+    canvas_set_attributes (top->animateControl.position_wc,
+			   CANVAS_ATT_LEFT_X,
+			   (double) top->animateControl.startFrame,
+			   CANVAS_ATT_RIGHT_X,
+			   (double) top->animateControl.endFrame,
+			   CANVAS_ATT_END);
+    (void) canvas_resize (top->animateControl.position_wc, NULL, TRUE);
 }   /*  End Function set_limits_cbk   */

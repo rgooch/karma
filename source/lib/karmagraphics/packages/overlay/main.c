@@ -3,7 +3,7 @@
 
     This code provides KOverlayList objects.
 
-    Copyright (C) 1993,1994,1995  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -59,8 +59,23 @@
     Updated by      Richard Gooch   21-SEP-1995: Fixed bugs in
   <overlay_ellipses> and <overlay_vectors>: error condition test inverted.
 
-    Last updated by Richard Gooch   22-DEC-1995: Trap NULL co-ordinate arrays
+    Updated by      Richard Gooch   22-DEC-1995: Trap NULL co-ordinate arrays
   in <overlay_lines> routine.
+
+    Updated by      Richard Gooch   28-FEB-1996: Added
+  #include <karma_iarray.h>
+
+    Last updated by Richard Gooch   14-APR-1996: Changed to new documentation
+  format.
+
+    Updated by      Richard Gooch   19-MAY-1996: Changed from using window
+  scale structure to using <canvas_get_attributes>.
+
+    Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   4-JUN-1996: Switched to left-right
+  bottom-top co-ordinate specification instead of min-max x and y.
 
 
 */
@@ -68,11 +83,14 @@
 #include <math.h>
 #include <string.h>
 #define KWIN_GENERIC_ONLY
+#define NEW_WIN_SCALE
 #include <karma_overlay.h>
+#include <karma_iarray.h>
 #include <karma_dsrw.h>
 #include <karma_dsra.h>
 #include <karma_conn.h>
 #include <karma_ch.h>
+#include <karma_pio.h>
 #include <karma_ds.h>
 #include <karma_st.h>
 #include <karma_a.h>
@@ -333,10 +351,10 @@ STATIC_FUNCTION (flag move_object,
 
 /*PUBLIC_FUNCTION*/
 KOverlayList overlay_create_list (void *info)
-/*  This routine will create a managed overlay object list.
-    The arbitrary information pointer for the overlay list must be pointed to
-    by  info  .This may be NULL.
-    The routine returns a KOverlayList object on success, else it returns NULL.
+/*  [SUMMARY] Create a managed overlay object list.
+    <info> The arbitrary information pointer for the overlay list. This may be
+    NULL.
+    [RETURNS] A KOverlayList object on success, else NULL.
 */
 {
     KOverlayList olist;
@@ -394,15 +412,16 @@ KOverlayList overlay_create_list (void *info)
 
 /*PUBLIC_FUNCTION*/
 void overlay_specify_iarray_2d (KOverlayList olist, iarray array)
-/*  This routine will specify horizontal and vertical label matching for an
-    overlay list based on the dimension names of a 2-dimensional Intelligent
-    Array. No further restrictions are imposed (any existing restrictions are
-    removed) if the Intelligent Array is a pure 2-dimensional array. If the
-    array is an alias of a plane of a 3-dimensional (or greater) array, then
-    further restrictions are imposed.
-    The overlay list must be given by  olist  .
-    The Intelligent Array must be given by  array  .
-    The routine returns nothing.
+/*  [SUMMARY] Extract specifications from an Intelligent Array.
+    [PURPOSE] This routine will specify horizontal and vertical label matching
+    for an overlay list based on the dimension names of a 2-dimensional
+    Intelligent Array. No further restrictions are imposed (any existing
+    restrictions are removed) if the Intelligent Array is a pure 2-dimensional
+    array. If the array is an alias of a plane of a 3-dimensional (or greater)
+    array, then further restrictions are imposed.
+    <olist> The overlay list object.
+    <array> The Intelligent Array.
+    [RETURNS] Nothing.
 */
 {
     unsigned int xdim, ydim;
@@ -454,12 +473,13 @@ void overlay_specify_iarray_2d (KOverlayList olist, iarray array)
 
 /*PUBLIC_FUNCTION*/
 void overlay_specify_canvas (KOverlayList olist, KWorldCanvas canvas)
-/*  This routine will register a world canvas to extract specification
-    information from for all future overlay objects which are created with an
-    overlay object list.
-    The overlay list must be given by  olist  .
-    The world canvas must be given by  canvas  .
-    The routine returns nothing.
+/*  [SUMMARY] Extract specification from a world canvas.
+    [PURPOSE] This routine will register a world canvas to extract
+    specification information from for all future overlay objects which are
+    created with an overlay object list.
+    <olist> The overlay list object.
+    <canvas> The world canvas object.
+    [RETURNS] Nothing.
 */
 {
     unsigned int count;
@@ -496,14 +516,15 @@ void overlay_specify_canvas (KOverlayList olist, KWorldCanvas canvas)
 
 /*PUBLIC_FUNCTION*/
 flag overlay_associate_display_canvas (KOverlayList olist, KWorldCanvas canvas)
-/*  This routine will register a world canvas to display overlay objects on
-    when overlay objects received (either by  overlay_  function calls within
-    the application or over a "2D_overlay" connection). Multiple canvases may
-    be associated with an overlay list.
-    The overlay list must be given by  olist  .
-    The world canvas must be given by  canvas  .
-    The routine returns TRUE on success, else it returns FALSE (indicating that
-    an error occurred refreshing the canvas).
+/*  [SUMMARY] Associate display canvas with overlay list.
+    [PURPOSE] This routine will register a world canvas to display overlay
+    objects on when overlay objects received (either by overlay_* function
+    calls within the application or over a "2D_overlay" connection). Multiple
+    canvases may  be associated with an overlay list.
+    <olist> The overlay list object.
+    <canvas> The world canvas object.
+    [RETURNS] TRUE on success, else FALSE (indicating that an error occurred
+    refreshing the canvas).
 */
 {
     struct refresh_canvas_type *cnv;
@@ -553,11 +574,10 @@ flag overlay_associate_display_canvas (KOverlayList olist, KWorldCanvas canvas)
 /*PUBLIC_FUNCTION*/
 flag overlay_unassociate_display_canvas (KOverlayList olist,
 					 KWorldCanvas canvas)
-/*  This routine will unregister a world canvas to display overlay objects.
-    The overlay list must be given by  olist  .
-    The world canvas must be given by  canvas  .
-    The routine returns TRUE if the canvas was associated,
-    else it returns FALSE.
+/*  [SUMMARY] Dissassociate a world canvas to display overlay objects.
+    <olist> The overlay list object.
+    <canvas> The world canvas object.
+    [RETURNS] TRUE if the canvas was associated, else FALSE.
 */
 {
     struct refresh_canvas_type *cnv;
@@ -588,10 +608,10 @@ flag overlay_unassociate_display_canvas (KOverlayList olist,
 
 /*PUBLIC_FUNCTION*/
 flag overlay_redraw_on_canvas (KOverlayList olist, KWorldCanvas canvas)
-/*  This routine will redraw an overlay list onto a world canvas.
-    The overlay list must be given by  olist  .
-    The world canvas must be given by  canvas  .
-    The routine returns TRUE on succes, else it returns FALSE.
+/*  [SUMMARY] Redraw an overlay list onto a world canvas.
+    <olist> The overlay list object.
+    <canvas> The world canvas object.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     unsigned int num_restr;
@@ -599,7 +619,6 @@ flag overlay_redraw_on_canvas (KOverlayList olist, KWorldCanvas canvas)
     char *ylabel;
     char **restr_names;
     double *restr_values;
-    char *ptr;
     list_header *list_head;
     list_entry *entry;
     static char function_name[] = "overlay_redraw_on_canvas";
@@ -634,17 +653,16 @@ unsigned int overlay_line (KOverlayList olist,
 			   unsigned int type0, double x0,double y0,
 			   unsigned int type1, double x1, double y1,
 			   char *colourname)
-/*  This routine will add a line to an overlay object list. See also
-    overlay_lines  .
-    The overlay list must be given by  olist  .
-    The type of the first co-ordinate must be given by  type0  .
-    The horizontal position of the first co-ordinate must be given by  x0  .
-    The vertical position of the first co-ordinate must be given by  y0  .
-    The type of the second co-ordinate must be given by  type1  .
-    The horizontal position of the second co-ordinate must be given by  x1  .
-    The vertical position of the second co-ordinate must be given by  y1  .
-    The colourname must be pointed to by  colourname  .
-    The routine returns the objectID on success, else it returns 0.
+/*  [SUMMARY] Add a line to an overlay object list. See also [<overlay_lines>].
+    <olist> The overlay list object.
+    <type0> The type of the first co-ordinate.
+    <x0> The horizontal position of the first co-ordinate.
+    <y0> The vertical position of the first co-ordinate.
+    <type1> The type of the second co-ordinate.
+    <x1> The horizontal position of the second co-ordinate.
+    <y1> The vertical position of the second co-ordinate.
+    <colourname> The colourname.
+    [RETURNS] The objectID on success, else 0.
 */
 {
     unsigned int pack_size;
@@ -695,9 +713,10 @@ unsigned int overlay_line (KOverlayList olist,
 unsigned int overlay_lines (KOverlayList olist, unsigned int num_coords,
 			    unsigned int *types, double *x_arr, double *y_arr,
 			    char *colourname)
-/*  [PURPOSE] This routine will add a number of connected lines to an overlay
+/*  [SUMMARY] Add many lines to an overlay list.
+    [PURPOSE] This routine will add a number of connected lines to an overlay
     object list. These lines will form a single object. Using this routine is
-    far more efficient than calling <<overlay_line>> repeatedly.
+    far more efficient than calling [<overlay_line>] repeatedly.
     <olist> The overlay list.
     <num_coords> The number of co-ordinates. The number of lines is one less
     than this value.
@@ -770,17 +789,17 @@ unsigned int overlay_lines (KOverlayList olist, unsigned int num_coords,
 unsigned int overlay_text (KOverlayList olist, char *string, unsigned int type,
 			   double x, double y, char *colourname,
 			   char *fontname, flag clear_under)
-/*  This routine will add a text string to an overlay object list.
-    The overlay list must be given by  olist  .
-    The text string must be pointed to by  string  .
-    The type of the co-ordinate must be given by  type  .
-    The horizontal position of the co-ordinate must be given by  x  .
-    The vertical position of the co-ordinate must be given by  y  .
-    The colourname must be pointed to by  colourname  .
-    The font name must be pointed to by  fontname  .
-    If the value of  clear_under  is TRUE, then both the foreground and
-    background of the characters will be drawn.
-    The routine returns the objectID on success, else it returns 0.
+/*  [SUMMARY] Add a text string to an overlay object list.
+    <olist> The overlay list object.
+    <string> The text string.
+    <type> The type of the co-ordinate.
+    <x> The horizontal position of the co-ordinate.
+    <y> The vertical position of the co-ordinate.
+    <colourname> The colourname.
+    <fontname> The font name.
+    <clear_under> If TRUE, then both the foreground and background of the
+    characters will be drawn.
+    [RETURNS] The objectID on success, else 0.
 */
 {
     double offset = 0.01;
@@ -829,18 +848,17 @@ unsigned int overlay_ellipse (KOverlayList olist,
 			      unsigned int ctype,double cx, double cy,
 			      unsigned int rtype, double rx, double ry,
 			      char *colourname, flag filled)
-/*  This routine will add an ellipse to an overlay object list. See also
-    overlay_eillipses  .
-    The overlay list must be given by  olist  .
-    The type of the centre co-ordinate must be given by  ctype  .
-    The horizontal position of the centre co-ordinate must be given by  cx  .
-    The vertical position of the centre co-ordinate must be given by  cy  .
-    The type of the radius co-ordinate must be given by  rtype  .
-    The horizontal radius must be given by  rx  .
-    The vertical radius must be given by  ry  .
-    The colourname must be pointed to by  colourname  .
-    If the ellipse is to be filled, the value of  filled  must be TRUE.
-    The routine returns the objectID on success, else it returns 0.
+/*  [SUMMARY] Add an ellipse to an overlay list. See also [<overlay_eillipses>]
+    <olist> The overlay list object.
+    <ctype> The type of the centre co-ordinate.
+    <cx> The horizontal position of the centre co-ordinate.
+    <cy> The vertical position of the centre co-ordinate.
+    <rtype> The type of the radius co-ordinate.
+    <rx> The horizontal radius.
+    <ry> The vertical radius.
+    <colourname> The colourname.
+    <filled> If TRUE the ellipse will be filled.
+    [RETURNS] The objectID on success, else 0.
 */
 {
     unsigned int pack_size;
@@ -895,15 +913,15 @@ unsigned int overlay_filled_polygon (KOverlayList olist,
 				     unsigned int *types,
 				     double *x_arr, double *y_arr,
 				     char *colourname)
-/*  This routine will add a filled polygon to an overlay object list.
-    The overlay list must be given by  olist  .
-    The number of co-ordinates (vertices) must be given by  num_coords  .
-    The co-ordinate type values must be pointed to by  types  .If this is
-    NULL, all co-ordinates are assumed to be world co-ordinates.
-    The first horizontal co-ordinate value must be pointed to by  x_arr  .
-    The first vertical co-ordinate value must be pointed to by  y_arr  .
-    The colourname must be pointed to by  colourname  .
-    The routine returns the objectID on success, else it returns 0.
+/*  [SUMMARY] Add a filled polygon to an overlay object list.
+    <olist> The overlay list object.
+    <num_coords> The number of co-ordinates (vertices).
+    <types> The array of co-ordinate type values. If this is NULL, all
+    co-ordinates are assumed to be world co-ordinates.
+    <x_arr> The array of horizontal co-ordinate values.
+    <y_arr> The array of vertical co-ordinate values.
+    <colourname> The colour name.
+    [RETURNS] The objectID on success, else 0.
 */
 {
     unsigned int count;
@@ -958,17 +976,18 @@ unsigned int overlay_vector (KOverlayList olist,
 			     unsigned int stype, double sx, double sy,
 			     unsigned int dtype, double dx, double dy,
 			     char *colourname)
-/*  This routine will add a vector (directed line) to an overlay object list.
-    See also  overlay_vectors  .
-    The overlay list must be given by  olist  .
-    The type of the start co-ordinate must be given by  stype  .
-    The horizontal position of the start co-ordinate must be given by  sx  .
-    The vertical position of the start co-ordinate must be given by  sy  .
-    The type of the vector direction must be given by  dtype  .
-    The horizontal vector direction must be given by  dx  .
-    The vertical vector direction must be given by  dy  .
-    The colourname must be pointed to by  colourname  .
-    The routine returns the objectID on success, else it returns 0.
+/*  [SUMMARY] Add a vector to an overlay list.
+    [PURPOSE] This routine will add a vector (directed line) to an overlay
+    object list. See also [<overlay_vectors>].
+    <olist> The overlay list object.
+    <stype> The type of the start co-ordinate.
+    <sx> The horizontal position of the start co-ordinate.
+    <sy> The vertical position of the start co-ordinate.
+    <dtype> The type of the vector direction.
+    <dx> The horizontal vector direction.
+    <dy> The vertical vector direction.
+    <colourname> The colour name.
+    [RETURNS] The objectID on success, else 0.
 */
 {
     unsigned int pack_size;
@@ -1020,23 +1039,23 @@ unsigned int overlay_ellipses (KOverlayList olist, unsigned int num_ellipses,
 			       unsigned int *ctypes, double *cx, double *cy,
 			       unsigned int *rtypes, double *rx, double *ry,
 			       char *colourname, flag filled)
-/*  This routine will add a number of ellipses to an overlay object list. These
-    ellipses will form a single object. Using this routine is far more
-    efficient than calling  overlay_ellipse  repeatedly.
-    The overlay list must be given by  olist  .
-    The number of ellipses must be given by  num_ellipses  .
-    The types of the centre co-ordinates must be pointed to by  ctypes  .If
-    this is NULL, all co-ordinates are assumed to be world co-ordinates.
-    The horizontal positions of the centre co-ordinates must be pointed to by
-    cx  .
-    The vertical positions of the centre co-ordinates must be pointed to by  cy
-    The types of the radii co-ordinates must be given by  rtypes  .If this is
-    NULL, all co-ordinates are assumed to be world co-ordinates.
-    The horizontal radii must be pointed to by  rx  .
-    The vertical radii must be pointed to by  ry  .
-    The colourname must be pointed to by  colourname  .
-    If the ellipses are to be filled, the value of  filled  must be TRUE.
-    The routine returns the objectID on success, else it returns 0.
+/*  [SUMMARY] Add many ellipses to an overlay list.
+    [PURPOSE] This routine will add a number of ellipses to an overlay object
+    list. These ellipses will form a single object. Using this routine is far
+    more efficient than calling [<overlay_ellipse>] repeatedly.
+    <olist> The overlay list object.
+    <num_ellipses> The number of ellipses.
+    <ctypes> The types of the centre co-ordinates. If this is NULL, all
+    co-ordinates are assumed to be world co-ordinates.
+    <cx> The horizontal positions of the centre co-ordinates.
+    <cy> The vertical positions of the centre co-ordinates.
+    <rtypes> The types of the radii co-ordinates. If this is NULL, all
+    co-ordinates are assumed to be world co-ordinates.
+    <rx> The horizontal radii.
+    <ry> The vertical radii.
+    <colourname> The colour name.
+    <filled> If TRUE the ellipses will be filled.
+    [RETURNS] The objectID on success, else 0.
 */
 {
     unsigned int count;
@@ -1119,22 +1138,22 @@ unsigned int overlay_segments (KOverlayList olist, unsigned int num_segments,
 			       unsigned int *types0, double *x0, double *y0,
 			       unsigned int *types1, double *x1, double *y1,
 			       char *colourname)
-/*  This routine will add a number of disjoint line segments to an overlay
-    object list. These segments will form a single object. Using this routine
-    is far more efficient than calling  overlay_line  repeatedly.
-    The overlay list must be given by  olist  .
-    The number of segments must be given by  num_segments  .
-    The types of the start co-ordinates must be pointed to by  types0  .If
-    this is NULL, all co-ordinates are assumed to be world co-ordinates.
-    The horizontal positions of the start co-ordinates must be pointed to by
-    x0  .
-    The vertical positions of the start co-ordinates must be pointed to by  y0
-    The types of the stop co-ordinates must be pointed to by  types1  .If
-    this is NULL, all co-ordinates are assumed to be world co-ordinates.
-    The horizontal positions of the stop co-ordinates must be pointed to by  x1
-    The vertical positions of the stop co-ordinates must be pointed to by  y1
-    The colourname must be pointed to by  colourname  .
-    The routine returns the objectID on success, else it returns 0.
+/*  [SUMMARY] Add many segments to an overlay list.
+    [PURPOSE] This routine will add a number of disjoint line segments to an
+    overlay object list. These segments will form a single object. Using this
+    routine is far more efficient than calling [<overlay_line>] repeatedly.
+    <olist> The overlay list object.
+    <num_segments> The number of segments.
+    <types0> The types of the start co-ordinates. If this is NULL, all
+    co-ordinates are assumed to be world co-ordinates.
+    <x0> The horizontal positions of the start co-ordinates.
+    <y0> The vertical positions of the start co-ordinates.
+    <types1> The types of the stop co-ordinates. If this is NULL, all
+    co-ordinates are assumed to be world co-ordinates.
+    <x1> The horizontal positions of the stop co-ordinates.
+    <y1> The vertical positions of the stop co-ordinates.
+    <colourname> The colour name.
+    [RETURNS] The objectID on success, else 0.
 */
 {
     unsigned int count;
@@ -1217,22 +1236,22 @@ unsigned int overlay_vectors (KOverlayList olist, unsigned int num_vectors,
 			      unsigned int *stypes, double *sx, double *sy,
 			      unsigned int *dtypes, double *dx, double *dy,
 			      char *colourname)
-/*  This routine will add a number of vectors (directed lines) to an overlay
-    object list. These vectors will form a single object. Using this routine
-    is far more efficient than calling  overlay_vector  repeatedly.
-    The overlay list must be given by  olist  .
-    The number of vectors must be given by  num_vectors  .
-    The types of the start co-ordinates must be pointed to by  stypes  .If
-    this is NULL, all co-ordinates are assumed to be world co-ordinates.
-    The horizontal positions of the start co-ordinates must be pointed to by
-    sx  .
-    The vertical positions of the start co-ordinates must be pointed to by  sy
-    The types of the vector directions must be pointed to by  dtypes  .If
-    this is NULL, all directions are assumed to be in world co-ordinates.
-    The horizontal vector directions must be pointed to by  dx  .
-    The vertical vector directions must be pointed to by  dy  .
-    The colourname must be pointed to by  colourname  .
-    The routine returns the objectID on success, else it returns 0.
+/*  [SUMMARY] Add many vectors to an overlay list.
+    [PURPOSE] This routine will add a number of vectors (directed lines) to an
+    overlay object list. These vectors will form a single object. Using this
+    routine is far more efficient than calling [<overlay_vector>] repeatedly.
+    <olist> The overlay list object.
+    <num_vectors> The number of vectors.
+    <stypes> The types of the start co-ordinates. If this is NULL, all
+    co-ordinates are assumed to be world co-ordinates.
+    <sx> The horizontal positions of the start co-ordinates.
+    <sy> The vertical positions of the start co-ordinates.
+    <dtypes> The types of the vector directions. If this is NULL, all
+    directions are assumed to be in world co-ordinates.
+    <dx> The horizontal vector directions.
+    <dy> The vertical vector directions.
+    <colourname> The colour name.
+    [RETURNS] The objectID on success, else 0.
 */
 {
     unsigned int count;
@@ -1313,11 +1332,11 @@ unsigned int overlay_vectors (KOverlayList olist, unsigned int num_vectors,
 
 /*PUBLIC_FUNCTION*/
 flag overlay_remove_objects (KOverlayList olist, unsigned int num_objects)
-/*  This routine will remove objects from the end of an overlay object list.
-    The overlay list must be given by  olist  .
-    The number of objects to remove must be given by  num_objects  .If this is
-    0, then the list is emptied.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Remove objects from the end of an overlay object list.
+    <olist> The overlay list object.
+    <num_objects> The number of objects to remove. If this is 0, then the list
+    is emptied.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     char *coords;
@@ -1344,13 +1363,13 @@ flag overlay_remove_objects (KOverlayList olist, unsigned int num_objects)
 /*PUBLIC_FUNCTION*/
 flag overlay_remove_object (KOverlayList olist, unsigned int id_in_list,
 			    unsigned int list_id)
-/*  This routine will remove one object from an overlay object list.
-    The overlay list must be given by  olist  .
-    The object ID must be given by  id_in_list  .This Id refers to an object
-    created by a particular list master or slave.
-    The ID of the list which created the object must be given by  list_id  .If
-    this is 0, the list given by  olist  is assumed.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Remove one object from an overlay object list.
+    <olist> The overlay list object.
+    <id_in_list> The object ID. This ID refers to an object created by a
+    particular list master or slave.
+    <list_id> The ID of the list which created the object. If this is 0, the
+    list given by <<olist>> is assumed.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     char *coords;
@@ -1382,15 +1401,15 @@ flag overlay_remove_object (KOverlayList olist, unsigned int id_in_list,
 /*PUBLIC_FUNCTION*/
 flag overlay_move_object (KOverlayList olist, unsigned int id_in_list,
 			  unsigned int list_id, double dx, double dy)
-/*  This routine will move a object in an overlay object list.
-    The overlay list must be given by  olist  .
-    The object ID must be given by  id_in_list  .This Id refers to an object
-    created by a particular list master or slave.
-    The ID of the list which created the object must be given by  list_id  .If
-    this is 0, the list given by  olist  is assumed.
-    The horizontal distance to move must be given by  dx  .
-    The vertical distance to move must be given by  dy  .
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Move a object in an overlay object list.
+    <olist> The overlay list object.
+    <id_in_list> The object ID. This ID refers to an object created by a
+    particular list master or slave.
+    <list_id> The ID of the list which created the object. If this is 0, the
+    list given by <<olist>> is assumed.
+    <dx> The horizontal distance to move.
+    <dy> The vertical distance to move.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     char *coords;
@@ -1430,7 +1449,7 @@ flag overlay_move_object (KOverlayList olist, unsigned int id_in_list,
 
 static void initialise_overlay_package ()
 /*  This routine will create the overlay object descriptor.
-    The routine returns nothing.
+    [RETURNS] Nothing.
 */
 {
     Channel channel;
@@ -1480,7 +1499,7 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas, int width,
     If the refresh function was called as a result of a colourmap resize the
     value of  cmap_resize  will be TRUE.
     The arbitrary canvas information pointer is pointed to by  info  .
-    The routine returns nothing.
+    [RETURNS] Nothing.
 */
 {
     KOverlayList olist;
@@ -1522,7 +1541,7 @@ static flag register_new_overlay_slave (Connection connection, void **info)
     list_header *list_head;
     extern KOverlayList masterable_list;
     extern packet_desc *object_desc;
-    static char function_name[] = "register_new_overlay_slave";
+    /*static char function_name[] = "register_new_overlay_slave";*/
 
     channel = conn_get_channel (connection);
     if (masterable_list == NULL)
@@ -1600,7 +1619,7 @@ static void register_slave_loss (Connection connection, void *info)
     buffered data from the channel associated with the connection object.
     The connection will be given by  connection  .
     The connection information pointer will be given by  info  .
-    The routine returns nothing.
+    [RETURNS] Nothing.
 */
 {
     KOverlayList olist;
@@ -1635,7 +1654,7 @@ static flag verify_overlay_slave_connection (void **info)
     list_header *list_head;
     extern KOverlayList slaveable_list;
     extern packet_desc *object_desc;
-    static char function_name[] = "verify_overlay_slave_connection";
+    /*static char function_name[] = "verify_overlay_slave_connection";*/
 
     if (slaveable_list == NULL)
     {
@@ -1736,7 +1755,7 @@ static void register_master_loss (Connection connection, void *info)
     buffered data from the channel associated with the connection object.
     The connection will be given by  connection  .
     The connection information pointer will be given by  info  .
-    The routine returns nothing.
+    [RETURNS] Nothing.
 */
 {
     KOverlayList olist;
@@ -1758,11 +1777,11 @@ static flag transmit_to_slaves (KOverlayList olist, list_entry *object,
 				Connection except_conn)
 /*  This routine will transmit an overlay object to all slaves of a managed
     overlay object list, except a specified slave.
-    The overlay list must be given by  olist  .
+    <olist> The overlay list object.
     The overlay object must be pointed to by  object  .
     The excepted slave connection must be given by  except_conn  .This may be
     NULL.
-    The routine returns TRUE on success, else it returns FALSE.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     Channel channel;
@@ -1799,7 +1818,7 @@ static flag write_entries (Channel channel, packet_desc *list_desc,
     The channel must be given by  channel  .
     The packet descriptor for the linked list must be pointed to by  list_desc
     The first entry must be pointed to by  first_entry  .
-    The routine returns TRUE on success, else it returns FALSE.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     list_entry *entry;
@@ -1818,11 +1837,11 @@ static flag process_instruction (KOverlayList olist, list_entry *instruction,
 				 Connection conn)
 /*  This routine will process a single overlay instruction (ie. a special
     instruction or an object) for a managed overlay object list.
-    The overlay list must be given by  olist  .
+    <olist> The overlay list object.
     The instruction must be given by  instruction  .
     The connection from where the instruction originated must be given by
     conn  .This may be NULL.
-    The routine returns TRUE on success, else it returns FALSE.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     unsigned int instruction_code;
@@ -1833,7 +1852,7 @@ static flag process_instruction (KOverlayList olist, list_entry *instruction,
     char *ptr, *coords;
     struct refresh_canvas_type *cnv;
     list_entry *curr_entry;
-    list_entry *prev_entry;
+    list_entry *prev_entry = NULL;  /*  Initialised to keep compiler happy  */
     list_header *coord_list;
     packet_desc *coord_desc;
     extern packet_desc *object_desc;
@@ -2040,10 +2059,10 @@ static flag process_local_object (KOverlayList olist, list_entry *object,
 				  flag append)
 /*  This routine will add a single overlay object to a managed overlay
     object list.
-    The overlay list must be given by  olist  .
+    <olist> The overlay list object.
     The object must be given by  object  .
     If the value of  append  is TRUE, the object is appended to the list.
-    The routine returns TRUE on success, else it returns FALSE.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     unsigned int num_restr;
@@ -2079,21 +2098,21 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
 			 char *ylabel, unsigned int num_restr,
 			 char **restr_names, double *restr_values)
 /*  This routine will draw an overlay object onto a world canvas.
-    The world canvas must be given by  canvas  .
+    <canvas> The world canvas object.
     The object must be pointed to by  object  .
     The horizontal dimension label must be pointed to by  xlabel  .
     The vertical dimension label must be pointed to by  ylabel  .
     The number of restrictions must be given by  num_restr  .
     The array of restriction names must by pointed to by  restr_names  .
     The restriction values must be pointed to by  restr_values  .
-    The routine returns TRUE on success, else it returns FALSE.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     KPixCanvas pixcanvas;
     KPixCanvasFont font;
     flag clear_under;
-    int width, height;
     int tmp_x, tmp_y;
+    int x_offset, y_offset, width, height;
     unsigned int object_code;
     unsigned int coord_pack_size;
     unsigned int restr_pack_size;
@@ -2101,7 +2120,6 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
     unsigned int count1, count2;
     unsigned long pixel_value;
     double value[2];
-    struct win_scale_type win_scale;
     char *ptr;
     char *colourname;
     char *x_label;
@@ -2213,6 +2231,11 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
     if ( !canvas_get_colour (canvas, colourname, &pixel_value,
 			     (unsigned short *) NULL, (unsigned short *) NULL,
 			     (unsigned short *) NULL) ) return (FALSE);
+    canvas_get_attributes (canvas,
+			   CANVAS_ATT_X_OFFSET, &x_offset,
+			   CANVAS_ATT_Y_OFFSET, &y_offset,
+			   CANVAS_ATT_END);
+    kwin_get_size (pixcanvas, &width, &height);
     switch (object_code)
     {
       case OBJECT_LINE:
@@ -2261,7 +2284,6 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
 			    num_coords);
 	    return (FALSE);
 	}
-	canvas_get_size (canvas, &width, &height, &win_scale);
 	convert_to_pixcoords (canvas, num_coords, types, x_arr, y_arr,
 			      coord_pack_size, px, py);
 	switch ( *(unsigned int *) (types + coord_pack_size) )
@@ -2271,8 +2293,8 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
 	    break;
 	  case OVERLAY_COORD_RELATIVE:
 	    py[1] = height - 1 - py[1];
-	    px[1] -= win_scale.x_offset;
-	    py[1] -= win_scale.y_offset;
+	    px[1] -= x_offset;
+	    py[1] -= y_offset;
 	    break;
 	  case OVERLAY_COORD_WORLD:
 	    (void) canvas_convert_from_canvas_coord (canvas,
@@ -2306,7 +2328,6 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
 			    num_coords);
 	    return (FALSE);
 	}
-	canvas_get_size (canvas, &width, &height, &win_scale);
 	convert_to_pixcoords (canvas, num_coords, types, x_arr, y_arr,
 			      coord_pack_size, px, py);
 	switch ( *(unsigned int *) (types + coord_pack_size) )
@@ -2316,8 +2337,8 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
 	    break;
 	  case OVERLAY_COORD_RELATIVE:
 	    py[1] = height - 1 - py[1];
-	    px[1] -= win_scale.x_offset;
-	    py[1] -= win_scale.y_offset;
+	    px[1] -= x_offset;
+	    py[1] -= y_offset;
 	    break;
 	  case OVERLAY_COORD_WORLD:
 	    (void) canvas_convert_from_canvas_coord (canvas,
@@ -2339,7 +2360,6 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
 			    num_coords);
 	    return (FALSE);
 	}
-	canvas_get_size (canvas, &width, &height, &win_scale);
 	convert_to_pixcoords (canvas, num_coords, types, x_arr, y_arr,
 			      coord_pack_size, px, py);
 	num_coords /= 2;
@@ -2355,8 +2375,8 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
 		break;
 	      case OVERLAY_COORD_RELATIVE:
 		py[num_coords + count1] = height - 1 - py[num_coords + count1];
-		px[num_coords + count1] -= win_scale.x_offset;
-		py[num_coords + count1] -= win_scale.y_offset;
+		px[num_coords + count1] -= x_offset;
+		py[num_coords + count1] -= y_offset;
 		break;
 	      case OVERLAY_COORD_WORLD:
 		px[num_coords + count1] -= tmp_x;
@@ -2402,7 +2422,6 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
 			    num_coords);
 	    return (FALSE);
 	}
-	canvas_get_size (canvas, &width, &height, &win_scale);
 	convert_to_pixcoords (canvas, num_coords, types, x_arr, y_arr,
 			      coord_pack_size, px, py);
 	num_coords /= 2;
@@ -2419,8 +2438,8 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
 		break;
 	      case OVERLAY_COORD_RELATIVE:
 		py[num_coords + count1] = height - 1 - py[num_coords + count1];
-		px[num_coords + count1] -= win_scale.x_offset;
-		py[num_coords + count1] -= win_scale.y_offset;
+		px[num_coords + count1] -= x_offset;
+		py[num_coords + count1] -= y_offset;
 		break;
 	      case OVERLAY_COORD_WORLD:
 		px[num_coords + count1] -= tmp_x;
@@ -2448,7 +2467,7 @@ static void convert_to_pixcoords (KWorldCanvas canvas, unsigned int num_coords,
 				  unsigned int pack_size, int *px, int *py)
 /*  This routine will convert a number of co-ordinates to pixel canvas
     co-ordinates.
-    The world canvas must be given by  canvas  .
+    <canvas> The world canvas object.
     The number of co-ordinates to convert must be given by  num_coords  .
     The first co-ordinate type value must be pointed to by  types  .
     The first horizontal co-ordinate value must be pointed to by  x_arr  .
@@ -2458,20 +2477,23 @@ static void convert_to_pixcoords (KWorldCanvas canvas, unsigned int num_coords,
     by  px  .
     The vertical pixel co-ordinates will be written to the array pointed to by
     py  .
-    The routine returns nothing.
+    [RETURNS] Nothing.
 */
 {
-    int width, height;
     unsigned int count;
-    double x, y;
+    double x, y, left_x, right_x, bottom_y, top_y;
     double value[2];
     double offset = 0.01;
-    struct win_scale_type win_scale;
     static int last_x = 0;
     static int last_y = 0;
     static char function_name[] = "__overlay_convert_to_pixcoords";
 
-    canvas_get_size (canvas, &width, &height, &win_scale);
+    canvas_get_attributes (canvas,
+			   CANVAS_ATT_LEFT_X, &left_x,
+			   CANVAS_ATT_RIGHT_X, &right_x,
+			   CANVAS_ATT_BOTTOM_Y, &bottom_y,
+			   CANVAS_ATT_TOP_Y, &top_y,
+			   CANVAS_ATT_END);
     for (count = 0; count < num_coords;
 	 ++count, types += pack_size, x_arr += pack_size, y_arr += pack_size,
 	 ++px, ++py)
@@ -2490,8 +2512,8 @@ static void convert_to_pixcoords (KWorldCanvas canvas, unsigned int num_coords,
 	    *py = (y + offset);
 	    break;
 	  case OVERLAY_COORD_RELATIVE:
-	    x = win_scale.x_min + x * (win_scale.x_max - win_scale.x_min);
-	    y = win_scale.y_min + y * (win_scale.y_max - win_scale.y_min);
+	    x = left_x + x * (right_x - left_x);
+	    y = bottom_y + y * (top_y - bottom_y);
 	  case OVERLAY_COORD_WORLD:
 	    (void) canvas_convert_from_canvas_coord (canvas, x, y, px, py);
 	    break;
@@ -2515,8 +2537,8 @@ static void convert_to_pixcoords (KWorldCanvas canvas, unsigned int num_coords,
 
 static flag send_token_request (KOverlayList olist)
 /*  This routine will send a token request for an overlay list.
-    The overlay list must be given by  olist  .
-    The routine returns TRUE on success, else it returns FALSE.
+    <olist> The overlay list object.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     Channel channel;
@@ -2564,9 +2586,9 @@ static flag send_token_request (KOverlayList olist)
 
 static flag send_token_grant (KOverlayList olist, Connection conn)
 /*  This routine will send a token grant for an overlay list.
-    The overlay list must be given by  olist  .
+    <olist> The overlay list object.
     The connection to send the grant to must be given by  conn  .
-    The routine returns TRUE on success, else it returns FALSE.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     Channel channel;
@@ -2607,10 +2629,10 @@ static flag send_token_grant (KOverlayList olist, Connection conn)
 static flag process_conn_token_request (KOverlayList olist, Connection conn)
 /*  This routine will process a request for a token for an overlay list from a
     "2D_overlay" connection.
-    The overlay list must be given by  olist  .
+    <olist> The overlay list object.
     The connection from where the token request originated must be given by
     conn  .
-    The routine returns TRUE on success, else it returns FALSE.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     struct token_request_type *entry;
@@ -2682,9 +2704,9 @@ static flag process_conn_token_request (KOverlayList olist, Connection conn)
 
 static flag process_token_receive (KOverlayList olist, Connection conn)
 /*  This routine will process the receipt of a token for an overlay list.
-    The overlay list must be given by  olist  .
+    <olist> The overlay list object.
     The connection from where the token originated must be given by   conn  .
-    The routine returns TRUE on success, else it returns FALSE.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     Channel channel;
@@ -2771,9 +2793,9 @@ static flag process_token_receive (KOverlayList olist, Connection conn)
 
 static void remove_token_request (KOverlayList olist, Connection conn)
 /*  This routine will remove a token request from the list.
-    The overlay list must be given by  olist  .
+    <olist> The overlay list object.
     The connection for the token request must be given by  conn  .
-    The routine returns nothing.
+    [RETURNS] Nothing.
 */
 {
     struct token_request_type *entry;
@@ -2870,9 +2892,9 @@ static list_entry *create_generic (KOverlayList olist,
 				   unsigned int *object_id)
 /*  This routine will create a generic overlay object for a particular overlay
     list.
-    The overlay list must be given by  olist  .
+    <olist> The overlay list object.
     The object code must be given by  object_code  .
-    The colourname must be pointed to by  colourname  .
+    <colourname> The colour name.
     The number of co-ordinates to allocate must be given by  num_coords  .
     The pointer to the co-ordinate packet descriptor will be written to the
     storage pointed to by  coord_desc  .
@@ -3047,7 +3069,7 @@ static list_entry *create_generic (KOverlayList olist,
 static flag remove_object (KOverlayList olist, unsigned int object_id,
 			   unsigned int list_id)
 /*  This routine will remove an object from an overlay list.
-    The overlay list must be given by  olist  .
+    <olist> The overlay list object.
     The ID of the object must be given by  object_id  .
     The ID of the list that created the object must be given by  list_id  .
     The routine returns TRUE if the object ID was valid, else it returns FALSE.
@@ -3085,7 +3107,7 @@ static flag remove_object (KOverlayList olist, unsigned int object_id,
 static list_entry *find_object (KOverlayList olist, unsigned int object_id,
 				unsigned int list_id)
 /*  This routine will find an object in an overlay list.
-    The overlay list must be given by  olist  .
+    <olist> The overlay list object.
     The ID of the object must be given by  object_id  .
     The ID of the list that created the object must be given by  list_id  .
     The routine returns a pointer to the list entry on success, else it
@@ -3118,7 +3140,7 @@ static list_entry *find_object (KOverlayList olist, unsigned int object_id,
 static flag move_object (KOverlayList olist, unsigned int object_id,
 			 unsigned int list_id, double dx, double dy)
 /*  This routine will move an object in an overlay list.
-    The overlay list must be given by  olist  .
+    <olist> The overlay list object.
     The ID of the object must be given by  object_id  .
     The ID of the list that created the object must be given by  list_id  .
     The horizontal distance to move must be given by  dx  .
@@ -3128,7 +3150,6 @@ static flag move_object (KOverlayList olist, unsigned int object_id,
 {
     unsigned int object_code;
     unsigned int num_coords, coord_pack_size, count;
-    list_header *list_head;
     list_entry *entry;
     list_header *coord_list;
     packet_desc *coord_desc;

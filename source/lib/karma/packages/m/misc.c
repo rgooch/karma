@@ -3,7 +3,7 @@
 
     This code provides simple memory manipulation routines.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -56,7 +56,13 @@
 
     Updated by      Richard Gooch   7-MAY-1995: Placate gcc -Wall
 
-    Last updated by Richard Gooch   9-JUN-1995: Added #ifdef MACHINE_crayPVP.
+    Updated by      Richard Gooch   9-JUN-1995: Added #ifdef MACHINE_crayPVP.
+
+    Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   15-JUN-1996: Created
+  <m_copy_and_swap_blocks>.
 
 
 */
@@ -78,7 +84,7 @@ STATIC_FUNCTION (void prog_bug, (char *function_name) );
 
 /*PUBLIC_FUNCTION*/
 void m_clear (char *memory, uaddr length)
-/*  [PURPOSE] This routine will clear a block of memory
+/*  [SUMMARY] Clear a block of memory
     <memory> The memory block to clear.
     <length> The length of the block (in bytes) to clear.
     [NOTE] The memory is cleared in long integers and chars.
@@ -125,7 +131,7 @@ void m_clear (char *memory, uaddr length)
 
 /*PUBLIC_FUNCTION*/
 void m_copy (char *dest, CONST char *source, uaddr length)
-/*  [PURPOSE] This routine will copy a block of memory.
+/*  [SUMMARY] Copy a block of memory.
     <dest> The destination block of memory.
     <source> The source block of memory.
     <length> The number of bytes to transfer. If this is zero, it is
@@ -162,6 +168,12 @@ void m_copy (char *dest, CONST char *source, uaddr length)
     for (; length > 0; --length) *dest++ = *source++;
     return;
 #else
+    if (length < 16)
+    {
+	/*  Save a few % operations  */
+	for (; length > 0; --length) *dest++ = *source++;
+	return;
+    }
     if ( (uaddr) dest % sizeof (unsigned long) !=
 	(uaddr) source % sizeof (unsigned long) )
     {
@@ -193,7 +205,7 @@ void m_copy (char *dest, CONST char *source, uaddr length)
 void m_copy_blocks (char *dest, CONST char *source, unsigned int dest_stride,
 		    unsigned int source_stride, unsigned int block_size,
 		    unsigned int num_blocks)
-/*  [PURPOSE] This routine will copy blocks of data.
+/*  [SUMMARY] Copy multiple blocks of data.
     <dest> The destination for the first block copy.
     <source> The source for the first block copy.
     <dest_stride> The spacing (in bytes) between destintion blocks.
@@ -273,9 +285,78 @@ void m_copy_blocks (char *dest, CONST char *source, unsigned int dest_stride,
 }   /*  End Function m_copy_blocks  */
 
 /*PUBLIC_FUNCTION*/
+void m_copy_and_swap_blocks (char *dest, CONST char *source, uaddr dest_stride,
+			     uaddr source_stride, uaddr block_size,
+			     uaddr num_blocks)
+/*  [SUMMARY] Copy and byte-swap multiple blocks of data.
+    <dest> The destination for the first block copy.
+    <source> The source for the first block copy. If this is NULL or the same
+    as <<dest>> the swap is performed in-situ, and <<source_stride>> is ignored
+    <dest_stride> The spacing (in bytes) between destintion blocks.
+    <source_stride> The spacing (in bytes) between source blocks.
+    <block_size> The size of each block (in bytes).
+    <num_blocks> The number of blocks to copy and swap.
+    [RETURNS] Nothing.
+*/
+{
+    uaddr count, iter;
+    char tmp;
+    char *dest_ptr, *d_up_ptr;
+    CONST char *source_ptr;
+    static char function_name[] = "m_copy_and_swap_blocks";
+
+    if (dest == NULL)
+    {
+	(void) fprintf (stderr, "NULL pointer passed\n");
+	prog_bug (function_name);
+    }
+    if (dest_stride < 1)
+    {
+	(void) fprintf (stderr, "dest_stride must be greater than zero\n");
+	prog_bug (function_name);
+    }
+    if (source == dest) source = NULL;
+    if (source == NULL)
+    {
+	/*  In-situ  */
+	iter = block_size / 2;
+	/*  Loop over blocks  */
+	for (; num_blocks > 0; --num_blocks, dest += dest_stride)
+	{
+	    dest_ptr = dest;
+	    d_up_ptr = dest + block_size - 1;
+	    /*  Swap-copy bytes  */
+	    for (count = 0; count < iter; ++count, ++dest_ptr, --d_up_ptr)
+	    {
+		tmp = *dest_ptr;
+		*dest_ptr = *d_up_ptr;
+		*d_up_ptr = tmp;
+	    }
+	}
+	return;
+    }
+    /*  Swap different blocks  */
+    if (source_stride < 1)
+    {
+	(void) fprintf (stderr, "source_stride must be greater than zero\n");
+	prog_bug (function_name);
+    }
+    /*  Loop over blocks  */
+    for (; num_blocks > 0;
+	 --num_blocks, dest += dest_stride, source += source_stride)
+    {
+	dest_ptr = dest;
+	source_ptr = source + block_size - 1;
+	/*  Swap-copy bytes  */
+	for (count = 0; count < block_size; ++count)
+	    *dest_ptr++ = *source_ptr--;
+    }
+}   /*  End Function m_copy_and_swap_blocks  */
+
+/*PUBLIC_FUNCTION*/
 void m_fill (char *dest, uaddr stride, CONST char *source,
 	     uaddr size, unsigned int num)
-/*  [PURPOSE] This routine will fill memory blocks with a specified value.
+/*  [SUMMARY] Fill memory blocks with a specified value.
     <dest> The destination.
     <stride> The stride (in bytes) of destination blocks.
     <source> The fill block.
@@ -311,7 +392,7 @@ void m_fill (char *dest, uaddr stride, CONST char *source,
 
 /*PUBLIC_FUNCTION*/
 flag m_cmp (CONST char *block1, CONST char *block2, uaddr length)
-/*  [PURPOSE] This routine will compare two blocks of memory.
+/*  [SUMMARY] Compare two blocks of memory.
     <block1> The first memory block.
     <block2> The second memory block.
     <length> The number of bytes to compare.
@@ -381,8 +462,7 @@ flag m_cmp (CONST char *block1, CONST char *block2, uaddr length)
 
 /*PUBLIC_FUNCTION*/
 char *m_dup (CONST char *original, uaddr size)
-/*  [PURPOSE] This routine will duplicate a block of memory into a freshly
-    allocated block.
+/*  [SUMMARY] Duplicate a block of memory into a freshly allocated block.
     <original> The original block of memory.
     <size> The size in bytes of the block.
     [RETURNS] A pointer to a freshly allocated block which contains identical
@@ -398,9 +478,10 @@ char *m_dup (CONST char *original, uaddr size)
 
 /*PUBLIC_FUNCTION*/
 char *m_alloc_scratch (uaddr size, char *function_name)
-/*  [PURPOSE] This routine will allocate a scratch block of memory, which may
+/*  [SUMMARY] Allocate a block of scratch memory.
+    [PURPOSE] This routine will allocate a block of scratch memory, which may
     be re-used by many different routines. The block is reserved until a call
-    is made to <<m_free_scratch>>.
+    is made to [<m_free_scratch>].
     <size> The minimum size in bytes of the scratch block.
     <function_name> If the memory block is already reserved and this is not
     NULL the string is printed and the process aborts.
@@ -444,7 +525,7 @@ char *m_alloc_scratch (uaddr size, char *function_name)
 
 /*PUBLIC_FUNCTION*/
 void m_free_scratch ()
-/*  [PURPOSE] This routine will free the scratch memory.
+/*  [SUMMARY] Free the scratch memory.
     [RETURNS] Nothing.
 */
 {

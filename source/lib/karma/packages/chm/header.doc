@@ -1,0 +1,8 @@
+$SUMMARY          Routines to manage channel objects
+$PURPOSE
+    These routines are meant to provide a generic and simple to use channel
+    management facility (i.e. event processing on pipes, connections and
+    terminals).
+    A similar set of routines: chx_ provide identical functionality
+    (with the exception of the polling routine), except that they rely on the
+    Xt Intrinsics event dispatching system.

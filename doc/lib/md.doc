@@ -1,42 +1,66 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the md_ package of routines in the Karma library.
-
+$PACKAGE          md
+$SUMMARY          Routines to produce message digests (secure hash functions)
+$PURPOSE
     These routines are meant to provide message digests (secure hash functions)
     These have application in message authentication/verification.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
+$FUNCTION         md_md5_init
+$RETURN_TYPE      MD5Context
+$PARAMETER_LIST
+    ()
+$SUMMARY          Initialise MD5 context.
+$PURPOSE
+    Initialise MD5 context.
+$RETURNS
+    An MD5 context.
+$END
 
-    Written by		Richard Gooch	24-Jun-1995
+$FUNCTION         md_md5_update
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (MD5Context ctx, CONST unsigned char *buf, unsigned int len)
+$SUMMARY          Add data to an MD5 context.
+$PURPOSE
+    Add data to an MD5 context.
+$PARAMETER        ctx :
+    The MD5 context.
+$PARAMETER        buf :
+    The block of bytes to add.
+$PARAMETER        len :
+    The length of the block.
+$RETURNS
+    Nothing.
+$END
 
-    Last updated by	Richard Gooch	24-Jun-1995
+$FUNCTION         md_md5_final
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (MD5Context ctx, unsigned char digest[16])
+$SUMMARY          Close an MD5 context.
+$PURPOSE
+    Close an MD5 context.
+$PARAMETER        ctx :
+    The MD5 context.
+$PARAMETER        digest :
+    The message digest is written here.
+$RETURNS
+    Nothing.
+$END
 
-
-*/
-
-MD5Context md_md5_init ()
-/*
- * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
- * initialization constants.
- */
-/*---------------------------------------------------------------------------*/
-
-void md_md5_update (MD5Context ctx, CONST unsigned char *buf, unsigned int len)
-/*
- * Update context to reflect the concatenation of another buffer full
- * of bytes.
- */
-/*---------------------------------------------------------------------------*/
-
-void md_md5_final (MD5Context ctx, unsigned char digest[16])
-/*
- * Final wrapup - pad to 64-byte boundary with the bit pattern 
- * 1 0* (64-bit count of bits processed, MSB-first)
- */
-/*---------------------------------------------------------------------------*/
-
-void md_md5_transform (unsigned char buf[16], CONST unsigned char in[64])
-/*  This routine will run the core MD5 transform over a block of data.
-    The digest accumulation buffer must be pointed to by  buf  .
-    The block of data must be pointed to by  in  .
-    The routine returns nothing.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         md_md5_transform
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (unsigned char buf[16], CONST unsigned char in[64])
+$SUMMARY          Run the core MD5 transform over a block of data.
+$PURPOSE
+    Run the core MD5 transform over a block of data.
+$PARAMETER        buf :
+    The digest accumulation buffer.
+$PARAMETER        in :
+    The block of data.
+$RETURNS
+    Nothing.
+$END

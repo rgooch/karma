@@ -1,0 +1,6 @@
+$SUMMARY          Routines to compute and write RGB colour values into arrays
+$PURPOSE
+    These routines are meant to provide a VERY primitive mechanism to generate
+    simple colourmaps. Although these routines are made public, their use is
+    NOT recommended. The <-kcmap_-> package is the suggested means to create
+    and manipulate colourmaps.

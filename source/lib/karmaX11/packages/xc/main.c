@@ -3,7 +3,7 @@
 
     This code provides X colourmap manipulation routines.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -37,7 +37,10 @@
     Updated by      Richard Gooch   22-NOV-1994: Moved typedef of  Kdisplay  to
   header file.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/xc/main.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/xc/main.c
+
+    Last updated by Richard Gooch   16-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -65,7 +68,7 @@ struct kdisplay_handle_type
 
 /*PUBLIC_FUNCTION*/
 Kdisplay xc_get_dpy_handle (Display *display, Colormap cmap)
-/*  [PURPOSE] This routine will generate a display handle for later use.
+/*  [SUMMARY] Generate a display handle for later use.
     <display> The X display.
     <cmap> The X colourmap ID.
     [RETURNS] A pointer to the display handle on success, else NULL.
@@ -89,8 +92,9 @@ Kdisplay xc_get_dpy_handle (Display *display, Colormap cmap)
 unsigned int xc_alloc_colours (unsigned int num_cells,
 			       unsigned long *pixel_values,
 			       unsigned int min_cells, Kdisplay dpy_handle)
-/*  [PURPOSE] This routine will allocate a number of colourcells in a low level
-    colourmap (eg. using the Xlib routine XAllocColorCells).
+/*  [SUMMARY] Allocate colourcells.
+    [PURPOSE] This routine will allocate a number of colourcells in a low level
+    colourmap (e.g. using the Xlib routine XAllocColorCells).
     <num_cells> The number of colourcells to allocate.
     <pixel_values> A pointer to the array where the pixel values allocated will
     be written.
@@ -137,8 +141,7 @@ unsigned int xc_alloc_colours (unsigned int num_cells,
 /*PUBLIC_FUNCTION*/
 void xc_free_colours (unsigned int num_cells, unsigned long *pixel_values,
 		      Kdisplay dpy_handle)
-/*  [PURPOSE] This routine will free a number of colourcells in a low level
-    colourmap.
+/*  [SUMMARY] Free a number of colourcells in a low level colourmap.
     <num_cells> The number of colourcells to free.
     <pixel_values> The array of pixel values (colourcells) to free.
     <dpy_handle> The low level display handle. The meaning of this value
@@ -162,7 +165,7 @@ void xc_store_colours (unsigned int num_cells, unsigned long *pixel_values,
 		       unsigned short *reds, unsigned short *greens,
 		       unsigned short *blues, unsigned int stride,
 		       Kdisplay dpy_handle)
-/*  [PURPOSE] This routine will store colours into a low level colourmap.
+/*  [SUMMARY] Store colours into a low level colourmap.
     <num_cells> The number of colourcells to store.
     <pixel_values> The array of pixel values.
     <reds> The array of red intensity values.
@@ -215,8 +218,7 @@ void xc_store_colours (unsigned int num_cells, unsigned long *pixel_values,
 /*PUBLIC_FUNCTION*/
 void xc_get_location (Kdisplay dpy_handle, unsigned long *serv_hostaddr,
 		      unsigned long *serv_display_num)
-/*  [PURPOSE] This routine will determine the location of the graphics display
-    being used.
+/*  [SUMMARY] Determine the location of the graphics display being used.
     <dpy_handle> The low level display handle. The meaning of this value
     depends on the lower level graphics library used.
     <serv_hostaddr> The Internet address of the host on which the display is
@@ -261,7 +263,7 @@ void xc_get_location (Kdisplay dpy_handle, unsigned long *serv_hostaddr,
 
 /*PUBLIC_FUNCTION*/
 Colormap xc_get_cmap (Kdisplay dpy_handle)
-/*  [PURPOSE] This routine will get the X11 colourmap for a display handle.
+/*  [SUMMARY] Get the X11 colourmap for a display handle.
     <dpy_handle> The display handle.
     [RETURNS] The X11 colourmap.
 */

@@ -1,17 +1,18 @@
-include $(KARMAROOT)/source/modules/GNUmakefile.head
+include $(KARMAINCLUDEPATH)/gmakedefs/modules.head
 
 
 TARGETS =	$(KARMABINPATH)/tx	$(KARMABINPATH)/rx \
 		$(KARMABINPATH)/collect_struct $(KARMABINPATH)/collect_frames \
 		$(KARMABINPATH)/conv_24to8	$(KARMABINPATH)/merge_planes \
 		$(KARMABINPATH)/kftpd		$(KARMABINPATH)/kftp \
-		$(KARMABINPATH)/tcplog		$(KARMABINPATH)/knoise
+		$(KARMABINPATH)/tcplog		$(KARMABINPATH)/knoise \
+		$(KARMABINPATH)/kgetslice	$(KARMABINPATH)/kprinthead
 
 all:	$(TARGETS)	generic_clean
 
 
-TX =	tx.c
-TXO =	tx.o
+TX  = tx.c
+TXO = tx.o
 
 $(KARMABINPATH)/tx:	$(TXO) $(KDEPLIB_KARMA)
 	cd $(machine_dir); $(LD) $(LDFLAGS) -o tmptx $(TXO) $(CLIBS)
@@ -19,8 +20,8 @@ $(KARMABINPATH)/tx:	$(TXO) $(KDEPLIB_KARMA)
 	chmod u=rwx,go=x $(KARMABINPATH)/tx
 
 
-RX =	rx.c
-RXO =	rx.o
+RX  = rx.c
+RXO = rx.o
 
 $(KARMABINPATH)/rx:	$(RXO) $(KDEPLIB_KARMA)
 	cd $(machine_dir); $(LD) $(LDFLAGS) -o tmprx $(RXO) $(CLIBS)
@@ -28,8 +29,8 @@ $(KARMABINPATH)/rx:	$(RXO) $(KDEPLIB_KARMA)
 	chmod u=rwx,go=x $(KARMABINPATH)/rx
 
 
-COLLECT_STRUCT =	collect_struct.c
-COLLECT_STRUCTO =	collect_struct.o
+COLLECT_STRUCT  = collect_struct.c
+COLLECT_STRUCTO = collect_struct.o
 
 $(KARMABINPATH)/collect_struct:	$(COLLECT_STRUCTO) $(KDEPLIB_KARMA)
 	cd $(machine_dir); $(LD) $(LDFLAGS) -o tmpcollect_struct $(COLLECT_STRUCTO) $(CLIBS)
@@ -37,8 +38,8 @@ $(KARMABINPATH)/collect_struct:	$(COLLECT_STRUCTO) $(KDEPLIB_KARMA)
 	chmod u=rwx,go=x $(KARMABINPATH)/collect_struct
 
 
-COLLECT_FRAMES =	collect_frames.c
-COLLECT_FRAMESO =	collect_frames.o
+COLLECT_FRAMES  = collect_frames.c
+COLLECT_FRAMESO = collect_frames.o
 
 $(KARMABINPATH)/collect_frames:	$(COLLECT_FRAMESO) $(KDEPLIB_KARMA)
 	cd $(machine_dir); $(LD) $(LDFLAGS) -o tmpcollect_frames $(COLLECT_FRAMESO) $(CLIBS)
@@ -46,8 +47,8 @@ $(KARMABINPATH)/collect_frames:	$(COLLECT_FRAMESO) $(KDEPLIB_KARMA)
 	chmod u=rwx,go=x $(KARMABINPATH)/collect_frames
 
 
-CONV_24TO8 =	conv_24to8.c
-CONV_24TO8O =	conv_24to8.o
+CONV_24TO8  = conv_24to8.c
+CONV_24TO8O = conv_24to8.o
 
 $(KARMABINPATH)/conv_24to8:	$(CONV_24TO8O) $(KDEPLIB_KARMA)
 	cd $(machine_dir); $(LD) $(LDFLAGS) -o tmpconv_24to8 $(CONV_24TO8O) $(CLIBS)
@@ -55,8 +56,8 @@ $(KARMABINPATH)/conv_24to8:	$(CONV_24TO8O) $(KDEPLIB_KARMA)
 	chmod u=rwx,go=x $(KARMABINPATH)/conv_24to8
 
 
-MERGE_PLANES =	merge_planes.c
-MERGE_PLANESO =	merge_planes.o
+MERGE_PLANES  = merge_planes.c
+MERGE_PLANESO = merge_planes.o
 
 $(KARMABINPATH)/merge_planes:	$(MERGE_PLANESO) $(KDEPLIB_KARMA)
 	cd $(machine_dir); $(LD) $(LDFLAGS) -o tmpmerge_planes $(MERGE_PLANESO) $(CLIBS)
@@ -64,8 +65,8 @@ $(KARMABINPATH)/merge_planes:	$(MERGE_PLANESO) $(KDEPLIB_KARMA)
 	chmod u=rwx,go=x $(KARMABINPATH)/merge_planes
 
 
-KFTPD =	kftpd.c
-KFTPDO =	kftpd.o
+KFTPD  = kftpd.c
+KFTPDO = kftpd.o
 
 $(KARMABINPATH)/kftpd:	$(KFTPDO) $(KDEPLIB_KARMA)
 	cd $(machine_dir); $(LD) $(LDFLAGS) -o tmpkftpd $(KFTPDO) $(CLIBS)
@@ -73,8 +74,8 @@ $(KARMABINPATH)/kftpd:	$(KFTPDO) $(KDEPLIB_KARMA)
 	chmod u=rwx,go=x $(KARMABINPATH)/kftpd
 
 
-KFTP =	kftp.c
-KFTPO =	kftp.o
+KFTP  = kftp.c
+KFTPO = kftp.o
 
 $(KARMABINPATH)/kftp:	$(KFTPO) $(KDEPLIB_KARMA)
 	cd $(machine_dir); $(LD) $(LDFLAGS) -o tmpkftp $(KFTPO) $(CLIBS)
@@ -82,8 +83,8 @@ $(KARMABINPATH)/kftp:	$(KFTPO) $(KDEPLIB_KARMA)
 	chmod u=rwx,go=x $(KARMABINPATH)/kftp
 
 
-TCPLOG =	tcplog.c
-TCPLOGO =	tcplog.o
+TCPLOG  = tcplog.c
+TCPLOGO = tcplog.o
 
 $(KARMABINPATH)/tcplog:	$(TCPLOGO) $(KDEPLIB_KARMA)
 	cd $(machine_dir); $(LD) $(LDFLAGS) -o tmptcplog $(TCPLOGO) $(CLIBS)
@@ -91,8 +92,8 @@ $(KARMABINPATH)/tcplog:	$(TCPLOGO) $(KDEPLIB_KARMA)
 	chmod u=rwx,go=x $(KARMABINPATH)/tcplog
 
 
-KNOISE =	knoise.c
-KNOISEO =	knoise.o
+KNOISE  = knoise.c
+KNOISEO = knoise.o
 
 $(KARMABINPATH)/knoise:	$(KNOISEO) $(KDEPLIB_KARMA)
 	cd $(machine_dir); $(LD) $(LDFLAGS) -o tmpknoise $(KNOISEO) $(CLIBS)
@@ -100,9 +101,27 @@ $(KARMABINPATH)/knoise:	$(KNOISEO) $(KDEPLIB_KARMA)
 	chmod u=rwx,go=x $(KARMABINPATH)/knoise
 
 
+KGETSLICE  = kgetslice.c
+KGETSLICEO = kgetslice.o
+
+$(KARMABINPATH)/kgetslice:	$(KGETSLICEO) $(KDEPLIB_KARMA)
+	cd $(machine_dir); $(LD) $(LDFLAGS) -o tmpkgetslice $(KGETSLICEO) $(CLIBS)
+	install -s $(machine_dir)/tmpkgetslice $(KARMABINPATH)/kgetslice
+	chmod u=rwx,go=x $(KARMABINPATH)/kgetslice
+
+
+KPRINTHEAD  = kprinthead.c
+KPRINTHEADO = kprinthead.o
+
+$(KARMABINPATH)/kprinthead:	$(KPRINTHEADO) $(KDEPLIB_KARMA)
+	cd $(machine_dir); $(LD) $(LDFLAGS) -o tmpkprinthead $(KPRINTHEADO) $(CLIBS)
+	install -s $(machine_dir)/tmpkprinthead $(KARMABINPATH)/kprinthead
+	chmod u=rwx,go=x $(KARMABINPATH)/kprinthead
+
+
 depend:
 	makedepend -DMAKEDEPEND -D__$(MACHINE)__ -I$(KARMAINCLUDEPATH) -f$(machine_dir)/depend *.c
 
 
-include $(KARMAROOT)/source/modules/GNUmakefile.tail
+include $(KARMAINCLUDEPATH)/gmakedefs/modules.tail
 include $(machine_dir)/depend

@@ -3,7 +3,7 @@
 
     This code provides data structure deallocation routines.
 
-    Copyright (C) 1993,1994,1995  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -73,9 +73,15 @@
 
     Updated by      Richard Gooch   19-APR-1995: Cleaned some code.
 
-    Last updated by Richard Gooch   22-AUG-1995: Made
+    Updated by      Richard Gooch   22-AUG-1995: Made
   <ds_dealloc_packet_subdata> more aware of alignment problems (hopefully
   fully aware).
+
+    Updated by      Richard Gooch   9-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   28-JUN-1996: Changed more pointers to
+  CONST.
 
 
 */
@@ -92,27 +98,24 @@
 
 
 /*PUBLIC_FUNCTION*/
-void ds_dealloc_multi (multi_desc)
-/*  This routine will deallocate all memory associated with a multi array
-    header. This includes all the descriptors and data arrays and lists in the
-    hierarchy below.
-    The routine will only deallocate the data structure when it's attachment
-    count is zero, else it decrements the attachment count and returns.
-    The routine is quite robust, deallocating in the correct order and cleanly
-    bypassing missing sections in the hierarchy.
-    The routine returns nothing.
+void ds_dealloc_multi (multi_array *multi_desc)
+/*  [SUMMARY] Deallocate a multi_array data structure.
+    [PURPOSE] This routine will deallocate all memory associated with a
+    multi_array header. This includes all the descriptors and data arrays and
+    lists in the hierarchy below. The routine will only deallocate the data
+    structure when it's attachment count is zero, else it decrements the
+    attachment count and returns. The routine is quite robust, deallocating in
+    the correct order and cleanly bypassing missing sections in the hierarchy.
+    <multi_desc> The descriptor.
+    [RETURNS] Nothing.
 */
-multi_array *multi_desc;
 {
     unsigned int array_count = 0;
     history *entry;
     history *next;
     static char function_name[] = "ds_dealloc_multi";
 
-    if (multi_desc == NULL)
-    {
-	return;
-    }
+    if (multi_desc == NULL) return;
     if (multi_desc->magic_number != MAGIC_MULTI_ARRAY)
     {
 	(void) fprintf (stderr, "Bad magic number\n");
@@ -163,18 +166,17 @@ multi_array *multi_desc;
 }   /*  End Function ds_dealloc_multi  */
 
 /*PUBLIC_FUNCTION*/
-void ds_dealloc_packet (pack_desc, data)
-/*  This routine will deallocate all memory associated with a data packet.
-    This includes all the descriptors and data arrays and lists associated
-    with the packet.
-    The descriptor for the packet should be pointed to by  pack_desc  and
-    the data for the packet should by pointed to by  data  .
+void ds_dealloc_packet (packet_desc *pack_desc, char *data)
+/*  [SUMMARY] Recursively deallocate a packet.
+    [PURPOSE] This routine will deallocate all memory associated with a data
+    packet. This includes all the descriptors and data arrays and lists
+    associated with the packet.
     The routine is quite robust, deallocating in the correct order and cleanly
     bypassing missing sections in the hierarchy.
-    The routine returns nothing.
+    <pack_desc> The descriptor for the packet.
+    <data> The data for the packet.
+    [RETURNS] Nothing.
 */
-packet_desc *pack_desc;
-char *data;
 {
     unsigned int element_count;
     unsigned int type;
@@ -229,17 +231,17 @@ char *data;
 }   /*  End Function ds_dealloc_packet  */
 
 /*PUBLIC_FUNCTION*/
-void ds_dealloc_data (pack_desc, packet)
-/*  This routine will deallocate all memory associated with the storage of
-    data in the data packet which has a descriptor pointed to by  pack_desc
-    and a pointer  packet  to the packet.
-    Any sub-arrays or linked lists are recursively deallocated.
+void ds_dealloc_data (packet_desc *pack_desc, char *packet)
+/*  [SUMMARY] Recursively deallocate packet data.
+    [PURPOSE] This routine will deallocate all memory associated with the
+    storage of data in a packet. Any sub-arrays or linked lists are recursively
+    deallocated.
     The routine is quite robust, deallocating in the correct order and cleanly
     bypassing missing sections in the hierarchy.
-    The routine returns nothing.
+    <pack_desc> The descriptor for the packet.
+    <data> The data for the packet.
+    [RETURNS] Nothing.
 */
-packet_desc *pack_desc;
-char *packet;
 {
     if (packet == NULL)
     {
@@ -257,18 +259,17 @@ char *packet;
 }   /*  End Function ds_dealloc_data  */
 
 /*PUBLIC_FUNCTION*/
-void ds_dealloc_packet_subdata (pack_desc, packet)
-/*  This routine will deallocate all memory associated with the storage of
-    sub structure data in the data packet which has a descriptor pointed to by
-    pack_desc and a pointer  packet  to the packet.
-    NOTE: the packet is not deallocated, only the sub-arrays and linked lists
-    are recursively deallocated.
+void ds_dealloc_packet_subdata (CONST packet_desc *pack_desc, char *packet)
+/*  [SUMMARY] Recursively deallocate packet data.
+    [PURPOSE] This routine will recursively deallocate all memory associated
+    with the storage of sub-arrays or linked lists. The packet itself is not
+    deallocated.
     The routine is quite robust, deallocating in the correct order and cleanly
     bypassing missing sections in the hierarchy.
-    The routine returns nothing.
+    <pack_desc> The descriptor for the packet.
+    <data> The data for the packet.
+    [RETURNS] Nothing.
 */
-packet_desc *pack_desc;
-char *packet;
 {
     FString fstring;
     unsigned int elem_count;
@@ -327,15 +328,16 @@ char *packet;
 }   /*  End Function ds_dealloc_packet_subdata  */
 
 /*PUBLIC_FUNCTION*/
-void ds_dealloc_array_desc (arr_desc)
-/*  This routine will deallocate all header information associated with a tiled
-    array. This includes all descriptors for sub-arrays and linked lists.
-    The array descriptor must be pointed to by  arr_desc  .
+void ds_dealloc_array_desc (array_desc *arr_desc)
+/*  [SUMMARY] Recursively deallocate an array.
+    [PURPOSE] This routine will deallocate all descriptor information
+    associated with a tiled array. This includes all descriptors for sub-arrays
+    and linked lists.
     The routine is quite robust, deallocating in the correct order and cleanly
     bypassing missing sections in the hierarchy.
-    The routine returns nothing.
+    <arr_desc> The array descriptor.
+    [RETURNS] Nothing.
 */
-array_desc *arr_desc;
 {
     unsigned int dim_count;
     packet_desc *pack_desc;
@@ -403,18 +405,18 @@ array_desc *arr_desc;
 }   /*  End Function ds_dealloc_array_desc  */
 
 /*PUBLIC_FUNCTION*/
-void ds_dealloc_list (list_desc, list_head)
-/*  This routine will deallocate all memory associated with the storage of
-    data for the linked list with descriptor pointed to by  list_desc  .
-    The linked list header must be pointed to by  list_head  .
+void ds_dealloc_list (packet_desc *list_desc, list_header *list_head)
+/*  [SUMMARY] Recursively deallocate a linked list.
+    [PURPOSE] This routine will deallocate all memory associated with the
+    storage of data in a linked list.
     Any sub-arrays or linked lists are recursively deallocated.
     The routine is quite robust, deallocating in the correct order and cleanly
     bypassing missing sections in the hierarchy.
     The list header is also deallocated.
-    The routine returns nothing.
+    <list_desc> The descriptor for the list.
+    <list_head> The linked list header.
+    [RETURNS] Nothing.
 */
-packet_desc *list_desc;
-list_header *list_head;
 {
     static char function_name[] = "ds_dealloc_list";
 
@@ -434,18 +436,19 @@ list_header *list_head;
 }   /*  End Function ds_dealloc_list  */
 
 /*PUBLIC_FUNCTION*/
-void ds_dealloc_list_entries (list_desc, list_head)
-/*  This routine will deallocate all memory associated with the storage of
-    data for the linked list with descriptor pointed to by  list_desc  .
-    The linked list header must be pointed to by  list_head  .
+void ds_dealloc_list_entries (CONST packet_desc *list_desc,
+			      list_header *list_head)
+/*  [SUMMARY] Recursively deallocate list entries.
+    [PURPOSE] This routine will deallocate all memory associated with the
+    storage of data in a linked list.
     Any sub-arrays or linked lists are recursively deallocated.
     The routine is quite robust, deallocating in the correct order and cleanly
     bypassing missing sections in the hierarchy.
     The list header is NOT deallocated.
-    The routine returns nothing.
+    <list_desc> The descriptor for the list.
+    <list_head> The linked list header.
+    [RETURNS] Nothing.
 */
-packet_desc *list_desc;
-list_header *list_head;
 {
     unsigned int count;
     unsigned int pack_size;
@@ -493,14 +496,15 @@ list_header *list_head;
 }   /*  End Function ds_dealloc_list_entries  */
 
 /*PUBLIC_FUNCTION*/
-void ds_dealloc2_list (list_head)
-/*  This routine will deallocate the data and the list entries in a linked
-    list. The list header must be pointed to by  list_head  .This routine
-    does not recursively deallocate sub-arrays or linked lists: it will only
-    remove the list. The list header is NOT deallocated.
-    The routine returns nothing.
+void ds_dealloc2_list (list_header *list_head)
+/*  [SUMMARY] Deallocate linked list entries.
+    [PURPOSE] This routine will deallocate the data and the list entries in a
+    linked list. This routine does not recursively deallocate sub-arrays or
+    linked lists: it will only remove the list. The list header is NOT
+    deallocated.
+    <list_head> The list header.
+    [RETURNS] Nothing.
 */
-list_header *list_head;
 {
     list_entry *curr_entry;
     list_entry *next_entry;
@@ -511,24 +515,24 @@ list_header *list_head;
 	/*  No list to deallocate  */
         return;
     }
-    if ( list_head->magic != MAGIC_LIST_HEADER )
+    if (list_head->magic != MAGIC_LIST_HEADER)
     {
 	(void) fprintf (stderr, "List header has bad magic number\n");
 	a_prog_bug (function_name);
     }
     /*  Deallocate data  */
-    if ( list_head->contiguous_data != NULL )
+    if (list_head->contiguous_data != NULL)
     {
 	/*  Free contiguous packet data  */
-	m_free ( list_head->contiguous_data );
+	m_free (list_head->contiguous_data);
     }
     /*  Deallocate the non-contiguous part of the list data  */
     for (curr_entry = list_head->first_frag_entry; curr_entry != NULL;
 	 curr_entry = next_entry)
     {
-	if ( curr_entry->data != NULL )
+	if (curr_entry->data != NULL)
         {
-	    m_free ( curr_entry->data );
+	    m_free (curr_entry->data);
         }
 	next_entry = curr_entry->next;
 	m_free ( (char *) curr_entry );
@@ -541,18 +545,17 @@ list_header *list_head;
 }   /*  End Function ds_dealloc2_list  */
 
 /*PUBLIC_FUNCTION*/
-void ds_dealloc_array (arr_desc, arr_element)
-/*  This routine will deallocate all memory associated with the storage of
-    data for the array with descriptor pointed to by  arr_desc  .
-    The element containing the array pointer must be pointed to by
-    arr_element  .
+void ds_dealloc_array (array_desc *arr_desc, char *arr_element)
+/*  [SUMMARY] Recursively deallocate array.
+    [PURPOSE] This routine will deallocate all memory associated with the
+    storage of data for an array.
     Any sub-arrays or linked lists are recursively deallocated.
     The routine is quite robust, deallocating in the correct order and cleanly
     bypassing missing sections in the hierarchy.
-    The routine returns nothing.
+    <arr_desc> The array descriptor.
+    <arr_element> The element containing the array pointer.
+    [RETURNS] Nothing.
 */
-array_desc *arr_desc;
-char *arr_element;
 {
     unsigned int packet_size;
     unsigned int array_size;

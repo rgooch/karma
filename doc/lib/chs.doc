@@ -1,59 +1,74 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the chs_ package of routines in the Karma library.
-
+$PACKAGE          chs
+$SUMMARY          Routines to scan values from channel objects
+$PURPOSE
     These routines are meant to provide a simple method of reading (scanning)
-    channel objects for ASCII representation of floating point and integer
+    channel objects for ASCII representations of floating point and integer
     values.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
+$FUNCTION         chs_get_value
+$RETURN_TYPE      unsigned int
+$PARAMETER_LIST
+    (Channel channel, char *string, unsigned int length)
+$SUMMARY          Scan a channel object for a whitespace separated value.
+$PURPOSE
+    Scan a channel object for a whitespace separated value.
+$PARAMETER        channel :
+    The channel to read from.
+$PARAMETER        string :
+    The routine will write the value here.
+$PARAMETER        length :
+    The size of the buffer (in bytes).
+$RETURNS
+    The length of the string scanned on success, else 0.
+$END
 
-    Written by		Richard Gooch	5-Jun-1995
+$FUNCTION         chs_get_float
+$RETURN_TYPE      double
+$PARAMETER_LIST
+    (Channel channel)
+$SUMMARY          Scan a channel object for a float value.
+$PURPOSE
+    This routine will scan a channel object for the ASCII
+    representation of a floating point number. Any leading whitespace will be
+    ignored.
+$PARAMETER        channel :
+    The channel to read from.
+$RETURNS
+    The value scanned. On error the process exits.
+$END
 
-    Last updated by	Richard Gooch	5-Jun-1995
+$FUNCTION         chs_get_int
+$RETURN_TYPE      int
+$PARAMETER_LIST
+    (Channel channel)
+$SUMMARY          Scan a channel object for an integer value.
+$PURPOSE
+    This routine will scan a channel object for the ASCII
+    representation of an integer number. Any leading whitespace will be
+    ignored.
+$PARAMETER        channel :
+    The channel object to read from.
+$RETURNS
+    The value scanned. On error the process exits.
+$END
 
-
-*/
-
-unsigned int chs_get_value (channel, string, length)
-/*  This routine will scan a channel object for a whitespace separated value.
-    The channel to read from must be given by  channel  .
-    The routine will write the value into the buffer pointed to by  string  .
-    The size of the buffer (in bytes) must be given by  length  .
-    The routine returns the length of the string scanned on success,
-    else it returns 0.
-*/
-Channel channel;
-char *string;
-unsigned int length;
-/*---------------------------------------------------------------------------*/
-
-double chs_get_float (channel)
-/*  This routine will scan a channel object for the ASCII representaion of a
-    floating point number. Any leading whitespace will be ignored.
-    The channel to read from must be given by  channel  .
-    The routine will return the value scanned.
-*/
-Channel channel;
-/*---------------------------------------------------------------------------*/
-
-int chs_get_int (channel)
-/*  This routine will scan a channel object for the ASCII representaion of a
-    integer number. Any leading whitespace will be ignored.
-    The channel to read from must be given by  channel  .
-    The routine will return the value scanned.
-*/
-Channel channel;
-/*---------------------------------------------------------------------------*/
-
-flag chs_get_line (channel, buffer, length)
-/*  This routine will read a line from a channel, stripping all comments,
-    leading and trailing whitespace. The comment character is '#'.
-    The channel must be given by  channel  .
-    The buffer to write the line into must be pointed to by  buffer  .
-    The size of the buffer must be given by  length  .
-    The routine returns TRUE on success, else it returns FALSE (indicating
-    End-Of-File).
-*/
-Channel channel;
-char *buffer;
-unsigned int length;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         chs_get_line
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, char *buffer, unsigned int length)
+$SUMMARY          Scan a channel object for a line.
+$PURPOSE
+    This routine will read a line from a channel, stripping all
+    comments, leading and trailing whitespace. The comment character is '#'.
+$PARAMETER        channel :
+    The channel object to read from.
+$PARAMETER        buffer :
+    The buffer to write the line into.
+$PARAMETER        length :
+    The size of the buffer.
+$RETURNS
+    TRUE on success, else FALSE (indicating End-Of-File).
+$END

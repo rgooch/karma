@@ -3,7 +3,7 @@
 
     This code provides history save/ restore routines.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -58,7 +58,13 @@
     Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
 
-    Last updated by Richard Gooch   8-JUN-1995: Added #ifdef OS_UNICOS
+    Updated by      Richard Gooch   8-JUN-1995: Added #ifdef OS_UNICOS
+
+    Updated by      Richard Gooch   20-FEB-1996: Increased size of temporary
+  filename strings.
+
+    Last updated by Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -91,23 +97,28 @@ extern char *getcwd ();
 #  endif
 #endif
 
-static char *find_filename_in_tree ();
+STATIC_FUNCTION (char *find_filename_in_tree, (CONST char *filename) );
 
 
 /*PUBLIC_FUNCTION*/
-void hi_read (command_name,command_decode)
-/* Read defaults file and process */
-char *command_name;        /* name of command */
-flag (*command_decode) ();  /* Function to decode commands in defaults file */
+void hi_read (CONST char *module_name,
+	      flag (*command_decode) (CONST char *command, FILE *fp) )
+/*  [SUMMARY] Read history information for a module.
+    [PURPOSE] This routine will read any available history information for a
+    module and process accordingly.
+    <module_name> The name of the module.
+    <command_decode> The function used to decode history lines.
+    [RETURNS] Nothing.
+*/
 {
-    FILE           *fp;		/* pointer to file */
+    FILE *fp;
     char *home = NULL;
     char *pathname;
-    char            file_name[32];	/* name of defaults file */
-    char            line[256];	/* buffer for data from file */
+    char file_name[STRING_LENGTH];
+    char line[STRING_LENGTH];
 
     (void) strcpy (file_name, ".");
-    (void) strcat (file_name, command_name);
+    (void) strcat (file_name, module_name);
     (void) strcat (file_name, ".defaults");
     /*  Try to find file somewhere up there ...  */
     if ( ( pathname = find_filename_in_tree (file_name) ) == NULL )
@@ -140,30 +151,33 @@ flag (*command_decode) ();  /* Function to decode commands in defaults file */
 	    return;
 	}
     }
-    for (;;)
+    while (fgets (line, STRING_LENGTH, fp) != NULL)
     {
-	if (!fgets(line, sizeof(line), fp))
-	    break;
 	if (line[strlen (line) - 1] == '\n') line[strlen (line) - 1] = '\0';
-	if (line[0] && line[0] != '\n')
-	(void) (*command_decode) (line, stderr);
+	if (line[0] && line[0] != '\n') (void) (*command_decode) (line,stderr);
     }
-    fclose (fp);
+    (void) fclose (fp);
 }   /*  End Function hi_read  */
 
 /*PUBLIC_FUNCTION*/
-void hi_write (command_name,command_decode)
-char *command_name;        /* name of command */
-flag (*command_decode) ();  /* Function to decode commands in defaults file */
+void hi_write (CONST char *module_name,
+	       flag (*command_decode) (CONST char *command, FILE *fp) )
+/*  [SUMMARY] Write history information for a module.
+    [PURPOSE] This routine will write history information for the module in the
+    current working directory.
+    <module_name> The name of the module.
+    <command_decode> The function used to decode history lines.
+    [RETURNS] Nothing.
+*/
 {
     FILE *fp;
-    char file_name[32];	/* name of defaults file */
+    char file_name[STRING_LENGTH];
     extern char *sys_errlist[];
 
-    (void) sprintf (file_name, ".%s.defaults", command_name);
+    (void) sprintf (file_name, ".%s.defaults", module_name);
 #ifdef OS_VXMVX
     (void) fprintf (stderr, "Writing history for: \"%s\" to file: \"%s\"\n",
-		    command_name, file_name);
+		    module_name, file_name);
 #endif
     /*  Write new defaults file to current working directory  */
     if ( ( fp = fopen (file_name, "w") ) == NULL )
@@ -172,7 +186,7 @@ flag (*command_decode) ();  /* Function to decode commands in defaults file */
 			file_name, sys_errlist[errno]);
 	exit (RV_CANNOT_OPEN);
     }
-    if ( (*command_decode) ("?#", fp) != TRUE )
+    if ( !(*command_decode) ("?#", fp) )
     {
 	(void) fprintf (stderr, "Error in writing defaults\n");
     }
@@ -180,7 +194,7 @@ flag (*command_decode) ();  /* Function to decode commands in defaults file */
     (void) fclose (fp);
 }  /*  End Function hi_write  */
 
-static char *find_filename_in_tree (filename)
+static char *find_filename_in_tree (CONST char *filename)
 /*  This routine will search the current working directory for a defaults file
     with filename (stripped of any directory specifications) pointed to by
     filename  .
@@ -191,7 +205,6 @@ static char *find_filename_in_tree (filename)
     The routine will return the pointer  filename  if the file exists in the
     current working directory.
 */
-char *filename;
 {
     char *path_ptr, *pathname_ptr;
     char curr_dir[MAXPATHLEN + 1];
@@ -200,7 +213,7 @@ char *filename;
     if (access (filename, R_OK) == 0)
     {
 	/*  Found file  */
-	return (filename);
+	return ( (char *) filename );
     }
     pathname_ptr = pathname;
     /*  Search up directory tree  */
@@ -231,7 +244,7 @@ char *filename;
 	    if (access (pathname, R_OK) == 0)
 	    {
 		/*  Found file  */
-		return (pathname);
+		return ( (char *) pathname );
 	    }
 	}
 	--path_ptr;

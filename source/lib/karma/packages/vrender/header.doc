@@ -1,0 +1,8 @@
+$SUMMARY          Routines to support volume rendering
+$PURPOSE
+    These routines are meant to provide support for volume rendering. Most of
+    the hard work in setting up the geometry, projections and making use of
+    multiple CPUs is done in the package. The application "just" needs to
+    provide the user interface, display canvas and shading algorithms.
+    NOTE: THIS PACKAGE IS WORK IN PROGRESS. THE INTERFACE MAY CHANGE IN THE
+    NEXT RELEASE, POSSIBLY WITHOUT NOTICE.

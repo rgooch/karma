@@ -2,7 +2,7 @@
 
     Source file for  tile1  (retiling module).
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,14 +37,19 @@
     Updated by      Richard Gooch   16-NOV-1993: Changed over to  panel_
   package for command line user interface and moved  main  into this file.
 
-    Last updated by Richard Gooch   23-NOV-1993: Fixed bug in call to
+    Updated by      Richard Gooch   23-NOV-1993: Fixed bug in call to
   panel_add_item  for  array_names  parameter.
+
+    Last updated by Richard Gooch   1-JUN-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
 #include <stdio.h>
 #include <math.h>
 #include <karma.h>
+#include <karma_module.h>
+#include <karma_dsproc.h>
 #include <karma_panel.h>
 #include <karma_dsxfr.h>
 #include <karma_ds.h>
@@ -78,13 +83,10 @@ static int num_lengths = 0;
 static char *dim_name = NULL;
 
 
-main (argc, argv)
-int argc;       /*  Count of parameters on command line */
-char **argv;    /*  List of command line parameters     */
+int main (int argc, char **argv)
 {
     KControlPanel panel;
     extern int tile_lengths[MAX_LENGTHS];
-    extern char *data_type_names[NUMTYPES];
     static char function_name[] = "main";
 
     if ( ( panel = panel_create (FALSE) ) == NULL )
@@ -107,16 +109,14 @@ char **argv;    /*  List of command line parameters     */
     return (RV_OK);
 }   /*  End Function main   */
 
-tile1 (p, fp)
-char *p;
-FILE *fp;
+flag tile1 (char *p, FILE *fp)
 {
     char *arrayfile;
     extern int save_unproc;
     extern int num_arrays;
     extern char *dim_name;
     extern char *array_names[NUMARRAYS];
-    static char function_name[] = "tile1";
+    /*static char function_name[] = "tile1";*/
 
     for ( ; p; p = ex_word_skip (p) )
     {
@@ -246,18 +246,24 @@ packet_desc *inp_desc;
 	(void) fprintf (stderr,
 			"Dimension: \"%s\" not found\n", dim_name);
 	return (NULL);
+/*
 	break;
+*/
       case IDENT_ELEMENT:
 	(void) fprintf (stderr,
 			"Item: \"%s\" must be a dimension, not an element",
 			dim_name);
 	return (NULL);
+/*
 	break;
+*/
       case IDENT_MULTIPLE:
 	(void) fprintf (stderr,
 			"Item \"%s\" found more than once\n", dim_name);
 	return (NULL);
+/*
 	break;
+*/
       case IDENT_DIMENSION:
 	break;
       case IDENT_GEN_STRUCT:
@@ -267,27 +273,27 @@ packet_desc *inp_desc;
 	a_prog_bug (function_name);
 	break;
     }
-    if ( (*arr_desc).num_dimensions < 2 )
+    if ( arr_desc->num_dimensions < 2 )
     {
 	(void) fprintf (stderr, "Array must have at least 2 dimensions\n");
 	return (NULL);
     }
-    if (num_lengths != (*arr_desc).num_dimensions)
+    if (num_lengths != arr_desc->num_dimensions)
     {
 	(void) fprintf (stderr,
 			"Array has: %u dimensions but: %u lengths specified\n",
-			(*arr_desc).num_dimensions, num_lengths);
+			arr_desc->num_dimensions, num_lengths);
 	return (NULL);
     }
     /*  Check if tiling OK  */
-    for (dim_num = 0; dim_num < (*arr_desc).num_dimensions; ++dim_num)
+    for (dim_num = 0; dim_num < arr_desc->num_dimensions; ++dim_num)
     {
-	dim = (*arr_desc).dimensions[dim_num];
-	if ( (*dim).length % tile_lengths[dim_num] != 0 )
+	dim = arr_desc->dimensions[dim_num];
+	if (dim->length % tile_lengths[dim_num] != 0)
 	{
 	    (void) fprintf (stderr,
-			    "Dimension: \"%s\" length: %u is not divisible by tile length: %u\n",
-			    (*dim).name, (*dim).length, tile_lengths[dim_num]);
+			    "Dimension: \"%s\" length: %lu is not divisible by tile length: %u\n",
+			    dim->name, dim->length, tile_lengths[dim_num]);
 	    return (NULL);
 	}
     }
@@ -307,20 +313,26 @@ packet_desc *inp_desc;
 			"Output dimension: \"%s\" not found\n", dim_name);
 	ds_dealloc_packet (return_value, (char *) NULL);
 	return (NULL);
+/*
 	break;
+*/
       case IDENT_ELEMENT:
 	(void) fprintf (stderr,
 			"Output item: \"%s\" must be a dimension, not an element",
 			dim_name);
 	ds_dealloc_packet (return_value, (char *) NULL);
 	return (NULL);
+/*
 	break;
+*/
       case IDENT_MULTIPLE:
 	(void) fprintf (stderr,
 			"Output item \"%s\" found more than once\n", dim_name);
 	ds_dealloc_packet (return_value, (char *) NULL);
 	return (NULL);
+/*
 	break;
+*/
       case IDENT_DIMENSION:
 	break;
       case IDENT_GEN_STRUCT:
@@ -345,11 +357,11 @@ packet_desc *inp_desc;
 	ds_dealloc_packet (return_value, (char *) NULL);
 	return (NULL);
     }
-    for (dim_num = 0; dim_num < (*arr_desc).num_dimensions; ++dim_num)
+    for (dim_num = 0; dim_num < arr_desc->num_dimensions; ++dim_num)
     {
-	dim = (*arr_desc).dimensions[dim_num];
-	(*arr_desc).lengths[dim_num] = tile_lengths[dim_num];
-	(*arr_desc).tile_lengths[dim_num][0] = (*dim).length / tile_lengths[dim_num];
+	dim = arr_desc->dimensions[dim_num];
+	arr_desc->lengths[dim_num] = tile_lengths[dim_num];
+	arr_desc->tile_lengths[dim_num][0] = dim->length / tile_lengths[dim_num];
     }
     return (return_value);
 }   /*  End Function generate_desc  */

@@ -1,3 +1,15 @@
+# If extra directories must be search for libraries, assign them to LIBDIRS.
+# This should be a colon separated list.
+
+# The default optimisation flags can be overridden by adding
+# KOPTIMISE="-flags" to the make command. You can use this for debugging.
+
+# The following compiler and linker command variables are created:
+#	CC	ANSI C compiler
+#	LD	C linker
+#	CCpp	C++ compiler
+#	LDpp	C++ linker
+
 ifdef LIBDIRS
 rpath = $(KARMALIBPATH):$(LIBDIRS)
 lpath = -L$(KARMALIBPATH) $(addprefix -L,$(subst :, ,$(LIBDIRS)))
@@ -9,21 +21,27 @@ endif
 kcflags = -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) $(KOPTIMISE)
 
 ifeq ($(OS),SunOS)
-CC = gcc -fpcc-struct-return $(kcflags)
-LD = gcc $(lpath)
+CC   = gcc -fpcc-struct-return $(kcflags)
+LD   = gcc $(lpath)
+CCpp = CC $(kcflags)
+LDpp = CC $(lpath)
 KOPTIMISE = -O2
 endif
 
 ifeq ($(OS),Solaris)
-CC = gcc -fpcc-struct-return -D_REENTRANT $(kcflags)
-LD = gcc $(lpath) -R$(rpath)
+CC   = gcc -fpcc-struct-return -D_REENTRANT $(kcflags)
+LD   = gcc $(lpath) -R$(rpath)
+CCpp = CC -D_REENTRANT $(kcflags)
+LDpp = CC $(lpath) -R$(rpath)
 KOPTIMISE = -O2
 OS_LIBS = -lthread
 endif
 
 ifeq ($(OS),Linux)
-CC = cc $(kcflags)
-LD = cc $(lpath) -Wl,-rpath,$(rpath)
+CC   = cc $(kcflags) -Wall -pedantic-errors
+LD   = cc $(lpath) -Wl,-rpath,$(rpath)
+CCpp = g++ $(kcflags)
+LDpp = g++ $(lpath) -Wl,-rpath,$(rpath)
 KOPTIMISE = -O2
 endif
 
@@ -34,52 +52,54 @@ ifeq ($(OS),IRIX6)
 ktmpos = IRIX
 endif
 ifeq ($(ktmpos),IRIX)
-CC = cc -xansi -signed -D_SGI_MP_SOURCE $(kcflags)
-LD = cc -xansi $(lpath) -Wl,-no_library_replacement -rpath $(rpath)
+CC   = cc -xansi -signed -D_SGI_MP_SOURCE $(kcflags)
+LD   = cc -xansi $(lpath) -Wl,-no_library_replacement -rpath $(rpath)
 KOPTIMISE = -O2
 endif
 
 ifeq ($(OS),OSF1)
 # gcc causes problems with shared Xt library ???
-# CC = gcc -fpcc-struct-return
-CC = cc -std $(kcflags)
-#LD = $(CC) $(lpath) -Wl,-no_library_replacement -Wl,-rpath,$(rpath)
-LD = $(CC) $(lpath) -Wl,-rpath,$(rpath)
+# CC   = gcc -fpcc-struct-return
+CC   = cc -std $(kcflags)
+#LD   = $(CC) $(lpath) -Wl,-no_library_replacement -Wl,-rpath,$(rpath)
+LD   = $(CC) $(lpath) -Wl,-rpath,$(rpath)
 KOPTIMISE = -O2
 endif
 
 ifeq ($(OS),AIX)
-CC = cc -qchars=signed -qlanglvl=ansi $(kcflags)
-LD = cc $(lpath)
+CC   = cc -qchars=signed -qlanglvl=ansi $(kcflags)
+LD   = cc $(lpath)
 KOPTIMISE = -O
 endif
 
 ifeq ($(OS),ConvexOS)
-CC = cc -ext $(kcflags)
-LD = $(CC) $(lpath)
+CC   = cc -ext $(kcflags)
+LD   = $(CC) $(lpath)
 KOPTIMISE = -O
 endif
 
 ifeq ($(OS),HPUX)
-CC = cc -Aa -D_HPUX_SOURCE $(kcflags)
-LD = cc $(lpath)
+CC   = cc -Aa -D_HPUX_SOURCE $(kcflags)
+LD   = cc $(lpath)
 KOPTIMISE = -O
 endif
 
 ifeq ($(OS),ULTRIX)
-CC = gcc -fpcc-struct-return $(kcflags)
-LD = gcc $(lpath)
+CC   = gcc -fpcc-struct-return $(kcflags)
+LD   = gcc $(lpath)
+CCpp = g++ -fpcc-struct-return $(kcflags)
+LDpp = g++ $(lpath)
 KOPTIMISE = -O
 endif
 
 ifeq ($(OS),UNICOS)
-CC = cc $(kcflags)
-LD = cc $(lpath)
+CC   = cc $(kcflags)
+LD   = cc $(lpath)
 KOPTIMISE = -h inline3,scalar3,vector2
 endif
 
 ifndef CC
-CC = cc $(kcflags)
-LD = cc $(lpath)
+CC   = cc $(kcflags)
+LD   = cc $(lpath)
 KOPTIMISE = -O
 endif

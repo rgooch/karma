@@ -1,0 +1,4 @@
+$SUMMARY          Routines to control daemon mode
+$PURPOSE
+    These routines are meant to provide a mechanism for a process to enter
+    daemon mode (ie. to dissociate from a controlling terminal).

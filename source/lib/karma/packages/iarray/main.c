@@ -139,8 +139,29 @@
     Updated by      Richard Gooch   13-DEC-1995: Unpublished
   <iarray_get_element_*D> routines.
 
-    Last updated by Richard Gooch   25-JAN-1996: Threaded <iarray_min_max> and
+    Updated by      Richard Gooch   25-JAN-1996: Threaded <iarray_min_max> and
   <iarray_compute_histogram> routines.
+
+    Updated by      Richard Gooch   1-APR-1996: Moved remaing functions to new
+  documentation style.
+
+    Updated by      Richard Gooch   6-APR-1996: Referenced <karma_data_types>
+  table.
+
+    Updated by      Richard Gooch   29-APR-1996: Added tiny offset to
+  <iarray_scale_and_offset> when converting to integer arrays.
+
+    Updated by      Richard Gooch   16-MAY-1996: Created
+  <iarray_clip_scale_and_offset>.
+
+    Updated by      Richard Gooch   30-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
+
+    Updated by      Richard Gooch   3-JUN-1996: Took account of new fields in
+  dimension descriptor for first and last co-ordinate.
+
+    Last updated by Richard Gooch   14-JUN-1996: Changed more pointers to
+  CONST.
 
 
 */
@@ -194,30 +215,50 @@ STATIC_FUNCTION (char *iarray_get_next_element,
 		 (iarray array, unsigned long *coordinates,
 		  unsigned int increment) );
 STATIC_FUNCTION (unsigned int iarray_get_max_contiguous, (iarray array) );
+STATIC_FUNCTION (flag iarray_is_full_array, (iarray array) );
 STATIC_FUNCTION (flag mem_debug_required, () );
 STATIC_FUNCTION (void initialise_thread_pool, () );
-STATIC_FUNCTION (flag generic_process,
+/*  Threaded functions requiring address offsets  */
+STATIC_FUNCTION (flag scatter_process,
 		 (iarray array,
 		  flag (*func) (KThreadPool pool, iarray array, char *data,
 				uaddr *lengths, uaddr **offsets,
 				unsigned int num_dim, void *f_info,
 				void *thread_info),
 		  unsigned int max_dim, void *f_info) );
-STATIC_FUNCTION (void job_func,
+STATIC_FUNCTION (void scatter_job_func,
 		 (void *pool_info, void *call_info1, void *call_info2,
 		  void *call_info3, void *call_info4, void *thread_info) );
-STATIC_FUNCTION (flag min_max_job_func,
+STATIC_FUNCTION (flag min_max_scatter_job_func,
 		 (KThreadPool pool, iarray array, char *data,
 		  uaddr *lengths, uaddr **offsets,
 		  unsigned int num_dim, void *f_info, void *thread_info) );
-STATIC_FUNCTION (flag histogram_job_func,
+STATIC_FUNCTION (flag histogram_scatter_job_func,
 		 (KThreadPool pool, iarray array, char *data,
 		  uaddr *lengths, uaddr **offsets,
 		  unsigned int num_dim, void *f_info, void *thread_info) );
+/*  Threaded functions requiring contiguous data  */
+STATIC_FUNCTION (flag contiguous_process,
+		 (iarray array,
+		  flag (*func) (KThreadPool pool, iarray array,
+				char *data, uaddr stride, unsigned int values,
+				void *f_info, void *thread_info),
+		  void *f_info) );
+STATIC_FUNCTION (void contiguous_job_func,
+		 (void *pool_info, void *call_info1, void *call_info2,
+		  void *call_info3, void *call_info4, void *thread_info) );
+STATIC_FUNCTION (flag min_max_contiguous_job_func,
+		 (KThreadPool pool, iarray array, char *data, uaddr stride,
+		  unsigned int num_values, void *f_info, void *thread_info) );
+STATIC_FUNCTION (flag histogram_contiguous_job_func,
+		 (KThreadPool pool, iarray array, char *data, uaddr stride,
+		  unsigned int num_values, void *f_info, void *thread_info) );
+/*  Other functions  */
 STATIC_FUNCTION (flag ds_find_2D_histogram,
-		 (char *data, unsigned int elem_type, unsigned int conv_type,
-		  unsigned int length1, uaddr *offsets1,
-		  unsigned int length2, uaddr *offsets2,
+		 (CONST char *data, unsigned int elem_type,
+		  unsigned int conv_type,
+		  unsigned int length1, CONST uaddr *offsets1,
+		  unsigned int length2, CONST uaddr *offsets2,
 		  double min, double max, unsigned long num_bins,
 		  unsigned long *histogram_array,
 		  unsigned long *histogram_peak,
@@ -232,45 +273,45 @@ KThreadPool pool = NULL;
 
 /*PUBLIC_FUNCTION*/
 iarray iarray_read_nD (CONST char *object, flag cache, CONST char *arrayname,
-		       unsigned int num_dim, char **dim_names, char *elem_name,
+		       unsigned int num_dim, CONST char **dim_names,
+		       CONST char *elem_name,
 		       unsigned int mmap_option)
-/*  This routine will read in a Karma arrayfile and will yield an "Intelligent
-    Array".
-    The name of the arrayfile to read must be pointed to by  object  .This
-    parameter is passed directly to the  dsxfr_get_multi  routine. In order to
-    understand the operation of the  iarray_read_nD  routine, the operation of
-    the  dsxfr_get_multi  routine must be understood.
-    The value of  cache  is passed directly to the  dsxfr_get_multi  routine.
+/*  [SUMMARY] Read in a Karma arrayfile and yield an "Intelligent Array".
+    <object> The name of the arrayfile to read. This parameter is passed
+    directly to the [<dsxfr_get_multi>] routine. In order to understand the
+    operation of this routine, the operation of the [<dsxfr_get_multi>] routine
+    must be understood.
+    <cache> This is passed directly to the [<dsxfr_get_multi>] routine.
     This controls whether disc arrayfiles are cached in memory for later use.
-    The name of the general data structure in the arrayfile to search for must
-    be pointed to by  arrayname  .If this is NULL, the routine searches for
-    the default name "Intelligent Array". If the arrayfile has only one
-    general data structure, then this parameter is ignored.
-    The routine searches for an n-dimensional array with a single atomic
-    element at each point in multi-dimensional space.
-    If  num_dim  is greater than 0, the routine will only return an array with
-    num_dim  dimensions. If  num_dim  is 0, then the routine will return an
+    <arrayname> The name of the general data structure in the arrayfile to
+    search for. If this is NULL, the routine searches for the default name
+    "Intelligent Array". If the arrayfile has only one general data structure,
+    then this parameter is ignored.
+    <num_dim> The routine searches for an n-dimensional array with a single
+    atomic element at each point in multi-dimensional space. If this parameter
+    is greater than 0, the routine will only return an array with the specified
+    number of dimensions. If the value is 0, then the routine will return an
     n-dimensional array.
-    If  num_dim  is not 0, then if  dim_names  is NULL, the routine will search
-    for and return an array with the default dimension names (see iarray_create
-    for a list of these) if more than one n-dimensional, single element array
-    exists in the general data structure, or the only n-dimensional array with
-    the specified number of dimensions. If the routine can't find an adequate
-    default, it will not return an array.
-    If  num_dim  is not 0, and  dim_names  points to an array of strings, then
-    the routine will only return an array which matches the specified dimension
-    names. The first name in the array of strings must be the highest order
-    dimension.
-    If  elem_name  is NULL, the routine will ignore the element name of the
-    array which is located, else it will insist on the array element name
-    matching the name pointed to by  elem_name  .
-    The  mmap_option  parameter is passed directly to the  dsxfr_get_multi
-    routine. This parameter controls the memory mapping of disc arrayfiles.
-    If the data structure is likely to be subsequently modified, the value of
-    must be K_CH_MAP_NEVER, otherwise the data may be read-only memory mapped
+    <dim_names> If <<num_dim>> is not 0, then if this parameter is NULL, the
+    routine will search for and return an array with the default dimension
+    names (see [<iarray_create>] for a list of these) if more than one
+    n-dimensional, single element array exists in the general data structure,
+    or the only n-dimensional array with the specified number of dimensions.
+    If the routine can't find an adequate default, it will not return an array.
+    If <<num_dim>> is not 0, and this parameter points to an array of strings,
+    then the routine will only return an array which matches the specified
+    dimension names. The first name in the array of strings must be the highest
+    order dimension.
+    <elem_name> If this is NULL, the routine will ignore the element name of
+    the array which is located, else it will insist on the array element name
+    matching the specified name.
+    <mmap_option> This is passed directly to the [<dsxfr_get_multi>] routine.
+    This parameter controls the memory mapping of disc arrayfiles.
+    If the data structure is likely to be subsequently modified, the value must
+    be K_CH_MAP_NEVER, otherwise the data may be read-only memory mapped
     and writing to it will cause a segmentation fault.
-    The routine returns a dynamically allocated intelligent array on success,
-    else it prints an error message to the standard output and returns NULL.
+    [RETURNS] A dynamically allocated intelligent array on success, else an
+    error message is printed to the standard output and NULL is returned.
 */
 {
     iarray array;
@@ -295,12 +336,12 @@ iarray iarray_read_nD (CONST char *object, flag cache, CONST char *arrayname,
 
 /*PUBLIC_FUNCTION*/
 flag iarray_write (iarray array, CONST char *arrayfile)
-/*  This routine will write an "Intelligent Array" in the Karma data format.
-    The "Intelligent Array" must be given by  array  .
-    The name of the arrayfile to write must be pointed to by  arrayfile  .
-    See  dsxfr_put_multi  for details on the interpretation of  arrayfile  .
-    The routine returns TRUE on success, else it prints an error message to the
-    standard output and returns FALSE.
+/*  [SUMMARY] Write an "Intelligent Array" in the Karma data format.
+    <array> The "Intelligent Array".
+    <arrayfile> The name of the arrayfile to write. See [<dsxfr_put_multi>] for
+    details on the interpretation of this.
+    [RETURNS] TRUE on success, else an error message is printed to the standard
+    output and FALSE is returned.
 */
 {
     static char function_name[] = "iarray_write";
@@ -322,32 +363,28 @@ flag iarray_write (iarray array, CONST char *arrayfile)
 
 /*PUBLIC_FUNCTION*/
 iarray iarray_create (unsigned int type, unsigned int num_dim,
-		      char **dim_names, unsigned long *dim_lengths,
-		      char *elem_name, iarray old_array)
-/*  This routine will create an "Intelligent Array", using the Karma general
-    data structure format as the underlying data format.
+		      CONST char **dim_names, CONST unsigned long *dim_lengths,
+		      CONST char *elem_name, iarray old_array)
+/*  [SUMMARY] Create an Intelligent Array.
+    [PURPOSE] This routine will create an "Intelligent Array", using the Karma
+    general data structure format as the underlying data format.
     If the environment variable "IARRAY_ALLOC_DEBUG" is set to "TRUE" then the
     routine will print allocation debugging information.
-    The type of the data must be given by  type  .Legal values for this are:
-        K_FLOAT, K_DOUBLE, K_BYTE, K_INT, K_SHORT, K_COMPLEX, K_DCOMPLEX,
-	K_BCOMPLEX, K_ICOMPLEX,
-        K_SCOMPLEX, K_LONG, K_LCOMPLEX, K_UBYTE, K_UINT, K_USHORT, K_ULONG,
-	K_UBCOMPLEX,
-        K_UICOMPLEX, K_USCOMPLEX, K_ULCOMPLEX.
-    The number of dimensions the array must have must be given by  num_dim  .
-    The names of the dimensions must be pointed to by  dim_names  .If this is
-    NULL, the default names: "Axis 0", "Axis 1", etc. are used.
-    The lengths of the dimensions must be pointed to by  dim_lengths  .
-    The first entry in both  dim_names  and  dim_lengths  refers to the most
-    significant dimension (ie. the dimension with the greatest stride in
-    memory).
-    The name of the element must be given by  elem_name  .If this is NULL, the
-    default name: "Data Value" is choosen.
-    Any auxilary information not representable with "Intelligent Arrays" which
-    is to be included in the Karma data format is copied from the array pointed
-    to by  old_array  .If this is NULL, no auxilary information is copied.
-    The routine returns a dynamically allocated intelligent array on success,
-    else it prints an error message to the standard output and returns NULL.
+    <type> The desired type of the data elements. See [<DS_KARMA_DATA_TYPES>]
+    for a list of defined data types.
+    <num_dim> The number of dimensions the array must have.
+    <dim_names> The names of the dimensions. If this is NULL, the default names
+    "Axis 0", "Axis 1", etc. are used.
+    <dim_lengths> The lengths of the dimensions. The first entry in this array
+    and the <<dim_lengths>> array refers to the most significant dimension
+    (i.e. the dimension with the greatest stride in memory).
+    <elem_name> The name of the element. If this is NULL, the default name
+    "Data Value" is choosen.
+    <old_array> Any auxilary information not representable with "Intelligent
+    Arrays" which is to be included in the Karma data format is copied from
+    here. If this is NULL, no auxilary information is copied.
+    [RETURNS] A dynamically allocated intelligent array on success, else an
+    error message is printed to the standard output and NULL is returned.
 */
 {
     unsigned int array_count;
@@ -501,8 +538,9 @@ iarray iarray_create (unsigned int type, unsigned int num_dim,
     /*  Allocate array descriptor  */
     if ( ( out_arr_desc =
 	  ds_easy_alloc_array_desc (num_dim, dim_lengths,
-				    (double *) NULL, (double *) NULL,
-				    (double **) NULL, dim_names,
+				    (CONST double *) NULL,
+				    (CONST double *) NULL,
+				    (CONST double **) NULL, dim_names,
 				    1, &type, &elem_name) )
 	== NULL )
     {
@@ -542,7 +580,7 @@ iarray iarray_create (unsigned int type, unsigned int num_dim,
     }
     if ( ( new =
 	  iarray_get_from_multi_array (out_multi_desc, arrayname, num_dim,
-				       (char **) NULL, elem_name) )
+				       (CONST char **) NULL, elem_name) )
 	== NULL )
     {
 	ds_dealloc_multi (out_multi_desc);
@@ -550,15 +588,27 @@ iarray iarray_create (unsigned int type, unsigned int num_dim,
     }
     /*  Decrement attachment count  */
     ds_dealloc_multi (out_multi_desc);
+    if ( mem_debug_required () )
+    {
+	(void) fprintf (stderr, "iarray_create: ");
+	for (dim_count = 0; dim_count < num_dim - 1; ++dim_count)
+	{
+	    (void) fprintf (stderr, "%lu * ", dim_lengths[dim_count]);
+	}
+	(void) fprintf (stderr, "%lu  type: %s\n",
+			dim_lengths[dim_count], data_type_names[type]);
+    }
     return (new);
 }   /*  End Function iarray_create  */
 
 /*PUBLIC_FUNCTION*/
 iarray iarray_get_from_multi_array (multi_array *multi_desc,
 				    CONST char *arrayname,
-				    unsigned int num_dim, char **dim_names,
-				    char *elem_name)
-/*  [PURPOSE] This routine will yield an "Intelligent Array" from a multi array
+				    unsigned int num_dim,
+				    CONST char **dim_names,
+				    CONST char *elem_name)
+/*  [SUMMARY] Create an Intelligent Array from a Karma data structure.
+    [PURPOSE] This routine will yield an "Intelligent Array" from a multi array
     Karma general data structure. The routine searches for a n-dimensional
     array with a single atomic element at each point in multi-dimensional space
     <multi_desc> The multi array header pointer. The attachment count is
@@ -582,8 +632,8 @@ iarray iarray_get_from_multi_array (multi_array *multi_desc,
     <elem_name> If NULL, the routine will ignore the element name of the array
     which is located, else it will insist on the array element name matching
     this name.
-    [RETURNS] A dynamically allocated intelligent array on success, else it
-    prints an error message to the standard output and returns NULL.
+    [RETURNS] A dynamically allocated intelligent array on success, else an
+    error message is printed to the standard output and NULL is returned.
 */
 {
     flag reorder_needed;
@@ -869,11 +919,12 @@ iarray iarray_get_from_multi_array (multi_array *multi_desc,
 
 /*PUBLIC_FUNCTION*/
 void iarray_dealloc (iarray array)
-/*  This routine will deallocate an "Intelligent Array".
-    If the environment variable "IARRAY_ALLOC_DEBUG" is set to "TRUE" then the
-    routine will print deallocation debugging information.
-    The array  must be given by  array  .
-    The routine returns nothing.
+/*  [SUMMARY] Deallocate an Intelligent Array.
+    [PURPOSE] This routine will deallocate an "Intelligent Array". If the
+    environment variable "IARRAY_ALLOC_DEBUG" is set to "TRUE" then the routine
+    will print deallocation debugging information.
+    <array> The Intelligent Array.
+    [RETURNS] Nothing.
 */
 {
     unsigned int dim_count;
@@ -917,15 +968,16 @@ void iarray_dealloc (iarray array)
 }   /*  End Function iarray_dealloc  */
 
 /*PUBLIC_FUNCTION*/
-flag iarray_put_named_value (iarray array, char *name, unsigned int type,
-			     double *value)
-/*  This routine will add a unique named value to the underlying Karma general
-    data structure of an "Intelligent Array".
-    The array must be given by  array  .
-    The name of the element must be pointed to by  name  .
-    The type of the data which is to be written must be given by  type  .
-    The value of the data must be pointed to by  value  .
-    The routine returns TRUE on success, else it returns FALSE.
+flag iarray_put_named_value (iarray array, CONST char *name, unsigned int type,
+			     double value[2])
+/*  [SUMMARY] Attach a data value to an Intelligent Array.
+    [PURPOSE] This routine will add a unique named value to the underlying
+    Karma general data structure of an "Intelligent Array".
+    <array> The Intelligent Array.
+    <name> The name of the element to add.
+    <type> The type of the data which is to be written.
+    <value> The value of the data.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     static char function_name[] = "iarray_put_named_value";
@@ -937,13 +989,14 @@ flag iarray_put_named_value (iarray array, char *name, unsigned int type,
 }   /*  End Function iarray_put_named_value  */
 
 /*PUBLIC_FUNCTION*/
-flag iarray_put_named_string (iarray array, char *name, char *string)
-/*  This routine will add a unique named string to the underlying Karma general
-    data structure of an "Intelligent Array".
-    The array must be given by  array  .
-    The name of the element must be pointed to by  name  .
-    The string must be pointed to by  string  .
-    The routine returns TRUE on success, else it returns FALSE.
+flag iarray_put_named_string (iarray array, CONST char *name, char *string)
+/*  [SUMMARY] Attach a string to an Intelligent Array.
+    [PURPOSE] This routine will add a unique named string to the underlying
+    Karma general data structure of an "Intelligent Array".
+    <array> The Intelligent Array.
+    <name> The name of the element to add.
+    <string> The string data.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     static char function_name[] = "iarray_put_named_string";
@@ -955,16 +1008,17 @@ flag iarray_put_named_string (iarray array, char *name, char *string)
 }   /*  End Function iarray_put_named_string  */
 
 /*PUBLIC_FUNCTION*/
-flag iarray_get_named_value (iarray array, char *name, unsigned int *type,
-			     double *value)
-/*  This routine will get a unique named value from the underlying Karma
-    general data structure of an "Intelligent Array".
-    The array must be given by  array  .
-    The name of the element must be pointed to by  name  .
-    The type of the data found will be written to the storage pointed to by
-    type  .If this is NULL, nothing is written here.
-    The value of the data will be written to the storage pointed to by  value
-    The routine returns TRUE on success, else it returns FALSE.
+flag iarray_get_named_value (iarray array, CONST char *name,
+			     unsigned int *type, double value[2])
+/*  [SUMMARY] Get attached data from an Intelligent Array.
+    [PURPOSE] This routine will get a unique named value from the underlying
+    Karma general data structure of an "Intelligent Array".
+    <array> The Intelligent Array.
+    <name> The name of the element.
+    <type> The type of the input data found will be written here. If this is
+    NULL, nothing is written here.
+    <value> The value of the converted data will be written here.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     static char function_name[] = "iarray_get_named_value";
@@ -976,13 +1030,14 @@ flag iarray_get_named_value (iarray array, char *name, unsigned int *type,
 }   /*  End Function iarray_get_named_value  */
 
 /*PUBLIC_FUNCTION*/
-char *iarray_get_named_string (iarray array, char *name)
-/*  This routine will get a unique named string from the underlying Karma
-    general data structure of an "Intelligent Array".
-    The array must be given by  array  .
-    The name of the element must be pointed to by  name  .
-    The routine returns a pointer to a dynamically allocated copy of the string
-    on success, else it returns NULL.
+char *iarray_get_named_string (iarray array, CONST char *name)
+/*  [SUMMARY] Get attached string from an Intelligent Array.
+    [PURPOSE] This routine will get a unique named string from the underlying
+    Karma general data structure of an "Intelligent Array".
+    <array> The Intelligent Array.
+    <name> The name of the element.
+    [RETURNS] A pointer to a dynamically allocated copy of the string on
+    success, else NULL.
 */
 {
     static char function_name[] = "iarray_get_named_string";
@@ -994,17 +1049,18 @@ char *iarray_get_named_string (iarray array, char *name)
 
 /*PUBLIC_FUNCTION*/
 flag iarray_copy_data (iarray output, iarray input, flag magnitude)
-/*  This routine will copy data from one "Intelligent Array" to another. The
-    sizes of the two arrays must be identical.
-    The output array must be given by  output  .
-    The input array must be given by  input  .
-    The routine will automatically perform type conversions if necessary.
-    If the value of  magnitude  is  TRUE  then when converting from a complex
-    to a real data type, the magnitude is taken, else the real component is
-    copied.
-    Note that when converting from a real to a complex data type, the imaginary
-    component is set to zero.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Copy data between Intelligent Arrays.
+    [PURPOSE] This routine will copy data from one "Intelligent Array" to
+    another. The sizes of the two arrays must be identical.
+    The routine can deal with the types of the two arrays being different
+    <output> The output Intelligent Array.
+    <input> The input Intelligent Array.
+    <magnitude> If TRUE then when converting from a complex array to a real
+    array, the magnitude of the complex data is taken, else the real component
+    is copied.
+    [NOTE] When converting from a real array to a complex data array, the
+    imaginary components are set to zero.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     flag contiguous = TRUE;
@@ -1176,7 +1232,8 @@ flag iarray_copy_data (iarray output, iarray input, flag magnitude)
 
 /*UNPUBLISHED_FUNCTION*/
 char *iarray_get_element_1D (iarray array, unsigned int type, int x)
-/*  [PURPOSE] This routine will get an element from a simple 1 dimensional
+/*  [SUMMARY] Get element from 1-dimensional Intelligent Array.
+    [PURPOSE] This routine will get an element from a simple 1 dimensional
     array. This routine is NOT meant to be called by applications.
     <array> The array.
     <type> The type of the element in the array (this is used to enforce type
@@ -1221,7 +1278,8 @@ char *iarray_get_element_1D (iarray array, unsigned int type, int x)
 
 /*UNPUBLISHED_FUNCTION*/
 char *iarray_get_element_2D (iarray array, unsigned int type, int y, int x)
-/*  [PURPOSE] This routine will get an element from a simple 2 dimensional
+/*  [SUMMARY] Get element from 2-dimensional Intelligent Array.
+    [PURPOSE] This routine will get an element from a simple 2 dimensional
     array. This routine is NOT meant to be called by applications.
     <array> The array.
     <type> The type of the element in the array (this is used to enforce type
@@ -1282,7 +1340,8 @@ char *iarray_get_element_2D (iarray array, unsigned int type, int y, int x)
 /*UNPUBLISHED_FUNCTION*/
 char *iarray_get_element_3D (iarray array, unsigned int type, int z, int y,
 			     int x)
-/*  [PURPOSE] This routine will get an element from a simple 3 dimensional
+/*  [SUMMARY] Get element from 3-dimensional Intelligent Array.
+    [PURPOSE] This routine will get an element from a simple 3 dimensional
     array. This routine is NOT meant to be called by applications.
     <array> The array.
     <type> The type of the element in the array (this is used to enforce type
@@ -1359,7 +1418,8 @@ char *iarray_get_element_3D (iarray array, unsigned int type, int z, int y,
 /*UNPUBLISHED_FUNCTION*/
 char *iarray_get_element_4D (iarray array, unsigned int type, int z, int y,
 			     int x, int w)
-/*  [PURPOSE] This routine will get an element from a simple 4 dimensional
+/*  [SUMMARY] Get element from 4-dimensional Intelligent Array.
+    [PURPOSE] This routine will get an element from a simple 4 dimensional
     array. This routine is NOT meant to be called by applications.
     <array> The array.
     <type> The type of the element in the array (this is used to enforce type
@@ -1451,18 +1511,21 @@ char *iarray_get_element_4D (iarray array, unsigned int type, int z, int y,
 /*PUBLIC_FUNCTION*/
 iarray iarray_get_sub_array_2D (iarray array, int starty, int startx,
 				unsigned int ylen, unsigned int xlen)
-/*  This function will create an "Intelligent Array" which is an alias or a
-    sub-array of another "Intelligent Array". Subsequent modification of the
-    sub-array will modify the data of the original array. Sub-arrays may be
-    created from other sub-arrays. The attachment count of the underlying
-    multi_array  data structure is incremented on successful completion.
-    The original array must be given by  array  .
-    The starting y (row) and x (column) indices which will indicate the origin
-    of the new array must be given by  starty  and  startx  ,respectively.
-    The size of the aliased array must be given by  ylen  and  xlen  .
-    The routine returns a dynamically allocated intelligent array on success,
-    else it returns NULL.
-    NOTE: sub-arrays cannot be saved to disc.
+/*  [SUMMARY] Create a 2-dimensional alias Intelligent Array.
+    [PURPOSE] This routine will create an "Intelligent Array" which is an alias
+    or a sub-array of another "Intelligent Array". Subsequent modification of
+    the alias array will modify the data of the original array. Sub-arrays may
+    be created from other sub-arrays. The attachment count of the underlying
+    <<multi_array>> data structure is incremented on successful completion.
+    <array> The original array.
+    <starty> The starting y (row) index in the original array corresponding to
+    the first row of the alias array.
+    <startx> The starting x (column) index in the original array corresponding
+    to the first column of the alias array.
+    <ylen> The number of y co-ordinates (rows) in the alias array.
+    <xlen> The number of x co-ordinates (columns) in the alias array.
+    [RETURNS] A dynamically allocated intelligent array on success, else NULL.
+    [NOTE] Sub-arrays cannot be saved to disc.
 */
 {
     int coord_count;
@@ -1583,18 +1646,18 @@ iarray iarray_get_sub_array_2D (iarray array, int starty, int startx,
 /*PUBLIC_FUNCTION*/
 iarray iarray_get_2D_slice_from_3D (iarray cube, unsigned int ydim,
 				    unsigned int xdim, unsigned int slice_pos)
-/*  This routine will create a 2-D "Intelligent Array" which is an alias of an
-    arbitrary slice of a 3-D array.
-    The 3-D array must be given by  cube  .
-    The dimension in the 3-D array which will become the y dimension (most
-    significant) must be given by  ydim  .
-    The dimension in the 3-D array which will become the x dimension (least
-    significant) must be given by  xdim  .
-    The position of the slice along the unspecified (remaining) dimension in
-    the 3-D array must be given by  slice_pos  .
-    The routine returns a dynamically allocated intelligent array on success,
-    else it returns NULL.
-    NOTE: alias arrays cannot be saved to disc.
+/*  [SUMMARY] Create a 2-dimensional Intelligent Array alias from a slice.
+    [PURPOSE] This routine will create a 2-D "Intelligent Array" which is an
+    alias of an arbitrary slice of a 3-D array.
+    <cube> The input 3-D array.
+    <ydim> The dimension in the 3-D array which will become the y dimension
+    (most significant) of the output array.
+    <xdim> The dimension in the 3-D array which will become the x dimension
+    (least significant) of the output array.
+    <slice_pos> The position of the slice along the unspecified (remaining)
+    dimension in the 3-D array.
+    [RETURNS] A dynamically allocated intelligent array on success, else NULL.
+    [NOTE] Alias arrays cannot be saved to disc.
 */
 {
     unsigned int dim_count;
@@ -1713,11 +1776,10 @@ iarray iarray_get_2D_slice_from_3D (iarray cube, unsigned int ydim,
 
 /*PUBLIC_FUNCTION*/
 unsigned long iarray_dim_length (iarray array, unsigned int index)
-/*  This routine will get the length of a specified dimension in a simple,
-    n-dimensional array.
-    The array must be given by  array  .
-    The index of the dimension must be given by  index  .
-    The routine returns the length of the specified dimension.
+/*  [SUMMARY] Get length of a dimension in an Intelligent Array.
+    <array> The Intelligent Array.
+    <index> The index of the dimension.
+    [RETURNS] The length of the specified dimension.
 */
 {
     static char function_name[] = "iarray_dim_length";
@@ -1736,15 +1798,15 @@ unsigned long iarray_dim_length (iarray array, unsigned int index)
 /*PUBLIC_FUNCTION*/
 unsigned int iarray_get_restrictions (iarray array, char ***restr_names,
 				      double **restr_values)
-/*  This routine will get any associated restrictions for an Intelligent
-    Array. The routine will dynamically allocate space for the restriction
-    data, which must be externally freed.
-    The Intelligent Array must be given by  array  .
-    The pointer to the array of pointers to restrictions names will be written
-    to the storage pointed to by  restr_names  .
-    The pointer to the array of restriction values will be written to the
-    storage pointed to by  restr_values  .
-    The routine returns the number of restrictions. This may be 0.
+/*  [SUMMARY] Get restriction information.
+    [PURPOSE] This routine will get any associated restrictions for an
+    Intelligent Array. The routine will dynamically allocate space for the
+    restriction data, which must be externally freed.
+    <array> The Intelligent Array.
+    <restr_names> The array of pointers to restrictions names will be written
+    here.
+    <restr_values> The array of restriction values will be written here.
+    [RETURNS] The number of restrictions. This may be 0.
 */
 {
     unsigned int count;
@@ -1784,13 +1846,11 @@ unsigned int iarray_get_restrictions (iarray array, char ***restr_names,
 }   /*  End Function iarray_get_restrictions  */
 
 /*PUBLIC_FUNCTION*/
-flag iarray_fill (iarray array, double *value)
-/*  This routine will fill an "Intelligent Array" with a single value.
-    The array must be given by  array  .
-    The fill value must be pointed to by  value  .
-    If filling a complex array, only the real component of the fill value will
-    be used.
-    The routine returns TRUE on success, else it returns FALSE.
+flag iarray_fill (iarray array, double value[2])
+/*  [SUMMARY] Fill an Intelligent Array with a single value.
+    <array> The Intelligent Array.
+    <value> The fill value.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     unsigned int elem_size;
@@ -1845,21 +1905,21 @@ flag iarray_fill (iarray array, double *value)
 /*PUBLIC_FUNCTION*/
 flag iarray_min_max (iarray array, unsigned int conv_type, double *min,
 		     double *max)
-/*  [PURPOSE] This routine will determine the minimum and maximum value of an
-    "Intelligent Array".
-    <array> The array.
-    <conv_type> The conversion type to use for complex numbers. Legal value for
-    this include:
-        CONV1_REAL        CONV1_IMAG        CONV1_ABS        CONV1_SQUARE_ABS
-	CONV1_PHASE       CONV1_CONT_PHASE  CONV1_ENVELOPE
+/*  [SUMMARY] Determine the minimum and maximum value of an Intelligent Array.
+    <array> The Intelligent Array.
+    <conv_type> The conversion type to use for complex numbers. This is ignored
+    if the array is not complex. See [<DS_COMPLEX_CONVERSIONS>] for legal
+    values.
     <min> The routine will write the minimum value here.
     <max> The routine will write the maximum value here.
     [MT-LEVEL] Unsafe.
     [RETURNS] TRUE on success, else FALSE.
 */
 {
+    flag full_array;
     unsigned int num_dim;
     unsigned int num_threads, thread_count;
+    array_desc *arr_desc;
     min_max_thread_info *info;
     extern KThreadPool pool;
     static char function_name[] = "iarray_min_max";
@@ -1873,7 +1933,19 @@ flag iarray_min_max (iarray array, unsigned int conv_type, double *min,
     *min = TOOBIG;
     *max = -TOOBIG;
     num_dim = iarray_num_dim (array);
-    if (num_dim == 1)
+    full_array = iarray_is_full_array (array);
+    initialise_thread_pool ();
+    num_threads = mt_num_threads (pool);
+    if ( full_array && (num_threads < 2) )
+    {
+	/*  Can do this in one contiguous block  */
+	arr_desc = array->arr_desc;
+	return ( ds_find_contiguous_extremes
+		 (array->data, ds_get_array_size (arr_desc),
+		  ds_get_packet_size (arr_desc->packet), iarray_type (array),
+		  conv_type, min, max) );
+    }
+    if ( !full_array && (num_dim == 1) )
     {
 	/*  Simple 1-dimensional process  */
 	return ( ds_find_1D_extremes (array->data,
@@ -1881,9 +1953,7 @@ flag iarray_min_max (iarray array, unsigned int conv_type, double *min,
 				      iarray_type (array), conv_type,
 				      min, max) );
     }
-    initialise_thread_pool ();
-    num_threads = mt_num_threads (pool);
-    if ( (num_dim == 2) && (num_threads < 2) )
+    if ( !full_array && (num_dim == 2) && (num_threads < 2) )
     {
 	/*  Simple unthreaded 2-dimensional process  */
 	return ( ds_find_2D_extremes (array->data,
@@ -1901,7 +1971,16 @@ flag iarray_min_max (iarray array, unsigned int conv_type, double *min,
 	info[thread_count].min = TOOBIG;
 	info[thread_count].max = -TOOBIG;
     }
-    if ( !generic_process (array, min_max_job_func, 2, NULL) ) return (FALSE);
+    if (full_array)
+    {
+	if ( !contiguous_process (array, min_max_contiguous_job_func, NULL) )
+	    return (FALSE);
+    }
+    else
+    {
+	if ( !scatter_process (array, min_max_scatter_job_func, 2, NULL) )
+	    return (FALSE);
+    }
     /*  Collect data from threads' private data  */
     for (thread_count = 0; thread_count < num_threads; ++thread_count)
     {
@@ -1912,23 +1991,23 @@ flag iarray_min_max (iarray array, unsigned int conv_type, double *min,
 }   /*  End Function iarray_min_max  */
 
 /*PUBLIC_FUNCTION*/
-flag iarray_scale_and_offset (iarray out, iarray inp, double *scale,
-			      double *offset, flag magnitude)
-/*  This routine will perform a scale and offset on every element in an
-    "Intelligent Array" (output = input * scale + offset).
-    The output array must be given by  out  .
-    The input array must be given by  inp  .
-    NOTE: the input and output arrays MUST be the same size (though not
+flag iarray_scale_and_offset (iarray out, iarray inp, double scale[2],
+			      double offset[2], flag magnitude)
+/*  [SUMMARY] Scale and offset an Intelligent Array.
+    [PURPOSE] This routine will perform a scale and offset on every element in
+    an "Intelligent Array" (output = input * scale + offset).
+    <out> The output Intelligent Array.
+    <inp> The input Intelligent Array.
+    [NOTE] The input and output arrays MUST be the same size (though not
     necessarily the same type).
-    The complex scale value must be pointed to by  scale  .
-    The complex offset value must be pointed to by  offset  .
-    When converting from a complex to a real array, the magnitude of the
-    complex data (after scale and offset have been applied) is used if
-    magnitude  is TRUE, else the real component of the complex scaled data is
-    used.
-    When converting from a real to a complex array, the imaginary component of
-    the output array is unaffected (NOTE: it is NOT set to 0).
-    The routine returns TRUE on success, else it returns FALSE.
+    <scale> The complex scale value.
+    <offset> The complex offset value.
+    <magnitude> If TRUE and converting from a complex to a real array, the
+    magnitude of the complex data (after scale and offset have been applied) is
+    used, else the real component of the complex scaled data is used.
+    [NOTE] When converting from a real to a complex array, the imaginary
+    component of the output array is set to 0.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     flag contiguous = TRUE;
@@ -1956,6 +2035,31 @@ flag iarray_scale_and_offset (iarray out, iarray inp, double *scale,
 			"Input array has: %u dimensions whilst output array has: %u\n",
 			iarray_num_dim (inp), iarray_num_dim (out) );
 	return (FALSE);
+    }
+    /*  Add a tiny offset if output type is integer, to get around rounding
+	errors which can cause unsedired truncation to the next lower integer.
+	*/
+    switch ( iarray_type (out) )
+    {
+      case K_BYTE:
+      case K_INT:
+      case K_SHORT:
+      case K_LONG:
+      case K_UBYTE:
+      case K_UINT:
+      case K_USHORT:
+      case K_ULONG:
+      case K_BCOMPLEX:
+      case K_ICOMPLEX:
+      case K_SCOMPLEX:
+      case K_LCOMPLEX:
+      case K_UBCOMPLEX:
+      case K_UICOMPLEX:
+      case K_USCOMPLEX:
+      case K_ULCOMPLEX:
+	offset[0] += 1e-6;
+	offset[1] += 1e-6;
+	break;
     }
     for (dim_count = 0; dim_count < num_dim; ++dim_count)
     {
@@ -2033,8 +2137,7 @@ flag iarray_scale_and_offset (iarray out, iarray inp, double *scale,
 		    ptr[0] = tmp[0] + offset[0];
 		    ptr[1] = tmp[1] + offset[1];
 		}
-		if (!ds_element_is_complex ( iarray_type (out) )
-		    && magnitude)
+		if (!ds_element_is_complex ( iarray_type (out) ) && magnitude)
 		{
 		    /*  Complex to real conversion  */
 		    for (elem_count = 0, ptr = buffer;
@@ -2112,24 +2215,239 @@ flag iarray_scale_and_offset (iarray out, iarray inp, double *scale,
     return (TRUE);
 }   /*  End Function iarray_scale_and_offset  */
 
+/*EXPERIMENTAL_FUNCTION*/
+flag iarray_clip_scale_and_offset (iarray out, iarray inp, double scale,
+				   double offset,
+				   double lower_clip, double upper_clip,
+				   flag blank)
+/*  [SUMMARY] Clip, scale and offset an Intelligent Array.
+    [PURPOSE] This routine will perform a clipping operation followed by a
+    scale and offset on every element in  an "Intelligent Array". The operation
+    following the clipping is: (output = input * scale + offset).
+    <out> The output Intelligent Array.
+    <inp> The input Intelligent Array.
+    [NOTE] The input and output arrays MUST be the same size (though not
+    necessarily the same type). Both arrays must be real.
+    <scale> The scale value.
+    <offset> The offset value.
+    <lower_clip> The input data is clipped so that no value is below this.
+    <upper_clip> The input data is clipped so that no value is above this.
+    <blank> If TRUE, clipped values are blanked.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    flag contiguous = TRUE;
+    unsigned int elem_count;
+    unsigned int inp_stride;
+    unsigned int out_stride;
+    unsigned int dim_count;
+    unsigned int num_dim;
+    double toobig = TOOBIG;
+    double value;
+    double data[2];
+    char *inp_data;
+    char *out_data;
+    unsigned long *coordinates;
+    double *buffer = NULL;
+    double *ptr;
+    static char function_name[] = "iarray_clip_scale_and_offset";
+
+    VERIFY_IARRAY (inp);
+    VERIFY_IARRAY (out);
+    /*  Test array sizes  */
+    if ( ( num_dim = iarray_num_dim (inp) ) != iarray_num_dim (out) )
+    {
+	(void) fprintf ( stderr,
+			"Input array has: %u dimensions whilst output array has: %u\n",
+			iarray_num_dim (inp), iarray_num_dim (out) );
+	return (FALSE);
+    }
+    /*  Add a tiny offset if output type is integer, to get around rounding
+	errors which can cause unsedired truncation to the next lower integer.
+	*/
+    if ( ds_element_is_complex ( iarray_type (inp) ) )
+    {
+	(void) fprintf (stderr, "Input array is complex\n");
+	return (FALSE);
+    }
+    if ( ds_element_is_complex ( iarray_type (out) ) )
+    {
+	(void) fprintf (stderr, "Input array is complex\n");
+	return (FALSE);
+    }
+    switch ( iarray_type (out) )
+    {
+      case K_BYTE:
+      case K_INT:
+      case K_SHORT:
+      case K_LONG:
+      case K_UBYTE:
+      case K_UINT:
+      case K_USHORT:
+      case K_ULONG:
+	offset += 1e-6;
+	break;
+    }
+    for (dim_count = 0; dim_count < num_dim; ++dim_count)
+    {
+	if (inp->lengths[dim_count] != out->lengths[dim_count])
+	{
+	    (void) fprintf (stderr, "Input dimension: %u has length: %lu\n",
+			    dim_count, inp->lengths[dim_count]);
+	    (void) fprintf (stderr, "Output dimension: %u has length: %lu\n",
+			    dim_count, out->lengths[dim_count]);
+	    (void) fprintf (stderr, "Must be the same\n");
+	    return (FALSE);
+	}
+    }
+    inp_stride = inp->offsets[num_dim -1][1] - inp->offsets[num_dim -1][0];
+    out_stride = out->offsets[num_dim -1][1] - out->offsets[num_dim -1][0];
+    /*  Check if lower dimensions are contiguous  */
+    if (!inp->contiguous[num_dim - 1])
+    {
+	/*  Input array not contiguous  */
+	contiguous = FALSE;
+    }
+    if (!out->contiguous[num_dim - 1])
+    {
+	/*  Output array not contiguous  */
+	contiguous = FALSE;
+    }
+    /*  Set up co-ordinate counters  */
+    if ( ( coordinates = (unsigned long *) m_alloc (sizeof *coordinates *
+						    num_dim) )
+	== NULL )
+    {
+	m_error_notify (function_name, "array of co-ordinate counters");
+	return (FALSE);
+    }
+    m_clear ( (char *) coordinates, sizeof *coordinates * num_dim);
+    if (contiguous)
+    {
+	/*  Lower dimensions are contiguous  */
+	/*  Allocate conversion copy buffer  */
+	if ( ( buffer = (double *)
+	      m_alloc (sizeof *buffer * 2 * inp->lengths[num_dim - 1]) )
+	    == NULL )
+	{
+	    m_error_notify (function_name, "conversion copy buffer");
+	    m_free ( (char *) coordinates );
+	    return (FALSE);
+	}
+    }
+    /*  Iterate through the arrays  */
+    inp_data = iarray_get_next_element (inp, coordinates, 0);
+    out_data = iarray_get_next_element (out, coordinates, 0);
+    while (inp_data != NULL)
+    {
+	/*  More data to process  */
+	if (contiguous)
+	{
+	    /*  Lower dimensions are contiguous  */
+	    if ( !ds_get_elements (inp_data, iarray_type (inp),
+				   inp_stride, buffer, NULL,
+				   inp->lengths[num_dim - 1]) )
+	    {
+		m_free ( (char *) coordinates );
+		m_free ( (char *) buffer );
+		return (FALSE);
+	    }
+	    for (elem_count = 0, ptr = buffer;
+		 elem_count < inp->lengths[num_dim - 1];
+		 ++elem_count, ptr += 2)
+	    {
+		if ( (value = ptr[0]) >= toobig ) continue;
+		if (value < lower_clip)
+		{
+		    if (blank)
+		    {
+			ptr[0] = toobig;
+			continue;
+		    }
+		    else value = lower_clip;
+		}
+		else if (value > upper_clip)
+		{
+		    if (blank)
+		    {
+			ptr[0] = toobig;
+			continue;
+		    }
+		    else value = upper_clip;
+		}
+		ptr[0] = value * scale + offset;
+	    }
+	    if ( !ds_put_elements (out_data, iarray_type (out),
+				   out_stride, buffer,
+				   inp->lengths[num_dim - 1]) )
+	    {
+		m_free ( (char *) coordinates );
+		m_free ( (char *) buffer );
+		return (FALSE);
+	    }
+	    inp_data = iarray_get_next_element (inp, coordinates,
+						inp->lengths[num_dim - 1]);
+	    out_data = iarray_get_next_element (out, coordinates, 0);
+	}
+	else
+	{
+	    /*  Data is not contiguous: copy one element at a time  */
+	    if ( !ds_get_element (inp_data, iarray_type (inp), data, NULL) )
+	    {
+		m_free ( (char *) coordinates );
+		return (FALSE);
+	    }
+	    if ( (value = data[0]) < toobig )
+	    {
+		if (value < lower_clip)
+		{
+		    if (blank) value = toobig;
+		    else value = lower_clip;
+		}
+		else if (value > upper_clip)
+		{
+		    if (blank) value = toobig;
+		    else value = upper_clip;
+		}
+		if (value >= toobig) data[0] = toobig;
+		else data[0] = value * scale + offset;
+	    }
+	    if (ds_put_element (out_data, iarray_type (out), data) == NULL)
+	    {
+		m_free ( (char *) coordinates );
+		return (FALSE);
+	    }
+	    inp_data = iarray_get_next_element (inp, coordinates, 1);
+	    out_data = iarray_get_next_element (out, coordinates, 0);
+	}
+    }
+    m_free ( (char *) coordinates );
+    if (buffer != NULL)
+    {
+	m_free ( (char *) buffer );
+    }
+    return (TRUE);
+}   /*  End Function iarray_clip_scale_and_offset  */
+
 /*PUBLIC_FUNCTION*/
-flag iarray_add_and_scale (iarray out, iarray inp1, iarray inp2, double *scale,
-			   flag magnitude)
-/*  This routine will add two "Intelligent Array" to each other and scales the
-    result. The sizes of the two input arrays and the output must be identical.
-    The output array must be given by  out  .
-    The first input array must be given by  inp1  .
-    The second input array must be given by  inp2  .
-    The complex scale value must be pointed to by  scale  .
+flag iarray_add_and_scale (iarray out, iarray inp1, iarray inp2,
+			   double scale[2], flag magnitude)
+/*  [SUMMARY] Add Intelligent Arrays and scale.
+    [PURPOSE] This routine will add two "Intelligent Array" to each other and
+    scales the result. The sizes of the two input arrays and the output must be
+    identical.
     The routine performs the following computation:
         OUT = INP1 + INP2 * scale
     The routine will automatically perform type conversions if necessary.
-    If the value of  magnitude  is  TRUE  then when converting from a complex
-    to a real data type, the magnitude is taken, else the real component is
-    copied.
-    Note that when converting from a real to a complex data type, the imaginary
+    <out> The output Intelligent Array.
+    <inp1> The first input Intelligent Array.
+    <inp2> The second input Intelligent Array.
+    <scale> The complex scale value.
+    <magnitude> If TRUE then when converting from a complex to a real data
+    type, the magnitude is taken, else the real component is copied.
+    [NOTE] When converting from a real to a complex data type, the imaginary
     component is set to zero.
-    The routine returns TRUE on success, else it returns FALSE.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     flag contiguous = TRUE;
@@ -2345,24 +2663,24 @@ flag iarray_add_and_scale (iarray out, iarray inp1, iarray inp2, double *scale,
 }   /*  End Function iarray_add_and_scale  */
 
 /*PUBLIC_FUNCTION*/
-flag iarray_sub_and_scale (iarray out, iarray inp1, iarray inp2, double *scale,
-			   flag magnitude)
-/*  This routine will subtract two "Intelligent Array" from each other and
-    scales the result. The sizes of the two input arrays and the output must be
-    identical.
-    The output array must be given by  out  .
-    The first input array must be given by  inp1  .
-    The second input array must be given by  inp2  .
-    The complex scale value must be pointed to by  scale  .
+flag iarray_sub_and_scale (iarray out, iarray inp1, iarray inp2,
+			   double scale[2], flag magnitude)
+/*  [SUMMARY] Subtract Intelligent Arrays and scale.
+    [PURPOSE] This routine will subtract two "Intelligent Array" from each
+    other and scales the result. The sizes of the two input arrays and the
+    output must be identical.
     The routine performs the following computation:
         OUT = INP1 - INP2 * scale
     The routine will automatically perform type conversions if necessary.
-    If the value of  magnitude  is  TRUE  then when converting from a complex
-    to a real data type, the magnitude is taken, else the real component is
-    copied.
-    Note that when converting from a real to a complex data type, the imaginary
+    <out> The output Intelligent Array.
+    <inp1> The first input Intelligent Array.
+    <inp2> The second input Intelligent Array.
+    <scale> The complex scale value.
+    <magnitude> If TRUE then when converting from a complex to a real data
+    type, the magnitude is taken, else the real component is copied.
+    [NOTE] When converting from a real to a complex data type, the imaginary
     component is set to zero.
-    The routine returns TRUE on success, else it returns FALSE.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     flag contiguous = TRUE;
@@ -2578,12 +2896,13 @@ flag iarray_sub_and_scale (iarray out, iarray inp1, iarray inp2, double *scale,
 }   /*  End Function iarray_sub_and_scale  */
 
 /*PUBLIC_FUNCTION*/
-char *iarray_dim_name (iarray array, unsigned int index)
-/*  This routine will get the name of a specified dimension in a simple,
-    n-dimensional array.
-    The array must be given by  array  .
-    The index of the dimension must be given by  index  .
-    The routine returns a pointer to the name of the specified dimension.
+CONST char *iarray_dim_name (iarray array, unsigned int index)
+/*  [SUMMARY] Get dimension name in an Intelligent Array.
+    [PURPOSE] This routine will get the name of a specified dimension in a
+    simple, n-dimensional array.
+    <array> The Intelligent Array.
+    <index> The index of the dimension.
+    [RETURNS] A pointer to the name of the specified dimension.
 */
 {
     array_desc *arr_desc;
@@ -2603,12 +2922,13 @@ char *iarray_dim_name (iarray array, unsigned int index)
 
 /*PUBLIC_FUNCTION*/
 void iarray_remap_torus (iarray array, unsigned int boundary_width)
-/*  This routine will remap an N-dimensional "Intelligent Array" to a pseudo
-    toroidal array.
-    The array must be given by  array  .
-    The width of the array boundary within which the array appears to be
-    toroidal must be given by  boundary_width  .
-    The routine returns nothing.
+/*  [SUMMARY] Remap Intelligent Array into a torus.
+    [PURPOSE] This routine will remap an N-dimensional "Intelligent Array" to a
+    pseudo-toroidal array.
+    <array> The Intelligent Array.
+    <boundary_width> The width of the array boundary within which the array
+    appears to be toroidal.
+    [RETURNS] Nothing.
 */
 {
     unsigned int dim_count;
@@ -2668,15 +2988,14 @@ void iarray_remap_torus (iarray array, unsigned int boundary_width)
 }   /*  End Function iarray_remap_torus  */
 
 /*PUBLIC_FUNCTION*/
-void iarray_set_world_coords (iarray array, unsigned int index, double minimum,
-			      double maximum)
-/*  This routine will set the world co-ordinates of a specified dimension in a
-    simple, n-dimensional array.
-    The array must be given by  array  .
-    The index of the dimension must be given by  index  .
-    The minimum real world co-ordinate must be given by  minimum  .
-    The maximum real world co-ordinate must be given by  maximum  .
-    The routine returns nothing.
+void iarray_set_world_coords (iarray array, unsigned int index, double first,
+			      double last)
+/*  [SUMMARY] Set the world co-ordinates of an Intelligent Array dimension.
+    <array> The Intelligent Array.
+    <index> The index of the dimension.
+    <first> The first real world co-ordinate.
+    <last> The last real world co-ordinate.
+    [RETURNS] Nothing.
 */
 {
     array_desc *arr_desc;
@@ -2691,29 +3010,30 @@ void iarray_set_world_coords (iarray array, unsigned int index, double minimum,
 			index, iarray_num_dim (array) );
 	a_prog_bug (function_name);
     }
-    if (minimum >= maximum)
-    {
-	(void) fprintf (stderr, "Minimum: %e  is not less than maximum: %e\n",
-			minimum, maximum);
-	a_prog_bug (function_name);
-    }
     index = array->orig_dim_indices[index];
-    arr_desc->dimensions[index]->minimum = minimum;
-    arr_desc->dimensions[index]->maximum = maximum;
+    arr_desc->dimensions[index]->first_coord = first;
+    arr_desc->dimensions[index]->last_coord = last;
+    if (first < last)
+    {
+	arr_desc->dimensions[index]->minimum = first;
+	arr_desc->dimensions[index]->maximum = last;
+    }
+    else
+    {
+	arr_desc->dimensions[index]->minimum = last;
+	arr_desc->dimensions[index]->maximum = first;
+    }
 }   /*  End Function iarray_set_world_coords  */
 
 /*PUBLIC_FUNCTION*/
 void iarray_get_world_coords (iarray array, unsigned int index,
-			      double *minimum, double *maximum)
-/*  This routine will get the world co-ordinates of a specified dimension in a
-    simple, n-dimensional array.
-    The array must be given by  array  .
-    The index of the dimension must be given by  index  .
-    The minimum real world co-ordinate will be written to the storage pointed
-    to by  minimum  .
-    The maximum real world co-ordinate will be written to the storage pointed
-    to by  maximum  .
-    The routine returns nothing.
+			      double *first, double *last)
+/*  [SUMMARY] Get the world co-ordinates of an Intelligent Array dimension.
+    <array> The Intelligent Array.
+    <index> The index of the dimension.
+    <first> The first real world co-ordinate is written here.
+    <last> The last real world co-ordinate is written here.
+    [RETURNS] Nothing.
 */
 {
     array_desc *arr_desc;
@@ -2728,23 +3048,22 @@ void iarray_get_world_coords (iarray array, unsigned int index,
 			index, iarray_num_dim (array) );
 	a_prog_bug (function_name);
     }
-    if ( (minimum == NULL) || (maximum == NULL) )
+    if ( (first == NULL) || (last == NULL) )
     {
 	(void) fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     index = array->orig_dim_indices[index];
-    *minimum = arr_desc->dimensions[index]->minimum;
-    *maximum = arr_desc->dimensions[index]->maximum;
+    *first = arr_desc->dimensions[index]->first_coord;
+    *last = arr_desc->dimensions[index]->last_coord;
 }   /*  End Function iarray_get_world_coords  */
 
 /*PUBLIC_FUNCTION*/
 dim_desc *iarray_get_dim_desc (iarray array, unsigned int index)
-/*  This routine will get the dimension descriptor of a specified dimension in
-    a simple, n-dimensional array.
-    The array must be given by  array  .
-    The index of the dimension must be given by  index  .
-    The routine returns nothing.
+/*  [SUMMARY] Get a dimension descriptor from an Intelligent Array.
+    <array> The Intelligent Array.
+    <index> The index of the dimension.
+    [RETURNS] A pointer to the dimension descriptor.
 */
 {
     array_desc *arr_desc;
@@ -2769,13 +3088,11 @@ flag iarray_compute_histogram (iarray array, unsigned int conv_type,
 			       unsigned long *histogram_array,
 			       unsigned long *histogram_peak,
 			       unsigned long *histogram_mode)
-/*  [PURPOSE] This routine will compute a histogram of an "Intelligent Array".
+/*  [SUMMARY] Compute a histogram of an "Intelligent Array".
     <array> The array.
-    <conv_type> The conversion type to use for complex numbers. Legal value for
-    this include:
-        KIMAGE_COMPLEX_CONV_REAL        KIMAGE_COMPLEX_CONV_IMAG
-        KIMAGE_COMPLEX_CONV_ABS         KIMAGE_COMPLEX_CONV_SQUARE_ABS
-	KIMAGE_COMPLEX_CONV_PHASE       KIMAGE_COMPLEX_CONV_CONT_PHASE
+    <conv_type> The conversion type to use for complex numbers. See
+    [<DS_COMPLEX_CONVERSIONS>] for legal values. CONV_CtoR_ENVELOPE is not
+    legal.
     <min> Data values below this will be ignored.
     <max> Data values above this will be ignored.
     <num_bins> The number of histogram bins.
@@ -2790,6 +3107,7 @@ flag iarray_compute_histogram (iarray array, unsigned int conv_type,
     [RETURNS] TRUE on success, else FALSE.
 */
 {
+    flag full_array;
     histogram_finfo finfo;
     uaddr info_size;
     unsigned int num_dim;
@@ -2797,6 +3115,7 @@ flag iarray_compute_histogram (iarray array, unsigned int conv_type,
     unsigned int num_threads, thread_count;
     unsigned long hval, hpeak, hmode;
     char *info;
+    array_desc *arr_desc;
     unsigned long *harray_ptr;
     extern KThreadPool pool;
     static char function_name[] = "iarray_compute_histogram";
@@ -2809,7 +3128,21 @@ flag iarray_compute_histogram (iarray array, unsigned int conv_type,
 	a_prog_bug (function_name);
     }
     num_dim = iarray_num_dim (array);
-    if (num_dim == 1)
+    full_array = iarray_is_full_array (array);
+    initialise_thread_pool ();
+    num_threads = mt_num_threads (pool);
+    if ( full_array && (num_threads < 2) )
+    {
+	/*  Can do this in one contiguous block  */
+	arr_desc = array->arr_desc;
+	return ( ds_find_single_histogram
+		 (array->data, iarray_type (array), conv_type,
+		  ds_get_array_size (arr_desc), NULL,
+		  ds_get_packet_size (arr_desc->packet), 
+		  min, max, num_bins,
+		  histogram_array, histogram_peak, histogram_mode) );
+    }
+    if ( !full_array && (num_dim == 1) )
     {
 	/*  Simple 1-dimensional process  */
 	return ( ds_find_single_histogram (array->data, iarray_type (array),
@@ -2819,9 +3152,7 @@ flag iarray_compute_histogram (iarray array, unsigned int conv_type,
 					   histogram_array, histogram_peak,
 					   histogram_mode) );
     }
-    initialise_thread_pool ();
-    num_threads = mt_num_threads (pool);
-    if ( (num_dim == 2) && (num_threads < 2) )
+    if ( !full_array && (num_dim == 2) && (num_threads < 2) )
     {
 	/*  Simple unthreaded 2-dimensional process  */
 	return ( ds_find_2D_histogram (array->data, iarray_type (array),
@@ -2841,19 +3172,29 @@ flag iarray_compute_histogram (iarray array, unsigned int conv_type,
     finfo.min = min;
     finfo.max = max;
     finfo.num_bins = num_bins;
-    if ( !generic_process (array, histogram_job_func, 2,
-			   &finfo) ) return (FALSE);
+    if (full_array)
+    {
+	if ( !contiguous_process (array, histogram_contiguous_job_func,
+				  &finfo) ) return (FALSE);
+    }
+    else
+    {
+	if ( !scatter_process (array, histogram_scatter_job_func, 2,
+			       &finfo) ) return (FALSE);
+    }
     hpeak = *histogram_peak;
     hmode = *histogram_mode;
     /*  Collect data from threads' private data  */
     for (bin_count = 0; bin_count < num_bins; ++bin_count)
     {
+	hval = 0;  /*  Initialised to keep compiler happy  */
 	for (thread_count = 0; thread_count < num_threads; ++thread_count)
 	{
 	    harray_ptr = (unsigned long *) (info + thread_count * info_size);
 	    hval = histogram_array[bin_count] + harray_ptr[bin_count];
 	    histogram_array[bin_count] = hval;
 	}
+	/*  hval contains the running total across threads for this bin  */
 	if (hval > hpeak)
 	{
 	    hpeak = hval;
@@ -3141,6 +3482,28 @@ static unsigned int iarray_get_max_contiguous (iarray array)
     return (max_contig);
 }   /*  End Function iarray_get_max_contiguous  */
 
+static flag iarray_is_full_array (iarray array)
+/*  [SUMMARY] Test if iarray is the same size as the unlerlying array.
+    [PURPOSE] This routine will test if an Intelligent Array is the same size
+    and dimensionality as the underlying array descriptor.
+    <array> The Intelligent Array.
+    [RETURNS] TRUE if the Intelligent Array is the same size, else FALSE.
+*/
+{
+    unsigned int count;
+    static char function_name[] = "iarray_is_full_array";
+
+    VERIFY_IARRAY (array);
+    if (iarray_num_dim (array) != array->arr_desc->num_dimensions)
+	return (FALSE);
+    for (count = 0; count < iarray_num_dim (array); ++count)
+    {
+	if (array->lengths[count] !=
+	    array->arr_desc->dimensions[count]->length) return (FALSE);
+    }
+    return (TRUE);
+}   /*  End Function iarray_is_full_array  */
+
 static flag mem_debug_required ()
 /*  This routine will determine if debugging information is required.
     The routine returns TRUE if debugging information is required,
@@ -3179,6 +3542,9 @@ static void initialise_thread_pool ()
     }
 }   /*  End Function initialise_thread_pool  */
 
+
+/*  Threaded support using offset arrays  */
+
 typedef struct
 {
     KThreadPool pool;
@@ -3191,9 +3557,9 @@ typedef struct
 		  uaddr *lengths, uaddr **offsets,
 		  unsigned int num_dim, void *f_info, void *thread_info);
     flag failed;
-} generic_process_info_type;
+} scatter_process_info_type;
 
-static flag generic_process (iarray array,
+static flag scatter_process (iarray array,
 			     flag (*func) (KThreadPool pool, iarray array,
 					   char *data,
 					   uaddr *lengths, uaddr **offsets,
@@ -3228,15 +3594,15 @@ static flag generic_process (iarray array,
     [RETURNS] TRUE on success, else FALSE.
 */
 {
-    generic_process_info_type info_struct;
-    unsigned int dim_count, num_dim, thread_count;
+    scatter_process_info_type info_struct;
+    unsigned int dim_count, num_dim;
     uaddr increment;
     uaddr *lengths, **offsets;
     char *data;
     void *thread_info;
     unsigned long *coordinates;
     extern KThreadPool pool;
-    static char function_name[] = "__iarray_generic_process";
+    static char function_name[] = "__iarray_scatter_process";
 
     if (pool == NULL)
     {
@@ -3304,7 +3670,7 @@ static flag generic_process (iarray array,
     info_struct.failed = FALSE;
     while (data != NULL)
     {
-	mt_launch_job (pool, job_func, &info_struct, data, NULL, NULL);
+	mt_launch_job (pool, scatter_job_func, &info_struct, data, NULL, NULL);
 	data = iarray_get_next_element (array, coordinates, increment);
 	if (info_struct.failed)
 	{
@@ -3316,17 +3682,18 @@ static flag generic_process (iarray array,
     m_free ( (char *) coordinates );
     mt_wait_for_all_jobs (pool);
     return (info_struct.failed ? FALSE : TRUE);
-}   /*  End Function generic_process  */
+}   /*  End Function scatter_process  */
 
-static void job_func (void *pool_info,
-		      void *call_info1, void *call_info2,
-		      void *call_info3, void *call_info4, void *thread_info)
+static void scatter_job_func (void *pool_info,
+			      void *call_info1, void *call_info2,
+			      void *call_info3, void *call_info4,
+			      void *thread_info)
 /*  [PURPOSE] This routine performs a job within a thread of execution.
     <pool_info> The pool information pointer.
     [RETURNS] Nothing.
 */
 {
-    generic_process_info_type *info = (generic_process_info_type *) call_info1;
+    scatter_process_info_type *info = (scatter_process_info_type *) call_info1;
 
     if ( ! (*info->func) (info->pool, info->array, (char *) call_info2,
 			  info->lengths, info->offsets, info->num_dim,
@@ -3334,15 +3701,15 @@ static void job_func (void *pool_info,
     {
 	info->failed = TRUE;
     }
-}   /*  End Function job_func  */
+}   /*  End Function scatter_job_func  */
 
 
-/*  Private functions to perform some job in parallel  */
+/*  Private functions to perform some job in parallel using offset arrays  */
 
-static flag min_max_job_func (KThreadPool pool, iarray array, char *data,
-			      uaddr *lengths, uaddr **offsets,
-			      unsigned int num_dim, void *f_info,
-			      void *thread_info)
+static flag min_max_scatter_job_func (KThreadPool pool, iarray array,
+				      char *data, uaddr *lengths,
+				      uaddr **offsets, unsigned int num_dim,
+				      void *f_info, void *thread_info)
 /*  [PURPOSE] This routine will do some work to compute the minimum and maximum
     of an array.
     <pool> The thread pool the job is running in. If NULL the job is running
@@ -3357,10 +3724,8 @@ static flag min_max_job_func (KThreadPool pool, iarray array, char *data,
     [RETURNS] TRUE on success, else FALSE.
 */
 {
-    double min = TOOBIG;
-    double max = -TOOBIG;
     min_max_thread_info *info = (min_max_thread_info *) thread_info;
-    static char function_name[] = "__iarray_min_max_job_func";
+    static char function_name[] = "__iarray_min_max_scatter_job_func";
 
     if (num_dim == 1)
     {
@@ -3378,12 +3743,12 @@ static flag min_max_job_func (KThreadPool pool, iarray array, char *data,
     (void) fprintf (stderr, "num_dim: %u illegal\n", num_dim);
     a_prog_bug (function_name);
     return (FALSE);
-}   /*  End Function min_max_job_func  */
+}   /*  End Function min_max_scatter_job_func  */
 
-static flag histogram_job_func (KThreadPool pool, iarray array, char *data,
-				uaddr *lengths, uaddr **offsets,
-				unsigned int num_dim, void *f_info,
-				void *thread_info)
+static flag histogram_scatter_job_func (KThreadPool pool, iarray array,
+					char *data, uaddr *lengths,
+					uaddr **offsets, unsigned int num_dim,
+					void *f_info, void *thread_info)
 /*  [PURPOSE] This routine will do some work to compute the histogram of an
     array.
     <pool> The thread pool the job is running in. If NULL the job is running
@@ -3402,7 +3767,7 @@ static flag histogram_job_func (KThreadPool pool, iarray array, char *data,
     unsigned long hmode = 0;
     histogram_finfo *info = (histogram_finfo *) f_info;
     unsigned long *histogram_array = (unsigned long *) thread_info;
-    static char function_name[] = "__iarray_histogram_job_func";
+    static char function_name[] = "__iarray_histogram_scatter_job_func";
 
     if (num_dim == 1)
     {
@@ -3424,12 +3789,184 @@ static flag histogram_job_func (KThreadPool pool, iarray array, char *data,
     (void) fprintf (stderr, "num_dim: %u illegal\n", num_dim);
     a_prog_bug (function_name);
     return (FALSE);
-}   /*  End Function histogram_job_func  */
+}   /*  End Function histogram_scatter_job_func  */
 
-static flag ds_find_2D_histogram (char *data, unsigned int elem_type,
+
+/*  Threaded support for contiguous data  */
+
+typedef struct
+{
+    KThreadPool pool;
+    iarray array;
+    void *f_info;
+    uaddr stride;
+    flag (*func) (KThreadPool pool, iarray array, char *data, uaddr stride,
+		  unsigned int num_values, void *f_info, void *thread_info);
+    flag failed;
+} contiguous_process_info_type;
+
+static flag contiguous_process (iarray array,
+				flag (*func) (KThreadPool pool, iarray array,
+					      char *data, uaddr stride,
+					      unsigned int num_values,
+					      void *f_info, void *thread_info),
+				void *f_info)
+/*  [PURPOSE] This routine will perform a generic processing task on an
+    Intelligent Array. The task is threaded to make maximum use of multiple
+    CPUs. This routine can only be used if the processing tasks are seperable.
+    <array> The array.
+    <func> The routine to call when some work needs to be done. The interface
+    to this routine is as follows:
+    [<pre>]
+    flag func (KThreadPool pool, iarray array, char *data, uaddr stride,
+               unsigned int num_values, void *f_info, void *thread_info)
+    *   [PURPOSE] This routine performs a processing task.
+        <pool> The thread pool the job is running in. If NULL the job is
+	running single-threaded.
+        <array> The array.
+        <data> A pointer to the section of data to process.
+	<stride> The stride in bytes between consecutive data values.
+	<num_values> The number of values to process.
+	<f_info> The arbitrary function information pointer.
+	<thread_info> The arbitrary thread information pointer.
+	[RETURNS] TRUE on success, else FALSE.
+    *
+    [</pre>]
+    <f_info> The arbitrary function information pointer.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    contiguous_process_info_type info_struct;
+    uaddr num_values, block_size;
+    uaddr stride;
+    char *data;
+    void *thread_info;
+    extern KThreadPool pool;
+    static char function_name[] = "__iarray_contiguous_process";
+
+    if (pool == NULL)
+    {
+	(void) fprintf (stderr, "Thread pool not yet initialised\n");
+	a_prog_bug (function_name);
+    }
+    thread_info = mt_get_thread_info (pool);
+    data = array->data;
+    stride = ds_get_packet_size (array->arr_desc->packet);
+    num_values = ds_get_array_size (array->arr_desc);
+    if (mt_num_threads (pool) < 2)
+    {
+	/*  No threads: do this the simple way  */
+	return ( (*func) (NULL, array, data, stride, num_values,
+			  f_info, thread_info) );
+    }
+    /*  Process blocks  */
+    info_struct.pool = pool;
+    info_struct.array = array;
+    info_struct.stride = stride;
+    info_struct.f_info = f_info;
+    info_struct.func = func;
+    info_struct.failed = FALSE;
+    block_size = num_values / mt_num_threads (pool);
+    for (; num_values > 0;
+	 num_values -= block_size, data += stride * block_size)
+    {
+	if (block_size > num_values) block_size = num_values;
+	mt_launch_job (pool, contiguous_job_func, &info_struct, data,
+		       (void *) block_size, NULL);
+	if (info_struct.failed)
+	{
+	    mt_wait_for_all_jobs (pool);
+	    return (FALSE);
+	}
+    }
+    mt_wait_for_all_jobs (pool);
+    return (info_struct.failed ? FALSE : TRUE);
+}   /*  End Function contiguous_process  */
+
+static void contiguous_job_func (void *pool_info,
+				 void *call_info1, void *call_info2,
+				 void *call_info3, void *call_info4,
+				 void *thread_info)
+/*  [PURPOSE] This routine performs a job within a thread of execution.
+    <pool_info> The pool information pointer.
+    [RETURNS] Nothing.
+*/
+{
+    contiguous_process_info_type *info = (contiguous_process_info_type *) call_info1;
+
+    if ( ! (*info->func) (info->pool, info->array, (char *) call_info2,
+			  info->stride, (uaddr) call_info3,
+			  info->f_info, thread_info) )
+    {
+	info->failed = TRUE;
+    }
+}   /*  End Function contiguous_job_func  */
+
+/*  Private functions to perform some job in parallel with contiguous data  */
+
+
+static flag min_max_contiguous_job_func (KThreadPool pool, iarray array,
+					 char *data, uaddr stride,
+					 unsigned int num_values,
+					 void *f_info, void *thread_info)
+/*  [PURPOSE] This routine performs a processing task.
+    <pool> The thread pool the job is running in. If NULL the job is
+    running single-threaded.
+    <array> The array.
+    <data> A pointer to the section of data to process.
+    <stride> The stride in bytes between consecutive data values.
+    <num_values> The number of values to process.
+    <f_info> The arbitrary function information pointer.
+    <thread_info> The arbitrary thread information pointer.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    min_max_thread_info *info = (min_max_thread_info *) thread_info;
+    array_desc *arr_desc;
+
+    arr_desc = array->arr_desc;
+    return ( ds_find_contiguous_extremes
+	     (data, num_values, stride, iarray_type (array),
+	      info->conv_type, &info->min, &info->max) );
+}   /*  End Function min_max_contiguous_job_func  */
+
+static flag histogram_contiguous_job_func (KThreadPool pool, iarray array,
+					   char *data, uaddr stride,
+					   unsigned int num_values,
+					   void *f_info, void *thread_info)
+/*  [PURPOSE] This routine performs a processing task.
+    <pool> The thread pool the job is running in. If NULL the job is
+    running single-threaded.
+    <array> The array.
+    <data> A pointer to the section of data to process.
+    <stride> The stride in bytes between consecutive data values.
+    <num_values> The number of values to process.
+    <f_info> The arbitrary function information pointer.
+    <thread_info> The arbitrary thread information pointer.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    unsigned long hpeak = 0;
+    unsigned long hmode = 0;
+    histogram_finfo *info = (histogram_finfo *) f_info;
+    unsigned long *histogram_array = (unsigned long *) thread_info;
+    array_desc *arr_desc;
+
+    arr_desc = array->arr_desc;
+    return ( ds_find_single_histogram (data, iarray_type (array),
+				       info->conv_type, num_values,
+				       NULL, stride,
+				       info->min, info->max, info->num_bins,
+				       histogram_array, &hpeak, &hmode) );
+}   /*  End Function histogram_contiguous_job_func  */
+
+
+/*  Miscellaneuous support routines  */
+
+static flag ds_find_2D_histogram (CONST char *data, unsigned int elem_type,
 				  unsigned int conv_type,
-				  unsigned int length1, uaddr *offsets1,
-				  unsigned int length2, uaddr *offsets2,
+				  unsigned int length1, CONST uaddr *offsets1,
+				  unsigned int length2, CONST uaddr *offsets2,
 				  double min, double max,
 				  unsigned long num_bins,
 				  unsigned long *histogram_array,

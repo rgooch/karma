@@ -1,0 +1,164 @@
+<html><head><title>Package: imw</title></head> 
+<body>
+<center><h1>The "imw" Package</h1></center>    These routines provide a means to convert from image data to raw images
+    suitable for low level graphics display. Although these routines are made
+    public, their use is NOT recommended. The <a href=viewimg.html#viewimg>viewimg</a> package is the
+    suggested means to manage image display.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=imw></a></table><h4>Functions</h4><table><tr><td><a href=imw.html#imw_to8_lossy>imw_to8_lossy</a></td><td>Convert generic image to 8 bit image, with resizing.
+</td></tr>
+<tr><td><a href=imw.html#imw_to8_oi>imw_to8_oi</a></td><td>Convert generic image to 8 bit image, preserving size.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=imw.html#IMW_PROTO_iscale_func>IMW_PROTO_iscale_func</a></td><td>Intensity scaling callback.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=imw_to8_lossy></a> flag
+ <b>imw_to8_lossy</b><i>    (unsigned char *out_image,
+		    iaddr out_hstride, iaddr out_vstride,
+		    int out_width, int out_height, CONST char *inp_image,
+		    CONST iaddr *inp_hoffsets, CONST iaddr *inp_voffsets,
+		    int inp_width, int inp_height,
+		    unsigned int inp_type, unsigned int conv_type,
+		    unsigned int num_pixels, CONST unsigned char *pixel_values,
+		    unsigned char blank_pixel, unsigned char min_sat_pixel,
+		    unsigned char max_sat_pixel,
+		    double i_min, double i_max,
+		    flag (*iscale_func) (), void *iscale_info)
+</i><br><p>    This routine will convert an image from one format to an 8 bit
+    image of pixels, permitting the input and output sizes to differ. If the
+    input image is effectively shrunk, the input data is subsampled. The output
+    image is flipped vertically relative to the input image.
+<p><b>Parameters:</b><ul><li><i>out_image :</i> 
+    The output image will be written here.
+<br><li><i>out_hstride :</i> 
+    The stride between successive horizontal pixels (in bytes).
+<br><li><i>out_vstride :</i> 
+    The stride between successive vertical pixels (in bytes).
+<br><li><i>out_width :</i> 
+    The width of the output image.
+<br><li><i>out_height :</i> 
+    The height of the output image.
+<br><li><i>inp_image :</i> 
+    The input image data.
+<br><li><i>inp_hoffsets :</i> 
+    The array of horizontal byte offsets.
+<br><li><i>inp_voffsets :</i> 
+    The array of vertical byte offsets.
+<br><li><i>inp_width :</i> 
+    The width of the input image.
+<br><li><i>inp_height :</i> 
+    The height of the input image.
+<br><li><i>inp_type :</i> 
+    The type of the input data.
+<br><li><i>conv_type :</i> 
+    The input conversion type (when the input is complex).
+<br><li><i>num_pixels :</i> 
+    The number of pixels in the pixel array.
+<br><li><i>pixel_values :</i> 
+    The array of pixel values.
+<br><li><i>blank_pixel :</i> 
+    The pixel value to be used when the intensity value is an
+    undefined value.
+<br><li><i>min_sat_pixel :</i> 
+    The pixel value to be used when the intensity value is
+    below the minimum value.
+<br><li><i>max_sat_pixel :</i> 
+    The pixel value to be used when the intensity value is
+    above the maximum value.
+<br><li><i>i_min :</i> 
+    The minimum intensity value.
+<br><li><i>i_max :</i> 
+    The maximum intensity value.
+<br><li><i>iscale_func :</i> 
+    The function to be called when non-linear intensity scaling
+    is required. If NULL, linear intensity scaling is used. The prototype
+    function is <a href=imw.html#IMW_PROTO_iscale_func>IMW_PROTO_iscale_func</a>.
+<br><li><i>iscale_info :</i> 
+    A pointer to arbitrary information for <em>iscale_func</em>.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe.
+<br><p><hr> <a name=imw_to8_oi></a> flag
+ <b>imw_to8_oi</b><i>    (unsigned char *out_image,
+		 iaddr out_hstride, iaddr out_vstride,
+		 int width, int height, CONST char *inp_image,
+		 CONST iaddr *inp_hoffsets, CONST iaddr *inp_voffsets,
+		 unsigned int inp_type, unsigned int conv_type,
+		 unsigned int num_pixels, CONST unsigned char *pixel_values,
+		 unsigned char blank_pixel,
+		 unsigned char min_sat_pixel, unsigned char max_sat_pixel,
+		 double i_min, double i_max,
+		 flag (*iscale_func) (), void *iscale_info)
+</i><br><p>    This routine will convert an image from one format to an 8 bit
+    image of pixels, maintaining the original image size. The output image is
+    flipped vertically relative to the input image.
+<p><b>Parameters:</b><ul><li><i>out_image :</i> 
+    The output image will be written here.
+<br><li><i>out_hstride :</i> 
+    The stride between successive horizontal pixels (in bytes).
+<br><li><i>out_vstride :</i> 
+    The stride between successive vertical pixels (in bytes).
+<br><li><i>width :</i> 
+    The width of the image.
+<br><li><i>height :</i> 
+    The height of the image.
+<br><li><i>inp_image :</i> 
+    The input image data.
+<br><li><i>inp_hoffsets :</i> 
+    The array of horizontal byte offsets.
+<br><li><i>inp_voffsets :</i> 
+    The array of vertical byte offsets.
+<br><li><i>inp_type :</i> 
+    The type of the input data.
+<br><li><i>conv_type :</i> 
+    The input conversion type (when the input is complex).
+<br><li><i>num_pixels :</i> 
+    The number of pixels in the pixel array.
+<br><li><i>pixel_values :</i> 
+    The array of pixel values.
+<br><li><i>blank_pixel :</i> 
+    The pixel value to be used when the intensity value is an
+    undefined value.
+<br><li><i>min_sat_pixel :</i> 
+    The pixel value to be used when the intensity value is
+    below the minimum value.
+<br><li><i>max_sat_pixel :</i> 
+    The pixel value to be used when the intensity value is
+    above the maximum value.
+<br><li><i>i_min :</i> 
+    The minimum intensity value.
+<br><li><i>i_max :</i> 
+    The maximum intensity value.
+<br><li><i>iscale_func :</i> 
+    The function to be called when non-linear intensity scaling
+    is required. If NULL, linear intensity scaling is used. The prototype
+    function is <a href=imw.html#IMW_PROTO_iscale_func>IMW_PROTO_iscale_func</a>.
+<br><li><i>iscale_info :</i> 
+    A pointer to arbitrary information for <em>iscale_func</em>.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe.
+<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=IMW_PROTO_iscale_func></a> flag
+ <b>IMW_PROTO_iscale_func</b><i>    (double *out, unsigned int out_stride,
+			    double *inp, unsigned int inp_stride,
+			    unsigned int num_values,
+			    double i_min, double i_max, void *info)
+</i><br><p>    This routine will perform an arbitrary intensity scaling on
+    an array of values. This routine may be called many times to scale an
+    image.
+<p><b>Parameters:</b><ul><li><i>out :</i> 
+    The output array.
+<br><li><i>out_stride :</i> 
+    The stride (in doubles) of the output array.
+<br><li><i>inp :</i> 
+    The input array.
+<br><li><i>inp_stride :</i> 
+    The stride (in doubles) of the input array.
+<br><li><i>num_values :</i> 
+    The number of values to scale.
+<br><li><i>i_min :</i> 
+    The minimum intensity value.
+<br><li><i>i_max :</i> 
+    The maximum intensity value.
+<br><li><i>info :</i> 
+    A pointer to arbitrary information.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

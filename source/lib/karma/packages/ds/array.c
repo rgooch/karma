@@ -50,8 +50,14 @@
 
     Updated by      Richard Gooch   19-APR-1995: Cleaned some code.
 
-    Last updated by Richard Gooch   24-JAN-1996: Created <ds_find_1D_extremes>
+    Updated by      Richard Gooch   24-JAN-1996: Created <ds_find_1D_extremes>
   and <ds_find_2D_extremes>.
+
+    Updated by      Richard Gooch   7-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   30-JUN-1996: Created
+  <ds_find_contiguous_extremes>.
 
 
 */
@@ -63,6 +69,7 @@
 #include <karma_m.h>
 #include <karma_a.h>
 
+
 #define BLOCK_SIZE 1024
 
 
@@ -71,9 +78,11 @@ flag ds_find_1D_extremes (CONST char *data,
 			  unsigned int num_values, uaddr *offsets,
 			  unsigned int elem_type, unsigned int conv_type,
 			  double *min, double *max)
-/*  [PURPOSE] This routine will find the extremes (minimum and maximum) of a
+/*  [SUMMARY] Find the minimum and maximum of a 1D array.
+    [PURPOSE] This routine will find the extremes (minimum and maximum) of a
     single trace (element versus a dimension).
-    <data> A pointer to the data.
+    <data> A pointer to the data. Misaligned data will cause bus errors on some
+    platforms.
     <num_values> The number of values to process.
     <offsets> The address offsets for data along the dimension.
     <elem_type> The type of the element.
@@ -95,7 +104,7 @@ flag ds_find_1D_extremes (CONST char *data,
     flag complex = FALSE;
     double *val;
     double values[2 * BLOCK_SIZE];
-    static char function_name[] = "ds_find_single_extremes";
+    static char function_name[] = "ds_find_1D_extremes";
 
     if ( (data == NULL) || (min == NULL) || (max == NULL) )
     {
@@ -182,7 +191,8 @@ flag ds_find_2D_extremes (CONST char *data,
 			  unsigned int length2, uaddr *offsets2,
 			  unsigned int elem_type, unsigned int conv_type,
 			  double *min, double *max)
-/*  [PURPOSE] This routine will find the extremes (minimum and maximum) of a
+/*  [SUMMARY] Find the minimum and maximum of a 2D array.
+    [PURPOSE] This routine will find the extremes (minimum and maximum) of a
     single plane (element versus two dimensions).
     <data> A pointer to the data.
     <length1> The number of values to process along one of the dimensions. For
@@ -212,6 +222,242 @@ flag ds_find_2D_extremes (CONST char *data,
     }
     return (TRUE);
 }   /*  End Function ds_find_2D_extremes  */
+
+/*PUBLIC_FUNCTION*/
+flag ds_find_contiguous_extremes (CONST char *data, unsigned int num_values,
+				  uaddr stride, unsigned int elem_type,
+				  unsigned int conv_type,
+				  double *min, double *max)
+/*  [SUMMARY] Find the minimum and maximum of a contiguous array.
+    [PURPOSE] This routine will find the extremes (minimum and maximum) of a
+    single trace (element versus a dimension).
+    <data> A pointer to the data. Misaligned data will cause bus errors on some
+    platforms.
+    <num_values> The number of values to process.
+    <stride> The stride (in bytes) between consecutive data values.
+    <elem_type> The type of the element.
+    <conv_type> The type of conversion to use for complex numbers.
+    <min> The minimum value will be written here.
+    <max> The maximum value will be written here.
+    [NOTE] The minimum and maximum value must be initialised to a very large
+    positive number and a very large negative number, respectively, outside of
+    the routine. In other words, the routine does not initialise these values
+    prior to testing for the minimum and maximum.
+    [MT-LEVEL] Safe.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    flag slow = FALSE;
+    int i_min, i_max, i_val, i_toobig;
+    unsigned int block_size;
+    unsigned int value_count;
+    float f_min, f_max, f_val, f_toobig = TOOBIG;
+    double value = 0.0;  /*  Initialised to keep compiler happy  */
+    double min_val, max_val;
+    flag complex = FALSE;
+    double *val;
+    double values[2 * BLOCK_SIZE];
+#ifdef NEED_ALIGNED_DATA
+    extern char host_type_sizes[NUMTYPES];
+#endif
+    static char function_name[] = "ds_find_contiguous_extremes";
+
+    if ( (data == NULL) || (min == NULL) || (max == NULL) )
+    {
+	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	a_prog_bug (function_name);
+    }
+    min_val = *min;
+    max_val = *max;
+    /*  Determine if this can be optimised  */
+    if ( ds_element_is_complex (elem_type) ) slow = TRUE;
+#ifdef NEED_ALIGNED_DATA
+    if ( !IS_ALIGNED ( data, host_type_sizes[elem_type] ) ) slow = TRUE;
+    if (stride % host_type_sizes[elem_type] != 0) slow = TRUE;
+#endif
+    switch (elem_type)
+    {
+      case K_BYTE:
+      case K_UBYTE:
+      case K_SHORT:
+      case K_USHORT:
+      case K_INT:
+      case K_FLOAT:
+      case K_DOUBLE:
+	break;
+      default:
+	slow = TRUE;
+	break;
+    }
+    if (slow)
+    {
+	/*  Loop over blocks  */
+	for (; num_values > 0;
+	     num_values -= block_size, data += block_size * stride)
+	{
+	    block_size = (num_values > BLOCK_SIZE) ? BLOCK_SIZE : num_values;
+	    /*  Convert data  */
+	    if ( !ds_get_elements (data, elem_type, stride, values,
+				   &complex, block_size) ) return (FALSE);
+	    for (value_count = 0, val = values; value_count < block_size;
+		 ++value_count, val += 2)
+	    {
+		if (complex)
+		{
+		    /*  Complex conversion  */
+		    switch (conv_type)
+		    {
+		      case CONV_CtoR_REAL:
+			value = val[0];
+			break;
+		      case CONV_CtoR_IMAG:
+			value = val[1];
+			break;
+		      case CONV_CtoR_ABS:
+		      case CONV_CtoR_ENVELOPE:
+			value = sqrt (val[0] * val[0] + val[1] * val[1]);
+			break;
+		      case CONV_CtoR_SQUARE_ABS:
+			value = val[0] * val[0] + val[1] * val[1];
+			break;
+		      case CONV_CtoR_PHASE:
+			value = atan2 (val[0], val[1]) / PION180;
+			break;
+		      case CONV_CtoR_CONT_PHASE:
+			fprintf (stderr,
+				 "Continuous phase not implemented yet\n");
+		      return (FALSE);
+/*
+		      break;
+*/
+		      default:
+			(void) fprintf (stderr,
+					"Bad value of conversion type: %u\n",
+					conv_type);
+		      a_prog_bug (function_name);
+		      break;
+		    }
+		}
+		else
+		{
+		    value = val[0];
+		}
+		if (value >= TOOBIG)
+		{
+		    /*  Hole in data: skip  */
+		    continue;
+		}
+		if (value < min_val) min_val = value;
+		if (value > max_val) max_val = value;
+		if ( complex && (conv_type == CONV_CtoR_ENVELOPE) )
+		{
+		    /*  Do again for negative part  */
+		    if (-value < min_val) min_val = -value;
+		    if (-value > max_val) max_val = -value;
+		}
+	    }
+	}
+	*min = min_val;
+	*max = max_val;
+	return (TRUE);
+    }
+    /*  Can do it quickly  */
+    f_min = min_val;
+    f_max = max_val;
+    switch (elem_type)
+    {
+      case K_BYTE:
+	i_min = 127;
+	i_max = -127;
+	for (value_count = 0; value_count < num_values;
+	     ++value_count, data += stride)
+	{
+	    if ( (i_val = *(signed char *) data) == -128 ) continue;
+	    if (i_val < i_min) i_min = i_val;
+	    if (i_val > i_max) i_max = i_val;
+	}
+	if ( (double) i_min < min_val ) min_val = i_min;
+	if ( (double) i_max > max_val ) max_val = i_max;
+	break;
+      case K_UBYTE:
+	i_min = 255;
+	i_max = 0;
+	for (value_count = 0; value_count < num_values;
+	     ++value_count, data += stride)
+	{
+	    i_val = *(unsigned char *) data;
+	    if (i_val < i_min) i_min = i_val;
+	    if (i_val > i_max) i_max = i_val;
+	}
+	if ( (double) i_min < min_val ) min_val = i_min;
+	if ( (double) i_max > max_val ) max_val = i_max;
+	break;
+      case K_SHORT:
+	i_min = 32767;
+	i_max = -32767;
+	for (value_count = 0; value_count < num_values;
+	     ++value_count, data += stride)
+	{
+	    if ( (i_val = *(signed short *) data) == -32768 ) continue;
+	    if (i_val < i_min) i_min = i_val;
+	    if (i_val > i_max) i_max = i_val;
+	}
+	if ( (double) i_min < min_val ) min_val = i_min;
+	if ( (double) i_max > max_val ) max_val = i_max;
+	break;
+      case K_USHORT:
+	i_min = 65535;
+	i_max = 0;
+	for (value_count = 0; value_count < num_values;
+	     ++value_count, data += stride)
+	{
+	    i_val = *(unsigned short *) data;
+	    if (i_val < i_min) i_min = i_val;
+	    if (i_val > i_max) i_max = i_val;
+	}
+	if ( (double) i_min < min_val ) min_val = i_min;
+	if ( (double) i_max > max_val ) max_val = i_max;
+	break;
+      case K_INT:
+	i_min = 2147483647;
+	i_max = -2147483647;
+	i_toobig = -2147483647;
+	--i_toobig;
+	for (value_count = 0; value_count < num_values;
+	     ++value_count, data += stride)
+	{
+	    if ( (i_val = *(signed int *) data) == i_toobig ) continue;
+	    if (i_val < i_min) i_min = i_val;
+	    if (i_val > i_max) i_max = i_val;
+	}
+	if ( (double) i_min < min_val ) min_val = i_min;
+	if ( (double) i_max > max_val ) max_val = i_max;
+	break;
+      case K_FLOAT:
+	for (value_count = 0; value_count < num_values;
+	     ++value_count, data += stride)
+	{
+	    if ( (f_val = *(float *) data) >= f_toobig ) continue;
+	    if (f_val < f_min) f_min = f_val;
+	    if (f_val > f_max) f_max = f_val;
+	}
+	min_val = f_min;
+	max_val = f_max;
+	break;
+      case K_DOUBLE:
+	for (value_count = 0; value_count < num_values;
+	     ++value_count, data += stride)
+	{
+	    if ( (value = *(double *) data) >= TOOBIG ) continue;
+	    if (value < min_val) min_val = value;
+	    if (value > max_val) max_val = value;
+	}
+	break;
+    }
+    *min = min_val;
+    *max = max_val;
+    return (TRUE);
+}   /*  End Function ds_find_contiguous_extremes  */
 
 /*OBSOLETE_FUNCTION*/
 flag ds_find_single_extremes (char *data, unsigned int elem_type,
@@ -258,13 +504,13 @@ flag ds_find_single_extremes (char *data, unsigned int elem_type,
 		    "Function: <%s> will be removed in Karma version 2.0\n",
 		    function_name);
     (void) fprintf (stderr, "Use: <ds_find_1D_extremes> instead.\n");
-    if (scan_start < (*dimension).minimum)
+    if (scan_start < dimension->minimum)
     {
-	scan_start = (*dimension).minimum;
+	scan_start = dimension->minimum;
     }
-    if (scan_end > (*dimension).maximum)
+    if (scan_end > dimension->maximum)
     {
-	scan_end = (*dimension).maximum;
+	scan_end = dimension->maximum;
     }
     start_coord = ds_get_coord_num (dimension, scan_start, SEARCH_BIAS_UPPER);
     end_coord = ds_get_coord_num (dimension, scan_end, SEARCH_BIAS_LOWER);
@@ -426,14 +672,15 @@ flag ds_find_plane_extremes (char *data, unsigned int elem_type,
 }   /*  End Function ds_find_plane_extremes  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_find_single_histogram (char *data, unsigned int elem_type,
+flag ds_find_single_histogram (CONST char *data, unsigned int elem_type,
 			       unsigned int conv_type, unsigned int num_values,
-			       uaddr *offsets, unsigned int stride,
+			       CONST uaddr *offsets, unsigned int stride,
 			       double min, double max, unsigned long num_bins,
 			       unsigned long *histogram_array,
 			       unsigned long *histogram_peak,
 			       unsigned long *histogram_mode)
-/*  [PURPOSE] This routine will find the histogram of a single trace (element
+/*  [SUMMARY] Find the histogram of a 1D array.
+    [PURPOSE] This routine will find the histogram of a single trace (element
     versus a dimension). This routine may be called repeatedly with multiple
     traces in order to build an aggregate histogram of all traces.
     <data> A pointer to the data. Misaligned data will cause bus errors on some
@@ -462,11 +709,13 @@ flag ds_find_single_histogram (char *data, unsigned int elem_type,
     [RETURNS] TRUE on success, else FALSE.
 */
 {
+    flag fast = TRUE;
+    flag complex = FALSE;
     unsigned int value_count, block_size;
     unsigned long index, hval, hpeak, hmode;
+    float f_val, f_bin_factor, f_toobig = TOOBIG, f_min, f_max;
     double value, bin_factor;
     double toobig = TOOBIG;
-    flag complex = FALSE;
     double *val;
     double values[2 * BLOCK_SIZE];
     static char function_name[] = "ds_find_single_histogram";
@@ -485,6 +734,47 @@ flag ds_find_single_histogram (char *data, unsigned int elem_type,
 			min, max);
 	a_prog_bug (function_name);
     }
+    if ( ds_element_is_complex (elem_type) ) fast = FALSE;
+#ifdef NEED_ALIGNED_DATA
+    if ( !IS_ALIGNED ( data, host_type_sizes[elem_type] ) ) fast = FALSE;
+    if (stride % host_type_sizes[elem_type] != 0) fast = FALSE;
+#endif
+    switch (elem_type)
+    {
+      case K_BYTE:
+      case K_UBYTE:
+      case K_FLOAT:
+      case K_DOUBLE:
+	break;
+      default:
+	fast = FALSE;
+	break;
+    }
+    if (offsets != NULL) fast = FALSE;
+    if ( fast && (elem_type == K_FLOAT) )
+    {
+	f_min = min;
+	f_max = max;
+	f_bin_factor = (float) (num_bins - 1) / (f_max - f_min);
+	for (; num_values > 0; --num_values, data += stride)
+	{
+	    if ( (f_val = *(float *) data) >= f_toobig ) continue;
+	    if (f_val < f_min) continue;
+	    if (f_val > f_max) continue;
+	    /*  Convert value to bin number  */
+	    index = (unsigned int) ( (f_val - f_min) * f_bin_factor );
+	    hval = ++histogram_array[index];
+	    if (hval > hpeak)
+	    {
+		hpeak = hval;
+		hmode = index;
+	    }
+	}
+	*histogram_peak = hpeak;
+	*histogram_mode = hmode;
+	return (TRUE);
+    }
+    bin_factor = (double) (num_bins - 1) / (max - min);
     /*  Loop over blocks  */
     while (num_values > 0)
     {
@@ -507,7 +797,6 @@ flag ds_find_single_histogram (char *data, unsigned int elem_type,
 	}
 	if (complex) ds_complex_to_real_1D (values, 2, values, block_size,
 					    conv_type);
-	bin_factor = (double) (num_bins - 1) / (max - min);
 	for (value_count = 0, val = values; value_count < block_size;
 	     ++value_count, val += 2)
 	{
@@ -535,8 +824,7 @@ flag ds_find_single_histogram (char *data, unsigned int elem_type,
 void ds_complex_to_real_1D (double *out, unsigned int out_stride,
 			    double *inp, unsigned int num_values,
 			    unsigned int conv_type)
-/*  [PURPOSE] This routine will convert a 1 dimensional array of complex values
-    to real values.
+/*  [SUMMARY] Convert a 1 dimensional array of complex values to real values.
     <out> A pointer to the output array.
     <out_stride> The stride (in doubles) of the output array.
     <inp> The array of input complex values.

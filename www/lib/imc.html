@@ -1,0 +1,47 @@
+<html><head><title>Package: imc</title></head> 
+<body>
+<center><h1>The "imc" Package</h1></center>    These routines provide a number of image conversion routines.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=imc></a></table><h4>Functions</h4><table><tr><td><a href=imc.html#imc_24to8>imc_24to8</a></td><td>Convert a 24 bit truecolour image to an 8 bit pseudocolour image.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=imc_24to8></a> flag
+ <b>imc_24to8</b><i>    (unsigned int image_size, unsigned char *image_reds,
+		unsigned char *image_greens, unsigned char *image_blues,
+		int stride24, unsigned char *out_image, int stride8,
+		unsigned int max_colours, unsigned int speed,
+		packet_desc **pack_desc, char **packet)
+</i><br><p>    Convert a 24 bit truecolour image to an 8 bit pseudocolour image.
+<p><b>Parameters:</b><ul><li><i>image_size :</i> 
+    The size of the image (in pixels).
+<br><li><i>image_reds :</i> 
+    The red component data of the truecolour image.
+<br><li><i>image_greens :</i> 
+    The green component data of the truecolour image.
+<br><li><i>image_blues :</i> 
+    The blue component data of the truecolour image.
+<br><li><i>stride24 :</i> 
+    The stride (in bytes) between adjacent pixels in the truecolour
+    image.
+<br><li><i>out_image :</i> 
+    The output (8 bit pseudocolour) image data.
+<br><li><i>stride8 :</i> 
+    The stride (in bytes) between adjacent pixels in the pseudocolour
+    image.
+<br><li><i>max_colours :</i> 
+    The maximum number of unique colours permitted (i.e. the
+    maximum colour palette size that can be supported).
+<br><li><i>speed :</i> 
+    The desired speed of the routine. This value may range from 0 to 9.
+    A value of 0 will result in the slowest but highest quality conversion
+    (i.e. the routine tries very hard to choose the best colour palette). A
+    value of 9 will result in the fastest conversion, at the expense of image
+    quality.
+<br><li><i>pack_desc :</i> 
+    The pointer to the top level packet descriptor of the general
+    data structure which contains the colourmap will be written here.
+<br><li><i>packet :</i> 
+    The pointer to the top level packet of the general data structure
+    which contains the colourmap will be written here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

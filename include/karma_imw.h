@@ -2,7 +2,7 @@
 
     Header for  imw_  package.
 
-    Copyright (C) 1994,1995  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   8-AUG-1994
 
-    Last updated by Richard Gooch   6-AUG-1995
+    Last updated by Richard Gooch   22-APR-1996
 
 */
 
@@ -96,6 +96,20 @@ EXTERN_FUNCTION (flag imw_scmap_16to24_o,
 		  unsigned char *out_blue_image, flag preserve_pad,
 		  iaddr out_hstride, iaddr out_vstride,
 		  int width, int height,CONST unsigned short *inp_image,
+		  CONST iaddr *inp_hoffsets, CONST iaddr *inp_voffsets,
+		  CONST unsigned char *cmap_red,
+		  CONST unsigned char *cmap_green,
+		  CONST unsigned char *cmap_blue, iaddr cmap_stride) );
+
+
+/*  File:  scmap_16to24_lossy.c  */
+EXTERN_FUNCTION (flag imw_scmap_16to24_lossy,
+		 (unsigned char *out_red_image, unsigned char *out_green_image,
+		  unsigned char *out_blue_image, flag preserve_pad,
+		  iaddr out_hstride, iaddr out_vstride,
+		  int out_width, int out_height,
+		  CONST unsigned short *inp_image,
+		  int inp_width, int inp_height,
 		  CONST iaddr *inp_hoffsets, CONST iaddr *inp_voffsets,
 		  CONST unsigned char *cmap_red,
 		  CONST unsigned char *cmap_green,

@@ -1,27 +1,32 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the n_ package of routines in the Karma library.
-
+$PACKAGE          n
+$SUMMARY          Routines to generate random numbers
+$PURPOSE
     These routines are meant to provide a simple way of generating random
     numbers.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
+$FUNCTION         n_gaussian
+$RETURN_TYPE      double
+$PARAMETER_LIST
+    ()
+$SUMMARY          Compute a random number with Gaussian distribution.
+$PURPOSE
+    This routine will compute a random number with a Gaussian
+    distribution. The mean is 0.0 and the variance is 1.0
+$RETURNS
+    The number.
+$END
 
-    Written by		Richard Gooch	28-Feb-1995
-
-    Last updated by	Richard Gooch	28-Feb-1995
-
-
-*/
-
-double n_gaussian ()
-/*  This routine will compute a random number with a Gaussian distribution.
-    The mean is 0.0 and the variance is 1.0
-    The routine will return the number.
-*/
-/*---------------------------------------------------------------------------*/
-
-double n_uniform ()
-/*  This routine will compute a random number with a Uniform distribution.
-    The range is from 0.0 to 1.0
-    The routine will return the number.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         n_uniform
+$RETURN_TYPE      double
+$PARAMETER_LIST
+    ()
+$SUMMARY          Compute a random number with Uniform distribution.
+$PURPOSE
+    This routine will compute a random number with a Uniform
+    distribution. The range is from 0.0 to 1.0
+$RETURNS
+    The number.
+$END

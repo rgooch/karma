@@ -1,20 +1,18 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the imw_ package of routines in the Karma library.
-
+$PACKAGE          imw
+$SUMMARY          Routines to write raw images
+$PURPOSE
     These routines provide a means to convert from image data to raw images
     suitable for low level graphics display. Although these routines are made
-    public, their use is NOT recommended. The viewimg_ package is the suggested
-    means to manage image display.
+    public, their use is NOT recommended. The <-viewimg-> package is the
+    suggested means to manage image display.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
-
-    Written by		Richard Gooch	31-Dec-1995
-
-    Last updated by	Richard Gooch	31-Dec-1995
-
-
-*/
-
-flag imw_to8_lossy (unsigned char *out_image,
+$FUNCTION         imw_to8_lossy
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (unsigned char *out_image,
 		    iaddr out_hstride, iaddr out_vstride,
 		    int out_width, int out_height, CONST char *inp_image,
 		    CONST iaddr *inp_hoffsets, CONST iaddr *inp_voffsets,
@@ -25,62 +23,68 @@ flag imw_to8_lossy (unsigned char *out_image,
 		    unsigned char max_sat_pixel,
 		    double i_min, double i_max,
 		    flag (*iscale_func) (), void *iscale_info)
-/*  [PURPOSE] This routine will convert an image from one format to an 8 bit
+$SUMMARY          Convert generic image to 8 bit image, with resizing.
+$PURPOSE
+    This routine will convert an image from one format to an 8 bit
     image of pixels, permitting the input and output sizes to differ. If the
     input image is effectively shrunk, the input data is subsampled. The output
     image is flipped vertically relative to the input image.
-    <out_image> The output image will be written here.
-    <out_hstride> The stride between successive horizontal pixels (in bytes).
-    <out_vstride> The stride between successive vertical pixels (in bytes).
-    <out_width> The width of the output image.
-    <out_height> The height of the output image.
-    <inp_image> The input image data.
-    <inp_hoffsets> The array of horizontal byte offsets.
-    <inp_voffsets> The array of vertical byte offsets.
-    <inp_width> The width of the input image.
-    <inp_height> The height of the input image.
-    <inp_type> The type of the input data.
-    <conv_type> The input conversion type (when the input is complex).
-    <num_pixels> The number of pixels in the pixel array.
-    <pixel_values> The array of pixel values.
-    <blank_pixel> The pixel value to be used when the intensity value is an
+$PARAMETER        out_image :
+    The output image will be written here.
+$PARAMETER        out_hstride :
+    The stride between successive horizontal pixels (in bytes).
+$PARAMETER        out_vstride :
+    The stride between successive vertical pixels (in bytes).
+$PARAMETER        out_width :
+    The width of the output image.
+$PARAMETER        out_height :
+    The height of the output image.
+$PARAMETER        inp_image :
+    The input image data.
+$PARAMETER        inp_hoffsets :
+    The array of horizontal byte offsets.
+$PARAMETER        inp_voffsets :
+    The array of vertical byte offsets.
+$PARAMETER        inp_width :
+    The width of the input image.
+$PARAMETER        inp_height :
+    The height of the input image.
+$PARAMETER        inp_type :
+    The type of the input data.
+$PARAMETER        conv_type :
+    The input conversion type (when the input is complex).
+$PARAMETER        num_pixels :
+    The number of pixels in the pixel array.
+$PARAMETER        pixel_values :
+    The array of pixel values.
+$PARAMETER        blank_pixel :
+    The pixel value to be used when the intensity value is an
     undefined value.
-    <min_sat_pixel> The pixel value to be used when the intensity value is
+$PARAMETER        min_sat_pixel :
+    The pixel value to be used when the intensity value is
     below the minimum value.
-    <max_sat_pixel> The pixel value to be used when the intensity value is
+$PARAMETER        max_sat_pixel :
+    The pixel value to be used when the intensity value is
     above the maximum value.
-    <i_min> The minimum intensity value.
-    <i_max> The maximum intensity value.
-    <iscale_func> The function to be called when non-linear intensity scaling
-    is required. If NULL, linear intensity scaling is used. The interface to
-    this function is as follows:
-    [<pre>]
-    flag iscale_func (double *out, unsigned int out_stride,
-                      double *inp, unsigned int inp_stride,
-		      unsigned int num_values, double i_min, double i_max,
-		      void *info)
-    *   [PURPOSE] This routine will perform an arbitrary intensity scaling on
-        an array of values. This routine may be called many times to scale an
-	image.
-        <out> The output array.
-	<out_stride> The stride (in doubles) of the output array.
-	<inp> The input array.
-	<inp_stride> The stride (in doubles) of the input array.
-	<num_values> The number of values to scale.
-	<i_min> The minimum intensity value.
-	<i_max> The maximum intensity value.
-	<info> A pointer to arbitrary information.
-	[RETURNS] TRUE on success, else FALSE.
-    *
-    [</pre>]
+$PARAMETER        i_min :
+    The minimum intensity value.
+$PARAMETER        i_max :
+    The maximum intensity value.
+$PARAMETER        iscale_func :
+    The function to be called when non-linear intensity scaling
+    is required. If NULL, linear intensity scaling is used. The prototype
+    function is <-IMW_PROTO_iscale_func->.
+$PARAMETER        iscale_info :
+    A pointer to arbitrary information for <<iscale_func>>.
+$MT-LEVEL         Unsafe.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-    <iscale_info> A pointer to arbitrary information for <<iscale_func>>.
-    [MT-LEVEL] Unsafe.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
-
-flag imw_to8_oi (unsigned char *out_image,
+$FUNCTION         imw_to8_oi
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (unsigned char *out_image,
 		 iaddr out_hstride, iaddr out_vstride,
 		 int width, int height, CONST char *inp_image,
 		 CONST iaddr *inp_hoffsets, CONST iaddr *inp_voffsets,
@@ -90,54 +94,87 @@ flag imw_to8_oi (unsigned char *out_image,
 		 unsigned char min_sat_pixel, unsigned char max_sat_pixel,
 		 double i_min, double i_max,
 		 flag (*iscale_func) (), void *iscale_info)
-/*  [PURPOSE] This routine will convert an image from one format to an 8 bit
+$SUMMARY          Convert generic image to 8 bit image, preserving size.
+$PURPOSE
+    This routine will convert an image from one format to an 8 bit
     image of pixels, maintaining the original image size. The output image is
     flipped vertically relative to the input image.
-    <out_image> The output image will be written here.
-    <out_hstride> The stride between successive horizontal pixels (in bytes).
-    <out_vstride> The stride between successive vertical pixels (in bytes).
-    <width> The width of the image.
-    <height> The height of the image.
-    <inp_image> The input image data.
-    <inp_hoffsets> The array of horizontal byte offsets.
-    <inp_voffsets> The array of vertical byte offsets.
-    <inp_type> The type of the input data.
-    <conv_type> The input conversion type (when the input is complex).
-    <num_pixels> The number of pixels in the pixel array.
-    <pixel_values> The array of pixel values.
-    <blank_pixel> The pixel value to be used when the intensity value is an
+$PARAMETER        out_image :
+    The output image will be written here.
+$PARAMETER        out_hstride :
+    The stride between successive horizontal pixels (in bytes).
+$PARAMETER        out_vstride :
+    The stride between successive vertical pixels (in bytes).
+$PARAMETER        width :
+    The width of the image.
+$PARAMETER        height :
+    The height of the image.
+$PARAMETER        inp_image :
+    The input image data.
+$PARAMETER        inp_hoffsets :
+    The array of horizontal byte offsets.
+$PARAMETER        inp_voffsets :
+    The array of vertical byte offsets.
+$PARAMETER        inp_type :
+    The type of the input data.
+$PARAMETER        conv_type :
+    The input conversion type (when the input is complex).
+$PARAMETER        num_pixels :
+    The number of pixels in the pixel array.
+$PARAMETER        pixel_values :
+    The array of pixel values.
+$PARAMETER        blank_pixel :
+    The pixel value to be used when the intensity value is an
     undefined value.
-    <min_sat_pixel> The pixel value to be used when the intensity value is
+$PARAMETER        min_sat_pixel :
+    The pixel value to be used when the intensity value is
     below the minimum value.
-    <max_sat_pixel> The pixel value to be used when the intensity value is
+$PARAMETER        max_sat_pixel :
+    The pixel value to be used when the intensity value is
     above the maximum value.
-    <i_min> The minimum intensity value.
-    <i_max> The maximum intensity value.
-    <iscale_func> The function to be called when non-linear intensity scaling
-    is required. If NULL, linear intensity scaling is used. The interface to
-    this function is as follows:
-    [<pre>]
-    flag iscale_func (double *out, unsigned int out_stride,
-                      double *inp, unsigned int inp_stride,
-		      unsigned int num_values, double i_min, double i_max,
-		      void *info)
-    *   [PURPOSE] This routine will perform an arbitrary intensity scaling on
-        an array of values. This routine may be called many times to scale an
-	image.
-        <out> The output array.
-	<out_stride> The stride (in doubles) of the output array.
-	<inp> The input array.
-	<inp_stride> The stride (in doubles) of the input array.
-	<num_values> The number of values to scale.
-	<i_min> The minimum intensity value.
-	<i_max> The maximum intensity value.
-	<info> A pointer to arbitrary information.
-	[RETURNS] TRUE on success, else FALSE.
-    *
-    [</pre>]
+$PARAMETER        i_min :
+    The minimum intensity value.
+$PARAMETER        i_max :
+    The maximum intensity value.
+$PARAMETER        iscale_func :
+    The function to be called when non-linear intensity scaling
+    is required. If NULL, linear intensity scaling is used. The prototype
+    function is <-IMW_PROTO_iscale_func->.
+$PARAMETER        iscale_info :
+    A pointer to arbitrary information for <<iscale_func>>.
+$MT-LEVEL         Unsafe.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-    <iscale_info> A pointer to arbitrary information for <<iscale_func>>.
-    [MT-LEVEL] Unsafe.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$PROTO_FUNC       IMW_PROTO_iscale_func
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (double *out, unsigned int out_stride,
+			    double *inp, unsigned int inp_stride,
+			    unsigned int num_values,
+			    double i_min, double i_max, void *info)
+$SUMMARY          Intensity scaling callback.
+$PURPOSE
+    This routine will perform an arbitrary intensity scaling on
+    an array of values. This routine may be called many times to scale an
+    image.
+$PARAMETER        out :
+    The output array.
+$PARAMETER        out_stride :
+    The stride (in doubles) of the output array.
+$PARAMETER        inp :
+    The input array.
+$PARAMETER        inp_stride :
+    The stride (in doubles) of the input array.
+$PARAMETER        num_values :
+    The number of values to scale.
+$PARAMETER        i_min :
+    The minimum intensity value.
+$PARAMETER        i_max :
+    The maximum intensity value.
+$PARAMETER        info :
+    A pointer to arbitrary information.
+$RETURNS
+    TRUE on success, else FALSE.
+$END

@@ -4,7 +4,7 @@
     This code finds various specific forms of data from the Karma data
     structure and returns Intelligent Arrays.
 
-    Copyright (C) 1994,1995  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -33,8 +33,11 @@
 
     Updated by      Richard Gooch   25-DEC-1994
 
-    Last updated by Richard Gooch   15-APR-1995: Added message when trying for
+    Updated by      Richard Gooch   15-APR-1995: Added message when trying for
   TrueColour.
+
+    Last updated by Richard Gooch   1-APR-1996: Moved remaing functions to new
+  documentation style.
 
 
 */
@@ -62,7 +65,8 @@ if ( (*array).magic_number != MAGIC_NUMBER ) \
 flag iarray_get_image_from_multi (multi_array *multi_desc, iarray *pseudo,
 				  iarray *red, iarray *green, iarray *blue,
 				  unsigned int *cmap_index)
-/*  [PURPOSE] This routine will find an image embedded in a Karma data
+/*  [SUMMARY] Get an image from a Karma data structure.
+    [PURPOSE] This routine will find an image embedded in a Karma data
     structure. The image may be single-channel (PseudoColour) or it may be a
     TrueColour image (red, green and blue components).
     <multi_desc> The Karma data structure.
@@ -94,7 +98,8 @@ flag iarray_get_image_from_multi (multi_array *multi_desc, iarray *pseudo,
     if ( (*multi_desc).num_arrays > 1 )
     {
 	if ( ( *pseudo = iarray_get_from_multi_array (multi_desc, "Frame", 2,
-						      (char **) NULL, NULL) )
+						      (CONST char **) NULL,
+						      NULL) )
 	    == NULL )
 	{
 	    (void) fprintf (stderr,
@@ -130,18 +135,20 @@ flag iarray_get_image_from_multi (multi_array *multi_desc, iarray *pseudo,
 	return (TRUE);
     }
     if ( ( *pseudo = iarray_get_from_multi_array (multi_desc, NULL, 2,
-						  (char **) NULL, NULL) )
+						  (CONST char **) NULL, NULL) )
 	== NULL )
     {
 	(void) fprintf (stderr, "%s: trying TrueColour...\n", function_name);
 	if ( ( *red =
-	      iarray_get_from_multi_array (multi_desc, NULL, 2, (char **) NULL,
+	      iarray_get_from_multi_array (multi_desc, NULL, 2,
+					   (CONST char **) NULL,
 					   "Red Intensity") ) == NULL )
 	{
 	    return (FALSE);
 	}
 	if ( ( *green =
-	      iarray_get_from_multi_array (multi_desc, NULL, 2, (char **) NULL,
+	      iarray_get_from_multi_array (multi_desc, NULL, 2,
+					   (CONST char **) NULL,
 					   "Green Intensity") ) == NULL )
 	{
 	    (void) fprintf (stderr, "Error getting green array\n");
@@ -157,7 +164,8 @@ flag iarray_get_image_from_multi (multi_array *multi_desc, iarray *pseudo,
 	    return (FALSE);
 	}
 	if ( ( *blue =
-	      iarray_get_from_multi_array (multi_desc, NULL, 2, (char **) NULL,
+	      iarray_get_from_multi_array (multi_desc, NULL, 2,
+					   (CONST char **) NULL,
 					   "Blue Intensity") ) == NULL )
 	{
 	    (void) fprintf (stderr, "Error getting blue array\n");
@@ -182,7 +190,8 @@ flag iarray_get_image_from_multi (multi_array *multi_desc, iarray *pseudo,
 flag iarray_get_movie_from_multi (multi_array *multi_desc, iarray *pseudo,
 				  iarray *red, iarray *green, iarray *blue,
 				  unsigned int *cmap_index)
-/*  [PURPOSE] This routine will find a movie embedded in a Karma data
+/*  [SUMMARY] Get a movie from a Karma data structure.
+    [PURPOSE] This routine will find a movie embedded in a Karma data
     structure. The movie may be single-channel (PseudoColour) or it may be a
     TrueColour movie (red, green and blue components).
     <multi_desc> The Karma data structure.
@@ -214,7 +223,8 @@ flag iarray_get_movie_from_multi (multi_array *multi_desc, iarray *pseudo,
     if ( (*multi_desc).num_arrays > 1 )
     {
 	if ( ( *pseudo = iarray_get_from_multi_array (multi_desc, "Movie", 3,
-						      (char **) NULL, NULL) )
+						      (CONST char **) NULL,
+						      NULL) )
 	    == NULL )
 	{
 	    (void) fprintf (stderr,
@@ -250,18 +260,20 @@ flag iarray_get_movie_from_multi (multi_array *multi_desc, iarray *pseudo,
 	return (TRUE);
     }
     if ( ( *pseudo = iarray_get_from_multi_array (multi_desc, NULL, 3,
-						  (char **) NULL, NULL) )
+						  (CONST char **) NULL, NULL) )
 	== NULL )
     {
 	(void) fprintf (stderr, "%s: trying TrueColour...\n", function_name);
 	if ( ( *red =
-	      iarray_get_from_multi_array (multi_desc, NULL, 3, (char **) NULL,
+	      iarray_get_from_multi_array (multi_desc, NULL, 3,
+					   (CONST char **) NULL,
 					   "Red Intensity") ) == NULL )
 	{
 	    return (FALSE);
 	}
 	if ( ( *green =
-	      iarray_get_from_multi_array (multi_desc, NULL, 3, (char **) NULL,
+	      iarray_get_from_multi_array (multi_desc, NULL, 3,
+					   NULL,
 					   "Green Intensity") ) == NULL )
 	{
 	    (void) fprintf (stderr, "Error getting green array\n");
@@ -277,7 +289,7 @@ flag iarray_get_movie_from_multi (multi_array *multi_desc, iarray *pseudo,
 	    return (FALSE);
 	}
 	if ( ( *blue =
-	      iarray_get_from_multi_array (multi_desc, NULL, 3, (char **) NULL,
+	      iarray_get_from_multi_array (multi_desc, NULL, 3, NULL,
 					   "Blue Intensity") ) == NULL )
 	{
 	    (void) fprintf (stderr, "Error getting blue array\n");

@@ -3,7 +3,7 @@
     Source file for  miriad2karma  (module to convert Miriad Image format to
     Karma).
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,12 +26,20 @@
 
 /*  This Karma module will generate a multi-dimensional array of data from a
     Miriad Image format file and will write the data to a Karma data file.
-    The Miriad Image data file must be in network format (as per the FITS standard).
+    The Miriad Image data file must be in network format (as per the FITS
+    standard).
 
 
     Written by      Richard Gooch   1-OCT-1995
 
-    Last updated by Richard Gooch   1-OCT-1995
+    Updated by      Richard Gooch   6-MAY-1996: Made use of KMiriadDataContext
+  manipulation routines.
+
+    Updated by      Richard Gooch   30-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   28-JUN-1996: Removed distinction between
+  blanked and masked data.
 
 
 */
@@ -133,6 +141,7 @@ static void generate_file (CONST char *dirname, CONST char *arrayfile)
 {
     Channel miriad_ch;
     Channel karma_ch;
+    KMiriadDataContext context;
     unsigned int array_size;
     unsigned int array_count, num_values;
     unsigned int elem_type, elem_size;
@@ -142,16 +151,12 @@ static void generate_file (CONST char *dirname, CONST char *arrayfile)
     unsigned long write_pos;
     unsigned long toobig_count;
     unsigned long toobig_count_tmp;
-    unsigned long type;
-    struct stat stat_buf;
     char padding[ARRAY_BOUNDARY];
     char header_file[STRING_LENGTH];
-    char image_file[STRING_LENGTH];
     char *packet, *ptr;
     multi_array *multi_desc;
     packet_desc *pack_desc;
     array_desc *arr_desc;
-    extern flag convert_to_float;
     extern flag sanitise;
     extern char host_type_sizes[NUMTYPES];
     extern char *sys_errlist[];
@@ -172,7 +177,6 @@ static void generate_file (CONST char *dirname, CONST char *arrayfile)
 	return;
     }
     (void) sprintf (header_file, "%s/header", dirname);
-    (void) sprintf (image_file, "%s/image", dirname);
     /*  Try to open header file  */
     if ( ( miriad_ch = ch_open_file (header_file, "r") ) == NULL )
     {
@@ -189,26 +193,10 @@ static void generate_file (CONST char *dirname, CONST char *arrayfile)
 	return;
     }
     /*  Try to open image file  */
-    if ( ( miriad_ch = ch_open_file (image_file, "r") ) == NULL )
+    if ( ( context = foreign_miriad_create_data_context (dirname) ) == NULL )
     {
-	(void) fprintf (stderr, "Error opening file: \"%s\"\t%s\n",
-			image_file, sys_errlist[errno]);
+	(void) fprintf (stderr, "Error creating KMiriadDataContext object\n");
 	ds_dealloc_multi (multi_desc);
-	return;
-    }
-    if ( !pio_read32 (miriad_ch, &type) )
-    {
-	(void) fprintf (stderr, "Error reading image data type\t%s\n",
-			sys_errlist[errno]);
-	ds_dealloc_multi (multi_desc);
-	(void) ch_close (miriad_ch);
-	return;
-    }
-    if (type != 4)
-    {
-	(void) fprintf (stderr, "Image data type: %lu is not 4!\n", type);
-	ds_dealloc_multi (multi_desc);
-	(void) ch_close (miriad_ch);
 	return;
     }
     pack_desc = multi_desc->headers[0];
@@ -221,7 +209,7 @@ static void generate_file (CONST char *dirname, CONST char *arrayfile)
     if ( ( karma_ch = open_file (arrayfile) ) == NULL )
     {
 	(void) fprintf (stderr, "Error opening Karma arrayfile file\n");
-	(void) ch_close (miriad_ch);
+	foreign_miriad_close_data_context (context);
 	return;
     }
     /*  Write magic string and version number  */
@@ -261,19 +249,21 @@ static void generate_file (CONST char *dirname, CONST char *arrayfile)
 	    exit (RV_WRITE_ERROR);
 	}
     }
+    /*  Start converting data. Do it in blocks so that we don't have to
+	allocate possibly huge amounts of virtual memory  */
     for (array_count = 0; array_count < array_size; array_count += num_values)
     {
 	num_values = array_size - array_count;
 	if (num_values *elem_size > BUF_SIZE) num_values = BUF_SIZE /elem_size;
 	/*  Read a block of data into memory  */
 	toobig_count_tmp = 0;
-	if ( !foreign_fits_read_data (miriad_ch, multi_desc, buffer,num_values,
-				      FA_FITS_READ_DATA_NUM_BLANKS,
-				      &toobig_count_tmp,
-				      FA_FITS_READ_DATA_END) )
+	if ( !foreign_miriad_read_data (context, multi_desc, buffer,num_values,
+					FA_MIRIAD_READ_DATA_NUM_BLANKS,
+					&toobig_count_tmp,
+					FA_MIRIAD_READ_DATA_END) )
 	{
 	    (void) fprintf (stderr, "Error reading Miriad file\n");
-	    (void) ch_close (miriad_ch);
+	    foreign_miriad_close_data_context (context);
 	    (void) ch_close (karma_ch);
 	    ds_dealloc_multi (multi_desc);
 	    return;
@@ -286,7 +276,7 @@ static void generate_file (CONST char *dirname, CONST char *arrayfile)
 		num_values * elem_size)
 	    {
 		(void) fprintf (stderr, "Error writing Karma file\n");
-		(void) ch_close (miriad_ch);
+		foreign_miriad_close_data_context (context);
 		(void) ch_close (karma_ch);
 		ds_dealloc_multi (multi_desc);
 		return;
@@ -301,7 +291,7 @@ static void generate_file (CONST char *dirname, CONST char *arrayfile)
 				pack_desc->element_desc[0], ptr);
 	}
     }
-    (void) ch_close (miriad_ch);
+    foreign_miriad_close_data_context (context);
     /*  Array should be copied by now: write rest of top level packet  */
     packet = multi_desc->data[0] + host_type_sizes[K_ARRAY];
     for (element_count = 1; element_count < pack_desc->num_elements;
@@ -329,7 +319,7 @@ static void generate_file (CONST char *dirname, CONST char *arrayfile)
     ds_dealloc_multi (multi_desc);
     if (toobig_count > 0)
     {
-	(void) fprintf (stderr, "Number of blank values: %u\n", toobig_count);
+	(void) fprintf (stderr, "Number of blank values: %lu\n", toobig_count);
     }
 }   /*  End Function generate_file  */
 

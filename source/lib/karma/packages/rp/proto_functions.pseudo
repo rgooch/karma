@@ -1,0 +1,19 @@
+/*PROTOTYPE_FUNCTION*/  /*
+void RP_PROTO_hash_func (unsigned char buffer[hash_digest_size],
+			 CONST unsigned char block[hash_block_size];)
+    [SUMMARY] Hash callback.
+    [PURPOSE] This routine is called when a hash buffer must be scrambled with
+    a block of data.
+    <buffer> The hash buffer.
+    <block> The block to add to the hash buffer data.
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void RP_PROTO_destroy_func (RandPool rp, void *info)
+    [SUMMARY] Destroy callback.
+    [PURPOSE] This routine is called when a random pool is destroyed.
+    <rp> The random pool.
+    <info> The arbitrary information pointer.
+    [RETURNS] Nothing.
+*/

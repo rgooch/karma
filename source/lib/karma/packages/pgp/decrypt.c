@@ -3,7 +3,7 @@
 
     This code provides PGP (Pretty Good Privacy) support.
 
-    Copyright (C) 1994,1995  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -39,7 +39,10 @@
     Updated by      Richard Gooch   23-JAN-1995: Fixed test when opening
   channels.
 
-    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Last updated by Richard Gooch   13-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -75,7 +78,7 @@ STATIC_FUNCTION (flag connect_to_pgpdaemon,
 /*PUBLIC_FUNCTION*/
 char *pgp_decrypt (CONST char *ciphertext, unsigned int ciphertext_length,
 		   unsigned int *plaintext_length)
-/*  [PURPOSE] Decrypt a block of data using PGP and PGPdaemon.
+/*  [SUMMARY] Decrypt a block of data using PGP and PGPdaemon.
     <ciphertext> The input ciphertext data.
     <ciphertext_length> The length of the input ciphertext data.
     <plaintext_length> The length of the decrypted data is written here.

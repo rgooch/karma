@@ -1,0 +1,33 @@
+/*PROTOTYPE_FUNCTION*/  /*
+void VRENDER_PROTO_render_notify_func (void *info)
+    [SUMMARY] Volume rendering completed callback.
+    [PURPOSE] This routine registers the completion of a volume render
+    request.
+    <info> The arbitrary information pointer.
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void VRENDER_PROTO_image_desc_notify_func (KVolumeRenderContext context,
+					   void **info)
+    [SUMMARY] Image descriptor changed callback.
+    [PURPOSE] This routine is called when the output image descriptor is
+    changed.
+    <context> The volume render context.
+    <info> A pointer to the arbitrary information pointer.
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void VRENDER_PROTO_cache_notify_func (KVolumeRenderContext context,
+				      void **info, uaddr eyes)
+    [SUMMARY] Cache computed callback.
+    [PURPOSE] This routine is called when the cache for one or more eye
+    views is computed.
+    <context> The volume render context.
+    <info> A pointer to the arbitrary information pointer.
+    <eyes> A bitmask specifying which eye views to compute. The bitmask may be
+    constructed by ORing some values. See [<VRENDER_EYE_MASKS>] for a list of
+    masks.
+    [RETURNS] Nothing.
+*/

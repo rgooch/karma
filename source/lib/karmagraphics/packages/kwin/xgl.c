@@ -1,5 +1,4 @@
 /*LINTLIBRARY*/
-#if defined(X11) && defined(HAS_XGL)
 /*  xgl.c
 
     This code provides KPixCanvas objects.
@@ -42,8 +41,22 @@
     Updated by      Richard Gooch   1-FEB-1996: Created <convert_colour>
   routine to do colour conversion right.
 
-    Last updated by Richard Gooch   4-FEB-1996: Worked around bug in XGL in
+    Updated by      Richard Gooch   4-FEB-1996: Worked around bug in XGL in
   <size_cache>.
+
+    Updated by      Richard Gooch   19-FEB-1996: Modified interface for
+  <clear_area> to support width and height parameters.
+
+    Updated by      Richard Gooch   21-FEB-1996: Pass <resize> func when
+  creating generic pixel canvas: forgot to do this when <resize> created.
+
+    Updated by      Richard Gooch   23-FEB-1996: Clip (sub)image to cache size
+  in <draw_cached_image> and added <<wait>> parameter.
+
+    Updated by      Richard Gooch   13-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   26-APR-1996: Moved stub functions in.
 
 
 */
@@ -53,18 +66,21 @@
 #include <stdarg.h>
 #include <karma.h>
 #include <karma_kwin.h>
-#include <karma_drw.h>
+#include <karma_kwin_hooks.h>
 #include <karma_xi.h>
-#include <X11/Xutil.h>
-#include <xgl/xgl.h>
-#include <karma_psw.h>
+#ifdef X11
+#  include <X11/Xutil.h>
+#endif
 #include <karma_imw.h>
 #include <karma_ds.h>
-#include <karma_ch.h>  /*  TEMPORARY for debugging  */
 #include <karma_st.h>
 #include <karma_a.h>
 #include <karma_m.h>
 #include <karma_r.h>
+
+
+#if defined(X11) && defined(HAS_XGL)
+#include <xgl/xgl.h>
 
 
 #define CANVAS_MAGIC_NUMBER (unsigned int) 249832902
@@ -98,6 +114,8 @@ typedef struct
     int yoff;
     int width;
     int height;
+    int xwin_width;
+    int xwin_height;
     struct colourcell_type *colours;
     struct Xglcanvas_type *xgl_active;
     struct Xglcanvas_type *xgl_mono;
@@ -170,7 +188,12 @@ STATIC_FUNCTION (flag draw_rgb_image,
 		  unsigned int width, unsigned int height,
 		  KPixCanvasImageCache *cache_ptr) );
 STATIC_FUNCTION (flag draw_cached_image,
-		 (KPixCanvasImageCache cache, int x_off, int y_off) );
+		 (KPixCanvasImageCache cache, flag wait,
+		  int parent_x_off, int parent_y_off,
+		  int image_width, int image_height,
+		  int image_x_off, int image_y_off /*,
+		  int canvas_x_off, int canvas_y_off,
+		  int canvas_width, int canvas_height */) );
 STATIC_FUNCTION (void free_cache_data, (KPixCanvasImageCache cache) );
 STATIC_FUNCTION (flag draw_line, (XglCanvas xglcanvas,
 				  double x0, double y0, double x1, double y1,
@@ -241,16 +264,14 @@ STATIC_FUNCTION (void convert_colour,
 
 /*PUBLIC_FUNCTION*/
 unsigned int kwin_xgl_test_stereo (Display *display, Window window)
-/*  [PURPOSE] This routine will determine if stereoscopic display is supported
+/*  [SUMMARY] Test if stereo supported using XGL.
+    [PURPOSE] This routine will determine if stereoscopic display is supported
     using XGL on a particular display.
     [NOTE] This routine is only available with the X window system.
     <display> The X display.
     <window> The window ID of a window of the same class as the desired stereo
     window.
-    [RETURNS] A status code. Legal values are:
-        KWIN_XGL_NOT_AVAILABLE              XGL is not supported
-	KWIN_XGL_STEREO_NOT_AVAILABLE       No stereo display hardware
-	KWIN_XGL_STEREO_AVAILABLE           Stereo available
+    [RETURNS] A status code. See [<KWIN_XGL_STATUS>] for a list of values.
 */
 {
     Xgl_obj_desc win_desc;
@@ -299,7 +320,8 @@ flag kwin_xgl_create_stereo (Display *display, Window window,
 			     int xoff, int yoff, int width, int height,
 			     KPixCanvas *mono,
 			     KPixCanvas *left, KPixCanvas *right)
-/*  [PURPOSE] This routine will create a stereo pixel canvas, ready for
+/*  [SUMMARY] Create a stereo pixel canvas using XGL.
+    [PURPOSE] This routine will create a stereo pixel canvas, ready for
     drawing, from an X window, using the XGL library. Note that the origin of
     a KPixCanvas is the upper-left corner.
     [NOTE] This routine is only available with the X window system.
@@ -326,10 +348,10 @@ flag kwin_xgl_create_stereo (Display *display, Window window,
     unsigned int visual;
     unsigned int red_offset, green_offset, blue_offset;
     unsigned long im_red_mask, im_green_mask, im_blue_mask;
-    static Xgl_usgn32 pixel_values[256];
     unsigned char *ch_ptr;
     XVisualInfo *vinfo;
     extern Xgl_sys_state xgl_system_state;
+    static Xgl_usgn32 pixel_values[256];
     static char function_name[] = "kwin_xgl_create_stereo";
 
     initialise ();
@@ -364,6 +386,8 @@ flag kwin_xgl_create_stereo (Display *display, Window window,
     shared_canvas->yoff = yoff;
     shared_canvas->width = width;
     shared_canvas->height = height;
+    shared_canvas->xwin_width = window_attributes.width;
+    shared_canvas->xwin_height = window_attributes.height;
     vinfo = get_visinfo_for_visual (display, window_attributes.visual);
     if (window_attributes.depth != vinfo->depth)
     {
@@ -481,6 +505,7 @@ flag kwin_xgl_create_stereo (Display *display, Window window,
 		  KWIN_FUNC_FREE_CACHE_DATA, free_cache_data,
 		  KWIN_FUNC_DRAW_LINE, draw_line,
 		  KWIN_FUNC_GET_COLOUR, get_colour,
+		  KWIN_FUNC_RESIZE, resize,
 		  KWIN_ATT_END) );
 	*left = ( kwin_create_generic
 		 (shared_canvas->xgl_left, xoff, yoff, width, height,
@@ -501,6 +526,7 @@ flag kwin_xgl_create_stereo (Display *display, Window window,
 		  KWIN_FUNC_FREE_CACHE_DATA, free_cache_data,
 		  KWIN_FUNC_DRAW_LINE, draw_line,
 		  KWIN_FUNC_GET_COLOUR, get_colour,
+		  KWIN_FUNC_RESIZE, resize,
 		  KWIN_ATT_END) );
 	*right = ( kwin_create_generic
 		  (shared_canvas->xgl_right, xoff, yoff, width, height,
@@ -521,6 +547,7 @@ flag kwin_xgl_create_stereo (Display *display, Window window,
 		   KWIN_FUNC_FREE_CACHE_DATA, free_cache_data,
 		   KWIN_FUNC_DRAW_LINE, draw_line,
 		   KWIN_FUNC_GET_COLOUR, get_colour,
+		   KWIN_FUNC_RESIZE, resize,
 		   KWIN_ATT_END) );
 	xgl_cmap = NULL;
     }
@@ -537,6 +564,7 @@ flag kwin_xgl_create_stereo (Display *display, Window window,
 		  KWIN_FUNC_FREE_CACHE_DATA, free_cache_data,
 		  KWIN_FUNC_DRAW_LINE, draw_line,
 		  KWIN_FUNC_GET_COLOUR, get_colour,
+		  KWIN_FUNC_RESIZE, resize,
 		  KWIN_ATT_END) );
 	*left = ( kwin_create_generic
 		 (shared_canvas->xgl_left, xoff, yoff, width, height,
@@ -548,6 +576,7 @@ flag kwin_xgl_create_stereo (Display *display, Window window,
 		  KWIN_FUNC_FREE_CACHE_DATA, free_cache_data,
 		  KWIN_FUNC_DRAW_LINE, draw_line,
 		  KWIN_FUNC_GET_COLOUR, get_colour,
+		  KWIN_FUNC_RESIZE, resize,
 		  KWIN_ATT_END) );
 	*right = ( kwin_create_generic
 		  (shared_canvas->xgl_right, xoff, yoff, width, height,
@@ -559,6 +588,7 @@ flag kwin_xgl_create_stereo (Display *display, Window window,
 		   KWIN_FUNC_FREE_CACHE_DATA, free_cache_data,
 		   KWIN_FUNC_DRAW_LINE, draw_line,
 		   KWIN_FUNC_GET_COLOUR, get_colour,
+		   KWIN_FUNC_RESIZE, resize,
 		   KWIN_ATT_END) );
 	xgl_cmap = xgl_object_create (xgl_system_state, XGL_CMAP, NULL, NULL);
 	xgl_object_set (xgl_cmap,
@@ -634,11 +664,11 @@ flag kwin_xgl_create_stereo (Display *display, Window window,
 }   /*  End Function kwin_xgl_create_stereo  */
 
 
-/*  Hook functions follow  */
+/*  Mandatory hook functions follow  */
 
 static flag draw_point (void *v_canvas, double x, double y,
 			unsigned long pixel_value)
-/*  [PURPOSE] This routine will draw a point onto an X11 canvas.
+/*  [PURPOSE] This routine will draw a point onto an XGL canvas.
     <v_canvas> The XGL canvas.
     <x> The horizontal offset of the point.
     <y> The vertical offset of the point.
@@ -680,8 +710,7 @@ static void *create_child (void *v_parent, KPixCanvas child)
     return (NULL);
 }   /*  End Function create_child  */
 
-static flag clear_area (void *v_canvas, int x, int y,
-			int width, int height)
+static flag clear_area (void *v_canvas, int x, int y, int width, int height)
 /*  [PURPOSE] This routine will clear an area in an XGL canvas.
     <v_canvas> The XGL canvas.
     <x> The horizontal offset of the area.
@@ -692,13 +721,26 @@ static flag clear_area (void *v_canvas, int x, int y,
 */
 {
     XglCanvas xglcanvas = (XglCanvas) v_canvas;
+    SharedCanvas sc;
     static char function_name[] = "__kwin_xgl_clear_area";
 
     VERIFY_CANVAS (xglcanvas);
+    sc = xglcanvas->shared_canvas;
     set_active_canvas (xglcanvas);
+/*
     (void) fprintf (stderr, "%s...\n", function_name);
+*/
+    if ( (x == 0) && (y == 0) && (width == sc->xwin_width) &&
+	 (height == sc->xwin_height) )
+    {
+	(void) fprintf (stderr, "%s clear all...\n", function_name);
+	xgl_context_new_frame (sc->render_context);
+    }
     return (TRUE);
 }   /*  End Function clear_area  */
+
+
+/*  Optional hook functions follow  */
 
 static flag draw_pc_image (XglCanvas xglcanvas, int x_off, int y_off,
 			   int x_pixels, int y_pixels, CONST char *slice,
@@ -902,7 +944,7 @@ static flag draw_pc_image (XglCanvas xglcanvas, int x_off, int y_off,
     }
     cache->width = x_pixels;
     cache->height = y_pixels;
-    if ( !draw_cached_image (cache, x_off, y_off) )
+    if ( !draw_cached_image (cache, TRUE, x_off, y_off, 0, 0, 0, 0) )
     {
 	(void) fprintf (stderr, "%s: error drawing image\n", function_name);
 	kwin_free_cache_data (cache);
@@ -1081,7 +1123,7 @@ static flag draw_rgb_image (XglCanvas xglcanvas,
     }
     cache->width = x_pixels;
     cache->height = y_pixels;
-    if ( !draw_cached_image (cache, x_off, y_off) )
+    if ( !draw_cached_image (cache, TRUE, x_off, y_off, 0, 0, 0, 0) )
     {
 	(void) fprintf (stderr, "%s: error drawing image\n", function_name);
 	kwin_free_cache_data (cache);
@@ -1096,14 +1138,36 @@ static flag draw_rgb_image (XglCanvas xglcanvas,
     return (TRUE);
 }   /*  End Function draw_rgb_image  */
 
-static flag draw_cached_image (KPixCanvasImageCache cache, int x_off,int y_off)
+static flag draw_cached_image (KPixCanvasImageCache cache, flag wait,
+			       int parent_x_off, int parent_y_off,
+			       int image_width, int image_height,
+			       int image_x_off, int image_y_off /*,
+			       int canvas_x_off, int canvas_y_off,
+			       int canvas_width, int canvas_height */)
 /*  [PURPOSE] This routine will draw a previously computed image cache data
     (computed by <<kwin_draw_pc_image>>) onto the canvas which the original
     image was drawn.
     <cache> The cache data.
-    <x_off> The horizontal offset, relative to the top-left corner of the
-    canvas.
-    <y_off> The vertical offset, relative to the top-left corner of the canvas.
+    <wait> If TRUE and the cache data is accessable by the graphics system, the
+    routine waits for the drawing request to complete.
+    <parent_x_off> The horizontal offset, relative to the top-left corner of
+    the parent object, where the image will be drawn.
+    <parent_y_off> The vertical offset, relative to the top-left corner of the
+    parent object, where the image will be drawn.
+    <image_width> The width of the image segment to draw. If this is less than
+    1 the entire image is drawn.
+    <image_height> The height of the image segment to draw. If this is less
+    than 1 the entire image is drawn.
+    <image_x_off> The horizontal offset, relative to the top-left corner of the
+    image.
+    <image_y_off> The vertical offset, relative to the top-left corner of the
+    image.
+    <canvas_x_off> The horizontal offset, relative to the top-left corner of
+    the parent object, of the pixel canvas. Used for clipping purposes.
+    <canvas_y_off> The vertical offset, relative to the top-left corner of
+    the parent object, of the pixel canvas. Used for clipping purposes.
+    <canvas_width> The width of the pixel canvas. Used for clipping purposes.
+    <canvas_height> The height of the pixel canvas. Used for clipping purposes.
     [RETURNS] TRUE on success if there is valid cache data, else FALSE
     indicating that the image must be recomputed and drawn using
     <<kwin_draw_pc_image>>.
@@ -1124,16 +1188,33 @@ static flag draw_cached_image (KPixCanvasImageCache cache, int x_off,int y_off)
     if (cache->raster == NULL) return (FALSE);
     set_active_canvas (xglcanvas);
 /*
-    (void) fprintf (stderr, "%s: xoff: %d  yoff: %d  width: %d  height: %d\n",
+    (void) fprintf (stderr,
+		    "%s: ca_xoff: %d  ca_yoff: %d  width: %d  height: %d\n",
 		    function_name,
-		    x_off, y_off, cache->width, cache->height);
+		    parent_x_off, parent_y_off, width, height);
+    (void) fprintf (stderr, "im_xoff: %d  im_y_off: %d\n",
+		    image_x_off, image_y_off);
 */
-    rect.xmin = 0;
-    rect.xmax = cache->width - 1;
-    rect.ymin = 0;
-    rect.ymax = cache->height - 1;
-    pos.x = x_off;
-    pos.y = y_off;
+    if ( (image_width < 1) || (image_height < 1) )
+    {
+	image_width = cache->width;
+	image_height = cache->height;
+	image_x_off = 0;
+	image_y_off = 0;
+    }
+    /*  Trim image to cache size  */
+    if (image_x_off + image_width > cache->width)
+	image_width = cache->width - image_x_off;
+    if (image_y_off + image_height > cache->height)
+    {
+	image_height = cache->height - image_y_off;
+    }
+    rect.xmin = image_x_off;
+    rect.xmax = image_x_off + image_width - 1;
+    rect.ymin = image_y_off;
+    rect.ymax = image_y_off + image_height - 1;
+    pos.x = parent_x_off;
+    pos.y = parent_y_off;
     xgl_context_copy_buffer (xglcanvas->shared_canvas->render_context, &rect,
 			     &pos, cache->raster);
 /*
@@ -1290,16 +1371,31 @@ static flag resize (XglCanvas xglcanvas, int xoff, int yoff,
 */
 {
     SharedCanvas sc;
+    XWindowAttributes window_attributes;
     static char function_name[] = "__kwin_xgl_resize";
 
     VERIFY_CANVAS (xglcanvas);
     sc = xglcanvas->shared_canvas;
     if ( (xoff == sc->xoff) && (yoff == sc->yoff) &&
-	(width == sc->width) && (height ==  sc->height) ) return (TRUE);
+	(width == sc->width) && (height == sc->height) ) return (TRUE);
+/*
+    (void) fprintf (stderr,
+		    "%s: xoff: %d  yoff: %d   width: %d  height: %d...\n",
+		    function_name, xoff, yoff, width, height);
+*/
     XSync (sc->display, False);
+    XGetWindowAttributes (sc->display, sc->window, &window_attributes);
+    sc->xwin_width = window_attributes.width;
+    sc->xwin_height = window_attributes.height;
     xgl_window_raster_resize (sc->win_ras);
     xgl_context_new_frame (sc->render_context);
+    sc->xoff = xoff;
+    sc->yoff = yoff;
+    sc->width = width;
+    sc->height = height;
+    return (TRUE);
 }   /*  End Function resize  */
+
 
 /*  Private functions follow  */
 
@@ -1509,4 +1605,32 @@ static void convert_colour (XglCanvas xglcanvas, Xgl_color *xgl_colour,
     xgl_colour->rgb.b = (float) (pixel_value & blue_mask) / (float) blue_mask;
 }   /*  End Function convert_colour  */
 
+#else  /*  !(X11 & HAS_XGL)  */
+#  ifdef X11
+
+/*  The stub functions are kept with the real functions now because when I
+    started using the -pedantic-errors option to gcc under Linux, it complained
+    about empty source files. Moving them into the one file solves this,
+    provided X11 is defined. I'll cross that bridge if I come to it.
+*/
+
+/*STUB_FUNCTION*/
+unsigned int kwin_xgl_test_stereo (Display *display, Window window)
+{
+    return (KWIN_XGL_NOT_AVAILABLE);
+}   /*  End Function kwin_test_xgl_stereo  */
+
+/*STUB_FUNCTION*/
+flag kwin_xgl_create_stereo (Display *display, Window window,
+			     int xoff, int yoff, int width, int height,
+			     KPixCanvas *mono,
+			     KPixCanvas *left, KPixCanvas *right)
+{
+    static char function_name[] = "kwin_create_xgl_stereo";
+
+    (void) fprintf (stderr, "%s: XGL not available!\n", function_name);
+    return (FALSE);
+}   /*  End Function kwin_create_xgl_stereo  */
+
+#  endif  /*  !X11  */
 #endif  /*  X11 & HAS_XGL  */

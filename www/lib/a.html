@@ -1,0 +1,34 @@
+<html><head><title>Package: a</title></head> 
+<body>
+<center><h1>The "a" Package</h1></center>    These routines are meant to provide an easy way of printing error messages
+    prior to function and process termination.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=a></a></table><h4>Functions</h4><table><tr><td><a href=a.html#a_print_abort>a_print_abort</a></td><td>Print an abort message.
+</td></tr>
+<tr><td><a href=a.html#a_prog_bug>a_prog_bug</a></td><td>Print a bug message.
+</td></tr>
+<tr><td><a href=a.html#a_func_abort>a_func_abort</a></td><td>Print a warning message.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=a_print_abort></a> void
+ <b>a_print_abort</b><i>    ()
+</i><br><p>    This routine will print the message "Aborting.\n" to the standard
+    error and will then abort the process.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     The routine does not return. The process is aborted.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=a_prog_bug></a> void
+ <b>a_prog_bug</b><i>    (char *function_name)
+</i><br><p>    This routine will print an error message to the standard error
+    indicating that a bug occurred.
+<p><b>Parameters:</b><ul><li><i>function_name :</i> 
+    The name of the function in which the bug was noted.
+<br></ul><b>Returns:</b>     The routine does not return. The process is aborted.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=a_func_abort></a> void
+ <b>a_func_abort</b><i>    (char *function_name, char *reason)
+</i><br><p>    This routine will print an error message to the standard error
+    indicating that a function is terminating abnormally.
+<p><b>Parameters:</b><ul><li><i>function_name :</i> 
+    The name of the function.
+<br><li><i>reason :</i> 
+    The reason for the function aborting.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

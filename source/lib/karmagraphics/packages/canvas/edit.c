@@ -3,7 +3,7 @@
 
     This code provides routines to draw editing instructions on world canvases.
 
-    Copyright (C) 1993,1994  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -38,8 +38,14 @@
     Updated by      Richard Gooch   27-AUG-1993: Took account of changes to
   iedit_  package.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to
+    Updated by      Richard Gooch   26-NOV-1994: Moved to
   packages/canvas/edit.c
+
+    Updated by      Richard Gooch   14-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -65,14 +71,12 @@ static flag draw_polygon (/* canvas, coord_list_head,
 /*  Public functions follow  */
 
 /*PUBLIC_FUNCTION*/
-flag canvas_draw_edit_list (canvas, ilist)
-/*  This routine will draw a list of edit objects to a world canvas.
-    The canvas must be given by  canvas  .
-    The instruction list must be given by  ilist  .
-    The routine returns TRUE on success, else it returns FALSE.
+flag canvas_draw_edit_list (KWorldCanvas canvas, KImageEditList ilist)
+/*  [SUMMARY] Draw a list of edit objects to a world canvas.
+    <canvas> The world canvas.
+    <ilist> The instruction list.
+    [RETURNS] TRUE on success, else FALSE.
 */
-KWorldCanvas canvas;
-KImageEditList ilist;
 {
     unsigned int count;
     unsigned int pack_size;
@@ -120,16 +124,12 @@ KImageEditList ilist;
 }   /*  End Function canvas_draw_edit_list  */
 
 /*PUBLIC_FUNCTION*/
-flag canvas_draw_edit_object (canvas, object)
-/*  This routine will draw one edit object to a world canvas.
-    The canvas must be given by  canvas  .
-    The first element in the instruction entry which is a pointer to a linked
-    list must be the linked list of co-ordinates.
-    The routine will draw the edit object pointed to by  object  .
-    The routine returns TRUE on success, else it returns FALSE.
+flag canvas_draw_edit_object (KWorldCanvas canvas, char *object)
+/*  [SUMMARY] Draw one edit object to a world canvas.
+    <canvas> The world canvas.
+    <object> The edit object.
+    [RETURNS] TRUE on success, else FALSE.
 */
-KWorldCanvas canvas;
-char *object;
 {
     unsigned int instruction_code;
     unsigned int elem_count;
@@ -249,31 +249,25 @@ char *object;
 
 /*  Private functions follow  */
 
-static flag draw_dab (canvas, coord_list_head, value)
+static flag draw_dab (KWorldCanvas canvas, list_header *coord_list_head,
+		      double *value)
 /*  This routine will draw a dab onto a world canvas.
     The canvas must be given by  canvas  .
     The co-ordinate list header must be pointed to by  coord_list_head  .
     The value to use when drawing must be given by  value  .
     The routine returns TRUE on success, else it returns FALSE.
 */
-KWorldCanvas canvas;
-list_header *coord_list_head;
-double *value;
 {
-    int cx;
-    int cy;
-    int rx;
-    int ry;
     edit_coord *coords;
-    static char function_name[] = "draw_dab";
+    /*static char function_name[] = "draw_dab";*/
 
-    if ( coord_list_head->length != 2 )
+    if (coord_list_head->length != 2)
     {
-	(void) fprintf (stderr, "Dab requires 2 points, got: %u\n",
+	(void) fprintf (stderr, "Dab requires 2 points, got: %lu\n",
 			coord_list_head->length);
 	return (FALSE);
     }
-    if (iedit_get_edit_coords (coord_list_head, &coords) != TRUE)
+    if ( !iedit_get_edit_coords (coord_list_head, &coords) )
     {
 	(void) fprintf (stderr, "Error getting co-ordinates\n");
 	return (FALSE);
@@ -296,17 +290,16 @@ KWorldCanvas canvas;
 list_header *coord_list_head;
 double *value;
 {
-    unsigned int coord_count;
     edit_coord *coords;
-    static char function_name[] = "draw_stroke";
+    /*static char function_name[] = "draw_stroke";*/
 
-    if ( coord_list_head->length != 4 )
+    if (coord_list_head->length != 4)
     {
-	(void) fprintf (stderr, "Stroke requires 4 points, got: %u\n",
+	(void) fprintf (stderr, "Stroke requires 4 points, got: %lu\n",
 			coord_list_head->length);
 	return (FALSE);
     }
-    if (iedit_get_edit_coords (coord_list_head, &coords) != TRUE)
+    if ( !iedit_get_edit_coords (coord_list_head, &coords) )
     {
 	(void) fprintf (stderr, "Error getting co-ordinates\n");
 	return (FALSE);
@@ -325,11 +318,10 @@ KWorldCanvas canvas;
 list_header *coord_list_head;
 double *value;
 {
-    unsigned int coord_count;
     edit_coord *coords;
-    static char function_name[] = "draw_polygon";
+    /*static char function_name[] = "draw_polygon";*/
 
-    if (iedit_get_edit_coords (coord_list_head, &coords) != TRUE)
+    if ( !iedit_get_edit_coords (coord_list_head, &coords) )
     {
 	(void) fprintf (stderr, "Error getting co-ordinates\n");
 	return (FALSE);

@@ -3,7 +3,7 @@
 
     This code provides miscellaneous functions for the <foreign_> package.
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -39,8 +39,13 @@
     Updated by      Richard Gooch   21-MAY-1995: Added support for Sun
   rasterfile format.
 
-    Last updated by Richard Gooch   28-SEP-1995: Added support for Miriad Image
+    Updated by      Richard Gooch   28-SEP-1995: Added support for Miriad Image
   format.
+
+    Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   21-JUN-1996: Added support for GIPSY format
 
 
 */
@@ -67,7 +72,8 @@
 multi_array *foreign_guess_and_read (CONST char *filename,
 				     unsigned int mmap_option, flag writeable,
 				     unsigned int *ftype, ...)
-/*  [PURPOSE] This routine will attempt to guess the filetype of a file and
+/*  [SUMMARY] Guess file type and read.
+    [PURPOSE] This routine will attempt to guess the filetype of a file and
     in the file, converting to the Karma data format if possible.
     <filename> The name of the file to read.
     <mmap_option> This has the same meaning as for the <dsxfr_get_multi>
@@ -75,8 +81,8 @@ multi_array *foreign_guess_and_read (CONST char *filename,
     <writeable> This has the same meaning as for the <dsxfr_get_multi> routine.
     <ftype> The type of the file that was read in is written here.
     [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be FA_GUESS_READ_END.
-    The attributes are passed using varargs.
+    attribute-value pairs. This list must terminated with FA_GUESS_READ_END.
+    See [<FOREIGN_ATT_GUESS>] for a list of defined attributes.
     [RETURNS] A pointer to the multi_array data structure on success, else
     NULL.
 */
@@ -191,6 +197,15 @@ multi_array *foreign_guess_and_read (CONST char *filename,
 	    == NULL )
 	{
 	    (void) fprintf (stderr, "Error reading Miriad Image file\n");
+	    return (NULL);
+	}
+	break;
+      case FOREIGN_FILE_FORMAT_GIPSY:
+	if ( ( multi_desc = foreign_gipsy_read (filename, TRUE,
+						FA_GIPSY_READ_END) )
+	    == NULL )
+	{
+	    (void) fprintf (stderr, "Error reading GIPSY file\n");
 	    return (NULL);
 	}
 	break;

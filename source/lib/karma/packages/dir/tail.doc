@@ -1,0 +1,12 @@
+
+$TABLE            DIR_SKIP_VALUES
+$COLUMNS          2
+$SUMMARY          List of defined skip control values
+$TABLE_DATA
+|.Mode                      |,Meaning
+
+|.KDIR_DOT                  |,Pass ".", skip ".."
+|.KDIR_DOTDOT               |,Pass "..", skip "."
+|.KDIR_DOT_AND_DOTDOT       |,Pass "." and ".."
+|.KDIR_NO_DOTS              |,Skip "." and ".."
+$END

@@ -2,7 +2,7 @@
 
     Source file for  karma2ppm  (Karma to PPM image conversion module).
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,12 +29,14 @@
 
     Written by      Richard Gooch   15-APR-1995
 
-    Last updated by Richard Gooch   15-APR-1995
+    Last updated by Richard Gooch   30-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
 #include <stdio.h>
 #include <math.h>
+#include <unistd.h>
 #include <errno.h>
 #include <karma.h>
 #include <karma_foreign.h>
@@ -45,6 +47,8 @@
 #include <karma_ds.h>
 #include <karma_ex.h>
 #include <karma_im.h>
+#include <karma_m.h>
+
 
 STATIC_FUNCTION (flag karma2ppm, (char *command, FILE *fp) );
 
@@ -52,9 +56,7 @@ static flag binary = TRUE;
 
 #define VERSION "1.0"
 
-main (argc, argv)
-int argc;
-char **argv;
+int main (int argc, char **argv)
 {
     KControlPanel panel;
     extern flag binary;

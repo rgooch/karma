@@ -1,207 +1,275 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the dsra_ package of routines in the Karma
-    library.
-
+$PACKAGE          dsra
+$SUMMARY          Routines to read an ASCII data structure from an open channel
+$PURPOSE
     These routines are meant to provide a mechanism to read the recursive,
     heirarchical data structure supported in Karma from open channels, in
     ASCII format.
-    The use of these routines is NOT recommended. The dsxfr_ routines are the
-    preferred means of transferring data structures.
+    The use of these routines is NOT recommended. The <-dsxfr-> routines are
+    the preferred means of transferring data structures.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
-
-    Written by		Richard Gooch	5-Jun-1995
-
-    Last updated by	Richard Gooch	5-Jun-1995
-
-
-*/
-
-multi_array *dsra_multi_desc (channel)
-/*  This routine will read the ASCII representation of the multi array general
-    data structure header from the channel object given by  channel  and
-    will allocate the required descriptors.
-    NOTE: this routine will NOT allocate space for data, nor will it read any
+$FUNCTION         dsra_multi_desc
+$RETURN_TYPE      multi_array *
+$PARAMETER_LIST
+    (Channel channel)
+$SUMMARY          Read ASCII representation of a multi_array data structure.
+$PURPOSE
+    This routine will read the ASCII representation of a multi_array
+    data structure descriptor from a channel object.
+$NOTE
+    The routine will NOT allocate space for data, nor will it read any
     data.
-    The routine returns a pointer to the multi array header on success, else
-    it displays an error message and returns NULL.
-*/
-Channel channel;
-/*---------------------------------------------------------------------------*/
+$PARAMETER        channel :
+    The channel object to read from.
+$RETURNS
+    A pointer to the multi array header on success, else NULL.
+$END
 
-packet_desc *dsra_packet_desc (channel)
-/*  This routine will read the channel object given by  channel  for
-    a packet descriptor.
-    The routine will recursively read in array and linked list descriptors
-    if required.
-    The routine returns a pointer to the packet descriptor. NULL is returned
-    if an error occured (the routine prints error messages).
-*/
-Channel channel;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         dsra_packet_desc
+$RETURN_TYPE      packet_desc *
+$PARAMETER_LIST
+    (Channel channel)
+$SUMMARY          Read ASCII representation of a packet descriptor.
+$PURPOSE
+    This routine will read the ASCII representation of a packet
+    descriptor from a channel object. The routine will recursively read in
+    array and linked list descriptors if required.
+$PARAMETER        channel :
+    The channel object to read from.
+$RETURNS
+    A pointer to the packet descriptor on success, else NULL.
+$END
 
-flag dsra_element_desc (channel, type, name)
-/*  This routine will read the channel object given by  channel  for an element
-    descriptor. The type of the element is written to the storage pointed to
-    by  type  and the name is written to the character string  name  .
-    The routine returns TRUE if a valid element descriptor was read, else
-    it displays an error message and returns FALSE.
-*/
-Channel channel;
-unsigned int *type;
-char name[];
-/*---------------------------------------------------------------------------*/
+$FUNCTION         dsra_element_desc
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, unsigned int *type, char name[])
+$SUMMARY          Read ASCII representation of an element descriptor.
+$PURPOSE
+    Read ASCII representation of an element descriptor.
+$PARAMETER        channel :
+    The channel object to read from.
+$PARAMETER        type :
+    The type of the element is written here.
+$PARAMETER        name :
+    The name of the element is written here. The length of the buffer
+    must be <<STRING_LENGTH>> bytes.
+$RETURNS
+    TRUE if a valid element descriptor was read, else FALSE.
+$END
 
-array_desc *dsra_array_desc (channel, type)
-/*  This routine will read in an array descriptor from the channel given by
-    channel  .
-    The type of the array must be given by  type  .Legal values for this are:
-        ARRAYP    K_ARRAY
-    The routine returns a pointer to the array descriptor if there were no
-    errors in reading, else it displays an error message and returns NULL.
-*/
-Channel channel;
-unsigned int type;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         dsra_array_desc
+$RETURN_TYPE      array_desc *
+$PARAMETER_LIST
+    (Channel channel, unsigned int type)
+$SUMMARY          Read ASCII representation of an array descriptor.
+$PURPOSE
+    Read ASCII representation of an array descriptor.
+$PARAMETER        channel :
+    The channel object to read from.
+$PARAMETER        type :
+    The type of the array. Legal values for this are:
+    ARRAYP    K_ARRAY
+$RETURNS
+    A pointer to the array descriptor on success, else NULL.
+$END
 
-dim_desc *dsra_dim_desc (channel)
-/*  This routine will read the channel object given by  channel  for
-    a dimension descriptor.
-    The routine returns a pointer to the dimension descriptor if there were no
-    errors in reading, else it displays an error message and returns NULL.
-*/
-Channel channel;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         dsra_dim_desc
+$RETURN_TYPE      dim_desc *
+$PARAMETER_LIST
+    (Channel channel)
+$SUMMARY          Read ASCII representation of a dimension descriptor.
+$PURPOSE
+    Read ASCII representation of a dimension descriptor.
+$PARAMETER        channel :
+    The channel object to read from.
+$RETURNS
+    A pointer to the dimension descriptor on success, else NULL.
+$END
 
-flag dsra_multi_data (channel, multi_desc)
-/*  This routine will read the ASCII representation of the data in a multi
-    array general data structure header from the channel object given by
-    channel  and will write the data into the multi_array structure pointed to
-    by  multi_desc  .
-    NOTE: this routine will only allocate space for linked list as it reads
+$FUNCTION         dsra_multi_data
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, multi_array *multi_desc)
+$SUMMARY          READ ASCII representation of data in a multi_array descriptor.
+$PURPOSE
+    READ ASCII representation of data in a multi_array descriptor.
+$PARAMETER        channel :
+    The channel object to read from.
+$PARAMETER        multi_desc :
+    The multi_array descriptor to store the data in. This is
+    modified.
+$NOTE
+    The routine will only allocate space for linked list as it reads
     them.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-Channel channel;
-multi_array *multi_desc;
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag dsra_packet (channel, descriptor, packet)
-/*  This routine will read the ASCII representation of the data packet
-    from the channel object given by  channel  .
-    The descriptor for the packet must be pointed to by  descriptor  and the
-    data will be written to the storage pointed to by  packet  .
+$FUNCTION         dsra_packet
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, packet_desc *descriptor, char *packet)
+$SUMMARY          Read ASCII representation of a data packet.
+$PURPOSE
+    This routine will read the ASCII representation of a data packet.
     The routine will recursively read in sub arrays and linked lists.
-    The routine returns TRUE on success, else it displays an error message
-    and returns FALSE.
-*/
-Channel channel;
-packet_desc *descriptor;
-char *packet;
-/*---------------------------------------------------------------------------*/
+$PARAMETER        channel :
+    The channel object to read from.
+$PARAMETER        descriptor :
+    The packet descriptor.
+$PARAMETER        packet :
+    The packet data will be written here. The packet storage must
+    already have been allocated.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag dsra_element (channel, type, desc, element)
-/*  This routine will read the ASCII representation of an element from the
-    channel object given by  channel  and will write the value to the storage
-    pointed to by  element  .The type of the element to read must be in  type
-    and the descriptor for the element must be pointed to by  desc  .
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-Channel channel;
-unsigned int type;
-char *desc;
-char *element;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         dsra_element
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, unsigned int type, char *desc,
+		   char *element)
+$SUMMARY          Read ASCII representation of an element.
+$PURPOSE
+    Read ASCII representation of an element.
+$PARAMETER        channel :
+    The channel object to read from.
+$PARAMETER        type :
+    The type of the element.
+$PARAMETER        desc :
+    The descriptor for the element.
+$PARAMETER        element :
+    The element data will be written here.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag dsra_array (channel, descriptor, array)
-/*  This routine will read in the ASCII representation of an array of data
-    packets from the channel object given by  channel  .
-    The array descriptor must be pointed to by  descriptor  and the data will
-    be written to the storage pointed to by  array  .
-    The routine returns TRUE on success, else it displays an error message
-    and returns FALSE.
-*/
-Channel channel;
-array_desc *descriptor;
-char *array;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         dsra_array
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, array_desc *descriptor, char *array)
+$SUMMARY          Read ASCII representation of an array of data packets.
+$PURPOSE
+    Read ASCII representation of an array of data packets.
+$PARAMETER        channel :
+    The channel object to read from.
+$PARAMETER        descriptor :
+    The array descriptor.
+$PARAMETER        array :
+    The array data will be written here.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag dsra_list (channel, descriptor, header)
-/*  This routine will read in the ASCII representation of a linked list of
-    data from the channel object given by  channel  .
-    The descriptor for the packets must be pointed to by  descriptor  and the
-    linked list header must be pointed to by  header  .
-    The routine will recursively read in sub arrays and linked lists.
-    The linked list entries will be contiguous in memory.
-    The routine returns TRUE on success, else it displays an error message
-    and returns FALSE.
-*/
-Channel channel;
-packet_desc *descriptor;
-list_header *header;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         dsra_list
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, packet_desc *descriptor, list_header *header)
+$SUMMARY          Read ASCII represention of a linked list.
+$PURPOSE
+    This routine will read in the ASCII representation of a linked
+    list of data from a channel object. The routine will recursively read in
+    sub arrays and linked lists.
+$PARAMETER        channel :
+    The channel object to read from.
+$PARAMETER        descriptor :
+    The descriptor for the list packets.
+$PARAMETER        header :
+    The linked list header. This is modified. The linked list entries
+    will be contiguous in memory.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag dsra_flag (channel, logical)
-/*  This routine will read in the ASCII representation of the the boolean
-    flag from the channel object given by  channel  and will write it to the
-    flag pointed to by  logical  .
-    The routine returns TRUE if the flag was read in without error, else
-    it returns FALSE.
-*/
-Channel channel;
-flag *logical;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         dsra_flag
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, flag *logical)
+$SUMMARY          Read ASCII representation of a boolean value.
+$PURPOSE
+    Read ASCII representation of a boolean value.
+$PARAMETER        channel :
+    The channel object to read from.
+$PARAMETER        logical :
+    The boolean value will be written here.
+$RETURNS
+    TRUE if the flag was read in without error, else FALSE.
+$END
 
-flag dsra_type (channel, type)
-/*  This routine will read in the ASCII representation of the data type from
-    the channel object given by  channel  and will write the type value into
-    the storage pointed to by  type  .
-    The routine returns TRUE if the type was read without error, else it
-    returns FALSE.
-*/
-Channel channel;
-unsigned int *type;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         dsra_type
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, unsigned int *type)
+$SUMMARY          Read ASCII representation of a data type.
+$PURPOSE
+    Read ASCII representation of a data type.
+$PARAMETER        channel :
+    The channel object to read from.
+$PARAMETER        type :
+    The type value will be written here.
+$RETURNS
+    TRUE if the type was read without error, else FALSE.
+$END
 
-flag dsra_uint (channel, value)
-/*  This routine will read the ASCII representation of an unsigned integer
-    value from the channel object given by  channel  .
-    The result is written into the storage pointed to by  value  .
-    The routine returns TRUE if successful, else it displays an error message
-    and returns FALSE.
-*/
-Channel channel;
-unsigned int *value;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         dsra_uint
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, unsigned int *value)
+$SUMMARY          Read the ASCII representation of an unsigned integer.
+$PURPOSE
+    Read the ASCII representation of an unsigned integer.
+$PARAMETER        channel :
+    The channel object to read from.
+$PARAMETER        value :
+    The result is written here.
+$RETURNS
+    TRUE if successful, else FALSE.
+$END
 
-flag dsra_int (channel, value)
-/*  This routine will read the ASCII representation of a signed integer
-    value from the channel object given by  channel  .
-    The result is written into the storage pointed to by  value  .
-    The routine returns TRUE if successful, else it displays an error message
-    and returns FALSE.
-*/
-Channel channel;
-int *value;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         dsra_int
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, int *value)
+$SUMMARY          Read the ASCII representation of a signed integer.
+$PURPOSE
+    Read the ASCII representation of a signed integer.
+$PARAMETER        channel :
+    The channel object to read from.
+$PARAMETER        value :
+    The result is written here.
+$RETURNS
+    TRUE if successful, else FALSE.
+$END
 
-flag dsra_float (channel, value)
-/*  This routine will read the ASCII representation of a floating point
-    value from the channel object given by  channel  .
-    The result is written into the storage pointed to by  value  .
-    The routine returns TRUE if successful, else it displays an error message
-    and returns FALSE.
-*/
-Channel channel;
-float *value;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         dsra_float
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, float *value)
+$SUMMARY          Read the ASCII representation of a floating point value.
+$PURPOSE
+    Read the ASCII representation of a floating point value.
+$PARAMETER        channel :
+    The channel object to read from.
+$PARAMETER        value :
+    The result is written here.
+$RETURNS
+    TRUE if successful, else FALSE.
+$END
 
-flag dsra_double (channel, value)
-/*  This routine will read the ASCII representation of a double floating point
-    value from the channel object given by  channel  .
-    The result is written into the storage pointed to by  value  .
-    The routine returns TRUE if successful, else it displays an error message
-    and returns FALSE.
-*/
-Channel channel;
-double *value;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         dsra_double
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, double *value)
+$SUMMARY          Read ASCII representation of a double floating point value.
+$PURPOSE
+    Read ASCII representation of a double floating point value.
+$PARAMETER        channel :
+    The channel object to read from.
+$PARAMETER        value :
+    The result is written here.
+$RETURNS
+    TRUE if successful, else FALSE.
+$END

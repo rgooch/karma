@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   12-JAN-1995
 
-    Last updated by Richard Gooch   24-JAN-1996
+    Last updated by Richard Gooch   2-MAY-1996
 
 */
 
@@ -48,6 +48,7 @@ typedef struct threadpool_type * KThreadPool;
 
 /*  File:  main.c  */
 EXTERN_FUNCTION (KThreadPool mt_create_pool, (void *pool_info) );
+EXTERN_FUNCTION (KThreadPool mt_get_shared_pool, () );
 EXTERN_FUNCTION (void mt_destroy_pool, (KThreadPool pool, flag interrupt) );
 EXTERN_FUNCTION (void mt_destroy_all_pools, (flag interrupt) );
 EXTERN_FUNCTION (unsigned int mt_num_threads, (KThreadPool pool) );

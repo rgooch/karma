@@ -3,7 +3,7 @@
 
     This code provides Channel objects.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -133,7 +133,16 @@
 
     Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
 
-    Last updated by Richard Gooch   15-JUN-1995: Made use of IS_ALIGNED macro.
+    Updated by      Richard Gooch   15-JUN-1995: Made use of IS_ALIGNED macro.
+
+    Updated by      Richard Gooch   31-MAR-1996: Changed documentation style.
+
+    Updated by      Richard Gooch   15-JUN-1996: Inlined memory copy for small
+  transfers in <ch_read_disc> and <ch_read_memory>. Created
+  <ch_read_and_swap_blocks>.
+
+    Last updated by Richard Gooch   29-JUN-1996: Created
+  <ch_swap_and_write_blocks>.
 
 
 */
@@ -198,6 +207,7 @@ if (ch->magic_number != CHANNEL_MAGIC_NUMBER) \
 #define CONNECTION_BUF_SIZE (unsigned int) 4096
 #define DEFAULT_BLOCK_SIZE (unsigned int) 4096
 #define CONV_BUF_SIZE (unsigned int) 4096
+#define SWAP_BUF_SIZE (unsigned int) 4096
 
 #define MMAP_LARGE_SIZE 1048576
 
@@ -264,495 +274,45 @@ static flag registered_exit_func = FALSE;
 static KCallbackList tap_list = NULL;
 
 
-/*  Declarations of private functions follow  */
+/*  Private functions  */
+STATIC_FUNCTION (Channel ch_alloc, () );
+STATIC_FUNCTION (unsigned int ch_read_disc,
+		 (Channel channel, char *buffer, unsigned int length) );
+STATIC_FUNCTION (unsigned int ch_read_connection,
+		 (Channel channel, char *buffer, unsigned int length) );
+STATIC_FUNCTION (unsigned int ch_read_memory,
+		 (Channel channel, char *buffer, unsigned int length) );
+#ifdef DISABLED
+STATIC_FUNCTION (unsigned int ch_read_memory_and_swap,
+		 (Channel channel, char *buffer, unsigned int num_blocks,
+		  unsigned int block_size) );
+#endif
+STATIC_FUNCTION (unsigned int ch_write_descriptor,
+		 (Channel channel, CONST char *buffer, unsigned int length) );
 STATIC_FUNCTION (int mywrite_raw,
 		 (Channel channel, CONST char *buffer, unsigned int length) );
-
-
-/*  Private functions follow  */
-
-static Channel ch_alloc ()
-/*  This routine will allocate and initialise a channel data structure.
-    The routine returns a channel object structure on success, 
-    else it returns NULL.
-*/
-{
-    Channel channel;
-    extern flag registered_exit_func;
-    extern Channel first_channel;
-    static char function_name[] = "ch_alloc";
-
-    if (registered_exit_func != TRUE)
-    {
-	/*  Register function to be called upon processing of  exit(3)  */
-#ifdef HAS_ATEXIT
-	atexit (ch_close_all_channels);
-#endif
-#ifdef HAS_ON_EXIT
-	on_exit (ch_close_all_channels, (caddr_t) NULL);
-#endif
-	registered_exit_func = TRUE;
-    }
-
-    /*  Allocate channel structure  */
-    if ( ( channel = (Channel) m_alloc ( (unsigned int) sizeof *channel ) )
-	== NULL )
-    {
-	m_error_notify (function_name, "channel object");
-	return (NULL);
-    }
-    channel->magic_number = CHANNEL_MAGIC_NUMBER;
-    channel->type = CHANNEL_TYPE_UNDEFINED;
-    channel->fd = -1;
-    channel->ch_errno = 0;
-    channel->read_buffer = NULL;
-    channel->read_buf_len = 0;
-    channel->read_buf_pos = 0;
-    channel->bytes_read = 0;
-    channel->write_buffer = NULL;
-    channel->write_buf_len = 0;
-    channel->write_buf_pos = 0;
-    channel->write_start_pos = 0;
-    channel->memory_buffer = NULL;
-    channel->mem_buf_len = 0;
-    channel->mem_buf_read_pos = 0;
-    channel->mem_buf_write_pos = 0;
-    channel->mmap_access_count = 0;
-    channel->abs_read_pos = 0;
-    channel->abs_write_pos = 0;
-    channel->top_converter = NULL;
-    channel->next_converter = NULL;
-    /*  Place channel object into list  */
-    channel->prev = NULL;
-    channel->next = first_channel;
-    if (first_channel != NULL)
-    {
-	first_channel->prev = channel;
-    }
-    first_channel = channel;
-    return (channel);
-}   /*  End Function ch_alloc  */
-
-static unsigned int ch_read_disc (channel, buffer, length)
-/*  This routine will read a number of bytes from a disc channel and places
-    them into a buffer.
-    The channel object must be given by  channel  .
-    The buffer to write the data into must be pointed to by  buffer  .
-    The number of bytes to read into the buffer must be pointed to by  length
-    The routine returns the number of bytes read.
-*/
-Channel channel;
-char *buffer;
-unsigned int length;
-{
-    unsigned int read_pos = 0;
-    int bytes_to_read;
-    int bytes_read;
-    extern KCallbackList tap_list;
-    extern char *sys_errlist[];
-/*
-    static char function_name[] = "ch_read_disc";
-*/
-
-    if ( (channel->bytes_read - channel->read_buf_pos) >= length )
-    {
-	/*  Read buffer has enough data in it  */
-	m_copy (buffer, channel->read_buffer + channel->read_buf_pos,
-		length);
-	channel->read_buf_pos += length;
-	return (length);
-    }
-    /*  Need to read from disc  */
-    /*  Copy what is left in the read buffer  */
-    read_pos = channel->bytes_read - channel->read_buf_pos;
-    m_copy (buffer, channel->read_buffer + channel->read_buf_pos,
-	    read_pos);
-    /*  Test if an error occurred  */
-    if (channel->ch_errno != 0)
-    {
-	errno = (channel->ch_errno > 0) ? channel->ch_errno : 0;
-	channel->read_buf_pos = 0;
-	channel->bytes_read = 0;
-	return (read_pos);
-    }
-    /*  Test if that's all there is in the file  */
-    if ( (channel->bytes_read > 0) &&
-	(channel->bytes_read < channel->read_buf_len) )
-    {
-	/*  Must have hit EOF  */
-	return (read_pos);
-    }
-    channel->read_buf_pos = 0;
-    channel->bytes_read = 0;
-    bytes_to_read = length - read_pos;
-    if (bytes_to_read > channel->read_buf_len)
-    {
-	/*  Call any tap functions that were registered  */
-	c_call_callbacks (tap_list, NULL);
-	/*  Read an intregal number of blocks directly  */
-	bytes_to_read -= bytes_to_read % (int) channel->read_buf_len;
-	if ( ( bytes_read = read (channel->fd, buffer + read_pos,
-				  bytes_to_read) )
-	    < 0 )
-	{
-	    /*  Error occurred  */
-	    channel->ch_errno = errno;
-	    if (read_pos > 0)
-	    {
-		errno = 0;
-	    }
-	    return (read_pos);
-	}
-	if (bytes_read < bytes_to_read)
-	{
-	    /*  Only read some bytes: hit End-Of-File  */
-	    read_pos += bytes_read;
-	    return (read_pos);
-	}
-	read_pos += bytes_read;
-    }
-    /*  Call any tap functions that were registered  */
-    c_call_callbacks (tap_list, NULL);
-    /*  Read one block into read buffer  */
-    bytes_to_read = channel->read_buf_len;
-    if ( ( bytes_read = read (channel->fd, channel->read_buffer,
-			      bytes_to_read) )
-	< 0 )
-    {
-	/*  Error reading complete block  */
-	channel->ch_errno = errno;
-    }
-    if (bytes_read < bytes_to_read)
-    {
-	channel->ch_errno = -1;
-    }
-    channel->bytes_read = bytes_read;
-    /*  Read what is needed from the read buffer  */
-    read_pos += ch_read_disc (channel, buffer + read_pos, length - read_pos);
-    errno = 0;
-    return (read_pos);
-}   /*  End Function ch_read_disc  */
-
-static unsigned int ch_read_connection (channel, buffer, length)
-/*  This routine will read a number of bytes from a connection channel and
-    places them into a buffer.
-    The channel object must be given by  channel  .
-    The buffer to write the data into must be pointed to by  buffer  .
-    The number of bytes to read into the buffer must be pointed to by  length
-    If the number of bytes readable from the connection is equal to or more
-    than  length  the routine will NOT block.
-    The routine returns the number of bytes read.
-*/
-Channel channel;
-char *buffer;
-unsigned int length;
-{
-    flag was_error = TRUE;
-    int bytes_available;
-    unsigned int read_pos = 0;
-    int bytes_to_read;
-    int bytes_read;
-    extern KCallbackList tap_list;
-    extern char *sys_errlist[];
-    static char function_name[] = "ch_read_connection";
-
-    if ( (channel->bytes_read - channel->read_buf_pos) >= length )
-    {
-	/*  Read buffer has enough data in it  */
-	m_copy (buffer, channel->read_buffer + channel->read_buf_pos,
-		length);
-	channel->read_buf_pos += length;
-	return (length);
-    }
-    /*  Will need to read from connection  */
-    /*  Copy what is left in the read buffer  */
-    read_pos = channel->bytes_read - channel->read_buf_pos;
-    m_copy (buffer, channel->read_buffer + channel->read_buf_pos,
-	    read_pos);
-    channel->read_buf_pos = 0;
-    channel->bytes_read = 0;
-    /*  Test if an error occurred  */
-    if (channel->ch_errno > 0)
-    {
-	errno = channel->ch_errno;
-	return (read_pos);
-    }
-    /*  Call any tap functions that were registered  */
-    c_call_callbacks (tap_list, NULL);
-    /*  Read the remainder directly  */
-    bytes_to_read = length - read_pos;
-    if ( ( bytes_read = r_read (channel->fd, buffer + read_pos,
-				bytes_to_read) )
-	< 0 )
-    {
-	/*  Error reading  */
-	channel->ch_errno = errno;
-	return (read_pos);
-    }
-    if (bytes_read < bytes_to_read)
-    {
-	/*  Only read some bytes  */
-	switch (channel->type)
-	{
-	  case CHANNEL_TYPE_CONNECTION:
-	    (void) fprintf (stderr,
-			    "Connection channel closed while reading\n");
-	    break;
-	  case CHANNEL_TYPE_CHARACTER:
-	    (void) fprintf (stderr,
-			    "Character special channel closed while reading\n");
-	    break;
-	  case CHANNEL_TYPE_FIFO:
-	    was_error = FALSE;
-	    break;
-	  default:
-	    (void) fprintf (stderr, "Bad channel type: %u\n", channel->type);
-	    a_prog_bug (function_name);
-	    break;
-	}
-	if (was_error) (void) fprintf (stderr,
-				       "Wanted: %d bytes  got: %d bytes\n",
-				       bytes_to_read, bytes_read);
-	return (read_pos);
-    }
-    read_pos += bytes_read;
-    /*  Drain data on connection into buffer  */
-    if ( ( bytes_available = r_get_bytes_readable (channel->fd) ) < 0 )
-    {
-	channel->ch_errno = errno;
-	errno = 0;
-	return (read_pos);
-    }
-    /*  Call any tap functions that were registered  */
-    c_call_callbacks (tap_list, NULL);
-    bytes_to_read = ( (bytes_available <= channel->read_buf_len) ?
-		     bytes_available : channel->read_buf_len );
-    if ( ( bytes_read = r_read (channel->fd, channel->read_buffer,
-				bytes_to_read) )
-	< bytes_to_read )
-    {
-	/*  Only read some bytes  */
-	switch (channel->type)
-	{
-	  case CHANNEL_TYPE_CONNECTION:
-	    (void) fprintf (stderr,
-			    "Connection channel closed while draining\t%s\n",
-			    sys_errlist[errno]);
-	    break;
-	  case CHANNEL_TYPE_CHARACTER:
-	    (void) fprintf (stderr,
-			    "Character special channel closed while draining\t%s\n",
-			    sys_errlist[errno]);
-	    break;
-	  case CHANNEL_TYPE_FIFO:
-	    (void) fprintf (stderr,
-			    "FIFO channel closed while draining\t%s\n",
-			    sys_errlist[errno]);
-	    break;
-	  default:
-	    (void) fprintf (stderr, "Bad channel type: %u\n", channel->type);
-	    a_prog_bug (function_name);
-	    break;
-	}
-	exit (RV_SYS_ERROR);
-    }
-    channel->bytes_read = bytes_read;
-    errno = 0;
-    return (read_pos);
-}   /*  End Function ch_read_connection  */
-
-static unsigned int ch_read_memory (channel, buffer, length)
-/*  This routine will read a number of bytes from a memory channel and
-    places them into a buffer.
-    The channel object must be given by  channel  .
-    The buffer to write the data into must be pointed to by  buffer  .
-    The number of bytes to read into the buffer must be pointed to by  length
-    The routine returns the number of bytes read.
-*/
-Channel channel;
-char *buffer;
-unsigned int length;
-{
-    unsigned int bytes_to_read;
-    unsigned int bytes_left;
-/*
-    static char function_name[] = "ch_read_memory";
-*/
-
-    bytes_left = channel->mem_buf_len - channel->mem_buf_read_pos;
-    bytes_to_read = (length <= bytes_left) ? length : bytes_left;
-    m_copy (buffer,
-	    channel->memory_buffer + channel->mem_buf_read_pos,
-	    bytes_to_read);
-    channel->mem_buf_read_pos += bytes_to_read;
-    return (bytes_to_read);
-}   /*  End Function ch_read_memory  */
-
-static unsigned int ch_write_descriptor (channel, buffer, length)
-/*  This routine will write a number of bytes from a buffer to a descriptor
-    channel.
-    The channel object must be given by  channel  .
-    The buffer to read the data from must be pointed to by  buffer  .
-    The number of bytes to write from the buffer must be pointed to by  length
-    The routine returns the number of bytes written.
-*/
-Channel channel;
-char *buffer;
-unsigned int length;
-{
-    int bytes_written;
-    int bytes_to_write;
-    unsigned int write_pos = 0;
-/*
-    static char function_name[] = "ch_write_descriptor";
-*/
-
-    if (channel->ch_errno != 0)
-    {
-	/*  Error occurred previously during writing  */
-	errno = channel->ch_errno;
-	return (0);
-    }
-    if ( length < (channel->write_buf_len - channel->write_buf_pos) )
-    {
-	/*  Write buffer will not be filled up  */
-	m_copy (channel->write_buffer + channel->write_buf_pos,
-		buffer, length);
-	channel->write_buf_pos += length;
-	return (length);
-    }
-    /*  Copy over as much as possible into write buffer  */
-    write_pos = channel->write_buf_len - channel->write_buf_pos;
-    m_copy (channel->write_buffer + channel->write_buf_pos, buffer,
-	    write_pos);
-    channel->write_buf_pos += write_pos;
-    /*  Flush write buffer  */
-    bytes_to_write = channel->write_buf_pos - channel->write_start_pos;
-    if ( ( bytes_written = mywrite_raw (channel, channel->write_buffer,
-					bytes_to_write) )
-	< bytes_to_write )
-    {
-	channel->write_start_pos = 0;
-	return (FALSE);
-    }
-    channel->write_start_pos = 0;
-    /*  Write integral number of blocks directly  */
-    bytes_to_write = length - write_pos;
-    bytes_to_write -= bytes_to_write % (int) channel->write_buf_len;
-    if ( ( bytes_written = mywrite_raw (channel, buffer + write_pos,
-					bytes_to_write) )
-	< bytes_to_write )
-    {
-	/*  Error writing  */
-	channel->ch_errno = errno;
-	return (write_pos + bytes_written);
-    }
-    write_pos += bytes_written;
-    /*  Place remainder into write buffer  */
-    m_copy (channel->write_buffer, buffer + write_pos, length - write_pos);
-    channel->write_buf_pos = length - write_pos;
-    return (length);
-}  /*  End Function ch_write_descriptor  */
-
-static int mywrite_raw (Channel channel, CONST char *buffer,
-			unsigned int length)
-/*  This routine will write a number of bytes from a buffer to a channel. This
-    routine takes no account of buffering, nor a  write_converter_func  .
-    The channel object must be given by  channel  .
-    The buffer to read the data from must be pointed to by  buffer  .
-    The number of bytes to write from the buffer must be pointed to by  length
-    The routine returns the number of bytes written.
-*/
-{
-    int bytes_to_write;
-    unsigned int bytes_left;
-    extern KCallbackList tap_list;
-    static char function_name[] = "mywrite_raw";
-
-    VERIFY_CHANNEL (channel);
-    if (buffer == NULL)
-    {
-	(void) fprintf (stderr, "NULL buffer pointer passed\n");
-	a_prog_bug (function_name);
-    }
-    if (length < 1) return (0);
-    switch (channel->type)
-    {
-      case CHANNEL_TYPE_DISC:
-	/*  Call any tap functions that were registered  */
-	c_call_callbacks (tap_list, NULL);
-	return ( write (channel->fd, buffer, length) );
-/*
-	break;
-*/
-      case CHANNEL_TYPE_CONNECTION:
-      case CHANNEL_TYPE_CHARACTER:
-      case CHANNEL_TYPE_FIFO:
-	/*  Call any tap functions that were registered  */
-	c_call_callbacks (tap_list, NULL);
-	return ( r_write (channel->fd, buffer, length) );
-/*
-	break;
-*/
-      case CHANNEL_TYPE_MEMORY:
-      case CHANNEL_TYPE_MMAP:
-	bytes_left = channel->mem_buf_len - channel->mem_buf_write_pos;
-	bytes_to_write = (length <= bytes_left) ? length : bytes_left;
-	m_copy (channel->memory_buffer + channel->mem_buf_write_pos,
-		buffer, bytes_to_write);
-	channel->mem_buf_write_pos += bytes_to_write;
-	return (bytes_to_write);
-/*
-	break;
-*/
-      case CHANNEL_TYPE_DOCK:
-	(void) fprintf (stderr,
-			"Write operation not permitted on dock channel\n");
-	a_prog_bug (function_name);
-	break;
-      case CHANNEL_TYPE_ASYNCHRONOUS:
-	(void) fprintf (stderr,
-			"Write operation not permitted on raw asynchronous\n");
-	a_prog_bug (function_name);
-	break;
-      default:
-	(void) fprintf (stderr, "Invalid channel type\n");
-	a_prog_bug (function_name);
-	break;
-    }
-    return (-1);
-}   /*  End Function mywrite_raw  */
 
 
 /*  Public functions follow  */
 
 /*PUBLIC_FUNCTION*/
-Channel ch_open_file (filename, type)
-/*  This routine will open a file channel. The file may be a regular disc file,
-    a named FIFO, a character special device, a Unix domain connection or a
-    TCP/IP connection. The channel may be later tested
+Channel ch_open_file (CONST char *filename, CONST char *type)
+/*  [SUMMARY] Open a file.
+    [PURPOSE] This routine will open a file channel. The file may be a regular
+    disc file, a named FIFO, a character special device, a Unix domain
+    connection or a TCP/IP connection. The channel may be later tested
     to determine what the true channel type is by calling routines such as:
-    ch_test_for_asynchronous  and  ch_test_for_io  .
-    The pathname of the file to open must be given by  filename  .This
-    parameter has the same meaning as the first parameter to  open(2).
-    Filenames of the form: "//tcpIP/<hostname>:<port>" indicate a connection to
-    a TCP/IP port on host  <hostname>  with raw port number  <port>  is
-    requested.
-    The mode of the file must be pointed to by  type  .The following modes are
-    allowed:
-        "r"         open for reading
-	"w"         open (truncate) or create for writing
-	"a"         open or create for writing at end of file (append)
-	"r+"        open for update (reading and writing)
-	"w+"        open for reading and writing after truncation
-	"a+"        open or create for update (reading and writing) at EOF
-	"W"         open for writing
-    Note that for character special files and named FIFOs, these modes
+    [<ch_test_for_asynchronous>] and [<ch_test_for_io>].
+    <filename> The pathname of the file to open. This parameter has the same
+    meaning as the first parameter to <<open(2)>>. Filenames of the form
+    "//tcpIP/<hostname>:<port>" indicate a connection to a TCP/IP port on host
+    <<hostname>> with raw port number <<port>> is requested.
+    <type> The mode of the file. See [<CH_FILE_MODES>] for a list of allowable
+    modes.
+    [NOTE] For character special files and named FIFOs, these modes
     degenerate into read-write, read-only and write-only.
-    The routine returns a channel object on success, else it returns NULL.
+    [RETURNS] A channel object on success, else NULL.
 */
-CONST char *filename;
-CONST char *type;
 {
     flag read_flag = FALSE;
     flag write_flag = FALSE;
@@ -894,42 +454,34 @@ CONST char *type;
 }   /*  End Function ch_open_file  */
 
 /*PUBLIC_FUNCTION*/
-Channel ch_map_disc (filename, option, writeable, update_on_write)
-/*  This routine will open a memory channel with the memory pages being mapped
-    from a disc file. The disc file must already exist.
-    The pathname of the file to open must be given by  filename  .
-    The channel may be opened as an ordinary disc file depending on the value
-    of  option  .Legal values for this are:
-        K_CH_MAP_NEVER           Never map
-	K_CH_MAP_LARGE_LOCAL     Map if local filesystem and file size > 1MB
-	K_CH_MAP_LOCAL           Map if local filesystem
-	K_CH_MAP_LARGE           Map if file over 1 MByte
-	K_CH_MAP_IF_AVAILABLE    Map if operating system supports it
-	K_CH_MAP_ALWAYS          Always map, fail if not supported.
+Channel ch_map_disc (CONST char *filename, unsigned int option, flag writeable,
+		     flag update_on_write)
+/*  [SUMMARY] Map a disc file.
+    [PURPOSE] This routine will open a memory channel with the memory pages
+    being mapped from a disc file. The disc file must already exist.
+    <filename> The pathname of the file to open.
+    <option> Control value which determines whether the channel is opened as an
+    ordinary disc file or is mapped. See [<CH_MAP_CONTROLS>] for legal values.
     If the file is not mapped then the routine will attempt to open an ordinary
-    disc channel, provided  option  is not equal to  K_CH_MAP_ALWAYS  .
-    If the file is opened as a disc channel the access mode is: "r".
-    If the mapped pages are to be writeable, the value of  writeable  must be
-    TRUE. If this is FALSE and the memory pages are written to, a segmentation
-    fault occurs.
-    If the disc file should be updated when the memory pages are written to,
-    the value of  update_on_write  must be TRUE. If this is FALSE, then a write
-    to a memory page causes the page to be copied into swap space and the
-    process retains a private copy of the page from this point on.
-    If  update_on_write  is FALSE and  writeable  is TRUE, then some systems
-    require the allocation of normal virtual memory equal to the size of the
-    disc file at the time of mapping, while others will dynamically allocate
-    memory from swap space as pages are written into.
-    In the latter case, some systems will cause a segmentation fault if swap
-    space is exhausted, while other systems wait for space to be freed.
-    The channel may be queried to determine if it has been memory mapped using
-    the call:  ch_test_for_mmap
-    The routine returns a channel object on success, else it returns NULL.
+    disc channel. If the file is opened as a disc channel the access mode is:
+    "r".
+    <writable> If the mapped pages are to be writeable, this must be TRUE. If
+    this is FALSE and the memory pages are written to, a segmentation fault
+    occurs.
+    <update_on_write> If the disc file should be updated when the memory pages
+    are written to, this must be TRUE. If this is FALSE, then a write to a
+    memory page causes the page to be copied into swap space and the process
+    retains a private copy of the page from this point on.
+    [NOTE] If <<update_on_write>> is FALSE and <<writeable>> is TRUE, then some
+    systems require the allocation of normal virtual memory equal to the size
+    of the disc file at the time of mapping, while others will dynamically
+    allocate memory from swap space as pages are written into. In the latter
+    case, some systems will cause a segmentation fault if swap space is
+    exhausted, while other systems wait for space to be freed.
+    [NOTE] The channel may be queried to determine if it has been memory mapped
+    using the call <<ch_test_for_mmap>>.
+    [RETURNS] A channel object on success, else NULL.
 */
-CONST char *filename;
-unsigned int option;
-flag writeable;
-flag update_on_write;
 {
     int open_flags;
 #ifdef HAS_MMAP
@@ -1122,16 +674,17 @@ flag update_on_write;
 
 /*PUBLIC_FUNCTION*/
 Channel ch_open_connection (unsigned long host_addr, unsigned int port_number)
-/*  This routine will open a full-duplex connection channel to a server running
-    on another host machine.
-    The Internet address of the host machine must be given by  host_addr  .
-    If this is 0 the connection is made to a server running on the same machine
-    using the most efficient transport available.
-    The port number to connect to must be given by  port_number  .This should
-    not be confused with Internet port numbers.
-    The use of this routine is not recommended: see the  conn_  package for
-    more powerful functionality.
-    The routine returns a channel object on success, else it returns NULL.
+/*  [SUMMARY] Open a connection.
+    [PURPOSE] This routine will open a full-duplex connection channel to a
+    server running on another host machine.
+    <host_addr> The Internet address of the host machine. If this is 0 the
+    connection is made to a server running on the same machine using the most
+    efficient transport available.
+    <port_number> The port number to connect to. This should not be confused
+    with Internet port numbers.
+    [NOTE] The use of this routine is not recommended, see the [<conn>]
+    package for more powerful functionality.
+    [RETURNS] A channel object on success, else NULL.
 */
 {
     Channel channel;
@@ -1174,18 +727,17 @@ Channel ch_open_connection (unsigned long host_addr, unsigned int port_number)
 }   /*  End Function ch_open_connection  */
 
 /*PUBLIC_FUNCTION*/
-Channel ch_open_memory (buffer, size)
-/*  This routine will open a memory channel. A memory channel behaves like a
-    disc channel with a limited (specified) file (device) size.
-    Data is undefined when reading before writing has occurred.
-    The buffer to use must be pointed to by  buffer  .If this is NULL, the
-    routine will allocate a buffer of the specified size which is automatically
-    deallocated upon closure of the channel.
-    The size of the buffer to allocate must be given by  size  .
-    The routine returns a channel object on success, else it returns NULL.
+Channel ch_open_memory (char *buffer, unsigned int size)
+/*  [SUMMARY] Open a memory channel.
+    [PURPOSE] This routine will open a memory channel. A memory channel behaves
+    like a disc channel with a limited (specified) file (device) size. Data is
+    undefined when reading before writing has occurred.
+    <buffer> The buffer to use. If this is NULL, the routine will allocate a
+    buffer of the specified size which is automatically deallocated upon
+    closure of the channel.
+    <size> The size of the buffer to allocate.
+    [RETURNS] A channel object on success, else NULL.
 */
-char *buffer;
-unsigned int size;
 {
     Channel channel;
     static char function_name[] = "ch_open_memory";
@@ -1218,16 +770,14 @@ unsigned int size;
 }   /*  End Function ch_open_memory  */
 
 /*PUBLIC_FUNCTION*/
-Channel ch_accept_on_dock (dock, addr)
-/*  This routine will open a full-duplex connection channel to the first
-    connection to a waiting dock.
-    The dock must be given by  dock  .
-    The address of the host connecting to the dock will be written to the
-    storage pointed to by  addr  .
-    The routine returns a channel object on success, else it returns NULL.
+Channel ch_accept_on_dock (Channel dock, unsigned long *addr)
+/*  [SUMMARY] Accept a connection.
+    [PURPOSE] This routine will open a full-duplex connection channel to the
+    first connection on a waiting dock.
+    <dock> The dock.
+    <addr> The address of the host connecting to the dock will be written here.
+    [RETURNS] A channel object on success, else NULL.
 */
-Channel dock;
-unsigned long *addr;
 {
     Channel channel;
     extern char *sys_errlist[];
@@ -1285,29 +835,26 @@ unsigned long *addr;
 }   /*  End Function ch_accept_on_dock  */
 
 /*PUBLIC_FUNCTION*/
-Channel *ch_alloc_port (port_number, retries, num_docks)
-/*  This routine will allocate a Karma port for the module so that it can
-    operate as a server (able to receive network connections).
-    The port number to allocate must be pointed to by  port_number  .The
-    routine will write the actual port number allocated to this address. This
-    must point to an address which lies on an  int  boundary.
-    The number of succsessive port numbers to attempt to allocate before giving
-    up must be given by  retries  .If this is 0, then the routine will give up
-    immediately if the specified port number is in use.
-    The routine will create a number of docks for one port. Each dock is an
-    alternative access point for other modules to connect to this port.
-    The number of docks allocated will be written to the storage pointed to by
-    num_docks  .This must point to an address which lies on an  int
-    boundary.
-    The close-on-exec flags of the docks are set such that the docks will
-    close on a call to execve(2V).
-    The docks are placed into blocking mode.
-    The routine returns a pointer to an array of channel docks on success,
-    else it returns NULL.
+Channel *ch_alloc_port (unsigned int *port_number, unsigned int retries,
+			unsigned int *num_docks)
+/*  [SUMMARY] Allocate a port.
+    [PURPOSE] This routine will allocate a Karma port for the module so that it
+    can operate as a server (able to receive network connections).
+    <port_number> A pointer to the port number to allocate. The routine will
+    write the actual port number allocated to this address. This must point to
+    an address which lies on an <<int>> boundary.
+    <retries> The number of succsessive port numbers to attempt to allocate
+    before giving up. If this is 0, then the routine will give up immediately
+    if the specified port number is in use.
+    <num_docks> The routine will create a number of docks for one port. Each
+    dock is an alternative access point for other modules to connect to this
+    port. The number of docks allocated will be written here. This must point
+    to an address which lies on an <<int>> boundary.
+    [NOTE] The close-on-exec flags of the docks are set such that the docks
+    will close on a call to execve(2V).
+    [NOTE] The docks are placed into blocking mode.
+    [RETURNS] A pointer to an array of channel docks on success, else NULL.
 */
-unsigned int *port_number;
-unsigned int retries;
-unsigned int *num_docks;
 {
     unsigned int dock_count;
     int *docks;
@@ -1371,13 +918,13 @@ unsigned int *num_docks;
 }   /*  End Function ch_alloc_port  */
 
 /*PUBLIC_FUNCTION*/
-flag ch_close (channel)
-/*  This routine will close a channel object. The write buffer will be flushed
-    prior to closure.
-    The channel object must be given by  channel  .
-    The routine returns TRUE on success, else it returns FALSE.
+flag ch_close (Channel channel)
+/*  [SUMMARY] Close a channel.
+    [PURPOSE] This routine will close a channel object. The write buffer will
+    be flushed prior to closure.
+    <channel> The channel object.
+    [RETURNS] TRUE on success, else FALSE.
 */
-Channel channel;
 {
     flag return_value = TRUE;
     ChConverter converter, next_converter;
@@ -1512,12 +1059,11 @@ Channel channel;
 }   /*  End Function ch_close  */
 
 /*PUBLIC_FUNCTION*/
-flag ch_flush (channel)
-/*  This routine will flush the write buffer of a channel object.
-    The channel object must be given by  channel  .
-    The routine returns TRUE on success, else it returns FALSE.
+flag ch_flush (Channel channel)
+/*  [SUMMARY] Flush the write buffer of a channel object.
+    <channel> The channel object.
+    [RETURNS] TRUE on success, else FALSE.
 */
-Channel channel;
 {
     int bytes_to_write;
     ChConverter converter;
@@ -1594,19 +1140,18 @@ Channel channel;
 }   /*  End Function ch_flush  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int ch_read (channel, buffer, length)
-/*  This routine will read a number of bytes from a channel and places them
-    into a buffer.
-    The channel object must be given by  channel  .
-    The buffer to write the data into must be pointed to by  buffer  .
-    The number of bytes to write into the buffer must be pointed to by  length
-    If the channel is a connection and the number of bytes readable from the
-    connection is equal to or more than  length  the routine will NOT block.
-    The routine returns the number of bytes read.
+unsigned int ch_read (Channel channel, char *buffer, unsigned int length)
+/*  [SUMMARY] Read from a channel.
+    [PURPOSE] This routine will read a number of bytes from a channel and
+    places them into a buffer.
+    <channel> The channel object.
+    <buffer> The buffer to write the data into.
+    <length> The number of bytes to write into the buffer.
+    [NOTE] If the channel is a connection and the number of bytes readable from
+    the connection is equal to or more than <<length>> the routine will NOT
+    block.
+    [RETURNS] The number of bytes read.
 */
-Channel channel;
-char *buffer;
-unsigned int length;
 {
     unsigned int num_read = 0;  /*  Initialised to keep compiler happy  */
     ChConverter converter, old_converter;
@@ -1679,17 +1224,120 @@ unsigned int length;
     return (num_read);
 }   /*  End Function ch_read  */
 
-/*PUBLIC_FUNCTION*/
-unsigned int ch_write (channel, buffer, length)
-/*  This routine will write a number of bytes from a buffer to a channel.
-    The channel object must be given by  channel  .
-    The buffer to read the data from must be pointed to by  buffer  .
-    The number of bytes to read from the buffer must be given by  length
-    The routine returns the number of bytes written.
+/*EXPERMIMENTAL_FUNCTION*/
+unsigned int ch_read_and_swap_blocks (Channel channel, char *buffer,
+				      unsigned int num_blocks,
+				      unsigned int block_size)
+/*  [SUMMARY] Read blocks from a channel and swap bytes.
+    [PURPOSE] This routine will read a number of blocks from a channel and
+    places them into a buffer after swapping (reversing the order).
+    <channel> The channel object.
+    <buffer> The buffer to write the data into.
+    <num_blocks> The number of blocks to read.
+    <block_size> The size (in bytes) of each block.
+    [NOTE] If the channel is a connection and the number of bytes readable from
+    the connection is equal to or more than <<num_blocks * block_size>> the
+    routine will NOT block.
+    [RETURNS] The number of bytes read. Errors may cause partial blocks to be
+    read.
 */
-Channel channel;
-CONST char *buffer;
-unsigned int length;
+{
+    unsigned int num_read = 0;  /*  Initialised to keep compiler happy  */
+    unsigned int length = num_blocks * block_size;
+    ChConverter converter, old_converter;
+    static char function_name[] = "ch_read_and_swap_blocks";
+
+    VERIFY_CHANNEL (channel);
+    if (buffer == NULL)
+    {
+	(void) fprintf (stderr, "NULL pointer passed\n");
+	a_prog_bug (function_name);
+    }
+#ifndef DISABLE_CONVERTERS
+    if ( (converter = channel->next_converter) != NULL )
+    {
+	if (converter != channel->top_converter)
+	{
+	    (void) fprintf (stderr, "Converter: %p is not top converter: %p\n",
+			    converter, channel->top_converter);
+	    a_prog_bug (function_name);
+	}
+	/*  Pass it on to a read converter  */
+	old_converter = channel->next_converter;
+	channel->next_converter = converter->next;
+	if ( ( num_read = (*converter->read_func) (channel, buffer, length,
+						   &converter->info) )
+	    < length )
+	{
+	    channel->next_converter = channel->top_converter;
+	    channel->abs_write_pos += num_read;
+	    m_copy_and_swap_blocks (buffer, NULL, block_size, 0, block_size,
+				    num_blocks);
+	    return (num_read);
+	}
+	/*  Read converter has produced all data  */
+	if (converter == channel->top_converter)
+	{
+	    channel->abs_read_pos += num_read;
+	}
+	channel->next_converter = old_converter;
+	return (num_read);
+    }
+#endif
+    /*  Since any read converters would call <ch_read> to do the dirty work,
+	if we get to this point, it means we have no converters for this
+	channel  */
+    switch (channel->type)
+    {
+      case CHANNEL_TYPE_DISC:
+	num_read = ch_read_disc (channel, buffer, length);
+	break;
+      case CHANNEL_TYPE_CONNECTION:
+      case CHANNEL_TYPE_CHARACTER:
+      case CHANNEL_TYPE_FIFO:
+	num_read = ch_read_connection (channel, buffer, length);
+	break;
+      case CHANNEL_TYPE_MEMORY:
+      case CHANNEL_TYPE_MMAP:
+	num_read = ch_read_memory (channel, buffer, length);
+	break;
+      case CHANNEL_TYPE_DOCK:
+	(void) fprintf (stderr, "Read operation not permitted on dock\n");
+	a_prog_bug (function_name);
+	break;
+      case CHANNEL_TYPE_ASYNCHRONOUS:
+	(void) fprintf (stderr,
+			"Read operation not permitted on raw asynchronous\n");
+	a_prog_bug (function_name);
+	break;
+      case CHANNEL_TYPE_SINK:
+	errno = 0;
+	return (0);
+/*
+	break;
+*/
+      default:
+	(void) fprintf (stderr, "Invalid channel type\n");
+	a_prog_bug (function_name);
+	break;
+    }
+    channel->abs_read_pos += num_read;
+    m_copy_and_swap_blocks (buffer, NULL, block_size, 0, block_size,
+			    num_blocks);
+    return (num_read);
+}   /*  End Function ch_read_and_swap_blocks  */
+
+/*PUBLIC_FUNCTION*/
+unsigned int ch_write (Channel channel, CONST char *buffer,unsigned int length)
+/*  [SUMMARY] Write to a channel.
+    [PURPOSE] This routine will write a number of bytes from a buffer to a
+    channel.
+    <channel> The channel object.
+    <buffer> The buffer to read the data from.
+    <length> The number of bytes to read from the buffer and write to the
+    channel.
+    [RETURNS] The number of bytes written.
+*/
 {
     ChConverter converter, old_converter;
     unsigned int bytes_to_write, bytes_written;
@@ -1771,11 +1419,53 @@ unsigned int length;
     return (num_written);
 }   /*  End Function ch_write  */
 
+/*EXPERMIMENTAL_FUNCTION*/
+unsigned int ch_swap_and_write_blocks (Channel channel, CONST char *buffer,
+				       unsigned int num_blocks,
+				       unsigned int block_size)
+/*  [SUMMARY] Write blocks to a channel after swapping bytes.
+    [PURPOSE] This routine will write a number of blocks to a channel after
+    swapping the bytes.
+    <channel> The channel object.
+    <buffer> The buffer to read the data from.
+    <num_blocks> The number of blocks to write.
+    <block_size> The size (in bytes) of each block.
+    [RETURNS] The number of bytes written. Errors may cause partial blocks to
+    be written.
+*/
+{
+    unsigned int tot_bytes_written, bytes_written, bytes_to_write, nblocks;
+    char swap_buffer[SWAP_BUF_SIZE];
+    static char function_name[] = "ch_swap_and_write_blocks";
+
+    VERIFY_CHANNEL (channel);
+    if (buffer == NULL)
+    {
+	(void) fprintf (stderr, "NULL pointer passed\n");
+	a_prog_bug (function_name);
+    }
+    for (tot_bytes_written = 0; num_blocks > 0;
+	 num_blocks -= nblocks, buffer += bytes_written)
+    {
+	nblocks = num_blocks;
+	if (nblocks * block_size > SWAP_BUF_SIZE)
+	    nblocks = SWAP_BUF_SIZE / block_size;
+	m_copy_and_swap_blocks (swap_buffer, buffer, block_size, block_size,
+				block_size, nblocks);
+	bytes_to_write = nblocks * block_size;
+	bytes_written = ch_write (channel, swap_buffer, bytes_to_write);
+	tot_bytes_written += bytes_written;
+	if (bytes_written < bytes_to_write) return (tot_bytes_written);
+    }
+    return (tot_bytes_written);
+}   /*  End Function ch_swap_and_write_blocks  */
+
 /*PUBLIC_FUNCTION*/
 void ch_close_all_channels ()
-/*  This routine will close all open channels.
-    The routine is meant to be called from the exit(3) function.
-    The routine returns nothing.
+/*  [SUMMARY] Close all open channels.
+    [PURPOSE] The routine will close all open channels. The routine is meant to
+    be called from the exit(3) function.
+    [RETURNS] Nothing.
 */
 {
     extern Channel first_channel;
@@ -1788,13 +1478,14 @@ void ch_close_all_channels ()
 
 /*PUBLIC_FUNCTION*/
 flag ch_seek (Channel channel, unsigned long position)
-/*  This routine will position the read and write pointers for a channel.
-    The channel object must be given by  channel  .
-    The position (relative to the start of the channel data) must be given
-    by  position  .
-    This routine cannot be used for connection channels.
-    The routine returns TRUE on success,
-    else it returns FALSE (indicating a seek request beyond the channel limits)
+/*  [SUMMARY] Move read/write pointer.
+    [PURPOSE] This routine will position the read and write pointers for a
+    channel.
+    <channel> The channel object.
+    <position> The position (relative to the start of the channel data).
+    [NOTE] This routine cannot be used for connection channels.
+    [RETURNS] TRUE on success, else FALSE (indicating a seek request beyond the
+    channel limits)
 */
 {
     char dummy;
@@ -1907,16 +1598,16 @@ flag ch_seek (Channel channel, unsigned long position)
 }   /*  End Function ch_seek  */
 
 /*PUBLIC_FUNCTION*/
-int ch_get_bytes_readable (channel)
-/*  This routine will determine the number of bytes currently readable on
-    a connection channel. This is equal to the maximum number of bytes that
-    could be read from the channel at this time without blocking waiting for
-    more input to be transmitted from the other end of the connection.
-    The channel object must be given by  channel  .
-    The routine returns the number of bytes readable on success,
-    else it returns -1 indicating error.
+int ch_get_bytes_readable (Channel channel)
+/*  [SUMMARY] Count unread bytes.
+    [PURPOSE] This routine will determine the number of bytes currently
+    readable on a connection channel. This is equal to the maximum number of
+    bytes that could be read from the channel at this time without blocking
+    waiting for more input to be transmitted from the other end of the
+    connection.
+    <channel> The channel object.
+    [RETURNS] The number of bytes readable on success, else -1 indicating error
 */
-Channel channel;
 {
     ChConverter converter;
     int bytes_available;
@@ -2004,13 +1695,11 @@ Channel channel;
 }   /*  End Function ch_get_bytes_readable  */
 
 /*PUBLIC_FUNCTION*/
-int ch_get_descriptor (channel)
-/*  This routine will get the file descriptor associated with a channel.
-    The channel object must be given by  channel  .
-    The routine returns the file descriptor on success,
-    else it returns -1 indicating error.
+int ch_get_descriptor (Channel channel)
+/*  [SUMMARY] Get the file descriptor associated with a channel.
+    <channel> The channel object.
+    [RETURNS] The file descriptor on success, else -1 indicating error.
 */
-Channel channel;
 {
     static char function_name[] = "ch_get_descriptor";
 
@@ -2020,11 +1709,12 @@ Channel channel;
 
 /*PUBLIC_FUNCTION*/
 void ch_open_stdin ()
-/*  This routine will create a channel object for the standard input descriptor
-    (typically 0 on Unix systems).
-    The standard input channel will be written to the external variable
-    ch_stdin  .
-    The routine returns nothing.
+/*  [SUMMARY] Create starndard input channel.
+    [PURPOSE] This routine will create a channel object for the standard input
+    descriptor (typically 0 on Unix systems).
+    [NOTE] The standard input channel will be written to the external variable
+    <<ch_stdin>>.
+    [RETURNS] Nothing.
 */
 {
     flag disc;
@@ -2057,16 +1747,15 @@ void ch_open_stdin ()
 }   /*  End Function ch_open_stdin  */
 
 /*PUBLIC_FUNCTION*/
-flag ch_test_for_io (channel)
-/*  This routine will test if a channel object is capable of supporting reading
-    and writing operations. Most channels fall under this category. The notable
-    exceptions are the dock channel and channels created by a call to
-    ch_attach_to_asynchronous_descriptor  .
-    The channel object must be given by  channel  .
-    The routine returns TRUE if the channel is capable of reading and writing,
-    else it returns FALSE.
+flag ch_test_for_io (Channel channel)
+/*  [SUMMARY] Test if I/O possible on channel.
+    [PURPOSE] This routine will test if a channel object is capable of
+    supporting reading and writing operations. Most channels fall under this
+    category. The notable exceptions are the dock channel and channels created
+    by a call to <<ch_attach_to_asynchronous_descriptor>>.
+    <channel> The channel object.
+    [RETURNS] TRUE if the channel is capable of reading and writing, else FALSE
 */
-Channel channel;
 {
     flag return_value;
     static char function_name[] = "ch_test_for_io";
@@ -2086,16 +1775,15 @@ Channel channel;
 }   /*  End Function ch_test_for_io  */
 
 /*PUBLIC_FUNCTION*/
-flag ch_test_for_asynchronous (channel)
-/*  This routine will test if a channel object is an asynchronous channel,
-    ie. a character special file, named FIFO, connection, a dock channel or one
-    created by a call to  ch_attach_to_asynchronous_descriptor  or
-    ch_create_pipe  .
-    The channel object must be given by  channel  .
-    The routine returns TRUE if the channel is asynchronous,
-    else it returns FALSE.
+flag ch_test_for_asynchronous (Channel channel)
+/*  [SUMMARY] Test if a channel object is an asynchronous channel.
+    [PURPOSE] This routine will test if a channel object is an asynchronous
+    channel, i.e. a character special file, named FIFO, connection, a dock
+    channel or one created by a call to
+    <<ch_attach_to_asynchronous_descriptor>> or <<ch_create_pipe>>.
+    <channel> The channel object.
+    [RETURNS] TRUE if the channel is asynchronous, else FALSE.
 */
-Channel channel;
 {
     flag return_value;
     static char function_name[] = "ch_test_for_asynchronous";
@@ -2118,13 +1806,11 @@ Channel channel;
 }   /*  End Function ch_test_for_asynchronous  */
 
 /*PUBLIC_FUNCTION*/
-flag ch_test_for_connection (channel)
-/*  This routine will test if a channel object is a connection channel.
-    The channel object must be given by  channel  .
-    The routine returns TRUE if the channel object is a connection,
-    else it returns FALSE.
+flag ch_test_for_connection (Channel channel)
+/*  [SUMMARY] Test if a channel object is a connection channel.
+    <channel> The channel object.
+    [RETURNS] TRUE if the channel object is a connection, else FALSE.
 */
-Channel channel;
 {
     static char function_name[] = "ch_test_for_connection";
 
@@ -2140,14 +1826,11 @@ Channel channel;
 }   /*  End Function ch_test_for_connection  */
 
 /*PUBLIC_FUNCTION*/
-flag ch_test_for_local_connection (channel)
-/*  This routine will test if a connection channel object is a local
-    connection.
-    The channel object must be given by  channel  .
-    The routine returns TRUE if the channel object is a local connection,
-    else it returns FALSE.
+flag ch_test_for_local_connection (Channel channel)
+/*  [SUMMARY] Test if a connection channel object is a local connection.
+    <channel> The channel object.
+    [RETURNS] TRUE if the channel object is a local connection, else FALSE.
 */
-Channel channel;
 {
     static char function_name[] = "ch_test_for_local_connection";
 
@@ -2160,12 +1843,11 @@ Channel channel;
 }   /*  End Function ch_test_for_local_connection  */
 
 /*PUBLIC_FUNCTION*/
-Channel ch_attach_to_asynchronous_descriptor (fd)
-/*  This routine will create a channel object from an asynchronous descriptor.
-    The descriptor must be given by  fd  .
-    The routine returns a channel object on success, else it returns NULL.
+Channel ch_attach_to_asynchronous_descriptor (int fd)
+/*  [SUMMARY] Create a channel object from an asynchronous descriptor.
+    <fd> The descriptor.
+    [RETURNS] A channel object on success, else NULL.
 */
-int fd;
 {
     Channel channel;
 /*
@@ -2183,13 +1865,11 @@ int fd;
 }   /*  End Function ch_attach_to_asynchronous_descriptor  */
 
 /*PUBLIC_FUNCTION*/
-flag ch_test_for_mmap (channel)
-/*  This routine will test if a channel object is a memory mapped disc channel.
-    The channel object must be given by  channel  .
-    The routine returns TRUE if the channel object is memory mapped,
-    else it returns FALSE.
+flag ch_test_for_mmap (Channel channel)
+/*  [SUMMARY] Test if a channel object is a memory mapped disc channel.
+    <channel> The channel object.
+    [RETURNS] TRUE if the channel object is memory mapped, else FALSE.
 */
-Channel channel;
 {
     static char function_name[] = "ch_test_for_mmap";
 
@@ -2205,18 +1885,16 @@ Channel channel;
 }   /*  End Function ch_test_for_mmap  */
 
 /*PUBLIC_FUNCTION*/
-flag ch_tell (channel, read_pos, write_pos)
-/*  This routine will determine the read and write pointers for a channel.
-    The channel object must be given by  channel  .
-    The read position (relative to the start of the channel data) will be
-    written to the storage pointed to by  read_pos  .
-    The write position (relative to the start of the channel data) will be
-    written to the storage pointed to by  write_pos  .
-    The routine returns TRUE on success, else it returns FALSE.
+flag ch_tell (Channel channel, unsigned long *read_pos,
+	      unsigned long *write_pos)
+/*  [SUMMARY] Get the read and write pointers for a channel.
+    <channel> The channel object.
+    <read_pos> The read position (relative to the start of the channel data)
+    will be written here.
+    <write_pos> The write position (relative to the start of the channel data)
+    will be written here.
+    [RETURNS] TRUE on success, else FALSE.
 */
-Channel channel;
-unsigned long *read_pos;
-unsigned long *write_pos;
 {
     static char function_name[] = "ch_tell";
 
@@ -2252,14 +1930,16 @@ unsigned long *write_pos;
 }   /*  End Function ch_tell  */
 
 /*PUBLIC_FUNCTION*/
-char *ch_get_mmap_addr (channel)
-/*  This routine will get the starting address of the data for a memory mapped
-    disc channel. The channel MUST be a memory mapped disc channel.
-    The routine returns the address of the memory mapped data.
-    NOTE: the if memory mapped address space is read-only, any attempt to write
-    to this address space will cause a segmentation fault.
+char *ch_get_mmap_addr (Channel channel)
+/*  [SUMMARY] Get memory mapped address.
+    [PURPOSE] This routine will get the starting address of the data for a
+    memory mapped disc channel. The channel MUST be a memory mapped disc
+    channel.
+    <channel> The channel object.
+    [RETURNS] The address of the memory mapped data.
+    [NOTE] If the memory mapped address space is read-only, any attempt to
+    write to this address space will cause a segmentation fault.
 */
-Channel channel;
 {
     static char function_name[] = "ch_get_mmap_addr";
 
@@ -2274,14 +1954,14 @@ Channel channel;
 }   /*  End Function ch_get_mmap_addr  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int ch_get_mmap_access_count (channel)
-/*  This routine will get the number of times a memory mapped disc channel has
-    been queried for the mapping address (using  ch_get_mmap_addr  ).
-    The channel object must be given by  channel  .
-    The channel MUST be a memory mapped disc channel.
-    The routine returns the number of address queries.
+unsigned int ch_get_mmap_access_count (Channel channel)
+/*  [SUMMARY] Get memory mapped access count.
+    [PURPOSE] This routine will get the number of times a memory mapped disc
+    channel has been queried for the mapping address using <<ch_get_mmap_addr>>
+    <channel> The channel object.
+    [NOTE] The channel MUST be a memory mapped disc channel.
+    [RETURNS] The number of address queries.
 */
-Channel channel;
 {
     static char function_name[] = "ch_get_mmap_access_count";
 
@@ -2295,112 +1975,50 @@ Channel channel;
 }   /*  End Function ch_get_mmap_access_count  */
 
 /*PUBLIC_FUNCTION*/
-ChConverter ch_register_converter (channel, size_func, read_func, write_func,
-				   flush_func, close_func, info)
-/*  This routine will register a set of converter functions which will be
-    called when channel data is read or written. The operation of these
+ChConverter ch_register_converter (Channel channel,
+				   unsigned int (*size_func) (),
+				   unsigned int (*read_func) (),
+				   unsigned int (*write_func) (),
+				   flag (*flush_func) (),
+				   void (*close_func) (),
+				   void *info)
+/*  [SUMMARY] Register channel converter function.
+    [PURPOSE] This routine will register a set of converter functions which
+    will be called when channel data is read or written. The operation of these
     routines is transparent. Converter functions are useful for automatic
     compression and encryption of data streams.
-    NOTE: converters may only be registered for disc, connection, character
-    special and FIFO channels (ie. those opened with  ch_open_file  ), and
-    impose restrictions on channel operations (ie.  ch_seek  cannot be called).
-    Converter functions are expected to provide their own buffering as needed.
-    The channel object must be given by  channel  .
-    The function which will determine (approximately) how many bytes would be
-    returned by the  read_func  must be pointed to by  size_func  .This routine
-    is called when  ch_get_bytes_readable  is called for the channel.
-    The interface to this function is given below:
-
-    unsigned int size_func (channel, info)
-    *   This routine will determine the approximate number of bytes that the
-        read_func  will return.
-	The channel object will be given by  channel  .
-	The arbitrary information pointer will be pointed to by  info  .The
-	information pointer may be modified.
-	The routine returns the number of bytes the  read_func  will return.
-    *
-    Channel channel;
-    void **info;
-
-    The function which will convert data when reading must be pointed to by
-    read_func  .
-    The interface to this function is given below:
-
-    unsigned int read_func (channel, buffer, length, info)
-    *   This routine will convert bytes being read from a channel object.
-        The channel object will be given by  channel  .It is permissable for
-	the routine to call  ch_read  with this channel. If this is done,
-	this  read_func  will be bypassed.
-	The buffer to write the data into will be pointed to by  buffer  .
-	The number of bytes to write into the buffer will be pointed to by
-	length  .
-	The arbitrary information pointer will be pointed to by  info  .The
-	information pointer may be modified.
-	The routine returns the number of bytes actually written to the buffer.
-    *
-    Channel channel;
-    char *buffer;
-    unsigned int length;
-    void **info;
-
-    The function which will convert data when writing must be pointed to by
-    write_func  .If this is NULL, no write conversion is performed.
-    The interface to this function is given below:
-
-    unsigned int write_func (channel, buffer, length, info)
-    *   This routine will convert bytes being written to a channel object.
-        The channel object will be given by  channel  .It is permissable for
-	the routine to call  ch_write  with this channel. If this is done,
-	this  write_func  will be bypassed.
-	The buffer to read the data from will be pointed to by  buffer  .The
-	contents of this buffer may be modified if needed.
-	The number of bytes to read from the buffer will be given by  length
-	The arbitrary information pointer will be pointed to by  info  .The
-	information pointer may be modified.
-	The routine returns the number of bytes read from the buffer.
-    *
-    Channel channel;
-    char *buffer;
-    unsigned int length;
-    void **info;
-
-    The function which is called when the channel is to be flushed must be
-    pointed to by  flush_func  .
-    The interface to this function is given below:
-
-    flag flush_func (channel, info)
-    *   This routine will process a flush request for a channel object.
-        The channel object will be given by  channel  .It is permissable for
-	the routine to call  ch_write  with this channel. If this is done,
-	this  write_func  will be bypassed.
-	The arbitrary information pointer will be pointed to by  info  .The
-	information pointer may be modified.
-	The routine returns TRUE on success, else it returns FALSE.
-    *
-    Channel channel;
-    void **info;
-
-    The function which is called when the channel is closed must be pointed to
-    by  close_func  .If this is NULL, no special action is taken upon channel
-    closure. Note that the  flush_func  will be called prior to the  close_func
-    upon channel closure.
-    The interface to this function is given below:
-
-    void close_func (info)
-    *   This routine is called when a channel is closed.
-	The arbitrary information pointer will be given by  info  .
-	The routine returns nothing.
-    *
-    void *info;
-
     It is permissable to register multiple converter functions with a channel.
     Converter functions are pushed down from the top (application) level. In
     other words, the last converter functions registered are called first.
-    The sequence of events when the application level calls  ch_write  is:
+    [NOTE] Converters may only be registered for disc, connection, character
+    special and FIFO channels (ie. those opened with <<ch_open_file>>), and
+    impose restrictions on channel operations (ie. <<ch_seek>> cannot be
+    called).
+    [NOTE] Converter functions are expected to provide their own buffering as
+    needed.
+    <channel> The channel object.
+    <size_func> The function which will determine (approximately) how many
+    bytes would be returned by the <<read_func>>. This routine is called when
+    [<ch_get_bytes_readable>] is called for the channel. The prototype function
+    is [<CH_PROTO_size_func>].
+    <read_func> The function which will convert data when reading.
+    The prototype function is [<CH_PROTO_read_func>].
+    <write_func> The function which will convert data when writing. If this is
+    NULL, no write conversion is performed. The prototype function is
+    [<CH_PROTO_write_func>].
+    <flush_func> The function which is called when the channel is to be flushed
+    The prototype function is [<CH_PROTO_flush_func>].
+    <close_func> The function which is called when the channel is closed. If
+    this is NULL, no special action is taken upon channel closure.
+    The prototype function is [<CH_PROTO_close_func>].
+    [NOTE] The <<flush_func>> will be called prior to the <<close_func>> upon
+    channel closure.
+    [NOTE]
+    The sequence of events when the application level calls [<ch_write>] is:
       The last registered write converter is popped from the stack and called.
       This write converter may buffer some or all of the data. It may call
-        ch_write  with some converted data.
-      When  ch_write  is called from a write converter, the next last
+        [<ch_write>] with some converted data.
+      When [<ch_write>] is called from a write converter, the next last
         registered write converter is popped from the stack and called.
       This sequence is continued until data is actually transferred into the
       channel write buffer.
@@ -2413,16 +2031,9 @@ ChConverter ch_register_converter (channel, size_func, read_func, write_func,
       When the last registered flush converter returns, the sequence is
       repeated with the next last flush converter, and so on, until all data
       in all write buffers is flushed, including the channel write buffer.
-    The routine returns a ChConverter object on success (which may be used in a
-    call to  ch_unregister_converter), else it returns NULL.
+    [RETURNS] A ChConverter object on success (which may be used in a call to
+    [<ch_unregister_converter>]), else NULL.
 */
-Channel channel;
-unsigned int (*size_func) ();
-unsigned int (*read_func) ();
-unsigned int (*write_func) ();
-flag (*flush_func) ();
-void (*close_func) ();
-void *info;
 {
     ChConverter new;
     static char function_name[] = "ch_register_converter";
@@ -2503,14 +2114,14 @@ void *info;
 }   /*  End Function ch_register_converter  */
 
 /*PUBLIC_FUNCTION*/
-void ch_unregister_converter (converter)
-/*  This routine will unregister a set of converter functions previously
-    registered with  ch_register_converter  .This will cause the registered
-    flush and close functions to be called.
-    The ChConverter object must be given by  converter  .
-    The routine returns nothing.
+void ch_unregister_converter (ChConverter converter)
+/*  [SUMMARY] Unregister converter.
+    [PURPOSE] This routine will unregister a set of converter functions
+    previously registered with [<ch_register_converter>]. This will cause the
+    registered flush and close functions to be called.
+    <converter> The ChConverter object.
+    [RETURNS] Nothing.
 */
-ChConverter converter;
 {
     Channel channel;
     ChConverter old_converter;
@@ -2566,18 +2177,17 @@ ChConverter converter;
 }   /*  End Function ch_unregister_converter  */
 
 /*PUBLIC_FUNCTION*/
-flag ch_create_pipe (read_ch, write_ch)
-/*  This routine will create an un-named pipe (see  pipe(2)  for details on
-    un-named pipes).
-    The channel corresponding to the read end of the pipe will be written to
-    the storage pointed to by  read_ch  .
-    The channel corresponding to the write end of the pipe will be written to
-    the storage pointed to by  write_ch  .
-    The routine returns TRUE on success, else it returns FALSE and sets  errno
-    with the error code.
+flag ch_create_pipe (Channel *read_ch, Channel *write_ch)
+/*  [SUMMARY] Create a pipe.
+    [PURPOSE] This routine will create an un-named pipe (see <<pipe(2)>> for
+    details on un-named pipes).
+    <read_ch> The channel corresponding to the read end of the pipe will be
+    written here.
+    <write_ch> The channel corresponding to the write end of the pipe will be
+    written here.
+    [RETURNS] TRUE on success, else FALSE and sets <<errno>> with the error
+    code.
 */
-Channel *read_ch;
-Channel *write_ch;
 {
     Channel rch, wch;
     int read_fd;
@@ -2640,11 +2250,12 @@ Channel *write_ch;
 
 /*PUBLIC_FUNCTION*/
 Channel ch_create_sink ()
-/*  This routine will create a data sink channel. All writes to the channel are
-    discarded (and reported as having succeeded) and all reads return an
-    End-Of-File condition. Read and write operations modify the absolute read
-    and write pointers (obtainable with  ch_tell  ) as expected.
-    The routine returns the channel object on succes, else it returns NULL.
+/*  [SUMMARY] Create data sink.
+    [PURPOSE] This routine will create a data sink channel. All writes to the
+    channel are discarded (and reported as having succeeded) and all reads
+    return an End-Of-File condition. Read and write operations modify the
+    absolute read and write pointers (obtainable with [<ch_tell>]) as expected.
+    [RETURNS] The channel object on succes, else NULL.
 */
 {
     Channel channel;
@@ -2661,28 +2272,19 @@ Channel ch_create_sink ()
 }   /*  End Function ch_create_sink  */
 
 /*PUBLIC_FUNCTION*/
-KCallbackFunc ch_tap_io_events ( void (*tap_func) (), void *info )
-/*  This routine will tap I/O events by calling a registered function whenever
-    data is transferred to/from a disc, connection or FIFO channel. Reading and
-    writing memory mapped or memory channels does *not* constitute an I/O event
-
-    The function which is called when I/O occurs must be pointed to by
-    tap_func  .
-    The interface to this function is given below:
-
-    void tap_func (info)
-    *   This routine is called when I/O occurs.
-	The arbitrary information pointer will be given by  info  .
-	The routine returns nothing.
-    *
-    void *info;
-
+KCallbackFunc ch_tap_io_events (void (*tap_func) (), void *info)
+/*  [SUMMARY] Register I/O tap function.
+    [PURPOSE] This routine will tap I/O events by calling a registered function
+    whenever data is transferred to/from a disc, connection or FIFO channel.
+    Reading and writing memory mapped or memory channels does *not* constitute
+    an I/O event.
     Multiple tap functions may be registered, with the first one registered
     being the first one called upon a channel I/O event.
-
-    The arbitrary information passed to the tap function must be pointed to
-    by  info  .This may be NULL.
-    The routine returns a KCallbackFunc. On failure, the process aborts.
+    <tap_func> The function which is called when I/O occurs. The prototype
+    function is [<CH_PROTO_tap_func>].
+    <info> The arbitrary information passed to the tap function. This may be
+    NULL.
+    [RETURNS] A KCallbackFunc. On failure, the process aborts.
 */
 {
     extern KCallbackList tap_list;
@@ -2690,3 +2292,514 @@ KCallbackFunc ch_tap_io_events ( void (*tap_func) (), void *info )
     return ( c_register_callback (&tap_list, ( flag (*) () ) tap_func,
 				  info, NULL, FALSE, NULL, FALSE, FALSE) );
 }   /*  End Function ch_tap_io_events  */
+
+
+/*  Private functions follow  */
+
+static Channel ch_alloc ()
+/*  This routine will allocate and initialise a channel data structure.
+    The routine returns a channel object structure on success, 
+    else it returns NULL.
+*/
+{
+    Channel channel;
+    extern flag registered_exit_func;
+    extern Channel first_channel;
+    static char function_name[] = "ch_alloc";
+
+    if (registered_exit_func != TRUE)
+    {
+	/*  Register function to be called upon processing of  exit(3)  */
+#ifdef HAS_ATEXIT
+	atexit (ch_close_all_channels);
+#endif
+#ifdef HAS_ON_EXIT
+	on_exit (ch_close_all_channels, (caddr_t) NULL);
+#endif
+	registered_exit_func = TRUE;
+    }
+
+    /*  Allocate channel structure  */
+    if ( ( channel = (Channel) m_alloc ( (unsigned int) sizeof *channel ) )
+	== NULL )
+    {
+	m_error_notify (function_name, "channel object");
+	return (NULL);
+    }
+    channel->magic_number = CHANNEL_MAGIC_NUMBER;
+    channel->type = CHANNEL_TYPE_UNDEFINED;
+    channel->fd = -1;
+    channel->ch_errno = 0;
+    channel->read_buffer = NULL;
+    channel->read_buf_len = 0;
+    channel->read_buf_pos = 0;
+    channel->bytes_read = 0;
+    channel->write_buffer = NULL;
+    channel->write_buf_len = 0;
+    channel->write_buf_pos = 0;
+    channel->write_start_pos = 0;
+    channel->memory_buffer = NULL;
+    channel->mem_buf_len = 0;
+    channel->mem_buf_read_pos = 0;
+    channel->mem_buf_write_pos = 0;
+    channel->mmap_access_count = 0;
+    channel->abs_read_pos = 0;
+    channel->abs_write_pos = 0;
+    channel->top_converter = NULL;
+    channel->next_converter = NULL;
+    /*  Place channel object into list  */
+    channel->prev = NULL;
+    channel->next = first_channel;
+    if (first_channel != NULL)
+    {
+	first_channel->prev = channel;
+    }
+    first_channel = channel;
+    return (channel);
+}   /*  End Function ch_alloc  */
+
+static unsigned int ch_read_disc (Channel channel, char *buffer,
+				  unsigned int length)
+/*  This routine will read a number of bytes from a disc channel and places
+    them into a buffer.
+    The channel object must be given by  channel  .
+    The buffer to write the data into must be pointed to by  buffer  .
+    The number of bytes to read into the buffer must be pointed to by  length
+    The routine returns the number of bytes read.
+*/
+{
+    unsigned int read_pos = 0;
+    unsigned int count;
+    int bytes_to_read;
+    int bytes_read;
+    CONST char *source;
+    extern KCallbackList tap_list;
+    extern char *sys_errlist[];
+/*
+    static char function_name[] = "ch_read_disc";
+*/
+
+    if ( (channel->bytes_read - channel->read_buf_pos) >= length )
+    {
+	/*  Read buffer has enough data in it  */
+	source = channel->read_buffer + channel->read_buf_pos;
+	if (length < 16)
+	{
+	    /*  Avoid function call overhead  */
+	    for (count = 0; count < length; ++count) *buffer++ = *source++;
+	}
+	else m_copy (buffer, source, length);
+	channel->read_buf_pos += length;
+	return (length);
+    }
+    /*  Need to read from disc  */
+    /*  Copy what is left in the read buffer  */
+    read_pos = channel->bytes_read - channel->read_buf_pos;
+    m_copy (buffer, channel->read_buffer + channel->read_buf_pos,
+	    read_pos);
+    /*  Test if an error occurred  */
+    if (channel->ch_errno != 0)
+    {
+	errno = (channel->ch_errno > 0) ? channel->ch_errno : 0;
+	channel->read_buf_pos = 0;
+	channel->bytes_read = 0;
+	return (read_pos);
+    }
+    /*  Test if that's all there is in the file  */
+    if ( (channel->bytes_read > 0) &&
+	(channel->bytes_read < channel->read_buf_len) )
+    {
+	/*  Must have hit EOF  */
+	return (read_pos);
+    }
+    channel->read_buf_pos = 0;
+    channel->bytes_read = 0;
+    bytes_to_read = length - read_pos;
+    if (bytes_to_read > channel->read_buf_len)
+    {
+	/*  Call any tap functions that were registered  */
+	c_call_callbacks (tap_list, NULL);
+	/*  Read an intregal number of blocks directly  */
+	bytes_to_read -= bytes_to_read % (int) channel->read_buf_len;
+	if ( ( bytes_read = read (channel->fd, buffer + read_pos,
+				  bytes_to_read) )
+	    < 0 )
+	{
+	    /*  Error occurred  */
+	    channel->ch_errno = errno;
+	    if (read_pos > 0)
+	    {
+		errno = 0;
+	    }
+	    return (read_pos);
+	}
+	if (bytes_read < bytes_to_read)
+	{
+	    /*  Only read some bytes: hit End-Of-File  */
+	    read_pos += bytes_read;
+	    return (read_pos);
+	}
+	read_pos += bytes_read;
+    }
+    /*  Call any tap functions that were registered  */
+    c_call_callbacks (tap_list, NULL);
+    /*  Read one block into read buffer  */
+    bytes_to_read = channel->read_buf_len;
+    if ( ( bytes_read = read (channel->fd, channel->read_buffer,
+			      bytes_to_read) )
+	< 0 )
+    {
+	/*  Error reading complete block  */
+	channel->ch_errno = errno;
+    }
+    if (bytes_read < bytes_to_read)
+    {
+	channel->ch_errno = -1;
+    }
+    channel->bytes_read = bytes_read;
+    /*  Read what is needed from the read buffer  */
+    read_pos += ch_read_disc (channel, buffer + read_pos, length - read_pos);
+    errno = 0;
+    return (read_pos);
+}   /*  End Function ch_read_disc  */
+
+static unsigned int ch_read_connection (Channel channel, char *buffer,
+					unsigned int length)
+/*  This routine will read a number of bytes from a connection channel and
+    places them into a buffer.
+    The channel object must be given by  channel  .
+    The buffer to write the data into must be pointed to by  buffer  .
+    The number of bytes to read into the buffer must be pointed to by  length
+    If the number of bytes readable from the connection is equal to or more
+    than  length  the routine will NOT block.
+    The routine returns the number of bytes read.
+*/
+{
+    flag was_error = TRUE;
+    int bytes_available;
+    unsigned int read_pos = 0;
+    int bytes_to_read;
+    int bytes_read;
+    extern KCallbackList tap_list;
+    extern char *sys_errlist[];
+    static char function_name[] = "ch_read_connection";
+
+    if ( (channel->bytes_read - channel->read_buf_pos) >= length )
+    {
+	/*  Read buffer has enough data in it  */
+	m_copy (buffer, channel->read_buffer + channel->read_buf_pos,
+		length);
+	channel->read_buf_pos += length;
+	return (length);
+    }
+    /*  Will need to read from connection  */
+    /*  Copy what is left in the read buffer  */
+    read_pos = channel->bytes_read - channel->read_buf_pos;
+    m_copy (buffer, channel->read_buffer + channel->read_buf_pos,
+	    read_pos);
+    channel->read_buf_pos = 0;
+    channel->bytes_read = 0;
+    /*  Test if an error occurred  */
+    if (channel->ch_errno > 0)
+    {
+	errno = channel->ch_errno;
+	return (read_pos);
+    }
+    /*  Call any tap functions that were registered  */
+    c_call_callbacks (tap_list, NULL);
+    /*  Read the remainder directly  */
+    bytes_to_read = length - read_pos;
+    if ( ( bytes_read = r_read (channel->fd, buffer + read_pos,
+				bytes_to_read) )
+	< 0 )
+    {
+	/*  Error reading  */
+	channel->ch_errno = errno;
+	return (read_pos);
+    }
+    if (bytes_read < bytes_to_read)
+    {
+	/*  Only read some bytes  */
+	switch (channel->type)
+	{
+	  case CHANNEL_TYPE_CONNECTION:
+	    (void) fprintf (stderr,
+			    "Connection channel closed while reading\n");
+	    break;
+	  case CHANNEL_TYPE_CHARACTER:
+	    (void) fprintf (stderr,
+			    "Character special channel closed while reading\n");
+	    break;
+	  case CHANNEL_TYPE_FIFO:
+	    was_error = FALSE;
+	    break;
+	  default:
+	    (void) fprintf (stderr, "Bad channel type: %u\n", channel->type);
+	    a_prog_bug (function_name);
+	    break;
+	}
+	if (was_error) (void) fprintf (stderr,
+				       "Wanted: %d bytes  got: %d bytes\n",
+				       bytes_to_read, bytes_read);
+	return (read_pos);
+    }
+    read_pos += bytes_read;
+    /*  Drain data on connection into buffer  */
+    if ( ( bytes_available = r_get_bytes_readable (channel->fd) ) < 0 )
+    {
+	channel->ch_errno = errno;
+	errno = 0;
+	return (read_pos);
+    }
+    /*  Call any tap functions that were registered  */
+    c_call_callbacks (tap_list, NULL);
+    bytes_to_read = ( (bytes_available <= channel->read_buf_len) ?
+		     bytes_available : channel->read_buf_len );
+    if ( ( bytes_read = r_read (channel->fd, channel->read_buffer,
+				bytes_to_read) )
+	< bytes_to_read )
+    {
+	/*  Only read some bytes  */
+	switch (channel->type)
+	{
+	  case CHANNEL_TYPE_CONNECTION:
+	    (void) fprintf (stderr,
+			    "Connection channel closed while draining\t%s\n",
+			    sys_errlist[errno]);
+	    break;
+	  case CHANNEL_TYPE_CHARACTER:
+	    (void) fprintf (stderr,
+			    "Character special channel closed while draining\t%s\n",
+			    sys_errlist[errno]);
+	    break;
+	  case CHANNEL_TYPE_FIFO:
+	    (void) fprintf (stderr,
+			    "FIFO channel closed while draining\t%s\n",
+			    sys_errlist[errno]);
+	    break;
+	  default:
+	    (void) fprintf (stderr, "Bad channel type: %u\n", channel->type);
+	    a_prog_bug (function_name);
+	    break;
+	}
+	exit (RV_SYS_ERROR);
+    }
+    channel->bytes_read = bytes_read;
+    errno = 0;
+    return (read_pos);
+}   /*  End Function ch_read_connection  */
+
+static unsigned int ch_read_memory (Channel channel, char *buffer,
+				    unsigned int length)
+/*  This routine will read a number of bytes from a memory channel and
+    places them into a buffer.
+    The channel object must be given by  channel  .
+    The buffer to write the data into must be pointed to by  buffer  .
+    The number of bytes to read into the buffer must be pointed to by  length
+    The routine returns the number of bytes read.
+*/
+{
+    unsigned int count, bytes_to_read;
+    unsigned int bytes_left;
+    CONST char *source;
+/*
+    static char function_name[] = "ch_read_memory";
+*/
+
+    bytes_left = channel->mem_buf_len - channel->mem_buf_read_pos;
+    bytes_to_read = (length <= bytes_left) ? length : bytes_left;
+    source = channel->memory_buffer + channel->mem_buf_read_pos;
+    if (bytes_to_read < 16)
+    {
+	/*  Avoid function call overhead  */
+	for (count = 0; count < bytes_to_read; ++count) *buffer++ = *source++;
+    }
+    else m_copy (buffer, source, bytes_to_read);
+    channel->mem_buf_read_pos += bytes_to_read;
+    return (bytes_to_read);
+}   /*  End Function ch_read_memory  */
+
+#ifdef DISABLED
+/*  The following routine was an experiment that failed. It turns it to be
+    faster to read/copy data into a buffer and then go back and swap the bytes,
+    rather then read/copy and swap on the fly. Since twice the memory is being
+    hit in a short time, cache utilisation drops. I also expect that for
+    larger-than-ram buffers things will get much worse, as the disc head will
+    have to travel from storage for the file to storage for the buffer and back
+    at a great rate (causing expensive head moves). Reading the data in one go
+    and then swapping requires the same data to be read but with much less head
+    movement. One day if I have the time I'll test this.
+*/
+static unsigned int ch_read_memory_and_swap (Channel channel, char *buffer,
+					     unsigned int num_blocks,
+					     unsigned int block_size)
+/*  [SUMMARY] Read blocks from a memory channel and swap bytes.
+    [PURPOSE] This routine will read a number of blocks from a channel and
+    places them into a buffer after swapping (reversing the order).
+    <channel> The channel object.
+    <buffer> The buffer to write the data into.
+    <num_blocks> The number of blocks to read.
+    <block_size> The size (in bytes) of each block.
+    [RETURNS] The number of bytes read. Errors may cause partial blocks to be
+    read.
+*/
+{
+    unsigned int bytes_to_read, blocks_to_read;
+    unsigned int bytes_left;
+    unsigned int block_bytes_to_read;
+    unsigned int bytes_to_read_in_block;
+    unsigned int length = num_blocks * block_size;
+    CONST char *source;
+/*
+    static char function_name[] = "ch_read_memory_and_swap";
+*/
+
+    bytes_left = channel->mem_buf_len - channel->mem_buf_read_pos;
+    bytes_to_read = (length <= bytes_left) ? length : bytes_left;
+    blocks_to_read = bytes_to_read / block_size;
+    block_bytes_to_read = blocks_to_read * block_size;
+    bytes_to_read_in_block = bytes_to_read - block_bytes_to_read;
+    /*  Copy and swap blocks  */
+    source = channel->memory_buffer + channel->mem_buf_read_pos;
+    m_copy_and_swap_blocks (buffer, source, block_size, block_size, block_size,
+			    blocks_to_read);
+    /*  Plain copy of remaining bytes  */
+    m_copy (buffer + block_bytes_to_read, source + block_bytes_to_read,
+	    bytes_to_read_in_block);
+    channel->mem_buf_read_pos += bytes_to_read;
+    return (bytes_to_read);
+}   /*  End Function ch_read_memory_and_swap  */
+#endif
+
+static unsigned int ch_write_descriptor (Channel channel, CONST char *buffer,
+					 unsigned int length)
+/*  This routine will write a number of bytes from a buffer to a descriptor
+    channel.
+    The channel object must be given by  channel  .
+    The buffer to read the data from must be pointed to by  buffer  .
+    The number of bytes to write from the buffer must be pointed to by  length
+    The routine returns the number of bytes written.
+*/
+{
+    int bytes_written;
+    int bytes_to_write;
+    unsigned int write_pos = 0;
+/*
+    static char function_name[] = "ch_write_descriptor";
+*/
+
+    if (channel->ch_errno != 0)
+    {
+	/*  Error occurred previously during writing  */
+	errno = channel->ch_errno;
+	return (0);
+    }
+    if ( length < (channel->write_buf_len - channel->write_buf_pos) )
+    {
+	/*  Write buffer will not be filled up  */
+	m_copy (channel->write_buffer + channel->write_buf_pos,
+		buffer, length);
+	channel->write_buf_pos += length;
+	return (length);
+    }
+    /*  Copy over as much as possible into write buffer  */
+    write_pos = channel->write_buf_len - channel->write_buf_pos;
+    m_copy (channel->write_buffer + channel->write_buf_pos, buffer,
+	    write_pos);
+    channel->write_buf_pos += write_pos;
+    /*  Flush write buffer  */
+    bytes_to_write = channel->write_buf_pos - channel->write_start_pos;
+    if ( ( bytes_written = mywrite_raw (channel, channel->write_buffer,
+					bytes_to_write) )
+	< bytes_to_write )
+    {
+	channel->write_start_pos = 0;
+	return (FALSE);
+    }
+    channel->write_start_pos = 0;
+    /*  Write integral number of blocks directly  */
+    bytes_to_write = length - write_pos;
+    bytes_to_write -= bytes_to_write % (int) channel->write_buf_len;
+    if ( ( bytes_written = mywrite_raw (channel, buffer + write_pos,
+					bytes_to_write) )
+	< bytes_to_write )
+    {
+	/*  Error writing  */
+	channel->ch_errno = errno;
+	return (write_pos + bytes_written);
+    }
+    write_pos += bytes_written;
+    /*  Place remainder into write buffer  */
+    m_copy (channel->write_buffer, buffer + write_pos, length - write_pos);
+    channel->write_buf_pos = length - write_pos;
+    return (length);
+}  /*  End Function ch_write_descriptor  */
+
+static int mywrite_raw (Channel channel, CONST char *buffer,
+			unsigned int length)
+/*  This routine will write a number of bytes from a buffer to a channel. This
+    routine takes no account of buffering, nor a  write_converter_func  .
+    The channel object must be given by  channel  .
+    The buffer to read the data from must be pointed to by  buffer  .
+    The number of bytes to write from the buffer must be pointed to by  length
+    The routine returns the number of bytes written.
+*/
+{
+    int bytes_to_write;
+    unsigned int bytes_left;
+    extern KCallbackList tap_list;
+    static char function_name[] = "mywrite_raw";
+
+    VERIFY_CHANNEL (channel);
+    if (buffer == NULL)
+    {
+	(void) fprintf (stderr, "NULL buffer pointer passed\n");
+	a_prog_bug (function_name);
+    }
+    if (length < 1) return (0);
+    switch (channel->type)
+    {
+      case CHANNEL_TYPE_DISC:
+	/*  Call any tap functions that were registered  */
+	c_call_callbacks (tap_list, NULL);
+	return ( write (channel->fd, buffer, length) );
+/*
+	break;
+*/
+      case CHANNEL_TYPE_CONNECTION:
+      case CHANNEL_TYPE_CHARACTER:
+      case CHANNEL_TYPE_FIFO:
+	/*  Call any tap functions that were registered  */
+	c_call_callbacks (tap_list, NULL);
+	return ( r_write (channel->fd, buffer, length) );
+/*
+	break;
+*/
+      case CHANNEL_TYPE_MEMORY:
+      case CHANNEL_TYPE_MMAP:
+	bytes_left = channel->mem_buf_len - channel->mem_buf_write_pos;
+	bytes_to_write = (length <= bytes_left) ? length : bytes_left;
+	m_copy (channel->memory_buffer + channel->mem_buf_write_pos,
+		buffer, bytes_to_write);
+	channel->mem_buf_write_pos += bytes_to_write;
+	return (bytes_to_write);
+/*
+	break;
+*/
+      case CHANNEL_TYPE_DOCK:
+	(void) fprintf (stderr,
+			"Write operation not permitted on dock channel\n");
+	a_prog_bug (function_name);
+	break;
+      case CHANNEL_TYPE_ASYNCHRONOUS:
+	(void) fprintf (stderr,
+			"Write operation not permitted on raw asynchronous\n");
+	a_prog_bug (function_name);
+	break;
+      default:
+	(void) fprintf (stderr, "Invalid channel type\n");
+	a_prog_bug (function_name);
+	break;
+    }
+    return (-1);
+}   /*  End Function mywrite_raw  */

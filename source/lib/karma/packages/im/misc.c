@@ -3,7 +3,7 @@
 
     This code provides simple module initialisation routines.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -42,7 +42,10 @@
     Updated by      Richard Gooch   15-APR-1995: Created
   <im_register_lib_version>.
 
-    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Last updated by Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -56,7 +59,7 @@
 
 /*PUBLIC_FUNCTION*/
 void im_register_module_name (char *name_string)
-/*  [PURPOSE] This routine will register a new name for the module.
+/*  [SUMMARY] Register a new name for the module.
     <name_string> The name string.
     [RETURNS] Nothing.
 */
@@ -86,7 +89,7 @@ void im_register_module_name (char *name_string)
 
 /*PUBLIC_FUNCTION*/
 void im_register_module_version_date (char *date_string)
-/*  [PURPOSE] This routine will register a new version date for the module.
+/*  [SUMMARY] Register a new version date for the module.
     <date_string> The date string.
     [RETURNS] Nothing.
 */
@@ -105,8 +108,7 @@ void im_register_module_version_date (char *date_string)
 
 /*PUBLIC_FUNCTION*/
 void im_register_lib_version (char *version_string)
-/*  [PURPOSE] This routine will register the library version a module was
-    compiled with.
+/*  [SUMMARY] Register the library version a module was compiled with.
     <version_string> The version string of the library.
     [RETURNS] Nothing.
 */

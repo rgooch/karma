@@ -1,0 +1,106 @@
+
+Widget Documentation
+
+------------------------------------------------------------------------
+
+Name: SimpleSlider
+Class name: simpleSliderWidgetClass
+Superclass: canvasWidgetClass
+Date: 5-MAY-1996
+Author: Richard Gooch (rgooch@atnf.csiro.au)
+
+------------------------------------------------------------------------
+
+The SimpleSlider widget implements a simple slider control. It allows
+the user to modify an integer value. This value is displayed (by
+default) and dynamically updated. The programmer interface to this
+widget is similar to the Value widget, but looks quite different
+(nicer).
+The value may be manipulated in a number of ways:
+
+1)  the user may left-click on either of the end-boxes. Clicking the
+left end-box will set the value to the minimum. Clicking on the right
+end-box will set the value to the maximum
+
+2)  the user may left-click-and-drag on the movable "thumb". The thumb
+may be slid left and right to modify the value
+
+3)  the user may left-click in the bar to the left of the slider and
+the value will be decreased by some amount. If the user right-clicks
+instead, the value is decreased by an amount 10 times greater than if
+the user left-clicked. If the user clicks on the bar to the left of
+the thumb, the value is increased instead.
+
+This widget has the following resources. Except where noted, these
+resources also exist for the Value widget:
+
+*)  XkwNvalueChangeCallback
+	This is the callback for the values changes. The callback has
+the following interface:
+
+void change_cbk (Widget w, XtPointer client_data, XtPointer call_data)
+/*  [PURPOSE] This routine is called when a Value widget changes value
+    as a result of a user action.
+    <w> The value widget.
+    <client_data> Arbitrary client data.
+    <call_data> A pointer to an integer which contains the new value. Use the
+    *(int *) cast to obtain the value.
+    [RETURNS] Nothing.
+*/
+
+*)  XtNlabel
+	The label string for the widget. This should tell the user
+what the widget controls. The label will appear above the slider.
+
+*)  XkwNminimum
+	This specifies the minimum value that the widget can be set
+to.
+
+*)  XkwNmaximum
+	This specifies the maximum value that the widget can be set
+to.
+
+*)  XkwNwrap
+	This specifies whether the value will wrap around when it is
+increased or decreased beyond the allowed limits. If True, the value
+will wrap, else it will remain fixed at the appropriate limit.
+
+*)  XtNvalue
+	This sets/gets the current value of the widget. The value
+cannot be set outside the range defined by XkwNminimum and
+XkwNmaximum.
+
+*)  XkwNvaluePtr
+	This specifies a pointer to an integer to which is written the
+current value of the widget. This value is written prior to any
+XkwNvalueChangeCallback being called.
+
+*)  XkwNmodifier
+	This specifies the absolute value of the increment by which the
+value widget can be changed when the mouse is left-clicked beside the
+thumb.
+
+*)  XtNorientation
+	This specifies whether the label is above or to the left of
+the buttons. If XtorientHorizontal, the label is to the left. If
+XtorientVertical, the label is above the buttons.
+
+*)  XkwNshowRange		(SimpleSlider widget only)
+	This specifies whether the range of possible slider values is
+shown.
+
+*)  XkwNshowValue		(SimpleSlider widget only)
+	This specifies whether the current value is shown.
+
+*)  XkwNvalueBesideLabel	(SimpleSlider widget only)
+	This specifies whether the current value should be displayed
+to the right of the widget label. If False (and XkwNshowValue is True)
+then the value is displayed to the left of the slider.
+
+*)  XkwNcallbackOnDrag		(SimpleSlider widget only)
+	This specifies whether the XkwNvalueChangeCallback callback
+should be called as the slider thumb is dragged. If False, the
+callback is called when the user releases the left mouse button after
+dragging the thumb. If True, the callback is called whenever the user
+moves the thumb during the drag, but not when the left mouse button is
+released and the thumb has not moved since the last mouse movement.

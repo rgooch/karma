@@ -1,167 +1,193 @@
-/*  Link with:    -lkarmavx  */
-/*  This file describes the vc_ package of routines in the Karma library.
-
+$PACKAGE          vc
+$SUMMARY          Routines to manipulate a VX display and colourmaps
+$PURPOSE
     These routines are meant to provide an abstracted interface to a VX display
-    and colourmaps, used in the  kclrmap_  routines.
+    and colourmaps, used in the <-kcmap-> routines.
+$LIBRARY          karmavx
+$LINKWITH         -lkarmavx
+$END
 
+$FUNCTION         vc_get_dpy_handle
+$RETURN_TYPE      Kdisplay
+$PARAMETER_LIST
+    ()
+$SUMMARY          Generate a display handle for later use.
+$PURPOSE
+    Generate a display handle for later use.
+$RETURNS
+    A pointer to the display handle on success, else NULL.
+$END
 
-    Written by		Richard Gooch	30-Nov-1994
+$FUNCTION         vc_alloc_colours
+$RETURN_TYPE      unsigned int
+$PARAMETER_LIST
+    (unsigned int num_cells,
+			       unsigned long *pixel_values,
+			       unsigned int min_cells, Kdisplay dpy_handle)
+$SUMMARY          Allocate colourcells.
+$PURPOSE
+    This routine will allocate a number of colourcells in a low level
+    colourmap (e.g. using the Xlib routine XAllocColorCells).
+$PARAMETER        num_cells :
+    The number of colourcells to allocate.
+$PARAMETER        pixel_values :
+    A pointer to the array where the pixel values allocated will
+    be written.
+$PARAMETER        min_cells :
+    The minimum number of colourcells to allocate. The routine will
+    try to allocate at least this number of colourcells.
+$PARAMETER        dpy_handle :
+    The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+$RETURNS
+    The number of colourcells allocated.
+$END
 
-    Last updated by	Richard Gooch	30-Nov-1994
+$FUNCTION         vc_free_colours
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (unsigned int num_cells, unsigned long *pixel_values,
+		      Kdisplay dpy_handle)
+$SUMMARY          Free a number of colourcells in a low level colourmap.
+$PURPOSE
+    Free a number of colourcells in a low level colourmap.
+$PARAMETER        num_cells :
+    The number of colourcells to free.
+$PARAMETER        pixel_values :
+    The array of pixel values (colourcells) to free.
+$PARAMETER        dpy_handle :
+    The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+$RETURNS
+    Nothing.
+$END
 
+$FUNCTION         vc_store_colours
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (unsigned int num_cells, unsigned long *pixel_values,
+		       unsigned short *reds, unsigned short *greens,
+		       unsigned short *blues, unsigned int stride,
+		       Kdisplay dpy_handle)
+$SUMMARY          Store colours into a low level colourmap.
+$PURPOSE
+    Store colours into a low level colourmap.
+$PARAMETER        num_cells :
+    The number of colourcells to store.
+$PARAMETER        pixel_values :
+    The array of pixel values.
+$PARAMETER        reds :
+    The array of red intensity values.
+$PARAMETER        greens :
+    The array of green intensity values.
+$PARAMETER        blues :
+    The array of blue intensity values.
+$PARAMETER        stride :
+    The stride (in unsigned shorts) between intensity values in each
+    array.
+$PARAMETER        dpy_handle :
+    The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+$RETURNS
+    Nothing.
+$END
 
-*/
+$FUNCTION         vc_store_colours_24bit
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (unsigned int num_cells,
+			     unsigned long *pixel_values, unsigned short *reds,
+			     unsigned short *greens, unsigned short *blues,
+			     unsigned int stride, Kdisplay dpy_handle)
+$SUMMARY          Store colours into a low level colourmap.
+$PURPOSE
+    This routine will store colours into a low level colourmap. The
+    colours are stored for the DirectColour (24 bit) visual type.
+$PARAMETER        num_cells :
+    The number of colourcells to store.
+$PARAMETER        pixel_values :
+    The array of pixel values.
+$PARAMETER        reds :
+    The array of red intensity values.
+$PARAMETER        greens :
+    The array of green intensity values.
+$PARAMETER        blues :
+    The array of blue intensity values.
+$PARAMETER        stride :
+    The stride (in unsigned shorts) between intensity values in each
+    array.
+$PARAMETER        dpy_handle :
+    The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+$RETURNS
+    Nothing.
+$END
 
-Kdisplay vc_get_dpy_handle ()
-/*  This routine will generate a display handle for later use.
-    The routine returns a pointer to the display handle on success,
-    else it returns NULL.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         vc_get_location
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (Kdisplay dpy_handle, unsigned long *serv_hostaddr,
+		      unsigned long *serv_display_num)
+$SUMMARY          Determine the location of the graphics display being used.
+$PURPOSE
+    Determine the location of the graphics display being used.
+$PARAMETER        dpy_handle :
+    The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+$PARAMETER        serv_hostaddr :
+    The Internet address of the host on which the display is
+    running will be written here.
+$PARAMETER        serv_display_num :
+    The number of the display will be written here.
+$RETURNS
+    Nothing.
+$END
 
-unsigned int vc_alloc_colours (num_cells, pixel_values, min_cells, dpy_handle)
-/*  This routine will allocate a number of colourcells in a low level
-    colourmap.
-    The number of colourcells to allocate must be given by  num_cells  .
-    The pixel values allocated will be written to the array pointed to by
-    pixel_values  .
-    The minimum number of colourcells to allocate must be given by  min_cells
-    The routine will try to allocate at least this number of colourcells.
-    The low level display handle must be pointed to by  dpy_handle  .The
-    meaning of this value depends on the lower level graphics library used.
-    The routine returns the number of colourcells allocated.
-*/
-unsigned int num_cells;
-unsigned long *pixel_values;
-unsigned int min_cells;
-Kdisplay dpy_handle;
-/*---------------------------------------------------------------------------*/
-
-void vc_free_colours (num_cells, pixel_values, dpy_handle)
-/*  This routine will free a number of colourcells in a low level colourmap
-    The number of colourcells to free must be given by  num_cells  .
-    The pixel values (colourcells) to free must be pointed to by
-    pixel_values  .
-    The low level display handle must be pointed to by  dpy_handle  .The
-    meaning of this value depends on the lower level graphics library used.
-    The routine returns nothing.
-*/
-unsigned int num_cells;
-unsigned long *pixel_values;
-Kdisplay dpy_handle;
-/*---------------------------------------------------------------------------*/
-
-void vc_store_colours (num_cells, pixel_values, reds, greens, blues, stride,
-		       dpy_handle)
-/*  This routine will store colours into a low level colourmap. The colours are
-    stored for the PseudoColour (8 bit) visual type.
-    The number of colourcells to store must be given by  num_cells  .
-    The pixel values must be pointed to by  pixel_values  .
-    The red intensity values must be pointed to by  reds  .
-    The green intensity values must be pointed to by  greens  .
-    The blue intensity values must be pointed to by  blues  .
-    The stride (in unsigned shorts) between intensity values in each array
-    must be given by  stride  .
-    The low level display handle must be pointed to by  dpy_handle  .The
-    meaning of this value depends on the lower level graphics library used.
-    The routine returns nothing.
-*/
-unsigned int num_cells;
-unsigned long *pixel_values;
-unsigned short *reds;
-unsigned short *greens;
-unsigned short *blues;
-unsigned int stride;
-Kdisplay dpy_handle;
-/*---------------------------------------------------------------------------*/
-
-void vc_store_colours_24bit (num_cells, pixel_values, reds, greens, blues,
-			     stride, dpy_handle)
-/*  This routine will store colours into a low level colourmap. The colours are
-    stored for the DirectColour (24 bit) visual type.
-    The number of colourcells to store must be given by  num_cells  .
-    The pixel values must be pointed to by  pixel_values  .
-    The red intensity values must be pointed to by  reds  .
-    The green intensity values must be pointed to by  greens  .
-    The blue intensity values must be pointed to by  blues  .
-    The stride (in unsigned shorts) between intensity values in each array
-    must be given by  stride  .
-    The low level display handle must be pointed to by  dpy_handle  .The
-    meaning of this value depends on the lower level graphics library used.
-    The routine returns nothing.
-*/
-unsigned int num_cells;
-unsigned long *pixel_values;
-unsigned short *reds;
-unsigned short *greens;
-unsigned short *blues;
-unsigned int stride;
-Kdisplay dpy_handle;
-/*---------------------------------------------------------------------------*/
-
-void vc_get_location (dpy_handle, serv_hostaddr, serv_display_num)
-/*  This routine will determine the location of the graphics display being
-    used.
-    The low level display handle must be given by  dpy_handle  .The meaning
-    of this value depends on the lower level graphics library used.
-    The Internet address of the host on which the display is running will
-    be written to the storage pointed to by  serv_hostaddr  .
-    The number of the display will be written to the storage pointed to by
-    serv_display_num  .
-    The routine returns nothing.
-*/
-Kdisplay dpy_handle;
-unsigned long *serv_hostaddr;
-unsigned long *serv_display_num;
-/*---------------------------------------------------------------------------*/
-
-void vc_set_visual (dpy_handle, pseudo_colour)
-/*  This routine will set the current visual of the viewable colourmap. This
-    routine is obsoleted by  vc_set_visualtype  .
-    If  pseudo_colour  is TRUE, this routine translates to:
-        vc_set_visualtype (dpy_handle, VC_VX_VISUAL_PSEUDOCOLOUR3, FALSE);
-    else it translates to:
-        vc_set_visualtype (dpy_handle, VC_VX_VISUAL_DIRECTCOLOUR, FALSE);
-    The routine returns nothing.
-*/
-Kdisplay dpy_handle;
-flag pseudo_colour;
-/*---------------------------------------------------------------------------*/
-
-void vc_set_visualtype (dpy_handle, visual, overlay)
-/*  This routine will set the current visual of the viewable colourmap.
-    The low level display handle must be pointed to by  dpy_handle  .
-    The visual type for the canvas must be given by  visual  .Legal values are:
-        VC_VX_VISUAL_PSEUDOCOLOUR0    8  bits deep (alpha/overlay channel)
-        VC_VX_VISUAL_PSEUDOCOLOUR1    8  bits deep (blue channel)
-        VC_VX_VISUAL_PSEUDOCOLOUR2    8  bits deep (green channel)
-        VC_VX_VISUAL_PSEUDOCOLOUR3    8  bits deep (red channel)
-        VC_VX_VISUAL_DIRECTCOLOUR     24 bits deep
-    Note that PseudoColour channels 1, 2 and 3 occupy the same area of screen
+$FUNCTION         vc_set_visualtype
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (Kdisplay dpy_handle, unsigned int visual, flag overlay)
+$SUMMARY          Set the current visual of the viewable colourmap.
+$PURPOSE
+    Set the current visual of the viewable colourmap.
+$PARAMETER        dpy_handle :
+    The low level display handle.
+$PARAMETER        visual :
+    The visual type for the canvas. Legal values are:
+    VC_VX_VISUAL_PSEUDOCOLOUR0    8  bits deep (alpha/overlay channel)
+    VC_VX_VISUAL_PSEUDOCOLOUR1    8  bits deep (blue channel)
+    VC_VX_VISUAL_PSEUDOCOLOUR2    8  bits deep (green channel)
+    VC_VX_VISUAL_PSEUDOCOLOUR3    8  bits deep (red channel)
+    VC_VX_VISUAL_DIRECTCOLOUR     24 bits deep
+$NOTE
+    PseudoColour channels 1, 2 and 3 occupy the same area of screen
     memory as the DirectColour channel. When viewing a PseudoColour canvas,
     the lower appropriate 8 bits are used. When viewing a DirectColour
     canvas, the lower 24 bits (big endian) are used. Bits 0-7, 8-15
     and 16-23 contain the red, green and blue components, respectively.
-    If the value of  overlay  is TRUE and PseudoColour channel 0 is NOT
-    selected, the overlay channel is displayed. A non-zero pixel in the overlay
-    channel will override the PseudoColour/DirectColour pixel.
-    The routine returns nothing.
-*/
-Kdisplay dpy_handle;
-unsigned int visual;
-flag overlay;
-/*---------------------------------------------------------------------------*/
+$PARAMETER        overlay :
+    If TRUE and PseudoColour channel 0 is NOT selected, the overlay
+    channel is displayed. A non-zero pixel in the overlay channel will override
+    the PseudoColour/DirectColour pixel.
+$RETURNS
+    Nothing.
+$END
 
-void vc_get_visualtype (dpy_handle, visual, overlay)
-/*  This routine will get the current visual of the viewable colourmap.
-    The low level display handle must be pointed to by  dpy_handle  .
-    The visual type for the canvas will be written to the storage pointed to by
-    visual  .
-    If the overlay channel is visible, the value  TRUE  will be written to the
-    storage pointed to by  overlay  ,else the value FALSE will be written here.
-    The routine returns nothing.
-*/
-Kdisplay dpy_handle;
-unsigned int *visual;
-flag *overlay;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         vc_get_visualtype
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (Kdisplay dpy_handle, unsigned int *visual,
+			flag *overlay)
+$SUMMARY          Get the current visual of the viewable colourmap.
+$PURPOSE
+    Get the current visual of the viewable colourmap.
+$PARAMETER        dpy_handle :
+    The low level display handle.
+$PARAMETER        visual :
+    The visual type for the canvas will be written here.
+$PARAMETER        overlay :
+    If the overlay channel is visible, the value TRUE will be written
+    here, else the value FALSE will be written here.
+$RETURNS
+    Nothing.
+$END

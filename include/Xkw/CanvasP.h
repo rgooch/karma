@@ -2,7 +2,7 @@
 
     Private header for  Canvas  widget class.
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,13 +31,15 @@
 
     Written by      Richard Gooch   17-JUL-1994
 
-    Last updated by Richard Gooch   28-DEC-1995
+    Last updated by Richard Gooch   4-MAY-1996
 
 */
 
 #ifndef _CanvasP_h
 #define _CanvasP_h
 
+#include <X11/extensions/multibuf.h>
+#include <X11/Xaw/SimpleP.h>
 #include <Xkw/Canvas.h>
 
 typedef struct
@@ -47,6 +49,7 @@ typedef struct
 
 typedef struct _CanvasClassRec {
     CoreClassPart	core_class;
+    SimpleClassPart     simple_class;
     CanvasClassPart	canvas_class;
 } CanvasClassRec;
 
@@ -61,10 +64,13 @@ typedef struct {
     Bool        clip;
     Bool        silence_unconsumed_events;
     int         stereoMode;
+    Bool        verticalSplit;
+    int         splitSeparation;
     Pixel       foreground_pixel;
     Bool        force_new_cmap;
     Bool        retain_fgbg;
     XtCallbackList realiseCallback;
+    String      fontName;
     Bool        verbose;
     /* private state */
     flag        cmap_installed;
@@ -77,6 +83,7 @@ typedef struct {
 
 typedef struct _CanvasRec {
     CorePart	core;
+    SimplePart  simple;
     CanvasPart	canvas;
 } CanvasRec;
 

@@ -3,7 +3,7 @@
 
     This code provides support for managing a random pool of bytes.
 
-    Copyright (C) 1994,1995  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     I first saw the idea of a random pool of bytes in PGP.
 
@@ -57,7 +57,10 @@
 
     Updated by      Richard Gooch   9-APR-1995: Added #include <sys/types.h>
 
-    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Last updated by Richard Gooch   13-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -127,28 +130,18 @@ STATIC_FUNCTION (void xor_copy,
 /*PUBLIC_FUNCTION*/
 RandPool rp_create ( unsigned int size, unsigned int hash_digest_size,
 		    unsigned int hash_block_size, void (*hash_func) () )
-/*  This routine will create a random pool of bytes to which random data may be
-    subsequently added or extracted. The pool is initialised with pseudo-random
-    data (which is *not* cryptographically secure). When data is added to the
-    pool, the pool is stirred using a supplied hash function.
-    The size of the pool must be given by  size  .
-    The size of the hash buffer must be given by  hash_digest_size
-    The size of the hash block must be given by  hash_block_size  .
-    The hash function must be pointed to by  hash_func  .
-    The interface to this function is given below:
-
-    void hash_func (buffer, block)
-    *   This routine is called when a hash buffer must be scrambled with a
-        block of data.
-	The hash buffer will be pointed to by  buffer  .
-	The block to add to the hash buffer data will be pointed to by
-	block  .
-	The routine returns nothing.
-    *
-    unsigned char buffer[hash_digest_size];
-    CONST unsigned char block[hash_block_size];
-
-    The routine returns a RandPool object on success, else it returns NULL.
+/*  [SUMMARY] Create a pool of random bytes.
+    [PURPOSE] This routine will create a random pool of bytes to which random
+    data may be subsequently added or extracted. The pool is initialised with
+    pseudo-random data (which is *not* cryptographically secure). When data is
+    added to the pool, the pool is stirred using a supplied hash function.
+    Bytes extracted from the pool should be cryptographically secure.
+    <size> The size of the pool.
+    <hash_digest_size> The size of the hash buffer.
+    <hash_block_size> The size of the hash block.
+    <hash_func> The hash function. The prototype function is
+    [<RP_PROTO_hash_func>].
+    [RETURNS] A RandPool object on success, else NULL.
 */
 {
     RandPool rp;
@@ -244,12 +237,14 @@ RandPool rp_create ( unsigned int size, unsigned int hash_digest_size,
 
 /*PUBLIC_FUNCTION*/
 void rp_add_bytes (RandPool rp, CONST unsigned char *buf, unsigned int length)
-/*  This routine will add bytes of data (entropy) into a pool. The pool is then
-    stirred using it's registered hash function in order to distribute the bits
-    The random pool must be given by  rp  .
-    The bytes to add to the pool must be pointed to by  buf  .
-    The number of bytes to add to the pool must be given by  length  .
-    The routine returns nothing.
+/*  [SUMMARY] Add bytes (entropy) to a random pool.
+    [PURPOSE] This routine will add bytes of data (entropy) into a pool. The
+    pool is then stirred using it's registered hash function in order to
+    distribute the bits.
+    <rp> The random pool.
+    <buf> The bytes to add to the pool.
+    <length> The number of bytes to add to the pool.
+    [RETURNS] Nothing.
 */
 {
     unsigned int space_in_key;
@@ -277,12 +272,12 @@ void rp_add_bytes (RandPool rp, CONST unsigned char *buf, unsigned int length)
 
 /*PUBLIC_FUNCTION*/
 void rp_get_bytes (RandPool rp, unsigned char *buf, unsigned int length)
-/*  This routine will get bytes of data from a random pool.
-    The random pool must be given by  rp  .
-    The bytes to get from the pool will be written to the storage pointed to by
-    buf  .
-    The number of bytes to get from the pool must be given by  length  .
-    The routine returns nothing.
+/*  [SUMMARY] Get bytes of data from a random pool.
+    <rp> The random pool.
+    <buf> The bytes to get from the pool will be written here. These bytes
+    should be random an cryptographically secure.
+    <length> The number of bytes to get from the pool.
+    [RETURNS] Nothing.
 */
 {
     unsigned int bytes_in_pool;
@@ -311,9 +306,9 @@ void rp_get_bytes (RandPool rp, unsigned char *buf, unsigned int length)
 
 /*PUBLIC_FUNCTION*/
 void rp_destroy (RandPool rp)
-/*  This routine will destroy a random pool of bytes, erasing all information.
-    The random pool must be given by  rp  .
-    The routine returns nothing.
+/*  [SUMMARY] Destroy a random pool of bytes, erasing all information.
+    <rp> The random pool.
+    [RETURNS] Nothing.
 */
 {
     extern RandPool first_randpool;
@@ -363,10 +358,11 @@ void rp_destroy (RandPool rp)
 
 /*PUBLIC_FUNCTION*/
 void rp_destroy_all ()
-/*  This routine will destroy all randpools.
-    The routine is meant to be called from the exit(3) function. It should be
-    called by the application prior to  execve(2)  .
-    The routine returns nothing.
+/*  [SUMMARY] Destroy all randpools.
+    [PURPOSE] This routine will destroy all randpools. The routine is meant to
+    be called from the <<exit(3)>> function. It should also be called by the
+    application prior to <<execve(2)>>.
+    [RETURNS] Nothing.
 */
 {
     extern RandPool first_randpool;
@@ -376,11 +372,12 @@ void rp_destroy_all ()
 
 /*PUBLIC_FUNCTION*/
 void rp_add_time_noise (RandPool rp)
-/*  This routine will add bytes of data (entropy) into a pool, derived from the
-    system time. It is suggested that this routine be called by various
-    callback routines to assist in the addition of entropy.
-    The random pool must be given by  rp  .
-    The routine returns nothing.
+/*  [SUMMARY] Add time-based entropy to a randpool.
+    [PURPOSE] This routine will add bytes of data (entropy) into a pool,
+    derived from the system time. It is suggested that this routine be called
+    by various callback routines to assist in the addition of entropy.
+    <rp> The random pool.
+    [RETURNS] Nothing.
 */
 {
 #ifdef OS_MSDOS
@@ -413,29 +410,17 @@ void rp_add_time_noise (RandPool rp)
 
 /*PUBLIC_FUNCTION*/
 void rp_register_destroy_func (RandPool rp, void (*destroy_func) (),void *info)
-/*  This routine will register a routine which should be called when a
-    random pool is destroyed.
-    The random pool must be given by  rp  .
-
-    The function which is called when the random pool is destroyed must be
-    pointed to by  destroy_func  .
-    The interface to this function is given below:
-
-    void destroy_func (rp, info)
-    *   This routine is called when a random pool is destroyed.
-        The random pool will be given by  rp  .
-	The arbitrary information pointer will be given by  info  .
-	The routine returns nothing.
-    *
-    RandPool rp;
-    void *info;
-
+/*  [SUMMARY] Register randpool destroy callback.
+    [PURPOSE] This routine will register a routine which should be called when
+    a random pool is destroyed.
+    <rp> The random pool.
+    <destroy_func> The function which is called when the random pool is
+    destroyed. The prototype function is [<RP_PROTO_destroy_func>].
     Multiple destroy functions may be registered, with the first one registered
     being the first one called upon destroy.
-
-    The arbitrary information passed to the destroy function must be pointed to
-    by  info  .This may be NULL.
-    The routine returns nothing.
+    <info> A pointer to the arbitrary information passed to the destroy
+    function. This may be NULL.
+    [RETURNS] Nothing.
 */
 {
     static char function_name[] = "rp_register_destroy_func";

@@ -1,0 +1,6 @@
+$SUMMARY          Routines to manage callback lists
+$PURPOSE
+    These routines are meant to provide a general purpose callback management
+    framework. Library packages and applications may use this package to
+    implement their own callback mechanisms. This package removes the need for
+    external code to maintain and traverse callback lists.

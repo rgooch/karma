@@ -2,7 +2,7 @@
 /*  main.c
     This code manipulates daemon mode for a process.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -40,7 +40,10 @@
     Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
 
-    Last updated by Richard Gooch   6-MAY-1995: Placate gcc -Wall
+    Updated by      Richard Gooch   6-MAY-1995: Placate gcc -Wall
+
+    Last updated by Richard Gooch   7-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -59,9 +62,10 @@ static flag daemon_mode = FALSE;
 
 /*PUBLIC_FUNCTION*/
 void d_enter_daemon_mode ()
-/*  This routine will cause the module to enter daemon mode. This involves
-    detatching from a terminal.
-    The routine returns nothing.
+/*  [SUMMARY] Enter daemon mode.
+    [PURPOSE] This routine will cause the module to enter daemon mode. This
+    involves detatching from a terminal.
+    [RETURNS] Nothing.
 */
 {
     int dev_null;
@@ -119,15 +123,17 @@ void d_enter_daemon_mode ()
 
 /*PUBLIC_FUNCTION*/
 flag d_test_daemon_mode ()
-/*  This routine will test if the module is running in daemon mode.
-    The routine returns TRUE if the module is running in daemon mode,
-    else it returns FALSE.
+/*  [SUMMARY] Test if the module is running in daemon mode.
+    [RETURNS] TRUE if the module is running in daemon mode, else FALSE.
 */
 {
     extern flag daemon_mode;
 
     return (daemon_mode);
 }   /*  End Function d_test_daemon_mode  */
+
+
+/*  Private functions follow  */
 
 static void prog_bug (char *function_name)
 {

@@ -3,7 +3,7 @@
 
     This code provides conversion between host and cannonical data formats.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -62,7 +62,10 @@
 
     Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
 
-    Last updated by Richard Gooch   9-JUN-1995: Changed to NEED_ALIGNED_DATA.
+    Updated by      Richard Gooch   9-JUN-1995: Changed to NEED_ALIGNED_DATA.
+
+    Last updated by Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -74,15 +77,13 @@
 #define BYTE_MASK 0xff
 
 /*PUBLIC_FUNCTION*/
-flag p_write_buf64 (buffer, data)
-/*  This routine will write 64 bits of data to the buffer pointed to by
-    buffer  .
-    The data must be given by  data  .This must be in host natural byte order.
-    The data will be converted to network byte order prior to writing.
-    The routine returns TRUE on success, else it returns FALSE.
+flag p_write_buf64 (char *buffer, unsigned long data)
+/*  [SUMMARY] Write 64 bits of data to a buffer.
+    <buffer> A pointer to the buffer. This buffer must be at least 8 bytes long
+    <data> The data. This must be in host natural byte order. The data will be
+    converted to network byte order prior to writing.
+    [RETURNS] TRUE on success, else FALSE.
 */
-char *buffer;
-unsigned long data;
 {
 #undef NO_FALLBACK
 #if defined(Kword64u) && defined(MACHINE_BIG_ENDIAN)
@@ -151,16 +152,14 @@ unsigned long data;
 }   /*  End Function p_write_buf64  */
 
 /*PUBLIC_FUNCTION*/
-flag p_read_buf64 (buffer, data)
-/*  This routine will read 64 bits of data from the buffer pointed to by
-    buffer  .This must be at least 8 bytes long.
-    The data will be written to the storage pointed to by  data  .This will be
-    in host natural byte order.
-    The data will be converted from network byte order after reading.
-    The routine returns TRUE on success, else it returns FALSE.
+flag p_read_buf64 (char *buffer, unsigned long *data)
+/*  [SUMMARY] Read 64 bits of signed data from a buffer.
+    <buffer> A pointer to the buffer. This buffer must be at least 8 bytes long
+    <data> The output data will be written here. This will be in host natural
+    byte order. The data will be converted from network byte order after
+    reading.
+    [RETURNS] TRUE on success, else FALSE.
 */
-char *buffer;
-unsigned long *data;
 {
 #undef NO_FALLBACK
 #ifndef Kword64u

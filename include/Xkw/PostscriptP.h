@@ -5,7 +5,6 @@
 #include <X11/IntrinsicP.h>
 #include <X11/ShellP.h>
 #include <X11/StringDefs.h>
-
 #include <karma_kcmap.h>
 #include <karma_kwin.h>
 
@@ -19,11 +18,12 @@ typedef struct _PostscriptPart
     int voffset;
     int hsize;
     int vsize;
+    Bool autoIncrement;
     XtCallbackList callback;
     /*  Special resources (changed by XkwPostscriptRegisterImageAndName)  */
-    char *arrayfile_name;
     KPixCanvas pixcanvas;
     /*  Private resources  */
+    Widget name_dialog;
 } PostscriptPart, *PostscriptPartPtr;
 
 typedef struct _PostscriptRec

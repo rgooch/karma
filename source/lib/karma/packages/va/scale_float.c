@@ -3,7 +3,7 @@
 
     This code provides some optimised vector arithmetic operations.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -44,7 +44,10 @@
     Updated by      Richard Gooch   26-NOV-1994: Moved to
   packages/va/scale_float.c
 
-    Last updated by Richard Gooch   15-JUN-1995: Made use of IS_ALIGNED macro.
+    Updated by      Richard Gooch   15-JUN-1995: Made use of IS_ALIGNED macro.
+
+    Last updated by Richard Gooch   13-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -66,21 +69,22 @@ EXTERN_FUNCTION (void asm__va_scale_float,
 /*PUBLIC_FUNCTION*/
 void va_scale_float (float *out, int out_stride, float *inp, int inp_stride,
 		     int length, float scale, float offset)
-/*  This routine will perform a scale and offset operation on an array of
-    floating point numbers. The arithmetic form is as follows:
+/*  [SUMMARY] Scale and offset an array of floats.
+    [PURPOSE] This routine will perform a scale and offset operation on an
+    array of floating point numbers. The arithmetic form is as follows:
         out[i] = inp[i] * scale + offset
-    The result array will be written to the storage pointed to by  out  .
-    The stride (in floats) of consecutive elements in the output array must be
-    given by  out_stride  .
-    The input array must be pointed to by  inp_stride  .
-    The stride (in floats) of consecutive elements in the input array must be
-    given by  inp_stride  .
-    The elements of the input and output arrays must be aligned on a float
-    boundary.
-    The length of the input and output arrays must be given by  length  .
-    The scale factor must be given by  scale  .
-    The offset value must be given by  offset  .
-    The routine returns nothing.
+    <out> The result array will be written here.
+    <out_stride> The stride (in floats) of consecutive elements in the output
+    array.
+    <inp> The input array.
+    <inp_stride> The stride (in floats) of consecutive elements in the input
+    array.
+    [NOTE] The elements of the input and output arrays must be aligned on a
+    float boundary.
+    <length> The length of the input and output arrays.
+    <scale> The scale factor.
+    <offset> The offset value.
+    [RETURNS] Nothing.
 */
 {
     static char function_name[] = "va_scale_float";

@@ -3,7 +3,7 @@
 
     This code provides simple colourmap generation routines.
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -34,7 +34,9 @@
 
     Updated by      Richard Gooch   5-MAY-1994
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/cf/misc2.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/cf/misc2.c
+
+    Last updated by Richard Gooch   31-MAR-1996: Changed documentation style.
 
 
 */
@@ -889,49 +891,64 @@ static Colour_struct isophot[LUT_SIZE] =
 };
 
 /*PUBLIC_FUNCTION*/
-void cf_background (num_cells, reds, greens, blues, stride, x, y, var_param)
-unsigned int          num_cells;
-unsigned short        *reds;
-unsigned short        *greens;
-unsigned short        *blues;
-unsigned int          stride;
-double                x;
-double                y;
-void                  *var_param;
+void cf_background (unsigned int num_cells, unsigned short *reds,
+		    unsigned short *greens, unsigned short *blues,
+		    unsigned int stride, double x, double y, void *var_param)
+/*  [SUMMARY] Compute a background colourmap.
+    <num_cells> The number of colour cells to modify.
+    <reds> The red intensity values.
+    <greens> The green intensity values.
+    <blues> The blue intensity values.
+    <stride> The stride (in unsigned shorts) between intensity values.
+    <x> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <y> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <var_param> A parameter used to compute the colour values. Ignored.
+    [RETURNS] Nothing.
+*/
 {
     extern Colour_struct   background[];
 
     colour_table (num_cells, reds, greens, blues, stride, x, y, background);
-}
+}   /*  End Function cf_background  */
 
 /*PUBLIC_FUNCTION*/
-void cf_heat (num_cells, reds, greens, blues, stride, x, y, var_param)
-unsigned int          num_cells;
-unsigned short        *reds;
-unsigned short        *greens;
-unsigned short        *blues;
-unsigned int          stride;
-double                x;
-double                y;
-void                  *var_param;
+void cf_heat (unsigned int num_cells, unsigned short *reds,
+	      unsigned short *greens, unsigned short *blues,
+	      unsigned int stride, double x, double y, void *var_param)
+/*  [SUMMARY] Compute a heat colourmap.
+    <num_cells> The number of colour cells to modify.
+    <reds> The red intensity values.
+    <greens> The green intensity values.
+    <blues> The blue intensity values.
+    <stride> The stride (in unsigned shorts) between intensity values.
+    <x> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <y> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <var_param> A parameter used to compute the colour values. Ignored.
+    [RETURNS] Nothing.
+*/
 {
     extern Colour_struct   heat[];
   
     colour_table (num_cells, reds, greens, blues, stride, x, y, heat);
-}
+}   /*  End Function cf_heat  */
 
 /*PUBLIC_FUNCTION*/
-void cf_isophot (num_cells, reds, greens, blues, stride, x, y, var_param)
-unsigned int          num_cells;
-unsigned short        *reds;
-unsigned short        *greens;
-unsigned short        *blues;
-unsigned int          stride;
-double                x;
-double                y;
-void                  *var_param;
+void cf_isophot (unsigned int num_cells, unsigned short *reds,
+		 unsigned short *greens, unsigned short *blues,
+		 unsigned int stride, double x, double y, void *var_param)
+/*  [SUMMARY] Compute an isophot colourmap.
+    <num_cells> The number of colour cells to modify.
+    <reds> The red intensity values.
+    <greens> The green intensity values.
+    <blues> The blue intensity values.
+    <stride> The stride (in unsigned shorts) between intensity values.
+    <x> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <y> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <var_param> A parameter used to compute the colour values. Ignored.
+    [RETURNS] Nothing.
+*/
 {
     extern Colour_struct   isophot[];
 
     colour_table (num_cells, reds, greens, blues, stride, x, y, isophot);
-}
+}   /*  End Function cf_isophot  */

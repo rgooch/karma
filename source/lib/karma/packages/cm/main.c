@@ -3,7 +3,7 @@
 
     This code provides child process management.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -59,7 +59,10 @@
     Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
 
-    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Last updated by Richard Gooch   1-APR-1996: Moved remaing functions to new
+  documentation style.
 
 
 */
@@ -97,6 +100,7 @@ static void init_sig_child_handler ();
 static void sig_child_handler ();
 
 #endif  /*  CAN_FORK  */
+
 
 /*  Private functions follow  */
 
@@ -141,59 +145,23 @@ static void sig_child_handler ()
 /*PUBLIC_FUNCTION*/
 flag cm_manage ( int pid, void (*stop_func) (), void (*term_func) (),
 		void (*exit_func) () )
-/*  This routine will manage a child process for state changes by registering
-    callback routines.
-    The child process to manage must be given by  pid  .
-    The routine which is called when the child is stopped (by a SIGTTIN,
-    SIGTTOU, SIGTSTP, or SIGSTOP signal) must be pointed to by  stop_func  .If
-    this is NULL, no callback routine is installed. The interface to this
-    routine is as follows:
-
-    void stop_func (pid, sig)
-    *   This routine is called when a child process is stopped.
-	The process ID is given by  pid  and the signal which stopped the
-	process is given by  sig  .
-	The routine returns nothing.
-    *
-    int pid;
-    int sig;
-
-    The routine which is called when the child terminates due to a signal must
-    be pointed to by  term_func  .If this is NULL, no callback routine is
-    installed. The interface to this routine is as follows:
-
-    void term_func (pid, sig, rusage)
-    *   This routine is called when a child process is killed.
-	The process ID is given by  pid  and the signal which killed the
-	process is given by  sig  .
-	The resource usage information will be pointed to by  rusage  .If this
-	is NULL, the platform does not support this.
-	The routine returns nothing.
-    *
-    int pid;
-    int sig;
-    struct rusage *rusage;
-
-    The routine which is called when the child exits due to a call to  _exit
-    must be pointed to by  exit_func  .If this is NULL, no callback routine is
-    installed. The interface to this routine is as follows:
-
-    void exit_func (pid, value, rusage)
-    *   This routine is called when a child process exits.
-	The process ID is given by  pid  and the value passed to  _exit  by the
-	process is given by  value  .
-	The resource usage information will be pointed to by  rusage  .If this
-	is NULL, the platform does not support this.
-	The routine returns nothing.
-    *
-    int pid;
-    int value;
-    struct rusage *rusage;
-
-    NOTE: if a child process is killed or exits, its callback routines are
-    automatically removed. The  term_func  or  exit_func  MUST NOT unmanage
-    the child process given by  pid  .
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Register a function to manage a child process.
+    [PURPOSE] This routine will manage a child process for state changes by
+    registering callback routines.
+    <pid> The child process ID to manage.
+    <stop_func> This routine is called when the child is stopped (by a SIGTTIN,
+    SIGTTOU, SIGTSTP, or SIGSTOP signal). If this is NULL, no callback routine
+    is installed. The prototype function is [<CM_PROTO_stop_func>]
+    <term_func> This routine is called when the child terminates due to a
+    signal. If this is NULL, no callback routine is installed. The prototype
+    function is [<CM_PROTO_term_func>].
+    <exit_func> This routine is called when the child exits due to a call to
+    <<_exit>>. If this is NULL, no callback routine is installed. The prototype
+    function is [<CM_PROTO_exit_func>].
+    [NOTE] If a child process is killed or exits, its callback routines are
+    automatically removed. The <<term_func>> or <<exit_func>> MUST NOT unmanage
+    the child process.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
 #ifdef CAN_FORK
@@ -206,9 +174,9 @@ flag cm_manage ( int pid, void (*stop_func) (), void (*term_func) (),
 
     init_sig_child_handler ();
     /*  See if child is already managed  */
-    for (entry = child_pid_list; entry != NULL; entry = (*entry).next)
+    for (entry = child_pid_list; entry != NULL; entry = entry->next)
     {
-	if (pid == (*entry).pid)
+	if (pid == entry->pid)
 	{
 	    (void) fprintf (stderr, "Child: %d is already managed\n", pid);
 	    a_prog_bug (function_name);
@@ -224,12 +192,12 @@ flag cm_manage ( int pid, void (*stop_func) (), void (*term_func) (),
 	return (FALSE);
     }
     /*  Fill in entry  */
-    (*new_entry).pid = pid;
-    (*new_entry).stop_func = stop_func;
-    (*new_entry).term_func = term_func;
-    (*new_entry).exit_func = exit_func;
-    (*new_entry).next = NULL;
-    (*new_entry).prev = NULL;
+    new_entry->pid = pid;
+    new_entry->stop_func = stop_func;
+    new_entry->term_func = term_func;
+    new_entry->exit_func = exit_func;
+    new_entry->next = NULL;
+    new_entry->prev = NULL;
     if (child_pid_list == NULL)
     {
 	/*  Create new list  */
@@ -238,8 +206,8 @@ flag cm_manage ( int pid, void (*stop_func) (), void (*term_func) (),
     else
     {
 	/*  Append to end of list  */
-	(*last_entry).next = new_entry;
-	(*new_entry).prev = last_entry;
+	last_entry->next = new_entry;
+	new_entry->prev = last_entry;
     }
     return (TRUE);
 
@@ -251,10 +219,9 @@ flag cm_manage ( int pid, void (*stop_func) (), void (*term_func) (),
 
 /*PUBLIC_FUNCTION*/
 void cm_unmanage (int pid)
-/*  This routine will terminate the management of a child process for state
-    changes.
-    The child process to unmanage must be given by  pid  .
-    The routine returns nothing.
+/*  [SUMMARY] Terminate the management of a child process for state changes.
+    <pid> The ID of the child process to unmanage.
+    [RETURNS] Nothing.
 */
 {
 #ifdef CAN_FORK
@@ -264,25 +231,25 @@ void cm_unmanage (int pid)
     static char function_name[] = "cm_unmanage";
 
     init_sig_child_handler ();
-    for (entry = child_pid_list; entry != NULL; entry = (*entry).next)
+    for (entry = child_pid_list; entry != NULL; entry = entry->next)
     {
-	if (pid == (*entry).pid)
+	if (pid == entry->pid)
 	{
 	    /*  Remove entry  */
-	    if ( (*entry).prev == NULL )
+	    if (entry->prev == NULL)
 	    {
 		/*  Entry is first in the list  */
-		child_pid_list = (*entry).next;
+		child_pid_list = entry->next;
 	    }
 	    else
 	    {
 		/*  Previous entry exists  */
-		(* (*entry).prev ).next = (*entry).next;
+		entry->prev->next = entry->next;
 	    }
-	    if ( (*entry).next != NULL )
+	    if (entry->next != NULL)
 	    {
 		/*  Next entry exists  */
-		(* (*entry).next ).prev = (*entry).prev;
+		entry->next->prev = entry->prev;
 	    }
 	    m_free ( (char *) entry );
 	    return;
@@ -299,18 +266,18 @@ void cm_unmanage (int pid)
 
 /*PUBLIC_FUNCTION*/
 void cm_poll (flag block)
-/*  This routine will poll for any change in status of child processes. If the
-    operating system does not support forking, the routine displays an error
-    message.
-    Those processes which have been registered using  cm_manage  will have any
-    callback routines called.
-    If a child has not been registered using  cm_manage  then the routine will
-    print a warning message stating that the child was not managed.
-    If the value of  block  is TRUE, the routine will poll forever until a
-    child changes status or a signal is caught.
-    NOTE: if the process has no children, the routine will ALWAYS return
+/*  [SUMMARY] Poll for child process state changes.
+    [PURPOSE] This routine will poll for any change in status of child
+    processes. If the operating system does not support forking, the routine
+    displays an error message. Those processes which have been registered using
+    [<cm_manage>] will have any callback routines called. If a child has not
+    been registered using [<cm_manage>] then the routine will print a warning
+    message stating that the child was not managed.
+    <block> If TRUE, the routine will poll forever until a child changes status
+    or a signal is caught.
+    [NOTE] If the process has no children, the routine will ALWAYS return
     immediately.
-    The routine returns nothing.
+    [RETURNS] Nothing.
 */
 {
 #ifdef CAN_FORK
@@ -366,42 +333,40 @@ void cm_poll (flag block)
 	/*  Got a child PID  */
 	break;
     }
-    for (entry = child_pid_list; entry != NULL; entry = (*entry).next)
+    for (entry = child_pid_list; entry != NULL; entry = entry->next)
     {
 	/*  Compare PID  */
 	unmanage = FALSE;
-	if (pid == (*entry).pid)
+	if (pid == entry->pid)
 	{
 	    /*  Found it  */
-	    if ( ( (*entry).stop_func != NULL ) &&
-		(WIFSTOPPED (child_status) == 1) )
+	    if ( (entry->stop_func != NULL) &&
+		 (WIFSTOPPED (child_status) == 1) )
 	    {
-		(* (*entry).stop_func ) ( (*entry).pid,
-					 WSTOPSIG (child_status) );
+		(*entry->stop_func) ( entry->pid, WSTOPSIG (child_status) );
 	    }
 	    if (WIFSIGNALED (child_status) == 1)
 	    {
-		if ( (*entry).term_func != NULL )
+		if (entry->term_func != NULL)
 		{
-		    (* (*entry).term_func ) ( (*entry).pid,
-					     WTERMSIG (child_status),
-					     rusage_ptr );
+		    (*entry->term_func) (entry->pid, WTERMSIG (child_status),
+					 rusage_ptr);
 		}
 		unmanage = TRUE;
 	    }
 	    if (WIFEXITED (child_status) == 1)
 	    {
-		if ( (*entry).exit_func != NULL )
+		if (entry->exit_func != NULL)
 		{
-		    (* (*entry).exit_func ) ( (*entry).pid,
-					     WEXITSTATUS (child_status),
-					     rusage_ptr );
+		    (*entry->exit_func) (entry->pid,
+					 WEXITSTATUS (child_status),
+					 rusage_ptr);
 		}
 		unmanage = TRUE;
 	    }
 	    if (unmanage == TRUE)
 	    {
-		cm_unmanage ( (*entry).pid );
+		cm_unmanage (entry->pid);
 	    }
 	    return;
 	}
@@ -417,6 +382,20 @@ void cm_poll (flag block)
 
 /*PUBLIC_FUNCTION*/
 void cm_poll_silent (flag block)
+/*  [SUMMARY] Poll for child process state changes.
+    [PURPOSE] This routine will poll for any change in status of child
+    processes. If the operating system does not support forking, the routine
+    displays an error message. Those processes which have been registered using
+    [<cm_manage>] will have any callback routines called. If a child has not
+    been registered using [<cm_manage>] then the routine will print a warning
+    message stating that the child was not managed.
+    <block> If TRUE, the routine will poll forever until a child changes status
+    or a signal is caught.
+    [NOTE] If the process has no children, the routine will ALWAYS return
+    immediately.
+    [RETURNS] Nothing.
+*/
+
 /*  This routine will poll for any change in status of child processes. This
     routine is similar to the  cm_poll  routine, except that if the operating
     system does not support forking, no error message is displayed.

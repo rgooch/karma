@@ -1,0 +1,6 @@
+$SUMMARY          Routines to support Astronomical sky-projections
+$PURPOSE
+    These routines are meant to provide support for Astronomical
+    sky-projections.
+    NOTE: THIS PACKAGE IS WORK IN PROGRESS. THE INTERFACE MAY CHANGE IN THE
+    NEXT RELEASE, POSSIBLY WITHOUT NOTICE.

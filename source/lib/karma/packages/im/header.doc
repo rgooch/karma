@@ -1,0 +1,3 @@
+$SUMMARY          Routines to do low level initialisation of modules
+$PURPOSE
+    These routines are meant to provide low level initialisation for a module.

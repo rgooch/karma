@@ -3,25 +3,31 @@
 /* This code provides an image display widget for Xt. */
 /**/
 /*
- Name		         Class		   RepType         Default Value
- ----		         -----		   -------         -------------
- pseudoColourCanvas      WorldCanvas         Pointer         NULL
- directColourCanvas      WorldCanvas         Pointer         NULL
- trueColourCanvas        WorldCanvas         Pointer         NULL
- pseudoColourLeftCanvas  WorldCanvas         Pointer         NULL
- pseudoColourRightCanvas WorldCanvas         Pointer         NULL
- directColourLeftCanvas  WorldCanvas         Pointer         NULL
- directColourRightCanvas WorldCanvas         Pointer         NULL
- trueColourLeftCanvas    WorldCanvas         Pointer         NULL
- trueColourRightCanvas   WorldCanvas         Pointer         NULL
- visibleCanvas           WorldCanvas         Pointer         NULL
- imageName               ImageName           String          "fred"
- enableAnimation         EnableAnimation     Bool            False
- showAnimateButton       ShowAnimateButton   Bool            True
- showQuitButton          ShowQuitButton      Bool            True
- cmapSize                CmapSize            Int             200
- fullscreen              Fullscreen          Bool            False
- verbose                 Verbose             Bool            False
+ Name                             Class               RepType     Default Value
+ ----                             -----               -------     -------------
+ XkwNpseudoColourCanvas           WorldCanvas         Pointer     NULL
+ XkwNdirectColourCanvas           WorldCanvas         Pointer     NULL
+ XkwNtrueColourCanvas             WorldCanvas         Pointer     NULL
+ XkwNpseudoColourLeftCanvas       WorldCanvas         Pointer     NULL
+ XkwNpseudoColourRightCanvas      WorldCanvas         Pointer     NULL
+ XkwNdirectColourLeftCanvas       WorldCanvas         Pointer     NULL
+ XkwNdirectColourRightCanvas      WorldCanvas         Pointer     NULL
+ XkwNtrueColourLeftCanvas         WorldCanvas         Pointer     NULL
+ XkwNtrueColourRightCanvas        WorldCanvas         Pointer     NULL
+ XkwNvisibleCanvas                WorldCanvas         Pointer     NULL
+ XkwNmagnifierPseudoColourCanvas  WorldCanvas         Pointer     NULL
+ XkwNmagnifierDirectColourCanvas  WorldCanvas         Pointer     NULL
+ XkwNmagnifierTrueColourCanvas    WorldCanvas         Pointer     NULL
+ XkwNmagnifierVisibleCanvas       WorldCanvas         Pointer     NULL
+ XkwNimageName                    ImageName           String      "fred"
+ XkwNenableAnimation              EnableAnimation     Bool        False
+ XkwNshowAnimateButton            ShowAnimateButton   Bool        True
+ XkwNshowQuitButton               ShowQuitButton      Bool        True
+ XkwNcmapSize                     CmapSize            Int         200
+ XkwNfullscreen                   Fullscreen          Bool        False
+ XkwNautoIntensityScale           AutoIntensityScale  Bool        True
+ XkwNnumTrackLabels               NumTrackLabels      Cardinal    0
+ XkwNverbose                      Verbose             Bool        False
 */    
 /*----------------------------------------------------------------------*/
 
@@ -50,12 +56,18 @@ typedef struct _ImageDisplayRec *ImageDisplayWidget;
 #define XkwNtrueColourLeftCanvas "trueColourLeftCanvas"
 #define XkwNtrueColourRightCanvas "trueColourRightCanvas"
 #define XkwNvisibleCanvas "visibleCanvas"
+#define XkwNmagnifierPseudoColourCanvas "magnifierPseudoColourCanvas"
+#define XkwNmagnifierDirectColourCanvas "magnifierDirectColourCanvas"
+#define XkwNmagnifierTrueColourCanvas "magnifierTrueColourCanvas"
+#define XkwNmagnifierVisibleCanvas "magnifierVisibleCanvas"
 #define XkwNimageName "imageName"
 #define XkwNenableAnimation "enableAnimation"
 #define XkwNshowAnimateButton "showAnimateButton"
 #define XkwNshowQuitButton "showQuitButton"
 #define XkwNcmapSize "cmapSize"
 #define XkwNfullscreen "fullscreen"
+#define XkwNautoIntensityScale "autoIntensityScale"
+#define XkwNnumTrackLabels "numTrackLabels"
 #define XkwNverbose "verbose"
 
 #define XkwCWorldCanvas "WorldCanvas"
@@ -65,6 +77,15 @@ typedef struct _ImageDisplayRec *ImageDisplayWidget;
 #define XkwCShowQuitButton "ShowQuitButton"
 #define XkwCCmapSize "CmapSize"
 #define XkwCFullscreen "Fullscreen"
+#define XkwCAutoIntensityScale "AutoIntensityScale"
+#define XkwCNumTrackLabels "NumTrackLabels"
 #define XkwCVerbose "Verbose"
+
+/*----------------------------------------------------------------------
+ * Functions
+ *----------------------------------------------------------------------*/
+
+EXTERN_FUNCTION (void XkwImageDisplayRefresh, (Widget W, flag clear) );
+
 
 #endif

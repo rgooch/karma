@@ -1,306 +1,441 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the r_ package of routines in the Karma library.
-
+$PACKAGE          r
+$SUMMARY          Low level connection routines
+$PURPOSE
     These routines are meant to provide a low level mechanism to create and
     accept connections. Although these routines are made public, their use is
-    NOT recommended. The conn_ package is the suggested means to create and
+    NOT recommended. The <-conn-> package is the suggested means to create and
     accept connections.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
-
-    Written by		Richard Gooch	22-Aug-1995
-
-    Last updated by	Richard Gooch	22-Aug-1995
-
-
-*/
-
-int *r_alloc_port (port_number, retries, num_docks)
-/*  This routine will allocate a Karma port for the module so that it can
-    operate as a server (able to receive network connections).
-    The port number to allocate must be pointed to by  port_number  .The
-    routine will write the actual port number allocated to this address. This
-    must point to an address which lies on an  int  boundary.
-    The number of succsessive port numbers to attempt to allocate before giving
-    up must be given by  retries  .If this is 0, then the routine will give up
-    immediately if the specified port number is in use.
+$FUNCTION         r_alloc_port
+$RETURN_TYPE      int *
+$PARAMETER_LIST
+    (unsigned int *port_number, unsigned int retries,
+		   unsigned int *num_docks)
+$SUMMARY          Allocate a Karma port whic can receive connections.
+$PURPOSE
+    This routine will allocate a Karma port for the module so that it
+    can operate as a server (able to receive network connections).
     The routine will create a number of docks for one port. Each dock is an
     alternative access point for other modules to connect to this port.
-    The number of docks allocated will be written to the storage pointed to by
-    num_docks  .This must point to an address which lies on an  int
-    boundary.
     The close-on-exec flags of the docks are set such that the docks will
     close on a call to execve(2V).
     The docks are placed into non-blocking mode.
-    The routine returns a pointer to a statically allocated array of docks on
-    success, else it returns NULL.
-*/
-unsigned int *port_number;
-unsigned int retries;
-unsigned int *num_docks;
-/*---------------------------------------------------------------------------*/
+$PARAMETER        port_number :
+    A pointer to the port number to allocate. The routine will
+    write the actual port number allocated to this address. This must point to
+    an address which lies on an <<int>> boundary.
+$PARAMETER        retries :
+    The number of succsessive port numbers to attempt to allocate
+    before giving up. If this is 0, then the routine will give up immediately
+    if the specified port number is in use.
+$PARAMETER        num_docs :
+    The number of docks allocated will be written here. This must
+    point to an address which lies on an <<int>> boundary.
+$RETURNS
+    A pointer to a statically allocated array of docks on success,
+    else NULL.
+$END
 
-void r_close_dock (dock)
-/*  This routine will close a dock. If the dock was the last open dock for the
-    port, then the entire port is closed and a new port may be allocated.
-    The dock to close must be given by  dock  .
-    The routine returns nothing.
-*/
-int dock;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         r_close_dock
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (int dock)
+$SUMMARY          Close a dock.
+$PURPOSE
+    This routine will close a dock. If the dock was the last open
+    dock for the port, then the entire port is closed and a new port may be
+    allocated.
+$PARAMETER        dock :
+    The dock to close.
+$RETURNS
+    Nothing.
+$END
 
-int r_connect_to_port (addr, port_number, local)
-/*  This routine will connect to a server module running on the machine
-    with Internet address given by  addr  .
-    If the value of 0 is supplied for the address, the connection is made to a
-    Karma server running on the local machine.
-    The port number to connect to must given by  port_number  .
-    If the connection is made to a port on the local host, then the value TRUE
-    will be written to the storage pointed to by  local  ,else the value FALSE
-    will be written here.
-    The close-on-exec flags of the socket is set such that the socket will
-    close on a call to execve(2V).
-    The routine returns the file descriptor of the opened connection on
-    success, else it returns -1
-*/
-unsigned long addr;
-unsigned int port_number;
-flag *local;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         r_connect_to_port
+$RETURN_TYPE      int
+$PARAMETER_LIST
+    (unsigned long addr, unsigned int port_number,
+		       flag *local)
+$SUMMARY          Make a connection to a Karma port on some machine.
+$PURPOSE
+    Make a connection to a Karma port on some machine.
+$PARAMETER        addr :
+    The address of the machine to connect to. If the value of 0 is
+    supplied for the address, the connection is made to a Karma server running
+    on the local machine.
+$PARAMETER        port_number :
+    The port number to connect to.
+$PARAMETER        local :
+    If the connection is made to a port on the local host, then the
+    value TRUE will be written here, else the value FALSE will be written here.
+$NOTE
+    The close-on-exec flags of the socket is set such that the socket
+    will close on a call to execve(2V).
+$RETURNS
+    The file descriptor of the opened connection on success, else -1.
+$END
 
-int r_accept_connection_on_dock (int dock, unsigned long *addr, flag *local)
-/*  This routine will accept a connection on a dock.
-    The dock must be given by  dock  .
-    The address of the host connecting to the dock will be written to the
-    storage pointed to by  addr  .
-    If the connection is a local connection, then the routine will write the
-    value TRUE to the storage pointed to by  local  ,else it will write
-    the value FALSE.
-    The routine returns a connection on success, else it returns -1
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         r_accept_connection_on_dock
+$RETURN_TYPE      int
+$PARAMETER_LIST
+    (int dock, unsigned long *addr, flag *local)
+$SUMMARY          Accept a connection on a dock.
+$PURPOSE
+    Accept a connection on a dock.
+$PARAMETER        dock :
+    The dock.
+$PARAMETER        addr :
+    The address of the host connecting to the dock will be written here.
+$PARAMETER        local :
+    If the connection is a local connection, then the routine will
+    write the value TRUE here, else it will write the value FALSE.
+$RETURNS
+    A connection on success, else -1.
+$END
 
-flag r_close_connection (int connection)
-/*  This routine will close a connection.
-    The connection to close must be given by  connection  .
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         r_close_connection
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (int connection)
+$SUMMARY          Close a connection.
+$PURPOSE
+    Close a connection.
+$PARAMETER        connection :
+    The connection to close.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-int r_get_bytes_readable (int connection)
-/*  This routine will determine the minimum number of bytes readable on a
-    connection. There may be more bytes readable than indicated.
-    The connection should be given by  connection  .
-    The routine returns the number of bytes readable on success,
-    else it returns -1
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         r_get_bytes_readable
+$RETURN_TYPE      int
+$PARAMETER_LIST
+    (int connection)
+$SUMMARY          Get bytes readable on a connection.
+$PURPOSE
+    This routine will determine the minimum number of bytes readable
+    on a connection. There may be more bytes readable than indicated.
+$PARAMETER        connection :
+    The connection.
+$RETURNS
+    The number of bytes readable on success, else -1.
+$END
 
-unsigned long r_get_inet_addr_from_host (char *host, flag *local)
-/*  This routine will get the first listed Internet address from the hostname
-    string pointed to by  host  .
-    If the specified host is the local machine, then the routine will write
-    the value TRUE to the storage pointed to by  local  ,else it will write
-    the value FALSE here. If this is NULL, nothing is written here.
-    The routine returns the Internet address on success (in host byte order),
-    else it returns 0.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         r_get_inet_addr_from_host
+$RETURN_TYPE      unsigned long
+$PARAMETER_LIST
+    (CONST char *host, flag *local)
+$SUMMARY          Get the first listed Internet address of a hostname.
+$PURPOSE
+    Get the first listed Internet address of a hostname.
+$PARAMETER        host :
+    The hostname.
+$PARAMETER        local :
+    If the specified host is the local machine, then the routine will
+    write the value TRUE here, else it will write the value FALSE here. If
+    this is NULL, nothing is written here.
+$RETURNS
+    The Internet address on success (in host byte order), else 0.
+$END
 
-int r_read (int fd, char *buf, int nbytes)
-/*  This routine is similar to the system  read(2)  call, except that the
-    number of bytes requested is always returned (except on error or closure).
-    Hence, if the descriptor references a socket, the routine will read as much
-    data as was requested, rather than a lesser amount due to packetisation or
-    interrupted system calls.
-    The file descriptor to read from must be given by  fd  .This descriptor
-    must NOT be set to non-blocking IO.
-    The buffer in which to write the data must be pointed to by  buf  .
-    The number of bytes to read must be given by  nbytes  .
-    The routine returns the number of bytes requested on success,
-    the number of bytes read on end of file (or closure) and -1 on error.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         r_read
+$RETURN_TYPE      int
+$PARAMETER_LIST
+    (int fd, char *buf, int nbytes)
+$SUMMARY          Read bytes from a file descriptor.
+$PURPOSE
+    This routine is similar to the system <<read(2)>> call, except
+    that the number of bytes requested is always returned (except on error or
+    closure). Hence, if the descriptor references a socket, the routine will
+    read as much data as was requested, rather than a lesser amount due to
+    packetisation or interrupted system calls.
+$PARAMETER        fd :
+    The file descriptor to read from. This descriptor must NOT be set to
+    non-blocking IO.
+$PARAMETER        buf :
+    The buffer in which to write the data.
+$PARAMETER        nbytes :
+    The number of bytes to read.
+$RETURNS
+    The number of bytes requested on success, the number of bytes
+    read on end of file (or closure) and -1 on error.
+$END
 
-int r_write (int fd, CONST char *buf, int nbytes)
-/*  This routine is similar to the system  write(2)  call, except that the
-    number of bytes requested is always returned (except on error). Hence, if
-    the descriptor references a socket, the routine will write as much data as
-    was requested, rather than a lesser amount due to packetisation or
-    interrupted system calls.
-    The file descriptor to write from must be given by  fd  .This descriptor
-    must NOT be set to non-blocking IO.
-    The buffer in which to write the data must be pointed to by  buf  .
-    The number of bytes to write must be given by  nbytes  .
-    NOTE: the routine will force  SIGPIPE  to be ignored.
-    The routine returns the number of bytes requested on success,
-    else it returns -1 indicating error.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         r_write
+$RETURN_TYPE      int
+$PARAMETER_LIST
+    (int fd, CONST char *buf, int nbytes)
+$SUMMARY          Write bytes to a file descriptor.
+$PURPOSE
+    This routine is similar to the system <<write(2)>> call, except
+    that the number of bytes requested is always returned (except on error).
+    Hence, if the descriptor references a socket, the routine will write as
+    much data as was requested, rather than a lesser amount due to
+    packetisation or interrupted system calls.
+$PARAMETER        fd :
+    The file descriptor to write to. This descriptor must NOT be set to
+    non-blocking IO.
+$PARAMETER        buf :
+    The buffer in which to write the data.
+$PARAMETER        nbytes :
+    The number of bytes to write.
+$NOTE
+    The routine will force  SIGPIPE  to be ignored.
+$RETURNS
+    The number of bytes requested on success, else -1 indicating
+    error.
+$END
 
-flag r_test_input_event (connection)
-/*  This routine will test if there is input activity on a connection. This
-    activity also covers the case of connection closure.
-    The connection descriptor must be given by  connection  .
-    NOTE: this routine is only available on platforms which emulate the
+$FUNCTION         r_test_input_event
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (int connection)
+$SUMMARY          Test for activity on a connection.
+$PURPOSE
+    This routine will test if there is input activity on a
+    connection. This activity also covers the case of connection closure. The
+    connection descriptor must be given by  connection  .
+$NOTE
+    This routine is only available on platforms which emulate the
     communications facilities of Unix. It is NOT available on standard Unix
     systems.
-    The routine returns TRUE if there is some input activity,
-    else it returns FALSE.
-*/
-int connection;
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE if there is some input activity, else FALSE.
+$END
 
-int r_open_stdin (disc)
-/*  This routine will open the standard input.
-    The routine will write the value TRUE to the storage pointed to by  disc
-    if the standard input is a disc, else it will write FALSE.
-    The routine returns the descriptor on success, else it returns -1
-*/
-flag *disc;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         r_open_stdin
+$RETURN_TYPE      int
+$PARAMETER_LIST
+    (flag *disc)
+$SUMMARY          Open the standard input.
+$PURPOSE
+    Open the standard input.
+$PARAMETER        disc :
+    The routine will write the value TRUE here if the standard input is
+    a disc, else it will write FALSE.
+$RETURNS
+    The descriptor on success, else -1.
+$END
 
-char *r_getenv (name)
-/*  This routine will get the value of the environment variable with name
-    pointed to by  name  .
-    The routine returns a pointer to the value string if present,
-    else it returns NULL.
-*/
-CONST char *name;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         r_getenv
+$RETURN_TYPE      char *
+$PARAMETER_LIST
+    (CONST char *name)
+$SUMMARY          Get the value of an environment variable.
+$PURPOSE
+    Get the value of an environment variable.
+$PARAMETER        name :
+    The name of the environment variable.
+$RETURNS
+    A pointer to the value string if present, else NULL.
+$END
 
-int r_setenv (env_name, env_value)
-/*  This routine will provide a consistent interface to set environment
-    variables. This is necessary because the "standard" C library routines:
-    putenv  or  setenv  (depending on the particular standard C library
-    supplied with the operating system) are in fact not standard.
-    The environment variable to create or change must be named by  env_name  .
-    The string value to set the variable to must be pointed to by  env_value  .
-    The routine returns 0 on success, else it returns -1.
-*/
-CONST char *env_name;
-CONST char *env_value;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         r_setenv
+$RETURN_TYPE      int
+$PARAMETER_LIST
+    (CONST char *env_name, CONST char *env_value)
+$SUMMARY          Set an environment variable.
+$PURPOSE
+    This routine will provide a consistent interface to set
+    environment variables. This is necessary because the "standard" C library
+    routines: <<putenv>> or <<setenv>> (depending on the particular standard
+    C library supplied with the operating system) are in fact not standard.
+$PARAMETER        env_name :
+    The environment variable to create or change.
+$PARAMETER        env_value :
+    The string value to set the variable to.
+$RETURNS
+    0 on success, else -1.
+$END
 
-void r_gethostname (char *name, unsigned int namelen)
-/*  [PURPOSE] This routine will determine the local hostname.
-    <name> The hostname will be written here. It is guaranteed to be null
+$FUNCTION         r_gethostname
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (char *name, unsigned int namelen)
+$SUMMARY          This routine will determine the local hostname.
+$PURPOSE
+    This routine will determine the local hostname.
+$PARAMETER        name :
+    The hostname will be written here. It is guaranteed to be null
     terminated.
-    <namelen> The size of the buffer.
-    [RETURNS] Nothing.
-*/
-/*---------------------------------------------------------------------------*/
+$PARAMETER        namelen :
+    The size of the buffer.
+$RETURNS
+    Nothing.
+$END
 
-flag r_get_fq_hostname (char *name, unsigned int namelen)
-/*  [PURPOSE] This routine will get the fully qualified local hostname.
-    <name> The hostname will be written here. It is guaranteed to be null
+$FUNCTION         r_get_fq_hostname
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (char *name, unsigned int namelen)
+$SUMMARY          This routine will get the fully qualified local hostname.
+$PURPOSE
+    This routine will get the fully qualified local hostname.
+$PARAMETER        name :
+    The hostname will be written here. It is guaranteed to be null
     terminated.
-    <namelen> The size of the buffer.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$PARAMETER        namelen :
+    The size of the buffer.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-int r_getppid ()
-/*  This routine will determine the parent process ID.
-    The routine returns the parent process ID.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         r_getppid
+$RETURN_TYPE      int
+$PARAMETER_LIST
+    ()
+$SUMMARY          Get the parent process ID.
+$PURPOSE
+    Get the parent process ID.
+$RETURNS
+    The parent process ID.
+$END
 
-int r_open_file (CONST char *filename, int flags, int mode,
+$FUNCTION         r_open_file
+$RETURN_TYPE      int
+$PARAMETER_LIST
+    (CONST char *filename, int flags, int mode,
 		 unsigned int *filetype, unsigned int *blocksize)
-/*  [PURPOSE] This routine will open a file. The file may be a regular disc
+$SUMMARY          Open a named file.
+$PURPOSE
+    This routine will open a file. The file may be a regular disc
     file, a named FIFO, a character special device, a Unix domain socket or a
     TCP/IP connection (where supported). This routine provides an enhanced
     interface to the <<open(2)>>, <<socket(2)>> and <<connect(2)>> routines.
-    <filename> The pathname of the file to open. This parameter has the same
+$PARAMETER        filename :
+    The pathname of the file to open. This parameter has the same
     meaning as the first parameter to <<open(2)>>.
     Filenames of the form: "//tcpIP/{hostname}:{port}" indicate a connection to
     a TCP/IP port on host {hostname} with raw port number {port} is
     requested.
-    <flags> The access flags. This parameter has the same meaning as the second
+$PARAMETER        flags :
+    The access flags. This parameter has the same meaning as the second
     parameter to <<open(2)>>.
-    <mode> If the file is created, the file protection modes will be determined
+$PARAMETER        mode :
+    If the file is created, the file protection modes will be determined
     by the combination of the process  umask  and this value. This parameter
     has the same meaning as the third parameter to <<open(2)>>.
-    <filetype> The type of the file will be written here.
-    <blocksize> The blocksize (in bytes) of the file will be written here (this
+$PARAMETER        filetype :
+    The type of the file will be written here.
+$PARAMETER        blocksize :
+    The blocksize (in bytes) of the file will be written here (this
     is only valid for a disc file). If the blocksize cannot be determined, the
     value 0 will be written here.
-    [RETURNS] The file descriptor on success, else -1 and sets <<errno>> with
+$RETURNS
+    The file descriptor on success, else -1 and sets <<errno>> with
     the error code.
-*/
-/*---------------------------------------------------------------------------*/
+$END
 
-int r_create_pipe (read_fd, write_fd)
-/*  This routine will create an un-named pipe.
-    This routine provides an enhanced interface to the  pipe(2)  routine.
-    The file descriptor corresponding to the read end of the pipe will be
-    written to the storage pointed to by  read_fd  .
-    The file descriptor corresponding to the write end of the pipe will be
-    written to the storage pointed to by  write_fd  .
-    The routine returns 0 on success, else it returns -1 and sets  errno  with
-    the error code.
-*/
-int *read_fd;
-int *write_fd;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         r_create_pipe
+$RETURN_TYPE      int
+$PARAMETER_LIST
+    (int *read_fd, int *write_fd)
+$SUMMARY          Create an un-named pipe.
+$PURPOSE
+    This routine will create an un-named pipe. This routine provides
+    an enhanced interface to the <<pipe(2)>> routine.
+$PARAMETER        read_fd :
+    The file descriptor corresponding to the read end of the pipe
+    will be written here.
+$PARAMETER        write_fd :
+    The file descriptor corresponding to the write end of the pipe
+    will be written here.
+$RETURNS
+    0 on success, else -1 and sets <<errno>> with the error code.
+$END
 
-char *r_get_karmabase ()
-/*  This routine will get the pathname of the installed runtime Karma.
-    The routine returns the pathname.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         r_get_karmabase
+$RETURN_TYPE      char *
+$PARAMETER_LIST
+    ()
+$SUMMARY          Get the pathname of the installed runtime Karma.
+$PURPOSE
+    Get the pathname of the installed runtime Karma.
+$RETURNS
+    The pathname.
+$END
 
-int r_get_service_number (module_name)
-/*  This routine uses a hashing function to determine the service number of the
-    module with name pointed to by  module_name  .
-    The routine will return the service number.
-*/
-char *module_name;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         r_get_service_number
+$RETURN_TYPE      int
+$PARAMETER_LIST
+    (CONST char *module_name)
+$SUMMARY          Get service number for a module.
+$PURPOSE
+    This routine uses a hashing function to determine the service
+    number of a module.
+$PARAMETER        module_name :
+    The name of the module.
+$RETURNS
+    The service number.
+$END
 
-char *r_get_host_from_display (display)
-/*  This routine will get the host to connect to from the string pointed to by
-    display  .If this is NULL, the host "unix" is returned.
-    The syntax for  display  is the same as for the X Windows system  DISPLAY
-    environmental variable.
-    The routine returns a pointer to a statically allocated string which will
-    contain the host name on success, else it returns NULL.
+$FUNCTION         r_get_host_from_display
+$RETURN_TYPE      char *
+$PARAMETER_LIST
+    (CONST char *display)
+$SUMMARY          Get the hostname in a display string.
+$PURPOSE
+    This routine will get the hostname from a display string.
+    The syntax for the display string is the same as for the X Windows system
+    DISPLAY environmental variable.
+$PARAMETER        display :
+    The display string. If this is NULL, the host "unix" is returned.
+$RETURNS
+    A pointer to a statically allocated string which will contain the
+    host name on success, else NULL.
+    
+$END
 
-*/
-char *display;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         r_get_display_num_from_display
+$RETURN_TYPE      int
+$PARAMETER_LIST
+    (CONST char *display)
+$SUMMARY          Get display number from a display string.
+$PURPOSE
+    This routine will get the display number from a display string
+    (following the X Windows system syntax for the DISPLAY environmental
+    variable).
+$PARAMETER        display :
+    The display string. If this is NULL, the display number defaults
+    to 0.
+$RETURNS
+    The display number on success, else -1.
+$END
 
-int r_get_display_num_from_display (display)
-/*  This routine will get the display number from the string pointed to by
-    display  (following the X Windows system syntax for the  DISPLAY
-    environmental variable).
-    If  display  is a NULL pointer, the display number defaults to 0
-    The routine returns the display number on success, else it returns -1
-*/
-char *display;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         r_get_screen_num_from_display
+$RETURN_TYPE      int
+$PARAMETER_LIST
+    (CONST char *display)
+$SUMMARY          Get the screen number in a display string.
+$PURPOSE
+    This routine will get the screen number from a display string
+    (following the X Windows system syntax for the DISPLAY environmental
+    variable).
+$PARAMETER        display :
+    The display string. If this is NULL, the screen number defaults
+    to 0.
+$RETURNS
+    The display number on success, else -1.
+$END
 
-int r_get_screen_num_from_display (display)
-/*  This routine will get the screen number from the string pointed to by
-    display  (following the X Windows system syntax for the  DISPLAY
-    environmental variable).
-    If  display  is a NULL pointer, the screen number defaults to 0
-    The routine returns the display number on success, else it returns -1
-*/
-char *display;
-/*---------------------------------------------------------------------------*/
-
-int r_get_def_port (module_name, display)
-/*  This routine will get the default Karma port number for the module with
-    name pointed to by  module_name  .
-    If  display  is not a NULL pointer, the display number entry in the string
-    it points to is also used to compute the port number. The syntax for this
-    string is the same as for the X Windows system  DISPLAY environmental
-    variable.
-    This routine does not resolve multiple port numbers residing on the same
-    machine.
-    The routine returns the default port number on success, else it returns -1
-*/
-char *module_name;
-char *display;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         r_get_def_port
+$RETURN_TYPE      int
+$PARAMETER_LIST
+    (CONST char *module_name, CONST char *display)
+$SUMMARY          Get the default Karma port number for a module.
+$PURPOSE
+    Get the default Karma port number for a module.
+$PARAMETER        module_name :
+    The module name.
+$PARAMETER        display :
+    The display string. The display number entry in the string is
+    also used to compute the port number. The syntax for this string is the
+    same as for the X Windows system DISPLAY environmental variable.
+$NOTE
+    This routine does not resolve multiple port numbers residing on the
+    same machine.
+$RETURNS
+    The default port number on success, else -1.
+$END

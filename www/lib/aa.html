@@ -1,0 +1,195 @@
+<html><head><title>Package: aa</title></head> 
+<body>
+<center><h1>The "aa" Package</h1></center>    These routines are meant to provide general purpose associative array
+    support. This can save a lot of code when you maintain lists of pairs of
+    items (e.g. pairs of names and objects).
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><b>Note:</b> <li>     THIS PACKAGE IS WORK IN PROGRESS. THE INTERFACE MAY CHANGE IN THE
+    NEXT RELEASE, POSSIBLY WITHOUT NOTICE.
+<br><p><a name=aa></a></table><h4>Functions</h4><table><tr><td><a href=aa.html#aa_create>aa_create</a></td><td>Create a general purpose associative array of key-value pairs.
+</td></tr>
+<tr><td><a href=aa.html#aa_get_info>aa_get_info</a></td><td>Get information attached to associative array.
+</td></tr>
+<tr><td><a href=aa.html#aa_put_pair>aa_put_pair</a></td><td>Add a key-value pair to an associative array.
+</td></tr>
+<tr><td><a href=aa.html#aa_get_pair>aa_get_pair</a></td><td>Find a key-value pair in an associative array.
+</td></tr>
+<tr><td><a href=aa.html#aa_destroy_pair>aa_destroy_pair</a></td><td>Remove a key-value pair from an associative array.
+</td></tr>
+<tr><td><a href=aa.html#aa_get_all_pairs>aa_get_all_pairs</a></td><td>Get all the key-value pairs on an associative array.
+</td></tr>
+<tr><td><a href=aa.html#aa_get_pair_info>aa_get_pair_info</a></td><td>Get key and value information for a key-value pair.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=aa.html#AA_PROTO_key_compare_func>AA_PROTO_key_compare_func</a></td><td>This routine will compare two keys.
+</td></tr>
+<tr><td><a href=aa.html#AA_PROTO_key_copy_func>AA_PROTO_key_copy_func</a></td><td>This routine will copy a key.
+</td></tr>
+<tr><td><a href=aa.html#AA_PROTO_key_destroy_func>AA_PROTO_key_destroy_func</a></td><td>This routine will destroy keys.
+</td></tr>
+<tr><td><a href=aa.html#AA_PROTO_value_copy_func>AA_PROTO_value_copy_func</a></td><td>This routine will copy a value.
+</td></tr>
+<tr><td><a href=aa.html#AA_PROTO_value_destroy_func>AA_PROTO_value_destroy_func</a></td><td>This routine will destroy values.
+</td></tr>
+</table><h4>Tables</h4><table><tr><td><a href=aa.html#AA_REPLACEMENT_POLICIES>AA_REPLACEMENT_POLICIES</a></td><td>List of replacement policies when adding keys
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=aa_create></a> KAssociativeArray
+ <b>aa_create</b><i>    (void *info,
+			     int (*key_compare_func) (void *key1, void *key2),
+			     void *(*key_copy_func) (void *key,
+						     uaddr length, flag *ok),
+			     void (*key_destroy_func) (void *key),
+			     void *(*value_copy_func) (void *value,
+						       uaddr length, flag *ok),
+			     void (*value_destroy_func) (void *value))
+</i><br><p>    Create a general purpose associative array of key-value pairs.
+<p><b>Parameters:</b><ul><li><i>info :</i> 
+    Arbitrary information to be stored with the associative array.
+<br><li><i>key_compare_func :</i> 
+    The function used to compare two keys. The prototype
+    function is <a href=aa.html#AA_PROTO_key_compare_func>AA_PROTO_key_compare_func</a>.
+<br><li><i>key_copy_func :</i> 
+    The function used to copy keys. The prototype function is
+    <a href=aa.html#AA_PROTO_key_copy_func>AA_PROTO_key_copy_func</a>.
+<br><li><i>key_destroy_func :</i> 
+    The function used to destroy keys. The prototype
+    function is <a href=aa.html#AA_PROTO_key_destroy_func>AA_PROTO_key_destroy_func</a>.
+<br><li><i>value_copy_func :</i> 
+    The function used to copy values. The prototype function
+    is <a href=aa.html#AA_PROTO_value_copy_func>AA_PROTO_value_copy_func</a>.
+<br><li><i>value_destroy_func :</i> 
+    The function used to destroy values. The prototype
+    function is <a href=aa.html#AA_PROTO_value_destroy_func>AA_PROTO_value_destroy_func</a>.
+<br></ul><b>Returns:</b>     An associative array on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=aa_get_info></a> void *
+ <b>aa_get_info</b><i>    (KAssociativeArray aa)
+</i><br><p>    This routine will get the arbitrary information pointer stored
+    with an associative array.
+<p><b>Parameters:</b><ul><li><i>aa :</i> 
+    The associative array.
+<br></ul><b>Returns:</b>     The arbitrary information pointer.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=aa_put_pair></a> KAssociativeArrayPair
+ <b>aa_put_pair</b><i>    (KAssociativeArray aa,
+				   void *key, uaddr key_length,
+				   void *value, uaddr value_length,
+				   unsigned int replacement_policy, flag front)
+</i><br><p>    Add a key-value pair to an associative array.
+<p><b>Parameters:</b><ul><li><i>aa :</i> 
+    The associative array.
+<br><li><i>key :</i> 
+    The key.
+<br><li><i>key_length :</i> 
+    The length of the key, in bytes. If this is 0 and the
+    <em>key_copy_func</em> is NULL, the key pointer is copied directly. If this is
+    greater than zero and the <em>key_copy_func</em> is NULL, the specified number
+    of bytes are copied.
+<br><li><i>value :</i> 
+    The value.
+<br><li><i>value_length :</i> 
+    The length of the value, in bytes. If this is 0 and the
+    <em>value_copy_func</em> is NULL, the value pointer is copied directly. If this
+    is greater than zero and the <em>value_copy_func</em> is NULL, the specified
+    number of bytes are copied.
+<br><li><i>replacement_policy :</i> 
+    The policy to use when adding the pair. See
+    <a href=aa.html#AA_REPLACEMENT_POLICIES>AA_REPLACEMENT_POLICIES</a> for a list of legal values.
+<br><li><i>front :</i> 
+    If TRUE and the key is new, place the pair at the front of the
+    array. If FALSE and the key is new, place the pair at the end of the
+    array.
+<br></ul><b>Returns:</b>     A KAssociativeArrayPair object on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=aa_get_pair></a> KAssociativeArrayPair
+ <b>aa_get_pair</b><i>    (KAssociativeArray aa, void *key,
+				   void **value)
+</i><br><p>    Find a key-value pair in an associative array.
+<p><b>Parameters:</b><ul><li><i>aa :</i> 
+    The associative array.
+<br><li><i>key :</i> 
+    The key.
+<br><li><i>value :</i> 
+    The value found will be written here on success.
+<br></ul><b>Returns:</b>     A KAssociativeArrayPair object if the key was found, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=aa_destroy_pair></a> void
+ <b>aa_destroy_pair</b><i>    (KAssociativeArrayPair pair)
+</i><br><p>    This routine will remove a key-value pair from an associative
+    array and will destroy all storage allocated for the pair.
+<p><b>Parameters:</b><ul><li><i>pair :</i> 
+    The key-value pair.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=aa_get_all_pairs></a> KAssociativeArrayPair *
+ <b>aa_get_all_pairs</b><i>    (KAssociativeArray aa,
+					 unsigned int *num_pairs)
+</i><br><p>    Get all the key-value pairs on an associative array.
+<p><b>Parameters:</b><ul><li><i>aa :</i> 
+    The associative array.
+<br><li><i>num_pairs :</i> 
+    The number of pairs found is written here. If no pairs are
+    found NULL is written here.
+<br></ul><b>Returns:</b>     An array of key-value pairs on success, else NULL. If
+    <em>num_pairs</em> is non-zero, an error occurred.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=aa_get_pair_info></a> void
+ <b>aa_get_pair_info</b><i>    (KAssociativeArrayPair pair,
+		       void **key, uaddr *key_length,
+		       void **value, uaddr *value_length)
+</i><br><p>    This routine will get the key and value information for a
+    key-value pair in an associative array.
+<p><b>Parameters:</b><ul><li><i>pair :</i> 
+    The key-value pair.
+<br><li><i>key :</i> 
+    The key will be written here.
+<br><li><i>key_length :</i> 
+    The length of the key will be written here.
+<br><li><i>value :</i> 
+    The value will be written here.
+<br><li><i>value_length :</i> 
+    The length of the value will be written here.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=AA_PROTO_key_compare_func></a> int
+ <b>AA_PROTO_key_compare_func</b><i>    (void *key1, void *key2)
+</i><br><p>    This routine will compare two keys.
+<p><b>Parameters:</b><ul><li><i>key1 :</i> 
+    The first key.
+<br><li><i>key2 :</i> 
+    The second key.
+<br></ul><b>Returns:</b>     0 if the keys match, a negative number if <em>key1</em> is less
+    than <em>key2</em>, a positive number if <em>key1</em> is greater than <em>key2</em>.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=AA_PROTO_key_copy_func></a> void *
+ <b>AA_PROTO_key_copy_func</b><i>    (void *key, uaddr length, flag *ok)
+</i><br><p>    This routine will copy a key.
+<p><b>Parameters:</b><ul><li><i>key :</i> 
+    The key to copy.
+<br><li><i>length :</i> 
+    The length of the key in bytes.
+<br><li><i>ok :</i> 
+    The value TRUE will be written here on success, else FALSE is
+    written here.
+<br></ul><b>Returns:</b>     A copy of the key on success.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=AA_PROTO_key_destroy_func></a> void
+ <b>AA_PROTO_key_destroy_func</b><i>    (void *key)
+</i><br><p>    This routine will destroy keys.
+<p><b>Parameters:</b><ul><li><i>key :</i> 
+    The key to destroy.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=AA_PROTO_value_copy_func></a> void *
+ <b>AA_PROTO_value_copy_func</b><i>    (void *value, uaddr length, flag *ok)
+</i><br><p>    This routine will copy a value.
+<p><b>Parameters:</b><ul><li><i>value :</i> 
+    The value to copy.
+<br><li><i>length :</i> 
+    The length of the value in bytes.
+<br><li><i>ok :</i> 
+    The value TRUE will be written here on success, else FALSE is
+    written here.
+<br></ul><b>Returns:</b>     A copy of the value on success.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=AA_PROTO_value_destroy_func></a> void
+ <b>AA_PROTO_value_destroy_func</b><i>    (void *value)
+</i><br><p>    This routine will destroy values.
+<p><b>Parameters:</b><ul><li><i>value :</i> 
+    The value to destroy.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Tables</h2></center><hr> <a name=AA_REPLACEMENT_POLICIES><b>AA_REPLACEMENT_POLICIES</b></a><p> <table><tr><td>Policy Name                           </td><td>Meaning
+
+</td></tr><tr><td>KAA_REPLACEMENT_POLICY_NEW            </td><td>Fail if existing key found
+</td></tr><tr><td>KAA_REPLACEMENT_POLICY_UPDATE         </td><td>Fail if no existing key found
+</td></tr><tr><td>KAA_REPLACEMENT_POLICY_PUT            </td><td>Add pair, remove old key if exists
+</table><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

@@ -107,8 +107,29 @@
     Updated by      Richard Gooch   22-SEP-1995: Fixed bug in
   <convert_from_canvas_coord>: passing wrong pointer type.
 
-    Last updated by Richard Gooch   5-JAN-1996: Created
+    Updated by      Richard Gooch   5-JAN-1996: Created
   <canvas_register_d_convert_func> and deprecated integer version.
+
+    Uupdated by     Richard Gooch   19-FEB-1996: Supported list of areas to
+  refresh in refresh routines.
+
+    Updated by      Richard Gooch   14-APR-1996: Changed to new documentation
+  format.
+
+    Updated by      Richard Gooch   19-MAY-1996: Deprecated <canvas_get_size>.
+
+    Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
+
+    Updated by      Richard Gooch   4-JUN-1996: Switched to left-right
+  bottom-top co-ordinate specification instead of min-max x and y.
+
+    Updated by      Richard Gooch   15-JUN-1996: Created
+  <canvas_register_transforms_func> and ellipse drawing routines.
+
+    Last updated by Richard Gooch   17-JUN-1996: Created
+  <canvas_convert_to_canvas_coords> routine and deprecated
+  <canvas_convert_to_canvas_coord> routine.
 
 
 */
@@ -117,7 +138,9 @@
 #include <stdarg.h>
 #include <karma.h>
 #define KWIN_GENERIC_ONLY
+#define NEW_WIN_SCALE
 #include <karma_canvas.h>
+#include <karma_ds.h>
 #include <karma_st.h>
 #include <karma_a.h>
 #include <karma_m.h>
@@ -175,7 +198,13 @@ struct worldcanvas_type
     KCallbackList position_list;
     flag quash_negotiate;
     flag in_size_control_func;
-    void (*coord_transform_func) ();
+    void (*coord_transforms_func) (KWorldCanvas canvas,unsigned int num_coords,
+				   double *x, flag x_to_linear,
+				   double *y, flag y_to_linear,
+				   double left_x, double right_x,
+				   double bottom_y, double top_y,
+				   void **info);
+    void (*deprecated_coord_transform_func) ();
     void *coord_transform_info;
     /*  Specification information  */
     char *specify_xlabel;
@@ -210,6 +239,9 @@ struct refresh_struct
     int height;
     flag cmap_resize;
     PostScriptPage pspage;
+    unsigned int num_areas;
+    KPixCanvasRefreshArea *areas;
+    flag honoured_areas;
 };
 
 struct position_struct
@@ -229,11 +261,15 @@ struct position_struct
 /*  Private functions  */
 STATIC_FUNCTION (void pixcanvas_refresh_func,
 		 (KPixCanvas pixcanvas, int width, int height, void **info,
-		  PostScriptPage pspage) );
+		  PostScriptPage pspage,
+		  unsigned int num_areas, KPixCanvasRefreshArea *areas,
+		  flag *honoured_areas) );
 STATIC_FUNCTION (void cmap_resize_func, (Kcolourmap cmap, void **info) );
 STATIC_FUNCTION (void refresh_canvas,
 		 (KWorldCanvas canvas, int width, int height,
-		  flag cmap_resize, PostScriptPage pspage) );
+		  flag cmap_resize, PostScriptPage pspage,
+		  unsigned int num_areas, KPixCanvasRefreshArea *areas,
+		  flag *honoured_areas) );
 STATIC_FUNCTION (unsigned long get_pixel_from_value,
 		 (double value[2], struct win_scale_type *win_scale,
 		  Kcolourmap cmap) );
@@ -252,9 +288,11 @@ STATIC_FUNCTION (void dressing_refresh_func,
 		 (KWorldCanvas canvas, int width, int height,
 		  struct win_scale_type *win_scale,
 		  Kcolourmap cmap, flag cmap_resize, void **info) );
-STATIC_FUNCTION (flag pixel_to_world_coord_convert,
-		 (KWorldCanvas canvas, double xin, double yin,
-		  double *xout, double *yout, double *x_lin, double *y_lin) );
+STATIC_FUNCTION (void pixel_to_world_coords_convert,
+		 (KWorldCanvas canvas, flag clip, unsigned int num_coords,
+		  CONST double *xin, CONST double *yin,
+		  double *xout_lin, double *yout_lin,
+		  double *xout, double *yout) );
 STATIC_FUNCTION (flag refresh_event_func,
 		 (void *object, void *client1_data,
 		  void *call_data, void *client2_data) );
@@ -272,17 +310,19 @@ STATIC_FUNCTION (flag convert_from_canvas_coord,
 /*PUBLIC_FUNCTION*/
 KWorldCanvas canvas_create (KPixCanvas pixcanvas, Kcolourmap cmap,
 			    struct win_scale_type *win_scale)
-/*  This routine will create a world canvas, ready for drawing, from a
-    KPixCanvas (pixel canvas) object.
-    Note that the origin of a KWorldCanvas is the lower-left corner.
-    The pixel canvas must be given by  pixcanvas  .
-    The colourmap must be given by  cmap  .If this is NULL, the canvas will
-    only permit drawing using pixel values. This precludes the use of drawing
-    images and drawing geometric primitives using data values.
-    The window scaling information must be pointed to by  win_scale  .The
-        x_offset  x_pixels  y_offset  y_pixels  fields are determined
-    internally.
-    The routine returns a world canvas on success, else it returns NULL.
+/*  [SUMMARY] Create world canvas.
+    [PURPOSE] This routine will create a world canvas, ready for drawing, from
+    a KPixCanvas (pixel canvas) object. The origin of a KWorldCanvas is the
+    lower-left corner.
+    <pixcanvas> The pixel canvas object.
+    <cmap> The colourmap. If this is NULL, the canvas will only permit drawing
+    using pixel values. This precludes the use of drawing PseudoColour images
+    and drawing geometric primitives using data values.
+    [NOTE] Resize events on the colourmap will cause the canvas to be
+    refreshed.
+    <win_scale> The window scaling information. The <<x_offset>> <<x_pixels>>
+    <<y_offset>> and <<y_pixels>> fields are determined internally.
+    [RETURNS] A world canvas object on success, else NULL.
 */
 {
     KWorldCanvas canvas;
@@ -323,7 +363,8 @@ KWorldCanvas canvas_create (KPixCanvas pixcanvas, Kcolourmap cmap,
     canvas->coord_convert_func = NULL;
     canvas->deprecated_coord_convert_func = NULL;
     canvas->coord_convert_info = NULL;
-    canvas->coord_transform_func = NULL;
+    canvas->coord_transforms_func = NULL;
+    canvas->deprecated_coord_transform_func = NULL;
     canvas->coord_transform_info = NULL;
     canvas->refresh_list = NULL;
     canvas->position_list = NULL;
@@ -368,31 +409,14 @@ KWorldCanvas canvas_create (KPixCanvas pixcanvas, Kcolourmap cmap,
 /*PUBLIC_FUNCTION*/
 KCallbackFunc canvas_register_refresh_func (KWorldCanvas canvas,
 					    void (*refresh_func) (),void *info)
-/*  [PURPOSE] This routine will register a refresh function for a world canvas.
+/*  [SUMMARY] Register world canvas refresh callback.
+    [PURPOSE] This routine will register a refresh function for a world canvas.
     The refresh function will be called whenever the contents of the canvas
     need to be redrawn. Many refresh functions may be registered per canvas.
     The first function registered is the first function called upon refresh.
     <canvas> The world canvas.
     <refresh_func> The function that is called when the canvas is to be
-    refreshed. The interface to this routine is as follows:
-    [<pre>]
-    void refresh_func (KWorldCanvas canvas, int width, int height,
-                       struct win_scale_type *win_scale, Kcolourmap cmap,
-		       flag cmap_resize, void **info, PostScriptPage pspage)
-    *   [PURPOSE] This routine is a refresh event consumer for a world canvas.
-        <canvas> The world canvas being refreshed.
-	<width> The width of the canvas in pixels.
-	<height> The height of the canvas in pixels.
-	<win_scale> A pointer to the window scaling information.
-	<cmap> The colourmap associated with the canvas.
-	<cmap_resize> TRUE if the refresh function was called as a result of a
-	colourmap resize, else FALSE.
-	<info> A pointer to the arbitrary canvas information pointer.
-	<pspage> If not NULL, the PostScriptPage object the refresh is
-	redirected to.
-	[RETURNS] Nothing.
-    *
-    [</pre>]
+    refreshed. The prototype function is [<CANVAS_PROTO_refresh_func>].
     <info> The initial arbitrary canvas information pointer.
     [RETURNS] A KCallbackFunc object.
 */
@@ -411,48 +435,20 @@ KCallbackFunc canvas_register_refresh_func (KWorldCanvas canvas,
 void canvas_register_size_control_func (KWorldCanvas canvas,
 					void (*size_control_func) (),
 					void *info)
-/*  This routine will register the size control function for a world canvas.
-    This function will be called whenever the lower level pixel canvas resizes,
-    or the associated Kcolourmap object is resized, OR a call is made to
-    canvas_resize  .
-    This function may alter the window scaling information for the canvas.
-    Only one size control function is permitted per canvas. The size control
-    routine is called before any refresh functions are called. This is
-    a means for a higher level object to take control of the world canvas.
-    The canvas must be given by  canvas  .
-    The function that is called when the canvas is to be refreshed must be
-    pointed to by  size_control_func  .
-    The interface to this routine is as follows:
-
-    void size_control_func (canvas, width, height, win_scale, info,
-                            boundary_clear)
-    *   This routine will modify the window scaling information for a world
-        canvas. While this routine is running, colourmap resize events are
-	ignored. Hence this routine may safely cause the associated Kcolourmap
-	object to be resized.
-        The canvas is given by  canvas  .
-	The width of the canvas in pixels is given by  width  .
-	The height of the canvas in pixels is given by  height  .
-	The window scaling information is pointed to by  win_scale  .The data
-	herein may be modified.
-	The arbitrary canvas information pointer is pointed to by  info  .
-	If the value TRUE is written to the storage pointed to by
-	boundary_clear  then the  canvas_resize  routine will attempt to clear
-	only the boundary between the pixel canvas and the world canvas. If
-	the value FALSE is written here or nothing is written here, the
-	canvas_resize  routine will clear the entire pixel canvas as
-	appropriate.
-	The routine should return nothing.
-    *
-    KWorldCanvas canvas;
-    int width;
-    int height;
-    struct win_scale_type *win_scale;
-    void **info;
-    flag *boundary_clear;
-
-    The initial arbitrary canvas information pointer must be given by  info  .
-    The routine returns nothing.
+/*  [SUMMARY] Register size control callback.
+    [PURPOSE] This routine will register the size control function for a world
+    canvas. This function will be called whenever the lower level pixel canvas
+    resizes, or the associated Kcolourmap object is resized, OR a call is made
+    to [<canvas_resize>]. The function may alter the window scaling information
+    for the canvas. Only one size control function is permitted per canvas. The
+    size control routine is called before any refresh functions are called.
+    This is a means for a higher level object to take control of the world
+    canvas.
+    <canvas> The world canvas object.
+    <size_control_func> The function that is called when the canvas is to be
+    refreshed. The prototype function is [<CANVAS_PROTO_size_control_func>].
+    <info> The initial arbitrary canvas information pointer.
+    [RETURNS] Nothing.
 */
 {
     static char function_name[] = "canvas_register_size_control_func";
@@ -472,36 +468,15 @@ void canvas_register_size_control_func (KWorldCanvas canvas,
 KCallbackFunc canvas_register_position_event_func (KWorldCanvas canvas,
 						   flag (*func) (),
 						   void *f_info)
-/*  [PURPOSE] This routine will register a position event function for a world
+/*  [SUMMARY] Register position event callback.
+    [PURPOSE] This routine will register a position event function for a world
     canvas. The position event function will be called whenever a position
     event on the canvas has not been consumed. Many position event functions
     may be registered per canvas. The first function registered is the first
     function called upon a position event.
     <canvas> The world canvas.
     <func> The function that is called when a position event occurs. The
-    interface to this routine is as follows:
-    [<pre>]
-    flag func (KWorldCanvas canvas, double x, double y,
-               unsigned int event_code, void *e_info, void **f_info,
-	       double x_lin, double y_lin)
-    *   [PURPOSE] This routine is a position event consumer for a world canvas.
-        <canvas> The canvas on which the event occurred.
-	<x> The horizontal world co-ordinate of the event.
-	<y> The vertical world co-ordinate of the event.
-	[NOTE] These values will have been transformed by the registered
-	transform function (see <anvas_register_transform_func>>).
-	<event_code> The arbitrary event code.
-	<e_info> A pointer to arbitrary event information.
-	<f_info> A pointer to an arbitrary function information pointer.
-	<x_lin> The horizontal linear world co-ordinate prior to the transform
-	function being called.
-	<y_lin> The vertical linear world co-ordinate prior to the transform
-	function being called.
-	[RETURNS] TRUE if the event was consumed, else FALSE indicating that
-	the event is still to be processed.
-    *
-    [</pre>]
-
+    prototype function is [<CANVAS_PROTO_position_func>].
     <f_info> The initial arbitrary function information pointer.
     [RETURNS] A KCallbackFunc object.
 */
@@ -517,11 +492,11 @@ KCallbackFunc canvas_register_position_event_func (KWorldCanvas canvas,
 
 /*PUBLIC_FUNCTION*/
 void canvas_get_attributes (KWorldCanvas canvas, ...)
-/*  [PURPOSE] This routine will get canvas attributes.
+/*  [SUMMARY] Get canvas attributes.
     <canvas> The world canvas.
     [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pointer pairs. The last argument must be CANVAS_ATT_END.
-    The attributes are passed using varargs.
+    attribute-value pointer pairs. The list must be terminated with
+    CANVAS_ATT_END. See [<CANVAS_ATTRIBUTES>] for the list of attributes.
     [RETURNS] Nothing.
 */
 {
@@ -556,17 +531,17 @@ void canvas_get_attributes (KWorldCanvas canvas, ...)
 	  case CANVAS_ATT_MAX_SAT_PIXEL:
 	    *( va_arg (argp, unsigned long *) ) = canvas->win_scale.max_sat_pixel;
 	    break;
-	  case CANVAS_ATT_X_MIN:
-	    *( va_arg (argp, double *) ) = canvas->win_scale.x_min;
+	  case CANVAS_ATT_LEFT_X:
+	    *( va_arg (argp, double *) ) = canvas->win_scale.left_x;
 	    break;
-	  case CANVAS_ATT_X_MAX:
-	    *( va_arg (argp, double *) ) = canvas->win_scale.x_max;
+	  case CANVAS_ATT_RIGHT_X:
+	    *( va_arg (argp, double *) ) = canvas->win_scale.right_x;
 	    break;
-	  case CANVAS_ATT_Y_MIN:
-	    *( va_arg (argp, double *) ) = canvas->win_scale.y_min;
+	  case CANVAS_ATT_BOTTOM_Y:
+	    *( va_arg (argp, double *) ) = canvas->win_scale.bottom_y;
 	    break;
-	  case CANVAS_ATT_Y_MAX:
-	    *( va_arg (argp, double *) ) = canvas->win_scale.y_max;
+	  case CANVAS_ATT_TOP_Y:
+	    *( va_arg (argp, double *) ) = canvas->win_scale.top_y;
 	    break;
 	  case CANVAS_ATT_VALUE_MIN:
 	    *( va_arg (argp, double *) ) = canvas->win_scale.z_min;
@@ -575,10 +550,11 @@ void canvas_get_attributes (KWorldCanvas canvas, ...)
 	    *( va_arg (argp, double *) ) = canvas->win_scale.z_max;
 	    break;
 	  case CANVAS_ATT_ISCALE_FUNC:
-	    *( va_arg (argp, void **) ) = canvas->win_scale.iscale_func;
+	    *( va_arg (argp, void **) ) =(void *)canvas->win_scale.iscale_func;
 	    break;
 	  case CANVAS_ATT_ISCALE_FREE_FUNC:
-	    *( va_arg (argp, void **) ) = canvas->win_scale.iscale_free_info_func;
+	    *( va_arg (argp, void **) ) =
+		(void *) canvas->win_scale.iscale_free_info_func;
 	    break;
 	  case CANVAS_ATT_ISCALE_INFO:
 	    *( va_arg (argp, void **) ) = canvas->win_scale.iscale_info;
@@ -598,27 +574,34 @@ void canvas_get_attributes (KWorldCanvas canvas, ...)
     va_end (argp);
 }   /*  End Function canvas_get_attributes  */
 
-/*PUBLIC_FUNCTION*/
+/*OBSOLETE_FUNCTION*/
 void canvas_get_size (KWorldCanvas canvas, int *width, int *height,
 		      struct win_scale_type *win_scale)
-/*  This routine will get the size of a world canvas.
-    The world canvas must be given by  canvas  .
-    The number of horizontal pixels will be written to the storage pointed to
-    by  width  .
-    The number of vertical pixels will be written to the storage pointed to by
-    height  .
-    The window scaling information will be written to the storage pointed to by
-    win_scale  .
-    The routine returns nothing.
+/*  [SUMMARY] Get the size of a world canvas.
+    <canvas> The world canvas object.
+    <width> The number of horizontal pixels will be written here.
+    <height> The number of vertical pixels will be written here.
+    <win_scale> The window scaling information will be written here.
+    [RETURNS] Nothing.
 */
 {
+    static flag first_time = TRUE;
     static char function_name[] = "canvas_get_size";
 
     VERIFY_CANVAS (canvas);
-    if (win_scale == NULL)
+    if (first_time)
     {
-	(void) fprintf (stderr, "NULL win_scale structure pointer passed\n");
-	a_prog_bug (function_name);
+	if (win_scale == NULL)
+	{
+	    (void) fputs ("NULL win_scale structure pointer passed\n", stderr);
+	    a_prog_bug (function_name);
+	}
+	(void) fprintf (stderr,
+			"WARNING: the <%s> routine will be removed in Karma",
+			function_name);
+	(void) fputs (" version 2.0\nUse ", stderr);
+	(void) fputs ("the <canvas_get_attributes> routine instead\n", stderr);
+	first_time = FALSE;
     }
     kwin_get_size (canvas->pixcanvas, width, height);
     m_copy ( (char *) win_scale, (char *) &canvas->win_scale,
@@ -627,11 +610,11 @@ void canvas_get_size (KWorldCanvas canvas, int *width, int *height,
 
 /*PUBLIC_FUNCTION*/
 flag canvas_set_attributes (KWorldCanvas canvas, ...)
-/*  [PURPOSE] This routine will set canvas attributes.
+/*  [SUMMARY] Set canvas attributes.
     <canvas> The world canvas.
     [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be CANVAS_ATT_END.
-    The attributes are passed using varargs.
+    attribute-value pairs. The list must be terminated with
+    CANVAS_ATT_END. See [<CANVAS_ATTRIBUTES>] for the list of attributes.
     [RETURNS] TRUE on success, else FALSE.
 */
 {
@@ -666,17 +649,17 @@ flag canvas_set_attributes (KWorldCanvas canvas, ...)
 	  case CANVAS_ATT_MAX_SAT_PIXEL:
 	    canvas->win_scale.max_sat_pixel = va_arg (argp, unsigned long);
 	    break;
-	  case CANVAS_ATT_X_MIN:
-	    canvas->win_scale.x_min = va_arg (argp, double);
+	  case CANVAS_ATT_LEFT_X:
+	    canvas->win_scale.left_x = va_arg (argp, double);
 	    break;
-	  case CANVAS_ATT_X_MAX:
-	    canvas->win_scale.x_max = va_arg (argp, double);
+	  case CANVAS_ATT_RIGHT_X:
+	    canvas->win_scale.right_x = va_arg (argp, double);
 	    break;
-	  case CANVAS_ATT_Y_MIN:
-	    canvas->win_scale.y_min = va_arg (argp, double);
+	  case CANVAS_ATT_BOTTOM_Y:
+	    canvas->win_scale.bottom_y = va_arg (argp, double);
 	    break;
-	  case CANVAS_ATT_Y_MAX:
-	    canvas->win_scale.y_max = va_arg (argp, double);
+	  case CANVAS_ATT_TOP_Y:
+	    canvas->win_scale.top_y = va_arg (argp, double);
 	    break;
 	  case CANVAS_ATT_VALUE_MIN:
 	    canvas->win_scale.z_min = va_arg (argp, double);
@@ -685,10 +668,11 @@ flag canvas_set_attributes (KWorldCanvas canvas, ...)
 	    canvas->win_scale.z_max = va_arg (argp, double);
 	    break;
 	  case CANVAS_ATT_ISCALE_FUNC:
-	    canvas->win_scale.iscale_func = va_arg (argp, void *);
+	    *(void **) canvas->win_scale.iscale_func = va_arg (argp, void *);
 	    break;
 	  case CANVAS_ATT_ISCALE_FREE_FUNC:
-	    canvas->win_scale.iscale_free_info_func = va_arg (argp, void *);
+	    *(void **) canvas->win_scale.iscale_free_info_func =
+		va_arg (argp, void *);
 	    break;
 	  case CANVAS_ATT_ISCALE_INFO:
 	    canvas->win_scale.iscale_info = va_arg (argp, void *);
@@ -714,25 +698,23 @@ flag canvas_set_attributes (KWorldCanvas canvas, ...)
 /*PUBLIC_FUNCTION*/
 flag canvas_resize (KWorldCanvas canvas, struct win_scale_type *win_scale,
 		    flag always_clear)
-/*  This routine will register a resize in the world canvas size. This will
-    cause any refresh routines registered for the canvas to be called. The
-    associated pixel canvas is refreshed, hence, refresh routines registered
-    for the pixel canvas will also be called.
-    The canvas must be given by  canvas  .
-    The new window scaling information must be pointed to by  win_scale  .If
-    this is NULL no change is made to the window scaling information, and a
-    simple refresh occurs.
-    If  always_clear  is FALSE,  win_scale  is NULL and there is a size
+/*  [SUMMARY] Resize a world canvas.
+    [PURPOSE] This routine will register a resize in the world canvas size.
+    This will cause any refresh routines registered for the canvas to be
+    called. The associated pixel canvas is refreshed, hence, refresh routines
+    registered for the pixel canvas will also be called.
+    <canvas> The world canvas object.
+    <win_scale> The new window scaling information. If this is NULL no change
+    is made to the window scaling information, and a simple refresh occurs.
+    <always_clear> If FALSE, <<win_scale>> is NULL and there is a size
     control function registered for the world canvas, then if that function
-    does not change the values of the  x_offset  ,  x_pixels  ,  y_offset  or
-    y_pixels  fields in the window scaling information, the associated pixel
-    canvas is NOT cleared.
-    Under all other circumstances, the pixel canvas is cleared prior to calling
-    any refresh functions.
-    The routine returns TRUE on success, else it returns FALSE.
+    does not change the values of the <<x_offset>>, <<x_pixels>>, <<y_offset>>
+    or <<y_pixels>> fields in the window scaling information, the associated
+    pixel canvas is NOT cleared. Under all other circumstances, the pixel
+    canvas is cleared prior to calling any refresh functions.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
-    KPixCanvas pixcanvas;
     flag clear = TRUE, boundary_clear = FALSE;
     int x_offset, x_pixels, y_offset, y_pixels;
     int width, height;
@@ -800,19 +782,20 @@ flag canvas_resize (KWorldCanvas canvas, struct win_scale_type *win_scale,
 flag canvas_specify (KWorldCanvas canvas, char *xlabel, char *ylabel,
 		     unsigned int num_restr, char **restr_names,
 		     double *restr_values)
-/*  This routine will change the specifications for a canvas. This includes the
-    horizontal and vertical dimension labels and any restrictions. The entire
-    specification is copied (ie. the inputs may be freed).
-    The world canvas must be given by  canvas  .
-    The horizontal dimension label must be pointed to by  xlabel  .
-    The vertical dimension label must be pointed to by  ylabel  .
-    The number of restrictions must be given by  num_restr  .
-    The array of restriction names must by pointed to by  restr_names  .
-    The restriction values must be pointed to by  restr_values  .
-    NOTE: this routine DOES NOT cause the canvas to be refreshed. It is highly
+/*  [SUMMARY] Set specification information for a world canvas.
+    [PURPOSE] This routine will change the specifications for a canvas. This
+    includes the horizontal and vertical dimension labels and any restrictions.
+    The entire specification is copied (i.e. the inputs may be freed).
+    <canvas> The world canvas object.
+    <xlabel> The horizontal dimension label.
+    <ylabel> The vertical dimension label.
+    <num_restr> The number of restrictions.
+    <restr_names> The array of restriction names.
+    <restr_values> The restriction values.
+    [NOTE] This routine DOES NOT cause the canvas to be refreshed. It is highly
     recommended that the canvas is refreshed after this routine, as higher
     level packages may depend on the specification information.
-    The routine returns TRUE on success, else it returns FALSE.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     unsigned int count;
@@ -923,21 +906,19 @@ flag canvas_specify (KWorldCanvas canvas, char *xlabel, char *ylabel,
 void canvas_get_specification (KWorldCanvas canvas, char **xlabel,
 			       char **ylabel, unsigned int *num_restr,
 			       char ***restr_names, double **restr_values)
-/*  This routine will get the specifications for a canvas. This includes the
-    horizontal and vertical dimension labels and any restrictions. Only
-    pointers are copied (ie. the outputs may NOT be freed).
-    The world canvas must be given by  canvas  .
-    The pointer to the horizontal dimension label will be written to the
-    storage pointed to by  xlabel  .
-    The pointer to the vertacal dimension label will be written to the
-    storage pointed to by  ylabel  .
-    The number of restrictions will be written to the storage pointed to by
-    num_restr  .
-    The pointer to the array of restriction names will be written to the
-    storage pointed to by  restr_names  .
-    The pointer to the array of restriction values will be written to the
-    storage pointed to by  restr_values  .
-    The routine returns nothing.
+/*  [SUMMARY] Get specification information for a world canvas.
+    [PURPOSE] This routine will get the specifications for a canvas. This
+    includes the horizontal and vertical dimension labels and any restrictions.
+    Only pointers are copied (i.e. the outputs may NOT be freed).
+    <canvas> The world canvas object.
+    <xlabel> The pointer to the horizontal dimension label will be written here
+    <ylabel> The pointer to the vertical dimension label will be written here.
+    <num_restr> The number of restrictions will be written here.
+    <restr_names> The pointer to the array of restriction names will be written
+    here.
+    <restr_values> The pointer to the array of restriction values will be
+    written here.
+    [RETURNS] Nothing.
 */
 {
     static char function_name[] = "canvas_get_specification";
@@ -951,47 +932,77 @@ void canvas_get_specification (KWorldCanvas canvas, char **xlabel,
 }   /*  End Function canvas_get_specification  */
 
 /*PUBLIC_FUNCTION*/
+void canvas_convert_to_canvas_coords (KWorldCanvas canvas, flag clip,
+				      unsigned int num_coords,
+				      CONST double *xin, CONST double *yin,
+				      double *xout_lin, double *yout_lin,
+				      double *xout, double *yout)
+/*  [SUMMARY] Convert pixel co-ordinates to world co-ordinates.
+    <canvas> The world canvas object.
+    <clip> If TRUE, pixel co-ordinates are first clipped to the canvas
+    boundaries prior to conversion.
+    <num_coords> The number of co-ordinates to convert.
+    <xin> The array of input horizontal pixel co-ordinates.
+    <yin> The array of input vertical pixel co-ordinates.
+    <xout_lin> The array of output horizontal linear world co-ordinates are
+    written here. If this is NULL, nothing is written here.
+    <yout_lin> The array of output vertical linear world co-ordinates are
+    written here. If this is NULL, nothing is written here.
+    <xout> The array of output horizontal non-linear world co-ordinates are
+    written here. If this is NULL, nothing is written here.
+    <yout> The array of output vertical non-linear world co-ordinates are
+    written here. If this is NULL, nothing is written here.
+    [RETURNS] Nothing.
+*/
+{
+    static char function_name[] = "canvas_convert_to_canvas_coords";
+
+    VERIFY_CANVAS (canvas);
+    pixel_to_world_coords_convert (canvas, clip, num_coords,
+				   xin, yin, xout_lin, yout_lin,
+				   xout, yout);
+}   /*  End Function canvas_convert_to_canvas_coords  */
+
+/*OBSOLETE_FUNCTION*/
 flag canvas_convert_to_canvas_coord (KWorldCanvas canvas,
 				     double xin, double yin,
 				     double *xout, double *yout)
-/*  This routine will convert co-ordinates in a pixel canvas to co-ordinates in
-    a world canvas.
-    The world canvas must be given by  canvas  .
-    The lower level horizontal co-ordinate must be given by  xin  .
-    The lower level vertical co-ordinate must be given by  yin  .
-    The horizontal world co-ordinate will be written to the storage pointed to
-    by  xout  .
-    The vertical world co-ordinate will be written to the storage pointed to
-    by  xout  .
-    The routine returns TRUE if the co-ordinate lies within the canvas
-    boundaries, else it returns FALSE (although a conversion is still
-    performed).
+/*  [SUMMARY] Convert pixel co-ordinates to world co-ordinates.
+    <canvas> The world canvas object.
+    <xin> The lower level horizontal co-ordinate.
+    <yin> The lower level vertical co-ordinate.
+    <xout> The horizontal world co-ordinate will be written here.
+    <yout> The vertical world co-ordinate will be written here.
+    [RETURNS] TRUE if the co-ordinate lies within the canvas boundaries,
+    else FALSE (although a conversion is still performed).
 */
 {
-    double lx, ly;
+    flag in_bounds = TRUE;
     static char function_name[] = "canvas_convert_to_canvas_coord";
 
     VERIFY_CANVAS (canvas);
-    return ( pixel_to_world_coord_convert (canvas, xin, yin,
-					   xout, yout, &lx, &ly) );
+    if ( (xin < canvas->win_scale.x_offset) ||
+	(xin >= canvas->win_scale.x_offset + canvas->win_scale.x_pixels) ||
+	(yin < canvas->win_scale.y_offset) ||
+	(yin >= canvas->win_scale.y_offset + canvas->win_scale.y_pixels) )
+	in_bounds = FALSE;
+    pixel_to_world_coords_convert (canvas, FALSE, 1, &xin, &yin,
+				   NULL, NULL, xout, yout);
+    return (in_bounds);
 }   /*  End Function canvas_convert_to_canvas_coord  */
 
 /*PUBLIC_FUNCTION*/
 flag canvas_convert_from_canvas_coord (KWorldCanvas canvas,
 				       double xin, double yin,
 				       int *xout, int *yout)
-/*  This routine will convert co-ordinates in a world canvas to co-ordinates in
-    a pixel canvas. The world co-ordinates may be non-linear.
-    The world canvas must be given by  canvas  .
-    The horizontal world co-ordinate must be given by  xin  .
-    The vertical world co-ordinate must be given by  yin  .
-    The lower level horizontal canvas co-ordinate will be written to the
-    storage pointed to by  xout  .
-    The lower level vertical canvas co-ordinate will be written to the storage
-    pointed to by  xout  .
-    The routine returns TRUE if the co-ordinate lies within the canvas
-    boundaries, else it returns FALSE (although a conversion is still
-    performed).
+/*  [SUMMARY] Convert non-linear world co-ordinates to pixel co-ordinates
+    <canvas> The world canvas object.
+    <xin> The horizontal world co-ordinate.
+    <yin> The vertical world co-ordinate.
+    <xout> The lower level horizontal canvas co-ordinate will be written here.
+    <yout> The lower level vertical canvas co-ordinate will be written here.
+    [RETURNS] TRUE if the co-ordinate lies within the canvas boundaries,
+    else FALSE (although a conversion is still performed).
 */
 {
     flag bool;
@@ -1008,34 +1019,15 @@ flag canvas_convert_from_canvas_coord (KWorldCanvas canvas,
 /*PUBLIC_FUNCTION*/
 void canvas_register_d_convert_func (KWorldCanvas canvas,
 				     flag (*coord_convert_func) (), void *info)
-/*  [PURPOSE] This routine will register the co-ordinate conversion function
+/*  [SUMMARY] Register co-ordinate conversion function.
+    [PURPOSE] This routine will register the co-ordinate conversion function
     for a world canvas. This function will be called whenever conversions
     between world co-ordinates and pixel co-ordinates are performed. Only one
     co-ordinate conversion function is permitted per canvas. This is a means
     for a higher level object to take control of the world canvas.
     <canvas> The canvas.
     <func> The function that is called when co-ordinates are to be converted.
-    The interface to this routine is as follows:
-    [<pre>]
-    flag coord_convert_func (KWorldCanvas canvas,
-                             struct win_scale_type *win_scale,
-			     double *x, double *y,
-			     flag to_world, void **info)
-    *   [PURPOSE] This routine will modify the window scaling information for a
-        world canvas.
-	<canvas> The canvas.
-	<win_scale> A pointer to the window scaling information. The data
-	herein may be modified.
-	<x> A pointer to the horizontal co-ordinate storage. This is updated.
-	<y> A pointer to the vertical co-ordinate storage. This is updated.
-	<to_world> If TRUE, then a pixel to world co-ordinate transform is
-	required, else a world to pixel co-ordinate transform is required.
-	<info> A pointer to the arbitrary canvas information pointer.
-	[RETURNS] TRUE if the conversion was completed, else FALSE indicating
-	that the default conversions should be used.
-    *
-    {
-    </pre>]
+    The prototype function is [<CANVAS_PROTO_coord_convert_func>].
     <info> The initial arbitrary canvas information pointer.
     [RETURNS] Nothing.
 */
@@ -1117,100 +1109,156 @@ void canvas_register_convert_func (KWorldCanvas canvas,
 /*PUBLIC_FUNCTION*/
 flag canvas_coord_transform (KWorldCanvas canvas, double *x, double *y,
 			     flag to_linear)
-/*  This routine will transform co-ordinates in a world canvas using the
-    registered co-ordinate transform function (see
-    canvas_register_transform_func  ).
-    The world canvas must be given by  canvas  .
-    The horizontal world co-ordinate must be pointed to by  x  .This value is
-    modified.
-    The vertical world co-ordinate must be pointed to by  y  .This value is
-    modified.
-    If the value of  to_linear  is TRUE  then the routine will transform
-    (possibly) non-linear world co-ordinates to linear world co-ordinates,
-    else the transform is from linear to non-linear co-ordinates.
-    The routine returns TRUE if the co-ordinate lies within the canvas
-    boundaries, else it returns FALSE (although a conversion is still
-    performed).
+/*  [SUMMARY] Transform world co-ordinates.
+    [PURPOSE] This routine will transform co-ordinates in a world canvas using
+    the registered co-ordinate transform function (see
+    [<canvas_register_transforms_func>]).
+    <canvas> The world canvas object.
+    <x> A pointer to the horizontal world co-ordinate. This is modified.
+    <y> A pointer to the vertical world co-ordinate. This is modified.
+    <to_linear> If TRUE then the routine will transform (possibly) non-linear
+    world co-ordinates to linear world co-ordinates, else the transform is from
+    linear to non-linear co-ordinates.
+    [RETURNS] TRUE if the linear world co-ordinate lies within the canvas
+    boundaries, else FALSE (although a conversion is still performed).
 */
 {
-    struct win_scale_type win_scale;
+    flag in_bounds = TRUE;
     static char function_name[] = "canvas_coord_transform";
 
     VERIFY_CANVAS (canvas);
-    if (canvas->coord_transform_func != NULL)
+    if (!to_linear)
     {
-	(*canvas->coord_transform_func) (x, y, to_linear,
-					 canvas->win_scale.x_min,
-					 canvas->win_scale.x_max,
-					 canvas->win_scale.y_min,
-					 canvas->win_scale.y_max,
-					 &canvas->coord_transform_info);
+	/*  Input data are linear co-ordinates: test bounds  */
+	if (canvas->win_scale.left_x < canvas->win_scale.right_x)
+	{
+	    if ( (*x < canvas->win_scale.left_x) ||
+		 (*x > canvas->win_scale.right_x) ) in_bounds = FALSE;
+	}
+	else if ( (*x > canvas->win_scale.left_x) ||
+		  (*x < canvas->win_scale.right_x) ) in_bounds = FALSE;
+	if (canvas->win_scale.bottom_y < canvas->win_scale.top_y)
+	{
+	    if ( (*y < canvas->win_scale.bottom_y) ||
+		 (*y > canvas->win_scale.top_y) ) in_bounds = FALSE;
+	}
+	else if ( (*y > canvas->win_scale.bottom_y) ||
+		  (*y < canvas->win_scale.top_y) ) in_bounds = FALSE;
     }
-    if ( (*x < canvas->win_scale.x_offset) ||
-	(*x >= canvas->win_scale.x_offset+canvas->win_scale.x_pixels) ||
-	(*y < canvas->win_scale.y_offset) ||
-	(*y >= canvas->win_scale.y_offset +canvas->win_scale.y_pixels) )
-    return (FALSE);
-    return (TRUE);
+    if (canvas->coord_transforms_func != NULL)
+    {
+	(*canvas->coord_transforms_func) (canvas,1, x, to_linear, y, to_linear,
+					  canvas->win_scale.left_x,
+					  canvas->win_scale.right_x,
+					  canvas->win_scale.bottom_y,
+					  canvas->win_scale.top_y,
+					  &canvas->coord_transform_info);
+    }
+    else if (canvas->deprecated_coord_transform_func != NULL)
+    {
+	(*canvas->deprecated_coord_transform_func)
+	    (x, y, to_linear,
+	     canvas->win_scale.left_x,
+	     canvas->win_scale.right_x,
+	     canvas->win_scale.bottom_y,
+	     canvas->win_scale.top_y,
+	     &canvas->coord_transform_info);
+    }
+    if (to_linear)
+    {
+	/*  Output data are linear co-ordinates: test bounds  */
+	if (canvas->win_scale.left_x < canvas->win_scale.right_x)
+	{
+	    if ( (*x < canvas->win_scale.left_x) ||
+		 (*x > canvas->win_scale.right_x) ) in_bounds = FALSE;
+	}
+	else if ( (*x > canvas->win_scale.left_x) ||
+		  (*x < canvas->win_scale.right_x) ) in_bounds = FALSE;
+	if (canvas->win_scale.bottom_y < canvas->win_scale.top_y)
+	{
+	    if ( (*y < canvas->win_scale.bottom_y) ||
+		 (*y > canvas->win_scale.top_y) ) in_bounds = FALSE;
+	}
+	else if ( (*y > canvas->win_scale.bottom_y) ||
+		  (*y < canvas->win_scale.top_y) ) in_bounds = FALSE;
+    }
+    return (in_bounds);
 }   /*  End Function canvas_coord_transform  */
 
 /*PUBLIC_FUNCTION*/
+void canvas_register_transforms_func (KWorldCanvas canvas,
+				      void (*coord_transform_func) (),
+				      void *info)
+/*  [SUMMARY] Register non-linear co-ordinate transformation function.
+    [PURPOSE] This routine will register the co-ordinate transform function
+    for a world canvas. The co-ordinate transform function transforms the
+    linear world co-ordinates used internally by the world canvas to be
+    transformed into non-linear co-ordinates for external use. Only one
+    co-ordinate transform function is permitted per canvas.
+    <canvas> The world canvas object.
+    <coord_transform_func> The function that is called when co-ordinates are to
+    be transformed. The prototype function is
+    [<CANVAS_PROTO_coord_transform_func>].
+    <info> The initial arbitrary transform information pointer.
+    [RETURNS] Nothing.
+*/
+{
+    static char function_name[] = "canvas_register_transforms_func";
+
+    VERIFY_CANVAS (canvas);
+    if (coord_transform_func == NULL) return;
+    if (canvas->coord_transforms_func != NULL)
+    {
+	(void) fprintf (stderr, "coord_transform_func already registered\n");
+	a_prog_bug (function_name);
+    }
+    canvas->coord_transforms_func = coord_transform_func;
+    canvas->coord_transform_info = info;
+}   /*  End Function canvas_register_transforms_func  */
+
+/*OBSOLETE_FUNCTION*/
 void canvas_register_transform_func (KWorldCanvas canvas,
 				     void (*coord_transform_func) (),
 				     void *info)
-/*  This routine will register the co-ordinate transform function for a world
-    canvas. The co-ordinate transform function transforms the linear world
-    co-ordinates used internally by the world canvas to be transformed into
-    non-linear co-ordinates for external use.
-    Only one co-ordinate transform function is permitted per canvas.
-    The canvas must be given by  canvas  .
-    The function that is called when co-ordinates are to be transformed must be
-    pointed to by  coord_transform_func  .
-    The interface to this routine is as follows:
-
-    void coord_transform_func (x, y, to_linear, x_min, x_max, y_min,y_max,info)
-    *   This routine will transform between linear and non-linear world
-        co-ordinates.
-        The window scaling information is pointed to by  win_scale  .
-	The horizontal world co-ordinate storage must be pointed to by  x  .
-	The vertical world co-ordinate storage must be pointed to by  y  .
-	If the value of  to_linear  is TRUE, then a non-linear to linear
-	transform is required, else a linear to non-linear transform is
-	required.
-	The arbitrary transform information pointer is pointed to by  info  .
-	The routine returns nothing.
-    *
-    double *x;
-    double *y;
-    flag to_linear;
-    double x_min;
-    double x_max;
-    double y_min;
-    double y_max;
-    void **info;
-
-    The initial arbitrary transform information pointer must be given by  info
-    The routine returns nothing.
+/*  [SUMMARY] Register non-linear co-ordinate transformation function.
+    [PURPOSE] This routine will register the co-ordinate transform function
+    for a world canvas. The co-ordinate transform function transforms the
+    linear world co-ordinates used internally by the world canvas to be
+    transformed into non-linear co-ordinates for external use. Only one
+    co-ordinate transform function is permitted per canvas.
+    <canvas> The world canvas object.
+    <coord_transform_func> The function that is called when co-ordinates are to
+    be transformed. The prototype function is
+    [<CANVAS_PROTO_coord_transform_func>].
+    <info> The initial arbitrary transform information pointer.
+    [RETURNS] Nothing.
 */
 {
     static char function_name[] = "canvas_register_transform_func";
 
     VERIFY_CANVAS (canvas);
+    (void) fprintf (stderr,
+		    "WARNING: the <%s> routine will be removed in Karma",
+		    function_name);
+    (void) fprintf (stderr, " version 2.0\nUse ");
+    (void) fprintf (stderr,
+		    "the <canvas_register_transforms_func> routine instead\n");
     if (coord_transform_func == NULL) return;
-    if (canvas->coord_transform_func != NULL)
+    if ( (canvas->coord_transforms_func != NULL) ||
+	 (canvas->deprecated_coord_transform_func != NULL) )
     {
 	(void) fprintf (stderr, "coord_transform_func already registered\n");
 	a_prog_bug (function_name);
     }
-    canvas->coord_transform_func = coord_transform_func;
+    canvas->deprecated_coord_transform_func = coord_transform_func;
     canvas->coord_transform_info = info;
 }   /*  End Function canvas_register_transform_func  */
 
 /*PUBLIC_FUNCTION*/
 KPixCanvas canvas_get_pixcanvas (KWorldCanvas canvas)
-/*  This routine will get the underlying pixel canvas of a world canvas.
-    The world canvas must be given by  canvas  .
-    The routine returns the KPixCanvas object.
+/*  [SUMMARY] Get the underlying pixel canvas of a world canvas.
+    <canvas> The world canvas object.
+    [RETURNS] The KPixCanvas object.
 */
 {
     static char function_name[] = "canvas_get_pixcanvas";
@@ -1223,25 +1271,21 @@ KPixCanvas canvas_get_pixcanvas (KWorldCanvas canvas)
 flag canvas_get_colour (KWorldCanvas canvas, char *colourname,
 			unsigned long *pixel_value, unsigned short *red,
 			unsigned short *green, unsigned short *blue)
-/*  This routine will get (possibly allocating) a colourcell for a canvas.
-    The canvas must be given by  canvas  .
-    The name of the colour to get must be pointed to by  colourname  .
-    The pixel value will be written to the storage pointed to by  pixel_value
-    NOTE: the pixel value is valid ONLY for the underlying pixel canvas.
+/*  [SUMMARY] Get (possibly allocating) a colourcell for a canvas.
+    <canvas> The world canvas object.
+    <colourname> The name of the colour to get.
+    <pixel_value> The pixel value will be written here.
+    [NOTE] The pixel value is valid ONLY for the underlying pixel canvas.
     ALSO: the pixel value becomes invalid EVERY time the underlying pixel
     canvas is refreshed/ resized. If the pixel canvas is refreshed/ resized,
     this routine MUST be called again.
-    The red intensity in the hardware colourmap for the pixel will be written
-    to the storage pointed to by  red  .If this is NULL, nothing is written
-    here.
-    The green intensity in the hardware colourmap for the pixel will be written
-    to the storage pointed to by  green  .If this is NULL, nothing is written
-    here.
-    The blue intensity in the hardware colourmap for the pixel will be written
-    to the storage pointed to by  blue  .If this is NULL, nothing is written
-    here.
-    The routine returns TRUE if the colourcell was allocated,
-    else it returns FALSE.
+    <red> The red intensity in the hardware colourmap for the pixel will be
+    written here. If this is NULL, nothing is written here.
+    <green> The green intensity in the hardware colourmap for the pixel will be
+    written here. If this is NULL, nothing is written here.
+    <blue> The blue intensity in the hardware colourmap for the pixel will be
+    written here. If this is NULL, nothing is written here.
+    [RETURNS] TRUE if the colourcell was allocated, else FALSE.
 */
 {
     static char function_name[] = "canvas_get_colour";
@@ -1253,10 +1297,10 @@ flag canvas_get_colour (KWorldCanvas canvas, char *colourname,
 
 /*PUBLIC_FUNCTION*/
 void canvas_set_dressing (KWorldCanvas canvas, ...)
-/*  [PURPOSE] This routine will set dressing parameters for a world canvas.
+/*  [SUMMARY] Set dressing parameters for a world canvas.
     <canvas> The world canvas.
-    <va_alist> The list of parameter attribute-key attribute-value pairs. This
-    list must be terminated with the value  KCD_END  .
+    [VARARGS] The list of parameter attribute-key attribute-value pairs. This
+    list must be terminated with the value KCD_END.
     [NOTE] The dressing code is not yet complete.
     [RETURNS] Nothing.
 */
@@ -1476,16 +1520,17 @@ void canvas_set_dressing (KWorldCanvas canvas, ...)
 
 /*PUBLIC_FUNCTION*/
 void canvas_sequence_dressing_refresh (KWorldCanvas canvas)
-/*  This routine will sequence the dressing (axes, etc.) refresh function for a
-    world canvas. If this routine is not called, the dressing will be drawn
-    after *all* registered refresh functions have been called (see
-    canvas_register_refresh_func  ). If this routine is called, all preceeding
-    refresh functions (registered with  canvas_register_refresh_func  ) will be
-    called on refresh prior to the dressing being drawn and all refresh
-    functions registered after this routine is called will be called *after*
-    the dressing is drawn.
-    The world canvas must be given by  canvas  .
-    The routine returns nothing.
+/*  [SUMMARY] Set order in which dressing is refreshed.
+    [PURPOSE] This routine will sequence the dressing (axes, etc.) refresh
+    function for a world canvas. If this routine is not called, the dressing
+    will be drawn after *all* registered refresh functions have been called
+    (see [<canvas_register_refresh_func>]). If this routine is called, all
+    preceeding refresh functions (registered with
+    [<canvas_register_refresh_func>]) will be called on refresh prior to the
+    dressing being drawn and all refresh functions registered after this
+    routine is called will be called *after* the dressing is drawn.
+    <canvas> The world canvas object.
+    [RETURNS] Nothing.
 */
 {
     static char function_name[] = "canvas_sequence_dressing_refresh";
@@ -1496,11 +1541,11 @@ void canvas_sequence_dressing_refresh (KWorldCanvas canvas)
 
 /*PUBLIC_FUNCTION*/
 void canvas_draw_dressing (KWorldCanvas canvas)
-/*  This routine will draw the dressing (axes, etc.) for a world canvas.
-    NOTE: this routine is called automatically each time the canvas is
+/*  [SUMMARY] Draw the dressing (axes, etc.) for a world canvas.
+    [NOTE] This routine is called automatically each time the canvas is
     refreshed.
-    The world canvas must be given by  canvas  .
-    The routine returns nothing.
+    <canvas> The world canvas object.
+    [RETURNS] Nothing.
 */
 {
     unsigned long pixel_value;
@@ -1541,10 +1586,10 @@ void canvas_draw_dressing (KWorldCanvas canvas)
 
 /*PUBLIC_FUNCTION*/
 Kcolourmap canvas_get_cmap (KWorldCanvas canvas)
-/*  This routine will get the Kcolourmap object associated with a world canvas.
-    The canvas must be given by  canvas  .
-    The routine returns the Kcolourmap object. This may be NULL (indicating
-    there is no colourmap associated with the canvas).
+/*  [SUMMARY] Get the Kcolourmap object associated with a world canvas.
+    <canvas> The world canvas object.
+    [RETURNS] The Kcolourmap object. This may be NULL (indicating there is no
+    colourmap associated with the canvas).
 */
 {
     static char function_name[] = "canvas_get_cmap";
@@ -1561,27 +1606,27 @@ flag canvas_draw_image (KWorldCanvas canvas, array_desc *arr_desc, char *slice,
 			unsigned int hdim, unsigned int vdim,
 			unsigned int elem_index,
 			KPixCanvasImageCache *cache_ptr)
-/*  This routine will draw a 2-dimensional slice of a Karma array onto a world
-    canvas.
-    This slice may be tiled.
-    The canvas must be given by  canvas  .
-    The array descriptor must be pointed to by  arr_desc  .
-    The start of the slice data must be pointed to by  slice  .
-    The dimension index of the horizontal dimension must be given by  hdim  .
-    The dimension index of the vertical dimension must be given by  vdim  .
-    The element index of the data packets must be given by  elem_index  .
-    The routine may produce cache data which will vastly increase the speed of
-    subsequent operations on this data. The routine will write a pointer to
-    this data to the storage pointed to by  cache_data  .Prior to process
-    exit, a call MUST be made to  kwin_free_cache_data  ,otherwise shared
-    memory segments could remain after the process exits.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Draw a PseudoColour image onto a world canvas.
+    [PURPOSE] This routine will draw a 2-dimensional PseudoColour slice of a
+    Karma array onto a world canvas. This slice may be tiled.
+    <canvas> The world canvas object.
+    <arr_desc> The array descriptor for the image.
+    <slice> The start of the slice (image) data.
+    <hdim> The dimension index of the horizontal dimension.
+    <vdim> The dimension index of the vertical dimension.
+    <elem_index> The element index of the data packets.
+    <cache_ptr> The routine may produce cache data which will vastly increase
+    the speed of subsequent operations on this data. The routine will write a
+    pointer to this data here. Prior to process exit, a call MUST be made to
+    [<kwin_free_cache_data>], otherwise shared memory segments could remain
+    after the process exits.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
-    unsigned int abs_start_coord;
-    unsigned int abs_end_coord;
-    unsigned int ord_start_coord;
-    unsigned int ord_end_coord;
+    unsigned int abs_start_index;
+    unsigned int abs_end_index;
+    unsigned int ord_start_index;
+    unsigned int ord_end_index;
     unsigned int num_abs_coords;
     unsigned int num_ord_coords;
     unsigned int num_pixels;
@@ -1611,16 +1656,30 @@ flag canvas_draw_image (KWorldCanvas canvas, array_desc *arr_desc, char *slice,
     hdim_desc = arr_desc->dimensions[hdim];
     vdim_desc = arr_desc->dimensions[vdim];
     /*  Determine start and stop co-ordinates along each dimension  */
-    abs_start_coord = ds_get_coord_num (hdim_desc, canvas->win_scale.x_min,
+    abs_start_index = ds_get_coord_num (hdim_desc, canvas->win_scale.left_x,
 					SEARCH_BIAS_CLOSEST);
-    abs_end_coord = ds_get_coord_num (hdim_desc, canvas->win_scale.x_max,
+    abs_end_index = ds_get_coord_num (hdim_desc, canvas->win_scale.right_x,
 				      SEARCH_BIAS_CLOSEST);
-    num_abs_coords = abs_end_coord - abs_start_coord + 1;
-    ord_start_coord = ds_get_coord_num (vdim_desc, canvas->win_scale.y_min,
+    if (abs_start_index >= abs_end_index)
+    {
+	(void) fprintf (stderr,
+			"Left co-ordinate index: %u not less than right: %u\n",
+			abs_start_index, abs_end_index);
+	a_prog_bug (function_name);
+    }
+    num_abs_coords = abs_end_index - abs_start_index + 1;
+    ord_start_index = ds_get_coord_num (vdim_desc, canvas->win_scale.bottom_y,
 					SEARCH_BIAS_CLOSEST);
-    ord_end_coord = ds_get_coord_num (vdim_desc, canvas->win_scale.y_max,
+    ord_end_index = ds_get_coord_num (vdim_desc, canvas->win_scale.top_y,
 				      SEARCH_BIAS_CLOSEST);
-    num_ord_coords = ord_end_coord - ord_start_coord + 1;
+    if (ord_start_index >= ord_end_index)
+    {
+	(void) fprintf (stderr,
+			"Bottom co-ordinate index: %u not less than top: %u\n",
+			ord_start_index, ord_end_index);
+	a_prog_bug (function_name);
+    }
+    num_ord_coords = ord_end_index - ord_start_index + 1;
     return ( kwin_draw_pc_image (canvas->pixcanvas,
 				 canvas->win_scale.x_offset,
 				 canvas->win_scale.y_offset,
@@ -1628,8 +1687,8 @@ flag canvas_draw_image (KWorldCanvas canvas, array_desc *arr_desc, char *slice,
 				 canvas->win_scale.y_pixels,
 				 slice + ds_get_element_offset (pack_desc,
 								elem_index),
-				 hoffsets + abs_start_coord,
-				 voffsets + ord_start_coord,
+				 hoffsets + abs_start_index,
+				 voffsets + ord_start_index,
 				 num_abs_coords, num_ord_coords,
 				 pack_desc->element_types[elem_index],
 				 canvas->win_scale.conv_type,
@@ -1651,29 +1710,29 @@ flag canvas_draw_rgb_image (KWorldCanvas canvas, array_desc *arr_desc,
 			    unsigned int red_index, unsigned int green_index,
 			    unsigned int blue_index,
 			    KPixCanvasImageCache *cache_ptr)
-/*  This routine will draw a 2-dimensional slice of a Karma array onto a world
-    canvas.
-    This slice may be tiled.
-    The canvas must be given by  canvas  .
-    The array descriptor must be pointed to by  arr_desc  .
-    The start of the slice data must be pointed to by  slice  .
-    The dimension index of the horizontal dimension must be given by  hdim  .
-    The dimension index of the vertical dimension must be given by  vdim  .
-    The element index of the red components must be given by  red_index  .
-    The element index of the green components must be given by  green_index  .
-    The element index of the blue components must be given by  blue_index  .
-    The routine may produce cache data which will vastly increase the speed of
-    subsequent operations on this data. The routine will write a pointer to
-    this data to the storage pointed to by  cache_data  .Prior to process
-    exit, a call MUST be made to  kwin_free_cache_data  ,otherwise shared
-    memory segments could remain after the process exits.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Draw a TrueColour image onto a world canvas.
+    [PURPOSE] This routine will draw a 2-dimensional TrueColour slice of a
+    Karma array onto a world canvas. This slice may be tiled.
+    <canvas> The world canvas.
+    <arr_desc> The array descriptor for the image.
+    <slice> The start of the slice (image) data.
+    <hdim> The dimension index of the horizontal dimension.
+    <vdim> The dimension index of the vertical dimension.
+    <red_index> The element index of the red components.
+    <green_index> The element index of the green components.
+    <blue_index> The element index of the blue components.
+    <cache_ptr> The routine may produce cache data which will vastly increase
+    the speed of subsequent operations on this data. The routine will write a
+    pointer to this data here. Prior to process exit, a call MUST be made to
+    [<kwin_free_cache_data>], otherwise shared memory segments could remain
+    after the process exits.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
-    unsigned int abs_start_coord;
-    unsigned int abs_end_coord;
-    unsigned int ord_start_coord;
-    unsigned int ord_end_coord;
+    unsigned int abs_start_index;
+    unsigned int abs_end_index;
+    unsigned int ord_start_index;
+    unsigned int ord_end_index;
     unsigned int num_abs_coords;
     unsigned int num_ord_coords;
     uaddr *hoffsets, *voffsets;
@@ -1736,16 +1795,30 @@ flag canvas_draw_rgb_image (KWorldCanvas canvas, array_desc *arr_desc,
     hdim_desc = arr_desc->dimensions[hdim];
     vdim_desc = arr_desc->dimensions[vdim];
     /*  Determine start and stop co-ordinates along each dimension  */
-    abs_start_coord = ds_get_coord_num (hdim_desc, canvas->win_scale.x_min,
+    abs_start_index = ds_get_coord_num (hdim_desc, canvas->win_scale.left_x,
 					SEARCH_BIAS_CLOSEST);
-    abs_end_coord = ds_get_coord_num (hdim_desc, canvas->win_scale.x_max,
+    abs_end_index = ds_get_coord_num (hdim_desc, canvas->win_scale.right_x,
 				      SEARCH_BIAS_CLOSEST);
-    num_abs_coords = abs_end_coord - abs_start_coord + 1;
-    ord_start_coord = ds_get_coord_num (vdim_desc, canvas->win_scale.y_min,
+    if (abs_start_index >= abs_end_index)
+    {
+	(void) fprintf (stderr,
+			"Left co-ordinate index: %u not less than right: %u\n",
+			abs_start_index, abs_end_index);
+	a_prog_bug (function_name);
+    }
+    num_abs_coords = abs_end_index - abs_start_index + 1;
+    ord_start_index = ds_get_coord_num (vdim_desc, canvas->win_scale.bottom_y,
 					SEARCH_BIAS_CLOSEST);
-    ord_end_coord = ds_get_coord_num (vdim_desc, canvas->win_scale.y_max,
+    ord_end_index = ds_get_coord_num (vdim_desc, canvas->win_scale.top_y,
 				      SEARCH_BIAS_CLOSEST);
-    num_ord_coords = ord_end_coord - ord_start_coord + 1;
+    if (ord_start_index >= ord_end_index)
+    {
+	(void) fprintf (stderr,
+			"Bottom co-ordinate index: %u not less than top: %u\n",
+			ord_start_index, ord_end_index);
+	a_prog_bug (function_name);
+    }
+    num_ord_coords = ord_end_index - ord_start_index + 1;
     red_slice = (CONST unsigned char *) slice;
     red_slice += ds_get_element_offset (pack_desc, red_index);
     green_slice = (CONST unsigned char *) slice;
@@ -1758,21 +1831,20 @@ flag canvas_draw_rgb_image (KWorldCanvas canvas, array_desc *arr_desc,
 				  canvas->win_scale.x_pixels,
 				  canvas->win_scale.y_pixels,
 				  red_slice, green_slice, blue_slice,
-				  hoffsets + abs_start_coord,
-				  voffsets + ord_start_coord,
+				  hoffsets + abs_start_index,
+				  voffsets + ord_start_index,
 				  num_abs_coords, num_ord_coords, cache_ptr) );
 }   /*  End Function canvas_draw_rgb_image  */
 
 /*PUBLIC_FUNCTION*/
 void canvas_draw_point (KWorldCanvas canvas, double x, double y,
 			double value[2])
-/*  This routine will draw a single point onto a world canvas.
-    The canvas must be given by  canvas  .
-    The horizontal world co-ordinate of the point must be given by  x  .
-    The vertical world co-ordinate of the point must be given by  y  .
-    The data value to use must be given by  value  .This must be of type
-    K_DCOMPLEX.
-    The routine returns nothing.
+/*  [SUMMARY] Draw a single point onto a world canvas.
+    <canvas> The world canvas object.
+    <x> The horizontal world co-ordinate of the point.
+    <y> The vertical world co-ordinate of the point.
+    <value> The data value to use. This is of type K_DCOMPLEX.
+    [RETURNS] Nothing.
 */
 {
     unsigned long pixel_value;
@@ -1792,23 +1864,32 @@ void canvas_draw_point (KWorldCanvas canvas, double x, double y,
 /*PUBLIC_FUNCTION*/
 void canvas_draw_point_p (KWorldCanvas canvas, double x, double y,
 			  unsigned long pixel_value)
-/*  This routine will draw a single point onto a world canvas.
-    The canvas must be given by  canvas  .
-    The horizontal world co-ordinate of the point must be given by  x  .
-    The vertical world co-ordinate of the point must be given by  y  .
-    The pixel value to use must be given by  pixel_value  .
-    The routine returns nothing.
+/*  [SUMMARY] Draw a single point onto a world canvas.
+    <canvas> The world canvas object.
+    <x> The horizontal world co-ordinate of the point.
+    <y> The vertical world co-ordinate of the point.
+    <pixel_value> The pixel value to use.
+    [RETURNS] Nothing.
 */
 {
     double px, py;
     static char function_name[] = "canvas_draw_point_p";
 
     VERIFY_CANVAS (canvas);
-    if ( (x < canvas->win_scale.x_min) || (x > canvas->win_scale.x_max) ||
-	(y < canvas->win_scale.y_min) || (y > canvas->win_scale.y_max) )
+    if (canvas->win_scale.left_x < canvas->win_scale.right_x)
     {
-	return;
+	if ( (x < canvas->win_scale.left_x) ||
+	     (x > canvas->win_scale.right_x) ) return;
     }
+    else if ( (x > canvas->win_scale.left_x) ||
+	      (x < canvas->win_scale.right_x) ) return;
+    if (canvas->win_scale.bottom_y < canvas->win_scale.top_y)
+    {
+	if ( (y < canvas->win_scale.bottom_y) ||
+	     (y > canvas->win_scale.top_y) ) return;
+    }
+    else if ( (y > canvas->win_scale.bottom_y) ||
+	      (y < canvas->win_scale.top_y) ) return;
     (void) convert_from_canvas_coord (canvas, x, y, &px, &py);
     kwin_draw_point (canvas->pixcanvas, px, py, pixel_value);
 }   /*  End Function canvas_draw_point_p  */
@@ -1817,15 +1898,14 @@ void canvas_draw_point_p (KWorldCanvas canvas, double x, double y,
 void canvas_draw_line (KWorldCanvas canvas,
 		       double x0, double y0, double x1, double y1,
 		       double value[2])
-/*  This routine will draw a single line onto a world canvas.
-    The canvas must be given by  canvas  .
-    The horizontal world co-ordinate of the first point must be given by  x0  .
-    The vertical world co-ordinate of the first point must be given by  y0  .
-    The horizontal world co-ordinate of the second point must be given by  x0
-    The vertical world co-ordinate of the second point must be given by  y0  .
-    The data value to use must be given by  value  .This must be of type
-    K_DCOMPLEX.
-    The routine returns nothing.
+/*  [SUMMARY] Draw a single line onto a world canvas.
+    <canvas> The world canvas object.
+    <x0> The horizontal world co-ordinate of the first point.
+    <y0> The vertical world co-ordinate of the first point.
+    <x1> The horizontal world co-ordinate of the second point.
+    <y1> The vertical world co-ordinate of the second point.
+    <value> The data value to use. This is of type K_DCOMPLEX.
+    [RETURNS] Nothing.
 */
 {
     unsigned long pixel_value;
@@ -1846,14 +1926,14 @@ void canvas_draw_line (KWorldCanvas canvas,
 void canvas_draw_line_p (KWorldCanvas canvas,
 			 double x0, double y0, double x1, double y1,
 			 unsigned long pixel_value)
-/*  This routine will draw a single line onto a world canvas.
-    The canvas must be given by  canvas  .
-    The horizontal world co-ordinate of the first point must be given by  x0  .
-    The vertical world co-ordinate of the first point must be given by  y0  .
-    The horizontal world co-ordinate of the second point must be given by  x0
-    The vertical world co-ordinate of the second point must be given by  y0  .
-    The pixel value to use must be given by  pixel_value  .
-    The routine returns nothing.
+/*  [SUMMARY] Draw a single line onto a world canvas.
+    <canvas> The world canvas object.
+    <x0> The horizontal world co-ordinate of the first point.
+    <y0> The vertical world co-ordinate of the first point.
+    <x1> The horizontal world co-ordinate of the second point.
+    <y1> The vertical world co-ordinate of the second point.
+    <pixel_value> The pixel value to use.
+    [RETURNS] Nothing.
 */
 {
     double px0, py0;
@@ -1868,17 +1948,81 @@ void canvas_draw_line_p (KWorldCanvas canvas,
 }   /*  End Function canvas_draw_line_p  */
 
 /*PUBLIC_FUNCTION*/
+void canvas_draw_ellipse (KWorldCanvas canvas,
+			  double centre_x, double centre_y,
+			  double radius_x, double radius_y, double value[2])
+/*  [SUMMARY] Draw an ellipse onto a world canvas.
+    <canvas> The world canvas object.
+    <centre_x> The horizontal world co-ordinate of the centre of the ellipse.
+    <centre_y> The vertical world co-ordinate of the centre of the ellipse.
+    <radius_x> The horizontal radius in world co-ordinates.
+    <radius_y> The vertical radius in world co-ordinates.
+    <value> The complex value to draw the ellipse with. This must be of type
+    K_DCOMPLEX.
+    [RETURNS] Nothing.
+*/
+{
+    unsigned long pixel_value;
+    static char function_name[] = "canvas_draw_ellipse";
+
+    VERIFY_CANVAS (canvas);
+    if (canvas->cmap == NULL)
+    {
+	(void) fprintf (stderr,"Canvas has no colourmap associated with it\n");
+	a_prog_bug (function_name);
+    }
+    pixel_value = get_pixel_from_value (value, &canvas->win_scale,
+					canvas->cmap);
+    canvas_draw_ellipse_p (canvas,
+			   centre_x, centre_y, radius_x, radius_y,
+			   pixel_value);
+}   /*  End Function canvas_draw_ellipse  */
+
+/*PUBLIC_FUNCTION*/
+void canvas_draw_ellipse_p (KWorldCanvas canvas,
+			    double centre_x, double centre_y,
+			    double radius_x, double radius_y,
+			    unsigned long pixel_value)
+/*  [SUMMARY] Draw an ellipse onto a world canvas.
+    <canvas> The world canvas object.
+    <centre_x> The horizontal world co-ordinate of the centre of the ellipse.
+    <centre_y> The vertical world co-ordinate of the centre of the ellipse.
+    <radius_x> The horizontal radius in world co-ordinates.
+    <radius_y> The vertical radius in world co-ordinates.
+    <pixel_value> The pixel value to draw the ellipse with.
+    [RETURNS] Nothing.
+*/
+{
+    int cx, cy, rx, ry;
+    static char function_name[] = "canvas_draw_ellipse_p";
+
+    VERIFY_CANVAS (canvas);
+    (void) canvas_convert_from_canvas_coord (canvas, centre_x, centre_y,
+					     &cx, &cy);
+    /*  Offset radius value  */
+    radius_x += centre_x;
+    radius_y += centre_y;
+    (void) canvas_convert_from_canvas_coord (canvas, radius_x, radius_y,
+					     &rx, &ry);
+    /*  Undo radius offset  */
+    rx = abs (rx - cx);
+    ry = abs (ry - cy);
+    kwin_draw_ellipse (canvas->pixcanvas, cx, cy, rx, ry, pixel_value);
+}   /*  End Function canvas_draw_ellipse_p  */
+
+/*PUBLIC_FUNCTION*/
 void canvas_fill_ellipse (KWorldCanvas canvas,
 			  double centre_x, double centre_y,
 			  double radius_x, double radius_y, double value[2])
-/*  This routine will draw a filled ellipse onto a world canvas.
-    The canvas must be given by  canvas  .
-    The world co-ordinates of the centre of the ellipse must be given by
-    centre_x  and centre_y  .
-    The radii must be given by  radius_x  and  radius_y  .
-    The complex value to fill the ellipse with must be pointed to be  value  .
-    This must be of type K_DCOMPLEX.
-    The routine returns nothing.
+/*  [SUMMARY] Draw a filled ellipse onto a world canvas.
+    <canvas> The world canvas object.
+    <centre_x> The horizontal world co-ordinate of the centre of the ellipse.
+    <centre_y> The vertical world co-ordinate of the centre of the ellipse.
+    <radius_x> The horizontal radius in world co-ordinates.
+    <radius_y> The vertical radius in world co-ordinates.
+    <value> The complex value to fill the ellipse with. This must be of type
+    K_DCOMPLEX.
+    [RETURNS] Nothing.
 */
 {
     unsigned long pixel_value;
@@ -1902,13 +2046,14 @@ void canvas_fill_ellipse_p (KWorldCanvas canvas,
 			    double centre_x, double centre_y,
 			    double radius_x, double radius_y,
 			    unsigned long pixel_value)
-/*  This routine will draw a filled ellipse onto a world canvas.
-    The canvas must be given by  canvas  .
-    The world co-ordinates of the centre of the ellipse must be given by
-    centre_x  and centre_y  .
-    The radii must be given by  radius_x  and  radius_y  .
-    The pixel value to fill the ellipse with must be given by  pixel_value  .
-    The routine returns nothing.
+/*  [SUMMARY] Draw a filled ellipse onto a world canvas.
+    <canvas> The world canvas object.
+    <centre_x> The horizontal world co-ordinate of the centre of the ellipse.
+    <centre_y> The vertical world co-ordinate of the centre of the ellipse.
+    <radius_x> The horizontal radius in world co-ordinates.
+    <radius_y> The vertical radius in world co-ordinates.
+    <pixel_value> The pixel value to fill the ellipse with.
+    [RETURNS] Nothing.
 */
 {
     int cx, cy, rx, ry;
@@ -1923,8 +2068,8 @@ void canvas_fill_ellipse_p (KWorldCanvas canvas,
     (void) canvas_convert_from_canvas_coord (canvas, radius_x, radius_y,
 					     &rx, &ry);
     /*  Undo radius offset  */
-    rx -= cx;
-    ry = cy - ry;
+    rx = abs (rx - cx);
+    ry = abs (ry - cy);
     kwin_fill_ellipse (canvas->pixcanvas, cx, cy, rx, ry, pixel_value);
 }   /*  End Function canvas_fill_ellipse_p  */
 
@@ -1932,16 +2077,14 @@ void canvas_fill_ellipse_p (KWorldCanvas canvas,
 flag canvas_fill_polygon (KWorldCanvas canvas, edit_coord *coords,
 			  unsigned int num_vertices, double value[2],
 			  flag convex)
-/*  This routine will draw a filled polygon onto a world canvas.
-    The canvas must be given by  canvas  .
-    The array of world co-ordinates of vertices of the polygon must be pointed
-    to by  coords  .
-    The number of vertices in the polygon must be given by  num_vertices  .
-    The complex value to fill the polygon with must be pointed to be  value  .
-    This must be of type K_DCOMPLEX.
-    If the value of  convex  is TRUE, then the points must form a convex
-    polygon  .
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Draw a filled polygon onto a world canvas.
+    <canvas> The world canvas object.
+    <coords> The array of world co-ordinates of vertices of the polygon.
+    <num_vertices> The number of vertices in the polygon.
+    <value> The complex value to fill the polygon with. This must be of type
+    K_DCOMPLEX.
+    <convex> If TRUE, then the points must form a convex polygon.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     unsigned int coord_count;
@@ -2005,15 +2148,14 @@ flag canvas_fill_polygon (KWorldCanvas canvas, edit_coord *coords,
 /*PUBLIC_FUNCTION*/
 void canvas_draw_rectangle (KWorldCanvas canvas, double x, double y,
 			    double width, double height, double value[2])
-/*  This routine will draw a single rectangle onto a world canvas.
-    The canvas must be given by  canvas  .
-    The horizontal offset of the rectangle must be given by  x  .
-    The vertical offset of the rectangle must be given by  y  .
-    The width of the rectangle must be given by  width  .
-    The height of the rectangle must be given by  height  .
-    The data value to use must be given by  value  .This must be of type
-    K_DCOMPLEX.
-    The routine returns nothing.
+/*  [SUMMARY] Draw a single rectangle onto a world canvas.
+    <canvas> The world canvas object.
+    <x> The horizontal offset of the rectangle.
+    <y> The vertical offset of the rectangle.
+    <width> The width of the rectangle.
+    <height> The height of the rectangle.
+    <value> The data value to use. This is of type K_DCOMPLEX.
+    [RETURNS] Nothing.
 */
 {
     unsigned long pixel_value;
@@ -2034,14 +2176,14 @@ void canvas_draw_rectangle (KWorldCanvas canvas, double x, double y,
 void canvas_draw_rectangle_p (KWorldCanvas canvas, double x, double y,
 			      double width, double height,
 			      unsigned long pixel_value)
-/*  This routine will draw a single rectangle onto a world canvas.
-    The canvas must be given by  canvas  .
-    The horizontal offset of the rectangle must be given by  x  .
-    The vertical offset of the rectangle must be given by  y  .
-    The width of the rectangle must be given by  width  .
-    The height of the rectangle must be given by  height  .
-    The pixel value to use must be given by  pixel_value  .
-    The routine returns nothing.
+/*  [SUMMARY] Draw a single rectangle onto a world canvas.
+    <canvas> The world canvas object.
+    <x> The horizontal offset of the rectangle.
+    <y> The vertical offset of the rectangle.
+    <width> The width of the rectangle.
+    <height> The height of the rectangle.
+    <pixel_value> The pixel value to use.
+    [RETURNS] Nothing.
 */
 {
     int px, py;
@@ -2065,15 +2207,14 @@ void canvas_draw_rectangle_p (KWorldCanvas canvas, double x, double y,
 /*PUBLIC_FUNCTION*/
 void canvas_fill_rectangle (KWorldCanvas canvas, double x, double y,
 			    double width, double height, double value[2])
-/*  This routine will fill a single rectangle onto a world canvas.
-    The canvas must be given by  canvas  .
-    The horizontal offset of the rectangle must be given by  x  .
-    The vertical offset of the rectangle must be given by  y  .
-    The width of the rectangle must be given by  width  .
-    The height of the rectangle must be given by  height  .
-    The data value to use must be given by  value  .This must be of type
-    K_DCOMPLEX.
-    The routine returns nothing.
+/*  [SUMMARY] Fill a single rectangle onto a world canvas.
+    <canvas> The world canvas object.
+    <x> The horizontal offset of the rectangle.
+    <y> The vertical offset of the rectangle.
+    <width> The width of the rectangle.
+    <height> The height of the rectangle.
+    <value> The data value to use. This is of type K_DCOMPLEX.
+    [RETURNS] Nothing.
 */
 {
     unsigned long pixel_value;
@@ -2094,14 +2235,14 @@ void canvas_fill_rectangle (KWorldCanvas canvas, double x, double y,
 void canvas_fill_rectangle_p (KWorldCanvas canvas, double x, double y,
 			      double width, double height,
 			      unsigned long pixel_value)
-/*  This routine will fill a single rectangle onto a world canvas.
-    The canvas must be given by  canvas  .
-    The horizontal offset of the rectangle must be given by  x  .
-    The vertical offset of the rectangle must be given by  y  .
-    The width of the rectangle must be given by  width  .
-    The height of the rectangle must be given by  height  .
-    The pixel value to use must be given by  pixel_value  .
-    The routine returns nothing.
+/*  [SUMMARY] Fill a single rectangle onto a world canvas.
+    <canvas> The world canvas object.
+    <x> The horizontal offset of the rectangle.
+    <y> The vertical offset of the rectangle.
+    <width> The width of the rectangle.
+    <height> The height of the rectangle.
+    <pixel_value> The pixel value to use.
+    [RETURNS] Nothing.
 */
 {
     int px, py;
@@ -2125,19 +2266,18 @@ void canvas_fill_rectangle_p (KWorldCanvas canvas, double x, double y,
 /*PUBLIC_FUNCTION*/
 void canvas_draw_lines (KWorldCanvas canvas, double *x_array, double *y_array,
 			int num_points, double value[2])
-/*  This routine will draw multiple connected lines onto a world canvas.
-    The canvas must be given by  canvas  .
-    The horizontal world co-ordinates of the points must be pointed to by
-    x_array  .If this is NULL, the routine assumes horizontal co-ordinates
-    equally spaced across the world canvas.
-    The vertical world co-ordinates of the points must be pointed to by
-    y_array  .If this is NULL, the routine assumes vertical co-ordinates
-    equally spaced across the world canvas.
-    The number of points must be given by  num_points  .The number of lines
-    drawn is 1 less than this value.
-    The data value to use must be given by  value  .This must be of type
-    K_DCOMPLEX.
-    The routine returns nothing.
+/*  [SUMMARY] Draw multiple connected lines onto a world canvas.
+    <canvas> The world canvas object.
+    <x_array> The horizontal world co-ordinates of the points. If this is NULL,
+    the routine assumes horizontal co-ordinates equally spaced across the world
+    canvas.
+    <y_array> The vertical world co-ordinates of the points. If this is NULL,
+    the routine assumes vertical co-ordinates equally spaced across the world
+    canvas.
+    <num_points> The number of points. The number of lines drawn is 1 less than
+    this value.
+    <value> The data value to use. This is of type K_DCOMPLEX.
+    [RETURNS] Nothing.
 */
 {
     unsigned long pixel_value;
@@ -2158,18 +2298,18 @@ void canvas_draw_lines (KWorldCanvas canvas, double *x_array, double *y_array,
 void canvas_draw_lines_p (KWorldCanvas canvas,
 			  double *x_array, double *y_array, int num_points,
 			  unsigned long pixel_value)
-/*  This routine will draw multiple connected lines onto a world canvas.
-    The canvas must be given by  canvas  .
-    The horizontal world co-ordinates of the points must be pointed to by
-    x_array  .If this is NULL, the routine assumes horizontal co-ordinates
-    equally spaced across the world canvas.
-    The vertical world co-ordinates of the points must be pointed to by
-    y_array  .If this is NULL, the routine assumes vertical co-ordinates
-    equally spaced across the world canvas.
-    The number of points must be given by  num_points  .The number of lines
-    drawn is 1 less than this value.
-    The pixel value to use must be given by  pixel_value  .
-    The routine returns nothing.
+/*  [SUMMARY] Draw multiple connected lines onto a world canvas.
+    <canvas> The world canvas object.
+    <x_array> The horizontal world co-ordinates of the points. If this is NULL,
+    the routine assumes horizontal co-ordinates equally spaced across the world
+    canvas.
+    <y_array> The vertical world co-ordinates of the points. If this is NULL,
+    the routine assumes vertical co-ordinates equally spaced across the world
+    canvas.
+    <num_points> The number of points. The number of lines drawn is 1 less than
+    this value.
+    <pixel_value> The pixel value to use.
+    [RETURNS] Nothing.
 */
 {
     int count;
@@ -2195,15 +2335,15 @@ void canvas_draw_lines_p (KWorldCanvas canvas,
 	}
 	num_allocated = num_points;
     }
-    xscale = canvas->win_scale.x_max - canvas->win_scale.x_min;
+    xscale = canvas->win_scale.right_x - canvas->win_scale.left_x;
     xscale /= (double) (num_points - 1);
-    yscale = canvas->win_scale.y_max - canvas->win_scale.y_min;
+    yscale = canvas->win_scale.top_y - canvas->win_scale.bottom_y;
     yscale /= (double) (num_points - 1);
     for (count = 0; count < num_points; ++count)
     {
 	if (x_array == NULL)
 	{
-	    wx = canvas->win_scale.x_min + xscale * (count);
+	    wx = canvas->win_scale.left_x + xscale * (count);
 	}
 	else
 	{
@@ -2211,7 +2351,7 @@ void canvas_draw_lines_p (KWorldCanvas canvas,
 	}
 	if (y_array == NULL)
 	{
-	    wy = canvas->win_scale.y_min + yscale * (count);
+	    wy = canvas->win_scale.bottom_y + yscale * (count);
 	}
 	else
 	{
@@ -2226,7 +2366,10 @@ void canvas_draw_lines_p (KWorldCanvas canvas,
 
 /*  Private functions follow  */
 static void pixcanvas_refresh_func (KPixCanvas pixcanvas, int width,int height,
-				    void **info, PostScriptPage pspage)
+				    void **info, PostScriptPage pspage,
+				    unsigned int num_areas,
+				    KPixCanvasRefreshArea *areas,
+				    flag *honoured_areas)
 /*  [PURPOSE] This routine is a refresh event consumer for a pixel canvas.
     <canvas> The pixel canvas.
     <width> The width of the canvas in pixels.
@@ -2234,11 +2377,20 @@ static void pixcanvas_refresh_func (KPixCanvas pixcanvas, int width,int height,
     <info> A pointer to the arbitrary information pointer.
     <pspage> The PostScriptPage object. If this is NULL, the refresh is *not*
     destined for a PostScript page.
+    <num_areas> The number of areas that need to be refreshed. If this is
+    0 then the entire pixel canvas needs to be refreshed.
+    <areas> The list of areas that need to be refreshed.
+    <honoured_areas> If the value TRUE is written here it is assumed the
+    routine honoured the list of refresh areas and did not write outside
+    these areas and hence the list of areas will be passed to subsequent
+    registered refresh routines. If FALSE is written here (or nothing is
+    written here), implying the routine refreshed the entire pixel canvas,
+    subsequent refresh routines will be told to refresh the entire canvas.
     [RETURNS] Nothing.
 */
 {
     KWorldCanvas canvas;
-    static char function_name[] = "pixcanvas_refresh_func";
+    static char function_name[] = "__canvas_pixcanvas_refresh_func";
 
     canvas = (KWorldCanvas) *info;
     VERIFY_CANVAS (canvas);
@@ -2247,20 +2399,19 @@ static void pixcanvas_refresh_func (KPixCanvas pixcanvas, int width,int height,
 	(void) fprintf (stderr, "Pixel canvases do not match\n");
 	a_prog_bug (function_name);
     }
-    refresh_canvas (canvas, width, height, FALSE, pspage);
+    refresh_canvas (canvas, width, height, FALSE, pspage,
+		    num_areas, areas, honoured_areas);
 }   /*  End Function pixcanvas_refresh_func  */
 
 static void cmap_resize_func (Kcolourmap cmap, void **info)
 /*  This routine registers a change in the size of a colourmap.
     The colourmap must be given by  cmap  .
     The arbitrary colourmap information pointer is pointed to by  info  .
-    The routine returns nothing.
+    [RETURNS] Nothing.
 */
 {
     KWorldCanvas canvas;
     int width, height;
-    struct win_scale_type win_scale;
-    struct refresh_func *curr_func;
     static char function_name[] = "__canvas_cmap_resize_func";
 
     canvas = (KWorldCanvas) *info;
@@ -2274,11 +2425,13 @@ static void cmap_resize_func (Kcolourmap cmap, void **info)
     set_sat_pixels (canvas);
     /*  Get pixel canvas size  */
     kwin_get_size (canvas->pixcanvas, &width, &height);
-    refresh_canvas (canvas, width, height, TRUE, NULL);
+    refresh_canvas (canvas, width, height, TRUE, NULL, 0, NULL, NULL);
 }   /*  End Function cmap_resize_func  */
 
 static void refresh_canvas (KWorldCanvas canvas, int width, int height,
-			    flag cmap_resize, PostScriptPage pspage)
+			    flag cmap_resize, PostScriptPage pspage,
+			    unsigned int num_areas,
+			    KPixCanvasRefreshArea *areas, flag *honoured_areas)
 /*  [PURPOSE] This routine will refresh a world canvas (by calling all
     registered refresh functions).
     <canvas> The world canvas.
@@ -2287,6 +2440,15 @@ static void refresh_canvas (KWorldCanvas canvas, int width, int height,
     <cmap_resize> If TRUE, the refresh is due to a colourmap resize.
     <pspage> The PostScriptPage object. If this is NULL, the refresh is *not*
     destined for a PostScript page.
+    <num_areas> The number of areas that need to be refreshed. If this is
+    0 then the entire pixel canvas needs to be refreshed.
+    <areas> The list of areas that need to be refreshed.
+    <honoured_areas> If the value TRUE is written here it is assumed the
+    routine honoured the list of refresh areas and did not write outside
+    these areas and hence the list of areas will be passed to subsequent
+    registered refresh routines. If FALSE is written here (or nothing is
+    written here), implying the routine refreshed the entire pixel canvas,
+    subsequent refresh routines will be told to refresh the entire canvas.
     [RETURNS] Nothing.
 */
 {
@@ -2313,7 +2475,14 @@ static void refresh_canvas (KWorldCanvas canvas, int width, int height,
     data.height = height;
     data.cmap_resize = cmap_resize;
     data.pspage = pspage;
+    data.num_areas = num_areas;
+    data.areas = areas;
+    data.honoured_areas = FALSE;
     (void) c_call_callbacks (canvas->refresh_list, &data);
+    if (data.honoured_areas && (honoured_areas != NULL) )
+    {
+	*honoured_areas = TRUE;
+    }
     if (canvas->dressing_drawn) return;
     if (canvas->display_dressing) canvas_draw_dressing (canvas);
 }   /*  End Function refresh_canvas  */
@@ -2420,15 +2589,18 @@ static flag pixcanvas_position_event (KPixCanvas pixcanvas, int x, int y,
 */
 {
     KWorldCanvas canvas;
+    double dx, dy;
     struct position_struct data;
     static char function_name[] = "pixcanvas_position_event";
 
     canvas = (KWorldCanvas) *f_info;
     VERIFY_CANVAS (canvas);
     /*  Convert pixel co-ordinates to world co-ordinates  */
-    (void) pixel_to_world_coord_convert (canvas, (double) x, (double) y,
-					 &data.x, &data.y,
-					 &data.x_lin, &data.y_lin);
+    dx = x;
+    dy = y;
+    pixel_to_world_coords_convert (canvas, TRUE, 1, &dx, &dy,
+				   &data.x_lin, &data.y_lin,
+				   &data.x, &data.y);
     /*  Call event consumer functions  */
     data.event_code = event_code;
     data.e_info = event_info;
@@ -2446,6 +2618,7 @@ static flag refresh_event_func (void *object, void *client1_data,
 */
 {
     KWorldCanvas canvas;
+    flag honoured_areas;
     struct win_scale_type win_scale;
     void (*func) ();
     struct refresh_struct *data;
@@ -2457,8 +2630,17 @@ static flag refresh_event_func (void *object, void *client1_data,
     func = ( void (*) () ) client2_data;
     m_copy ( (char *) &win_scale, (char *) &canvas->win_scale,
 	    sizeof win_scale );
+    honoured_areas = FALSE;
     (*func) (canvas, data->width, data->height, &win_scale, canvas->cmap,
-	     data->cmap_resize, client1_data, data->pspage);
+	     data->cmap_resize, client1_data, data->pspage,
+	     data->num_areas, data->areas, &honoured_areas);
+    if (honoured_areas) data->honoured_areas = TRUE;
+    else
+    {
+	data->num_areas = 0;
+	data->areas = NULL;
+	data->honoured_areas = FALSE;
+    }
     return (FALSE);
 }   /*  End Function refresh_event_func  */
 
@@ -2506,16 +2688,16 @@ static void verify_win_scale (struct win_scale_type *win_scale,
 	a_prog_bug (function_name);
 */
     }
-    if (win_scale->x_max <= win_scale->x_min)
+    if (win_scale->right_x == win_scale->left_x)
     {
-	(void) fprintf (stderr, "x_max: %e must be greater than x_min: %e\n",
-			win_scale->x_max, win_scale->x_min);
+	(void) fprintf (stderr, "right_x: %e must not equal left_x: %e\n",
+			win_scale->right_x, win_scale->left_x);
 	a_prog_bug (function_name);
     }
-    if (win_scale->y_max <= win_scale->y_min)
+    if (win_scale->top_y == win_scale->bottom_y)
     {
-	(void) fprintf (stderr, "y_max: %e must be greater than y_min: %e\n",
-			win_scale->y_max, win_scale->y_min);
+	(void) fprintf (stderr, "top_y: %e must not equal bottom_y: %e\n",
+			win_scale->top_y, win_scale->bottom_y);
 	a_prog_bug (function_name);
     }
     if (win_scale->z_scale != K_INTENSITY_SCALE_LINEAR)
@@ -2652,7 +2834,7 @@ static void get_dressing_size (KWorldCanvas canvas, int *p_left, int *p_right,
     storage pointed to by  p_top  .
     The number of vertical pixels required at the bottom will be written to
     the storage pointed to by  p_bottom  .
-    The routine returns nothing.
+    [RETURNS] Nothing.
 */
 {
     if (!canvas->display_dressing)
@@ -2716,7 +2898,7 @@ static void dressing_refresh_func (KWorldCanvas canvas, int width, int height,
     If the refresh function was called as a result of a colourmap resize
     the value of  cmap_resize  will be TRUE.
     The arbitrary canvas information pointer is pointed to by  info  .
-    The routine returns nothing.
+    [RETURNS] Nothing.
 */
 {
     static char function_name[] = "__canvas_dressing_refresh_func";
@@ -2725,79 +2907,107 @@ static void dressing_refresh_func (KWorldCanvas canvas, int width, int height,
     canvas_draw_dressing (canvas);
 }   /*  End Function dressing_refresh_func  */
 
-static flag pixel_to_world_coord_convert (KWorldCanvas canvas,
-					  double xin, double yin,
-					  double *xout, double *yout,
-					  double *x_lin, double *y_lin)
-/*  This routine will convert co-ordinates in a pixel canvas to co-ordinates in
-    a world canvas.
-    The world canvas must be given by  canvas  .
-    The lower level horizontal co-ordinate must be given by  xin  .
-    The lower level vertical co-ordinate must be given by  yin  .
-    The horizontal world co-ordinate will be written to the storage pointed to
-    by  xout  .
-    The vertical world co-ordinate will be written to the storage pointed to
-    by  xout  .
-    The linear world co-ordinates will by written to the storage pointed to by
-    x_lin  and  y_lin  .
-    The routine returns TRUE if the co-ordinate lies within the canvas
-    boundaries, else it returns FALSE (although a conversion is still
-    performed).
+static void pixel_to_world_coords_convert (KWorldCanvas canvas, flag clip,
+					   unsigned int num_coords,
+					   CONST double *xin,CONST double *yin,
+					   double *xout_lin, double *yout_lin,
+					   double *xout, double *yout)
+/*  [SUMMARY] Convert pixel co-ordinates to world co-ordinates.
+    <canvas> The world canvas object.
+    <clip> If TRUE, pixel co-ordinates are first clipped to the canvas
+    boundaries prior to conversion.
+    <num_coords> The number of co-ordinates to convert.
+    <xin> The array of input horizontal pixel co-ordinates.
+    <yin> The array of input vertical pixel co-ordinates.
+    <xout_lin> The array of output horizontal linear world co-ordinates are
+    written here. If this is NULL, nothing is written here.
+    <yout_lin> The array of output vertical linear world co-ordinates are
+    written here. If this is NULL, nothing is written here.
+    <xout> The array of output horizontal non-linear world co-ordinates are
+    written here. If this is NULL, nothing is written here.
+    <yout> The array of output vertical non-linear world co-ordinates are
+    written here. If this is NULL, nothing is written here.
+    [RETURNS] TRUE if the co-ordinate lies within the canvas boundaries,
+    else FALSE (although a conversion is still performed).
 */
 {
-    flag converted = FALSE;
+    flag converted;
     int px, py;
+    unsigned int count;
+    double dx, dy;
     struct win_scale_type win_scale;
-    static char function_name[] = "pixel_to_world_coord_convert";
+    static char function_name[] = "pixel_to_world_coords_convert";
 
     VERIFY_CANVAS (canvas);
-    if (canvas->coord_convert_func != NULL)
+    for (count = 0; count < num_coords; ++count)
     {
-	m_copy ( (char *) &win_scale, (char *) &canvas->win_scale,
-		sizeof win_scale );
-	*x_lin = xin;
-	*y_lin = yin;
-	converted = ( (*canvas->coord_convert_func)
-		     (canvas, &win_scale, x_lin, y_lin, TRUE,
-		      &canvas->coord_convert_info) );
+	dx = xin[count];
+	dy = yin[count];
+	if ( clip && (dx < canvas->win_scale.x_offset) )
+	{
+	    dx = canvas->win_scale.x_offset;
+	}
+	if ( clip && (dx >= canvas->win_scale.x_offset +
+		      canvas->win_scale.x_pixels) )
+	{
+	    dx = canvas->win_scale.x_offset + canvas->win_scale.x_pixels - 1;
+	}
+	if ( clip && (dy < canvas->win_scale.y_offset) )
+	{
+	    dy = canvas->win_scale.y_offset;
+	}
+	if ( clip && (dy >= canvas->win_scale.y_offset +
+		      canvas->win_scale.y_pixels) )
+	{
+	    dy = canvas->win_scale.y_offset + canvas->win_scale.y_pixels - 1;
+	}
+	converted = FALSE;
+	if (canvas->coord_convert_func != NULL)
+	{
+	    m_copy ( (char *) &win_scale, (char *) &canvas->win_scale,
+		     sizeof win_scale );
+	    converted = ( (*canvas->coord_convert_func)
+			  (canvas, &win_scale, &dx, &dy, TRUE,
+			   &canvas->coord_convert_info) );
+	}
+	else if (canvas->deprecated_coord_convert_func != NULL)
+	{
+	    m_copy ( (char *) &win_scale, (char *) &canvas->win_scale,
+		     sizeof win_scale );
+	    px = dx;
+	    py = dy;
+	    converted = ( (*canvas->deprecated_coord_convert_func)
+			  (canvas, &win_scale, &px, &py, &dx, &dy, TRUE,
+			   &canvas->coord_convert_info) );
+	}
+	if (!converted)
+	{
+	    /*  Convert pixel co-ordinates to world co-ordinates  */
+	    /*  Convert x  */
+	    dx = dx - canvas->win_scale.x_offset;
+	    dx /= (double) (canvas->win_scale.x_pixels - 1);
+	    dx *= (canvas->win_scale.right_x - canvas->win_scale.left_x);
+	    dx += canvas->win_scale.left_x;
+	    /*  Flip vertical  */
+	    dy -= canvas->win_scale.y_offset;
+	    dy = canvas->win_scale.y_pixels - dy - 1;
+	    /*  Convert y  */
+	    dy /= (double) (canvas->win_scale.y_pixels - 1);
+	    dy *= (canvas->win_scale.top_y - canvas->win_scale.bottom_y);
+	    dy += canvas->win_scale.bottom_y;
+	}
+	/*  dx and dy should now be linear world co-ordinates  */
+	if (xout_lin != NULL) xout_lin[count] = dx;
+	if (yout_lin != NULL) yout_lin[count] = dy;
+	/*  Apply non-linear transform function  */
+	if ( (xout != NULL) || (yout != NULL) )
+	{
+	    canvas_coord_transform (canvas, &dx, &dy, FALSE);
+	    if (xout != NULL) xout[count] = dx;
+	    if (yout != NULL) yout[count] = dy;
+	}
     }
-    else if (canvas->deprecated_coord_convert_func != NULL)
-    {
-	m_copy ( (char *) &win_scale, (char *) &canvas->win_scale,
-		sizeof win_scale );
-	px = xin;
-	py = yin;
-	converted = ( (*canvas->deprecated_coord_convert_func)
-		     (canvas, &win_scale, &px, &py, x_lin, y_lin, TRUE,
-		      &canvas->coord_convert_info) );
-    }
-    if (!converted)
-    {
-	/*  Convert pixel co-ordinates to world co-ordinates  */
-	/*  Convert x  */
-	*x_lin = xin - canvas->win_scale.x_offset;
-	*x_lin /= (double) (canvas->win_scale.x_pixels - 1);
-	*x_lin *= (canvas->win_scale.x_max - canvas->win_scale.x_min);
-	*x_lin += canvas->win_scale.x_min;
-	/*  Flip vertical  */
-	yin -= canvas->win_scale.y_offset;
-	yin = canvas->win_scale.y_pixels - yin - 1;
-	/*  Convert y  */
-	*y_lin = yin;
-	*y_lin /= (double) (canvas->win_scale.y_pixels - 1);
-	*y_lin *= (canvas->win_scale.y_max - canvas->win_scale.y_min);
-	*y_lin += canvas->win_scale.y_min;
-    }
-    *xout = *x_lin;
-    *yout = *y_lin;
-    if ( (xin < canvas->win_scale.x_offset) ||
-	(xin >= canvas->win_scale.x_offset + canvas->win_scale.x_pixels) ||
-	(yin < canvas->win_scale.y_offset) ||
-	(yin >= canvas->win_scale.y_offset + canvas->win_scale.y_pixels) )
-    return (FALSE);
-    /*  Apply non-linear transform function  */
-    return ( canvas_coord_transform (canvas, xout, yout, FALSE) );
-}   /*  End Function pixel_to_world_coord_convert  */
+}   /*  End Function pixel_to_world_coords_convert  */
 
 static void set_sat_pixels (KWorldCanvas canvas)
 /*  [PURPOSE] This routine will set the saturation pixels as appropriate.
@@ -2844,7 +3054,6 @@ static flag convert_from_canvas_coord (KWorldCanvas canvas,
     flag converted = FALSE;
     struct win_scale_type win_scale;
     double px, py;
-    double wx, wy;
     int ix, iy;
     static char function_name[] = "convert_from_canvas_coord";
 
@@ -2873,13 +3082,13 @@ static flag convert_from_canvas_coord (KWorldCanvas canvas,
     if (!converted)
     {
 	/*  Convert x  */
-	px = xin - (double) canvas->win_scale.x_min;
-	px /= (double) (canvas->win_scale.x_max - canvas->win_scale.x_min);
+	px = xin - (double) canvas->win_scale.left_x;
+	px /= (double) (canvas->win_scale.right_x - canvas->win_scale.left_x);
 	px *= (double) (canvas->win_scale.x_pixels - 1);
 	px += 0.01;
 	/*  Convert y  */
-	py = yin - canvas->win_scale.y_min;
-	py /= canvas->win_scale.y_max - canvas->win_scale.y_min;
+	py = yin - canvas->win_scale.bottom_y;
+	py /= canvas->win_scale.top_y - canvas->win_scale.bottom_y;
 	py *= (double) (canvas->win_scale.y_pixels - 1);
 	iy = (int) (py + 0.01);
 	/*  Convert world co-ordinates to pixel co-ordinates  */

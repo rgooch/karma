@@ -4,7 +4,7 @@
     This code provides a popup file selector widget with close and
     rescan buttons, for Xt.
 
-    Copyright (C) 1993,1994,1995  Patrick Jordan
+    Copyright (C) 1993-1996  Patrick Jordan
     Incorporated into Karma by permission.
 
     This library is free software; you can redistribute it and/or
@@ -49,8 +49,14 @@
     Updated by      Richard Gooch   24-DEC-1994: Propagated change of filename
   tester resource.
 
-    Last updated by Richard Gooch   17-APR-1995: Fixed mix of XtRBool and
+    Updated by      Richard Gooch   17-APR-1995: Fixed mix of XtRBool and
   sizeof Boolean in resource fields. Use Bool because it is of int size.
+
+    Updated by      Richard Gooch   25-FEB-1996: Made default position top-left
+  corner.
+
+    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -84,9 +90,9 @@
 
 /* Methods*/
 
-static void Initialize(Widget request,Widget new);
-static void Destroy(Widget w);
-static Boolean SetValues(Widget current,Widget request,Widget new);
+static void Initialize (Widget request, Widget new);
+static void Destroy (Widget w);
+static Boolean SetValues (Widget current, Widget request, Widget new);
 
 /*----------------------------------------------------------------------*/
 /* Default Resources*/
@@ -102,6 +108,10 @@ static XtResource FilepopupResources[] =
    TheOffset (fileSelectCallback), XtRCallback, (caddr_t) NULL},
   {XkwNfilenameTester, XtCCallback, XtRPointer, sizeof (caddr_t),
    TheOffset (accept_file), XtRPointer, (caddr_t) NULL},
+  {XtNx, XtCPosition, XtRPosition, sizeof (Position),
+   XtOffset (FilepopupWidget, core.x), XtRPosition, 0},
+  {XtNy, XtCPosition, XtRPosition, sizeof (Position),
+   XtOffset (FilepopupWidget, core.y), XtRPosition, 0},
 };
 
 #undef TheOffset
@@ -142,7 +152,7 @@ FilepopupClassRec filepopupClassRec =
     XtVersion,                     /* version */
     NULL,                          /* callback_private */
     NULL,                          /* tm_translations */
-    NULL,
+    NULL,                          /* query_geometry  */
     NULL,
     NULL,
   },
@@ -202,9 +212,9 @@ static void close_cbk(Widget w,XtPointer client_data,XtPointer call_data)
 
 static void Initialize(Widget Request,Widget New)
 {
-  FilepopupWidget request = (FilepopupWidget) Request;
-  FilepopupWidget new = (FilepopupWidget) New;
-  Widget closebtn,form,rescanbtn;
+    /*FilepopupWidget request = (FilepopupWidget) Request;*/
+    FilepopupWidget new = (FilepopupWidget) New;
+    Widget closebtn,form,rescanbtn;
 
   form=XtVaCreateManagedWidget
     ("form",formWidgetClass,(Widget)new,
@@ -264,15 +274,14 @@ static void Destroy(Widget W)
 static Boolean SetValues(Widget Current,Widget Request,Widget New)
 {
     FilepopupWidget current = (FilepopupWidget) Current;
-    FilepopupWidget request = (FilepopupWidget) Request;
+    /*FilepopupWidget request = (FilepopupWidget) Request;*/
     FilepopupWidget new = (FilepopupWidget) New;
 
-    if ( (*new).filepopup.accept_file != (*current).filepopup.accept_file )
+    if (new->filepopup.accept_file != current->filepopup.accept_file)
     {
-	XtVaSetValues ( (*new).filepopup.selector,
-		       XkwNfilenameTester, (*new).filepopup.accept_file,
-		       NULL );
+	XtVaSetValues (new->filepopup.selector,
+		       XkwNfilenameTester, new->filepopup.accept_file,
+		       NULL);
     }
     return False;
 }
-

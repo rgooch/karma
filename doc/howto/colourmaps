@@ -51,15 +51,15 @@ grouped by layer.
   Level 2
   =======
 
-The  cf_  package provides a large number of colourmap types (or
+The <cf> package provides a large number of colourmap types (or
 palettes) which support the colourmap selection facility at a higher
 level in the library. These routines have a very simple defined
 interface, hence writing new colourmap functions is trivial.
 
-The  xc_  package provides X11 colourmap support for higher levels of
+The <xc> package provides X11 colourmap support for higher levels of
 the library.
 
-The  vc_  package provides colourmap support for the Vicom VX board (a
+The <vc> package provides colourmap support for the Vicom VX board (a
 Sun/VME board with an i860 and a 32 bit frame buffer).
 
 
@@ -77,13 +77,13 @@ applicable to the colourmap support.
 The actual colourmap support is provided by the  kcmap_  package. This
 package allows the programmer to create and manipulate dynamic pseudo
 colourmaps using a generic interface. If network connections are set
-up (using either the  conn_  package or the Connection Management
+up (using either the <conn> package or the Connection Management
 tool), manipulation of colourmaps is automatically transmitted across
 the network. In addition to these features, colourmaps may be copied
 to standard Karma data structures, and hence tranferred from/ to disc.
 New colourmap functions are easily added. A large number of colourmap
 functions are automatically available by default.
-The  kcmap_  package registers support for two comminications
+The <kcmap> package registers support for two comminications
 protocols:
 "colourmap_indices"  for the sharing of colourmaps on the same screen,
 "full_colourmap"  for the sharing of colourmaps on different screens.
@@ -137,10 +137,11 @@ Window window;
     XGetWindowAttributes (display, win, &window_attributes);
     /*  Initialise colourmap system  */
     dpy_handle = xc_get_dpy_handle (display, window_attributes.colormap);
-    kcmap_init (xc_alloc_colours, xc_free_colours, xc_store_colours,
-		xc_get_location);
     /*  Create Kcolourmap object  */
-    cmap = kcmap_create (DEFAULT_COLOURMAP_NAME, MAX_COLOURS, TRUE,dpy_handle);
+    cmap = kcmap_va_create (DEFAULT_COLOURMAP_NAME, MAX_COLOURS, TRUE,
+			    dpy_handle, xc_alloc_colours, xc_free_colours,
+			    xc_store_colours, xc_get_location,
+			    KCMAP_ATT_END);
     return (cmap);
 }   /*  End Function setup_cmap  */
 
@@ -174,10 +175,11 @@ Kcolourmap setup_cmap ()
 
     /*  Initialise colourmap system  */
     dpy_handle = vc_get_dpy_handle ();
-    kcmap_init (vc_alloc_colours, vc_free_colours, vc_store_colours,
-		vc_get_location);
     /*  Create Kcolourmap object  */
-    cmap = kcmap_create (DEFAULT_COLOURMAP_NAME, MAX_COLOURS, TRUE,dpy_handle);
+    cmap = kcmap_va_create (DEFAULT_COLOURMAP_NAME, MAX_COLOURS, TRUE,
+			    dpy_handle, vc_alloc_colours, vc_free_colours,
+			    vc_store_colours, vc_get_location,
+			    KCMAP_ATT_END);
     return (cmap);
 }   /*  End Function setup_cmap  */
 
@@ -205,10 +207,81 @@ flag write_cmap (cmap, file)
 Kcolourmap cmap;
 char *file;
 {
+    flag ok;
     multi_array *multi_desc;
 
     multi_desc = ds_alloc_multi (1);
-    if (kcmap_copy_to_struct (cmap, (*multi_desc).headers, (*multi_desc).data)
-        != TRUE) return (FALSE);
-    return ( dsxfr_put_multi (multi_desc, file) );
+    if ( !kcmap_copy_to_struct (cmap, multi_desc->headers,
+				multi_desc->data) ) return (FALSE);
+    ok = dsxfr_put_multi (multi_desc, file);
+    multi_desc->headers[0] = NULL;
+    multi_desc->data[0] = NULL;
+    ds_dealloc_multi (multi_desc);
+    return (ok);
 }   /*  End Function write_cmap  */
+
+  Example 4
+  =========
+
+This example shows how to create a software colourmap (i.e. a
+colourmap which is not associated with a display device, but still
+has colours and pixels associated with it). This software colourmap is
+a convenient way to manage an array of pixel values or colour
+component values. The advantage of using a software colourmap rather
+than maintaining your own array of pixel values is that the software
+colourmap may be used with parts of the Karma graphics library (such
+as creating a world canvas and displaying images).
+This example also shows how the pixel values in a colourmap may be
+modifed and the changes registered. If the Kcolourmap object is used
+by a world canvas, refresh events are automatically generated when
+changes to the pixel values are registered. See the tutorial on image
+display for information on world canvases.
+
+
+/*----------------------------------------------------------*/
+/*  Colourmap creation sample programme: software colourmap */
+/*----------------------------------------------------------*/
+
+#include <karma.h>
+#include <karma_kcmap.h>
+
+
+#define MAX_COLOURS (unsigned int) 200
+
+Kcolourmap setup_cmap ()
+/*  This routine will create a software Kcolourmap object.
+    The routine returns a Kcolourmap object.
+*/
+{
+    /*  Declare variables  */
+    Kcolourmap cmap;
+
+    /*  Create Kcolourmap object  */
+    cmap = kcmap_va_create (NULL, MAX_COLOURS, TRUE,
+			    NULL, ( unsigned int (*) () ) NULL,
+			    ( void (*) () ) NULL, ( void (*) () ) NULL,
+			    ( void (*) () ) NULL,
+			    KCMAP_ATT_END);
+    return (cmap);
+}   /*  End Function setup_cmap  */
+
+void set_pixels (Kcolourmap cmap,
+		 unsigned long first_pixel, unsigned long last_pixel)
+/*  [SUMMARY] Change the first and last pixel values in a colourmap.
+    <cmap> The Kcolourmap object.
+    <first_pixel> The first pixel value.
+    <last_pixel> The last pixel value.
+    [RETURNS] Nothing.
+*/
+{
+    unsigned int size;
+    unsigned long *pixel_values;
+
+    size = kcmap_get_pixels (cmap, &pixel_values);
+    pixel_values[0] = first_pixel;
+    pixel_values[size - 1] = last_pixel;
+    /*  If any world canvases were created with this colourmap, refresh events
+	would be automatically generated for them
+	*/
+    kcmap_notify_pixels_changed (cmap);
+}   /*  End Function set_pixels  */

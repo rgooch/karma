@@ -1,9 +1,0 @@
-mt_create_pool
-mt_destroy_pool
-mt_destroy_all_pools
-mt_num_threads
-mt_launch_job
-mt_setlock
-mt_new_thread_info
-mt_get_thread_info
-mt_wait_for_all_jobs

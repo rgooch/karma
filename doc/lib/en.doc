@@ -1,44 +1,62 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the en_ package of routines in the Karma library.
-
+$PACKAGE          en
+$SUMMARY          Routines to provide encryption
+$PURPOSE
     These routines are meant to provide strong encryption.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
-
-    Written by		Richard Gooch	5-Jun-1995
-
-    Last updated by	Richard Gooch	5-Jun-1995
-
-
-*/
-
-idea_status en_idea_init (char key[EN_IDEA_KEY_SIZE], flag decrypt,
+$FUNCTION         en_idea_init
+$RETURN_TYPE      idea_status
+$PARAMETER_LIST
+    (char key[EN_IDEA_KEY_SIZE], flag decrypt,
 			  char init_vector[EN_IDEA_BLOCK_SIZE], flag clear)
-/*  This routine will initialise the IDEA cipher in Cipher Feed Back mode for
-    a stream of data. The stream is uni-directional.
-    The 16 byte IDEA key must be pointed to by  key  .
-    If the stream is to be decrypted, the value of  decrypt  must be TRUE.
-    The 8 byte initialisation vector must be pointed to by  init_vector  .
-    If the value of  clear  is TRUE the key and initialisation vector will be
-    cleared after use (highly recommended if they will not be needed again).
-    The routine returns an IDEA cipher status which may be sebsequently used by
-    en_idea_cfb  on success, else it returns NULL.
-*/
-/*---------------------------------------------------------------------------*/
+$SUMMARY          Create stream for IDEA encryption.
+$PURPOSE
+    This routine will initialise the IDEA cipher in Cipher Feed Back
+    mode for a stream of data. The stream is uni-directional.
+$PARAMETER        key :
+    The 16 byte IDEA key.
+$PARAMETER        decrypt :
+    If TRUE the stream is to be decrypted.
+$PARAMETER        init_vector :
+    The 8 byte initialisation vector.
+$PARAMETER        clear :
+    If TRUE the key and initialisation vector will be cleared after use
+    (highly recommended if they will not be needed again).
+$RETURNS
+    An IDEA cipher status which may be sebsequently used by
+    <-en_idea_cfb-> on success, else NULL.
+$END
 
-void en_idea_cfb (idea_status status, char *buffer, unsigned int length)
-/*  This routine will encrypt (or decrypt) a sequence of bytes using the IDEA
-    cipher in Cipher Feed Back mode.
-    The IDEA cipher status must be given by  status  .
-    The data to encrypt must be pointed to by  buffer  .
-    The number of bytes to encrypt (or decrypt) must be given by  length  .
-    The routine returns nothing.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         en_idea_cfb
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (idea_status status, char *buffer, unsigned int length)
+$SUMMARY          Encrypt bytes using the IDEA cipher.
+$PURPOSE
+    This routine will encrypt (or decrypt) a sequence of bytes using
+    the IDEA cipher in Cipher Feed Back mode.
+$PARAMETER        status :
+    The IDEA cipher status.
+$PARAMETER        buffer :
+    The data to encrypt. This is modified.
+$PARAMETER        length :
+    The number of bytes to encrypt (or decrypt).
+$RETURNS
+    Nothing.
+$END
 
-void en_idea_close (idea_status status)
-/*  This routine will clean up an IDEA cipher status, removing sensitive key
-    information.
-    The IDEA cipher status must be given by  status  .
-    The routine returns nothing.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         en_idea_close
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (idea_status status)
+$SUMMARY          Close a cipher stream.
+$PURPOSE
+    This routine will clean up an IDEA cipher status, removing
+    sensitive key information.
+$PARAMETER        status :
+    The IDEA cipher status.
+$RETURNS
+    Nothing.
+$END

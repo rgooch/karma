@@ -3,7 +3,7 @@
     Source file for  karma2sunras  (Karma to Sun rasterfile image/movie
     conversion module).
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -30,12 +30,14 @@
 
     Written by      Richard Gooch   6-SEP-1995
 
-    Last updated by Richard Gooch   6-SEP-1995
+    Last updated by Richard Gooch   30-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
 #include <stdio.h>
 #include <math.h>
+#include <unistd.h>
 #include <errno.h>
 #include <karma.h>
 #include <karma_foreign.h>
@@ -47,6 +49,8 @@
 #include <karma_ds.h>
 #include <karma_ex.h>
 #include <karma_im.h>
+#include <karma_m.h>
+
 
 STATIC_FUNCTION (flag karma2sunras, (char *command, FILE *fp) );
 STATIC_FUNCTION (flag write_movie,
@@ -56,12 +60,9 @@ STATIC_FUNCTION (flag write_movie,
 
 #define VERSION "1.0"
 
-main (argc, argv)
-int argc;
-char **argv;
+int main (int argc, char **argv)
 {
     KControlPanel panel;
-    extern flag binary;
     static char function_name[] = "main";
 
     im_register_lib_version (KARMA_VERSION);
@@ -87,7 +88,6 @@ FILE *fp;
     packet_desc *pack_desc;
     char *packet;
     char *inp_filename, *out_filename;
-    extern flag binary;
     extern char *sys_errlist[];
 
     if ( ( inp_filename = ex_word (p, &p) ) == NULL )
@@ -220,7 +220,7 @@ static flag write_movie (CONST char *filename, iarray pseudo, iarray red,
 					      (double *) NULL, 0) )
 	    == NULL ) return (FALSE);
     }
-    (void) fprintf ( stderr, "Frames to write: %u\n",
+    (void) fprintf ( stderr, "Frames to write: %lu\n",
 		    iarray_dim_length (pseudo, 0) );
     for (frame_count = 0; frame_count < iarray_dim_length (pseudo, 0);
 	 ++frame_count)

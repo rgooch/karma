@@ -3,7 +3,7 @@
 
     This code provides Channel Management routines for the X Intrinsics toolkit
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -48,8 +48,14 @@
     Updated by      Richard Gooch   1-DEC-1994: Copied to
   packages/chx/main.c  and obsoleted  xt_chm_  package.
 
-    Last updated by Richard Gooch   7-DEC-1994: Stripped declaration of  errno
+    Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
+
+    Updated by      Richard Gooch   16-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -61,6 +67,7 @@
     applies to broken versions of  X11/Intrinsic.h  */
 #include <karma_chx.h>
 #include <karma_ch.h>
+#include <karma_r.h>
 #include <karma_m.h>
 #include <karma_a.h>
 
@@ -104,7 +111,6 @@ int *fd;
 XtInputId *id;
 {
     struct managed_channel_type *entry;
-    char drain_buffer[1];
     extern struct managed_channel_type *managed_channel_list;
     extern char *sys_errlist[];
     static char function_name[] = "xt_input_handler";
@@ -135,7 +141,6 @@ int *fd;
 XtInputId *id;
 {
     struct managed_channel_type *entry;
-    char drain_buffer[1];
     extern struct managed_channel_type *managed_channel_list;
     extern char *sys_errlist[];
     static char function_name[] = "xt_output_handler";
@@ -167,7 +172,6 @@ int *fd;
 XtInputId *id;
 {
     struct managed_channel_type *entry;
-    char drain_buffer[1];
     extern struct managed_channel_type *managed_channel_list;
     extern char *sys_errlist[];
     static char function_name[] = "xt_exception_handler";
@@ -291,7 +295,7 @@ static void close_channel (entry)
 struct managed_channel_type *entry;
 {
     extern char *sys_errlist[];
-    static char function_name[] = "close_channel";
+    /*static char function_name[] = "close_channel";*/
 
     if ( (*entry).close_func != NULL )
     {
@@ -305,15 +309,15 @@ struct managed_channel_type *entry;
 /*  Public functions follow  */
 
 /*PUBLIC_FUNCTION*/
-void chx_register_app_context (context)
-/*  This routine will register the application context to use for channel
-    management with the Xt toolkit. This must be called before ANY reference is
-    made to any other  chx_  routines (i.e. before passing to
-    conn_register_managers  ).
-    The application context must be given by  context  .
-    The routine returns nothing.
+void chx_register_app_context (XtAppContext context)
+/*  [SUMMARY] Register Xt application context for event management.
+    [PURPOSE] This routine will register the application context to use for
+    channel management with the Xt toolkit. This must be called before ANY
+    reference is made to any other <<chx>> routines (i.e. before passing to
+    [<conn_register_managers>]).
+    <context> The application context.
+    [RETURNS] Nothing.
 */
-XtAppContext context;
 {
     extern XtAppContext app_context;
 
@@ -321,106 +325,20 @@ XtAppContext context;
 }   /*  End Function chx_register_app_context  */
 
 /*PUBLIC_FUNCTION*/
-flag chx_manage (channel, info, input_func, close_func, output_func,
-		 exception_func)
-/*  This routine will manage a channel for activity by registering callback
-    routines.
-    The channel object to manage must be given by  channel  .
-    An arbitrary pointer may associated with the managed channel. This pointer
-    may be modified by the callback routines. The initial value of this pointer
-    must be given by  info  .
-    The routine which is called when new input occurrs on the channel must
-    be pointed to by  input_func  .If this is NULL, no callback routine is
-    installed. The interface to this routine is as follows:
-
-    flag input_func (channel, info)
-    *   This routine is called when new input occurs on a channel.
-        The channel object is given by  channel  .
-	An arbitrary pointer may be written to the storage pointed to by  info
-	The pointer written here will persist until the channel is unmanaged
-	(or a subsequent callback routine changes it).
-	The routine returns TRUE if the channel is to remain managed and
-	open, else it returns FALSE (indicating that the channel is to be
-	unmanaged and closed). This routine MUST NOT unmanage or close the
-	channel given by  channel  .
-	Note that the  close_func  will be called if this routine returns FALSE
-    *
-    Channel channel;
-    void **info;
-
-    The routine which is called when the channel closes must be pointed to by
-    close_func  .If this is NULL, no callback routine is installed. The
-    interface to this routine is as follows:
-
-    void close_func (channel, info)
-    *   This routine is called when a channel closes.
-        The channel object is given by  channel  .The channel object MUST be
-        capable of detecting closure if this routine is supplied (ie. this
-	routine cannot be supplied for dock channels).
-        The arbitrary pointer for the channel will be pointed to by  info  .
-	This routine MUST NOT unmanage the channel pointed to by  channel  ,
-	the channel will be automatically unmanaged and deleted upon closure
-	(even if no close_func is specified).
-	Any unread buffered data in the channel will be lost upon closure. The
-	call to this function is the last chance to read this buffered data.
-	The routine returns nothing.
-    *
-    Channel channel;
-    void *info;
-
-    The routine which is called when the channel becomes ready for output
-    must be pointed to by  output_func  .If this is NULL, no callback routine
-    is installed. The interface to this routine is as follows:
-
-    flag output_func (channel, info)
-    *   This routine is called when a channel becomes ready for writing.
-	The channel object is given by  channel  .
-	An arbitrary pointer may be written to the storage pointed to by  info
-	The pointer written here will persist until the channel is unmanaged
-	(or a subsequent callback routine changes it).
-	The routine returns TRUE if the channel is to remain managed and
-	open, else it returns FALSE (indicating that the channel is to be
-	unmanaged and closed). This routine MUST NOT unmanage or close the
-	channel given by  channel  .
-	Note that the  close_func  will be called if this routine returns FALSE
-    *
-    Channel channel;
-    void **info;
-
-    The routine which is called when exceptions occurr on the channel must
-    be pointed to by  exception_func  .If this is NULL, no callback routine is
-    installed. The interface to this routine is as follows:
-
-    flag exception_func (channel, info)
-    *   This routine is called when an exception occurrs on channel.
-	The channel object is given by  channel  .
-	An arbitrary pointer may be written to the storage pointed to by  info
-	The pointer written here will persist until the channel is unmanaged
-	(or a subsequent callback routine changes it).
-	The routine returns TRUE if the channel is to remain managed and
-	open, else it returns FALSE (indicating that the channel is to be
-	unmanaged and closed). This routine MUST NOT unmanage or close the
-	channel given by  channel  .
-	Note that the  close_func  will be called if this routine returns FALSE
-    *
-    Channel channel;
-    void **info;
-
-    The routine returns TRUE on success, else it returns FALSE.
+flag chx_manage ( Channel channel, void *info, flag (*input_func) (),
+		  void (*close_func) (), flag (*output_func) (),
+		  flag (*exception_func) () )
+/*  [SUMMARY] Manage a channel for activity by registering callback routines.
+    [PURPOSE] This routine will manage a channel for activity by registering
+    callback routines. The Xt Intrinsics event management scheme is used for
+    the underlying management. See [<chm_manage>] for the interface definition.
 */
-Channel channel;
-void *info;
-flag (*input_func) ();
-void (*close_func) ();
-flag (*output_func) ();
-flag (*exception_func) ();
 {
-    int fd_flags;
     int fd;
     XtInputId id;
     struct managed_channel_type *entry;
     struct managed_channel_type *new_entry;
-    struct managed_channel_type *last_entry;
+    struct managed_channel_type *last_entry = NULL;
     extern struct managed_channel_type *managed_channel_list;
     extern XtAppContext app_context;
     extern char *sys_errlist[];
@@ -461,7 +379,7 @@ flag (*exception_func) ();
     {
 	if (channel == (*entry).channel)
 	{
-	    (void) fprintf (stderr, "Channel: %x is already managed\n",
+	    (void) fprintf (stderr, "Channel: %p is already managed\n",
 			    channel);
 	    a_prog_bug (function_name);
 	}
@@ -523,14 +441,13 @@ flag (*exception_func) ();
 }   /*  End Function chx_manage  */
 
 /*PUBLIC_FUNCTION*/
-void chx_unmanage (channel)
-/*  This routine will terminate the management of a channel for activity.
-    The channel to unmanage must be given by  channel  .
-    The routine will NOT close the channel (nor does it assume the channel is
-    open).
-    The routine returns nothing.
+void chx_unmanage (Channel channel)
+/*  [SUMMARY] Terminate the management of a channel for activity.
+    <channel> The channel object to unmanage.
+    [NOTE] This routine will NOT close the channel (nor does it assume the
+    channel is open).
+    [RETURNS] Nothing.
 */
-Channel channel;
 {
     struct managed_channel_type *entry;
     extern struct managed_channel_type *managed_channel_list;
@@ -575,6 +492,6 @@ Channel channel;
 	}
     }
     /*  Channel not found  */
-    (void) fprintf (stderr, "Channel: %x not managed\n", channel);
+    (void) fprintf (stderr, "Channel: %p not managed\n", channel);
     a_prog_bug (function_name);
 }   /*  End Function chx_unmanage  */

@@ -3,7 +3,7 @@
 
     This code provides random number generation routines.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -46,7 +46,10 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/n/misc.c
 
-    Last updated by Richard Gooch   25-JAN-1995: Added #ifdef OS_ConvexOS
+    Updated by      Richard Gooch   25-JAN-1995: Added #ifdef OS_ConvexOS
+
+    Last updated by Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -60,9 +63,10 @@ extern double drand48 ();
 
 /*PUBLIC_FUNCTION*/
 double n_gaussian ()
-/*  This routine will compute a random number with a Gaussian distribution.
-    The mean is 0.0 and the variance is 1.0
-    The routine will return the number.
+/*  [SUMMARY] Compute a random number with Gaussian distribution.
+    [PURPOSE] This routine will compute a random number with a Gaussian
+    distribution. The mean is 0.0 and the variance is 1.0
+    [RETURNS] The number.
 */
 {   
     double val = -6.0;
@@ -74,9 +78,10 @@ double n_gaussian ()
 
 /*PUBLIC_FUNCTION*/
 double n_uniform ()
-/*  This routine will compute a random number with a Uniform distribution.
-    The range is from 0.0 to 1.0
-    The routine will return the number.
+/*  [SUMMARY] Compute a random number with Uniform distribution.
+    [PURPOSE] This routine will compute a random number with a Uniform
+    distribution. The range is from 0.0 to 1.0
+    [RETURNS] The number.
 */
 {   
     struct timeval tv;

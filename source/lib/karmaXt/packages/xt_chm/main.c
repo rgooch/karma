@@ -4,7 +4,7 @@
     This code provides Channel Management routines for the X Intrinsics toolkit
     WARNING: this package will be removed in Karma version 2.0
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -49,8 +49,11 @@
     Updated by      Richard Gooch   1-DEC-1994: Added warning that this
   package will be removed in Karma version 2.0.
 
-    Last updated by Richard Gooch   7-DEC-1994: Stripped declaration of  errno
+    Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
+
+    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -62,6 +65,7 @@
     applies to broken versions of  X11/Intrinsic.h  */
 #include <karma_xt_chm.h>
 #include <karma_ch.h>
+#include <karma_r.h>
 #include <karma_m.h>
 #include <karma_a.h>
 
@@ -105,7 +109,6 @@ int *fd;
 XtInputId *id;
 {
     struct managed_channel_type *entry;
-    char drain_buffer[1];
     extern struct managed_channel_type *managed_channel_list;
     extern char *sys_errlist[];
     static char function_name[] = "xt_input_handler";
@@ -136,7 +139,6 @@ int *fd;
 XtInputId *id;
 {
     struct managed_channel_type *entry;
-    char drain_buffer[1];
     extern struct managed_channel_type *managed_channel_list;
     extern char *sys_errlist[];
     static char function_name[] = "xt_output_handler";
@@ -168,7 +170,6 @@ int *fd;
 XtInputId *id;
 {
     struct managed_channel_type *entry;
-    char drain_buffer[1];
     extern struct managed_channel_type *managed_channel_list;
     extern char *sys_errlist[];
     static char function_name[] = "xt_exception_handler";
@@ -292,7 +293,7 @@ static void close_channel (entry)
 struct managed_channel_type *entry;
 {
     extern char *sys_errlist[];
-    static char function_name[] = "close_channel";
+    /*static char function_name[] = "close_channel";*/
 
     if ( (*entry).close_func != NULL )
     {
@@ -419,12 +420,11 @@ void (*close_func) ();
 flag (*output_func) ();
 flag (*exception_func) ();
 {
-    int fd_flags;
     int fd;
     XtInputId id;
     struct managed_channel_type *entry;
     struct managed_channel_type *new_entry;
-    struct managed_channel_type *last_entry;
+    struct managed_channel_type *last_entry = NULL;
     extern struct managed_channel_type *managed_channel_list;
     extern XtAppContext app_context;
     extern char *sys_errlist[];
@@ -465,7 +465,7 @@ flag (*exception_func) ();
     {
 	if (channel == (*entry).channel)
 	{
-	    (void) fprintf (stderr, "Channel: %x is already managed\n",
+	    (void) fprintf (stderr, "Channel: %p is already managed\n",
 			    channel);
 	    a_prog_bug (function_name);
 	}
@@ -579,6 +579,6 @@ Channel channel;
 	}
     }
     /*  Channel not found  */
-    (void) fprintf (stderr, "Channel: %x not managed\n", channel);
+    (void) fprintf (stderr, "Channel: %p not managed\n", channel);
     a_prog_bug (function_name);
 }   /*  End Function xt_chm_unmanage  */

@@ -1,0 +1,19 @@
+
+$TABLE            KCMAP_ATTRIBUTES
+$COLUMNS          4
+$SUMMARY          List of attributes for Kcolourmap objects
+$TABLE_DATA
+|.Name                    |,Get Type         |,Set Type       |,Meaning
+|.
+|.KCMAP_ATT_END           |,                 |,               |,End of varargs list
+|.KCMAP_ATT_REVERSE       |,flag *           |,flag           |,Reverse pixel order
+|.KCMAP_ATT_INVERT        |,flag *           |,flag           |,Invert intensities
+|.KCMAP_ATT_SOFTWARE      |,flag *           |,               |,Test if software
+|~                        |~                 |~               |~colourmap
+|.KCMAP_ATT_DPY_HANDLE    |,Kdisplay *       |,               |,Get display handle
+|.KCMAP_ATT_DIRECT_VISUAL |,flag *           |,flag           |,Handle colourmap as for
+|~                        |~                 |~               |~a direct visual type
+|.KCMAP_ATT_RED_SCALE     |,unsigned short * |,unsigned short |,Red scale
+|.KCMAP_ATT_GREEN_SCALE   |,unsigned short * |,unsigned short |,Green scale
+|.KCMAP_ATT_BLUE_SCALE    |,unsigned short * |,unsigned short |,Blue scale
+$END

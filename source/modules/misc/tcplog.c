@@ -2,7 +2,7 @@
 
     Source file for  tcplog  (TCP/IP logging facility).
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,7 +29,8 @@
 
     Written by      Richard Gooch   14-AUG-1994
 
-    Last updated by Richard Gooch   14-AUG-1994
+    Last updated by Richard Gooch   1-JUN-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -61,13 +62,10 @@ static char *remote_spec = NULL;
 static Channel txlog = NULL;
 static Channel rxlog = NULL;
 
-void main (argc, argv)
-int argc;
-char **argv;
+int main (int argc, char **argv)
 {
-    Channel channel, *port;
+    Channel *port;
     int req_port;
-    char ch;
     unsigned int dock_count;
     unsigned int num_docks;
     unsigned int allocated_port;
@@ -124,7 +122,7 @@ char **argv;
 	exit (RV_CANNOT_OPEN);
     }
     while (TRUE) chm_poll (-1);
-}
+}   /*  End Function main  */
 
 static flag dock_input_func (Channel dock, void **info)
 /*   This routine is called when new input occurs on a dock channel (ie. there
@@ -274,7 +272,7 @@ static void close_func (Channel channel, void *info)
 */
 {
     struct conn_info_type *con;
-    static char function_name[] = "close_func";
+    /*static char function_name[] = "close_func";*/
 
     con = (struct conn_info_type *) info;
     chm_unmanage ( (*con).other );

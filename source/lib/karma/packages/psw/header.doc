@@ -1,0 +1,3 @@
+$SUMMARY          Routines to write PostScript
+$PURPOSE
+    These routines provide PostScript generation facilities.

@@ -1,87 +1,130 @@
-/*  Link with:    -lkarmaX11  */
-/*  This file describes the xc_ package of routines in the Karma library.
-
+$PACKAGE          xc
+$SUMMARY          Routines to manipulate X displays and colourmaps
+$PURPOSE
     These routines are meant to provide an abstracted interface to X displays
-    and colourmaps, used in the  kclrmap_  routines.
+    and colourmaps, used in the <-kcmap-> routines.
+$LIBRARY          karmaX11
+$LINKWITH         -lkarmaX11
+$END
 
+$FUNCTION         xc_get_dpy_handle
+$RETURN_TYPE      Kdisplay
+$PARAMETER_LIST
+    (Display *display, Colormap cmap)
+$SUMMARY          Generate a display handle for later use.
+$PURPOSE
+    Generate a display handle for later use.
+$PARAMETER        display :
+    The X display.
+$PARAMETER        cmap :
+    The X colourmap ID.
+$RETURNS
+    A pointer to the display handle on success, else NULL.
+$END
 
-    Written by		Richard Gooch	5-Dec-1995
-
-    Last updated by	Richard Gooch	5-Dec-1995
-
-
-*/
-
-Kdisplay xc_get_dpy_handle (Display *display, Colormap cmap)
-/*  [PURPOSE] This routine will generate a display handle for later use.
-    <display> The X display.
-    <cmap> The X colourmap ID.
-    [RETURNS] A pointer to the display handle on success, else NULL.
-*/
-/*---------------------------------------------------------------------------*/
-
-unsigned int xc_alloc_colours (unsigned int num_cells,
+$FUNCTION         xc_alloc_colours
+$RETURN_TYPE      unsigned int
+$PARAMETER_LIST
+    (unsigned int num_cells,
 			       unsigned long *pixel_values,
 			       unsigned int min_cells, Kdisplay dpy_handle)
-/*  [PURPOSE] This routine will allocate a number of colourcells in a low level
-    colourmap (eg. using the Xlib routine XAllocColorCells).
-    <num_cells> The number of colourcells to allocate.
-    <pixel_values> A pointer to the array where the pixel values allocated will
+$SUMMARY          Allocate colourcells.
+$PURPOSE
+    This routine will allocate a number of colourcells in a low level
+    colourmap (e.g. using the Xlib routine XAllocColorCells).
+$PARAMETER        num_cells :
+    The number of colourcells to allocate.
+$PARAMETER        pixel_values :
+    A pointer to the array where the pixel values allocated will
     be written.
-    <min_cells> The minimum number of colourcells to allocate. The routine will
+$PARAMETER        min_cells :
+    The minimum number of colourcells to allocate. The routine will
     try to allocate at least this number of colourcells.
-    <dpy_handle> The low level display handle. The meaning of this value
+$PARAMETER        dpy_handle :
+    The low level display handle. The meaning of this value
     depends on the lower level graphics library used.
-    [RETURNS] The number of colourcells allocated.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    The number of colourcells allocated.
+$END
 
-void xc_free_colours (unsigned int num_cells, unsigned long *pixel_values,
+$FUNCTION         xc_free_colours
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (unsigned int num_cells, unsigned long *pixel_values,
 		      Kdisplay dpy_handle)
-/*  [PURPOSE] This routine will free a number of colourcells in a low level
-    colourmap.
-    <num_cells> The number of colourcells to free.
-    <pixel_values> The array of pixel values (colourcells) to free.
-    <dpy_handle> The low level display handle. The meaning of this value
+$SUMMARY          Free a number of colourcells in a low level colourmap.
+$PURPOSE
+    Free a number of colourcells in a low level colourmap.
+$PARAMETER        num_cells :
+    The number of colourcells to free.
+$PARAMETER        pixel_values :
+    The array of pixel values (colourcells) to free.
+$PARAMETER        dpy_handle :
+    The low level display handle. The meaning of this value
     depends on the lower level graphics library used.
-    [RETURNS] Nothing.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    Nothing.
+$END
 
-void xc_store_colours (unsigned int num_cells, unsigned long *pixel_values,
+$FUNCTION         xc_store_colours
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (unsigned int num_cells, unsigned long *pixel_values,
 		       unsigned short *reds, unsigned short *greens,
 		       unsigned short *blues, unsigned int stride,
 		       Kdisplay dpy_handle)
-/*  [PURPOSE] This routine will store colours into a low level colourmap.
-    <num_cells> The number of colourcells to store.
-    <pixel_values> The array of pixel values.
-    <reds> The array of red intensity values.
-    <greens> The array of green intensity values.
-    <blues> The array of blue intensity values.
-    <stride> The stride (in unsigned shorts) between intensity values in each
+$SUMMARY          Store colours into a low level colourmap.
+$PURPOSE
+    Store colours into a low level colourmap.
+$PARAMETER        num_cells :
+    The number of colourcells to store.
+$PARAMETER        pixel_values :
+    The array of pixel values.
+$PARAMETER        reds :
+    The array of red intensity values.
+$PARAMETER        greens :
+    The array of green intensity values.
+$PARAMETER        blues :
+    The array of blue intensity values.
+$PARAMETER        stride :
+    The stride (in unsigned shorts) between intensity values in each
     array.
-    <dpy_handle> The low level display handle. The meaning of this value
+$PARAMETER        dpy_handle :
+    The low level display handle. The meaning of this value
     depends on the lower level graphics library used.
-    [RETURNS] Nothing.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    Nothing.
+$END
 
-void xc_get_location (Kdisplay dpy_handle, unsigned long *serv_hostaddr,
+$FUNCTION         xc_get_location
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (Kdisplay dpy_handle, unsigned long *serv_hostaddr,
 		      unsigned long *serv_display_num)
-/*  [PURPOSE] This routine will determine the location of the graphics display
-    being used.
-    <dpy_handle> The low level display handle. The meaning of this value
+$SUMMARY          Determine the location of the graphics display being used.
+$PURPOSE
+    Determine the location of the graphics display being used.
+$PARAMETER        dpy_handle :
+    The low level display handle. The meaning of this value
     depends on the lower level graphics library used.
-    <serv_hostaddr> The Internet address of the host on which the display is
+$PARAMETER        serv_hostaddr :
+    The Internet address of the host on which the display is
     running will be written here.
-    <serv_display_num> The number of the display will be written here.
-    [RETURNS] Nothing.
-*/
-/*---------------------------------------------------------------------------*/
+$PARAMETER        serv_display_num :
+    The number of the display will be written here.
+$RETURNS
+    Nothing.
+$END
 
-Colormap xc_get_cmap (Kdisplay dpy_handle)
-/*  [PURPOSE] This routine will get the X11 colourmap for a display handle.
-    <dpy_handle> The display handle.
-    [RETURNS] The X11 colourmap.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         xc_get_cmap
+$RETURN_TYPE      Colormap
+$PARAMETER_LIST
+    (Kdisplay dpy_handle)
+$SUMMARY          Get the X11 colourmap for a display handle.
+$PURPOSE
+    Get the X11 colourmap for a display handle.
+$PARAMETER        dpy_handle :
+    The display handle.
+$RETURNS
+    The X11 colourmap.
+$END

@@ -29,7 +29,8 @@
 
     Written by      Richard Gooch   24-JAN-1996
 
-    Last updated by Richard Gooch   24-JAN-1996
+    Last updated by Richard Gooch   30-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -45,6 +46,8 @@
 #include <karma_ex.h>
 #include <karma_m.h>
 #include <karma_n.h>
+#include <karma_a.h>
+
 
 #define VERSION "1.0"
 
@@ -83,9 +86,7 @@ static char *distribution_comments[NUM_DISTRIBUTIONS] =
 };
 static unsigned int distribution = DISTRIBUTION_UNIFORM;
 
-main (argc, argv)
-int argc;
-char **argv;
+int main (int argc, char **argv)
 {
     KControlPanel panel, group;
     extern char *data_type_names[];
@@ -177,7 +178,7 @@ FILE *fp;
     return (TRUE);
 }   /*  End Function knoise  */
 
-void generate_file (char *arrayname, unsigned int elem_type)
+static void generate_file (char *arrayname, unsigned int elem_type)
 /*  This routine will generate a Karma arrayfile with a multi-dimensional array
     of a single atomic element.
     The name of the Karma arrayfile must be pointed to by  arrayname  .
@@ -188,7 +189,7 @@ void generate_file (char *arrayname, unsigned int elem_type)
     unsigned int array_size;
     unsigned int elem_count;
     unsigned int dim_count;
-    double factor;
+    double factor = 0.0;  /*  Initialised to keep compiler happy  */
     double value[2];
     char *array;
     multi_array *multi_desc;
@@ -201,7 +202,6 @@ void generate_file (char *arrayname, unsigned int elem_type)
     extern double maxima[MAX_DIMENSIONS];
     extern char *names[MAX_DIMENSIONS];
     extern char *elem_name;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "generate_file";
 
@@ -212,7 +212,7 @@ void generate_file (char *arrayname, unsigned int elem_type)
 	if (lengths[dim_count] < 1)
 	{
 	    (void) fprintf (stderr,
-			    "Dimension: %u has length: %d: must be greater than 0\n",
+			    "Dimension: %u has length: %lu: must be greater than 0\n",
 			    dim_count, lengths[dim_count]);
 	    return;
 	}
@@ -220,7 +220,8 @@ void generate_file (char *arrayname, unsigned int elem_type)
     }
     if ( ( array = ds_easy_alloc_array (&multi_desc,
 					(unsigned int) num_dimensions,
-					lengths, minima, maxima, names,
+					lengths, minima, maxima,
+					(CONST char **) names,
 					elem_type, elem_name) )
 	== NULL )
     {

@@ -3,7 +3,7 @@
 
     This code provides high level connection control/ management routines.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -131,8 +131,14 @@
     Updated by      Richard Gooch   10-AUG-1995: Removed printing of error
   message in <conn_attempt_connection> if raw connection failed.
 
-    Last updated by Richard Gooch   30-NOV-1995: Changed from call to <_exit>
+    Updated by      Richard Gooch   30-NOV-1995: Changed from call to <_exit>
   to call to <exit> in <cm_close_func> for IRIX sproc() problems.
+
+    Updated by      Richard Gooch   7-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   3-JUN-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -354,29 +360,893 @@ STATIC_FUNCTION (flag client_connection_input_func,
 STATIC_FUNCTION (void connection_close_func, (Channel channel, void *info) );
 STATIC_FUNCTION (void dealloc_connection, (Connection connection) );
 STATIC_FUNCTION (struct serv_protocol_list_type *get_serv_protocol_info,
-		 (char *protocol_name) );
+		 (CONST char *protocol_name) );
 STATIC_FUNCTION (struct client_protocol_list_type *get_client_protocol_info,
-		 (char *protocol_name) );
+		 (CONST char *protocol_name) );
 STATIC_FUNCTION (struct auth_password_list_type *get_authinfo,
-		 (char *protocol) );
-STATIC_FUNCTION (struct auth_password_list_type *get_password_list, () );
+		 (CONST char *protocol) );
+STATIC_FUNCTION (struct auth_password_list_type *get_password_list, (void) );
 STATIC_FUNCTION (void convert_password_to_bin,
 		 (unsigned char *binpassword, CONST char *asciipassword) );
 #ifdef dummy
-static flag check_host_access ();
+static flag check_host_access (void);
 #endif
-STATIC_FUNCTION (char *write_protocol, (Channel channel, char *protocol_name,
-					unsigned int version) );
-static flag respond_to_ping_server_from_client ();
-static flag register_server_exit ();
-static Connection get_numbered_connection ();
-static flag cm_command_func ();
-static void cm_close_func ();
-STATIC_FUNCTION (void setup_prng, () );
+STATIC_FUNCTION (char *write_protocol,
+		 (Channel channel, CONST char *protocol_name,
+		  unsigned int version) );
+STATIC_FUNCTION (flag respond_to_ping_server_from_client,
+		 (Connection connection, void **info) );
+STATIC_FUNCTION (flag register_server_exit,
+		 (Connection connection, void **info) );
+STATIC_FUNCTION (Connection get_numbered_connection,
+		 (CONST char *protocol_name, unsigned int number,
+		  Connection list) );
+STATIC_FUNCTION (void attempt_connection_to_cm, (void) );
+STATIC_FUNCTION (flag cm_command_func, (Channel channel, void **info) );
+STATIC_FUNCTION (void cm_close_func, (Channel channel, void *info) );
+STATIC_FUNCTION (void setup_prng, (void) );
 STATIC_FUNCTION (void randpool_destroy_func, (RandPool rp, void *info) );
 STATIC_FUNCTION (ChConverter get_encryption,
 		 (Channel channel, struct auth_password_list_type *authinfo,
 		  flag server, char *rand_block) );
+
+
+/*  Public functions follow  */
+
+/*PUBLIC_FUNCTION*/
+void conn_register_managers ( flag (*manage_func) (), void (*unmanage_func) (),
+			      void (*exit_schedule_func) () )
+/*  [SUMMARY] Register the channel management functions.
+    [NOTE] This routine MUST be called prior to the [<conn_become_server>]
+    routine.
+    See the [<chm>] package for information on channel management.
+    <manage_func> The routine to manage channels. See the [<chm_manage>]
+    routine for the interface definition.
+    <unmanage_func> The routine to unmanage channels. See the [<chm_unmanage>]
+    routine for the interface definition.
+    <exit_shedule_func> The routine which should be called when a clean exit is
+    to be scheduled. The prototype function is
+    [<CONN_PROTO_exit_schedule_func>].
+    If this is NULL, then exit(3) is called instead.
+    [RETURNS] Nothing.
+*/
+{
+    extern flag (*manage_channel) ();
+    extern void (*unmanage_channel) ();
+    extern void (*exit_schedule_function) ();
+    static char function_name[] = "conn_register_managers";
+
+    if ( (manage_channel != NULL) || (unmanage_channel != NULL) )
+    {
+	(void) fprintf (stderr, "Channel managers already registered\n");
+	a_prog_bug (function_name);
+    }
+    manage_channel = manage_func;
+    unmanage_channel = unmanage_func;
+    exit_schedule_function = exit_schedule_func;
+    attempt_connection_to_cm ();
+    (void) get_password_list ();
+}   /*  End Function conn_register_managers  */
+
+/*PUBLIC_FUNCTION*/
+void conn_register_server_protocol ( CONST char *protocol_name,
+				     unsigned int version,
+				     unsigned int max_connections,
+				     flag (*open_func) (),
+				     flag (*read_func) (),
+				     void (*close_func) () )
+/*  [SUMMARY] Register server protocol support.
+    [PURPOSE] This routine will register the support of a new Karma protocol
+    for the Karma ports which are being managed by the various routines in the
+    [<conn>] package. This routine may be called at any time.
+    <protocol_name> The name of the new protocol to support. Note that this is
+    only for incoming connections.
+    <version> The version number for the protocol. When any changes to the
+    protocol are made, this should be increased.
+    <max_connections> The maximum number of incoming connections to this server
+    If this is 0, an unlimited number of connections is permitted.
+    <open_func> The routine which is called when a new connection is opened.
+    The prototype function is [<CONN_PROTO_open_func>].
+    <read_func> The function which will be called when data is ready to be read
+    data from the connection. The prototype function is
+    [<CONN_PROTO_read_func>].
+    <close_func> The function which will be called prior to closure of a
+    connection. The prototype function is [<CONN_PROTO_close_func>].
+    [RETURNS] Nothing.
+*/
+{
+    struct serv_protocol_list_type *entry;
+    struct serv_protocol_list_type *last_entry;
+    extern struct serv_protocol_list_type *serv_protocol_list;
+    static char function_name[] = "conn_register_server_protocol";
+
+    if ( (int) strlen (protocol_name) >= PROTOCOL_NAME_LENGTH )
+    {
+	(void) fprintf (stderr,
+			"Protocol name: \"%s\" too long. Max: %u characters\n",
+			protocol_name, PROTOCOL_NAME_LENGTH);
+	a_prog_bug (function_name);
+    }
+    /*  Test if protocol already supported  */
+    if (get_serv_protocol_info (protocol_name) != NULL)
+    {
+	/*  Already supported: error  */
+	(void) fprintf (stderr, "Protocol: \"%s\" already supported\n",
+			protocol_name);
+	a_prog_bug (function_name);
+    }
+    /*  Allocate new entry  */
+    if ( ( entry = (struct serv_protocol_list_type *) m_alloc (sizeof *entry) )
+	== NULL )
+    {
+	m_abort (function_name, "new protocol list entry");
+    }
+    if ( ( entry->protocol_name = st_dup (protocol_name) ) == NULL )
+    {
+	m_abort (function_name, "protocol name");
+    }
+    entry->version = version;
+    entry->max_connections = max_connections;
+    entry->connection_count = 0;
+    entry->open_func = open_func;
+    entry->read_func = read_func;
+    entry->close_func = close_func;
+    entry->authorised_hosts = NULL;
+    entry->next = NULL;
+    if (serv_protocol_list == NULL)
+    {
+	/*  Create protocol list  */
+	serv_protocol_list = entry;
+    }
+    else
+    {
+	/*  Append entry to protocol list  */
+	for (last_entry = serv_protocol_list; last_entry->next != NULL;
+	     last_entry = last_entry->next);
+	last_entry->next = entry;
+    }
+    return;
+}   /*  End Function conn_register_server_protocol  */
+
+/*PUBLIC_FUNCTION*/
+void conn_register_client_protocol ( CONST char *protocol_name,
+				     unsigned int version,
+				     unsigned int max_connections,
+				     flag (*validate_func) (),
+				     flag (*open_func) (),
+				     flag (*read_func) (),
+				     void (*close_func) () )
+/*  [SUMMARY] Register client protocol support.
+    [PURPOSE] This routine will register the support of a new Karma protocol
+    for outgoing (client) connections. This routine may be called at any time.
+    <protocol_name> The name of the new protocol to support. Note that this is
+    only for outgoing connections.
+    <version> The version number for the protocol. When any changes to the
+    protocol are made, this should be increased.
+    <max_connections> The maximum number of outgoing connections from this
+    client. If this is 0, an unlimited number of connections is permitted.
+    <validate_func> The function which will validate the opening of a new
+    connection (prior to any attempts to connect to the server). The prototype
+    function is [<CONN_PROTO_client_validate_func>].
+    <open_func> The routine which is called when a new connection is opened.
+    The prototype function is [<CONN_PROTO_open_func>].
+    <read_func> The function which will be called when data is ready to be read
+    data from the connection. The prototype function is
+    [<CONN_PROTO_read_func>].
+    <close_func> The function which will be called prior to closure of a
+    connection. The prototype function is [<CONN_PROTO_close_func>].
+    [RETURNS] Nothing.
+*/
+{
+    struct client_protocol_list_type *entry;
+    struct client_protocol_list_type *last_entry;
+    extern struct client_protocol_list_type *client_protocol_list;
+    static char function_name[] = "conn_register_client_protocol";
+
+    if ( (int) strlen (protocol_name) >= PROTOCOL_NAME_LENGTH )
+    {
+	(void) fprintf (stderr,
+			"Protocol name: \"%s\" too long. Max: %u characters\n",
+			protocol_name, PROTOCOL_NAME_LENGTH);
+	a_prog_bug (function_name);
+    }
+    if (strcmp (protocol_name, "conn_mngr_control") == 0)
+    {
+	(void) fprintf (stderr, "Client protocol: \"%s\" reserved\n",
+			protocol_name);
+	a_prog_bug (function_name);
+    }
+    /*  Test if protocol already supported  */
+    if (get_client_protocol_info (protocol_name) != NULL)
+    {
+	/*  Already supported: error  */
+	(void) fprintf (stderr, "Protocol: \"%s\" already supported\n",
+			protocol_name);
+	a_prog_bug (function_name);
+    }
+    /*  Allocate new entry  */
+    if ( ( entry = (struct client_protocol_list_type *)
+	  m_alloc (sizeof *entry) )
+	== NULL )
+    {
+	m_abort (function_name, "new protocol list entry");
+    }
+    if ( ( entry->protocol_name = st_dup (protocol_name) ) == NULL )
+    {
+	m_abort (function_name, "protocol name");
+    }
+    entry->version = version;
+    entry->max_connections = max_connections;
+    entry->connection_count = 0;
+    entry->validate_func = validate_func;
+    entry->open_func = open_func;
+    entry->read_func = read_func;
+    entry->close_func = close_func;
+    entry->next = NULL;
+    if (client_protocol_list == NULL)
+    {
+	/*  Create protocol list  */
+	client_protocol_list = entry;
+    }
+    else
+    {
+	/*  Append entry to protocol list  */
+	for (last_entry = client_protocol_list; last_entry->next != NULL;
+	     last_entry = last_entry->next);
+	last_entry->next = entry;
+    }
+    return;
+}   /*  End Function conn_register_client_protocol  */
+
+/*PUBLIC_FUNCTION*/
+Channel conn_get_channel (Connection connection)
+/*  [SUMMARY] Extract the channel object associated with a connection.
+    <connection> The connection object.
+    [RETURNS] The channel object.
+*/
+{
+    static char function_name[] = "conn_get_channel";
+
+    VERIFY_CONNECTION (connection);
+    return ( connection->channel );
+}   /*  End Function conn_get_channel  */
+
+/*PUBLIC_FUNCTION*/
+flag conn_attempt_connection (CONST char *hostname, unsigned int port_number,
+			      CONST char *protocol_name)
+/*  [SUMMARY] Attempt connection.
+    [PURPOSE] This routine will attempt to make a connection to a server. The
+    routine always makes a connection using the most efficient transport layer
+    available.
+    <hostname> The hostname of the machine on which the server is running.
+    <port_number> The Karma port number to connect to.
+    <protocol_name> The protocol to connect with.
+    [RETURNS] TRUE if the connection was successful, else FALSE.
+    [NOTE] The appropriate callback functions registered with
+    [<conn_register_client_protocol>] will be called.
+*/
+{
+    flag local;
+    int bytes;
+    unsigned long host_addr;
+    Connection new_connection;
+    Connection last_entry;
+    Channel channel;
+    void *info = NULL;
+    struct client_protocol_list_type *protocol_info;
+    extern Channel cm_channel;
+    extern Connection client_connections;
+    extern struct client_protocol_list_type *client_protocol_list;
+    extern flag (*manage_channel) ();
+    extern void (*unmanage_channel) ();
+    extern char *sys_errlist[];
+    static char function_name[] = "conn_attempt_connection";
+
+    if ( (int) strlen (protocol_name) >= PROTOCOL_NAME_LENGTH )
+    {
+	(void) fprintf (stderr,
+			"Protocol name: \"%s\" too long. Max: %u characters\n",
+			protocol_name, PROTOCOL_NAME_LENGTH);
+	a_prog_bug (function_name);
+    }
+    if (manage_channel == NULL)
+    {
+	(void) fprintf (stderr, "Channel managers not registered\n");
+	a_prog_bug (function_name);
+    }
+    if (strcmp (protocol_name, "conn_mngr_control") == 0)
+    {
+	(void) fprintf (stderr, "Client protocol: \"%s\" reserved\n",
+			protocol_name);
+	a_prog_bug (function_name);
+    }
+    if (strcmp (protocol_name, "conn_mngr_stdio") == 0)
+    {
+	(void) fprintf (stderr, "Client protocol: \"%s\" reserved\n",
+			protocol_name);
+	a_prog_bug (function_name);
+    }
+    if ( ( host_addr = r_get_inet_addr_from_host (hostname, &local) ) == 0 )
+    {
+	(void) fprintf (stderr, "Error getting host address for: \"%s\"\n",
+			hostname);
+	return (FALSE);
+    }
+    if (local)
+    {
+	host_addr = 0;
+    }
+    if ( ( protocol_info = get_client_protocol_info (protocol_name) ) == NULL )
+    {
+	(void) fprintf (stderr, "Protocol: \"%s\" not supported\n",
+			protocol_name);
+	return (FALSE);
+    }
+    if ( (protocol_info->max_connections > 0) &&
+	(protocol_info->connection_count >= protocol_info->max_connections) )
+    {
+	(void) fprintf (stderr,
+			"Maximum number of client connections reached for protocol: \"%s\"\n",
+			protocol_name);
+	return (FALSE);
+    }
+    /*  Validate  */
+    if (protocol_info->validate_func != NULL)
+    {
+	if ( !(*protocol_info->validate_func) (&info) )
+	{
+	    return (FALSE);
+	}
+    }
+    if ( ( new_connection = (Connection) m_alloc (sizeof *new_connection) )
+	== NULL )
+    {
+	m_error_notify (function_name, "new connection object");
+	return (FALSE);
+    }
+    new_connection->client = TRUE;
+    new_connection->protocol_name = protocol_info->protocol_name;
+    new_connection->connection_count = &protocol_info->connection_count;
+    new_connection->read_func = protocol_info->read_func;
+    new_connection->close_func = protocol_info->close_func;
+    new_connection->info = info;
+    new_connection->prev = NULL;
+    new_connection->next = NULL;
+    new_connection->list_start = &client_connections;
+    /*  Open connection  */
+    if ( ( channel = ch_open_connection (host_addr, port_number) ) == NULL )
+    {
+	m_free ( (char *) new_connection );
+	return (FALSE);
+    }
+    new_connection->channel = channel;
+    /*  Send protocol info  */
+    if ( ( new_connection->module_name =
+	  write_protocol (channel, protocol_name,
+			  protocol_info->version) ) == NULL )
+    {
+	(void) fprintf (stderr, "Error writing authentication information\n");
+	(void) ch_close (channel);
+	m_free ( (char *) new_connection );
+	return (FALSE);
+    }
+    if ( !(*manage_channel) (channel, (void *) new_connection,
+			     client_connection_input_func,
+			     connection_close_func,
+			     ( flag (*) () ) NULL,
+			     ( flag (*) () ) NULL ) )
+    {
+	(void) ch_close (channel);
+	m_free ( (char *) new_connection );
+	a_func_abort (function_name, "Could not manage channel");
+	return (FALSE);
+    }
+    ++*new_connection->connection_count;
+    new_connection->magic_number = OBJECT_MAGIC_NUMBER;
+    if (protocol_info->open_func != NULL)
+    {
+	if ( !(*protocol_info->open_func) (new_connection,
+					   &new_connection->info) )
+	{
+	    (*unmanage_channel) (channel);
+	    (void) ch_close (channel);
+	    --*new_connection->connection_count;
+	    new_connection->magic_number = 0;
+	    m_free ( (char *) new_connection );
+	    return (FALSE);
+	}
+    }
+    /*  Append connection to list  */
+    if (client_connections == NULL)
+    {
+	/*  No list yet  */
+	client_connections = new_connection;
+    }
+    else
+    {
+	/*  Search for end of list  */
+	for (last_entry = client_connections; last_entry->next != NULL;
+	     last_entry = last_entry->next);
+	/*  Append entry  */
+	last_entry->next = new_connection;
+	new_connection->prev = last_entry;
+    }
+    /*  Drain any input on new connection  */
+    if ( ( bytes = ch_get_bytes_readable (channel) ) < 0 )
+    {
+	(void) exit (RV_SYS_ERROR);
+    }
+    if (bytes > 0)
+    {
+	if (new_connection->read_func == NULL)
+	{
+	    (void) fprintf (stderr,
+			    "Input on new connection not being read\n");
+	    a_prog_bug (function_name);
+	}
+	if ( !client_connection_input_func (channel,
+					    (void **) &new_connection) )
+	{
+	    dealloc_connection (new_connection);
+	    (*unmanage_channel) (channel);
+	    (void) ch_close (channel);
+	    return (FALSE);
+	}
+    }
+    if (cm_channel != NULL)
+    {
+	/*  Connected to Connection Management tool  */
+	if ( !pio_write32 (cm_channel, CM_LIB_NEW_CONNECTION) )
+	{
+	    (void) fprintf (stderr, "Error writing command value\t%s\n",
+			    sys_errlist[errno]);
+	    exit (RV_WRITE_ERROR);
+	}
+	if ( !pio_write_string (cm_channel, protocol_name) )
+	{
+	    (void) fprintf (stderr, "Error writing protocol name\t%s\n",
+			    sys_errlist[errno]);
+	    exit (RV_WRITE_ERROR);
+	}
+	if ( !pio_write32 (cm_channel, host_addr) )
+	{
+	    (void) fprintf (stderr,
+			    "Error writing host Internet address\t%s\n",
+			    sys_errlist[errno]);
+	    exit (RV_WRITE_ERROR);
+	}
+	if ( !pio_write32 (cm_channel, (unsigned long) port_number) )
+	{
+	    (void) fprintf (stderr, "Error writing port number\t%s\n",
+			    sys_errlist[errno]);
+	    exit (RV_WRITE_ERROR);
+	}
+	if ( !pio_write32 (cm_channel,
+			   (unsigned long) new_connection & 0xffffffff) )
+	{
+	    (void) fprintf (stderr, "Error writing Connection ID\t%s\n",
+			    sys_errlist[errno]);
+	    exit (RV_WRITE_ERROR);
+	}
+	if ( !ch_flush (cm_channel) )
+	{
+	    (void) fprintf (stderr, "Error flushing channel\t%s\n",
+			    sys_errlist[errno]);
+	    exit (RV_WRITE_ERROR);
+	}
+    }
+    return (TRUE);
+}   /*  End Function conn_attempt_connection  */
+
+/*PUBLIC_FUNCTION*/
+flag conn_close (Connection connection)
+/*  [SUMMARY] Close connection.
+    [PURPOSE] This routine will close a connection. This will cause the closure
+    callback routine registered to be executed.
+    <connection> The connection object.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    Channel channel;
+    extern void (*unmanage_channel) ();
+    static char function_name[] = "conn_close";
+
+    VERIFY_CONNECTION (connection);
+    if (unmanage_channel == NULL)
+    {
+	(void) fprintf (stderr, "Channel managers not registered\n");
+	a_prog_bug (function_name);
+    }
+    channel = connection->channel;
+    dealloc_connection (connection);
+    (*unmanage_channel) (channel);
+    return ( ch_close (channel) );
+}   /*  End Function conn_close  */
+
+/*PUBLIC_FUNCTION*/
+flag conn_become_server (unsigned int *port_number, unsigned int retries)
+/*  [SUMMARY] Become a Karma server.
+    [PURPOSE] This routine will allocate a Karma port for the module so that it
+    can operate as a server (able to receive network connections).
+    <port_number> The port number to allocate. The routine will write the
+    actual port number allocated to this address. This must point to an address
+    which lies on an <<int>> boundary.
+    <retries> The number of succsessive port numbers to attempt to allocate
+    before giving up. If this is 0, then the routine will give up immediately
+    if the specified port number is in use.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    unsigned int num_docks;
+    unsigned int dock_count;
+    flag return_value = FALSE;
+    Channel *port;
+    extern Channel cm_channel;
+    extern flag ran_become_server;
+    extern flag (*manage_channel) ();
+    extern char *sys_errlist[];
+    static char function_name[] = "conn_become_server";
+
+    if (manage_channel == NULL)
+    {
+	(void) fprintf (stderr, "Channel managers not registered\n");
+	a_prog_bug (function_name);
+    }
+    if (!ran_become_server)
+    {
+	/*  Set up internal protocol support  */
+	conn_register_server_protocol ("ping_server", 0, 0,
+				       ( flag (*) () ) NULL,
+				       respond_to_ping_server_from_client,
+				       ( void (*) () ) NULL);
+	conn_register_server_protocol ("server_exit", 0, 1,
+				       register_server_exit,
+				       ( flag (*) () ) NULL,
+				       ( void (*) () ) NULL);
+	ran_become_server = TRUE;
+    }
+    if ( ( port = ch_alloc_port (port_number, retries, &num_docks) ) == NULL )
+    {
+	a_func_abort (function_name, "Error becoming server");
+	return (FALSE);
+    }
+    for (dock_count = 0; dock_count < num_docks; ++dock_count)
+    {
+	if ( !(*manage_channel) (port[dock_count], (void *) NULL,
+				 dock_input_func,
+				 ( void (*) () ) NULL,
+				 ( flag (*) () ) NULL,
+				 ( flag (*) () ) NULL) )
+	{
+	    (void) fprintf (stderr, "Error managing dock: %u\n", dock_count);
+	    (void) ch_close (port[dock_count]);
+	}
+	else
+	{
+	    /*  At least one dock was managed: call this success  */
+	    return_value = TRUE;
+	}
+    }
+    m_free ( (char *) port );
+    if ( return_value && (cm_channel != NULL) )
+    {
+	/*  Have a dock and are connected to Connection Management tool  */
+	if ( !pio_write32 (cm_channel, CM_LIB_PORT_NUMBER) )
+	{
+	    (void) fprintf (stderr, "Error writing command value\t%s\n",
+			    sys_errlist[errno]);
+	    exit (RV_WRITE_ERROR);
+	}
+	if ( !pio_write32 (cm_channel, (unsigned long) *port_number) )
+	{
+	    (void) fprintf (stderr, "Error writing port number\t%s\n",
+			    sys_errlist[errno]);
+	    exit (RV_WRITE_ERROR);
+	}
+	if ( !ch_flush (cm_channel) )
+	{
+	    (void) fprintf (stderr, "Error flushing channel\t%s\n",
+			    sys_errlist[errno]);
+	    exit (RV_WRITE_ERROR);
+	}
+    }
+    return (return_value);
+}   /*  End Function conn_become_server  */
+
+/*PUBLIC_FUNCTION*/
+unsigned int conn_get_num_serv_connections (CONST char *protocol_name)
+/*  [SUMMARY] Get number of server connections.
+    [PURPOSE] This routine will get the number of connections to the server
+    with a specified protocol.
+    <protocol_name> The protocol name.
+    [RETURNS] The number of current connections. A return value of 0 indicates
+    that the protocol is not supported or there are no current connections.
+*/
+{
+    struct serv_protocol_list_type *serv_protocol_info;
+/*
+    static char function_name[] = "conn_get_num_serv_connections";
+*/
+
+    if ( ( serv_protocol_info = get_serv_protocol_info (protocol_name) )
+	== NULL )
+    {
+	/*  Protocol is not supported  */
+	return (0);
+    }
+    return ( (*serv_protocol_info).connection_count );
+}   /*  End Function conn_get_num_serv_connections  */
+
+/*PUBLIC_FUNCTION*/
+unsigned int conn_get_num_client_connections (CONST char *protocol_name)
+/*  [SUMMARY] Get number of client connections.
+    [PURPOSE] This routine will get the number of connections from the client
+    with a specified protocol.
+    <protocol_name> The protocol name.
+    [RETURNS] The number of current connections. A return value of 0 indicates
+    that the protocol is not supported or there are no current connections.
+*/
+{
+    struct client_protocol_list_type *client_protocol_info;
+/*
+    static char function_name[] = "conn_get_num_client_connections";
+*/
+
+    if ( ( client_protocol_info = get_client_protocol_info (protocol_name) )
+	== NULL )
+    {
+	/*  Protocol is not supported  */
+	return (0);
+    }
+    return ( (*client_protocol_info).connection_count );
+}   /*  End Function conn_get_num_client_connections  */
+
+/*PUBLIC_FUNCTION*/
+Connection conn_get_serv_connection (CONST char *protocol_name,
+				     unsigned int number)
+/*  [SUMMARY] Get a numbered server connection.
+    [PURPOSE] This routine will get Nth connection to the server with a
+    specified protocol. The first connection is numbered 0.
+    <protocol_name> The protocol name.
+    <number> The number of the connection to get.
+    [RETURNS] The connection object on success, else NULL.
+*/
+{
+    extern Connection serv_connections;
+
+    return ( get_numbered_connection (protocol_name, number,
+				      serv_connections) );
+}   /*  End Function conn_get_serv_connection  */
+
+/*PUBLIC_FUNCTION*/
+Connection conn_get_client_connection (CONST char *protocol_name,
+				       unsigned int number)
+/*  [SUMMARY] Get a numbered client connection.
+    [PURPOSE] This routine will get Nth connection from the client with a
+    specified protocol. The first connection is numbered 0.
+    <protocol_name> The protocol name.
+    <number> The number of the connection to get.
+    [RETURNS] The connection object on success, else NULL.
+*/
+{
+    extern Connection client_connections;
+
+    return ( get_numbered_connection (protocol_name, number,
+				      client_connections) );
+}   /*  End Function conn_get_client_connection  */
+
+/*PUBLIC_FUNCTION*/
+void *conn_get_connection_info (Connection connection)
+/*  [SUMMARY] Get the arbitrary information for a connection.
+    <connection> The connection object. The routine aborts the process if the
+    connection is not valid.
+    [RETURNS] A pointer to the arbitrary information. This may be NULL.
+*/
+{
+    static char function_name[] = "conn_get_connection_info";
+
+    VERIFY_CONNECTION (connection);
+    return (connection->info);
+}   /*  End Function conn_get_connection_info  */
+
+/*PUBLIC_FUNCTION*/
+flag conn_controlled_by_cm_tool ()
+/*  [SUMMARY] Check if controlled by CM tool.
+    [PURPOSE] This routine will determine if the module is being controlled by
+    the Connection Management tool.
+    [RETURNS] TRUE if the module is controlled, else FALSE
+*/
+{
+    extern Channel cm_channel;
+
+    return ( (cm_channel == NULL) ? FALSE : TRUE );
+}   /*  End Function conn_controlled_by_cm_tool  */
+
+/*PUBLIC_FUNCTION*/
+char *conn_get_connection_module_name (Connection connection)
+/*  [SUMMARY] Get the name of the module at the other end of a connection.
+    <connection> The connection object. The routine aborts the process if the
+    connection is not valid.
+    [RETURNS] A pointer to the module name.
+*/
+{
+    static char function_name[] = "conn_get_connection_module_name";
+
+    VERIFY_CONNECTION (connection);
+    if (connection->module_name == NULL)
+    {
+	(void) fprintf (stderr, "Invalid connection module_name\n");
+	a_prog_bug (function_name);
+    }
+    return (connection->module_name);
+}   /*  End Function conn_get_connection_module_name  */
+
+/*PUBLIC_FUNCTION*/
+void conn_register_cm_quiescent_func ( void (*func) () )
+/*  [SUMMARY] Register callback for quiescence.
+    [PURPOSE] This routine will register a callback function to be called when
+    the Connection Management tool or shell is quiescent (ie. all modules have
+    started and all initial connections made). The function is ONLY called if
+    the module is running under the Connection Management tool or shell.
+    [NOTE] Only one callback may be registered.
+    <quiescent_func> The routine which will be called when the Connection
+    Management tool or shell is quiescent. The prototype function is
+    [<CONN_PROTO_quiescent_func>].
+    [RETURNS] Nothing.
+*/
+{
+    extern void (*quiescent_function) ();
+    static char function_name[] = "conn_register_cm_quiescent_func";
+
+    if ( !conn_controlled_by_cm_tool () )
+    {
+	(void) fprintf (stderr, "Not controlled by CM tool or shell\n");
+	a_prog_bug (function_name);
+    }
+    if (quiescent_function != NULL)
+    {
+	(void) fprintf (stderr, "Quiescent callback already registered\n");
+	a_prog_bug (function_name);
+    }
+    quiescent_function = func;
+}   /*  End Function conn_register_cm_quiescent_func  */
+
+#ifndef OS_VXMVX
+/*PUBLIC_FUNCTION*/
+char **conn_extract_protocols ()
+/*  [SUMMARY] Get supported protocols.
+    [PURPOSE] This routine will extract all the supported protocols and
+    produces a dynamically allocated array of strings which may be later
+    displayed.
+    [RETURNS] A pointer to a dynamically allocated array of dynamically
+    allocated strings on success, else NULL. The end of the array is marked
+    with a NULL string pointer.
+*/
+{
+    unsigned int num_protocols;
+    char **strings;
+    char txt[STRING_LENGTH];
+    char tmp1[STRING_LENGTH];
+    char tmp2[STRING_LENGTH];
+    struct client_protocol_list_type *client_entry;
+    struct serv_protocol_list_type *serv_entry;
+    extern struct client_protocol_list_type *client_protocol_list;
+    extern struct serv_protocol_list_type *serv_protocol_list;
+    static char function_name[] = "conn_extract_protocols";
+
+    /*  Find total number of protocols  */
+    /*  Loop through all server protocols  */
+    for (serv_entry = serv_protocol_list, num_protocols = 0;
+	 serv_entry != NULL;
+	 serv_entry = serv_entry->next, ++num_protocols);
+    /*  Loop through all client protocols  */
+    for (client_entry = client_protocol_list; client_entry != NULL;
+	 client_entry = client_entry->next)
+    {
+	if (get_serv_protocol_info (client_entry->protocol_name) == NULL )
+	{
+	    /*  Client protocol not in the server list  */
+	    ++num_protocols;
+	}
+    }
+    if ( ( strings = (char **)
+	  m_alloc ( (num_protocols + 2) * sizeof *strings ) ) == NULL )
+    {
+	m_error_notify (function_name, "array of string pointers");
+	return (NULL);
+    }
+    strings[0] = NULL;
+    if ( ( strings[0] = st_dup
+	  ("Protocol_name              serv_max  #serv     client_max #client")
+	  ) == NULL )
+    {
+	m_error_notify (function_name, "first string");
+	m_free ( (char *) strings );
+	return (NULL);
+    }
+    strings[1] = NULL;
+    /*  Process the server protocol list again  */
+    for (serv_entry = serv_protocol_list, num_protocols = 0;
+	 serv_entry != NULL;
+	 serv_entry = serv_entry->next, ++num_protocols)
+    {
+	if (serv_entry->max_connections == 0)
+	{
+	    (void) strcpy (tmp1, "unlimited");
+	}
+	else
+	{
+	    (void) sprintf (tmp1, "%u", serv_entry->max_connections);
+	}
+	client_entry = get_client_protocol_info ( serv_entry->protocol_name);
+	if (client_entry == NULL)
+	{
+	    (void) sprintf (txt, "%-27s%-10s%-10u-          -",
+			    serv_entry->protocol_name,
+			    tmp1,
+			    serv_entry->connection_count);
+	}
+	else
+	{
+	    if (client_entry->max_connections == 0)
+	    {
+		(void) strcpy (tmp2, "unlimited");
+	    }
+	    else
+	    {
+		(void) sprintf (tmp2, "%u", client_entry->max_connections);
+	    }
+	    (void) sprintf (txt, "%-27s%-10s%-10u%-11s%u",
+			    serv_entry->protocol_name,
+			    tmp1,
+			    serv_entry->connection_count,
+			    tmp2,
+			    client_entry->connection_count);
+	}
+	if ( ( strings[num_protocols + 1] = st_dup (txt) ) == NULL )
+	{
+	    m_error_notify (function_name, "protocol string information");
+	    for (num_protocols = 0; strings[num_protocols] != NULL;
+		 ++num_protocols) m_free (strings[num_protocols]);
+	    m_free ( (char *) strings );
+	    return (NULL);
+	}
+	strings[num_protocols + 2] = NULL;
+    }
+    /*  Process the client protocol list again  */
+    for (client_entry = client_protocol_list; client_entry != NULL;
+	 client_entry = client_entry->next)
+    {
+	if (get_serv_protocol_info (client_entry->protocol_name) != NULL )
+	{
+	    /*  Client protocol is in the server list  */
+	    continue;
+	}
+	if (client_entry->max_connections == 0)
+	{
+	    (void) strcpy (tmp2, "unlimited");
+	}
+	else
+	{
+	    (void) sprintf (tmp2, "%u", client_entry->max_connections);
+	}
+	(void) sprintf (txt, "%-27s-         -         %-11s%u",
+			client_entry->protocol_name,
+			tmp2,
+			client_entry->connection_count);
+	if ( ( strings[num_protocols + 1] = st_dup (txt) ) == NULL )
+	{
+	    m_error_notify (function_name, "protocol string information");
+	    for (num_protocols = 0; strings[num_protocols] != NULL;
+		 ++num_protocols) m_free (strings[num_protocols]);
+	    m_free ( (char *) strings );
+	    return (NULL);
+	}
+	strings[++num_protocols + 1] = NULL;
+    }
+    return (strings);
+}   /*  End Function conn_extract_protocols  */
+#endif  /*  OS_VXMVX  */
 
 
 /*  Private functions follow  */
@@ -541,7 +1411,7 @@ static flag serv_connection_input_func (Channel channel, void **info)
 			connection->protocol_name);
 	a_prog_bug (function_name);
     }
-    if (ch_tell (connection->channel, &old_read_pos, &dummy) != TRUE )
+    if ( !ch_tell (connection->channel, &old_read_pos, &dummy) )
     {
 	(void) exit (RV_SYS_ERROR);
     }
@@ -551,7 +1421,7 @@ static flag serv_connection_input_func (Channel channel, void **info)
 	{
 	    return (FALSE);
 	}
-	if (ch_tell ( connection->channel, &new_read_pos, &dummy ) != TRUE )
+	if ( !ch_tell ( connection->channel, &new_read_pos, &dummy ) )
 	{
 	    (void) exit (RV_SYS_ERROR);
 	}
@@ -777,7 +1647,7 @@ static flag verify_connection (Connection connection)
     }
     protocol_buffer[PROTOCOL_NAME_LENGTH] = '\0';
     /*  Get protocol version number  */
-    if (pio_read32 (connection->channel, &protocol_version) != TRUE)
+    if ( !pio_read32 (connection->channel, &protocol_version) )
     {
 	(void) fprintf (stderr,
 			"Error reading protocol version number from connection\n");
@@ -920,71 +1790,12 @@ static flag verify_protocol_security (Connection connection)
     return (TRUE);
 }   /*  End Function verify_protocol_security  */
 
-/*  Function to process client connection input  */
-
-static flag client_connection_input_func (Channel channel, void **info)
-/*  This routine is called when new input occurs on a channel.
-    The channel object is given by  channel  .
-    An arbitrary pointer may be written to the storage pointed to by  info
-    The pointer written here will persist until the channel is unmanaged
-    (or a subsequent callback routine changes it).
-    The routine returns TRUE if the channel is to remain managed and
-    open, else it returns FALSE (indicating that the channel is to be
-    unmanaged and closed).
-*/
-{
-    int bytes;
-    unsigned long old_read_pos, new_read_pos, dummy;
-    Connection connection;
-    static char function_name[] = "client_connection_input_func";
-
-    connection = (Connection) *info;
-    VERIFY_CONNECTION (connection);
-    if (connection->read_func == NULL)
-    {
-	(void) fprintf (stderr,
-			"Input on \"%s\" connection not being read (no callback)\n",
-			connection->protocol_name);
-	a_prog_bug (function_name);
-    }
-    bytes = 1;
-    if ( !ch_tell (channel, &old_read_pos, &dummy) )
-    {
-	(void) exit (RV_SYS_ERROR);
-    }
-    while (bytes > 0)
-    {
-	if ( !(*connection->read_func) (connection, &connection->info) )
-	{
-	    return (FALSE);
-	}
-	if ( !ch_tell (channel, &new_read_pos, &dummy) )
-	{
-	    (void) exit (RV_SYS_ERROR);
-	}
-	if (new_read_pos <= old_read_pos)
-	{
-	    (void) fprintf (stderr,
-			    "Connection read callback for protocol: \"%s\" not draining\n",
-			    connection->protocol_name);
-	    a_prog_bug (function_name);
-	}
-	old_read_pos = new_read_pos;
-	if ( ( bytes = ch_get_bytes_readable (channel) ) < 0 )
-	{
-	    (void) exit (RV_SYS_ERROR);
-	}
-    }
-    return (TRUE);
-}   /*  End Function client_connection_input_func  */
-
-static struct serv_protocol_list_type *get_serv_protocol_info (protocol_name)
+static struct serv_protocol_list_type *get_serv_protocol_info (CONST char *protocol_name)
 /*  This routine will search the list of supported server protocols for the
     protocol given by  protocol_name  .
     The routine will return a pointer to a protocol information structure if
     the protocol is found in the list, else it returns NULL.
 */
-char *protocol_name;
 {
     struct serv_protocol_list_type *entry;
     extern struct serv_protocol_list_type *serv_protocol_list;
@@ -1003,13 +1814,12 @@ char *protocol_name;
     return (NULL);
 }   /*  End Function get_serv_protocol_info  */
 
-static struct client_protocol_list_type *get_client_protocol_info (protocol_name)
+static struct client_protocol_list_type *get_client_protocol_info (CONST char *protocol_name)
 /*  This routine will search the list of supported client protocols for the
     protocol given by  protocol_name  .
     The routine will return a pointer to a protocol information structure if
     the protocol is found in the list, else it returns NULL.
 */
-char *protocol_name;
 {
     struct client_protocol_list_type *entry;
     extern struct client_protocol_list_type *client_protocol_list;
@@ -1120,7 +1930,7 @@ static void dealloc_connection (Connection connection)
     m_free ( (char *) connection );
 }   /*  End Function dealloc_connection  */
 
-static struct auth_password_list_type *get_authinfo (char *protocol)
+static struct auth_password_list_type *get_authinfo (CONST char *protocol)
 /*  This routine will determine the authorisation required to gain access to a
     Karma server using the protocol given by  protocol  .
     The routine will write the security type to the storage pointed to by
@@ -1157,7 +1967,7 @@ static struct auth_password_list_type *get_authinfo (char *protocol)
 #endif  /*  COMMUNICATIONS_AVAILABLE  */
 }   /*  End Function get_authinfo  */
 
-static struct auth_password_list_type *get_password_list ()
+static struct auth_password_list_type *get_password_list (void)
 /*  [PURPOSE] This routine will process the authorisation file.
     [RETURNS] The password list.
 */
@@ -1398,7 +2208,65 @@ char *protocol;
 }   /*  End Function check_host_access  */
 #endif
 
-static char *write_protocol (Channel channel, char *protocol_name,
+/*  Functions to process client connection input  */
+
+static flag client_connection_input_func (Channel channel, void **info)
+/*  This routine is called when new input occurs on a channel.
+    The channel object is given by  channel  .
+    An arbitrary pointer may be written to the storage pointed to by  info
+    The pointer written here will persist until the channel is unmanaged
+    (or a subsequent callback routine changes it).
+    The routine returns TRUE if the channel is to remain managed and
+    open, else it returns FALSE (indicating that the channel is to be
+    unmanaged and closed).
+*/
+{
+    int bytes;
+    unsigned long old_read_pos, new_read_pos, dummy;
+    Connection connection;
+    static char function_name[] = "client_connection_input_func";
+
+    connection = (Connection) *info;
+    VERIFY_CONNECTION (connection);
+    if (connection->read_func == NULL)
+    {
+	(void) fprintf (stderr,
+			"Input on \"%s\" connection not being read (no callback)\n",
+			connection->protocol_name);
+	a_prog_bug (function_name);
+    }
+    bytes = 1;
+    if ( !ch_tell (channel, &old_read_pos, &dummy) )
+    {
+	(void) exit (RV_SYS_ERROR);
+    }
+    while (bytes > 0)
+    {
+	if ( !(*connection->read_func) (connection, &connection->info) )
+	{
+	    return (FALSE);
+	}
+	if ( !ch_tell (channel, &new_read_pos, &dummy) )
+	{
+	    (void) exit (RV_SYS_ERROR);
+	}
+	if (new_read_pos <= old_read_pos)
+	{
+	    (void) fprintf (stderr,
+			    "Connection read callback for protocol: \"%s\" not draining\n",
+			    connection->protocol_name);
+	    a_prog_bug (function_name);
+	}
+	old_read_pos = new_read_pos;
+	if ( ( bytes = ch_get_bytes_readable (channel) ) < 0 )
+	{
+	    (void) exit (RV_SYS_ERROR);
+	}
+    }
+    return (TRUE);
+}   /*  End Function client_connection_input_func  */
+
+static char *write_protocol (Channel channel, CONST char *protocol_name,
 			     unsigned int version)
 /*  This routine will write an authentication message for a specified protocol
     to a channel.
@@ -1422,13 +2290,13 @@ static char *write_protocol (Channel channel, char *protocol_name,
     static char function_name[] = "write_protocol";
 
     /*  Write magic number  */
-    if (pio_write32 (channel, CONN_MAGIC_NUMBER) != TRUE)
+    if ( !pio_write32 (channel, CONN_MAGIC_NUMBER) )
     {
 	a_func_abort (function_name, "Error writing magic number to channel");
 	return (NULL);
     }
     /*  Write revision number  */
-    if (pio_write32 (channel, REVISION_NUMBER) != TRUE)
+    if ( !pio_write32 (channel, REVISION_NUMBER) )
     {
 	a_func_abort (function_name,
 		      "Error writing revision number to channel");
@@ -1494,7 +2362,7 @@ static char *write_protocol (Channel channel, char *protocol_name,
 	return (NULL);
     }
     /*  Write protocol version number  */
-    if (pio_write32 (channel, (unsigned long) version) != TRUE)
+    if ( !pio_write32 (channel, (unsigned long) version) )
     {
 	a_func_abort (function_name,
 		      "Error writing protocol version number to channel");
@@ -1586,7 +2454,8 @@ static char *write_protocol (Channel channel, char *protocol_name,
     return (message);
 }   /*  End Function write_protocol  */
 
-static flag respond_to_ping_server_from_client (connection, info)
+static flag respond_to_ping_server_from_client (Connection connection,
+						void **info)
 /*  This routine will process input from a client on a  ping_server  connection
     The connection object must be given by  connection  .
     Any appropriate information will be written to the pointer pointed to by
@@ -1594,8 +2463,6 @@ static flag respond_to_ping_server_from_client (connection, info)
     The routine returns TRUE on success, else it returns FALSE (indicating that
     the connection should be closed).
 */
-Connection connection;
-void **info;
 {
 #ifdef COMMUNICATIONS_AVAILABLE
     int bytes_readable;
@@ -1661,7 +2528,7 @@ void **info;
 #endif
 }   /*  End Function respond_to_ping_server_from_client   */
 
-static flag register_server_exit (connection, info)
+static flag register_server_exit (Connection connection, void **info)
 /*  This routine will process input from a client on a  "server_exit"
     connection.
     The connection object must be given by  connection  .
@@ -1670,8 +2537,6 @@ static flag register_server_exit (connection, info)
     The routine either returns FALSE (indicating that the connection should be
     closed), or the routine will never exit ( because it calls exit(3) ).
 */
-Connection connection;
-void **info;
 {
     extern void (*exit_schedule_function) ();
     static char function_name[] = "register_server_exit";
@@ -1685,7 +2550,8 @@ void **info;
     return (FALSE);
 }   /*  End Function respond_to_ping_server_from_client   */
 
-static Connection get_numbered_connection (protocol_name, number, list)
+static Connection get_numbered_connection (CONST char *protocol_name,
+					   unsigned int number,Connection list)
 /*  This routine will get Nth connection from a connection list with a
     specified protocol.
     The protocol name must be pointed to by  protocol_name  .
@@ -1693,9 +2559,6 @@ static Connection get_numbered_connection (protocol_name, number, list)
     The connection list must be given by  list  .
     The routine returns the connection on success, else it returns NULL.
 */
-char *protocol_name;
-unsigned int number;
-Connection list;
 {
     unsigned int conn_count;
     Connection curr_entry;
@@ -1720,7 +2583,7 @@ Connection list;
     return (NULL);
 }   /*  End Function get_numbered_connection  */  
 
-static void attempt_connection_to_cm ()
+static void attempt_connection_to_cm (void)
 /*  This routine will attempt to connect to the Connection Management tool.
     The routine returns nothing.
 */
@@ -1734,7 +2597,6 @@ static void attempt_connection_to_cm ()
     char *control_command;
     char *char_ptr;
     char *message;
-    char *keyword;
     char my_hostname[STRING_LENGTH];
     char txt[STRING_LENGTH];
     extern Channel cm_channel;
@@ -1831,48 +2693,48 @@ static void attempt_connection_to_cm ()
 	exit (RV_SYS_ERROR);
     }
     m_free (message);
-    if ( (*manage_channel) (cm_channel, (void *) NULL,
-			    cm_command_func,
-			    cm_close_func,
-			    ( flag (*) () ) NULL,
-			    ( flag (*) () ) NULL ) != TRUE )
+    if ( !(*manage_channel) (cm_channel, (void *) NULL,
+			     cm_command_func,
+			     cm_close_func,
+			     ( flag (*) () ) NULL,
+			     ( flag (*) () ) NULL ) )
     {
 	(void) ch_close (cm_channel);
 	(void) fprintf (stderr, "Could not manage channel");
 	exit (RV_UNDEF_ERROR);
     }
     /*  Send information back to Connection Management tool  */
-    if (pio_write_string (cm_channel, module_name) != TRUE)
+    if ( !pio_write_string (cm_channel, module_name) )
     {
 	(void) fprintf (stderr, "Error writing module name\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_WRITE_ERROR);
     }
-    if (pio_write_string (cm_channel, my_hostname) != TRUE)
+    if ( !pio_write_string (cm_channel, my_hostname) )
     {
 	(void) fprintf (stderr, "Error writing hostname\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_WRITE_ERROR);
     }
-    if (pio_write32s (cm_channel, x) != TRUE)
+    if ( !pio_write32s (cm_channel, x) )
     {
 	(void) fprintf (stderr, "Error writing x position\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_WRITE_ERROR);
     }
-    if (pio_write32s (cm_channel, y) != TRUE)
+    if ( !pio_write32s (cm_channel, y) )
     {
 	(void) fprintf (stderr, "Error writing y position\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_WRITE_ERROR);
     }
-    if (pio_write32s ( cm_channel, getpid () ) != TRUE)
+    if ( !pio_write32s ( cm_channel, getpid () ) )
     {
 	(void) fprintf (stderr, "Error writing PID\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_WRITE_ERROR);
     }
-    if (ch_flush (cm_channel) != TRUE)
+    if ( !ch_flush (cm_channel) )
     {
 	(void) fprintf (stderr, "Error flushing channel\t%s\n",
 			sys_errlist[errno]);
@@ -1895,19 +2757,19 @@ static void attempt_connection_to_cm ()
 	exit (RV_SYS_ERROR);
     }
     m_free (message);
-    if (pio_write_string (stdio, my_hostname) != TRUE)
+    if ( !pio_write_string (stdio, my_hostname) )
     {
 	(void) fprintf (stderr, "Error writing hostname\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_WRITE_ERROR);
     }
-    if (pio_write32s ( stdio, getpid () ) != TRUE)
+    if ( !pio_write32s ( stdio, getpid () ) )
     {
 	(void) fprintf (stderr, "Error writing PID\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_WRITE_ERROR);
     }
-    if (ch_flush (stdio) != TRUE)
+    if ( !ch_flush (stdio) )
     {
 	(void) fprintf (stderr, "Error flushing channel\t%s\n",
 			sys_errlist[errno]);
@@ -1918,7 +2780,7 @@ static void attempt_connection_to_cm ()
     ch_stderr = stdio;
 }   /*  End Function attempt_connection_to_cm  */
 
-static flag cm_command_func (channel, info)
+static flag cm_command_func (Channel channel, void **info)
 /*  This routine is called when new input occurs on the connection to the
     Connection Management tool.
     The channel object is given by  channel  .
@@ -1930,8 +2792,6 @@ static flag cm_command_func (channel, info)
     unmanaged and closed). This routine MUST NOT unmanage or close the
     channel given by  channel  .
 */
-Channel channel;
-void **info;
 {
     unsigned long command;
     unsigned long conn_id;
@@ -1949,7 +2809,7 @@ void **info;
 	(void) fprintf (stderr, "Bad channel\n");
 	a_prog_bug (function_name);
     }
-    if (pio_read32 (channel, &command) != TRUE)
+    if ( !pio_read32 (channel, &command) )
     {
 	(void) fprintf (stderr, "Error reading command\t%s\n",
 			sys_errlist[errno]);
@@ -1965,7 +2825,7 @@ void **info;
 			    sys_errlist[errno]);
 	    return (FALSE);
 	}
-	if (pio_read32 (channel, &port_number) != TRUE)
+	if ( !pio_read32 (channel, &port_number) )
 	{
 	    (void) fprintf (stderr, "Error reading port_number\t%s\n",
 			    sys_errlist[errno]);
@@ -1979,21 +2839,20 @@ void **info;
 			    sys_errlist[errno]);
 	    return (FALSE);
 	}
-	if (conn_attempt_connection (hostname, (unsigned int) port_number,
-				     protocol_name)
-	    != TRUE)
+	if ( !conn_attempt_connection (hostname, (unsigned int) port_number,
+				       protocol_name) )
 	{
 	    (void) fprintf (stderr, "Error attempting connection\n");
 	}
 	break;
       case CM_TOOL_CLOSE_CONNECTION:
-	if (pio_read32 (channel, &conn_id) != TRUE)
+	if ( !pio_read32 (channel, &conn_id) )
 	{
 	    (void) fprintf (stderr, "Error reading command\t%s\n",
 			    sys_errlist[errno]);
 	    return (FALSE);
 	}
-	if (conn_close ( (Connection) conn_id ) != TRUE)
+	if ( !conn_close ( (Connection) conn_id ) )
 	{
 	    (void) fprintf (stderr, "Error closing connection\t%s\n",
 			    sys_errlist[errno]);
@@ -2024,20 +2883,14 @@ void **info;
     return (TRUE);
 }   /*  End Function cm_command_func  */
 
-static void cm_close_func (channel, info)
+static void cm_close_func (Channel channel, void *info)
 /*  This routine is called when the connection to the Connection Management
     tool closes.
-    The channel object is given by  channel  .
-    An arbitrary pointer may be written to the storage pointed to by  info
-    The pointer written here will persist until the channel is unmanaged
-    (or a subsequent callback routine changes it).
     The routine returns TRUE if the channel is to remain managed and
     open, else it returns FALSE (indicating that the channel is to be
     unmanaged and closed). This routine MUST NOT unmanage or close the
     channel given by  channel  .
 */
-Channel channel;
-void **info;
 {
     extern Channel cm_channel;
     static char function_name[] = "cm_close_func";
@@ -2055,7 +2908,7 @@ void **info;
     exit (RV_OK);
 }   /*  End Function cm_close_func  */
 
-static void setup_prng ()
+static void setup_prng (void)
 /*  This routine will setup the cryptographically strong random number
     generator(s). If already set up, the routine does nothing.
     The routine returns nothing.
@@ -2245,986 +3098,3 @@ static ChConverter get_encryption (Channel channel,
     }
     return (converter);
 }   /*  End Function get_encryption  */
-
-
-/*  Public functions follow  */
-
-/*PUBLIC_FUNCTION*/
-void conn_register_managers (manage_func, unmanage_func, exit_schedule_func)
-/*  This routine will register the channel management functions. This routine
-    MUST be called prior to the routine:  conn_become_server  .
-    See the  chm_  routines for information on channel management.
-    The function pointer  manage_func  must refer to a function with the same
-    interface definition as the  chm_manage  function.
-    The function pointer  unmanage_func  must refer to a function with the same
-    interface definition as the  chm_unmanage  function.
-    The routine which should be called when a clean exit is to be scheduled
-    must be pointed to by  exit_schedule_func  .
-    The interface to this routine is as follows:
-
-    void exit_schedule_func ()
-    *   This routine is called when the  conn_  package wishes to schedule a
-        clean exit from the module.
-	This routine may return (ie. it need not exit).
-	The routine returns nothing.
-    *
-
-    If this is NULL, then exit(3) is called instead.
-
-    The routine returns nothing.
-*/
-flag (*manage_func) ();
-void (*unmanage_func) ();
-void (*exit_schedule_func) ();
-{
-    extern flag (*manage_channel) ();
-    extern void (*unmanage_channel) ();
-    extern void (*exit_schedule_function) ();
-    static char function_name[] = "conn_register_managers";
-
-    if ( (manage_channel != NULL) || (unmanage_channel != NULL) )
-    {
-	(void) fprintf (stderr, "Channel managers already registered\n");
-	a_prog_bug (function_name);
-    }
-    manage_channel = manage_func;
-    unmanage_channel = unmanage_func;
-    exit_schedule_function = exit_schedule_func;
-    attempt_connection_to_cm ();
-    (void) get_password_list ();
-}   /*  End Function conn_register_managers  */
-
-/*PUBLIC_FUNCTION*/
-void conn_register_server_protocol (protocol_name, version, max_connections,
-				    open_func, read_func, close_func)
-/*  This routine will register the support of a new Karma protocol for the
-    Karma ports which are being managed by the various routines in this file.
-    This routine may be called at any time.
-    The name of the new protocol to support must be pointed to by
-    protocol_name  .Note that this is only for incoming connections.
-    The version number for the protocol must be given by  version  .When any
-    changes to the protocol are made, this should be increased.
-    The maximum number of incoming connections to this server must be given by
-    max_connections  .If this is 0, an unlimited number of connections is
-    permitted.
-    The function which will register the opening of a connection must be
-    pointed to by  open_func  .
-    The interface to this function is given below:
-
-    flag open_func (connection, info)
-    *   This routine will register the opening of a connection.
-        The connection will be given by  connection  .
-	The routine will write any appropriate information to the pointer
-	pointed to by  info  .
-	The routine returns TRUE on successful registration,
-	else it returns FALSE (indicating the connection should be closed).
-	Note that the  close_func  will not be called if this routine returns
-	FALSE.
-    *
-    Connection connection;
-    void **info;
-
-    The function which will read data from the connection must be pointed to by
-    read_func  .
-    The interface to this function is given below:
-
-    flag read_func (connection, info)
-    *   This routine will read in data from the connection given by  connection
-        and will write any appropriate information to the pointer pointed to by
-	info  .
-	The routine returns TRUE on successful reading,
-	else it returns FALSE (indicating the connection should be closed).
-	Note that the  close_func  will be called if this routine returns FALSE
-    *
-    Connection connection;
-    void **info;
-
-    The function which will be called prior to closure of a connection must be
-    pointed to by  close_func  .
-    The interface to this function is given below:
-
-    void close_func (connection, info)
-    *   This routine will register the closure of a connection.
-	When this routine is called, this is the last chance to read any
-	buffered data from the channel associated with the connection object.
-        The connection will be given by  connection  .
-        The connection information pointer will be given by  info  .
-	The routine returns nothing.
-    *
-    Connection connection;
-    void *info;
-
-    The routine returns nothing.
-*/
-char *protocol_name;
-unsigned int version;
-unsigned int max_connections;
-flag (*open_func) ();
-flag (*read_func) ();
-void (*close_func) ();
-{
-    struct serv_protocol_list_type *entry;
-    struct serv_protocol_list_type *last_entry;
-    extern struct serv_protocol_list_type *serv_protocol_list;
-    static char function_name[] = "conn_register_server_protocol";
-
-    if ( (int) strlen (protocol_name) >= PROTOCOL_NAME_LENGTH )
-    {
-	(void) fprintf (stderr,
-			"Protocol name: \"%s\" too long. Max: %u characters\n",
-			protocol_name, PROTOCOL_NAME_LENGTH);
-	a_prog_bug (function_name);
-    }
-    /*  Test if protocol already supported  */
-    if (get_serv_protocol_info (protocol_name) != NULL)
-    {
-	/*  Already supported: error  */
-	(void) fprintf (stderr, "Protocol: \"%s\" already supported\n",
-			protocol_name);
-	a_prog_bug (function_name);
-    }
-    /*  Allocate new entry  */
-    if ( ( entry = (struct serv_protocol_list_type *) m_alloc (sizeof *entry) )
-	== NULL )
-    {
-	m_abort (function_name, "new protocol list entry");
-    }
-    if ( ( entry->protocol_name = st_dup (protocol_name) ) == NULL )
-    {
-	m_abort (function_name, "protocol name");
-    }
-    entry->version = version;
-    entry->max_connections = max_connections;
-    entry->connection_count = 0;
-    entry->open_func = open_func;
-    entry->read_func = read_func;
-    entry->close_func = close_func;
-    entry->authorised_hosts = NULL;
-    entry->next = NULL;
-    if (serv_protocol_list == NULL)
-    {
-	/*  Create protocol list  */
-	serv_protocol_list = entry;
-    }
-    else
-    {
-	/*  Append entry to protocol list  */
-	for (last_entry = serv_protocol_list; last_entry->next != NULL;
-	     last_entry = last_entry->next);
-	last_entry->next = entry;
-    }
-    return;
-}   /*  End Function conn_register_server_protocol  */
-
-/*PUBLIC_FUNCTION*/
-void conn_register_client_protocol (protocol_name, version, max_connections,
-				    validate_func,
-				    open_func, read_func, close_func)
-/*  This routine will register the support of a new Karma protocol for outgoing
-    (client) connections.
-    This routine may be called at any time.
-    The name of the new protocol to support must be pointed to by
-    protocol_name  .Note that this is only for outgoing connections.
-    The version number for the protocol must be given by  version  .When any
-    changes to the protocol are made, this should be increased.
-    The maximum number of outgoing connections from this client must be given
-    by max_connections  .If this is 0, an unlimited number of connections is
-    permitted.
-    The function which will validate the opening of a new connection (prior to
-    any attempts to connect to the server) must be pointed to by
-    validate_func  .
-    The interface to this function is given below:
-
-    flag validate_func (info)
-    *   This routine will validate whether it is appropriate to open a
-        connection.
-	The routine will write any appropriate information to the pointer
-	pointed to by  info  .The pointer value written here will be passed
-	to the other routines.
-	The routine returns TRUE if the connection should be attempted,
-	else it returns FALSE (indicating the connection should be aborted).
-	NOTE: Even if this routine is called and returns TRUE, there is no
-	guarantee that the connection will be subsequently opened.
-    *
-    void **info;
-
-    The function which will register the opening of a connection must be
-    pointed to by  open_func  .
-    The interface to this function is given below:
-
-    flag open_func (connection, info)
-    *   This routine will register the opening of a connection.
-        The connection will be given by  connection  .
-	The routine will write any appropriate information to the pointer
-	pointed to by  info  .
-	The routine returns TRUE on successful registration,
-	else it returns FALSE (indicating the connection should be closed).
-	Note that the  close_func  will not be called if this routine returns
-	FALSE.
-    *
-    Connection connection;
-    void **info;
-
-    The function which will read data from the connection must be pointed to by
-    read_func  .
-    The interface to this function is given below:
-
-    flag read_func (connection, info)
-    *   This routine will read in data from the connection given by  connection
-        and will write any appropriate information to the pointer pointed to by
-	info  .
-	The routine returns TRUE on successful reading,
-	else it returns FALSE (indicating the connection should be closed).
-	Note that the  close_func  will be called if this routine returns FALSE
-    *
-    Connection connection;
-    void **info;
-
-    The function which will be called prior to closure of a connection must be
-    pointed to by  close_func  .
-    The interface to this function is given below:
-
-    void close_func (connection, info)
-    *   This routine will register a closure of a connection.
-	When this routine is called, this is the last chance to read any
-	buffered data from the channel associated with the connection object.
-        The connection will be given by  connection  .
-        The connection information pointer will be given by  info  .
-	The routine returns nothing.
-    *
-    Connection connection;
-    void *info;
-
-    The routine returns nothing.
-*/
-char *protocol_name;
-unsigned int version;
-unsigned int max_connections;
-flag (*validate_func) ();
-flag (*open_func) ();
-flag (*read_func) ();
-void (*close_func) ();
-{
-    struct client_protocol_list_type *entry;
-    struct client_protocol_list_type *last_entry;
-    extern struct client_protocol_list_type *client_protocol_list;
-    static char function_name[] = "conn_register_client_protocol";
-
-    if ( (int) strlen (protocol_name) >= PROTOCOL_NAME_LENGTH )
-    {
-	(void) fprintf (stderr,
-			"Protocol name: \"%s\" too long. Max: %u characters\n",
-			protocol_name, PROTOCOL_NAME_LENGTH);
-	a_prog_bug (function_name);
-    }
-    if (strcmp (protocol_name, "conn_mngr_control") == 0)
-    {
-	(void) fprintf (stderr, "Client protocol: \"%s\" reserved\n",
-			protocol_name);
-	a_prog_bug (function_name);
-    }
-    /*  Test if protocol already supported  */
-    if (get_client_protocol_info (protocol_name) != NULL)
-    {
-	/*  Already supported: error  */
-	(void) fprintf (stderr, "Protocol: \"%s\" already supported\n",
-			protocol_name);
-	a_prog_bug (function_name);
-    }
-    /*  Allocate new entry  */
-    if ( ( entry = (struct client_protocol_list_type *)
-	  m_alloc (sizeof *entry) )
-	== NULL )
-    {
-	m_abort (function_name, "new protocol list entry");
-    }
-    if ( ( entry->protocol_name = st_dup (protocol_name) ) == NULL )
-    {
-	m_abort (function_name, "protocol name");
-    }
-    entry->version = version;
-    entry->max_connections = max_connections;
-    entry->connection_count = 0;
-    entry->validate_func = validate_func;
-    entry->open_func = open_func;
-    entry->read_func = read_func;
-    entry->close_func = close_func;
-    entry->next = NULL;
-    if (client_protocol_list == NULL)
-    {
-	/*  Create protocol list  */
-	client_protocol_list = entry;
-    }
-    else
-    {
-	/*  Append entry to protocol list  */
-	for (last_entry = client_protocol_list; last_entry->next != NULL;
-	     last_entry = last_entry->next);
-	last_entry->next = entry;
-    }
-    return;
-}   /*  End Function conn_register_client_protocol  */
-
-/*PUBLIC_FUNCTION*/
-Channel conn_get_channel (connection)
-/*  This routine will extract the channel object associated with a connection.
-    The connection object must be given by  connection  .
-    The routine returns the channel object.
-*/
-Connection connection;
-{
-    static char function_name[] = "conn_get_channel";
-
-    VERIFY_CONNECTION (connection);
-    return ( connection->channel );
-}   /*  End Function conn_get_channel  */
-
-/*PUBLIC_FUNCTION*/
-flag conn_attempt_connection (hostname, port_number, protocol_name)
-/*  This routine will attempt to make a connection to a server. The routine
-    always makes a connection using the most efficient transport layer
-    available.
-    The hostname of the machine on which the server is running must be pointed
-    to by  hostname  .
-    The Karma port number to connect to must be given by  port_number  .
-    The protocol to connect with must be pointed to by  protocol_name  .
-    The routine returns TRUE if the connection was successfull,
-    else it returns FALSE. Note that this will cause the appropriate callback
-    functions registered with  conn_register_client_protocol  to be called.
-*/
-char *hostname;
-unsigned int port_number;
-char *protocol_name;
-{
-    flag local;
-    int bytes;
-    unsigned long host_addr;
-    Connection new_connection;
-    Connection last_entry;
-    Channel channel;
-    void *info = NULL;
-    struct client_protocol_list_type *protocol_info;
-    extern Channel cm_channel;
-    extern Connection client_connections;
-    extern struct client_protocol_list_type *client_protocol_list;
-    extern flag (*manage_channel) ();
-    extern void (*unmanage_channel) ();
-    extern char *sys_errlist[];
-    static char function_name[] = "conn_attempt_connection";
-
-    if ( (int) strlen (protocol_name) >= PROTOCOL_NAME_LENGTH )
-    {
-	(void) fprintf (stderr,
-			"Protocol name: \"%s\" too long. Max: %u characters\n",
-			protocol_name, PROTOCOL_NAME_LENGTH);
-	a_prog_bug (function_name);
-    }
-    if (manage_channel == NULL)
-    {
-	(void) fprintf (stderr, "Channel managers not registered\n");
-	a_prog_bug (function_name);
-    }
-    if (strcmp (protocol_name, "conn_mngr_control") == 0)
-    {
-	(void) fprintf (stderr, "Client protocol: \"%s\" reserved\n",
-			protocol_name);
-	a_prog_bug (function_name);
-    }
-    if (strcmp (protocol_name, "conn_mngr_stdio") == 0)
-    {
-	(void) fprintf (stderr, "Client protocol: \"%s\" reserved\n",
-			protocol_name);
-	a_prog_bug (function_name);
-    }
-    if ( ( host_addr = r_get_inet_addr_from_host (hostname, &local) ) == 0 )
-    {
-	(void) fprintf (stderr, "Error getting host address for: \"%s\"\n",
-			hostname);
-	return (FALSE);
-    }
-    if (local)
-    {
-	host_addr = 0;
-    }
-    if ( ( protocol_info = get_client_protocol_info (protocol_name) ) == NULL )
-    {
-	(void) fprintf (stderr, "Protocol: \"%s\" not supported\n",
-			protocol_name);
-	return (FALSE);
-    }
-    if ( (protocol_info->max_connections > 0) &&
-	(protocol_info->connection_count >= protocol_info->max_connections) )
-    {
-	(void) fprintf (stderr,
-			"Maximum number of client connections reached for protocol: \"%s\"\n",
-			protocol_name);
-	return (FALSE);
-    }
-    /*  Validate  */
-    if (protocol_info->validate_func != NULL)
-    {
-	if ( (*protocol_info->validate_func) (&info) != TRUE )
-	{
-	    return (FALSE);
-	}
-    }
-    if ( ( new_connection = (Connection) m_alloc (sizeof *new_connection) )
-	== NULL )
-    {
-	m_error_notify (function_name, "new connection object");
-	return (FALSE);
-    }
-    new_connection->client = TRUE;
-    new_connection->protocol_name = protocol_info->protocol_name;
-    new_connection->connection_count = &protocol_info->connection_count;
-    new_connection->read_func = protocol_info->read_func;
-    new_connection->close_func = protocol_info->close_func;
-    new_connection->info = info;
-    new_connection->prev = NULL;
-    new_connection->next = NULL;
-    new_connection->list_start = &client_connections;
-    /*  Open connection  */
-    if ( ( channel = ch_open_connection (host_addr, port_number) ) == NULL )
-    {
-	m_free ( (char *) new_connection );
-	return (FALSE);
-    }
-    new_connection->channel = channel;
-    /*  Send protocol info  */
-    if ( ( new_connection->module_name =
-	  write_protocol (channel, protocol_name,
-			  protocol_info->version) ) == NULL )
-    {
-	(void) fprintf (stderr, "Error writing authentication information\n");
-	(void) ch_close (channel);
-	m_free ( (char *) new_connection );
-	return (FALSE);
-    }
-    if ( (*manage_channel) (channel, (void *) new_connection,
-			    client_connection_input_func,
-			    connection_close_func,
-			    ( flag (*) () ) NULL,
-			    ( flag (*) () ) NULL ) != TRUE )
-    {
-	(void) ch_close (channel);
-	m_free ( (char *) new_connection );
-	a_func_abort (function_name, "Could not manage channel");
-	return (FALSE);
-    }
-    ++*new_connection->connection_count;
-    new_connection->magic_number = OBJECT_MAGIC_NUMBER;
-    if (protocol_info->open_func != NULL)
-    {
-	if ( !(*protocol_info->open_func) (new_connection,
-					   &new_connection->info) )
-	{
-	    (*unmanage_channel) (channel);
-	    (void) ch_close (channel);
-	    --*new_connection->connection_count;
-	    new_connection->magic_number = 0;
-	    m_free ( (char *) new_connection );
-	    return (FALSE);
-	}
-    }
-    /*  Append connection to list  */
-    if (client_connections == NULL)
-    {
-	/*  No list yet  */
-	client_connections = new_connection;
-    }
-    else
-    {
-	/*  Search for end of list  */
-	for (last_entry = client_connections; last_entry->next != NULL;
-	     last_entry = last_entry->next);
-	/*  Append entry  */
-	last_entry->next = new_connection;
-	new_connection->prev = last_entry;
-    }
-    /*  Drain any input on new connection  */
-    if ( ( bytes = ch_get_bytes_readable (channel) ) < 0 )
-    {
-	(void) exit (RV_SYS_ERROR);
-    }
-    if (bytes > 0)
-    {
-	if (new_connection->read_func == NULL)
-	{
-	    (void) fprintf (stderr,
-			    "Input on new connection not being read\n");
-	    a_prog_bug (function_name);
-	}
-	if ( !client_connection_input_func (channel,
-					    (void **) &new_connection) )
-	{
-	    dealloc_connection (new_connection);
-	    (*unmanage_channel) (channel);
-	    (void) ch_close (channel);
-	    return (FALSE);
-	}
-    }
-    if (cm_channel != NULL)
-    {
-	/*  Connected to Connection Management tool  */
-	if ( !pio_write32 (cm_channel, CM_LIB_NEW_CONNECTION) )
-	{
-	    (void) fprintf (stderr, "Error writing command value\t%s\n",
-			    sys_errlist[errno]);
-	    exit (RV_WRITE_ERROR);
-	}
-	if ( !pio_write_string (cm_channel, protocol_name) )
-	{
-	    (void) fprintf (stderr, "Error writing protocol name\t%s\n",
-			    sys_errlist[errno]);
-	    exit (RV_WRITE_ERROR);
-	}
-	if ( !pio_write32 (cm_channel, host_addr) )
-	{
-	    (void) fprintf (stderr,
-			    "Error writing host Internet address\t%s\n",
-			    sys_errlist[errno]);
-	    exit (RV_WRITE_ERROR);
-	}
-	if ( !pio_write32 (cm_channel, (unsigned long) port_number) )
-	{
-	    (void) fprintf (stderr, "Error writing port number\t%s\n",
-			    sys_errlist[errno]);
-	    exit (RV_WRITE_ERROR);
-	}
-	if ( !pio_write32 (cm_channel,
-			   (unsigned long) new_connection & 0xffffffff) )
-	{
-	    (void) fprintf (stderr, "Error writing Connection ID\t%s\n",
-			    sys_errlist[errno]);
-	    exit (RV_WRITE_ERROR);
-	}
-	if (ch_flush (cm_channel) != TRUE)
-	{
-	    (void) fprintf (stderr, "Error flushing channel\t%s\n",
-			    sys_errlist[errno]);
-	    exit (RV_WRITE_ERROR);
-	}
-    }
-    return (TRUE);
-}   /*  End Function conn_attempt_connection  */
-
-/*PUBLIC_FUNCTION*/
-flag conn_close (connection)
-/*  This routine will close a connection. This will cause the closure callback
-    routine registered to be executed.
-    The connection object must be given by  connection  .
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-Connection connection;
-{
-    Channel channel;
-    extern void (*unmanage_channel) ();
-    static char function_name[] = "conn_close";
-
-    VERIFY_CONNECTION (connection);
-    if (unmanage_channel == NULL)
-    {
-	(void) fprintf (stderr, "Channel managers not registered\n");
-	a_prog_bug (function_name);
-    }
-    channel = connection->channel;
-    dealloc_connection (connection);
-    (*unmanage_channel) (channel);
-    return ( ch_close (channel) );
-}   /*  End Function conn_close  */
-
-/*PUBLIC_FUNCTION*/
-flag conn_become_server (port_number, retries)
-/*  This routine will allocate a Karma port for the module so that it can
-    operate as a server (able to receive network connections).
-    The port number to allocate must be pointed to by  port_number  .The
-    routine will write the actual port number allocated to this address. This
-    must point to an address which lies on an  int  boundary.
-    The number of succsessive port numbers to attempt to allocate before giving
-    up must be given by  retries  .If this is 0, then the routine will give up
-    immediately if the specified port number is in use.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-unsigned int *port_number;
-unsigned int retries;
-{
-    unsigned int num_docks;
-    unsigned int dock_count;
-    flag return_value = FALSE;
-    Channel *port;
-    extern Channel cm_channel;
-    extern flag ran_become_server;
-    extern flag (*manage_channel) ();
-    extern char *sys_errlist[];
-    static char function_name[] = "conn_become_server";
-
-    if (manage_channel == NULL)
-    {
-	(void) fprintf (stderr, "Channel managers not registered\n");
-	a_prog_bug (function_name);
-    }
-    if (ran_become_server != TRUE)
-    {
-	/*  Set up internal protocol support  */
-	conn_register_server_protocol ("ping_server", 0, 0,
-				       ( flag (*) () ) NULL,
-				       respond_to_ping_server_from_client,
-				       ( void (*) () ) NULL);
-	conn_register_server_protocol ("server_exit", 0, 1,
-				       register_server_exit,
-				       ( flag (*) () ) NULL,
-				       ( void (*) () ) NULL);
-	ran_become_server = TRUE;
-    }
-    if ( ( port = ch_alloc_port (port_number, retries, &num_docks) ) == NULL )
-    {
-	a_func_abort (function_name, "Error becoming server");
-	return (FALSE);
-    }
-    for (dock_count = 0; dock_count < num_docks; ++dock_count)
-    {
-	if ( (*manage_channel) (port[dock_count], (void *) NULL,
-				dock_input_func,
-				( void (*) () ) NULL,
-				( flag (*) () ) NULL,
-				( flag (*) () ) NULL) != TRUE )
-	{
-	    (void) fprintf (stderr, "Error managing dock: %u\n", dock_count);
-	    (void) ch_close (port[dock_count]);
-	}
-	else
-	{
-	    /*  At least one dock was managed: call this success  */
-	    return_value = TRUE;
-	}
-    }
-    m_free ( (char *) port );
-    if ( return_value && (cm_channel != NULL) )
-    {
-	/*  Have a dock and are connected to Connection Management tool  */
-	if (pio_write32 (cm_channel, CM_LIB_PORT_NUMBER) != TRUE)
-	{
-	    (void) fprintf (stderr, "Error writing command value\t%s\n",
-			    sys_errlist[errno]);
-	    exit (RV_WRITE_ERROR);
-	}
-	if (pio_write32 (cm_channel, (unsigned long) *port_number) != TRUE)
-	{
-	    (void) fprintf (stderr, "Error writing port number\t%s\n",
-			    sys_errlist[errno]);
-	    exit (RV_WRITE_ERROR);
-	}
-	if (ch_flush (cm_channel) != TRUE)
-	{
-	    (void) fprintf (stderr, "Error flushing channel\t%s\n",
-			    sys_errlist[errno]);
-	    exit (RV_WRITE_ERROR);
-	}
-    }
-    return (return_value);
-}   /*  End Function conn_become_server  */
-
-/*PUBLIC_FUNCTION*/
-unsigned int conn_get_num_serv_connections (protocol_name)
-/*  This routine will get the number of connections to the server with a
-    specified protocol.
-    The protocol name must be pointed to by  protocol_name  .
-    The routine returns the number of current connections. A return value of
-    0 indicates that the protocol is not supported or there are no current
-    connections.
-*/
-char *protocol_name;
-{
-    struct serv_protocol_list_type *serv_protocol_info;
-/*
-    static char function_name[] = "conn_get_num_serv_connections";
-*/
-
-    if ( ( serv_protocol_info = get_serv_protocol_info (protocol_name) )
-	== NULL )
-    {
-	/*  Protocol is not supported  */
-	return (0);
-    }
-    return ( (*serv_protocol_info).connection_count );
-}   /*  End Function conn_get_num_serv_connections  */
-
-/*PUBLIC_FUNCTION*/
-unsigned int conn_get_num_client_connections (protocol_name)
-/*  This routine will get the number of connections from the client with a
-    specified protocol.
-    The protocol name must be pointed to by  protocol_name  .
-    The routine returns the number of current connections. A return value of
-    0 indicates that the protocol is not supported or there are no current
-    connections.
-*/
-char *protocol_name;
-{
-    struct client_protocol_list_type *client_protocol_info;
-/*
-    static char function_name[] = "conn_get_num_client_connections";
-*/
-
-    if ( ( client_protocol_info = get_client_protocol_info (protocol_name) )
-	== NULL )
-    {
-	/*  Protocol is not supported  */
-	return (0);
-    }
-    return ( (*client_protocol_info).connection_count );
-}   /*  End Function conn_get_num_client_connections  */
-
-/*PUBLIC_FUNCTION*/
-Connection conn_get_serv_connection (protocol_name, number)
-/*  This routine will get Nth connection to the server with a specified
-    protocol. The first connection is numbered 0.
-    The protocol name must be pointed to by  protocol_name  .
-    The number of the connection to get must be given by  number  .
-    The routine returns the connection on success, else it returns NULL.
-*/
-char *protocol_name;
-unsigned int number;
-{
-    extern Connection serv_connections;
-
-    return ( get_numbered_connection (protocol_name, number,
-				      serv_connections) );
-}   /*  End Function conn_get_serv_connection  */
-
-/*PUBLIC_FUNCTION*/
-Connection conn_get_client_connection (protocol_name, number)
-/*  This routine will get Nth connection from the client with a specified
-    protocol. The first connection is numbered 0.
-    The protocol name must be pointed to by  protocol_name  .
-    The number of the connection to get must be given by  number  .
-    The routine returns the connection on success, else it returns NULL.
-*/
-char *protocol_name;
-unsigned int number;
-{
-    extern Connection client_connections;
-
-    return ( get_numbered_connection (protocol_name, number,
-				      client_connections) );
-}   /*  End Function conn_get_client_connection  */
-
-/*PUBLIC_FUNCTION*/
-void *conn_get_connection_info (connection)
-/*  This routine will get the arbitrary information for a connection.
-    The connection must be given by  connection  .
-    The routine aborts the process if  connection  is not valid.
-    The routine returns a pointer to the arbitrary information. This may be a
-    NULL pointer.
-*/
-Connection connection;
-{
-    static char function_name[] = "conn_get_connection_info";
-
-    VERIFY_CONNECTION (connection);
-    return (connection->info);
-}   /*  End Function conn_get_connection_info  */
-
-/*PUBLIC_FUNCTION*/
-flag conn_controlled_by_cm_tool ()
-/*  This routine will determine if the module is being controlled by the
-    Connection Management tool.
-    The routine returns TRUE if the module is controlled, else it returns FALSE
-*/
-{
-    extern Channel cm_channel;
-
-    return ( (cm_channel == NULL) ? FALSE : TRUE );
-}   /*  End Function conn_controlled_by_cm_tool  */
-
-/*PUBLIC_FUNCTION*/
-char *conn_get_connection_module_name (connection)
-/*  This routine will get the name of the module at the other end of a
-    connection.
-    The connection must be given by  connection  .
-    The routine aborts the process if  connection  is not valid.
-    The routine returns a pointer to the module name.
-*/
-Connection connection;
-{
-    static char function_name[] = "conn_get_connection_module_name";
-
-    VERIFY_CONNECTION (connection);
-    if (connection->module_name == NULL)
-    {
-	(void) fprintf (stderr, "Invalid connection module_name\n");
-	a_prog_bug (function_name);
-    }
-    return (connection->module_name);
-}   /*  End Function conn_get_connection_module_name  */
-
-/*PUBLIC_FUNCTION*/
-void conn_register_cm_quiescent_func (func)
-/*  This routine will register a callback function to be called when the
-    Connection Management tool or shell is quiescent (ie. all modules have
-    started and all initial connections made). The function is ONLY called if
-    the module is running under the Connection Management tool or shell.
-    Only one callback may be registered.
-    The routine which should be called when the Connection Management tool or
-    shell is quiescent must be pointed to by  func  .
-    The interface to this routine is as follows:
-
-    void func ()
-    *   This routine is called when the Connection Management tool or
-        shell is quiescent.
-	The routine returns nothing.
-    *
-
-    The routine returns nothing.
-*/
-void (*func) ();
-{
-    extern void (*quiescent_function) ();
-    static char function_name[] = "conn_register_cm_quiescent_func";
-
-    if (conn_controlled_by_cm_tool () != TRUE)
-    {
-	(void) fprintf (stderr, "Not controlled by CM tool or shell\n");
-	a_prog_bug (function_name);
-    }
-    if (quiescent_function != NULL)
-    {
-	(void) fprintf (stderr, "Quiescent callback already registered\n");
-	a_prog_bug (function_name);
-    }
-    quiescent_function = func;
-}   /*  End Function conn_register_cm_quiescent_func  */
-
-#ifndef OS_VXMVX
-/*PUBLIC_FUNCTION*/
-char **conn_extract_protocols ()
-/*  This routine will extract all the supported protocols and produces a
-    dynamically allocated array of strings which may be later displayed.
-    The routine returns a pointer to a dynamically allocated array of
-    dynamically allocated strings on success, else it returns NULL. The end
-    of the array is marked with a NULL string pointer.
-*/
-{
-    unsigned int num_protocols;
-    char **strings;
-    char txt[STRING_LENGTH];
-    char tmp1[STRING_LENGTH];
-    char tmp2[STRING_LENGTH];
-    struct client_protocol_list_type *client_entry;
-    struct serv_protocol_list_type *serv_entry;
-    extern struct client_protocol_list_type *client_protocol_list;
-    extern struct serv_protocol_list_type *serv_protocol_list;
-    static char function_name[] = "conn_extract_protocols";
-
-    /*  Find total number of protocols  */
-    /*  Loop through all server protocols  */
-    for (serv_entry = serv_protocol_list, num_protocols = 0;
-	 serv_entry != NULL;
-	 serv_entry = serv_entry->next, ++num_protocols);
-    /*  Loop through all client protocols  */
-    for (client_entry = client_protocol_list; client_entry != NULL;
-	 client_entry = client_entry->next)
-    {
-	if (get_serv_protocol_info (client_entry->protocol_name) == NULL )
-	{
-	    /*  Client protocol not in the server list  */
-	    ++num_protocols;
-	}
-    }
-    if ( ( strings = (char **)
-	  m_alloc ( (num_protocols + 2) * sizeof *strings ) ) == NULL )
-    {
-	m_error_notify (function_name, "array of string pointers");
-	return (NULL);
-    }
-    strings[0] = NULL;
-    if ( ( strings[0] = st_dup
-	  ("Protocol_name              serv_max  #serv     client_max #client")
-	  ) == NULL )
-    {
-	m_error_notify (function_name, "first string");
-	m_free ( (char *) strings );
-	return (NULL);
-    }
-    strings[1] = NULL;
-    /*  Process the server protocol list again  */
-    for (serv_entry = serv_protocol_list, num_protocols = 0;
-	 serv_entry != NULL;
-	 serv_entry = serv_entry->next, ++num_protocols)
-    {
-	if ( serv_entry->max_connections == 0 )
-	{
-	    (void) strcpy (tmp1, "unlimited");
-	}
-	else
-	{
-	    (void) sprintf (tmp1, "%u", serv_entry->max_connections);
-	}
-	client_entry = get_client_protocol_info ( serv_entry->protocol_name);
-	if (client_entry == NULL)
-	{
-	    (void) sprintf (txt, "%-27s%-10s%-10u-          -",
-			    serv_entry->protocol_name,
-			    tmp1,
-			    serv_entry->connection_count);
-	}
-	else
-	{
-	    if ( client_entry->max_connections == 0 )
-	    {
-		(void) strcpy (tmp2, "unlimited");
-	    }
-	    else
-	    {
-		(void) sprintf (tmp2, "%u", client_entry->max_connections);
-	    }
-	    (void) sprintf (txt, "%-27s%-10s%-10u%-11s%u",
-			    serv_entry->protocol_name,
-			    tmp1,
-			    serv_entry->connection_count,
-			    tmp2,
-			    client_entry->connection_count);
-	}
-	if ( ( strings[num_protocols + 1] = st_dup (txt) ) == NULL )
-	{
-	    m_error_notify (function_name, "protocol string information");
-	    for (num_protocols = 0; strings[num_protocols] != NULL;
-		 ++num_protocols) m_free (strings[num_protocols]);
-	    m_free ( (char *) strings );
-	    return (NULL);
-	}
-	strings[num_protocols + 2] = NULL;
-    }
-    /*  Process the client protocol list again  */
-    for (client_entry = client_protocol_list; client_entry != NULL;
-	 client_entry = client_entry->next)
-    {
-	if (get_serv_protocol_info ( client_entry->protocol_name ) != NULL )
-	{
-	    /*  Client protocol is in the server list  */
-	    continue;
-	}
-	if ( client_entry->max_connections == 0 )
-	{
-	    (void) strcpy (tmp2, "unlimited");
-	}
-	else
-	{
-	    (void) sprintf (tmp2, "%u", client_entry->max_connections);
-	}
-	(void) sprintf (txt, "%-27s-         -         %-11s%u",
-			client_entry->protocol_name,
-			tmp2,
-			client_entry->connection_count);
-	if ( ( strings[num_protocols + 1] = st_dup (txt) ) == NULL )
-	{
-	    m_error_notify (function_name, "protocol string information");
-	    for (num_protocols = 0; strings[num_protocols] != NULL;
-		 ++num_protocols) m_free (strings[num_protocols]);
-	    m_free ( (char *) strings );
-	    return (NULL);
-	}
-	strings[++num_protocols + 1] = NULL;
-    }
-    return (strings);
-}   /*  End Function conn_extract_protocols  */
-#endif  /*  OS_VXMVX  */

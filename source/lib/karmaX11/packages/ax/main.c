@@ -3,7 +3,7 @@
 
     This code provides routines to draw axes into an X window.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -32,7 +32,10 @@
 
     Updated by      Richard Gooch   4-DEC-1992
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/ax/main.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/ax/main.c
+
+    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -69,11 +72,11 @@ static int xverticaltextwidth (font_info, string)
 XFontStruct *font_info;
 char *string;
 {
-    static char function_name[] = "xverticaltextwidth";
     int max_width = 0;
     int char_width;
     unsigned int char_count;
     unsigned int string_length;
+    /*static char function_name[] = "xverticaltextwidth";*/
 
     if ( ( string_length = (unsigned int) strlen (string) ) == 0 )
     {
@@ -111,9 +114,9 @@ int x;
 int y;
 char *string;
 {
-    static char function_name[] = "xdrawverticalstring";
     unsigned int string_length;
     unsigned int char_count;
+    /*static char function_name[] = "xdrawverticalstring";*/
 
     string_length = (unsigned int) strlen (string);
     for (char_count = 0; char_count < string_length; ++char_count)
@@ -170,7 +173,6 @@ struct win_scale_type *win_scale;
 unsigned int max_log_cycles;
 void (*error_notify_func) ();
 {
-    static char function_name[] = "ax_plot_dressing";
     int title_font_height;
     int axes_font_height;
     int scale_font_height;
@@ -189,6 +191,7 @@ void (*error_notify_func) ();
     XFontStruct *axes_font;
     XFontStruct *scale_font;
     char txt[STRING_LENGTH];
+    /*static char function_name[] = "ax_plot_dressing";*/
 
     default_screen = DefaultScreen(display);
     /*  Calculate number of pixels in ticks  */
@@ -227,7 +230,7 @@ void (*error_notify_func) ();
 	    (*error_notify_func) (txt);
 	}
 	/*  Free all font info  */
-	free ( (char *) title_font );
+	XFree ( (char *) title_font );
 	return (FALSE);
     }
     /*  Load scale font  */
@@ -243,8 +246,8 @@ void (*error_notify_func) ();
 	    (*error_notify_func) (txt);
 	}
 	/*  Free all font info  */
-	free ( (char *) title_font );
-	free ( (char *) axes_font );
+	XFree ( (char *) title_font );
+	XFree ( (char *) axes_font );
 	return (FALSE);
     }
     /*  Determine font heights  */
@@ -438,7 +441,6 @@ struct scale_type *new_scale;
 unsigned int max_log_cycles;
 void (*error_notify_func) ();
 {
-    static char function_name[] = "ax_choose_scale";
     unsigned int spacing_count = 0;
     double inp_norm_scale;
     double inp_scale_exp;
@@ -449,6 +451,7 @@ void (*error_notify_func) ();
     {
 	0.1, 0.2, 1.0
     };
+    /*static char function_name[] = "ax_choose_scale";*/
 
     if (log == TRUE)
     {
@@ -563,7 +566,6 @@ struct win_scale_type *win_scale;
 unsigned int max_log_cycles;
 void (*error_notify_func) ();
 {
-    static char function_name[] = "ax_draw_ordinate_scale";
     int first_log;
     int width = 0;
     int string_length;
@@ -582,6 +584,7 @@ void (*error_notify_func) ();
     unsigned int minor_tick_count;
     struct scale_type scale_info;
     char txt[STRING_LENGTH];
+    /*static char function_name[] = "ax_draw_ordinate_scale";*/
 
     /*  Calculate number of pixels in ticks  */
     pixels_per_mm = ( (float)DisplayWidth (display, DefaultScreen (display) ) /
@@ -951,7 +954,6 @@ struct win_scale_type *win_scale;
 unsigned int max_log_cycles;
 void (*error_notify_func) ();
 {
-    static char function_name[] = "ax_draw_abscissa_scale";
     int first_log;
     int string_length;
     int string_pixels;
@@ -974,6 +976,7 @@ void (*error_notify_func) ();
     unsigned int minor_tick_count;
     struct scale_type scale_info;
     char txt[STRING_LENGTH];
+    /*static char function_name[] = "ax_draw_abscissa_scale";*/
 
     /*  Calculate number of pixels in ticks  */
     pixels_per_mm = ( (float)DisplayHeight (display,DefaultScreen (display) ) /
@@ -1509,9 +1512,9 @@ int x2;
 flag *abs_zoomed;
 struct win_scale_type *win_scale;
 {
-    static char function_name[] = "ax_set_zoom_h_info";
     double min;
     double max;
+    /*static char function_name[] = "ax_set_zoom_h_info";*/
 
     if (x1 < x2)
     {
@@ -1561,9 +1564,9 @@ int y2;
 flag *ord_zoomed;
 struct win_scale_type *win_scale;
 {
-    static char function_name[] = "ax_set_zoom_v_info";
     double min;
     double max;
+    /*static char function_name[] = "ax_set_zoom_v_info";*/
 
     if (y1 < y2)
     {
@@ -1611,8 +1614,8 @@ flag ax_unset_zoom_info (abs_zoomed, ord_zoomed)
 flag *abs_zoomed;
 flag *ord_zoomed;
 {
-    static char function_name[] = "ax_unset_zoom_info";
     flag return_value = FALSE;
+    /*static char function_name[] = "ax_unset_zoom_info";*/
 
     if (*abs_zoomed == TRUE)
     {
@@ -1639,7 +1642,8 @@ int x;
 int y;
 struct win_scale_type *win_scale;
 {
-    static char function_name[] = "ax_verify_crosshair_location";
+    /*static char function_name[] = "ax_verify_crosshair_location";*/
+
     if (x < (*win_scale).x_offset)
     {
 	return (FALSE);
@@ -1710,8 +1714,8 @@ double ax_pixel_to_abscissa (x, win_scale)
 int x;
 struct win_scale_type *win_scale;
 {
-    static char function_name[] = "ax_pixel_to_abscissa";
     double abs_value;
+    /*static char function_name[] = "ax_pixel_to_abscissa";*/
 
     abs_value = (double) (x - (*win_scale).x_offset);
     abs_value /= (double) ( (*win_scale).x_pixels - 1 );
@@ -1740,8 +1744,8 @@ double ax_pixel_to_ordinate (y, win_scale)
 int y;
 struct win_scale_type *win_scale;
 {
-    static char function_name[] = "ax_pixel_to_ordinate";
     double ord_value;
+    /*static char function_name[] = "ax_pixel_to_ordinate";*/
 
     ord_value = (double) (y - (*win_scale).y_offset);
     ord_value /= (double) ( (*win_scale).y_pixels - 1 );

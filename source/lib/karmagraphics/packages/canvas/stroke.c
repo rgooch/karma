@@ -3,7 +3,7 @@
 
     This code provides a routine to create an edit stroke instruction.
 
-    Copyright (C) 1993,1994  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -36,8 +36,14 @@
     Last updated by Richard Gooch   27-AUG-1993: Took account of changes to
   iedit_  package.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to
+    Updated by      Richard Gooch   26-NOV-1994: Moved to
   packages/canvas/stroke.c
+
+    Updated by      Richard Gooch   14-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -49,35 +55,33 @@
 
 #include <karma_iedit.h>
 #include <karma_a.h>
+#include <karma_m.h>
 
 
 /*  Public functions follow  */
 
 /*PUBLIC_FUNCTION*/
-flag canvas_create_stroke_instruction (canvas, x0, y0, x1, y1,
-				       brush_width, value, ilist)
-/*  This routine will create a 2-dimensional edit stroke instruction, according
-    to the specification in the  iedit_  package and will append it to a
-    managed edit list.
-    The world canvas which contains the world co-ordinate system must be given
-    by  canvas  .
-    The end-points (in world co-ordinates) of the stroke must be given by
-    x0  ,  y0  ,  x1  and  y1  .
-    The width of the stroke (in canvas pixels) must be given by  brush_width  .
-    This must be at least 1.
-    The data value in the stroke instruction must be pointed to by  value  .
-    This must be of type K_DCOMPLEX.
-    The managed edit list must be given by  ilist  .
-    The routine returns TRUE on success, else it returns FALSE.
+flag canvas_create_stroke_instruction (KWorldCanvas canvas,
+				       double x0, double y0,
+				       double x1, double y1,
+				       unsigned int brush_width,
+				       double value[2], KImageEditList ilist)
+/*  [SUMMARY] Create an image editing stroke instruction.
+    [PURPOSE] This routine will create a 2-dimensional edit stroke instruction,
+    according to the specification in the [<iedit>] package and will append it
+    to a managed edit list.
+    <canvas> The world canvas which contains the world co-ordinate system.
+    <x0> The starting horizontal co-ordidinate of the stroke.
+    <y0> The starting vertical co-ordidinate of the stroke.
+    <x1> The ending horizontal co-ordidinate of the stroke.
+    <y1> The ending vertical co-ordidinate of the stroke.
+    <brush_width> The width of the stroke (in canvas pixels). This must be at
+    least 1.
+    <value> The data value in the stroke instruction. This must be of type
+    K_DCOMPLEX.
+    <ilist> The managed edit list.
+    [RETURNS] TRUE on success, else FALSE.
 */
-KWorldCanvas canvas;
-double x0;
-double y0;
-double x1;
-double y1;
-unsigned int brush_width;
-double value[2];
-KImageEditList ilist;
 {
     edit_coord brushradius;
     int ix, iy;
@@ -86,7 +90,6 @@ KImageEditList ilist;
     double factor;
     double o_x, o_y;
     edit_coord *coords;
-    list_entry *entry;
     static char function_name[] = "canvas_create_stroke_instruction";
 
     if (brush_width < 1)

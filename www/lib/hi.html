@@ -1,0 +1,31 @@
+<html><head><title>Package: hi</title></head> 
+<body>
+<center><h1>The "hi" Package</h1></center>    These routines are meant to provide which a mechanism for saving and
+    restoring history (parameter) information.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=hi></a></table><h4>Functions</h4><table><tr><td><a href=hi.html#hi_read>hi_read</a></td><td>Read history information for a module.
+</td></tr>
+<tr><td><a href=hi.html#hi_write>hi_write</a></td><td>Write history information for a module.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=hi_read></a> void
+ <b>hi_read</b><i>    (CONST char *module_name,
+	      flag (*command_decode) (CONST char *command, FILE *fp) )
+</i><br><p>    This routine will read any available history information for a
+    module and process accordingly.
+<p><b>Parameters:</b><ul><li><i>module_name :</i> 
+    The name of the module.
+<br><li><i>command_decode :</i> 
+    The function used to decode history lines.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=hi_write></a> void
+ <b>hi_write</b><i>    (CONST char *module_name,
+	       flag (*command_decode) (CONST char *command, FILE *fp) )
+</i><br><p>    This routine will write history information for the module in the
+    current working directory.
+<p><b>Parameters:</b><ul><li><i>module_name :</i> 
+    The name of the module.
+<br><li><i>command_decode :</i> 
+    The function used to decode history lines.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

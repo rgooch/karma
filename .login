@@ -25,14 +25,14 @@
 
 # Written by		Richard Gooch	22-SEP-1992
 
-# Last updated by	Richard Gooch	10-JAN-1996
+# Last updated by	Richard Gooch	2-MAY-1996
 
 
 # Define Karma installed base (for ordinary users)
 if ("$?KARMABASE" == "0") setenv KARMABASE /usr/local/karma
 
 # List of Karma root directories
-set karmaroots = (/vindaloo/karma /nfs/applic/karma /aips++1/karma /usr/local/src/karma $HOME/karma)
+set karmaroots = (/vindaloo/karma /home/karma /applic/karma /nfs/applic/karma /aips++1/karma /usr/local/src/karma $HOME/karma)
 foreach i ($karmaroots)
     if ("$?KARMAROOT" == "0") then
 	if (-d $i) setenv KARMAROOT $i
@@ -41,12 +41,13 @@ end
 
 # Set up Karma executable paths and machine dependent environmental variables
 if ("$?MACHINE_OS" == "0") then
-    if (-r /usr/local/csh_script/machine_type) then
-	set _database_file = /usr/local/csh_script/machine_type
+    if (-x /usr/local/bin/platform) then
+	set _platform_file = /usr/local/bin/platform
     else
-	set _database_file = ${KARMABASE}/csh_script/machine_type
+	set _platform_file = ${KARMABASE}/csh_script/uname_to_platform
     endif
-    source $_database_file
+    setenv MACHINE_OS `$_platform_file`
+    unset _platform_file
 endif
 
 if ("$?OS" == "0") then

@@ -1,0 +1,49 @@
+
+$TABLE            KWIN_ATTRIBUTES
+$COLUMNS          4
+$SUMMARY          List of attributes for KPixCanvas objects
+$TABLE_DATA
+|.Name                      |,Get Type          |,Set Type       |,Meaning
+|.
+|.KWIN_ATT_END              |,                  |,               |,End of varargs list
+|.KWIN_ATT_VISUAL           |,unsigned int *    |,               |,Visual type
+|.KWIN_ATT_DEPTH            |,unsigned int *    |,               |,Depth of canvas
+|.KWIN_ATT_VISIBLE          |,flag *            |,flag           |,Canvas is visible
+|.KWIN_ATT_FONT             |,KPixCanvasFont *  |,KPixCanvasFont |,Current font
+|.KWIN_ATT_PIX_RED_MASK     |,unsigned long *   |,               |,Red pixel mask
+|.KWIN_ATT_PIX_GREEN_MASK   |,unsigned long *   |,               |,Green pixel mask
+|.KWIN_ATT_PIX_BLUE_MASK    |,unsigned long *   |,               |,Blue pixel mask
+|.KWIN_ATT_IM_RED_MASK      |,unsigned long *   |,               |,Red image mask
+|.KWIN_ATT_IM_GREEN_MASK    |,unsigned long *   |,               |,Green image mask
+|.KWIN_ATT_IM_BLUE_MASK     |,unsigned long *   |,               |,Blue image mask
+|.KWIN_ATT_IM_RED_OFFSET    |,uaddr *           |,               |,Red image offset
+|.KWIN_ATT_IM_GREEN_OFFSET  |,uaddr *           |,               |,Green image offset
+|.KWIN_ATT_IM_BLUE_OFFSET   |,uaddr *           |,               |,Blue image offset
+|.KWIN_ATT_LOWER_HANDLE     |,void **           |,               |,Lower handle
+|.KWIN_ATT_USER_PTR         |,void **           |,void *         |,User pointer
+|.KWIN_ATT_LINEWIDTH        |,double *          |,double         |,Line width in pixels (0.0 = thin)
+$END
+
+$TABLE            KWIN_STRING_ATTRIBUTES
+$COLUMNS          3
+$SUMMARY          List of attributes for KPixCanvasFont string
+$TABLE_DATA
+|.Name                      |,Get Type          |,Meaning
+|.
+|.KWIN_STRING_END           |,                  |,End of varargs list     
+|.KWIN_STRING_WIDTH         |,int *             |,String width
+|.KWIN_STRING_HEIGHT        |,int *             |,String height
+|.KWIN_STRING_ASCENT        |,int *             |,String ascent
+|.KWIN_STRING_DESCENT       |,int *             |,String descent
+$END
+
+$TABLE            KWIN_XGL_STATUS
+$COLUMNS          2
+$SUMMARY          List of XGL stereo support types
+$TABLE_DATA
+|.Name                           |,Meaning
+|.
+|.KWIN_XGL_NOT_AVAILABLE         |,XGL is not supported
+|.KWIN_XGL_STEREO_NOT_AVAILABLE  |,No stereo display hardware
+|.KWIN_XGL_STEREO_AVAILABLE      |,Stereo available
+$END

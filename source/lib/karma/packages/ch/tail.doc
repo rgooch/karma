@@ -1,0 +1,29 @@
+
+$TABLE            CH_FILE_MODES
+$COLUMNS          2
+$SUMMARY          List of defined file modes
+$TABLE_DATA
+|.Mode         |,Meaning
+
+|."r"          |,open for reading
+|."w"          |,open (truncate) or create for writing
+|."a"          |,open or create for writing at end of file (append)
+|."r+"         |,open for update (reading and writing)
+|."w+"         |,open for reading and writing after truncation
+|."a+"         |,open or create for update (reading and writing) at EOF
+|."W"          |,open for writing
+$END
+
+$TABLE            CH_MAP_CONTROLS
+$COLUMNS          2
+$SUMMARY          List of mapping control values
+$TABLE_DATA
+|.Control                      |,Meaning
+
+|.K_CH_MAP_NEVER               |,Never map
+|.K_CH_MAP_LARGE_LOCAL         |,Map if local filesystem and file size > 1MB
+|.K_CH_MAP_LOCAL               |,Map if local filesystem
+|.K_CH_MAP_LARGE               |,Map if file over 1 MByte
+|.K_CH_MAP_IF_AVAILABLE        |,Map if operating system supports it
+|.K_CH_MAP_ALWAYS              |,Always map, fail if not supported.
+$END

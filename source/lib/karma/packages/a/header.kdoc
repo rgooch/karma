@@ -1,5 +1,0 @@
-$SUMMARY
-    Routines to print general error messages
-$PURPOSE
-    These routines are meant to provide an easy way of printing error messages
-    prior to function and process termination.

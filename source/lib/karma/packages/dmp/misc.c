@@ -3,7 +3,7 @@
 
     This code provides routines to write the Karma data structure to Channels.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -56,8 +56,14 @@
 
     Updated by      Richard Gooch   19-APR-1995: Cleaned some code.
 
-    Last updated by Richard Gooch   5-JUN-1995: Added code to cope with
+    Updated by      Richard Gooch   5-JUN-1995: Added code to cope with
   misaligned data accesses on sensitive platforms.
+
+    Updated by      Richard Gooch   7-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   3-JUN-1996: Took account of new fields in
+  dimension descriptor for first and last co-ordinate.
 
 
 */
@@ -74,17 +80,16 @@
 #define ARRAYP        6    /*  Backwards compatibility  */
 
 /*PUBLIC_FUNCTION*/
-void dmp_multi_desc (fp, multi_desc, comments)
-/*  This routine will dump an ASCII descriptor file to the file pointed to by
-    the file pointer  fp  .The descriptor that will be sent to the file must
-    be pointed to by  multi_desc  .
-    The routine will append comments to the lines written, if the value of
-    comments  is TRUE, else it will not.
-    The routine returns nothing.
+void dmp_multi_desc (FILE *fp, multi_array *multi_desc, flag comments)
+/*  [SUMMARY] Dump a multi_array descriptor to a file.
+    [PURPOSE] This routine will dump a multi_array descriptor to a file,
+    writing in ASCII format.
+    <fp> The file pointer.
+    <multi_desc> The descriptor.
+    <comments> If TRUE, the routine will append comments to the lines written,
+    else it will not.
+    [RETURNS] Nothing.
 */
-FILE *fp;
-multi_array *multi_desc;
-flag comments;
 {
     unsigned int array_count;
 
@@ -164,18 +169,16 @@ flag comments;
 }   /*  End Function dmp_multi_desc    */
 
 /*PUBLIC_FUNCTION*/
-void dmp_packet_desc (fp, pack_desc, comments)
-/*  This routine will dump the ASCII format of the packet descriptor pointed
-    to by  pack_desc  to the file pointed to by  fp  .
-    The routine will also dump all lower levels of array or linked list
-    descriptors.
-    The routine will append comments to the lines written, if the value of
-    comments  is TRUE, else it will not.
-    The routine returns nothing.
+void dmp_packet_desc (FILE *fp, packet_desc *pack_desc, flag comments)
+/*  [SUMMARY] Dump a packet descriptor to a file.
+    [PURPOSE] This routine will dump a packet descriptor to a file,
+    writing in ASCII format.
+    <fp> The file pointer.
+    <pack_desc> The descriptor.
+    <comments> If TRUE, the routine will append comments to the lines written,
+    else it will not.
+    [RETURNS] Nothing.
 */
-FILE *fp;
-packet_desc *pack_desc;
-flag comments;
 {
     unsigned int element_count = 0;
 
@@ -232,19 +235,18 @@ flag comments;
 }   /*  End Function dmp_packet_desc   */
 
 /*PUBLIC_FUNCTION*/
-void dmp_element_desc (fp, type, desc, comments)
-/*  This routine will dump the ASCII format of the element of type  type  and
-    descriptor pointed to by  desc  to the file pointed to by  fp  .If the
-    element is an array pointer or a linked list pointer, that descriptor will
-    also be dumped.
-    The routine will append comments to the lines written, if the value of
-    comments  is TRUE, else it will not.
-    The routine returns nothing.
+void dmp_element_desc (FILE *fp, unsigned int type, char *desc, flag comments)
+/*  [SUMMARY] Dump an element descriptor to a file.
+    [PURPOSE] This routine will dump an element descriptor to a file, writing
+    in ASCII.
+    <fp> The file.
+    <type> The type of the element.
+    <desc> The element descriptor. If the element is an array pointer or a
+    linked list pointer, that descriptor will also be dumped.
+    <comments> If TRUE, the routine will append comments to the lines written,
+    else it will not.
+    [RETURNS] Nothing.
 */
-FILE *fp;
-unsigned int type;
-char *desc;
-flag comments;
 {
     static char function_name[] = "dmp_element_desc";
 
@@ -604,18 +606,17 @@ flag comments;
 }   /*  End Function dmp_element_desc  */
 
 /*PUBLIC_FUNCTION*/
-void dmp_array_desc (fp, arr_desc, comments)
-/*  This routine will dump the ASCII representation of the array descriptor
-    pointed to by  arr_desc  to the file pointed to by  fp  .
-    The packet descriptor for the array will also be dumped (this is a
-    recursive process).
-    The routine will append comments to the lines written, if the value of
-    comments  is TRUE, else it will not.
-    The routine returns nothing.
+void dmp_array_desc (FILE *fp, array_desc *arr_desc, flag comments)
+/*  [SUMMARY] Dump an array descriptor to a file.
+    [PURPOSE] This routine will dump an array descriptor to a file,
+    writing in ASCII format. The packet descriptor for the array will also be
+    dumped (this is a recursive process).
+    <fp> The file pointer.
+    <array_desc> The descriptor.
+    <comments> If TRUE, the routine will append comments to the lines written,
+    else it will not.
+    [RETURNS] Nothing.
 */
-FILE *fp;
-array_desc *arr_desc;
-flag comments;
 {
     unsigned int dim_count;
     unsigned int level_count;
@@ -703,16 +704,17 @@ flag comments;
 }   /*  End Function dmp_array_desc    */
 
 /*PUBLIC_FUNCTION*/
-void dmp_dim_desc (fp, dimension, comments)
-/*  This routine will dump the ASCII representation of the dimension descriptor
-    pointed to by  dimension  to the file pointed to by  fp  .
-    The routine will append comments to the lines written, if the value of
-    comments  is TRUE, else it will not.
-    The routine returns nothing.
+void dmp_dim_desc (FILE *fp, dim_desc *dimension, flag comments)
+/*  [SUMMARY] Dump a dimension descriptor to a file.
+    [PURPOSE] This routine will dump a dimension descriptor to a file,
+    writing in ASCII format. The packet descriptor for the array will also be
+    dumped (this is a recursive process).
+    <fp> The file pointer.
+    <dimension> The descriptor.
+    <comments> If TRUE, the routine will append comments to the lines written,
+    else it will not.
+    [RETURNS] Nothing.
 */
-FILE *fp;
-dim_desc *dimension;
-flag comments;
 {
     unsigned int coord_count = 0;
 
@@ -798,20 +800,20 @@ flag comments;
 	    (void) fprintf (fp, "\tRANDOM\n");
         }
     }
-    if ( dimension->coordinates == NULL )
+    if (dimension->coordinates == NULL)
     {
-	/*  Print minimum and maximum   */
+	/*  Print first and last co-ordinates   */
         if (comments)
         {
-	    (void) fprintf (fp, "\t%-32.16e%s\n", dimension->minimum,
-			    "#Minimum co-ordinate");
-            (void) fprintf (fp, "\t%-32.16e%s\n", dimension->maximum,
-			    "#Maximum co-ordinate");
+	    (void) fprintf (fp, "\t%-32.16e%s\n", dimension->first_coord,
+			    "#First co-ordinate");
+            (void) fprintf (fp, "\t%-32.16e%s\n", dimension->last_coord,
+			    "#Last co-ordinate");
         }
         else
         {
-	    (void) fprintf (fp, "\t%.16e\n", dimension->minimum);
-            (void) fprintf (fp, "\t%.16e\n", dimension->maximum);
+	    (void) fprintf (fp, "\t%.16e\n", dimension->first_coord);
+            (void) fprintf (fp, "\t%.16e\n", dimension->last_coord);
         }
     }
     else
@@ -845,17 +847,16 @@ flag comments;
 }   /*  End Function dmp_dim_desc  */
 
 /*PUBLIC_FUNCTION*/
-void dmp_multi_data (fp, multi_desc, comments)
-/*  This routine will dump the ASCII representation of the data in the
-    multi array general data structure pointed to by  multi_desc  to the file
-    pointed to by  fp  .
-    The routine will append comments to key lines if the value of  comments
-    is TRUE, else it will not.
-    The routine returns nothing.
+void dmp_multi_data (FILE *fp, multi_array *multi_desc, flag comments)
+/*  [SUMMARY] Dump the data in a multi_array descriptor to a file.
+    [PURPOSE] This routine will dump the data in a multi_array descriptor to a
+    file, writing in ASCII format.
+    <fp> The file pointer.
+    <multi_desc> The descriptor.
+    <comments> If TRUE, the routine will append comments to the lines written,
+    else it will not.
+    [RETURNS] Nothing.
 */
-FILE *fp;
-multi_array *multi_desc;
-flag comments;
 {
     unsigned int array_count = 0;
 
@@ -917,18 +918,17 @@ flag comments;
 }   /*  End Function dmp_multi_data    */
 
 /*PUBLIC_FUNCTION*/
-void dmp_packet (fp, pack_desc, packet, comments)
-/*  This routine will dump the ASCII representation of the data pointed to
-    by  packet  with a descriptor pointed to by  pack_desc  to the file
-    pointed to by  fp  .
-    The routine will append comments to key lines if the value of  comments
-    is TRUE, else it will not.
-    The routine returns nothing.
+void dmp_packet (FILE *fp, packet_desc *pack_desc, char *packet, flag comments)
+/*  [SUMMARY] Dump a packet to a file.
+    [PURPOSE] This routine will dump a packet to a file, writing in ASCII
+    format.
+    <fp> The file pointer.
+    <pack_desc> The descriptor.
+    <packet> The packet.
+    <comments> If TRUE, the routine will append comments to the lines written,
+    else it will not.
+    [RETURNS] Nothing.
 */
-FILE *fp;
-packet_desc *pack_desc;
-char *packet;
-flag comments;
 {
     unsigned int element_count = 0;
     unsigned int type;
@@ -977,19 +977,20 @@ flag comments;
 }   /*  End Function dmp_packet    */
 
 /*PUBLIC_FUNCTION*/
-void dmp_element (fp, type, desc, element, comments)
-/*  This routine will dump the ASCII representation of the element of type
-    type  and pointed to by  element  to the file pointed to by  fp  .
-    The descriptor for the element is pointed to by  desc  .
-    The routine will append comments to key lines if the value of  comments
-    is TRUE, else it will not.
-    The routine returns nothing.
+void dmp_element (FILE *fp, unsigned int type, char *desc, char *element,
+		  flag comments)
+/*  [SUMMARY] Dump an element to a file.
+    [PURPOSE] This routine will dump an element to a file, writing in ASCII
+    format.
+    <fp> The file.
+    <type> The type of the element.
+    <desc> The element descriptor. If the element is an array pointer or a
+    linked list pointer, that data will also be dumped.
+    <element> The element.
+    <comments> If TRUE, the routine will append comments to the lines written,
+    else it will not.
+    [RETURNS] Nothing.
 */
-FILE *fp;
-unsigned int type;
-char *desc;
-char *element;
-flag comments;
 {
     FString *fstring;
 #ifdef NEED_ALIGNED_DATA
@@ -1110,18 +1111,17 @@ flag comments;
 }   /*  End Function dmp_element   */
 
 /*PUBLIC_FUNCTION*/
-void dmp_array (fp, arr_desc, array, comments)
-/*  This routine will dump the ASCII representation of the array pointed to
-    by  array  with a descriptor pointed to by  arr_desc  to the file
-    pointed to by  fp  .
-    The routine will append comments to key lines if the value of  comments
-    is TRUE, else it will not.
-    The routine returns nothing.
+void dmp_array (FILE *fp, array_desc *arr_desc, char *array, flag comments)
+/*  [SUMMARY] Dump an array to a file.
+    [PURPOSE] This routine will dump an array to a file, writing in ASCII
+    format.
+    <fp> The file pointer.
+    <array_desc> The descriptor.
+    <array> The array.
+    <comments> If TRUE, the routine will append comments to the lines written,
+    else it will not.
+    [RETURNS] Nothing.
 */
-FILE *fp;
-array_desc *arr_desc;
-char *array;
-flag comments;
 {
     unsigned int array_size;
     unsigned int array_count = 0;
@@ -1170,18 +1170,18 @@ flag comments;
 }   /*  End Function dmp_array */
 
 /*PUBLIC_FUNCTION*/
-void dmp_list (fp, pack_desc, list_head, comments)
-/*  This routine will dump the ASCII representation of the data in the linked
-    list pointed to by  list_header  with a descriptor pointed to by
-    pack_desc  to the file pointed to by  fp  .
-    The routine will append comments to key lines if the value of  comments
-    is TRUE, else it will not.
-    The routine returns nothing.
+void dmp_list (FILE *fp, packet_desc *pack_desc, list_header *list_head,
+	       flag comments)
+/*  [SUMMARY] Dump a linked list to a file.
+    [PURPOSE] This routine will dump an array descriptor to a file,
+    writing in ASCII format.
+    <fp> The file pointer.
+    <pack_desc> The list descriptor.
+    <list_head> A pointer to the list header.
+    <comments> If TRUE, the routine will append comments to the lines written,
+    else it will not.
+    [RETURNS] Nothing.
 */
-FILE *fp;
-packet_desc *pack_desc;
-list_header *list_head;
-flag comments;
 {
     unsigned int count;
     unsigned int pack_size;
@@ -1311,16 +1311,16 @@ flag comments;
 }   /*  End Function dmp_list  */
 
 /*PUBLIC_FUNCTION*/
-void dmp_flag (fp, logical, comment_string, comments)
-/*  This routine will dump the ASCII representation of the flag value in  logical
-    to the file pointed to by  fp  .The comments string pointed to by
-    comment_string  will be printed on the line if  comments  is TRUE.
-    The routine returns nothing.
+void dmp_flag (FILE *fp, flag logical, char *comment_string, flag comments)
+/*  [SUMMARY] Dump a flag value to a file.
+    [PURPOSE] This routine will dump the ASCII representation of a flag value
+    to a file.
+    <fp> The file.
+    <logical> The flag value.
+    <comment_string> The comment string.
+    <comments> If TRUE, the comment string is written.
+    [RETURNS] Nothing.
 */
-FILE *fp;
-flag logical;
-char comment_string[];
-flag comments;
 {
     if (fp == NULL)
     {

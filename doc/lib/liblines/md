@@ -1,2 +1,0 @@
-/*  Routines to produce message digests (secure hash functions)  */
-/*  Link with:    -lkarma  */

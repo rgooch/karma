@@ -33,8 +33,11 @@
 
     Updated by      Richard Gooch   29-SEP-1993
 
-    Last updated by Richard Gooch   16-DEC-1993: Added patch submitted by
+    Updated by      Richard Gooch   16-DEC-1993: Added patch submitted by
   Patrick Jordan (extra  XFlush  call).
+
+    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -61,13 +64,17 @@
  * XtNvalueChangeCallback : callback : NULL
 */
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <X11/Xos.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 
 #include <math.h>
-#include <varargs.h>
+#include <stdarg.h>
 
+#include <karma.h>
 #include <Xkw/HdialP.h>
 #include <Xkw/Hdial.h>
 
@@ -109,20 +116,19 @@ static Boolean SetValues();
 #endif
 
 /* Misc */
+STATIC_FUNCTION (void MyXtWarning, (char *_format, ...) );
 #if NeedFunctionProtoTypes
-static void MoveArm(HdialWidget _w);
-static void ReValue(HdialWidget _w);
-static void DrawArrow(HdialWidget _w, GC _gc);
-static void DrawArm(HdialWidget _w, GC _gc);
-static void DrawLabel(HdialWidget _w, GC _gc);
-static void MyXtWarning();
+static void MoveArm (HdialWidget _w);
+static void ReValue (HdialWidget _w);
+static void DrawArrow (HdialWidget _w, GC _gc);
+static void DrawArm (HdialWidget _w, GC _gc);
+static void DrawLabel (HdialWidget _w, GC _gc);
 #else
-static void MoveArm();
-static void ReValue();
-static void DrawArrow();
-static void DrawArm();
-static void DrawLabel();
-static void MyXtWarning();
+static void MoveArm ();
+static void ReValue ();
+static void DrawArrow ();
+static void DrawArm ();
+static void DrawLabel ();
 #endif
 
 static char HdialTranslations[] =
@@ -689,16 +695,14 @@ HdialWidget _w;
 
 #define MAXSTRING 300
 
-static void MyXtWarning(_format, va_alist)
-char *_format;
-va_dcl   /* stupid define already has a ; on it */
+static void MyXtWarning (char *_format, ...)
 {
-  va_list parms;
-  char dest[MAXSTRING];
+    va_list parms;
+    char dest[MAXSTRING];
 
-  va_start(parms);
-  vsprintf(dest, _format, parms);
-  va_end(parms);
+    va_start (parms, _format);
+    vsprintf (dest, _format, parms);
+    va_end (parms);
 
-  XtWarning(dest);
+    XtWarning (dest);
 }

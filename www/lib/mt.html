@@ -1,0 +1,164 @@
+<html><head><title>Package: mt</title></head> 
+<body>
+<center><h1>The "mt" Package</h1></center>    These routines are meant to provide management of a pool of threads which
+    may execute concurrently.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=mt></a></table><h4>Functions</h4><table><tr><td><a href=mt.html#mt_create_pool>mt_create_pool</a></td><td>Create a pool of threads which may have jobs launched onto it.
+</td></tr>
+<tr><td><a href=mt.html#mt_get_shared_pool>mt_get_shared_pool</a></td><td>Create or get the shared thread pool.
+</td></tr>
+<tr><td><a href=mt.html#mt_destroy_pool>mt_destroy_pool</a></td><td>This routine will destroy a thread pool.
+</td></tr>
+<tr><td><a href=mt.html#mt_destroy_all_pools>mt_destroy_all_pools</a></td><td>This routine will destroy all thread pools.
+</td></tr>
+<tr><td><a href=mt.html#mt_num_threads>mt_num_threads</a></td><td>Get the number of threads in a thread pool.
+</td></tr>
+<tr><td><a href=mt.html#mt_launch_job>mt_launch_job</a></td><td>Launch a job onto a thread pool.
+</td></tr>
+<tr><td><a href=mt.html#mt_setlock>mt_setlock</a></td><td>Set a lock on a thread pool.
+</td></tr>
+<tr><td><a href=mt.html#mt_new_thread_info>mt_new_thread_info</a></td><td>Register new thread information for the threads in a pool.
+</td></tr>
+<tr><td><a href=mt.html#mt_get_thread_info>mt_get_thread_info</a></td><td>Get the thread information pointer for a pool of threads.
+</td></tr>
+<tr><td><a href=mt.html#mt_wait_for_all_jobs>mt_wait_for_all_jobs</a></td><td>Wait for all previously launched jobs to complete.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=mt.html#MT_PROTO_func>MT_PROTO_func</a></td><td>Perform a job.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=mt_create_pool></a> KThreadPool
+ <b>mt_create_pool</b><i>    (void *pool_info)
+</i><br><p>    Create a pool of threads which may have jobs launched onto it.
+<p><b>Parameters:</b><ul><li><i>pool_info :</i> 
+    An arbitrary pointer passed to work functions.
+<br></ul><b>Returns:</b>     A KThreadPool object on success, else NULL.
+<br><b>Multithreading Level:</b> Safe under Solaris 2.
+<br><b>Note:</b><ul> <li>     The environment variable MT_MAX_THEADS may be used to limit the
+    number of threads used.
+</ul><p><hr> <a name=mt_get_shared_pool></a> KThreadPool
+ <b>mt_get_shared_pool</b><i>    ()
+</i><br><p>    This routine will get a pool of threads which may be shared
+    between several services within a process. This shared pool may be used to
+    reduce the number of thread pools created. Creating large numbers of thread
+    pools may consume significant system resources on some platforms. The first
+    time this routine is called the shared pool is created.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     The shared KThreadPool object on success. On failure the process
+    aborts.
+<br><b>Multithreading Level:</b> Safe under Solaris 2.
+<br><b>Note:</b><ul> <li>     The environment variable MT_MAX_THEADS may be used to limit the
+    number of threads used.
+<li>     This shared pool cannot be used with the <a href=mt.html#mt_new_thread_info>mt_new_thread_info</a> and
+    <a href=my.html#my_get_thread_info>my_get_thread_info</a> routines.
+</ul><p><hr> <a name=mt_destroy_pool></a> void
+ <b>mt_destroy_pool</b><i>    (KThreadPool pool, flag interrupt)
+</i><br><p>    This routine will destroy a thread pool.
+<p><b>Parameters:</b><ul><li><i>pool :</i> 
+    The thread pool.
+<br><li><i>interrupt :</i> 
+    If TRUE, any jobs not yet completed will be killed, else the
+    function will wait for uncompleted jobs to finish prior to destroying the
+    pool.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Safe.
+<br><p><hr> <a name=mt_destroy_all_pools></a> void
+ <b>mt_destroy_all_pools</b><i>    (flag interrupt)
+</i><br><p>    This routine will destroy all thread pools.
+<p><b>Parameters:</b><ul><li><i>interrupt :</i> 
+    If TRUE, any jobs not yet completed will be killed, else the
+    function will wait for uncompleted jobs to finish prior to destroying the
+    pools.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Safe.
+<br><p><hr> <a name=mt_num_threads></a> unsigned int
+ <b>mt_num_threads</b><i>    (KThreadPool pool)
+</i><br><p>    This function will determine the number of threads that may be
+    run concurrently in a thread pool.
+<p><b>Parameters:</b><ul><li><i>pool :</i> 
+    The thread pool.
+<br></ul><b>Returns:</b>     The number of concurrent threads.
+<br><b>Multithreading Level:</b> Safe.
+<br><p><hr> <a name=mt_launch_job></a> void
+ <b>mt_launch_job</b><i>    (KThreadPool pool,
+		    void (*func) (void *pool_info,
+				  void *call_info1, void *call_info2,
+				  void *call_info3, void *call_info4,
+				  void *thread_info),
+		    void *call_info1, void *call_info2,
+		    void *call_info3, void *call_info4)
+</i><br><p>    This function will launch a job to a pool of threads, running the
+    job on the first available thread.
+<p><b>Parameters:</b><ul><li><i>pool :</i> 
+    The thread pool.
+<br><li><i>func :</i> 
+    The function to execute. The prototype function is <a href=mt.html#MT_PROTO_func>MT_PROTO_func</a>
+<br><li><i>call_info1 :</i> 
+    An arbitrary argument to <em>func</em>.
+<br><li><i>call_info2 :</i> 
+    An arbitrary argument to <em>func</em>.
+<br><li><i>call_info3 :</i> 
+    An arbitrary argument to <em>func</em>.
+<br><li><i>call_info4 :</i> 
+    An arbitrary argument to <em>func</em>.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Safe.
+<br><b>Note:</b><ul> <li>     Jobs must not modify any signal actions or masks.
+</ul><p><hr> <a name=mt_setlock></a> void
+ <b>mt_setlock</b><i>    (KThreadPool pool, flag lock)
+</i><br><p>    This function will lock a thread pool such that no other thread
+    can lock the pool at the same time. This does not prevent other threads
+    from running, nor new jobs from being launched, it merely prevents them
+    from aquiring the lock.
+<p><b>Parameters:</b><ul><li><i>pool :</i> 
+    The thread pool to lock.
+<br><li><i>lock :</i> 
+    If TRUE the pool is locked. If FALSE the pool is unlocked and any
+    other threads wishing to lock the pool may do so (one at a time of course).
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Safe.
+<br><p><hr> <a name=mt_new_thread_info></a> void
+ <b>mt_new_thread_info</b><i>    (KThreadPool pool, void *info, uaddr size)
+</i><br><p>    Register new thread information for the threads in a pool.
+<p><b>Parameters:</b><ul><li><i>pool :</i> 
+    The thread pool.
+<br><li><i>info :</i> 
+    A pointer to the thread information array. If NULL and <em>size</em> is
+    not 0 then the routine will allocate an array of sufficient size.
+<br><li><i>size :</i> 
+    The size (per thread) in bytes of the thread information. When
+    threads are executing each is guaranteed to have a private working space of
+    this size.
+<br></ul><b>Returns:</b>     Nothing. On failure the process aborts.
+<br><b>Multithreading Level:</b> Safe.
+<br><p><hr> <a name=mt_get_thread_info></a> void *
+ <b>mt_get_thread_info</b><i>    (KThreadPool pool)
+</i><br><p>    Get the thread information pointer for a pool of threads.
+<p><b>Parameters:</b><ul><li><i>pool :</i> 
+    The thread pool.
+<br></ul><b>Returns:</b>     A pointer to the thread information array.
+<br><b>Multithreading Level:</b> Safe.
+<br><p><hr> <a name=mt_wait_for_all_jobs></a> void
+ <b>mt_wait_for_all_jobs</b><i>    (KThreadPool pool)
+</i><br><p>    Wait for all previously launched jobs to complete.
+<p><b>Parameters:</b><ul><li><i>pool :</i> 
+    The thread pool.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Safe.
+<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=MT_PROTO_func></a> void
+ <b>MT_PROTO_func</b><i>    (void *pool_info, void *call_info1, void *call_info2,
+		    void *call_info3, void *call_info4, void *thread_info)
+</i><br><p>    Perform a job.
+<p><b>Parameters:</b><ul><li><i>pool_info :</i> 
+    The arbitrary pool information pointer.
+<br><li><i>call_info1 :</i> 
+    The first arbitrary call information pointer.
+<br><li><i>call_info2 :</i> 
+    The second arbitrary call information pointer.
+<br><li><i>call_info3 :</i> 
+    The third arbitrary call information pointer.
+<br><li><i>call_info4 :</i> 
+    The fourth arbitrary call information pointer.
+<br><li><i>thread_info :</i> 
+    A pointer to arbitrary, per thread, information. This
+    information is private to the thread.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

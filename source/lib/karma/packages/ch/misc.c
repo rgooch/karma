@@ -3,7 +3,7 @@
 
     This code provides miscellaneous channel manipulation routines.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -46,8 +46,13 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/ch/misc.c
 
-    Last updated by Richard Gooch   27-SEP-1995: Created <ch_drain> and
+    Updated by      Richard Gooch   27-SEP-1995: Created <ch_drain> and
   <ch_printf>.
+
+    Updated by      Richard Gooch   31-MAR-1996: Changed documentation style.
+
+    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -66,15 +71,15 @@
 
 
 /*PUBLIC_FUNCTION*/
-Channel ch_open_and_fill_memory (strings)
-/*  This routine will open a memory channel with sufficient space to contain
-    a list of strings.
-    The NULL terminated array of string pointers must be pointed to by  strings
+Channel ch_open_and_fill_memory (char **strings)
+/*  [SUMMARY] Create and fill memory channel.
+    [PURPOSE] This routine will open a memory channel with sufficient space to
+    contain a list of strings.
+    <strings> The NULL terminated array of string pointers.
     The strings are written with a NEWLINE character to terminate the string.
     The NULL terminator character is not written.
-    The routine returns a channel object on success, else it returns NULL.
+    [RETURNS] A channel object on success, else NULL.
 */
-char **strings;
 {
     Channel channel;
     unsigned int buf_size;
@@ -108,22 +113,21 @@ char **strings;
 }   /*  End Function ch_open_and_fill_memory  */
 
 /*PUBLIC_FUNCTION*/
-flag ch_gets (channel, buffer, length)
-/*  This routine will read a character string from a channel into a buffer.
-    The channel object must be given by  channel  .
-    The buffer to write the data to must be pointed to by  buffer  .
+flag ch_gets (Channel channel, char *buffer, unsigned int length)
+/*  [SUMMARY] Read a line from a channel.
+    [PURPOSE] This routine will read a character string from a channel into a
+    buffer.
+    <channel> The channel object.
+    <buffer> The buffer to write the data into.
     The routine will write a NULL terminator character at the end of the
     string.
-    NOTE: the newline chanacter '\n' is NOT copied into the buffer.
-    The length of the buffer must be given by  length  .If the buffer is not
-    large enough to contain the string, then the remainder of the string is NOT
-    read. See also the  ch_getl  routine.
-    The routine returns TRUE on success,
-    else it returns FALSE (indicating end-of-file was encountered).
+    [NOTE] The newline chanacter '\n' is NOT copied into the buffer.
+    <length> The length of the buffer. If the buffer is not large enough to
+    contain the string, then the remainder of the string is NOT read. See also
+    the [<ch_getl>] routine.
+    [RETURNS] TRUE on success, else FALSE (indicating end-of-file was
+    encountered).
 */
-Channel channel;
-char *buffer;
-unsigned int length;
 {
     flag return_value = TRUE;
     flag another = TRUE;
@@ -162,23 +166,22 @@ unsigned int length;
 }   /*  End Function ch_gets  */
 
 /*PUBLIC_FUNCTION*/
-flag ch_getl (channel, buffer, length)
-/*  This routine will read a character string from a channel into a buffer.
-    The channel object must be given by  channel  .
-    The buffer to write the data to must be pointed to by  buffer  .
+flag ch_getl (Channel channel, char *buffer, unsigned int length)
+/*  [SUMMARY] Read a line from a channel.
+    [PURPOSE] This routine will read a character string from a channel into a
+    buffer.
+    <channel> The channel object.
+    <buffer> The buffer to write the data into.
     The routine will write a NULL terminator character at the end of the
     string.
-    NOTE: the newline chanacter '\n' is NOT copied into the buffer.
-    The length of the buffer must be given by  length  .If the buffer is not
-    large enough to contain the string, then the remainder of the string
-    (including the newline character) is read in and discarded and a warning
-    message is displayed. See also the ch_gets  routine.
-    The routine returns TRUE on success,
-    else it returns FALSE (indicating end-of-file was encountered).
+    [NOTE] The newline chanacter '\n' is NOT copied into the buffer.
+    <length> The length of the buffer. If the buffer is not large enough to
+    contain the string, then the remainder of the string (including the
+    newline character) is read in and discarded and a warning message is
+    displayed. See also the [<ch_gets>] routine.
+    [RETURNS] TRUE on success, else FALSE (indicating end-of-file was
+    encountered).
 */
-Channel channel;
-char *buffer;
-unsigned int length;
 {
     flag return_value = TRUE;
     flag another = TRUE;
@@ -233,18 +236,15 @@ unsigned int length;
 }   /*  End Function ch_getl  */
 
 /*PUBLIC_FUNCTION*/
-flag ch_puts (channel, string, newline)
-/*  This routine will write a character stream to a channel.
-    The channel object must be given by  channel  .
-    The strings must be pointed to by  string  .
-    The routine will write a NEWLINE character after writing the string if the
-    value of  newline  is TRUE.
-    The routine will not write the NULL terminator character.
-    The routine returns TRUE on success, else it returns FALSE.
+flag ch_puts (Channel channel, CONST char *string, flag newline)
+/*  [SUMMARY] Write a character string to a channel.
+    <channel> The channel object.
+    <string> The string.
+    <newline> If TRUE, the routine will write a NEWLINE character after writing
+    the string.
+    [NOTE] The routine will not write the NULL terminator character.
+    [RETURNS] TRUE on success, else FALSE.
 */
-Channel channel;
-CONST char *string;
-flag newline;
 {
     unsigned int length;
     char newline_char = '\n';
@@ -273,14 +273,15 @@ flag newline;
 
 /*PUBLIC_FUNCTION*/
 unsigned int ch_drain (Channel channel, unsigned int length)
-/*  [PURPOSE] This routine will drain (read) a specified number of bytes from a
+/*  [SUMMARY] Drain bytes from a channel.
+    [PURPOSE] This routine will drain (read) a specified number of bytes from a
     channel, ignoring the data.
     <channel> The Channel object.
     <length> The number of bytes to drain.
     [RETURNS] The number of bytes drained.
 */
 {
-    unsigned int count, block, read;
+    unsigned int block, read;
     unsigned int num_drained = 0;
     char buffer[BUF_LEN];
 
@@ -297,7 +298,7 @@ unsigned int ch_drain (Channel channel, unsigned int length)
 
 /*PUBLIC_FUNCTION*/
 flag ch_printf (Channel channel, CONST char *format, ...)
-/*  [PURPOSE] This routine provides writing of formatted output to a channel.
+/*  [SUMMARY] Write formatted output to a channel.
     <channel> The channel object.
     <format> The format string. See <<fprintf>>.
     [VARARGS] The optional parameters. See <<fprintf>>.

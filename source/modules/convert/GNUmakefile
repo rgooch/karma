@@ -1,4 +1,4 @@
-include ../GNUmakefile.head
+include $(KARMAINCLUDEPATH)/gmakedefs/modules.head
 
 
 TARGETS =	$(KARMABINPATH)/kgen \
@@ -109,5 +109,5 @@ depend:
 	makedepend -DMAKEDEPEND -D__$(MACHINE)__ -I$(KARMAINCLUDEPATH) -f$(machine_dir)/depend *.c
 
 
-include ../GNUmakefile.tail
+include $(KARMAINCLUDEPATH)/gmakedefs/modules.tail
 include $(machine_dir)/depend

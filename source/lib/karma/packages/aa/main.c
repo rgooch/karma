@@ -3,7 +3,7 @@
 
     This code provides Associative Array support.
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -36,8 +36,10 @@
     Updated by      Richard Gooch   21-DEC-1995: Fixed bug in <aa_get_pair>
   routine: value was not returned.
 
-    Last updated by Richard Gooch   22-DEC-1995: Added <<front>> parameter to
+    Updated by      Richard Gooch   22-DEC-1995: Added <<front>> parameter to
   <aa_put_pair> routine.
+
+    Last updated by Richard Gooch   31-MAR-1996: Changed documentation style.
 
 
 */
@@ -110,62 +112,18 @@ KAssociativeArray aa_create (void *info,
 			     void *(*value_copy_func) (void *value,
 						       uaddr length, flag *ok),
 			     void (*value_destroy_func) (void *value))
-/*  [PURPOSE] This routine will create a general purpose associative array of
-    key-value pairs.
+/*  [SUMMARY] Create a general purpose associative array of key-value pairs.
     <info> Arbitrary information to be stored with the associative array.
-    <key_compare_func> The function used to compare two keys. The interface to
-    this routine is as follows:
-    [<pre>]
-    int key_compare_func (void *key1, void *key2)
-    *   [PURPOSE] This routine will compare two keys.
-        <key1> The first key.
-	<key2> The second key.
-	[RETURNS] 0 if the keys match, a negative number if <<key1>> is less
-	than <<key2>>, a positive number if <<key1>> is greater than <<key2>>.
-    *
-    [</pre>]
-    <key_copy_func> The function used to copy keys. The interface to this
-    routine is as follows:
-    [<pre>]
-    void *key_copy_func (void *key, uaddr length, flag *ok)
-    *   [PURPOSE] This routine will copy a key.
-        <key> The key to copy.
-	<length> The length of the key in bytes.
-	<ok> The value TRUE will be written here on success, else FALSE is
-	written here.
-	[RETURNS] A copy of the key on success.
-    *
-    [</pre>]
-    <key_destroy_func> The function used to destroy keys. The interface to this
-    routine is as follows:
-    [<pre>]
-    void key_destroy_func (void *key)
-    *   [PURPOSE] This routine will destroy keys.
-        <key> The key to destroy.
-	[RETURNS] Nothing.
-    *
-    [</pre>]
-    <value_copy_func> The function used to copy values. The interface to this
-    routine is as follows:
-    [<pre>]
-    void *value_copy_func (void *value, uaddr length, flag *ok)
-    *   [PURPOSE] This routine will copy a value.
-        <value> The value to copy.
-	<length> The length of the value in bytes.
-	<ok> The value TRUE will be written here on success, else FALSE is
-	written here.
-	[RETURNS] A copy of the value on success.
-    *
-    [</pre>]
-    <value_destroy_func> The function used to destroy values. The interface to
-    this routine is as follows:
-    [<pre>]
-    void value_destroy_func (void *value)
-    *   [PURPOSE] This routine will destroy values.
-        <value> The value to destroy.
-	[RETURNS] Nothing.
-    *
-    [</pre>]
+    <key_compare_func> The function used to compare two keys. The prototype
+    function is [<AA_PROTO_key_compare_func>].
+    <key_copy_func> The function used to copy keys. The prototype function is
+    [<AA_PROTO_key_copy_func>].
+    <key_destroy_func> The function used to destroy keys. The prototype
+    function is [<AA_PROTO_key_destroy_func>].
+    <value_copy_func> The function used to copy values. The prototype function
+    is [<AA_PROTO_value_copy_func>].
+    <value_destroy_func> The function used to destroy values. The prototype
+    function is [<AA_PROTO_value_destroy_func>].
     [RETURNS] An associative array on success, else NULL.
 */
 {
@@ -190,7 +148,8 @@ KAssociativeArray aa_create (void *info,
 
 /*PUBLIC_FUNCTION*/
 void *aa_get_info (KAssociativeArray aa)
-/*  [PURPOSE] This routine will get the aribtrary information pointer stored
+/*  [SUMMARY] Get information attached to associative array.
+    [PURPOSE] This routine will get the arbitrary information pointer stored
     with an associative array.
     <aa> The associative array.
     [RETURNS] The arbitrary information pointer.
@@ -207,8 +166,7 @@ KAssociativeArrayPair aa_put_pair (KAssociativeArray aa,
 				   void *key, uaddr key_length,
 				   void *value, uaddr value_length,
 				   unsigned int replacement_policy, flag front)
-/*  [PURPOSE] This routine will add a key-value pair to an associative array.
-    There must be no existing key-value pair with the same key.
+/*  [SUMMARY] Add a key-value pair to an associative array.
     <aa> The associative array.
     <key> The key.
     <key_length> The length of the key, in bytes. If this is 0 and the
@@ -220,10 +178,8 @@ KAssociativeArrayPair aa_put_pair (KAssociativeArray aa,
     <<value_copy_func>> is NULL, the value pointer is copied directly. If this
     is greater than zero and the <<value_copy_func>> is NULL, the specified
     number of bytes are copied.
-    <replacement_policy> The policy to use when adding the pair. Legal values:
-        KAA_REPLACEMENT_POLICY_NEW         Fail if existing key found
-        KAA_REPLACEMENT_POLICY_UPDATE      Fail if no existing key found
-        KAA_REPLACEMENT_POLICY_PUT         Add pair, remove old key if exists
+    <replacement_policy> The policy to use when adding the pair. See
+    [<AA_REPLACEMENT_POLICIES>] for a list of legal values.
     <front> If TRUE and the key is new, place the pair at the front of the
     array. If FALSE and the key is new, place the pair at the end of the
     array.
@@ -386,7 +342,7 @@ KAssociativeArrayPair aa_put_pair (KAssociativeArray aa,
 /*PUBLIC_FUNCTION*/
 KAssociativeArrayPair aa_get_pair (KAssociativeArray aa, void *key,
 				   void **value)
-/*  [PURPOSE] This routine will find a key-value pair in an associative array.
+/*  [SUMMARY] Find a key-value pair in an associative array.
     <aa> The associative array.
     <key> The key.
     <value> The value found will be written here on success.
@@ -411,7 +367,8 @@ KAssociativeArrayPair aa_get_pair (KAssociativeArray aa, void *key,
 
 /*PUBLIC_FUNCTION*/
 void aa_destroy_pair (KAssociativeArrayPair pair)
-/*  [PURPOSE] This routine will remove a key-value pair from an associative
+/*  [SUMMARY] Remove a key-value pair from an associative array.
+    [PURPOSE] This routine will remove a key-value pair from an associative
     array and will destroy all storage allocated for the pair.
     <pair> The key-value pair.
     [RETURNS] Nothing.
@@ -441,8 +398,7 @@ void aa_destroy_pair (KAssociativeArrayPair pair)
 /*PUBLIC_FUNCTION*/
 KAssociativeArrayPair *aa_get_all_pairs (KAssociativeArray aa,
 					 unsigned int *num_pairs)
-/*  [PURPOSE] This routine will get all the key-value pairs on an associative
-    array.
+/*  [SUMMARY] Get all the key-value pairs on an associative array.
     <aa> The associative array.
     <num_pairs> The number of pairs found is written here. If no pairs are
     found NULL is written here.
@@ -480,7 +436,8 @@ KAssociativeArrayPair *aa_get_all_pairs (KAssociativeArray aa,
 void aa_get_pair_info (KAssociativeArrayPair pair,
 		       void **key, uaddr *key_length,
 		       void **value, uaddr *value_length)
-/*  [PURPOSE] This routine will get the key and value information for a
+/*  [SUMMARY] Get key and value information for a key-value pair.
+    [PURPOSE] This routine will get the key and value information for a
     key-value pair in an associative array.
     <pair> The key-value pair.
     <key> The key will be written here.

@@ -3,7 +3,7 @@
 
     This code provides KWorkFunc objects.
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -30,7 +30,8 @@
 
     Written by      Richard Gooch   30-DEC-1995
 
-    Last updated by Richard Gooch   30-DEC-1995
+    Last updated by Richard Gooch   13-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -76,7 +77,8 @@ static KCallbackList register_list = NULL;
 
 /*PUBLIC_FUNCTION*/
 flag wf_test_supported ()
-/*  [PURPOSE] This routine will determine if work functions have been supported
+/*  [SUMMARY] Test if application supports work functions.
+    [PURPOSE] This routine will determine if work functions have been supported
     by the application.
     [RETURNS] TRUE if work functions are supported, else FALSE.
 */
@@ -89,7 +91,8 @@ flag wf_test_supported ()
 
 /*PUBLIC_FUNCTION*/
 void wf_register_support ()
-/*  [PURPOSE] This routine will inform the package that the application will
+/*  [SUMMARY] Register support for work functions.
+    [PURPOSE] This routine will inform the package that the application will
     support work functions. This routine may only be called once.
     [RETURNS] Nothing.
 */
@@ -110,18 +113,11 @@ void wf_register_support ()
 
 /*PUBLIC_FUNCTION*/
 KCallbackFunc wf_register_notify_func (void (*func) (void *info), void *info)
-/*  [PURPOSE] This routine will register a routine which is called whenever a
+/*  [SUMMARY] Register new work function callback.
+    [PURPOSE] This routine will register a routine which is called whenever a
     new work function is registered.
     <func> The function that is called when a new work function is registered.
-    The interface to this routine is as follows:
-    [<pre>]
-    void func (void *info)
-    *   [PURPOSE] This routine is called whenever a new work function is
-        registered.
-	<info> An arbitrary information pointer.
-	[RETURNS] Nothing.
-    *
-    [</pre>]
+    The prototype function is [<WF_PROTO_new_func>].
     <info> The initial arbitrary information pointer.
     [RETURNS] A KCallbackFunc object. On failure, the process aborts.
 */
@@ -134,7 +130,8 @@ KCallbackFunc wf_register_notify_func (void (*func) (void *info), void *info)
 
 /*PUBLIC_FUNCTION*/
 flag wf_work_to_be_done ()
-/*  [PURPOSE] This routine will determine if there are any pending work
+/*  [SUMMARY] Test for pending work functions waiting to be called.
+    [PURPOSE] This routine will determine if there are any pending work
     functions waiting to be called.
     [RETURNS] TRUE if any work functions are pending, else FALSE.
 */
@@ -146,7 +143,8 @@ flag wf_work_to_be_done ()
 
 /*PUBLIC_FUNCTION*/
 flag wf_do_work ()
-/*  [PURPOSE] This routine will call any pending work functions. The work
+/*  [SUMMARY] Do some work.
+    [PURPOSE] This routine will call any pending work functions. The work
     function at the top of the list is called once only.
     [RETURNS] TRUE if more work is left to be done, else FALSE.
 */
@@ -173,29 +171,16 @@ flag wf_do_work ()
 /*PUBLIC_FUNCTION*/
 KWorkFunc wf_register_func (flag (*func) (void **info), void *info,
 			    unsigned int priority)
-/*  [PURPOSE] This routine will register a work function. The work function at
+/*  [SUMMARY] Register a work function.
+    [PURPOSE] This routine will register a work function. The work function at
     the top of the list is the one that is always called. Only when the work
     function at the top of the list is unregistered will the next work function
     be called.
-    <func> The routine to be called. The interface to this routine is as
-    follows:
-    [<pre>]
-    flag func (void **info)
-    *   [PURPOSE] This routine is called to perform some work.
-        <info> A pointer to the arbitrary work function information pointer.
-	[RETURNS] TRUE if the work function should be called again, else FALSE
-	indicating that the work function is to be unregistered.
-    *
-    [</pre>]
+    <func> The routine to be called. The prototype function is
+    [<WF_PROTO_work_func>].
     <info> The initial arbitrary work function information pointer.
-    <priority> The priority level of the work function. Legal values are:
-      KWF_PRIORITY_HIGHEST  Place function at top of list, any work functions
-                            registered while this one is running will be placed
-			    second in the list
-      KWF_PRIORITY_HIGH     Place function at top of list, any work functions
-                            registered while this one is running will be placed
-			    at the top of the list
-      KWF_PRIORITY_LOWEST   Place function at bottom of the list
+    <priority> The priority level of the work function. See [<WF_PRIORITIES>]
+    for a list of legal values.
     [RETURNS] A KWorkFunc object. On failure, the process aborts.
 */
 {
@@ -244,7 +229,8 @@ KWorkFunc wf_register_func (flag (*func) (void **info), void *info,
 
 /*PUBLIC_FUNCTION*/
 void wf_unregister_func (KWorkFunc wf)
-/*  [PURPOSE] This routine will unregister a work function. The second function
+/*  [SUMMARY] Unregister a work function.
+    [PURPOSE] This routine will unregister a work function. The second function
     in the list will moved to the top of the list. A work function cannot
     unregister itself in this manner.
     <wf> The KWorkFunc object.

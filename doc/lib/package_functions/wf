@@ -1,7 +1,0 @@
-wf_test_supported
-wf_register_support
-wf_register_notify_func
-wf_work_to_be_done
-wf_do_work
-wf_register_func
-wf_unregister_func

@@ -3,7 +3,7 @@
 
     This code provides simple string manipulation routines.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -59,7 +59,10 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/st/misc.c
 
-    Last updated by Richard Gooch   7-MAY-1995: Placate gcc -Wall
+    Updated by      Richard Gooch   7-MAY-1995: Placate gcc -Wall
+
+    Last updated by Richard Gooch   13-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -105,13 +108,15 @@ static void swap (/* v, i, j */);
 /*PUBLIC_FUNCTION*/
 unsigned int st_find ( CONST char **string_list, unsigned int list_length,
 		      CONST char *string, int (*function) () )
-/*  This routine will search the list of strings pointed to by  string_list
-    for an occurrence of the string  string  .The length of the string list
-    must be in  list_length  .
-    The comparison routine uses the routine pointed to by  function  .
-    The routine returns the index of the found string in the string list.
-    If no match is found, the routine returns  list_length  .
-    The routine returns on the first match.
+/*  [SUMMARY] Search a list of strings for a string.
+    <string_list> The list of strings to search.
+    <list_length> The length of the string list.
+    <string> The string to search for.
+    <function> The function to use for string comparisons. This has the same
+    interface as the <<strcmp>> function.
+    [RETURNS] The index of the found string in the string list. If no match is
+    found, the <<list_length>> is returned. The routine returns on the first
+    match.
 */
 {
     unsigned int count = 0;
@@ -139,11 +144,12 @@ unsigned int st_find ( CONST char **string_list, unsigned int list_length,
 
 /*PUBLIC_FUNCTION*/
 CONST char *st_chr (CONST char *string, char c)
-/*  @(#)strchr.c    1.2 */
-/*
- * Return the ptr in string at which the character c appears;
- * NULL if not found
- */
+/*  [SUMMARY] Search a string for the first occurrence of a character.
+    <string> The string to search.
+    <c> The character to search for.
+    [RETURNS] A pointer to the found character in the string. If no match is
+    found, NULL is returned.
+*/
 {
     static char function_name[] = "st_chr";
 
@@ -163,7 +169,11 @@ CONST char *st_chr (CONST char *string, char c)
 
 /*PUBLIC_FUNCTION*/
 int st_cmp_wild (CONST char *a, CONST char *b)
-/* compare strings a & b allowing for wild cards in a but not b */
+/*  [SUMMARY] Compare strings with wildcard support.
+    <a> One of the strings. Wildcards are permitted.
+    <b> The other string. Wildcards are not permitted.
+    [RETURNS] The difference between the strings.
+*/
 {
     CONST char *a_star;
     int l,lb,diff ;
@@ -191,11 +201,11 @@ int st_cmp_wild (CONST char *a, CONST char *b)
 
 /*PUBLIC_FUNCTION*/
 int st_cspn (CONST char *string, CONST char *charset)
-/*  @(#)strcspn.c   1.1 */
-/*
- * Return the number of characters in the maximum leading segment
- * of string which consists solely of characters NOT from charset.
- */
+/*  [SUMMARY] Find maximum leading segment in string with exclusion.
+    <string> The string.
+    <charset> The set of exclusion characters.
+    [RETURNS] The number of characters in the leading segment.
+*/
 {
     register CONST char *p, *q;
     static char function_name[] = "st_cspn";
@@ -217,10 +227,10 @@ int st_cspn (CONST char *string, CONST char *charset)
 
 /*PUBLIC_FUNCTION*/
 int st_icmp (CONST char *string1, CONST char *string2)
-/*  This routine will compare two strings pointed to by  string1  and
-    string2  .The operation of this routine is similar to that of  strcmp
-    ,except that the comparison is case insensitive.
-    The comparison value is returned.
+/*  [SUMMARY] Compare strings, ignoring case.
+    <string1> One of the strings.
+    <string2> The other string.
+    [RETURNS] The comparison value. 0 indicates equality.
 */
 {
     int ret_value;
@@ -262,8 +272,9 @@ int st_icmp (CONST char *string1, CONST char *string2)
 
 /*PUBLIC_FUNCTION*/
 char *st_lwr (char *string)
-/*  This routine will convert the string pointed to by  string  to lowercase.
-    The routine returns the address of the string.
+/*  [SUMMARY] Convert a string to lowercase.
+    <string> The string.
+    [RETURNS] The address of the string.
 */
 {
     static char function_name[] = "st_lwr";
@@ -286,11 +297,11 @@ char *st_lwr (char *string)
 
 /*PUBLIC_FUNCTION*/
 int st_nicmp (CONST char *string1, CONST char *string2, int str_len)
-/*  This routine will compare two strings pointed to by  string1  and
-    string2  .The string comparison is performed up to  str_len  characters
-    long. The operation of this routine is similar to that of  strncmp  ,
-    except that the comparison is case insensitive.
-    The comparison value is returned.
+/*  [SUMMARY] Compare strings, ignoring case, up to a specified length.
+    <string1> One of the strings.
+    <string2> The other string.
+    <str_len> The maximum number of characters to compare.
+    [RETURNS] The comparison value. 0 indicates equality.
 */
 {
     int ret_value;
@@ -332,10 +343,10 @@ int st_nicmp (CONST char *string1, CONST char *string2, int str_len)
 
 /*PUBLIC_FUNCTION*/
 char *st_nupr (char *string, int str_len)
-/*  This routine will convert the string pointed to by  string  to uppercase.
-    The conversion stops at the first NULL terminator character or if  str_len
-    characters have been converted.
-    The routine returns the address of the string.
+/*  [SUMMARY] Convert a string to uppercase, up to a specified length.
+    <string> The string.
+    <str_len> The maximum number of characters to convert.
+    [RETURNS] The address of the string.
 */
 {
     int count = 0;
@@ -360,10 +371,10 @@ char *st_nupr (char *string, int str_len)
 
 /*PUBLIC_FUNCTION*/
 char *st_nlwr (char *string, int str_len)
-/*  This routine will convert the string pointed to by  string  to lowercase.
-    The conversion stops at the first NULL terminator character or if  str_len
-    characters have been converted.
-    The routine returns the address of the string.
+/*  [SUMMARY] Convert a string to lowercase, up to a specified length.
+    <string> The string.
+    <str_len> The maximum number of characters to convert.
+    [RETURNS] The address of the string.
 */
 {
     int count = 0;
@@ -388,11 +399,12 @@ char *st_nlwr (char *string, int str_len)
 
 /*PUBLIC_FUNCTION*/
 char *st_pbrk (CONST char *string, CONST char *brkset)
-/*  @(#)strpbrk.c   1.1 */
-/*
- * Return ptr to first occurance of any character from `brkset'
- * in the character string `string'; NULL if none exists.
- */
+/*  [SUMMARY] Search a string for a character from a set.
+    <string> The string to search.
+    <brkset> The set of characters to search for.
+    [RETURNS] A pointer to the found character in the string. If no match is
+    found, NULL is returned.
+*/
 {
     register CONST char *p;
     static char function_name[] = "st_pbrk";
@@ -415,10 +427,11 @@ char *st_pbrk (CONST char *string, CONST char *brkset)
 
 /*PUBLIC_FUNCTION*/
 CONST char *st_rchr (CONST char *string, char c)
-/*  @(#)strrchr.c   1.2 */
-/*
- * Return the ptr in string at which the character c last
- * appears; NULL if not found
+/*  [SUMMARY] Search a string for the last occurrence of a character.
+    <string> The string to search.
+    <c> The character to search for.
+    [RETURNS] A pointer to the found character in the string. If no match is
+    found, NULL is returned.
 */
 {
     register CONST char *r;
@@ -441,11 +454,11 @@ CONST char *st_rchr (CONST char *string, char c)
 
 /*PUBLIC_FUNCTION*/
 int st_spn (CONST char *string, CONST char *charset)
-/*  @(#)strspn.c    1.1 */
-/*
- * Return the number of characters in the maximum leading segment
- * of string which consists solely of characters from charset.
- */
+/*  [SUMMARY] Find maximum leading segment in string with inclusion.
+    <string> The string.
+    <charset> The set of inclusion characters.
+    [RETURNS] The number of characters in the leading segment.
+*/
 {
     register CONST char *p, *q;
     static char function_name[] = "st_rchr";
@@ -467,13 +480,15 @@ int st_spn (CONST char *string, CONST char *charset)
 
 /*PUBLIC_FUNCTION*/
 char *st_tok (char *string, CONST char *sepset)
-/*  @(#)strtok.c    1.2 */
-/*
- * uses strpbrk and strspn to break string into tokens on
- * sequentially subsequent calls.  returns NULL when no
- * non-separator characters remain.
- * `subsequent' calls are calls with first argument NULL.
- */
+/*  [SUMMARY] Extract token from string.
+    [PURPOSE] This routine will break a string into a series of tokens. This
+    routine should be called until no more tokens are found.
+    <string> The string. On subsequent calls (for a series of tokens), NULL
+    should be passed.
+    <sepset> The set of delimiters (separators between tokens).
+    [RETURNS] A pointer to the next token. NULL is returned if no tokens are
+    found.
+*/
 {
     register char   *p, *q, *r;
     static char *savept;
@@ -504,6 +519,13 @@ char *st_tok (char *string, CONST char *sepset)
 
 /*PUBLIC_FUNCTION*/
 long st_tol (CONST char *str, char **ptr, int base)
+/*  [SUMMARY] Convert a string to a long integer.
+    <str> The string.
+    <ptr> A pointer to the first invalid character is written here. If this is
+    NULL, nothing is written here.
+    <base> The base of the number system.
+    [RETURNS] The integer value.
+*/
 {
     long val;
     int xx, sign;
@@ -558,8 +580,9 @@ long st_tol (CONST char *str, char **ptr, int base)
 
 /*PUBLIC_FUNCTION*/
 char *st_upr (char *string)
-/*  This routine will convert the string pointed to by  string  to uppercase.
-    The routine returns the address of the string.
+/*  [SUMMARY] Convert a string to uppercase.
+    <string> The string.
+    [RETURNS] The address of the string.
 */
 {
     static char function_name[] = "st_upr";
@@ -582,9 +605,10 @@ char *st_upr (char *string)
 
 /*PUBLIC_FUNCTION*/
 char *st_dup (CONST char *input)
-/*  This routine will make a duplicate copy of the string pointed to by  input
-    The routine returns a pointer to a copy of the string (allocated using
-    m_alloc) on success, else it returns NULL.
+/*  [SUMMARY] Make a duplicate copy of a string.
+    <string> The input string.
+    [RETURNS] A pointer to a copy of the string (allocated using [<m_alloc>])
+    on success, else NULL.
 */
 {
     unsigned int new_length;
@@ -607,11 +631,11 @@ char *st_dup (CONST char *input)
 
 /*PUBLIC_FUNCTION*/
 void st_qsort (char **v, int left, int right)
-/*  This routine will perform a quicksort on an array of strings.
-    The array of strings must be pointed to by  v  .
-    The left and right string indices must be given by  left  and  right  ,
-    respectively.
-    The routine returns nothing.
+/*  [SUMMARY] Perform a quicksort on an array of strings.
+    <v> The array of strings.
+    <left> The left string index.
+    <right> The right string index.
+    [RETURNS] Nothing.
 */
 {
     int i,last;

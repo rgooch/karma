@@ -3,7 +3,7 @@
 
     This code provides routines to extract values and substrings from strings.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -27,17 +27,20 @@
 /*  Functions to decode (EXtract) floats and integers from strings.
 
 
-    Written by      Richard Gooch    30-SEP-1992
+    Written by      Richard Gooch   30-SEP-1992
 
-    Updated by      Richard Gooch    2-DEC-1992
+    Updated by      Richard Gooch   2-DEC-1992
 
-    Updated by      Richard Gooch    6-JAN-1993: Changed from  #include "*.h"
+    Updated by      Richard Gooch   6-JAN-1993: Changed from  #include "*.h"
   to  #include <*.h>
 
-    Updated by      Richard Gooch    26-NOV-1994: Moved to  packages/ex/misc.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/ex/misc.c
 
-    Last updated by Richard Gooch    14-JUN-1995: Created <ex_uint> because
+    Updated by      Richard Gooch   14-JUN-1995: Created <ex_uint> because
   <ex_int> failed on crayPVP with value greater than 0x7fffffff.
+
+    Last updated by Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -71,9 +74,12 @@ char *charset;
 }
 
 /*PUBLIC_FUNCTION*/
-int ex_int (str, rest)
-char *str;
-char **rest;
+int ex_int (char *str, char **rest)
+/*  [SUMMARY] Extract integer value from string.
+    <str> The string to extract from.
+    <rest> A pointer beyond the value will be written here.
+    [RETURNS] The value.
+*/
 {   
     int i=0,base=10,maxdig=017777777777,neg=FALSE,dig  ;
     
@@ -134,9 +140,12 @@ char **rest;
 }
 
 /*PUBLIC_FUNCTION*/
-unsigned int ex_uint (str, rest)
-char *str;
-char **rest;
+unsigned int ex_uint (char *str, char **rest)
+/*  [SUMMARY] Extract unsigned integer value from string.
+    <str> The string to extract from.
+    <rest> A pointer beyond the value will be written here.
+    [RETURNS] The value.
+*/
 {   
     unsigned int i=0,base=10,maxdig=0xffffffff,neg=FALSE,dig  ;
 
@@ -196,17 +205,13 @@ char **rest;
     if(neg)i= -i ; return(i) ;
 }
 
-
 /*PUBLIC_FUNCTION*/
-char *ex_word (str, rest)
-/* Function decodes (eXtracts) a word from str, and returns a pointer
-* to a copy of that word, with null terminator. It also 
-* returns a pointer to the next character of the string in rest.
-*
-*  Author Don McLean 1984 Sept. 6.
+char *ex_word (char *str, char **rest)
+/*  [SUMMARY] Extract word from string.
+    <str> The string to extract from.
+    <rest> A pointer beyond the word will be written here.
+    [RETURNS] The word.
 */
-char *str;
-char **rest;
 {   
     int n=0 ; char *start,*copy ;
     
@@ -224,16 +229,14 @@ char **rest;
 static char command_terminators[]=" \n\t/=?!()" ;
 
 /*PUBLIC_FUNCTION*/
-char *ex_command (str, rest)
-/* Function decodes (eXtracts) a command from str, and returns a pointer
- * to a copy of that word, with null terminator. It also 
- * returns a pointer to the next character of the string in rest.
- * Identical to ex_word() except that any of " \t/=?!" terminate a command.
- *
- *  Author Don McLean 1986 February 13.
+char *ex_command (char *str, char **rest)
+/*  [SUMMARY] Extract command from string.
+    [PURPOSE] This routine will extract a command from a string. The operation
+    is similar to [<ex_word>] except that any of " \t/=?!" terminate a command.
+    <str> The string to extract from.
+    <rest> A pointer beyond the command will be written here.
+    [RETURNS] The command.
 */
-char *str;
-char **rest;
 {   
     int n=0 ; char *start,*copy,*strpbrk() ;
     
@@ -256,17 +259,12 @@ char **rest;
     return(copy) ;
 }
 
-
-
-
 /*PUBLIC_FUNCTION*/
-char *ex_word_skip (str)
-/* Skips a word in str, and returns a pointer
- * to the next character of the string.
- *
- *  Author Don McLean 1984 Sept. 6.
+char *ex_word_skip (char *str)
+/*  [SUMMARY] Skip a word in a string.
+    <str> The string.
+    [RETURNS] The next part of the string.
 */
-char *str;
 {   
     if(!str || !(*str))return(0) ;    
     for( ; isspace(*str)  ; str++) ; /* skip leading spaces */
@@ -276,20 +274,13 @@ char *str;
     return(*str ? str : 0) ;
 }
 
-
-
-
 /*PUBLIC_FUNCTION*/
-double ex_float (str, rest)
-/* Function decodes (eXtracts) next floating point value from string and
- * returns value as function value, and pointer to next character of string
- * in rest.
- *
- * Author Don McLean 1985 January 8.
- *
- */
-char *str;
-char **rest;
+double ex_float (char *str, char **rest)
+/*  [SUMMARY] Extract float value from string.
+    <str> The string to extract from.
+    <rest> A pointer beyond the value will be written here.
+    [RETURNS] The value.
+*/
 {   
     int infract=FALSE,pos=TRUE,exponent=0 ;
     double base=10.0,f=1.0,val=0 ;
@@ -350,12 +341,13 @@ char **rest;
     *rest= str && *str ? str : 0 ; if(!pos)val = -val ; return(val) ;
 }
 
-
-
 /*PUBLIC_FUNCTION*/
-double ex_hour (p, nxt)
-char *p;
-char **nxt;
+double ex_hour (char *p, char **nxt)
+/*  [SUMMARY] Extract hour value from string.
+    <p> The string to extract from.
+    <nxt> A pointer beyond the value will be written here.
+    [RETURNS] The value.
+*/
 {   
     double h ;
     
@@ -384,18 +376,15 @@ char **nxt;
     return(h + ex_float(p,nxt)/3600.0) ;
 }
 
-
-
-
 /*PUBLIC_FUNCTION*/
-char *ex_command_skip (str)
-/* Skips a command from str, and returns a pointer
- * to the next character of the string.
- * Identical to ex_word_skip() except that any of " \t/=?!" terminate a command.
- *
- *  Author Don McLean 1986 February 14.
+char *ex_command_skip (char *str)
+/*  [SUMMARY] Skip a command in a string.
+    [PURPOSE] This routine skip a command in a string. The operation
+    is similar to [<ex_word_skip>] except that any of " \t/=?!" terminate a
+    command.
+    <str> The string.
+    [RETURNS] The next part of the string.
 */
-char *str;
 {   
     char *strpbrk() ;
     
@@ -408,21 +397,15 @@ char *str;
     if(*str)return(str) ; else return(0) ;
 }
 
-
-
 /*PUBLIC_FUNCTION*/
-int ex_on (ptr)
-/* ptr points to a text string (normally control input)
- * On entry ptr is advanced over one (key-)word, then
- * if next word matches "on" or "off", ptr will be advanced
- * and function returns TRUE or FALSE. 
- * If neither "on" nor "off" is found, pointer
- * is not advanced, but function returns TRUE.
- * A word matches a target if all its letters match the letters
- * of the target: "y", "ye", "yes" all match "yes", but "yesterday"
- * does not.
- */
-char **ptr;
+int ex_on (char **ptr)
+/*  [SUMMARY] Extract boolean value from string.
+    [PURPOSE] This routine will extract a boolean value from string. The first
+    command is skipped.
+    <ptr> A pointer to the string to extract from. This is advanced to the next
+    word in the string if the current word matches "on" or "off".
+    [RETURNS] TRUE unless the word is "off".
+*/
 {   
     char *ex_command_skip() ;
     int l;
@@ -446,21 +429,13 @@ char **ptr;
 
 
 /*PUBLIC_FUNCTION*/
-int ex_on_or_off (ptr)
-/* ptr points to a text string (normally control input)
- * If next word matches "on" or "off", ptr will be advanced
- * and function returns TRUE or FALSE. 
- * If neither "on" nor "off" is found, pointer
- * is not advanced, but function returns TRUE.
- *
- * The only difference between 'ex_on' and 'ex_on_or_off' is that
- * 'ex_on_or_off' does not skip an initial key-word on entry.
- *
- * A word matches a target if all its letters match the letters
- * of the target: "y", "ye", "yes" all match "yes", but "yesterday"
- * does not.
- */
-char **ptr;
+int ex_on_or_off (char **ptr)
+/*  [SUMMARY] Extract boolean value from string.
+    [PURPOSE] This routine will extract a boolean value from string.
+    <ptr> A pointer to the string to extract from. This is advanced to the next
+    word in the string if the current word matches "on" or "off".
+    [RETURNS] TRUE unless the word is "off".
+*/
 {   
     char *ex_command_skip() ;
     int l;
@@ -484,18 +459,15 @@ char **ptr;
 
 
 /*PUBLIC_FUNCTION*/
-int ex_yes (ptr, default_v)
-/* ptr points to a text string (normally control input)
- * if next word matches "yes" or "no", ptr will be advanced
- * and function returns TRUE or FALSE. 
- * If neither "yes" nor "no" is found, pointer
- * is not advanced, but function returns 'default_v'.
- * A word matches a target if all its letters match the letters
- * of the target: "y", "ye", "yes" all match "yes", but "yesterday"
- * does not.
- */
-char **ptr;
-int default_v;
+int ex_yes (char **ptr, int default_v)
+/*  [SUMMARY] Extract boolean value from string.
+    [PURPOSE] This routine will extract a boolean value from string.
+    <ptr> A pointer to the string to extract from. This is advanced to the next
+    word in the string if the current word matches "yes" or "no".
+    <default_v> The default value.
+    [RETURNS] TRUE if the word is "yes", FALSE if the word is "no", else the
+    default value.
+*/
 {   
     char *w,*ex_command_skip() ;
     int l ;
@@ -521,20 +493,19 @@ int default_v;
 }
 
 /*PUBLIC_FUNCTION*/
-char *ex_str (str, rest)
-/*  This routine will extract a sub-string from a string. The sub-string may be
-    delimited by any number of whitespace characters.
-    The input string must be pointed to by  str. The routine will write a
-    pointer to the next field in the input string to  rest  . If this is NULL,
-    nothing is written here.
-    The double quote character may appear anywhere in the sub-string, and will
+char *ex_str (char *str, char **rest)
+/*  [SUMMARY] Extract sub-string from string.
+    [PURPOSE] This routine will extract a sub-string from a string. The
+    sub-string may be delimited by any number of whitespace characters. The
+    double quote character may appear anywhere in the sub-string, and will
     force all whitespace characters except '\n' into the output string. A
     second double quote character unquotes the previous quote. These double
     quote characters are not copied, unless they are consecutive.
-    The routine returns a pointer to a copy of the sub-string.
+    <str> The string to extract from.
+    <rest> A pointer beyond the value will be written here. If this is NULL,
+    nothing is written here.
+    [RETURNS] A pointer to a copy of the sub-string.
 */
-char *str;
-char **rest;
 {
     flag finished = FALSE;
     char quote = '\0';

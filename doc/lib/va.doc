@@ -1,6 +1,6 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the va_ package of routines in the Karma library.
-
+$PACKAGE          va
+$SUMMARY          Routines to perform optimised vector arithmetic operations
+$PURPOSE
     These routines are meant to provide a suite of arithmetic operations on
     vectors (arrays) of data.
     These routines are highly optimised, with many inner loops coded in
@@ -8,31 +8,39 @@
     equalling) the rated peak performance of the hardware.
     On some platforms, a speed improvment of over 30 times has been attained by
     coding in assembler.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
-
-    Written by		Richard Gooch	24-Jun-1995
-
-    Last updated by	Richard Gooch	24-Jun-1995
-
-
-*/
-
-void va_scale_float (float *out, int out_stride, float *inp, int inp_stride,
+$FUNCTION         va_scale_float
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (float *out, int out_stride, float *inp, int inp_stride,
 		     int length, float scale, float offset)
-/*  This routine will perform a scale and offset operation on an array of
-    floating point numbers. The arithmetic form is as follows:
-        out[i] = inp[i] * scale + offset
-    The result array will be written to the storage pointed to by  out  .
-    The stride (in floats) of consecutive elements in the output array must be
-    given by  out_stride  .
-    The input array must be pointed to by  inp_stride  .
-    The stride (in floats) of consecutive elements in the input array must be
-    given by  inp_stride  .
-    The elements of the input and output arrays must be aligned on a float
-    boundary.
-    The length of the input and output arrays must be given by  length  .
-    The scale factor must be given by  scale  .
-    The offset value must be given by  offset  .
-    The routine returns nothing.
-*/
-/*---------------------------------------------------------------------------*/
+$SUMMARY          Scale and offset an array of floats.
+$PURPOSE
+    This routine will perform a scale and offset operation on an
+    array of floating point numbers. The arithmetic form is as follows:
+    out[i] = inp[i] * scale + offset
+$PARAMETER        out :
+    The result array will be written here.
+$PARAMETER        out_stride :
+    The stride (in floats) of consecutive elements in the output
+    array.
+$PARAMETER        inp :
+    The input array.
+$PARAMETER        inp_stride :
+    The stride (in floats) of consecutive elements in the input
+    array.
+$NOTE
+    The elements of the input and output arrays must be aligned on a
+    float boundary.
+$PARAMETER        length :
+    The length of the input and output arrays.
+$PARAMETER        scale :
+    The scale factor.
+$PARAMETER        offset :
+    The offset value.
+$RETURNS
+    Nothing.
+$END

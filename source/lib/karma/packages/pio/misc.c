@@ -3,7 +3,7 @@
 
     This code provides portable data IO routines.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -66,8 +66,11 @@
     Updated by      Richard Gooch   31-JUL-1995: Created
   <pio_read_float_nantrap> and <pio_read_double_nantrap>.
 
-    Last updated by Richard Gooch   22-AUG-1995: Extended NaN list to include
+    Updated by      Richard Gooch   22-AUG-1995: Extended NaN list to include
   all 1s filled.
+
+    Last updated by Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -105,11 +108,11 @@ static unsigned char dnans[NUM_NANS][NET_DOUBLE_SIZE] =
 
 /*PUBLIC_FUNCTION*/
 flag pio_write64 (Channel channel, unsigned long data)
-/*  This routine will write 64 bits of data to the channel object given by
-    channel  .
-    The data must be given by  data  .This must be in host natural byte order.
-    The data will be converted to network byte order prior to writing.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Write 64 bits of data to a channel object.
+    <channel> The channel object.
+    <data> The data. This must be in host natural byte order. The data will be
+    converted to network byte order prior to writing.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     char buffer[8];
@@ -130,12 +133,11 @@ flag pio_write64 (Channel channel, unsigned long data)
 
 /*PUBLIC_FUNCTION*/
 flag pio_read64 (Channel channel, unsigned long *data)
-/*  This routine will read 64 bits of data from the channel object given by
-    channel  .
-    The data will be written to the storage pointed to by  data  .This will be
-    in host natural byte order.
-    The data will be converted from network byte order after reading.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Read 64 bits of data from a channel object.
+    <channel> The channel object.
+    <data> The data will be written here. This will be in host natural byte
+    order. The data will be converted from network byte order after reading.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     char buffer[8];
@@ -152,11 +154,11 @@ flag pio_read64 (Channel channel, unsigned long *data)
 
 /*PUBLIC_FUNCTION*/
 flag pio_write32 (Channel channel, unsigned long data)
-/*  This routine will write 32 bits of data to the channel object given by
-    channel  .
-    The data must be given by  data  .This must be in host natural byte order.
-    The data will be converted to network byte order prior to writing.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Write 32 bits of data to a channel object.
+    <channel> The channel object.
+    <data> The data. This must be in host natural byte order. The data will be
+    converted to network byte order prior to writing.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     char buffer[4];
@@ -177,12 +179,11 @@ flag pio_write32 (Channel channel, unsigned long data)
 
 /*PUBLIC_FUNCTION*/
 flag pio_read32 (Channel channel, unsigned long *data)
-/*  This routine will read 32 bits of data from the channel object given by
-    channel  .
-    The data will be written to the storage pointed to by  data  .This will be
-    in host natural byte order.
-    The data will be converted from network byte order after reading.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Read 32 bits of data from a channel object.
+    <channel> The channel object.
+    <data> The data will be written here. This will be in host natural byte
+    order. The data will be converted from network byte order after reading.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     char buffer[4];
@@ -199,11 +200,11 @@ flag pio_read32 (Channel channel, unsigned long *data)
 
 /*PUBLIC_FUNCTION*/
 flag pio_write16 (Channel channel, unsigned long data)
-/*  This routine will write 16 bits of data to the channel object given by
-    channel  .
-    The data must be given by  data  .This must be in host natural byte order.
-    The data will be converted to network byte order prior to writing.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Write 16 bits of data to a channel object.
+    <channel> The channel object.
+    <data> The data. This must be in host natural byte order. The data will be
+    converted to network byte order prior to writing.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     char buffer[2];
@@ -224,12 +225,11 @@ flag pio_write16 (Channel channel, unsigned long data)
 
 /*PUBLIC_FUNCTION*/
 flag pio_read16 (Channel channel, unsigned long *data)
-/*  This routine will read 16 bits of data from the channel object given by
-    channel  .
-    The data will be written to the storage pointed to by  data  .This will be
-    in host natural byte order.
-    The data will be converted from network byte order after reading.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Read 16 bits of data from a channel object.
+    <channel> The channel object.
+    <data> The data will be written here. This will be in host natural byte
+    order. The data will be converted from network byte order after reading.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     char buffer[2];
@@ -246,8 +246,7 @@ flag pio_read16 (Channel channel, unsigned long *data)
 
 /*PUBLIC_FUNCTION*/
 flag pio_write_float (Channel channel, float data)
-/*  [PURPOSE] This routine will write a floating point number to a channel
-    object.
+/*  [SUMMARY] Write a floating point number to a channel object.
     <channel> The channel object.
     <data> The data. This must be in host natural format. The data will be
     converted to IEEE network format prior to writing.
@@ -269,8 +268,7 @@ flag pio_write_float (Channel channel, float data)
 
 /*PUBLIC_FUNCTION*/
 flag pio_read_float (Channel channel, float *data)
-/*  [PURPOSE] This routine will read a floating point number from a channel
-    object.
+/*  [SUMMARY] Read a floating point number from a channel object.
     <channel> The channel object.
     <data> The data will be written here. This will be written in host natural
     format. The data will be converted from IEEE network format prior to
@@ -292,7 +290,8 @@ flag pio_read_float (Channel channel, float *data)
 
 /*PUBLIC_FUNCTION*/
 flag pio_read_float_nantrap (Channel channel, float *data, flag *was_nan)
-/*  [PURPOSE] This routine will read a floating point number from a channel
+/*  [SUMMARY] Read floating point data from a channel object, trapping NaNs.
+    [PURPOSE] This routine will read a floating point number from a channel
     object and will trap IEEE Not-A-Number (NaN) values.
     <channel> The channel object.
     <data> The data will be written here. This will be written in host natural
@@ -333,8 +332,7 @@ flag pio_read_float_nantrap (Channel channel, float *data, flag *was_nan)
 
 /*PUBLIC_FUNCTION*/
 flag pio_write_double (Channel channel, double data)
-/*  [PURPOSE] This routine will write a double precision floating point number
-    to a channel object.
+/*  [SUMMARY] Write double precision floating point data to a channel object.
     <channel> The channel object.
     <data> The data. This must be in host natural format. The data will be
     converted to IEEE network format prior to writing.
@@ -356,8 +354,7 @@ flag pio_write_double (Channel channel, double data)
 
 /*PUBLIC_FUNCTION*/
 flag pio_read_double (Channel channel, double *data)
-/*  [PURPOSE] This routine will read a double precision floating point number
-    from a channel object.
+/*  [SUMMARY] Read double precision floating point data from a channel object.
     <channel> The channel object.
     <data> The data will be written here. This will be written in host natural
     format. The data will be converted from IEEE network format prior to
@@ -379,7 +376,8 @@ flag pio_read_double (Channel channel, double *data)
 
 /*PUBLIC_FUNCTION*/
 flag pio_read_double_nantrap (Channel channel, double *data, flag *was_nan)
-/*  [PURPOSE] This routine will read a double precision floating point number
+/*  [SUMMARY] Read floating point data from a channel object, trapping NaNs.
+    [PURPOSE] This routine will read a double precision floating point number
     from a channel object and will trap IEEE Not-A-Number (NaN) values.
     <channel> The channel object.
     <data> The data will be written here. This will be written in host natural
@@ -420,11 +418,11 @@ flag pio_read_double_nantrap (Channel channel, double *data, flag *was_nan)
 
 /*PUBLIC_FUNCTION*/
 flag pio_write32s (Channel channel, long data)
-/*  This routine will write 32 bits of signed data to the channel object
-    given by  channel  .
-    The data must be given by  data  .This must be in host natural byte order.
-    The data will be converted to network byte order prior to writing.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Write 32 bits of signed data to a channel object.
+    <channel> The channel object.
+    <data> The data. This must be in host natural byte order. The data will be
+    converted to network byte order prior to writing.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     char buffer[4];
@@ -448,12 +446,11 @@ flag pio_write32s (Channel channel, long data)
 
 /*PUBLIC_FUNCTION*/
 flag pio_read32s (Channel channel, long *data)
-/*  This routine will read 32 bits of data from the channel object given by
-    channel  .
-    The data will be written to the storage pointed to by  data  .This will be
-    in host natural byte order.
-    The data will be converted from network byte order after reading.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Read 32 bits of signed data from a channel object.
+    <channel> The channel object.
+    <data> The data will be written here. This will be in host natural byte
+    order. The data will be converted from network byte order after reading.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     char buffer[4];
@@ -473,11 +470,11 @@ flag pio_read32s (Channel channel, long *data)
 
 /*PUBLIC_FUNCTION*/
 flag pio_write16s (Channel channel, long data)
-/*  This routine will write 16 bits of signed data to the channel object
-    given by  channel  .
-    The data must be given by  data  .This must be in host natural byte order.
-    The data will be converted to network byte order prior to writing.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Write 16 bits of signed data to a channel object.
+    <channel> The channel object.
+    <data> The data. This must be in host natural byte order. The data will be
+    converted to network byte order prior to writing.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     char buffer[2];
@@ -501,12 +498,11 @@ flag pio_write16s (Channel channel, long data)
 
 /*PUBLIC_FUNCTION*/
 flag pio_read16s (Channel channel, long *data)
-/*  This routine will read 16 bits of data from the channel object given by
-    channel  .
-    The data will be written to the storage pointed to by  data  .This will be
-    in host natural byte order.
-    The data will be converted from network byte order after reading.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Read 16 bits of signed data from a channel object.
+    <channel> The channel object.
+    <data> The data will be written here. This will be in host natural byte
+    order. The data will be converted from network byte order after reading.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     char buffer[2];
@@ -525,13 +521,12 @@ flag pio_read16s (Channel channel, long *data)
 }   /*  End Function pio_read16s  */
 
 /*PUBLIC_FUNCTION*/
-flag pio_write_swap (Channel channel, char *data, unsigned int length)
-/*  This routine will a swap a number of bytes of data and write them to the
-    channel object given by  channel  .
-    The data to be written must be pointed to by  data  .
-    The number of bytes to swap and then write must be given by  length  .
-    Note that the routine will not swap the data in the original buffer.
-    The routine returns TRUE on success, else it returns FALSE.
+flag pio_write_swap (Channel channel, CONST char *data, unsigned int length)
+/*  [SUMMARY] Swap and write bytes to a channel object.
+    <channel> The channel object.
+    <data> A pointer to the data bytes.
+    <length> The number of bytes to swap and then write.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     unsigned int byte_count;
@@ -573,11 +568,11 @@ flag pio_write_swap (Channel channel, char *data, unsigned int length)
 
 /*PUBLIC_FUNCTION*/
 flag pio_read_swap (Channel channel, char *data, unsigned int length)
-/*  This routine will read a number of bytes from the channel object given by
-    channel  and will then swap them.
-    The data will be written to the storage pointed to by  data  .
-    The number of bytes to read and then swap must be given by  length  .
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Read from a channel object and swap bytes.
+    <channel> The channel object.
+    <data> The data bytes will be written here.
+    <length> The number of bytes to read and then swap.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     unsigned int byte_count;
@@ -618,12 +613,11 @@ flag pio_read_swap (Channel channel, char *data, unsigned int length)
 }   /*  End Function pio_read_swap  */
 
 /*PUBLIC_FUNCTION*/
-flag pio_write_string (Channel channel, char *string)
-/*  This routine will write a string to a channel.
-    The channel object must be given by  channel  .
-    The string must be pointed to by  string  .If this is NULL, a zero length
-    string is written.
-    The routine returns TRUE on success, else it returns FALSE.
+flag pio_write_string (Channel channel, CONST char *string)
+/*  [SUMMARY] Write a string to a channel object.
+    <channel> The channel object.
+    <string> The string. If this is NULL, a zero length string is written.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     unsigned long length;
@@ -631,22 +625,10 @@ flag pio_write_string (Channel channel, char *string)
     static char function_name[] = "pio_write_string";
 */
 
-    if (string == NULL)
-    {
-	length = 0;
-    }
-    else
-    {
-	length = strlen (string);
-    }
-    if (pio_write32 (channel, length) != TRUE)
-    {
-	return (FALSE);
-    }
-    if (length < 1)
-    {
-	return (TRUE);
-    }
+    if (string == NULL) length = 0;
+    else length = strlen (string);
+    if ( !pio_write32 (channel, length) ) return (FALSE);
+    if (length < 1) return (TRUE);
     if (ch_write (channel, string, (unsigned int) length) < length)
     {
 	return (FALSE);
@@ -656,13 +638,13 @@ flag pio_write_string (Channel channel, char *string)
 
 /*PUBLIC_FUNCTION*/
 char *pio_read_string (Channel channel, unsigned int *length)
-/*  This routine will read a string from a channel.
-    The channel object must be given by  channel  .
-    The length of the string will be written to the storage pointed to by
-    length  .If this is NULL, nothing is written here.
-    The routine returns a pointer to a dynamically allocated string on success,
-    else it returns NULL. If a zero length string was read, the returned buffer
-    is one character long and contains the '\0' character.
+/*  [SUMMARY] Read a string from a channel object.
+    <channel> The channel object.
+    <length> The length of the string will be written here. If this is NULL,
+    nothing is written here.
+    [RETURNS] A pointer to a dynamically allocated string on success,
+    else NULL. If a zero length string was read, the returned buffer is one
+    character long and contains the '\0' character.
 */
 {
     unsigned long len;
@@ -670,7 +652,7 @@ char *pio_read_string (Channel channel, unsigned int *length)
     extern char *sys_errlist[];
     static char function_name[] = "pio_read_string";
 
-    if (pio_read32 (channel, &len) != TRUE)
+    if ( !pio_read32 (channel, &len) )
     {
 	a_func_abort (function_name, "Error reading string length");
 	return (NULL);

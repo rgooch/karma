@@ -3,7 +3,7 @@
 
     This code provides a file selector widget for Xt.
 
-    Copyright (C) 1993,1994,1995  Patrick Jordan
+    Copyright (C) 1993-1996  Patrick Jordan
     Incorporated into Karma by permission.
 
     This library is free software; you can redistribute it and/or
@@ -49,7 +49,23 @@
 
     Updated by      Richard Gooch   28-SEP-1995: Added directory callbacks.
 
-    Last updated by Richard Gooch   20-OCT-1995: Added minimum list height.
+    Updated by      Richard Gooch   20-OCT-1995: Added minimum list height.
+
+    Updated by      Richard Gooch   3-MAY-1996: Made widget 60 pixels wider.
+
+    Updated by      Richard Gooch   5-MAY-1996: Improved documentation.
+
+    Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
+
+    Updated by      Richard Gooch   22-JUN-1996: Created
+  <XkwFilewinStandardFileTester_nD> and <XkwFilewinStandardFileTester_3D>
+  routines.
+
+    Last updated by Richard Gooch   24-JUN-1996: Fixed
+  <XkwFilewinStandardFileTester_nD> and <XkwFilewinStandardFileTester_3D>
+  routines to catenate directory name with filename. Required for properly
+  testing GIPSY files.
 
 
 */
@@ -71,6 +87,7 @@
 #include <math.h>
 #include <varargs.h>
 
+#include <karma_foreign.h>
 #include <karma_dir.h>
 #include <karma_st.h>
 #include <karma_m.h>
@@ -198,7 +215,6 @@ static void create_list (FilewinWidget w)
 #define W w->filewin
     KDir thedir;
     KFileInfo *finfo;
-    flag ok;
     char *ptr;
     static char function_name[] = "Filewin::create_list";
 
@@ -306,10 +322,9 @@ static void ConstraintInitialize(Widget request,Widget new)
 
 static void Initialize(Widget Request,Widget New)
 {
-    int list_width;
-    FilewinWidget request = (FilewinWidget) Request;
+    /*FilewinWidget request = (FilewinWidget) Request;*/
     FilewinWidget new = (FilewinWidget) New;
-    Widget view,cancelbtn,rescanbtn;
+    Widget view;
   
     /* Initialise the directory list space */
     new->filewin.listmax = 64;
@@ -323,7 +338,7 @@ static void Initialize(Widget Request,Widget New)
     view=XtVaCreateManagedWidget
     ("view",viewportWidgetClass,New,
      XtNforceBars,True,
-     XtNwidth,190,
+     XtNwidth, 300,
      /*
 	XtNheight,250,
 	*/
@@ -358,9 +373,9 @@ static void Destroy(Widget W)
 
 static Boolean SetValues(Widget Current,Widget Request,Widget New)
 {
-  FilewinWidget current = (FilewinWidget) Current;
-  FilewinWidget request = (FilewinWidget) Request;
-  FilewinWidget new = (FilewinWidget) New;
+    FilewinWidget current = (FilewinWidget) Current;
+    /*FilewinWidget request = (FilewinWidget) Request;*/
+    FilewinWidget new = (FilewinWidget) New;
 
   if(new->core.background_pixel!=current->core.background_pixel ||
      new->filewin.foreground!=current->filewin.foreground) {
@@ -396,7 +411,13 @@ KCallbackFunc XkwFilewinRegisterDirCbk (Widget w,
     The interface to this routine is given below:
     [<pre>]
     flag callback (Widget w, void *info, CONST char *dirname)
-    *   [PURPOSE] This routine will process a directory selection event.
+    *   [SUMMARY] Callback for directory selection.
+        [PURPOSE] This routine is called when the user selects a directory in
+	the file selector. Normally the directory is descended and another
+	group of files is visible. This callback makes it to possible to
+	"capture" a directory if required. This can be useful when a
+	conceptual "data file" is in fact implemented as a directory or files,
+	such as with Miriad.
         <w> The Filewin widget on which the selection occurred.
 	<info> A pointer to arbitrary information.
 	<dirname> The name of the directory.
@@ -414,3 +435,81 @@ KCallbackFunc XkwFilewinRegisterDirCbk (Widget w,
     return ( c_register_callback (&fw->filewin.dir_callbacks, callback, w,
 				  info, FALSE, NULL, FALSE, TRUE) );
 }   /*  End Function XkwFilewinRegisterDirCbk  */
+
+flag XkwFilewinStandardFileTester_nD (KFileInfo finfo)
+/*  [SUMMARY] Standard file tester.
+    [PURPOSE] This routine may be passed as the value for the
+    XkwNfilenameTester resource on a FilewinWidget or FilepopupWidget. The
+    routine will accept all known filetypes.
+    <finfo> The file information.
+    [RETURNS] TRUE if the file is to be displayed, else FALSE.
+*/
+{
+    unsigned int filetype;
+    char *ptr;
+    char pathname[STRING_LENGTH];
+
+    /*  Accept all directories  */
+    if (finfo.type == KFILETYPE_DIRECTORY) return (TRUE);
+    (void) strcpy (pathname, finfo.dirname);
+    (void) strcat (pathname, "/");
+    (void) strcat (pathname, finfo.filename);
+    filetype = foreign_guess_format_from_filename (pathname);
+    if (filetype == FOREIGN_FILE_FORMAT_UNKNOWN) return (FALSE);
+    /*  Filetype understood: accept it  */
+    if (filetype != FOREIGN_FILE_FORMAT_GIPSY) return (TRUE);
+    /*  It's a proper GIPSY file: fake things a bit  */
+    if ( ( ptr = strrchr (finfo.filename, '.') ) == NULL ) return (FALSE);
+    if (strcmp (ptr, ".descr") == 0)
+    {
+	(void) strcpy (ptr, ".gipsy");
+	return (TRUE);
+    }
+    /*  Ignore anything else (i.e. the ".image" file)  */
+    return (FALSE);
+}   /*  End Function XkwFilewinStandardFileTester_nD  */
+
+flag XkwFilewinStandardFileTester_3D (KFileInfo finfo)
+/*  [SUMMARY] Standard file tester for cube files.
+    [PURPOSE] This routine may be passed as the value for the
+    XkwNfilenameTester resource on a FilewinWidget or FilepopupWidget. The
+    routine will accept all known filetypes which are capable of containing a
+    3-dimensional array of data.
+    <finfo> The file information.
+    [RETURNS] TRUE if the file is to be displayed, else FALSE.
+*/
+{
+    unsigned int filetype;
+    char *ptr;
+    char pathname[STRING_LENGTH];
+
+    /*  Accept all directories  */
+    if (finfo.type == KFILETYPE_DIRECTORY) return (TRUE);
+    (void) strcpy (pathname, finfo.dirname);
+    (void) strcat (pathname, "/");
+    (void) strcat (pathname, finfo.filename);
+    filetype = foreign_guess_format_from_filename (pathname);
+    switch (filetype)
+    {
+      case FOREIGN_FILE_FORMAT_UNKNOWN:
+      case FOREIGN_FILE_FORMAT_PPM:
+      case FOREIGN_FILE_FORMAT_SUNRAS:
+	return (FALSE);
+/*
+	break;
+*/
+      default:
+	break;
+    }
+    /*  Filetype understood: accept it  */
+    if (filetype != FOREIGN_FILE_FORMAT_GIPSY) return (TRUE);
+    /*  It's a proper GIPSY file: fake things a bit  */
+    if ( ( ptr = strrchr (finfo.filename, '.') ) == NULL ) return (FALSE);
+    if (strcmp (ptr, ".descr") == 0)
+    {
+	(void) strcpy (ptr, ".gipsy");
+	return (TRUE);
+    }
+    /*  Ignore anything else (i.e. the ".image" file)  */
+    return (FALSE);
+}   /*  End Function XkwFilewinStandardFileTester_3D  */

@@ -1,0 +1,42 @@
+<html><head><title>Package: col</title></head> 
+<body>
+<center><h1>The "col" Package</h1></center>    These routines are meant to provide basic conversions between colours in
+    different colour spaces.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=col></a></table><h4>Functions</h4><table><tr><td><a href=col.html#col_hsb_slice_to_rgb_array>col_hsb_slice_to_rgb_array</a></td><td>Generate a table of RGB values from a slice of HSB space.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=col_hsb_slice_to_rgb_array></a> void
+ <b>col_hsb_slice_to_rgb_array</b><i>    (unsigned long rgb_array[65536],
+				 unsigned long red_mask,
+				 unsigned long green_mask,
+				 unsigned long blue_mask,
+				 float min_brightness, float max_brightness,
+				 float start_hue, float stop_hue,
+				 float saturation)
+</i><br><p>    This routine will convert a slice in HSB (Hue, Saturation and
+    Brightness) colour space to a 2-dimensional array of RGB (Red, Green and
+    Blue) values. The HSB slice covers a range of hue and brightness at a fixed
+    satutation.
+<p><b>Parameters:</b><ul><li><i>rgb_array :</i> 
+    The 256*256 array of RGB values will be written here. The upper
+    dimension will map to brightness and the lower dimension will map to hue.
+<br><li><i>red_mask :</i> 
+    The bitmask used when writing the red colour component.
+<br><li><i>green_mask :</i> 
+    The bitmask used when writing the green colour component.
+<br><li><i>blue_mask :</i> 
+    The bitmask used when writing the blue colour component.
+<br><li><i>min_brightness :</i> 
+    The minimum brightness. The valid range is 0.0 to 1.0
+<br><li><i>max_brightness :</i> 
+    The maximum brightness. The valid range is 0.0 to 1.0
+<br><li><i>start_hue :</i> 
+    The start hue. The valid range is 0.0 to just under 6.0
+<br><li><i>stop_hue :</i> 
+    The end hue. The valid range is 0.0 to just under 6.0
+<br><li><i>saturation :</i> 
+    The saturation value. The valid range is 0.0 to 1.0
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Safe.
+<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

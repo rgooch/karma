@@ -2,7 +2,7 @@
 
     Header for  conn_  package.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   18-SEP-1992
 
-    Last updated by Richard Gooch   7-APR-1995
+    Last updated by Richard Gooch   7-APR-1996
 
 */
 
@@ -55,30 +55,30 @@ EXTERN_FUNCTION (void conn_register_managers,
 		 (flag (*manage_func) (), void (*unmanage_func) (),
 		  void (*exit_schedule_func) () ) );
 EXTERN_FUNCTION (void conn_register_server_protocol,
-		 (char *protocol_name, unsigned int version,
+		 (CONST char *protocol_name, unsigned int version,
 		  unsigned int max_connections,
 		  flag (*open_func) (), flag (*read_func) (),
 		  void (*close_func) () ) );
 EXTERN_FUNCTION (void conn_register_client_protocol,
-		 (char *protocol_name, unsigned int version,
+		 (CONST char *protocol_name, unsigned int version,
 		  unsigned int max_connections,
 		  flag (*validate_func) (), flag (*open_func) (),
 		  flag (*read_func) (), void (*close_func) () ) );
 EXTERN_FUNCTION (Channel conn_get_channel, (Connection connection) );
-EXTERN_FUNCTION (flag conn_attempt_connection, (char *hostname,
-						unsigned int port_number,
-						char *protocol_name) );
+EXTERN_FUNCTION (flag conn_attempt_connection,
+		 (CONST char *hostname, unsigned int port_number,
+		  CONST char *protocol_name) );
 EXTERN_FUNCTION (flag conn_close, (Connection connection) );
 EXTERN_FUNCTION (flag conn_become_server, (unsigned int *port_number,
 					   unsigned int retries) );
 EXTERN_FUNCTION (unsigned int conn_get_num_serv_connections,
-		 (char *protocol_name) );
+		 (CONST char *protocol_name) );
 EXTERN_FUNCTION (unsigned int conn_get_num_client_connections,
-		 (char *protocol_name) );
-EXTERN_FUNCTION (Connection conn_get_serv_connection, (char *protocol_name,
-						       unsigned int number) );
+		 (CONST char *protocol_name) );
+EXTERN_FUNCTION (Connection conn_get_serv_connection,
+		 (CONST char *protocol_name, unsigned int number) );
 EXTERN_FUNCTION (Connection conn_get_client_connection,
-		 (char *protocol_name, unsigned int number) );
+		 (CONST char *protocol_name, unsigned int number) );
 EXTERN_FUNCTION (void *conn_get_connection_info, (Connection connection) );
 EXTERN_FUNCTION (flag conn_controlled_by_cm_tool, () );
 EXTERN_FUNCTION (char *conn_get_connection_module_name,

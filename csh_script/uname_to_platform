@@ -1,0 +1,140 @@
+#! /bin/csh -f
+#
+# This C-shell script will determine the type of machine one is operating on,
+# and will print the platform type.
+#
+#   Copyright (C) 1996  Richard Gooch
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+#   Richard Gooch may be reached by email at  karma-request@atnf.csiro.au
+#   The postal address is:
+#     Richard Gooch, c/o ATNF, P. O. Box 76, Epping, N.S.W., 2121, Australia.
+
+# Written by            Richard Gooch   2-MAY-1996
+
+# Last updated by       Richard Gooch   2-MAY-1996
+
+
+set unknown = "UNKNOWN_unknown"
+
+# Search for uname programme. Must be sure to avoid the GNU version which does
+# not output the same as the vendor's version (and the vendor *is* correct).
+foreach i (/bin/uname /usr/bin/uname)
+    if ( ("$?uname_path" == "0") && (-x $i) ) then
+	set uname_path = $i
+    endif
+end
+if ("$?uname_path" == "0") then
+    echo "$unknown"
+    exit 1
+endif
+
+set full_uname = `$uname_path -a`
+@ num_components = "$#full_uname"
+
+# Linux
+if ("$full_uname[1]" == "Linux") then
+    set OS = "Linux"
+    set machine = "$full_uname[$num_components]"
+    switch ("$machine")
+      case "i386":
+      case "i486":
+      case "i586":
+	set MACHINE = "i386"
+	breaksw
+      default:
+	echo "$unknown"
+	exit 2
+	breaksw
+    endsw
+    echo "${MACHINE}_${OS}"
+    exit 0
+endif
+
+# IRIX 6.x
+if ("$full_uname[1]" == "IRIX64") then
+    echo "mips4_IRIX6"
+    exit 0
+endif
+
+# SunOS 4.x and Solaris 2.x
+if ("$full_uname[1]" == "SunOS") then
+    # Sun, in their arrogance, call Solaris 2 "SunOS 5.x". Nobody is fooled.
+    set os_rev = `echo "$full_uname[3]" | sed -e 's/. //'`
+    switch ("$os_rev")
+      case "4":
+	set OS = "SunOS"
+	if (`echo "$full_uname[5]" | fgrep -c "sun4"` == "0") then
+	    echo "$unknown"
+	    exit 2
+	endif
+	set MACHINE = "sparc"
+	breaksw
+      case "5":
+	set OS = "Solaris"
+	if ("$full_uname[6]" != "sparc") then
+	    echo "$unknown"
+	    exit 2
+	endif
+	set MACHINE = "sparc"
+	breaksw
+    endsw
+    echo "${MACHINE}_${OS}"
+    exit 0
+endif
+
+# OSF/1
+if ("$full_uname[1]" == "OSF1") then
+    set OS = "OSF1"
+    set machine = "$full_uname[$num_components]"
+    switch ("$machine")
+      case "alpha":
+	set MACHINE = "alpha"
+	breaksw
+      default:
+	echo "$unknown"
+	exit 2
+	breaksw
+    endsw
+    echo "${MACHINE}_${OS}"
+    exit 0
+endif
+
+# HP/UX
+if ("$full_uname[1]" == "HP-UX") then
+    echo "hp9000_HPUX"
+    exit 0
+endif
+
+# ULTRIX
+if ("$full_uname[1]" == "ULTRIX") then
+    echo "mips1_ULTRIX"
+    exit 0
+endif
+
+# Don't know what this is
+echo "$unknown"
+exit 2
+
+# Sample output of uname
+#
+#Linux workaholix 1.3.88 #1 Mon Apr 15 12:05:07 EST 1996 i586
+#IRIX64 raptor 6.0.1 03302045 IP21 mips
+#SunOS phoenix 5.5 Generic sun4m sparc SUNW,SPARCsystem-600
+#SunOS lynx 4.1.3 11 sun4m
+#OSF1 kaputar.atnf.csiro.au V3.2 148 alpha
+#HP-UX rzmws7 A.09.01 A 9000/720 2002130964 two-user license
+#ULTRIX quiros 4.4 0 RISC

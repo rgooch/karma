@@ -1,0 +1,27 @@
+/*PROTOTYPE_FUNCTION*/  /*
+void CM_PROTO_stop_func (int pid, int sig)
+  [SUMMARY] This routine is called when a child process is stopped.
+    <pid> The process ID.
+    <sig> The signal which stopped the process.
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void CM_PROTO_term_func (int pid, int sig, struct rusage *rusage)
+    [SUMMARY] This routine is called when a child process is killed.
+    <pid> The process ID.
+    <sig> The signal which killed the process.
+    <rusage> The resource usage information. If this is NULL, the platform does
+    not support this.
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void CM_PROTO_exit_func (int pid, int value, struct rusage *rusage)
+    [SUMMARY] This routine is called when a child process exits.
+    <pid> The process ID.
+    <value> The value passed to <<_exit>>.
+    <rusage> The resource usage information. If this is NULL, the platform does
+    not support this.
+    [RETURNS] Nothing.
+*/

@@ -42,8 +42,10 @@
     Updated by      Richard Gooch   8-OCT-1995: Call <abort> rather than <exit>
   in <prog_bug>.
 
-    Last updated by Richard Gooch   24-JAN-1996: Fixed bug in
+    Updated by      Richard Gooch   24-JAN-1996: Fixed bug in
   <c_unregister_callback>.
+
+    Last updated by Richard Gooch   31-MAR-1996: Changed documentation style.
 
 
 */
@@ -109,26 +111,16 @@ KCallbackFunc c_register_callback (KCallbackList *list, flag (*callback) (),
 				   void *client1_data, flag client1_indirect,
 				   void *client2_data, flag client2_indirect,
 				   flag quenchable)
-/*  [PURPOSE] This routine will register a function which should be called when
+/*  [SUMMARY] Register a callback function with a list.
+    [PURPOSE] This routine will register a function which should be called when
     the callbacks for an object should be called. When the object is destroyed
-    a call should be made to  c_destroy_list  .The first callback registered is
-    the first one called. Multiple callback functions may be registered per
+    a call should be made to [<c_destroy_list>]. The first callback registered
+    is the first one called. Multiple callback functions may be registered per
     object.
     <list> A pointer to the callback list. This is changed. The initial value
     must be NULL.
     <callback> The function to be called when the object callbacks are called.
-    The interface to this function is given below:
-    [<pre>]
-    flag callback (void *object, void *client1_data, void *call_data,
-                   void *client2_data)
-    *   [PURPOSE] This routine is called when object callbacks are called.
-        <object> The object information pointer.
-	<client1_data> The first client information pointer.
-	<call_data> The call information pointer.
-	<client2_data> The second client information pointer.
-	[RETURNS] TRUE if further callbacks should not be called, else FALSE.
-    *
-    [</pre>]
+    The prototype function is [<C_PROTO_callback>].
     <object> The object pointer passed to the callback. This may be NULL.
     <client1_data> The first client information pointer passed to the callback.
     This may be NULL.
@@ -197,7 +189,7 @@ KCallbackFunc c_register_callback (KCallbackList *list, flag (*callback) (),
 
 /*PUBLIC_FUNCTION*/
 void c_unregister_callback (KCallbackFunc callback)
-/*  [PURPOSE] This routine will unregister a callback function.
+/*  [SUMMARY] Unregister a callback function.
     <callback> The callback function.
     [RETURNS] Nothing.
 */
@@ -229,7 +221,7 @@ void c_unregister_callback (KCallbackFunc callback)
 
 /*PUBLIC_FUNCTION*/
 flag c_call_callbacks (KCallbackList list, void *call_data)
-/*  [PURPOSE] This routine will call all registered callbacks for an object.
+/*  [SUMMARY] Call all registered callbacks for an object.
     <list> The callback list.
     <call_data> The arbitrary call information pointer.
     [RETURNS] TRUE if one of the callbacks quenched the further delivery of
@@ -286,8 +278,9 @@ flag c_call_callbacks (KCallbackList list, void *call_data)
 
 /*PUBLIC_FUNCTION*/
 void c_destroy_list (KCallbackList list)
-/*  [PURPOSE] This routine will unregister all callbacks for an object and then
-    destroys the callback list.
+/*  [SUMMARY] Destroy a callback list.
+    [PURPOSE] This routine will unregister all callbacks in a callback list and
+    then destroys the list.
     <list> The callback list.
     [RETURNS] Nothing.
 */

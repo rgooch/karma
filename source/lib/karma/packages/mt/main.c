@@ -60,8 +60,20 @@
   Added thread_info parameter to thread function and created
   <mt_new_thread_info> routine.
 
-    Last updated by Richard Gooch   25-JAN-1996: Increased arena space from
+    Updated by      Richard Gooch   25-JAN-1996: Increased arena space from
   64k to 256k for IRIX. Stupid limitations.
+
+    Updated by      Richard Gooch   18-FEB-1996: Made child process die when
+  parent dies with IRIX.
+
+    Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
+
+    Updated by      Richard Gooch   2-MAY-1996: Created <mt_get_shared_pool>
+  routine.
+
+    Last updated by Richard Gooch   3-JUN-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -190,6 +202,7 @@ KCallbackList destroy_list = NULL;
 #ifdef OS_IRIX
 static usptr_t *arena = NULL;
 #endif
+KThreadPool shared_pool = NULL;
 
 /*  Private functions  */
 #ifdef HAS_THREADS
@@ -206,8 +219,7 @@ STATIC_FUNCTION (void exit_callback, () );
 
 /*PUBLIC_FUNCTION*/
 KThreadPool mt_create_pool (void *pool_info)
-/*  [PURPOSE] This routine will create a pool of threads which may have jobs
-    launched onto it.
+/*  [SUMMARY] Create a pool of threads which may have jobs launched onto it.
     <pool_info> An arbitrary pointer passed to work functions.
     [NOTE] The environment variable MT_MAX_THEADS may be used to limit the
     number of threads used.
@@ -426,9 +438,44 @@ KThreadPool mt_create_pool (void *pool_info)
 }   /*  End Function mt_create_pool  */
 
 /*PUBLIC_FUNCTION*/
+KThreadPool mt_get_shared_pool ()
+/*  [SUMMARY] Create or get the shared thread pool.
+    [PURPOSE] This routine will get a pool of threads which may be shared
+    between several services within a process. This shared pool may be used to
+    reduce the number of thread pools created. Creating large numbers of thread
+    pools may consume significant system resources on some platforms. The first
+    time this routine is called the shared pool is created.
+    [NOTE] The environment variable MT_MAX_THEADS may be used to limit the
+    number of threads used.
+    [NOTE] This shared pool cannot be used with the [<mt_new_thread_info>] and
+    [<my_get_thread_info>] routines.
+    [MT-LEVEL] Safe under Solaris 2.
+    [RETURNS] The shared KThreadPool object on success. On failure the process
+    aborts.
+*/
+{
+    extern KThreadPool shared_pool;
+#ifdef HAS_FUNC_LOCKS
+    static LOCK_TYPE func_lock;
+#endif
+    static char function_name[] = "mt_get_shared_pool";
+
+    FUNC_LOCK;
+    if (shared_pool == NULL)
+    {
+	if ( ( shared_pool = mt_create_pool (NULL) ) == NULL )
+	{
+	    m_abort (function_name, "shared thread pool");
+	}
+    }
+    FUNC_UNLOCK;
+    return (shared_pool);
+}   /*  End Function mt_get_shared_pool  */
+
+/*PUBLIC_FUNCTION*/
 void mt_destroy_pool (KThreadPool pool, flag interrupt)
-/*  [PURPOSE] This routine will destroy a thread pool.
-    <pool) The thread pool.
+/*  [SUMMARY] This routine will destroy a thread pool.
+    <pool> The thread pool.
     <interrupt> If TRUE, any jobs not yet completed will be killed, else the
     function will wait for uncompleted jobs to finish prior to destroying the
     pool.
@@ -441,9 +488,16 @@ void mt_destroy_pool (KThreadPool pool, flag interrupt)
 #ifdef OS_IRIX
     extern usptr_t *arena;
 #endif
+    extern KThreadPool shared_pool;
+#ifdef HAS_FUNC_LOCKS
+    static LOCK_TYPE func_lock;
+#endif
     static char function_name[] = "mt_destroy_pool";
 
     VERIFY_POOL (pool);
+    FUNC_LOCK;
+    if (pool == shared_pool) shared_pool = NULL;
+    FUNC_UNLOCK;
     FLAG_VERIFY (interrupt);
     if (!interrupt) mt_wait_for_all_jobs (pool);
     LOCK_POOL (pool);
@@ -499,7 +553,7 @@ void mt_destroy_pool (KThreadPool pool, flag interrupt)
 
 /*PUBLIC_FUNCTION*/
 void mt_destroy_all_pools (flag interrupt)
-/*  [PURPOSE] This routine will destroy all thread pools.
+/*  [SUMMARY] This routine will destroy all thread pools.
     <interrupt> If TRUE, any jobs not yet completed will be killed, else the
     function will wait for uncompleted jobs to finish prior to destroying the
     pools.
@@ -515,10 +569,11 @@ void mt_destroy_all_pools (flag interrupt)
 
 /*PUBLIC_FUNCTION*/
 unsigned int mt_num_threads (KThreadPool pool)
-/*  [PURPOSE] This function will determine the number of threads that may be
+/*  [SUMMARY] Get the number of threads in a thread pool.
+    [PURPOSE] This function will determine the number of threads that may be
     run concurrently in a thread pool.
     <pool> The thread pool.
-    [MT-LEVEL] Unsafe.
+    [MT-LEVEL] Safe.
     [RETURNS] The number of concurrent threads.
 */
 {
@@ -537,25 +592,11 @@ void mt_launch_job (KThreadPool pool,
 				  void *thread_info),
 		    void *call_info1, void *call_info2,
 		    void *call_info3, void *call_info4)
-/*  [PURPOSE] This function will launch a job to a pool of threads, running the
+/*  [SUMMARY] Launch a job onto a thread pool.
+    [PURPOSE] This function will launch a job to a pool of threads, running the
     job on the first available thread.
     <pool> The thread pool.
-    <func> The function to execute. The interface to this functions is as
-    follows:
-    [<pre>]
-    void func (void *pool_info, void *call_info1, void *call_info2,
-               void *call_info3, void *call_info4, void *thread_info)
-    *   [PURPOSE] This routine will perform a job.
-        <pool_info> The arbitrary pool information pointer.
-	<call_info1> The first arbitrary call information pointer.
-	<call_info2> The second arbitrary call information pointer.
-	<call_info3> The third arbitrary call information pointer.
-	<call_info4> The fourth arbitrary call information pointer.
-	<thread_info> A pointer to arbitrary, per thread, information. This
-	information is private to the thread.
-	[RETURNS] Nothing.
-    *
-    [</pre>]
+    <func> The function to execute. The prototype function is [<MT_PROTO_func>]
     <call_info1> An arbitrary argument to <<func>>.
     <call_info2> An arbitrary argument to <<func>>.
     <call_info3> An arbitrary argument to <<func>>.
@@ -566,7 +607,9 @@ void mt_launch_job (KThreadPool pool,
 */
 {
     unsigned int count;
+#ifdef HAS_THREADS
     char *thread_info;
+#endif
     static char function_name[] = "mt_launch_job";
 
     VERIFY_POOL (pool);
@@ -621,7 +664,8 @@ void mt_launch_job (KThreadPool pool,
 
 /*PUBLIC_FUNCTION*/
 void mt_setlock (KThreadPool pool, flag lock)
-/*  [PURPOSE] This function will lock a thread pool such that no other thread
+/*  [SUMMARY] Set a lock on a thread pool.
+    [PURPOSE] This function will lock a thread pool such that no other thread
     can lock the pool at the same time. This does not prevent other threads
     from running, nor new jobs from being launched, it merely prevents them
     from aquiring the lock.
@@ -644,8 +688,7 @@ void mt_setlock (KThreadPool pool, flag lock)
 
 /*PUBLIC_FUNCTION*/
 void mt_new_thread_info (KThreadPool pool, void *info, uaddr size)
-/*  [PURPOSE] This routine will register new thread information for the threads
-    in a pool.
+/*  [SUMMARY] Register new thread information for the threads in a pool.
     <pool> The thread pool.
     <info> A pointer to the thread information array. If NULL and <<size>> is
     not 0 then the routine will allocate an array of sufficient size.
@@ -657,12 +700,18 @@ void mt_new_thread_info (KThreadPool pool, void *info, uaddr size)
 */
 {
     uaddr num_threads;
+    extern KThreadPool shared_pool;
     static char function_name[] = "mt_new_thread_info";
 
     VERIFY_POOL (pool);
     if (size < 1)
     {
-	(void) fprintf (stderr, "Illegal size: %u\n", size);
+	(void) fprintf (stderr, "Illegal size: %lu\n", size);
+	a_prog_bug (function_name);
+    }
+    if (pool == shared_pool)
+    {
+	(void) fprintf (stderr, "Operation illegal for shared thread pool\n");
 	a_prog_bug (function_name);
     }
     num_threads = mt_num_threads (pool);
@@ -697,25 +746,29 @@ void mt_new_thread_info (KThreadPool pool, void *info, uaddr size)
     UNLOCK_POOL (pool);
 }   /*  End Function mt_new_thread_info  */
 
-
 /*PUBLIC_FUNCTION*/
 void *mt_get_thread_info (KThreadPool pool)
-/*  [PURPOSE] This routine will get the thread information pointer for a pool
-    of threads.
+/*  [SUMMARY] Get the thread information pointer for a pool of threads.
     <pool> The thread pool.
+    [MT-LEVEL] Safe.
     [RETURNS] A pointer to the thread information array.
 */
 {
+    extern KThreadPool shared_pool;
     static char function_name[] = "mt_get_thread_info";
 
     VERIFY_POOL (pool);
+    if (pool == shared_pool)
+    {
+	(void) fprintf (stderr, "Operation illegal for shared thread pool\n");
+	a_prog_bug (function_name);
+    }
     return ( (char *) pool->thread_info_buffer );
 }   /*  End Function mt_get_thread_info  */
 
 /*PUBLIC_FUNCTION*/
 void mt_wait_for_all_jobs (KThreadPool pool)
-/*  [PURPOSE] This function will wait for all previously launched jobs to
-    complete.
+/*  [SUMMARY] Wait for all previously launched jobs to complete.
     <pool> The thread pool.
     [MT-LEVEL] Safe.
     [RETURNS] Nothing.
@@ -754,6 +807,15 @@ static THREAD_RETURN thread_main (void *arg)
     if ( (long) signal (SIGTERM, ( void (*) () ) thr_exit) == -1 )
     {
 	(void) fprintf (stderr, "Error setting sigTERM handler\t%s\n",
+			sys_errlist[errno]);
+	(void) exit (RV_SYS_ERROR);
+    }
+#  endif
+#  ifdef OS_IRIX
+    /*  Make child die when parent dies  */
+    if (prctl (PR_TERMCHILD) == -1)
+    {
+	(void) fprintf (stderr, "Error controlling process\t%s\n",
 			sys_errlist[errno]);
 	(void) exit (RV_SYS_ERROR);
     }

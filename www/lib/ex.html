@@ -1,0 +1,133 @@
+<html><head><title>Package: ex</title></head> 
+<body>
+<center><h1>The "ex" Package</h1></center>    These routines are meant to provide a simple mechanism to extract numeric
+    values and strings from strings.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=ex></a></table><h4>Functions</h4><table><tr><td><a href=ex.html#ex_int>ex_int</a></td><td>Extract integer value from string.
+</td></tr>
+<tr><td><a href=ex.html#ex_uint>ex_uint</a></td><td>Extract unsigned integer value from string.
+</td></tr>
+<tr><td><a href=ex.html#ex_word>ex_word</a></td><td>Extract word from string.
+</td></tr>
+<tr><td><a href=ex.html#ex_command>ex_command</a></td><td>Extract command from string.
+</td></tr>
+<tr><td><a href=ex.html#ex_word_skip>ex_word_skip</a></td><td>Skip a word in a string.
+</td></tr>
+<tr><td><a href=ex.html#ex_float>ex_float</a></td><td>Extract float value from string.
+</td></tr>
+<tr><td><a href=ex.html#ex_hour>ex_hour</a></td><td>Extract hour value from string.
+</td></tr>
+<tr><td><a href=ex.html#ex_command_skip>ex_command_skip</a></td><td>Skip a command in a string.
+</td></tr>
+<tr><td><a href=ex.html#ex_on>ex_on</a></td><td>Extract boolean value from string.
+</td></tr>
+<tr><td><a href=ex.html#ex_on_or_off>ex_on_or_off</a></td><td>Extract boolean value from string.
+</td></tr>
+<tr><td><a href=ex.html#ex_yes>ex_yes</a></td><td>Extract boolean value from string.
+</td></tr>
+<tr><td><a href=ex.html#ex_str>ex_str</a></td><td>Extract sub-string from string.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=ex_int></a> int
+ <b>ex_int</b><i>    (char *str, char **rest)
+</i><br><p>    Extract integer value from string.
+<p><b>Parameters:</b><ul><li><i>str :</i> 
+    The string to extract from.
+<br><li><i>rest :</i> 
+    A pointer beyond the value will be written here.
+<br></ul><b>Returns:</b>     The value.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ex_uint></a> unsigned int
+ <b>ex_uint</b><i>    (char *str, char **rest)
+</i><br><p>    Extract unsigned integer value from string.
+<p><b>Parameters:</b><ul><li><i>str :</i> 
+    The string to extract from.
+<br><li><i>rest :</i> 
+    A pointer beyond the value will be written here.
+<br></ul><b>Returns:</b>     The value.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ex_word></a> char *
+ <b>ex_word</b><i>    (char *str, char **rest)
+</i><br><p>    Extract word from string.
+<p><b>Parameters:</b><ul><li><i>str :</i> 
+    The string to extract from.
+<br><li><i>rest :</i> 
+    A pointer beyond the word will be written here.
+<br></ul><b>Returns:</b>     The word.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ex_command></a> char *
+ <b>ex_command</b><i>    (char *str, char **rest)
+</i><br><p>    This routine will extract a command from a string. The operation
+    is similar to <a href=ex.html#ex_word>ex_word</a> except that any of " \t/=?!" terminate a command.
+<p><b>Parameters:</b><ul><li><i>str :</i> 
+    The string to extract from.
+<br><li><i>rest :</i> 
+    A pointer beyond the command will be written here.
+<br></ul><b>Returns:</b>     The command.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ex_word_skip></a> char *
+ <b>ex_word_skip</b><i>    (char *str)
+</i><br><p>    Skip a word in a string.
+<p><b>Parameters:</b><ul><li><i>str :</i> 
+    The string.
+<br></ul><b>Returns:</b>     The next part of the string.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ex_float></a> double
+ <b>ex_float</b><i>    (char *str, char **rest)
+</i><br><p>    Extract float value from string.
+<p><b>Parameters:</b><ul><li><i>str :</i> 
+    The string to extract from.
+<br><li><i>rest :</i> 
+    A pointer beyond the value will be written here.
+<br></ul><b>Returns:</b>     The value.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ex_hour></a> double
+ <b>ex_hour</b><i>    (char *p, char **nxt)
+</i><br><p>    Extract hour value from string.
+<p><b>Parameters:</b><ul><li><i>p :</i> 
+    The string to extract from.
+<br><li><i>nxt :</i> 
+    A pointer beyond the value will be written here.
+<br></ul><b>Returns:</b>     The value.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ex_command_skip></a> char *
+ <b>ex_command_skip</b><i>    (char *str)
+</i><br><p>    This routine skip a command in a string. The operation
+    is similar to <a href=ex.html#ex_word_skip>ex_word_skip</a> except that any of " \t/=?!" terminate a
+    command.
+<p><b>Parameters:</b><ul><li><i>str :</i> 
+    The string.
+<br></ul><b>Returns:</b>     The next part of the string.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ex_on></a> int
+ <b>ex_on</b><i>    (char **ptr)
+</i><br><p>    This routine will extract a boolean value from string. The first
+    command is skipped.
+<p><b>Parameters:</b><ul><li><i>ptr :</i> 
+    A pointer to the string to extract from. This is advanced to the next
+    word in the string if the current word matches "on" or "off".
+<br></ul><b>Returns:</b>     TRUE unless the word is "off".
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ex_on_or_off></a> int
+ <b>ex_on_or_off</b><i>    (char **ptr)
+</i><br><p>    This routine will extract a boolean value from string.
+<p><b>Parameters:</b><ul><li><i>ptr :</i> 
+    A pointer to the string to extract from. This is advanced to the next
+    word in the string if the current word matches "on" or "off".
+<br></ul><b>Returns:</b>     TRUE unless the word is "off".
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ex_yes></a> int
+ <b>ex_yes</b><i>    (char **ptr, int default_v)
+</i><br><p>    This routine will extract a boolean value from string.
+<p><b>Parameters:</b><ul><li><i>ptr :</i> 
+    A pointer to the string to extract from. This is advanced to the next
+    word in the string if the current word matches "yes" or "no".
+<br><li><i>default_v :</i> 
+    The default value.
+<br></ul><b>Returns:</b>     TRUE if the word is "yes", FALSE if the word is "no", else the
+    default value.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ex_str></a> char *
+ <b>ex_str</b><i>    (char *str, char **rest)
+</i><br><p>    This routine will extract a sub-string from a string. The
+    sub-string may be delimited by any number of whitespace characters. The
+    double quote character may appear anywhere in the sub-string, and will
+    force all whitespace characters except '\n' into the output string. A
+    second double quote character unquotes the previous quote. These double
+    quote characters are not copied, unless they are consecutive.
+<p><b>Parameters:</b><ul><li><i>str :</i> 
+    The string to extract from.
+<br><li><i>rest :</i> 
+    A pointer beyond the value will be written here. If this is NULL,
+    nothing is written here.
+<br></ul><b>Returns:</b>     A pointer to a copy of the sub-string.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

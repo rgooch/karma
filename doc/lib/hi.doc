@@ -1,24 +1,42 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the hi_ package of routines in the Karma library.
-
+$PACKAGE          hi
+$SUMMARY          Routines to save and restore history information
+$PURPOSE
     These routines are meant to provide which a mechanism for saving and
     restoring history (parameter) information.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
+$FUNCTION         hi_read
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (CONST char *module_name,
+	      flag (*command_decode) (CONST char *command, FILE *fp) )
+$SUMMARY          Read history information for a module.
+$PURPOSE
+    This routine will read any available history information for a
+    module and process accordingly.
+$PARAMETER        module_name :
+    The name of the module.
+$PARAMETER        command_decode :
+    The function used to decode history lines.
+$RETURNS
+    Nothing.
+$END
 
-    Written by		Richard Gooch	9-Jun-1995
-
-    Last updated by	Richard Gooch	27-OCT-1992
-
-
-*/
-
-void hi_read (command_name,command_decode)
-/* Read defaults file and process */
-char *command_name;        /* name of command */
-flag (*command_decode) ();  /* Function to decode commands in defaults file */
-/*---------------------------------------------------------------------------*/
-
-void hi_write (command_name,command_decode)
-char *command_name;        /* name of command */
-flag (*command_decode) ();  /* Function to decode commands in defaults file */
-/*---------------------------------------------------------------------------*/
+$FUNCTION         hi_write
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (CONST char *module_name,
+	       flag (*command_decode) (CONST char *command, FILE *fp) )
+$SUMMARY          Write history information for a module.
+$PURPOSE
+    This routine will write history information for the module in the
+    current working directory.
+$PARAMETER        module_name :
+    The name of the module.
+$PARAMETER        command_decode :
+    The function used to decode history lines.
+$RETURNS
+    Nothing.
+$END

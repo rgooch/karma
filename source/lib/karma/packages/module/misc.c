@@ -3,7 +3,7 @@
 
     This code provides initialisation, control and sequencing for many modules.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -93,8 +93,11 @@
 
     Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
 
-    Last updated by Richard Gooch   9-AUG-1995: Used sigaction(2) instead of
+    Updated by      Richard Gooch   9-AUG-1995: Used sigaction(2) instead of
   signal(3) for SIGINT.
+
+    Last updated by Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -143,47 +146,26 @@ static flag (*decode_function) () = NULL;
 /*  Public functions follow  */
 
 /*PUBLIC_FUNCTION*/
-void module_run (argc, argv, name_string, version_string, decode_func,
-		 max_incoming, max_outgoing, server)
-/*  This routine will initialise and then run a generic module.
-    The number of command line arguments must be given by  argc  .
-    The command line arguments must be pointed to by  argv  .
-    The name of the module must be given by  name_string  .
-    The version date of the module must be given by  version_string  .
-    The command line decode function must be pointed to by  decode_func  .The
-    interface to this function is as follows:
-
-    flag decode_func (command, fp)
-    *   This function is called whenever a command string is to be processed.
-        The command string will be pointed to by  command  .
-	The output file must be pointed to by  fp  .
-	The routine returns TRUE on success, else it returns FALSE (indicating
-	that the module should terminate immediately).
-    *
-    char *command;
-    FILE *fp;
-
-    The maximum number of incoming "multi_array" protocol connections must be
-    given by  max_incoming  .
-    If this is less than 0, no connections are permitted. If this is 0, an
-    unlimited number of connections is permitted.
-    The maximum number of outgoing "multi_array" protocol connections must be
-    given by  max_outgoing  .
-    If this is less than 0, no connections are permitted. If this is 0, an
-    unlimited number of connections is permitted.
-    If the module can operate as a server (for any protocol), then the value of
-    server  must be TRUE.
-    The routine returns nothing. Upon return from the function, the module
-    should exit.
+void module_run (int argc, char **argv, char *name_string,
+		 char *version_string, flag (*decode_func) (),
+		 int max_incoming, int max_outgoing, flag server)
+/*  [SUMMARY] Initialise and then run a generic module.
+    <argc> The number of command line arguments.
+    <argv> The command line arguments.
+    <name_string> The name of the module.
+    <version_string> The version date of the module.
+    <decode_func> The command line decode function. The prototype function is
+    [<PANEL_PROTO_decode_func>].
+    <max_incoming> The maximum number of incoming "multi_array" protocol
+    connections. If this is less than 0, no connections are permitted. If this
+    is 0, an unlimited number of connections is permitted.
+    <max_outgoing> The maximum number of outgoing "multi_array" protocol
+    connections. If this is less than 0, no connections are permitted. If this
+    is 0, an unlimited number of connections is permitted.
+    <server> If TRUE, the module can operate as a server (for at least one
+    protocol).
+    [RETURNS] Nothing. Upon return from the function, the module should exit.
 */
-int argc;
-char **argv;
-char *name_string;
-char *version_string;
-flag (*decode_func) ();
-int max_incoming;
-int max_outgoing;
-flag server;
 {
     int def_port_number;
     unsigned int server_port_number;
@@ -280,31 +262,17 @@ flag server;
 }   /*  End Function module_run   */
 
 /*PUBLIC_FUNCTION*/
-void module_process_argvs (argc, argv, unknown_func)
-/*  This routine will process a shell command line, using the
-    panel_process_command_with_stack  routine.
-    The number of command line arguments must be given by  argc  .
-    The command line arguments must be pointed to by  argv  .These do not
-    include command used to execute the process ( cf. main() ).
-    If the command is not understood, then the command will be passed to the
-    function pointed to by  unknown_func  .
-    The interface to this function is given below:
-
-    flag unknown_func (cmd, fp)
-    *   This routine will process a command.
-        The command must be pointed to by  cmd  .
-	Output messages are directed to  fp  .
-	The routine returns TRUE if more commands should be processed,
-	else it returns FALSE, indicating that the "exit" command was entered.
-    *
-    char *cmd;
-    FILE *fp;
-
-    The routine returns nothing.
+void module_process_argvs ( int argc, char **argv, flag (*unknown_func) () )
+/*  [SUMMARY] Process a shell command line.
+    [PURPOSE] This routine will process a shell command line, using the
+    [<panel_process_command_with_stack>] routine.
+    <argc> The number of command line arguments.
+    <argv> The command line arguments. These do not include command used to
+    execute the process ( cf. main() ).
+    <unknown_func> The function which is called when the command is not
+    understood. The prototype function is [<PANEL_PROTO_decode_func>].
+    [RETURNS] Nothing.
 */
-int argc;
-char **argv;
-flag (*unknown_func) ();
 {
     int line_length, arg_len;
     int arg_count;

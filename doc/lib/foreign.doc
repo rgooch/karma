@@ -1,163 +1,450 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the foreign_ package of routines in the Karma
-    library.
-
+$PACKAGE          foreign
+$SUMMARY          Routines to convert between Karma and other data formats
+$PURPOSE
     These routines convert between the Karma data format and foreign data
-  formats.
+    formats.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
-
-    Written by		Richard Gooch	22-Jan-1996
-
-    Last updated by	Richard Gooch	22-Jan-1996
-
-
-*/
-
-multi_array *foreign_fits_read_header (Channel channel, flag data_alloc,
+$FUNCTION         foreign_fits_read_header
+$RETURN_TYPE      multi_array *
+$PARAMETER_LIST
+    (Channel channel, flag data_alloc,
 				       flag convert_int_to_float,
 				       flag sanitise, ...)
-/*  [PURPOSE] This routine will read the header of a FITS file from a channel.
+$SUMMARY          Read a FITS header.
+$PURPOSE
+    This routine will read the header of a FITS file from a channel.
     The data section is NOT read.
-    <channel> The channel to read from.
-    <data_alloc> If TRUE, the data space is allocated.
-    <convert_int_to_float> If TRUE, integer FITS data is converted to floating
+$PARAMETER        channel :
+    The channel to read from.
+$PARAMETER        data_alloc :
+    If TRUE, the data space is allocated.
+$PARAMETER        convert_int_to_float :
+    If TRUE, integer FITS data is converted to floating
     point data.
-    <sanitise> If TRUE, FITS axes with length 1 are ignored. This is highly
+$PARAMETER        sanitise :
+    If TRUE, FITS axes with length 1 are ignored. This is highly
     recommended.
-    [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be FA_FITS_READ_HEADER_END.
-    The attributes are passed using varargs.
-    [RETURNS] A pointer to the multi_array data structure on success, else
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_FITS_READ_HEADER_END. See <-FOREIGN_ATT_FITS_READ_HEADER-> for a list of
+    defined attributes.
+$RETURNS
+    A pointer to the multi_array data structure on success, else
     NULL.
-*/
-/*---------------------------------------------------------------------------*/
+$END
 
-flag foreign_fits_read_data (Channel channel, multi_array *multi_desc,
+$FUNCTION         foreign_fits_read_data
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, multi_array *multi_desc,
 			     char *data, uaddr num_values, ...)
-/*  [PURPOSE] This routine will read the data of a FITS file from a channel.
+$SUMMARY          Read data in a FITS file.
+$PURPOSE
+    This routine will read the data of a FITS file from a channel.
     The header section is NOT read.
-    <channel> The channel to read from.
-    <multi_desc> The Karma data structure to write the data into.
-    <data> An alternate data array to write the FITS data into. If this is
+$PARAMETER        channel :
+    The channel to read from.
+$PARAMETER        multi_desc :
+    The Karma data structure to write the data into.
+$PARAMETER        data :
+    An alternate data array to write the FITS data into. If this is
     NULL, the routine will write the data into the Karma data structure.
-    <num_values> The number of values to write into the data array. This is
+$PARAMETER        num_values :
+    The number of values to write into the data array. This is
     only used when data is not NULL.
-    [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be FA_FITS_READ_DATA_END.
-    The attributes are passed using varargs.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_FITS_READ_DATA_END. See <-FOREIGN_ATT_FITS_READ_DATA-> for a list of
+    defined attributes.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-multi_array *foreign_guess_and_read (CONST char *filename,
+$FUNCTION         foreign_gipsy_test
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (CONST char *filename)
+$SUMMARY          Test if a file is part of a GIPSY file set.
+$PURPOSE
+    Test if a file is part of a GIPSY file set.
+$PARAMETER        filename :
+    The name of any file in the GIPSY file set.
+$RETURNS
+    TRUE if the file is part of a GIPSY file set, else FALSE.
+$END
+
+$FUNCTION         foreign_gipsy_read_header
+$RETURN_TYPE      multi_array *
+$PARAMETER_LIST
+    (Channel channel, flag data_alloc,
+					flag sanitise, ...)
+$SUMMARY          Read a GIPSY file header.
+$PURPOSE
+    This routine will read the header of a GIPSY file from a channel.
+    The data section is NOT read.
+$PARAMETER        channel :
+    The channel to read from.
+$PARAMETER        data_alloc :
+    If TRUE, the data space is allocated.
+$PARAMETER        sanitise :
+    If TRUE, GIPSY axes with length 1 are ignored. This is highly
+    recommended.
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_GIPSY_READ_HEADER_END. See <-FOREIGN_ATT_GIPSY_READ_HEADER-> for a
+    list of defined attributes.
+$RETURNS
+    A pointer to the multi_array data structure on success, else
+    NULL.
+$END
+
+$FUNCTION         foreign_gipsy_read_data
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, multi_array *multi_desc,
+			      char *data, uaddr num_values, ...)
+$SUMMARY          Read data in a GIPSY image file.
+$PURPOSE
+    This routine will read the data of a GIPSY image file from a
+    channel.
+$PARAMETER        channel :
+    The channel to read from.
+$PARAMETER        multi_desc :
+    The Karma data structure to write the data into.
+$PARAMETER        data :
+    An alternate data array to write the FITS data into. If this is
+    NULL, the routine will write the data into the Karma data structure.
+$PARAMETER        num_values :
+    The number of values to write into the data array. This is
+    only used when data is not NULL.
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_GIPSY_READ_DATA_END. See <-FOREIGN_ATT_GIPSY_READ_DATA-> for a list of
+    defined attributes.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION         foreign_gipsy_read
+$RETURN_TYPE      multi_array *
+$PARAMETER_LIST
+    (CONST char *filename, flag sanitise, ...)
+$SUMMARY          Read a GIPSY file set.
+$PURPOSE
+    Read a GIPSY file set.
+$PARAMETER        filename :
+    The name of any file in the GIPSY file set.
+$PARAMETER        sanitise :
+    If TRUE, Miriad axes with length 1 are ignored. This is highly
+    recommended.
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_GIPSY_READ_END. See <-FOREIGN_ATT_GIPSY_READ-> for a list of defined
+    attributes.
+$RETURNS
+    A multi_array descriptor on success, else NULL.
+$END
+
+$FUNCTION         foreign_guess_and_read
+$RETURN_TYPE      multi_array *
+$PARAMETER_LIST
+    (CONST char *filename,
 				     unsigned int mmap_option, flag writeable,
 				     unsigned int *ftype, ...)
-/*  [PURPOSE] This routine will attempt to guess the filetype of a file and
+$SUMMARY          Guess file type and read.
+$PURPOSE
+    This routine will attempt to guess the filetype of a file and
     in the file, converting to the Karma data format if possible.
-    <filename> The name of the file to read.
-    <mmap_option> This has the same meaning as for the <dsxfr_get_multi>
+$PARAMETER        filename :
+    The name of the file to read.
+$PARAMETER        mmap_option :
+    This has the same meaning as for the <dsxfr_get_multi>
     routine.
-    <writeable> This has the same meaning as for the <dsxfr_get_multi> routine.
-    <ftype> The type of the file that was read in is written here.
-    [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be FA_GUESS_READ_END.
-    The attributes are passed using varargs.
-    [RETURNS] A pointer to the multi_array data structure on success, else
+$PARAMETER        writeable :
+    This has the same meaning as for the <dsxfr_get_multi> routine.
+$PARAMETER        ftype :
+    The type of the file that was read in is written here.
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must terminated with FA_GUESS_READ_END.
+    See <-FOREIGN_ATT_GUESS-> for a list of defined attributes.
+$RETURNS
+    A pointer to the multi_array data structure on success, else
     NULL.
-*/
-/*---------------------------------------------------------------------------*/
+$END
 
-multi_array *foreign_miriad_read_header (Channel channel, flag data_alloc,
+$FUNCTION         foreign_miriad_test
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (CONST char *dirname)
+$SUMMARY          Test if a directory is a Miriad Image file.
+$PURPOSE
+    Test if a directory is a Miriad Image file.
+$PARAMETER        dirname :
+    The directory name of the Miriad dataset name.
+$RETURNS
+    TRUE if the directory is a Miriad Image file, else FALSE.
+$END
+
+$FUNCTION         foreign_miriad_read_header
+$RETURN_TYPE      multi_array *
+$PARAMETER_LIST
+    (Channel channel, flag data_alloc,
 					 flag sanitise, ...)
-/*  [PURPOSE] This routine will read the header of a Miriad Image file from a
-    channel.
-    The data section is NOT read.
-    <channel> The channel to read from.
-    <data_alloc> If TRUE, the data space is allocated.
-    <sanitise> If TRUE, Miriad axes with length 1 are ignored. This is highly
+$SUMMARY          Read a Miriad Image file header.
+$PURPOSE
+    This routine will read the header of a Miriad Image file from a
+    channel. The data section is NOT read.
+$PARAMETER        channel :
+    The channel to read from.
+$PARAMETER        data_alloc :
+    If TRUE, the data space is allocated.
+$PARAMETER        sanitise :
+    If TRUE, Miriad axes with length 1 are ignored. This is highly
     recommended.
-    [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be FA_MIRIAD_READ_HEADER_END.
-    The attributes are passed using varargs.
-    [RETURNS] A pointer to the multi_array data structure on success, else
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_MIRIAD_READ_HEADER_END. See <-FOREIGN_ATT_MIRIAD_READ_HEADER-> for a
+    list of defined attributes.
+$RETURNS
+    A pointer to the multi_array data structure on success, else
     NULL.
-*/
-/*---------------------------------------------------------------------------*/
+$END
 
-multi_array *foreign_miriad_read (CONST char *dirname, flag sanitise, ...)
-/*  [PURPOSE] This routine will read a Miriad image file.
-    <dirname> The directory name of the Miriad dataset name.
-    <sanitise> If TRUE, Miriad axes with length 1 are ignored. This is highly
+$FUNCTION         foreign_miriad_read
+$RETURN_TYPE      multi_array *
+$PARAMETER_LIST
+    (CONST char *dirname, flag sanitise, ...)
+$SUMMARY          Read a Miriad image file.
+$PURPOSE
+    Read a Miriad image file.
+$PARAMETER        dirname :
+    The directory name of the Miriad dataset name.
+$PARAMETER        sanitise :
+    If TRUE, Miriad axes with length 1 are ignored. This is highly
     recommended.
-    [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be FA_MIRIAD_READ_END.
-    The attributes are passed using varargs.
-    [RETURNS] A multi_array descriptor on success, else NULL.
-*/
-/*---------------------------------------------------------------------------*/
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_MIRIAD_READ_END. See <-FOREIGN_ATT_MIRIAD_READ-> for a list of defined
+    attributes.
+$RETURNS
+    A multi_array descriptor on success, else NULL.
+$END
 
-flag foreign_miriad_test (CONST char *dirname)
-/*  [PURPOSE] This routine will test if a directory is a Miriad Image file.
-    <dirname> The directory name of the Miriad dataset name.
-    [RETURNS] TRUE if the directory is a Miriad Image file, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         foreign_guess_format_from_filename
+$RETURN_TYPE      unsigned int
+$PARAMETER_LIST
+    (CONST char *filename)
+$SUMMARY          Attempt to guess the format of a file by examining its filename.
+$PURPOSE
+    Attempt to guess the format of a file by examining its filename.
+$PARAMETER        filename :
+    The name of the file.
+$RETURNS
+    A value indicating the format of the file. The value
+    FOREIGN_FILE_FORMAT_KARMA is returned if the extension is ".kf". See
+    <-FOREIGN_TYPES-> for a list of possible values.
+$END
 
-unsigned int foreign_guess_format_from_filename (CONST char *filename)
-/*  [PURPOSE] This routine will attempt to guess the format of a file by
-    examining its filename.
-    <filename> The name of the file.
-    [RETURNS] A value indicating the format of the file. The value
-    FOREIGN_FILE_FORMAT_KARMA is returned if the extension is ".kf".
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         foreign_ppm_read
+$RETURN_TYPE      multi_array *
+$PARAMETER_LIST
+    (Channel channel, ...)
+$SUMMARY          Read a colour image in PPM format from a channel.
+$PURPOSE
+    Read a colour image in PPM format from a channel.
+$PARAMETER        channel :
+    The channel to read from.
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with FA_PPM_READ_END.
+    See <-FOREIGN_ATT_PPM_READ-> for a list of defined attributes.
+$RETURNS
+    A pointer to the multi_array data structure on success, else NULL
+$END
 
-multi_array *foreign_ppm_read (Channel channel, ...)
-/*  [PURPOSE] This routine will read a colour image in PPM format from a
-    channel.
-    <channel> The channel to read from.
-    [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be FA_PPM_READ_END.
-    The attributes are passed using varargs.
-    [RETURNS] A pointer to the multi_array data structure on success, else NULL
-*/
-/*---------------------------------------------------------------------------*/
-
-flag foreign_ppm_write (Channel channel, multi_array *multi_desc, flag binary,
+$FUNCTION         foreign_ppm_write
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, multi_array *multi_desc, flag binary,
 			...)
-/*  [PURPOSE] This routine will write a colour image to a channel in PPM format
-    <channel> The channel to write to. The channel is not flushed.
-    <multi_desc> The multi_array descriptor pointer. The routine will find a
+$SUMMARY          Write a colour image to a channel in PPM format
+$PURPOSE
+    Write a colour image to a channel in PPM format
+$PARAMETER        channel :
+    The channel to write to. The channel is not flushed.
+$PARAMETER        multi_desc :
+    The multi_array descriptor pointer. The routine will find a
     TrueColour image or a PseudoColour image within the data structure.
-    <binary> If TRUE, the pixels will be written in binary mode.
-    [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be FA_PPM_WRITE_END.
-    The attributes are passed using varargs.
-    [RETURNS] TRUE on succes, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$PARAMETER        binary :
+    If TRUE, the pixels will be written in binary mode.
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with FA_PPM_WRITE_END.
+    See <-FOREIGN_ATT_PPM_WRITE-> for a list of defined attributes.
+$RETURNS
+    TRUE on succes, else FALSE.
+$END
 
-multi_array *foreign_sunras_read (Channel channel, ...)
-/*  [PURPOSE] This routine will read an image in Sun rasterfile format from a
-    channel.
-    <channel> The channel to read from.
-    [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be FA_SUNRAS_READ_END.
-    The attributes are passed using varargs.
-    [RETURNS] A pointer to the multi_array data structure on success, else NULL
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         foreign_sunras_read
+$RETURN_TYPE      multi_array *
+$PARAMETER_LIST
+    (Channel channel, ...)
+$SUMMARY          Read an image in Sun rasterfile format from a channel.
+$PURPOSE
+    Read an image in Sun rasterfile format from a channel.
+$PARAMETER        channel :
+    The channel to read from.
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_SUNRAS_READ_END. See <-FOREIGN_ATT_SUNRAS_READ-> for a list of defined
+    attributes.
+$RETURNS
+    A pointer to the multi_array data structure on success, else NULL
+$END
 
-flag foreign_sunras_write (Channel channel, multi_array *multi_desc, ...)
-/*  [PURPOSE] This routine will write a colour image to a channel in Sun
-    rasterfile format
-    <channel> The channel to write to. The channel is not flushed.
-    <multi_desc> The multi_array descriptor pointer. The routine will find a
+$FUNCTION         foreign_sunras_write
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, multi_array *multi_desc, ...)
+$SUMMARY          Write a colour image to a channel in Sun rasterfile format
+$PURPOSE
+    Write a colour image to a channel in Sun rasterfile format
+$PARAMETER        channel :
+    The channel to write to. The channel is not flushed.
+$PARAMETER        multi_desc :
+    The multi_array descriptor pointer. The routine will find a
     TrueColour image or a PseudoColour image within the data structure.
-    [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be FA_SUNRAS_WRITE_END.
-    The attributes are passed using varargs.
-    [MT-LEVEL] Unsafe.
-    [RETURNS] TRUE on succes, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_SUNRAS_WRITE_END. See <-FOREIGN_ATT_SUNRAS_WRITE-> for a list of defined
+    attributes.
+$MT-LEVEL         Unsafe.
+$RETURNS
+    TRUE on succes, else FALSE.
+$END
+
+$TABLE            FOREIGN_ATT_FITS_READ_HEADER
+$COLUMNS          3
+$SUMMARY          List of attributes for reading FITS headers
+$TABLE_DATA
+|.Name                       |,Type  |,Meaning
+|.
+|.FA_FITS_READ_HEADER_END    |,      |,End of varargs list
+$END
+
+$TABLE            FOREIGN_ATT_FITS_READ_DATA
+$COLUMNS          3
+$SUMMARY          List of attributes for reading FITS data
+$TABLE_DATA
+|.Name                         |,Type            |,Meaning
+|.
+|.FA_FITS_READ_DATA_END        |,                |,End of varargs list
+|.FA_FITS_READ_DATA_NUM_BLANKS |,unsigned long * |,Number of blank values found
+$END
+
+$TABLE            FOREIGN_ATT_GUESS
+$COLUMNS          3
+$SUMMARY          List of attributes for guessing and reading data
+$TABLE_DATA
+|.Name                         |,Type    |,Meaning
+|.
+|.FA_GUESS_READ_END            |,        |,End of varargs list
+|.FA_GUESS_READ_FITS_TO_FLOAT  |,flag    |,Convert FITS data to floating point
+$END
+
+$TABLE            FOREIGN_ATT_MIRIAD_READ_HEADER
+$COLUMNS          3
+$SUMMARY          List of attributes for reading Miriad Image headers
+$TABLE_DATA
+|.Name                         |,Type    |,Meaning
+|.
+|.FA_MIRIAD_READ_HEADER_END    |,        |,End of varargs list
+$END
+
+$TABLE            FOREIGN_ATT_MIRIAD_READ_DATA
+$COLUMNS          3
+$SUMMARY          List of attributes for reading Miriad Image data
+$TABLE_DATA
+|.Name                           |,Type            |,Meaning
+|.
+|.FA_MIRIAD_READ_DATA_END        |,                |,End of varargs list
+|.FA_MIRIAD_READ_DATA_NUM_BLANKS |,unsigned long * |,Number of blank values
+|~                               |~                |~(includes masked values)
+|.FA_MIRIAD_READ_DATA_NUM_MASKED |,unsigned long * |,Number of masked values
+$END
+
+$TABLE            FOREIGN_ATT_MIRIAD_READ
+$COLUMNS          3
+$SUMMARY          List of attributes for reading Miriad Image files
+$TABLE_DATA
+|.Name                      |,Type            |,Meaning
+|.
+|.FA_MIRIAD_READ_END        |,                |,End of varargs list
+|.FA_MIRIAD_READ_NUM_BLANKS |,unsigned long * |,Number of blank values
+|~                          |~                |~(includes masked values)
+|.FA_MIRIAD_READ_NUM_MASKED |,unsigned long * |,Number of masked values
+$END
+
+$TABLE            FOREIGN_TYPES
+$COLUMNS          2
+$SUMMARY          List of foreign file types
+$TABLE_DATA
+|.Name                           |,Meaning
+|.
+|.FOREIGN_FILE_FORMAT_KARMA      |,Karma file (native format)
+|.FOREIGN_FILE_FORMAT_UNKNOWN    |,Unknown format
+|.FOREIGN_FILE_FORMAT_PPM        |,Portable PixMap format (PPM)
+|.FOREIGN_FILE_FORMAT_FITS       |,Flexible Image Transport System (FITS)
+|.FOREIGN_FILE_FORMAT_SUNRAS     |,Sun Rasterfile
+|.FOREIGN_FILE_FORMAT_MIRIAD     |,Miriad Image file
+$END
+
+$TABLE            FOREIGN_ATT_PPM_READ
+$COLUMNS          3
+$SUMMARY          List of attributes for reading PPM files
+$TABLE_DATA
+|.Name               |,Type    |,Meaning
+|.
+|.FA_PPM_READ_END    |,        |,End of varargs list
+$END
+
+$TABLE            FOREIGN_ATT_PPM_WRITE
+$COLUMNS          3
+$SUMMARY          List of attributes for writing PPM files
+$TABLE_DATA
+|.Name                |,Type    |,Meaning
+|.
+|.FA_PPM_WRITE_END    |,        |,End of varargs list
+$END
+
+$TABLE            FOREIGN_ATT_SUNRAS_READ
+$COLUMNS          3
+$SUMMARY          List of attributes for reading Sun Rasterfile files
+$TABLE_DATA
+|.Name                  |,Type    |,Meaning
+|.
+|.FA_SUNRAS_READ_END    |,        |,End of varargs list
+$END
+
+$TABLE            FOREIGN_ATT_SUNRAS_WRITE
+$COLUMNS          3
+$SUMMARY          List of attributes for writing Sun Rasterfile files
+$TABLE_DATA
+|.Name                      |,Type      |,Meaning
+|.
+|.FA_SUNRAS_WRITE_END       |,          |,End of varargs list
+|.FA_SUNRAS_WRITE_NO_IMAGE  |,flag *    |,No image found in data structure
+$END

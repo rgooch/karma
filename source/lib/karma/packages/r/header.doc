@@ -1,0 +1,6 @@
+$SUMMARY          Low level connection routines
+$PURPOSE
+    These routines are meant to provide a low level mechanism to create and
+    accept connections. Although these routines are made public, their use is
+    NOT recommended. The <-conn-> package is the suggested means to create and
+    accept connections.

@@ -2,7 +2,7 @@
 /*  misc.c
     This code provides some simple error printing routines.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -33,7 +33,10 @@
 
     Updated by      Richard Gooch   1-MAY-1993: Added GLPL.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/a/aborts.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/a/aborts.c
+
+    Last updated by Richard Gooch   30-MAR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -44,9 +47,10 @@
 
 /*PUBLIC_FUNCTION*/
 void a_print_abort ()
-/*  This routine will print the message "Aborting.\n" to the standard output
-    and will then abort the process.
-    The routine does not return.
+/*  [SUMMARY] Print an abort message.
+    [PURPOSE] This routine will print the message "Aborting.\n" to the standard
+    error and will then abort the process.
+    [RETURNS] The routine does not return. The process is aborted.
 */
 {
     (void) fprintf (stderr, "Aborting.\n");
@@ -54,14 +58,13 @@ void a_print_abort ()
 }   /*  End Function a_print_abort    */
 
 /*PUBLIC_FUNCTION*/
-void a_prog_bug (function_name)
-/*  This routine will print an error message to the standard error indicating
-    that a bug occurred.
-    The name of the function in which the bug was noted must be pointed to by
-    function_name  .
-    The routine returns nothing. The process is aborted.
+void a_prog_bug (char *function_name)
+/*  [SUMMARY] Print a bug message.
+    [PURPOSE] This routine will print an error message to the standard error
+    indicating that a bug occurred.
+    <function_name> The name of the function in which the bug was noted.
+    [RETURNS] The routine does not return. The process is aborted.
 */
-char *function_name;
 {
     (void) fprintf (stderr, "Program bug noted in function: %s\n",
 		    function_name);
@@ -70,15 +73,14 @@ char *function_name;
 }   /*  End Function a_prog_bug   */
 
 /*PUBLIC_FUNCTION*/
-void a_func_abort (function_name, reason)
-/*  This routine will print an error message to the standard error indicating
-    that a function is terminating abnormally.
-    The name of the function must be pointed to by  function_name  .
-    The reason for the function aborting must be pointed to by  reason  .
-    The routine returns nothing.
+void a_func_abort (char *function_name, char *reason)
+/*  [SUMMARY] Print a warning message.
+    [PURPOSE] This routine will print an error message to the standard error
+    indicating that a function is terminating abnormally.
+    <function_name> The name of the function.
+    <reason> The reason for the function aborting.
+    [RETURNS] Nothing.
 */
-char *function_name;
-char *reason;
 {
     (void) fprintf (stderr, "Function: %s bad exit, reason: %s\n",
 		    function_name, reason);

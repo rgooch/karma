@@ -1,0 +1,44 @@
+<html><head><title>Package: dir</title></head> 
+<body>
+<center><h1>The "dir" Package</h1></center>    These routines are meant to provide an enhanced, portable method for
+    scanning directories and automatically obtaining file status information.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=dir></a></table><h4>Functions</h4><table><tr><td><a href=dir.html#dir_open>dir_open</a></td><td>Open a directory for reading (scanning).
+</td></tr>
+<tr><td><a href=dir.html#dir_read>dir_read</a></td><td>Read (scan) a directory for files.
+</td></tr>
+<tr><td><a href=dir.html#dir_close>dir_close</a></td><td>Close a directory.
+</td></tr>
+</table><h4>Tables</h4><table><tr><td><a href=dir.html#DIR_SKIP_VALUES>DIR_SKIP_VALUES</a></td><td>List of defined skip control values
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=dir_open></a> KDir
+ <b>dir_open</b><i>    (CONST char *dirname)
+</i><br><p>    Open a directory for reading (scanning).
+<p><b>Parameters:</b><ul><li><i>dirname :</i> 
+    The directory name.
+<br></ul><b>Returns:</b>     A KDir object on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dir_read></a> KFileInfo *
+ <b>dir_read</b><i>    (KDir dir, unsigned int skip_control)
+</i><br><p>    Read (scan) a directory for files.
+<p><b>Parameters:</b><ul><li><i>dir :</i> 
+    The directory object.
+<br><li><i>skip_control :</i> 
+    Determines whether or not to skip the special files: "."
+    and "..". See <a href=dir.html#DIR_SKIP_VALUES>DIR_SKIP_VALUES</a> for a list of legal values.
+<br></ul><b>Returns:</b>     A pointer to a <em>KFileInfo</em> structure on success, else NULL.
+    The data in this structure is valid until the next call to <a href=dir.html#dir_read>dir_read</a> or
+    <a href=dir.html#dir_close>dir_close</a> with this directory object.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dir_close></a> void
+ <b>dir_close</b><i>    (KDir dir)
+</i><br><p>    Close a directory.
+<p><b>Parameters:</b><ul><li><i>dir :</i> 
+    The directory object.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Tables</h2></center><hr> <a name=DIR_SKIP_VALUES><b>DIR_SKIP_VALUES</b></a><p> <table><tr><td>Mode                      </td><td>Meaning
+
+</td></tr><tr><td>KDIR_DOT                  </td><td>Pass ".", skip ".."
+</td></tr><tr><td>KDIR_DOTDOT               </td><td>Pass "..", skip "."
+</td></tr><tr><td>KDIR_DOT_AND_DOTDOT       </td><td>Pass "." and ".."
+</td></tr><tr><td>KDIR_NO_DOTS              </td><td>Skip "." and ".."
+</table><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

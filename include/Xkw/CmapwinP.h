@@ -11,15 +11,18 @@
 typedef struct _CmapwinPart
 {
     /*  Public resources  */
+    Visual          *colourbarVisual;
+    Kcolourmap      dcm;
     XtCallbackList  colourCallback;
     Bool            regenerateColourmap;
-    Kcolourmap      dcm;
+    Bool            simpleColourbar;
+    Bool            disableScaleSliders;
     /*  Private resources  */
     Widget          selector;
     Widget          palette;
     Widget          twodthing;
     Widget          thecolour;
-    char            **list;
+    CONST char      **list;
     double          cmap_x;
     double          cmap_y;
     int             listcount;

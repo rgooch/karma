@@ -1,0 +1,6 @@
+$SUMMARY          Routines to manipulate viewable images
+$PURPOSE
+    These routines are meant to provide a high level mechanism to create and
+    manipulate viewable images (2-dimensional slices of Karma data structures).
+    These viewable images utilise the world canvases available in the
+    <-canvas-> package, hence the resulting code is device independent.

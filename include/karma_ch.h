@@ -2,7 +2,7 @@
 
     Header for  ch_  package.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   12-SEP-1992
 
-    Last updated by Richard Gooch   27-SEP-1995
+    Last updated by Richard Gooch   29-JUN-1996
 
 */
 
@@ -69,8 +69,14 @@ EXTERN_FUNCTION (flag ch_close, (Channel channel) );
 EXTERN_FUNCTION (flag ch_flush, (Channel channel) );
 EXTERN_FUNCTION (unsigned int ch_read, (Channel channel, char *buffer,
 					unsigned int length) );
+EXTERN_FUNCTION (unsigned int ch_read_and_swap_blocks,
+		 (Channel channel, char *buffer,
+		  unsigned int num_blocks, unsigned int block_size) );
 EXTERN_FUNCTION (unsigned int ch_write, (Channel channel, CONST char *buffer,
 					 unsigned int length) );
+EXTERN_FUNCTION (unsigned int ch_swap_and_write_blocks,
+		 (Channel channel, CONST char *buffer, unsigned int num_blocks,
+		  unsigned int block_size) );
 EXTERN_FUNCTION (void ch_close_all_channels, () );
 EXTERN_FUNCTION (flag ch_seek, (Channel channel, unsigned long position) );
 EXTERN_FUNCTION (int ch_get_bytes_readable, (Channel channel) );

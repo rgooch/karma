@@ -3,7 +3,7 @@
 
     This code provides Karma data structure descriptor manipulation routines.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -54,7 +54,10 @@
     Updated by      Richard Gooch   26-NOV-1994: Moved to
   packages/ds/mod_desc.c
 
-    Last updated by Richard Gooch   19-APR-1995: Cleaned some code.
+    Updated by      Richard Gooch   19-APR-1995: Cleaned some code.
+
+    Last updated by Richard Gooch   9-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -77,18 +80,16 @@ STATIC_FUNCTION (void compute_offsets,
 /*  Public functions follow  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_remove_dim_desc (arr_desc, dim_name)
-/*  This routine will remove a dimension descriptor from an array descriptor.
-    Tiling information is preserved, however, any address offset information is
-    removed.
-    With the exception of the dimension to be removed, the order of the
-    dimensions is unaffected.
-    The array descriptor must be pointed to by  arr_desc  .
-    The name of the dimension to be removed must be pointed to by  dim_name  .
-    The routine returns TRUE on success, else it returns FALSE.
+flag ds_remove_dim_desc (array_desc *arr_desc, CONST char *dim_name)
+/*  [SUMMARY] Remove dimension from an array.
+    [PURPOSE] This routine will remove a dimension descriptor from an array
+    descriptor. Tiling information is preserved, however, any address offset
+    information is removed. With the exception of the dimension to be removed,
+    the order of the dimensions is unaffected.
+    <arr_desc> The array descriptor.
+    <name> The name of the dimension to be removed.
+    [RETURNS] TRUE on success, else FALSE.
 */
-array_desc *arr_desc;
-CONST char *dim_name;
 {
     unsigned int dim_count;
     unsigned int dim_num;
@@ -106,26 +107,26 @@ CONST char *dim_name;
     }
     /*  Find dimension index  */
     if ( ( dim_num = ds_f_dim_in_array (arr_desc, dim_name) )
-	>= (*arr_desc).num_dimensions )
+	>= arr_desc->num_dimensions )
     {
 	(void) fprintf (stderr, "Dimension name: \"%s\" not found\n",
 			dim_name);
 	return (FALSE);
     }
     /*  Remove any address offset information if it exists  */
-    if ( (*arr_desc).offsets != NULL )
+    if (arr_desc->offsets != NULL)
     {
-	for (dim_count = 0; dim_count < (*arr_desc).num_dimensions;
+	for (dim_count = 0; dim_count < arr_desc->num_dimensions;
 	     ++dim_count)
 	{
-	    m_free ( (char *) (*arr_desc).offsets[dim_count] );
+	    m_free ( (char *) arr_desc->offsets[dim_count] );
 	}
-	m_free ( (char *) (*arr_desc).offsets );
-	(*arr_desc).offsets = NULL;
+	m_free ( (char *) arr_desc->offsets );
+	arr_desc->offsets = NULL;
     }
     /*  Allocate new dimension descriptor pointer array  */
     if ( ( new_dimensions = (dim_desc **) m_alloc
-	  ( sizeof *new_dimensions * ( (*arr_desc).num_dimensions - 1 ) ) )
+	  ( sizeof *new_dimensions * (arr_desc->num_dimensions - 1) ) )
 	== NULL )
     {
 	m_error_notify (function_name,
@@ -134,18 +135,18 @@ CONST char *dim_name;
     }
     /*  Allocate new lengths pointer array  */
     if ( ( new_lengths = (uaddr *) m_alloc
-	  ( sizeof *new_lengths * ( (*arr_desc).num_dimensions - 1 ) ) )
+	  ( sizeof *new_lengths * (arr_desc->num_dimensions - 1) ) )
 	== NULL )
     {
 	m_error_notify (function_name, "array of lengths");
 	m_free ( (char *) new_dimensions );
 	return (FALSE);
     }
-    if ( (*arr_desc).num_levels > 0 )
+    if (arr_desc->num_levels > 0)
     {
 	/*  Allocate new tile lengths pointer array  */
 	if ( ( new_tile_lengths = (unsigned int **) m_alloc
-	      ( sizeof *new_tile_lengths* ( (*arr_desc).num_dimensions -1 ) ) )
+	      ( sizeof *new_tile_lengths* (arr_desc->num_dimensions -1) ) )
 	    == NULL )
 	{
 	    m_error_notify (function_name, "array of tile length pointers");
@@ -161,71 +162,70 @@ CONST char *dim_name;
     /*  Copy dimension descriptor pointers (except the named one)  */
     for (dim_count = 0; dim_count < dim_num; ++dim_count)
     {
-	new_dimensions[dim_count] = (*arr_desc).dimensions[dim_count];
-	new_lengths[dim_count] = (*arr_desc).lengths[dim_count];
-	if ( (*arr_desc).num_levels > 0 )
+	new_dimensions[dim_count] = arr_desc->dimensions[dim_count];
+	new_lengths[dim_count] = arr_desc->lengths[dim_count];
+	if (arr_desc->num_levels > 0)
 	{
-	    new_tile_lengths[dim_count] = (*arr_desc).tile_lengths[dim_count];
+	    new_tile_lengths[dim_count] = arr_desc->tile_lengths[dim_count];
 	}
     }
-    for (dim_count = dim_num + 1; dim_count < (*arr_desc).num_dimensions;
+    for (dim_count = dim_num + 1; dim_count < arr_desc->num_dimensions;
 	 ++dim_count)
     {
-	new_dimensions[dim_count - 1] = (*arr_desc).dimensions[dim_count];
-	new_lengths[dim_count - 1] = (*arr_desc).lengths[dim_count];
-	if ( (*arr_desc).num_levels > 0 )
+	new_dimensions[dim_count - 1] = arr_desc->dimensions[dim_count];
+	new_lengths[dim_count - 1] = arr_desc->lengths[dim_count];
+	if (arr_desc->num_levels > 0)
 	{
-	    new_tile_lengths[dim_count-1] =(*arr_desc).tile_lengths[dim_count];
+	    new_tile_lengths[dim_count-1] =arr_desc->tile_lengths[dim_count];
 	}
     }
     /*  Deallocate dimension descriptor  */
-    dimension = (*arr_desc).dimensions[dim_num];
+    dimension = arr_desc->dimensions[dim_num];
     /*  Deallocate dimension name   */
-    if ( (*dimension).name != NULL )
+    if (dimension->name != NULL)
     {
-	m_free ( (*dimension).name );
+	m_free (dimension->name);
     }
     /*  Deallocate dimension co-ordinates   */
-    if ( (*dimension).coordinates != NULL )
+    if (dimension->coordinates != NULL)
     {
-	m_free ( (char *) (*dimension).coordinates );
+	m_free ( (char *) dimension->coordinates );
     }
     /*  Deallocate actual dimension descriptor */
     m_free ( (char *) dimension);
     /*  Deallocate tile length information for dimension  */
-    if ( (*arr_desc).num_levels > 0 )
+    if (arr_desc->num_levels > 0)
     {
-	m_free ( (char *) (*arr_desc).tile_lengths[dim_num] );
+	m_free ( (char *) arr_desc->tile_lengths[dim_num] );
     }
     /*  Deallocate old pointer arrays and link in new info  */
-    m_free ( (char *) (*arr_desc).dimensions );
-    m_free ( (char *) (*arr_desc).lengths );
-    if ( (*arr_desc).num_levels > 0 )
+    m_free ( (char *) arr_desc->dimensions );
+    m_free ( (char *) arr_desc->lengths );
+    if (arr_desc->num_levels > 0)
     {
-	m_free ( (char *) (*arr_desc).tile_lengths );
+	m_free ( (char *) arr_desc->tile_lengths );
     }
-    --(*arr_desc).num_dimensions;
-    (*arr_desc).dimensions = new_dimensions;
-    (*arr_desc).lengths = new_lengths;
-    (*arr_desc).tile_lengths = new_tile_lengths;
+    --arr_desc->num_dimensions;
+    arr_desc->dimensions = new_dimensions;
+    arr_desc->lengths = new_lengths;
+    arr_desc->tile_lengths = new_tile_lengths;
     /*  Return OK  */
     return (TRUE);
 }   /*  End Function ds_remove_dim_desc  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_append_dim_desc (arr_desc, dimension)
-/*  This routine will append a dimension descriptor to the list of dimensions
-    attached to an array descriptor. The appended dimension will be the LEAST
-    significant dimension (co-ordinates have lowest stride).
-    Tiling information is preserved, however, any address offset information is
+flag ds_append_dim_desc (array_desc *arr_desc, dim_desc *dimension)
+/*  [SUMMARY] Append a dimension to an array.
+    [PURPOSE] This routine will append a dimension descriptor to the list of
+    dimensions attached to an array descriptor. The appended dimension will be
+    the LEAST significant dimension (co-ordinates have lowest stride). Tiling
+    information is preserved, however, any address offset information is
     removed. If the array is NOT tiled, the dimension length will be copied
     into the array of bottom tile lengths.
-    The array descriptor must be pointed to by  arr_desc  .
-    The dimension descriptor must be pointed to by  dimension  .
-    The routine returns TRUE on success, else it returns FALSE.
+    <arr_desc> The array descriptor.
+    <dimension> The dimension descriptor.
+    [RETURNS] TRUE on success, else FALSE.
 */
-array_desc *arr_desc;
-dim_desc *dimension;
 {
     unsigned int dim_count;
     uaddr *new_lengths;
@@ -239,27 +239,27 @@ dim_desc *dimension;
 	a_prog_bug (function_name);
     }
     /*  Check for repeated dimension name  */
-    if (ds_f_dim_in_array (arr_desc, (*dimension).name)
-	< (*arr_desc).num_dimensions)
+    if (ds_f_dim_in_array (arr_desc, dimension->name)
+	< arr_desc->num_dimensions)
     {
 	(void) fprintf (stderr, "Another dimension with name: \"%s\" exists\n",
-			(*dimension).name);
+			dimension->name);
 	a_prog_bug (function_name);
     }
     /*  Remove any address offset information if it exists  */
-    if ( (*arr_desc).offsets != NULL )
+    if (arr_desc->offsets != NULL)
     {
-	for (dim_count = 0; dim_count < (*arr_desc).num_dimensions;
+	for (dim_count = 0; dim_count < arr_desc->num_dimensions;
 	     ++dim_count)
 	{
-	    m_free ( (char *) (*arr_desc).offsets[dim_count] );
+	    m_free ( (char *) arr_desc->offsets[dim_count] );
 	}
-	m_free ( (char *) (*arr_desc).offsets );
-	(*arr_desc).offsets = NULL;
+	m_free ( (char *) arr_desc->offsets );
+	arr_desc->offsets = NULL;
     }
     /*  Allocate new dimension descriptor pointer array  */
     if ( ( new_dimensions = (dim_desc **) m_alloc
-	  ( sizeof *new_dimensions * ( (*arr_desc).num_dimensions + 1 ) )
+	  ( sizeof *new_dimensions * (arr_desc->num_dimensions + 1) )
 	  ) == NULL )
     {
 	m_error_notify (function_name,
@@ -268,18 +268,18 @@ dim_desc *dimension;
     }
     /*  Allocate new lengths pointer array  */
     if ( ( new_lengths = (uaddr *) m_alloc
-	  ( sizeof *new_lengths * ( (*arr_desc).num_dimensions + 1 ) ) )
+	  ( sizeof *new_lengths * ( arr_desc->num_dimensions + 1 ) ) )
 	== NULL )
     {
 	m_error_notify (function_name, "array of lengths");
 	m_free ( (char *) new_dimensions );
 	return (FALSE);
     }
-    if ( (*arr_desc).num_levels > 0 )
+    if (arr_desc->num_levels > 0)
     {
 	/*  Allocate new tile lengths pointer array  */
 	if ( ( new_tile_lengths = (unsigned int **) m_alloc
-	      ( sizeof *new_tile_lengths* ( (*arr_desc).num_dimensions +1 ) ) )
+	      ( sizeof *new_tile_lengths* (arr_desc->num_dimensions +1) ) )
 	    == NULL )
 	{
 	    m_error_notify (function_name, "array of tile length pointers");
@@ -287,8 +287,8 @@ dim_desc *dimension;
 	    m_free ( (char *) new_lengths );
 	    return (FALSE);
 	}
-	if ( ( new_tile_lengths[(*arr_desc).num_dimensions] = (unsigned int *)
-	      m_alloc (sizeof **new_tile_lengths * (*arr_desc).num_levels) )
+	if ( ( new_tile_lengths[arr_desc->num_dimensions] = (unsigned int *)
+	      m_alloc (sizeof **new_tile_lengths * arr_desc->num_levels) )
 	    == NULL )
 	{
 	    m_error_notify (function_name, "array of tile lengths");
@@ -304,55 +304,54 @@ dim_desc *dimension;
     }
     /*  Copy dimension descriptor pointers  */
     m_copy ( (char *) new_dimensions,
-	    (char *) (*arr_desc).dimensions,
-	    sizeof *new_dimensions * (*arr_desc).num_dimensions );
+	    (char *) arr_desc->dimensions,
+	    sizeof *new_dimensions * arr_desc->num_dimensions );
     /*  Copy new dimension descriptor pointer  */
-    new_dimensions[(*arr_desc).num_dimensions] = dimension;
+    new_dimensions[arr_desc->num_dimensions] = dimension;
     /*  Copy lengths  */
     m_copy ( (char *) new_lengths,
-	    (char *) (*arr_desc).lengths,
-	    sizeof *new_lengths * (*arr_desc).num_dimensions );
-    new_lengths[(*arr_desc).num_dimensions] = 0;
-    if ( (*arr_desc).num_levels > 0 )
+	    (char *) arr_desc->lengths,
+	    sizeof *new_lengths * arr_desc->num_dimensions );
+    new_lengths[arr_desc->num_dimensions] = 0;
+    if (arr_desc->num_levels > 0)
     {
 	/*  Copy tile length pointers  */
 	m_copy ( (char *) new_tile_lengths,
-		(char *) (*arr_desc).tile_lengths,
-		sizeof *new_tile_lengths * (*arr_desc).num_dimensions );
+		(char *) arr_desc->tile_lengths,
+		sizeof *new_tile_lengths * arr_desc->num_dimensions );
     }
-    m_free ( (char *) (*arr_desc).dimensions );
-    m_free ( (char *) (*arr_desc).lengths );
-    if ( (*arr_desc).num_levels > 0 )
+    m_free ( (char *) arr_desc->dimensions );
+    m_free ( (char *) arr_desc->lengths );
+    if (arr_desc->num_levels > 0)
     {
 	/*  Tiled: remove old pointer array of tile lengths  */
-	m_free ( (char *) (*arr_desc).tile_lengths );
+	m_free ( (char *) arr_desc->tile_lengths );
     }
     else
     {
 	/*  Not tiled: copy dimension length into length array  */
-	new_lengths[(*arr_desc).num_dimensions] = (*dimension).length;
+	new_lengths[arr_desc->num_dimensions] = dimension->length;
     }
-    ++(*arr_desc).num_dimensions;
-    (*arr_desc).dimensions = new_dimensions;
-    (*arr_desc).lengths = new_lengths;
-    (*arr_desc).tile_lengths = new_tile_lengths;
+    ++arr_desc->num_dimensions;
+    arr_desc->dimensions = new_dimensions;
+    arr_desc->lengths = new_lengths;
+    arr_desc->tile_lengths = new_tile_lengths;
     return (TRUE);
 }   /*  End Function ds_append_dim_desc  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_prepend_dim_desc (arr_desc, dimension)
-/*  This routine will prepend a dimension descriptor to the list of dimensions
-    attached to an array descriptor. The prepended dimension will be the MOST
-    significant dimension (co-ordinates have greatest stride).
+flag ds_prepend_dim_desc (array_desc *arr_desc, dim_desc *dimension)
+/*  [SUMMARY] Prepend a dimension to an array.
+    [PURPOSE] This routine will prepend a dimension descriptor to the list of
+    dimensions attached to an array descriptor. The prepended dimension will be
+    the MOST significant dimension (co-ordinates have greatest stride).
     Tiling information is preserved, however, any address offset information is
     removed. If the array is NOT tiled, the dimension length will be copied
     into the array of bottom tile lengths.
-    The array descriptor must be pointed to by  arr_desc  .
-    The dimension descriptor must be pointed to by  dimension  .
-    The routine returns TRUE on success, else it returns FALSE.
+    <arr_desc> The array descriptor.
+    <dimension> The dimension descriptor to prepend.
+    [RETURNS] TRUE on success, else FALSE.
 */
-array_desc *arr_desc;
-dim_desc *dimension;
 {
     unsigned int dim_count;
     uaddr *new_lengths;
@@ -366,27 +365,27 @@ dim_desc *dimension;
 	a_prog_bug (function_name);
     }
     /*  Check for repeated dimension name  */
-    if (ds_f_dim_in_array (arr_desc, (*dimension).name)
-	< (*arr_desc).num_dimensions)
+    if (ds_f_dim_in_array (arr_desc, dimension->name)
+	< arr_desc->num_dimensions)
     {
 	(void) fprintf (stderr, "Another dimension with name: \"%s\" exists\n",
-			(*dimension).name);
+			dimension->name);
 	a_prog_bug (function_name);
     }
     /*  Remove any address offset information if it exists  */
-    if ( (*arr_desc).offsets != NULL )
+    if (arr_desc->offsets != NULL)
     {
-	for (dim_count = 0; dim_count < (*arr_desc).num_dimensions;
+	for (dim_count = 0; dim_count < arr_desc->num_dimensions;
 	     ++dim_count)
 	{
-	    m_free ( (char *) (*arr_desc).offsets[dim_count] );
+	    m_free ( (char *) arr_desc->offsets[dim_count] );
 	}
-	m_free ( (char *) (*arr_desc).offsets );
-	(*arr_desc).offsets = NULL;
+	m_free ( (char *) arr_desc->offsets );
+	arr_desc->offsets = NULL;
     }
     /*  Allocate new dimension descriptor pointer array  */
     if ( ( new_dimensions = (dim_desc **) m_alloc
-	  ( sizeof *new_dimensions * ( (*arr_desc).num_dimensions + 1 ) )
+	  ( sizeof *new_dimensions * (arr_desc->num_dimensions + 1) )
 	  ) == NULL )
     {
 	m_error_notify (function_name,
@@ -395,18 +394,18 @@ dim_desc *dimension;
     }
     /*  Allocate new lengths pointer array  */
     if ( ( new_lengths = (uaddr *) m_alloc
-	  ( sizeof *new_lengths * ( (*arr_desc).num_dimensions + 1 ) ) )
+	  ( sizeof *new_lengths * (arr_desc->num_dimensions + 1) ) )
 	== NULL )
     {
 	m_error_notify (function_name, "array of lengths");
 	m_free ( (char *) new_dimensions );
 	return (FALSE);
     }
-    if ( (*arr_desc).num_levels > 0 )
+    if (arr_desc->num_levels > 0)
     {
 	/*  Allocate new tile lengths pointer array  */
 	if ( ( new_tile_lengths = (unsigned int **) m_alloc
-	      ( sizeof *new_tile_lengths* ( (*arr_desc).num_dimensions +1 ) ) )
+	      ( sizeof *new_tile_lengths* (arr_desc->num_dimensions + 1) ) )
 	    == NULL )
 	{
 	    m_error_notify (function_name, "array of tile length pointers");
@@ -414,8 +413,8 @@ dim_desc *dimension;
 	    m_free ( (char *) new_lengths );
 	    return (FALSE);
 	}
-	if ( ( new_tile_lengths[(*arr_desc).num_dimensions] = (unsigned int *)
-	      m_alloc (sizeof **new_tile_lengths * (*arr_desc).num_levels) )
+	if ( ( new_tile_lengths[arr_desc->num_dimensions] = (unsigned int *)
+	      m_alloc (sizeof **new_tile_lengths * arr_desc->num_levels) )
 	    == NULL )
 	{
 	    m_error_notify (function_name, "array of tile lengths");
@@ -431,50 +430,47 @@ dim_desc *dimension;
     }
     /*  Copy dimension descriptor pointers  */
     m_copy ( (char *) (new_dimensions + 1),
-	    (char *) (*arr_desc).dimensions,
-	    sizeof *new_dimensions * (*arr_desc).num_dimensions );
+	    (char *) arr_desc->dimensions,
+	    sizeof *new_dimensions * arr_desc->num_dimensions );
     /*  Copy new dimension descriptor pointer  */
     new_dimensions[0] = dimension;
     /*  Copy lengths  */
     m_copy ( (char *) (new_lengths + 1),
-	    (char *) (*arr_desc).lengths,
-	    sizeof *new_lengths * (*arr_desc).num_dimensions );
+	    (char *) arr_desc->lengths,
+	    sizeof *new_lengths * arr_desc->num_dimensions );
     new_lengths[0] = 0;
-    if ( (*arr_desc).num_levels > 0 )
+    if (arr_desc->num_levels > 0)
     {
 	/*  Copy tile length pointers  */
 	m_copy ( (char *) (new_tile_lengths + 1),
-		(char *) (*arr_desc).tile_lengths,
-		sizeof *new_tile_lengths * (*arr_desc).num_dimensions );
+		(char *) arr_desc->tile_lengths,
+		sizeof *new_tile_lengths * arr_desc->num_dimensions );
     }
-    m_free ( (char *) (*arr_desc).dimensions );
-    m_free ( (char *) (*arr_desc).lengths );
-    if ( (*arr_desc).num_levels > 0 )
+    m_free ( (char *) arr_desc->dimensions );
+    m_free ( (char *) arr_desc->lengths );
+    if (arr_desc->num_levels > 0)
     {
 	/*  Tiled: remove old pointer array of tile lengths  */
-	m_free ( (char *) (*arr_desc).tile_lengths );
+	m_free ( (char *) arr_desc->tile_lengths );
     }
     else
     {
 	/*  Not tiled: copy dimension length into length array  */
-	new_lengths[0] = (*dimension).length;
+	new_lengths[0] = dimension->length;
     }
-    ++(*arr_desc).num_dimensions;
-    (*arr_desc).dimensions = new_dimensions;
-    (*arr_desc).lengths = new_lengths;
-    (*arr_desc).tile_lengths = new_tile_lengths;
+    ++arr_desc->num_dimensions;
+    arr_desc->dimensions = new_dimensions;
+    arr_desc->lengths = new_lengths;
+    arr_desc->tile_lengths = new_tile_lengths;
     return (TRUE);
 }   /*  End Function ds_prepend_dim_desc  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_compute_array_offsets (arr_desc)
-/*  This routine will compute array address offsets for each dimension in the
-    array.
-    The array descriptor must be pointed to by  arr_desc  .The array
-    descriptor is modified.
-    The routine returns TRUE on success, else it returns FALSE.
+flag ds_compute_array_offsets (array_desc *arr_desc)
+/*  [SUMMARY] Compute array address offsets for each dimension in an array.
+    <arr_desc> The array descriptor. This descriptor is modified.
+    [RETURNS] TRUE on success, else FALSE.
 */
-array_desc *arr_desc;
 {
     flag more;
     int dim_count;
@@ -495,77 +491,75 @@ array_desc *arr_desc;
 	(void) fprintf (stderr, "NULL pointer passed\n");
 	a_prog_bug (function_name);
     }
-    if ( (*arr_desc).offsets == NULL )
+    if (arr_desc->offsets == NULL)
     {
-	if ( ( (*arr_desc).offsets = (uaddr **)
-	      m_alloc (sizeof *(*arr_desc).offsets *
-		       (*arr_desc).num_dimensions) )
+	if ( ( arr_desc->offsets = (uaddr **)
+	      m_alloc (sizeof *arr_desc->offsets *
+		       arr_desc->num_dimensions) )
 	    == NULL )
 	{
 	    m_error_notify (function_name, "array of offset array pointers");
 	    return (FALSE);
 	}
-	m_clear ( (char *) (*arr_desc).offsets, sizeof *(*arr_desc).offsets *
-		 (*arr_desc).num_dimensions );
+	m_clear ( (char *) arr_desc->offsets, sizeof *arr_desc->offsets *
+		  arr_desc->num_dimensions );
     }
-    stride = ds_get_packet_size ( (*arr_desc).packet );
-    if ( (*arr_desc).num_levels > 0 )
+    stride = ds_get_packet_size (arr_desc->packet);
+    if (arr_desc->num_levels > 0)
     {
 	/*  Tiled: need co-ordinate array  */
 	if ( ( coords = (uaddr *)
-	      m_alloc (sizeof *coords * (*arr_desc).num_levels) )
+	      m_alloc (sizeof *coords * arr_desc->num_levels) )
 	    == NULL )
 	{
 	    m_error_notify (function_name, "array of coordinate indices");
-	    m_free ( (char *) (*arr_desc).offsets );
+	    m_free ( (char *) arr_desc->offsets );
 	    return (FALSE);
 	}
 	/*  Compute bottom tile size  */
 	for (dim1_count = 0, bot_tile_size = stride;
-	     dim1_count < (*arr_desc).num_dimensions;
+	     dim1_count < arr_desc->num_dimensions;
 	     ++dim1_count)
 	{
-	    bot_tile_size *= (*arr_desc).lengths[dim1_count];
+	    bot_tile_size *= arr_desc->lengths[dim1_count];
 	}
     }
     /*  Allocate and compute for each dimension  */
-    for (dim_count = (*arr_desc).num_dimensions - 1; dim_count >= 0;
-	 --dim_count)
+    for (dim_count = arr_desc->num_dimensions - 1; dim_count >= 0; --dim_count)
     {
-	dim = (*arr_desc).dimensions[dim_count];
+	dim = arr_desc->dimensions[dim_count];
 	/*  Allocate  */
-	if ( (*arr_desc).offsets[dim_count] == NULL )
+	if (arr_desc->offsets[dim_count] == NULL)
 	{
-	    if ( ( (*arr_desc).offsets[dim_count] = (uaddr *)
-		  m_alloc (sizeof **(*arr_desc).offsets * (*dim).length) )
+	    if ( ( arr_desc->offsets[dim_count] = (uaddr *)
+		  m_alloc (sizeof **arr_desc->offsets * dim->length) )
 		== NULL )
 	    {
 		m_error_notify (function_name, "offset array");
 		/*  Deallocate  */
-		while (++dim_count < (*arr_desc).num_dimensions)
+		while (++dim_count < arr_desc->num_dimensions)
 		{
-		    m_free ( (char *) (*arr_desc).offsets[dim_count - 1] );
+		    m_free ( (char *) arr_desc->offsets[dim_count - 1] );
 		}
-		m_free ( (char *) (*arr_desc).offsets );
-		(*arr_desc).offsets = NULL;
+		m_free ( (char *) arr_desc->offsets );
+		arr_desc->offsets = NULL;
 		m_free ( (char *) coords );
 		return (FALSE);
 	    }
 	}
 	/*  Compute  */
-	if ( (*arr_desc).num_levels < 1 )
+	if (arr_desc->num_levels < 1)
 	{
 	    /*  Not tiled  */
-	    compute_offsets ( (*arr_desc).offsets[dim_count], (*dim).length,
-			     0, stride );
-	    stride *= (*dim).length;
+	    compute_offsets (arr_desc->offsets[dim_count], dim->length,
+			     0, stride);
+	    stride *= dim->length;
 	}
 	else
 	{
 	    /*  Tiled  */
 	    tile_size = bot_tile_size;
-	    m_clear ( (char *) coords,
-		     sizeof *coords * (*arr_desc).num_levels );
+	    m_clear ( (char *) coords, sizeof *coords * arr_desc->num_levels );
 	    more = TRUE;
 	    coord_count = 0;
 	    while (more)
@@ -573,32 +567,32 @@ array_desc *arr_desc;
 		/*  New tile: compute offset  */
 		tile_size = bot_tile_size;
 		offset = 0;
-		for (level = (*arr_desc).num_levels - 1; level >= 0; --level)
+		for (level = arr_desc->num_levels - 1; level >= 0; --level)
 		{
 		    block = tile_size;
-		    for (dim1_count = (*arr_desc).num_dimensions - 1;
+		    for (dim1_count = arr_desc->num_dimensions - 1;
 			 dim1_count > dim_count; --dim1_count)
 		    {
-			block *= (*arr_desc).tile_lengths[dim1_count][level];
+			block *= arr_desc->tile_lengths[dim1_count][level];
 		    }
 		    offset += block * coords[level];
 		    for (dim1_count = 0;
-			 dim1_count < (*arr_desc).num_dimensions;
+			 dim1_count < arr_desc->num_dimensions;
 			 ++dim1_count)
 		    {
-			tile_size*=(*arr_desc).tile_lengths[dim1_count][level];
+			tile_size *= arr_desc->tile_lengths[dim1_count][level];
 		    }
 		}
-		compute_offsets ( (*arr_desc).offsets[dim_count] + coord_count,
-				 (*arr_desc).lengths[dim_count],
-				 offset, stride );
-		coord_count += (*arr_desc).lengths[dim_count];
+		compute_offsets (arr_desc->offsets[dim_count] + coord_count,
+				 arr_desc->lengths[dim_count],
+				 offset, stride);
+		coord_count += arr_desc->lengths[dim_count];
 		/*  Increment in tile  */
-		level = (*arr_desc).num_levels - 1;
+		level = arr_desc->num_levels - 1;
 		while (more)
 		{
 		    if (++coords[level] <
-			(*arr_desc).tile_lengths[dim_count][level])
+			arr_desc->tile_lengths[dim_count][level])
 		    {
 			/*  Still OK for this tile  */
 			more = FALSE;
@@ -620,59 +614,53 @@ array_desc *arr_desc;
 		}
 		more = TRUE;
 	    }
-	    (void) fprintf (stderr, "WARNING: tiling being used\n");
-	    stride *= (*arr_desc).lengths[dim_count];
+	    stride *= arr_desc->lengths[dim_count];
 	}
     }
     return (TRUE);
 }   /*  End Function ds_compute_array_offsets  */
 
 /*PUBLIC_FUNCTION*/
-void ds_remove_tiling_info (arr_desc)
-/*  This routine will remove any tiling information from an array descriptor.
-    The routine will NOT remove (or change) any offset information.
-    The array descriptor must be pointed to by  arr_desc  .
-    The routine returns nothing.
+void ds_remove_tiling_info (array_desc *arr_desc)
+/*  [SUMMARY] Remove any tiling information from an array descriptor.
+    [PURPOSE] This routine will remove any tiling information from an array
+    descriptor. The routine will NOT remove (or change) any offset information.
+    <arr_desc> The array descriptor.
+    [RETURNS] Nothing.
 */
-array_desc *arr_desc;
 {
     unsigned int dim_count;
 
-    if ( (*arr_desc).num_levels > 0 )
+    if (arr_desc->num_levels > 0)
     {
-	for (dim_count = 0; dim_count < (*arr_desc).num_dimensions;
+	for (dim_count = 0; dim_count < arr_desc->num_dimensions;
 	     ++dim_count)
 	{
-	    m_free ( (char *) (*arr_desc).tile_lengths[dim_count] );
+	    m_free ( (char *) arr_desc->tile_lengths[dim_count] );
 	}
-	m_free ( (char *) (*arr_desc).tile_lengths );
-	(*arr_desc).num_levels = 0;
-	(*arr_desc).tile_lengths = NULL;
+	m_free ( (char *) arr_desc->tile_lengths );
+	arr_desc->num_levels = 0;
+	arr_desc->tile_lengths = NULL;
     }
 }   /*  End Function ds_remove_tiling_info  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_append_gen_struct (multi_desc, pack_desc, packet, existing_arrayname,
-			   append_arrayname)
-/*  This routine will append a general data structure to a multi-array general
-    data structure.
-    The multi-array general data structure must be pointed to by  multi_desc
-    The top level packet descriptor of the general data structure to append
-    must be poined to by  pack_desc  .
-    The corresponding data for the general data structure must be pointed to
-    by  packet  .
-    If the multi-array data structure previously had only one general data
-    structure, then the name pointed to by  existing_arrayname  will become
-    the arrayname for that data structure.
-    The name of the appended data structure must be pointed to by
-    append_arrayname  .
-    The routine returns TRUE on success, else it returns FALSE.
+flag ds_append_gen_struct (multi_array *multi_desc, packet_desc *pack_desc,
+			   char *packet, char *existing_arrayname,
+			   char *append_arrayname)
+/*  [SUMMARY] Append a general data structure to a multi_array structure.
+    [PURPOSE] This routine will append a general data structure to a
+    multi_array general data structure.
+    <multi_desc> The multi-array general data structure to append to.
+    <pack_desc> The top level packet descriptor of the general data structure
+    to append.
+    <packet> The corresponding data for the general data structure.
+    <existing_arrayname> If the multi-array data structure previously had only
+    one general data structure, then this name will become the arrayname for
+    that data structure.
+    <append_arrayname> The name of the appended data structure.
+    [RETURNS] TRUE on success, else FALSE.
 */
-multi_array *multi_desc;
-packet_desc *pack_desc;
-char *packet;
-char *existing_arrayname;
-char *append_arrayname;
 {
     char **array_names;
     char **data;
@@ -680,14 +668,14 @@ char *append_arrayname;
     static char function_name[] = "ds_append_gen_struct";
 
     if ( ( array_names = (char **)
-	  m_alloc ( sizeof *array_names * ( (*multi_desc).num_arrays + 1 ) ) )
+	  m_alloc ( sizeof *array_names * (multi_desc->num_arrays + 1) ) )
 	== NULL )
     {
 	m_error_notify (function_name, "array of name pointers");
 	return (FALSE);
     }
     if ( ( data = (char **)
-	  m_alloc ( sizeof *data * ( (*multi_desc).num_arrays + 1 ) ) )
+	  m_alloc ( sizeof *data * (multi_desc->num_arrays + 1) ) )
 	== NULL )
     {
 	m_error_notify (function_name, "array of data pointers");
@@ -695,7 +683,7 @@ char *append_arrayname;
 	return (FALSE);
     }
     if ( ( headers = (packet_desc **)
-	  m_alloc ( sizeof *headers * ( (*multi_desc).num_arrays + 1 ) ) )
+	  m_alloc ( sizeof *headers * (multi_desc->num_arrays + 1) ) )
 	== NULL )
     {
 	m_error_notify (function_name, "array of packet descriptor pointers");
@@ -703,7 +691,7 @@ char *append_arrayname;
 	m_free ( (char *) data );
 	return (FALSE);
     }
-    if ( (*multi_desc).num_arrays < 2 )
+    if (multi_desc->num_arrays < 2)
     {
 	/*  Original had only one array  */
 	if ( ( array_names[0] = m_alloc (strlen (existing_arrayname) + 1) )
@@ -716,7 +704,7 @@ char *append_arrayname;
 	    return (FALSE);
 	}
 	(void) strcpy (array_names[0], existing_arrayname);
-	if ( ( array_names[(*multi_desc).num_arrays] =
+	if ( ( array_names[multi_desc->num_arrays] =
 	      m_alloc (strlen (append_arrayname) + 1) ) == NULL )
 	{
 	    m_error_notify (function_name, "existing arrayname");
@@ -726,14 +714,14 @@ char *append_arrayname;
 	    m_free ( (char *) headers );
 	    return (FALSE);
 	}
-	(void) strcpy (array_names[(*multi_desc).num_arrays],append_arrayname);
+	(void) strcpy (array_names[multi_desc->num_arrays],append_arrayname);
     }
     else
     {
 	/*   Original had more than one array  */
-	m_copy ( (char *) array_names, (char *) (*multi_desc).array_names,
-		sizeof *array_names * (*multi_desc).num_arrays );
-	if ( ( array_names[(*multi_desc).num_arrays] =
+	m_copy ( (char *) array_names, (char *) multi_desc->array_names,
+		sizeof *array_names * multi_desc->num_arrays );
+	if ( ( array_names[multi_desc->num_arrays] =
 	      m_alloc (strlen (append_arrayname) + 1) ) == NULL )
 	{
 	    m_error_notify (function_name, "existing arrayname");
@@ -742,24 +730,24 @@ char *append_arrayname;
 	    m_free ( (char *) headers );
 	    return (FALSE);
 	}
-	(void) strcpy (array_names[(*multi_desc).num_arrays],append_arrayname);
+	(void) strcpy (array_names[multi_desc->num_arrays],append_arrayname);
     }
-    m_copy ( (char *) data, (char *) (*multi_desc).data,
-	    sizeof *data * (*multi_desc).num_arrays );
-    m_copy ( (char *) headers, (char *) (*multi_desc).headers,
-	    sizeof *headers * (*multi_desc).num_arrays );
-    data[(*multi_desc).num_arrays] = packet;
-    headers[(*multi_desc).num_arrays] = pack_desc;
-    if ( (*multi_desc).array_names != NULL )
+    m_copy ( (char *) data, (char *) multi_desc->data,
+	    sizeof *data * multi_desc->num_arrays );
+    m_copy ( (char *) headers, (char *) multi_desc->headers,
+	    sizeof *headers * multi_desc->num_arrays );
+    data[multi_desc->num_arrays] = packet;
+    headers[multi_desc->num_arrays] = pack_desc;
+    if (multi_desc->array_names != NULL)
     {
-	m_free ( (char *) (*multi_desc).array_names );
+	m_free ( (char *) multi_desc->array_names );
     }
-    (*multi_desc).array_names = array_names;
-    m_free ( (char *) (*multi_desc).data );
-    (*multi_desc).data = data;
-    m_free ( (char *) (*multi_desc).headers );
-    (*multi_desc).headers = headers;
-    ++(*multi_desc).num_arrays;
+    multi_desc->array_names = array_names;
+    m_free ( (char *) multi_desc->data );
+    multi_desc->data = data;
+    m_free ( (char *) multi_desc->headers );
+    multi_desc->headers = headers;
+    ++multi_desc->num_arrays;
     return (TRUE);
 }   /*  End Function ds_append_gen_struct  */
 

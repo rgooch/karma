@@ -2,7 +2,7 @@
 
     Source file for  karma2ps  (Karma to PostScript image conversion module).
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -34,12 +34,16 @@
 
     Updated by      Richard Gooch   21-MAY-1994: Added  #include <karma_ch.h>
 
-    Last updated by Richard Gooch   3-NOV-1994: Fixed declation of  karma2ps  .
+    Updated by      Richard Gooch   3-NOV-1994: Fixed declation of  karma2ps  .
+
+    Last updated by Richard Gooch   30-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
 #include <stdio.h>
 #include <math.h>
+#include <unistd.h>
 #include <karma.h>
 #include <karma_module.h>
 #include <karma_iarray.h>
@@ -50,6 +54,8 @@
 #include <karma_ds.h>
 #include <karma_ex.h>
 #include <karma_a.h>
+#include <karma_m.h>
+
 
 STATIC_FUNCTION (flag karma2ps, (char *command, FILE *fp) );
 STATIC_FUNCTION (flag write_array, (PostScriptPage pspage,
@@ -67,9 +73,7 @@ static double vsize = 18.0;
 
 #define VERSION "1.1"
 
-main (argc, argv)
-int argc;
-char **argv;
+int main (int argc, char **argv)
 {
     KControlPanel panel;
     extern flag portrait;
@@ -202,8 +206,7 @@ multi_array *multi_desc;
     if ( (*multi_desc).num_arrays > 1 )
     {
 	if ( ( image = iarray_get_from_multi_array (multi_desc, "Frame", 2,
-						    (char **) NULL, NULL) )
-	    == NULL )
+						    NULL, NULL) ) == NULL )
 	{
 	    (void) fprintf (stderr,
 			    "Error getting Intelligent Array: Frame\n");
@@ -229,8 +232,7 @@ multi_array *multi_desc;
     }
     /*  Only one data structure in file  */
     if ( ( image = iarray_get_from_multi_array (multi_desc, NULL, 2,
-						(char **) NULL, NULL) )
-	!= NULL )
+						NULL, NULL) ) != NULL )
     {
 	/*  Monochrome  */
 	retval = iarray_write_mono_ps (image, pspage, 0.0, 0.0, 1.0, 1.0,
@@ -242,7 +244,7 @@ multi_array *multi_desc;
 		    "Error getting PseudoColour Intelligent Array\n");
     (void) fprintf (stderr, "Trying TrueColour...\n");
     if ( ( image_red =
-	  iarray_get_from_multi_array (multi_desc, NULL, 2, (char **) NULL,
+	  iarray_get_from_multi_array (multi_desc, NULL, 2, NULL,
 				       "Red Intensity") )
 	== NULL )
     {
@@ -256,7 +258,7 @@ multi_array *multi_desc;
 	return (FALSE);
     }
     if ( ( image_green =
-	  iarray_get_from_multi_array (multi_desc, NULL, 2, (char **) NULL,
+	  iarray_get_from_multi_array (multi_desc, NULL, 2, NULL,
 				       "Green Intensity") )
 	== NULL )
     {
@@ -281,7 +283,7 @@ multi_array *multi_desc;
 	return (FALSE);
     }
     if ( ( image_blue =
-	  iarray_get_from_multi_array (multi_desc, NULL, 2, (char **) NULL,
+	  iarray_get_from_multi_array (multi_desc, NULL, 2, NULL,
 				       "Blue Intensity") )
 	== NULL )
     {

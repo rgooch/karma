@@ -4,6 +4,8 @@ Widget Documentation
 ------------------------------------------------------------------------
 
 Name: Filewin
+Class name: filewinWidgetClass
+Superclass: formWidgetClass
 Date: 23/7/93
 Author: Patrick Jordan (pjordan@rp.csiro.au)
 

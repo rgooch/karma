@@ -1,5 +1,0 @@
-dsxfr_register_connection_limits
-dsxfr_put_multi
-dsxfr_get_multi
-dsxfr_register_read_func
-dsxfr_register_close_func

@@ -1,0 +1,970 @@
+<html><head><title>Package: iarray</title></head> 
+<body>
+<center><h1>The "iarray" Package</h1></center>    These routines provide a simple interface to the recursive,
+    heirarchical data structure supported in Karma, when only n-dimensional
+    data is to be represented.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=iarray></a></table><h4>Functions</h4><table><tr><td><a href=iarray.html#iarray_num_dim>iarray_num_dim</a></td><td>Get number of dimensions in an Intelligent Array
+</td></tr>
+<tr><td><a href=iarray.html#iarray_type>iarray_type</a></td><td>Get type of data in an Intelligent Array
+</td></tr>
+<tr><td><a href=iarray.html#iarray_value_name>iarray_value_name</a></td><td>Get name of data in an Intelligent Array
+</td></tr>
+<tr><td><a href=iarray.html#iarray_register_destroy_func>iarray_register_destroy_func</a></td><td>Register destroy function for an Intelligent Array
+</td></tr>
+<tr><td><a href=iarray.html#iarray_get_image_from_multi>iarray_get_image_from_multi</a></td><td>Get an image from a Karma data structure.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_get_movie_from_multi>iarray_get_movie_from_multi</a></td><td>Get a movie from a Karma data structure.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_read_nD>iarray_read_nD</a></td><td>Read in a Karma arrayfile and yield an "Intelligent Array".
+</td></tr>
+<tr><td><a href=iarray.html#iarray_write>iarray_write</a></td><td>Write an "Intelligent Array" in the Karma data format.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_create>iarray_create</a></td><td>Create an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_get_from_multi_array>iarray_get_from_multi_array</a></td><td>Create an Intelligent Array from a Karma data structure.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_dealloc>iarray_dealloc</a></td><td>Deallocate an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_put_named_value>iarray_put_named_value</a></td><td>Attach a data value to an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_put_named_string>iarray_put_named_string</a></td><td>Attach a string to an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_get_named_value>iarray_get_named_value</a></td><td>Get attached data from an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_get_named_string>iarray_get_named_string</a></td><td>Get attached string from an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_copy_data>iarray_copy_data</a></td><td>Copy data between Intelligent Arrays.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_get_sub_array_2D>iarray_get_sub_array_2D</a></td><td>Create a 2-dimensional alias Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_get_2D_slice_from_3D>iarray_get_2D_slice_from_3D</a></td><td>Create a 2-dimensional Intelligent Array alias from a slice.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_dim_length>iarray_dim_length</a></td><td>Get length of a dimension in an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_get_restrictions>iarray_get_restrictions</a></td><td>Get restriction information.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_fill>iarray_fill</a></td><td>Fill an Intelligent Array with a single value.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_min_max>iarray_min_max</a></td><td>Determine the minimum and maximum value of an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_scale_and_offset>iarray_scale_and_offset</a></td><td>Scale and offset an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_add_and_scale>iarray_add_and_scale</a></td><td>Add Intelligent Arrays and scale.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_sub_and_scale>iarray_sub_and_scale</a></td><td>Subtract Intelligent Arrays and scale.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_dim_name>iarray_dim_name</a></td><td>Get dimension name in an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_remap_torus>iarray_remap_torus</a></td><td>Remap Intelligent Array into a torus.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_set_world_coords>iarray_set_world_coords</a></td><td>Set the world co-ordinates of an Intelligent Array dimension.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_get_world_coords>iarray_get_world_coords</a></td><td>Get the world co-ordinates of an Intelligent Array dimension.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_get_dim_desc>iarray_get_dim_desc</a></td><td>Get a dimension descriptor from an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_compute_histogram>iarray_compute_histogram</a></td><td>Compute a histogram of an "Intelligent Array".
+</td></tr>
+<tr><td><a href=iarray.html#iarray_dim_index>iarray_dim_index</a></td><td>This routine will find the index of a named dimension.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_get_data_scaling>iarray_get_data_scaling</a></td><td>Get the scale and offset for data in an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_set_data_scaling>iarray_set_data_scaling</a></td><td>Set the scale and offset for data in an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_write_mono_ps>iarray_write_mono_ps</a></td><td>Write an Intelligent Array as monochrome PostScript.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_write_pseudocolour_ps>iarray_write_pseudocolour_ps</a></td><td>Write an Intelligent Array as PseudoColour PostScript.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_write_rgb_ps>iarray_write_rgb_ps</a></td><td>Write an Intelligent Array as TrueColour PostScript.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_create_1D>iarray_create_1D</a></td><td>Create a 1-dimensional Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_create_2D>iarray_create_2D</a></td><td>Create a 2-dimensional Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_create_3D>iarray_create_3D</a></td><td>Create a 3-dimensional Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_create_4D>iarray_create_4D</a></td><td>Create a 4-dimensional Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_put_float>iarray_put_float</a></td><td>Attach a float data value to an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_put_int>iarray_put_int</a></td><td>Attach an integer data value to an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_get_float>iarray_get_float</a></td><td>Get attached float from an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_get_int>iarray_get_int</a></td><td>Get attached integer from an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_fill_float>iarray_fill_float</a></td><td>Fill an Intelligent Array with a single float value.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_fill_int>iarray_fill_int</a></td><td>Fill an Intelligent Array with a single integer value.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_min_max_float>iarray_min_max_float</a></td><td>Determine the minimum and maximum value of an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_min_max_int>iarray_min_max_int</a></td><td>Determine the minimum and maximum value of an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_scale_and_offset_float>iarray_scale_and_offset_float</a></td><td>Scale and offset an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_scale_and_offset_int>iarray_scale_and_offset_int</a></td><td>Scale and offset an Intelligent Array.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=iarray.html#IARRAY_PROTO_destroy_func>IARRAY_PROTO_destroy_func</a></td><td>Register destruction of an Intelligent Array.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=iarray_num_dim></a> unsigned int
+ <b>iarray_num_dim</b><i>    (iarray array)
+</i><br><p>    Get number of dimensions in an Intelligent Array
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br></ul><b>Returns:</b>     The number of dimensions.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_type></a> unsigned int
+ <b>iarray_type</b><i>    (iarray array)
+</i><br><p>    Get type of data in an Intelligent Array
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br></ul><b>Returns:</b>     The type of the data in the array.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_value_name></a> CONST char *
+ <b>iarray_value_name</b><i>    (iarray array)
+</i><br><p>    Get name of data in an Intelligent Array
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br></ul><b>Returns:</b>     The name of the data in the array.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_register_destroy_func></a> KCallbackFunc
+ <b>iarray_register_destroy_func</b><i>    (iarray array, void (*destroy_func) (iarray array, void *info), void *info)
+</i><br><p>    Register destroy function for an Intelligent Array.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>destroy_func :</i> 
+    The routine that is called when the array is destroyed. The prototype
+    function is <a href=iarray.html#IARRAY_PROTO_destroy_func>IARRAY_PROTO_destroy_func</a>.
+<br><li><i>info :</i> 
+    The arbitrary information pointer.
+<br></ul><b>Returns:</b>     The name of the data in the array.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_image_from_multi></a> flag
+ <b>iarray_get_image_from_multi</b><i>    (multi_array *multi_desc, iarray *pseudo,
+				  iarray *red, iarray *green, iarray *blue,
+				  unsigned int *cmap_index)
+</i><br><p>    This routine will find an image embedded in a Karma data
+    structure. The image may be single-channel (PseudoColour) or it may be a
+    TrueColour image (red, green and blue components).
+<p><b>Parameters:</b><ul><li><i>multi_desc :</i> 
+    The Karma data structure.
+<br><li><i>pseudo :</i> 
+    If a single-channel image is found, the corresponding Intelligent
+    Array is written here. If no single-channel image is found, NULL is written
+    here.
+<br><li><i>red :</i> 
+    If a TrueColour image is found, the red component Intelligent Array
+    is written here. If no TrueColour image is found, NULL is written here.
+<br><li><i>green :</i> 
+    If a TrueColour image is found, the green component Intelligent
+    Array is written here. If no TrueColour image is found, NULL is written
+    here.
+<br><li><i>blue :</i> 
+    If a TrueColour image is found, the blue component Intelligent Array
+    is written here. If no TrueColour image is found, NULL is written here.
+<br><li><i>cmap_index :</i> 
+    If the image found is a single-channel image and the data
+    structure has an associated RGBcolourmap, the index to the colourmap
+    structure is written here. If no colourmap is found, the value written here
+    is set to the number of general data structures in multi_desc.
+<br></ul><b>Returns:</b>     TRUE on succes, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_movie_from_multi></a> flag
+ <b>iarray_get_movie_from_multi</b><i>    (multi_array *multi_desc, iarray *pseudo,
+				  iarray *red, iarray *green, iarray *blue,
+				  unsigned int *cmap_index)
+</i><br><p>    This routine will find a movie embedded in a Karma data
+    structure. The movie may be single-channel (PseudoColour) or it may be a
+    TrueColour movie (red, green and blue components).
+<p><b>Parameters:</b><ul><li><i>multi_desc :</i> 
+    The Karma data structure.
+<br><li><i>pseudo :</i> 
+    If a single-channel movie is found, the corresponding Intelligent
+    Array is written here. If no single-channel movie is found, NULL is written
+    here.
+<br><li><i>red :</i> 
+    If a TrueColour movie is found, the red component Intelligent Array
+    is written here. If no TrueColour movie is found, NULL is written here.
+<br><li><i>green :</i> 
+    If a TrueColour movie is found, the green component Intelligent
+    Array is written here. If no TrueColour movie is found, NULL is written
+    here.
+<br><li><i>blue :</i> 
+    If a TrueColour movie is found, the blue component Intelligent Array
+    is written here. If no TrueColour movie is found, NULL is written here.
+<br><li><i>cmap_index :</i> 
+    If the movie found is a single-channel movie and the data
+    structure has an associated RGBcolourmap, the index to the colourmap
+    structure is written here. If no colourmap is found, the value written here
+    is set to the number of general data structures in multi_desc.
+<br></ul><b>Returns:</b>     TRUE on succes, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_read_nD></a> iarray
+ <b>iarray_read_nD</b><i>    (CONST char *object, flag cache, CONST char *arrayname,
+		       unsigned int num_dim, CONST char **dim_names,
+		       CONST char *elem_name,
+		       unsigned int mmap_option)
+</i><br><p>    Read in a Karma arrayfile and yield an "Intelligent Array".
+<p><b>Parameters:</b><ul><li><i>object :</i> 
+    The name of the arrayfile to read. This parameter is passed
+    directly to the <a href=dsxfr.html#dsxfr_get_multi>dsxfr_get_multi</a> routine. In order to understand the
+    operation of this routine, the operation of the <a href=dsxfr.html#dsxfr_get_multi>dsxfr_get_multi</a> routine
+    must be understood.
+<br><li><i>cache :</i> 
+    This is passed directly to the <a href=dsxfr.html#dsxfr_get_multi>dsxfr_get_multi</a> routine.
+    This controls whether disc arrayfiles are cached in memory for later use.
+<br><li><i>arrayname :</i> 
+    The name of the general data structure in the arrayfile to
+    search for. If this is NULL, the routine searches for the default name
+    "Intelligent Array". If the arrayfile has only one general data structure,
+    then this parameter is ignored.
+<br><li><i>num_dim :</i> 
+    The routine searches for an n-dimensional array with a single
+    atomic element at each point in multi-dimensional space. If this parameter
+    is greater than 0, the routine will only return an array with the specified
+    number of dimensions. If the value is 0, then the routine will return an
+    n-dimensional array.
+<br><li><i>dim_names :</i> 
+    If <em>num_dim</em> is not 0, then if this parameter is NULL, the
+    routine will search for and return an array with the default dimension
+    names (see <a href=iarray.html#iarray_create>iarray_create</a> for a list of these) if more than one
+    n-dimensional, single element array exists in the general data structure,
+    or the only n-dimensional array with the specified number of dimensions.
+    If the routine can't find an adequate default, it will not return an array.
+    If <em>num_dim</em> is not 0, and this parameter points to an array of strings,
+    then the routine will only return an array which matches the specified
+    dimension names. The first name in the array of strings must be the highest
+    order dimension.
+<br><li><i>elem_name :</i> 
+    If this is NULL, the routine will ignore the element name of
+    the array which is located, else it will insist on the array element name
+    matching the specified name.
+<br><li><i>mmap_option :</i> 
+    This is passed directly to the <a href=dsxfr.html#dsxfr_get_multi>dsxfr_get_multi</a> routine.
+    This parameter controls the memory mapping of disc arrayfiles.
+    If the data structure is likely to be subsequently modified, the value must
+    be K_CH_MAP_NEVER, otherwise the data may be read-only memory mapped
+    and writing to it will cause a segmentation fault.
+<br></ul><b>Returns:</b>     A dynamically allocated intelligent array on success, else an
+    error message is printed to the standard output and NULL is returned.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_write></a> flag
+ <b>iarray_write</b><i>    (iarray array, CONST char *arrayfile)
+</i><br><p>    Write an "Intelligent Array" in the Karma data format.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The "Intelligent Array".
+<br><li><i>arrayfile :</i> 
+    The name of the arrayfile to write. See <a href=dsxfr.html#dsxfr_put_multi>dsxfr_put_multi</a> for
+    details on the interpretation of this.
+<br></ul><b>Returns:</b>     TRUE on success, else an error message is printed to the standard
+    output and FALSE is returned.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_create></a> iarray
+ <b>iarray_create</b><i>    (unsigned int type, unsigned int num_dim,
+		      CONST char **dim_names, CONST unsigned long *dim_lengths,
+		      CONST char *elem_name, iarray old_array)
+</i><br><p>    This routine will create an "Intelligent Array", using the Karma
+    general data structure format as the underlying data format.
+    If the environment variable "IARRAY_ALLOC_DEBUG" is set to "TRUE" then the
+    routine will print allocation debugging information.
+<p><b>Parameters:</b><ul><li><i>type :</i> 
+    The desired type of the data elements. See <a href=ds.html#DS_KARMA_DATA_TYPES>DS_KARMA_DATA_TYPES</a>
+    for a list of defined data types.
+<br><li><i>num_dim :</i> 
+    The number of dimensions the array must have.
+<br><li><i>dim_names :</i> 
+    The names of the dimensions. If this is NULL, the default names
+    "Axis 0", "Axis 1", etc. are used.
+<br><li><i>dim_lengths :</i> 
+    The lengths of the dimensions. The first entry in this array
+    and the <em>dim_lengths</em> array refers to the most significant dimension
+    (i.e. the dimension with the greatest stride in memory).
+<br><li><i>elem_name :</i> 
+    The name of the element. If this is NULL, the default name
+    "Data Value" is choosen.
+<br><li><i>old_array :</i> 
+    Any auxilary information not representable with "Intelligent
+    Arrays" which is to be included in the Karma data format is copied from
+    here. If this is NULL, no auxilary information is copied.
+<br></ul><b>Returns:</b>     A dynamically allocated intelligent array on success, else an
+    error message is printed to the standard output and NULL is returned.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_from_multi_array></a> iarray
+ <b>iarray_get_from_multi_array</b><i>    (multi_array *multi_desc,
+				    CONST char *arrayname,
+				    unsigned int num_dim,
+				    CONST char **dim_names,
+				    CONST char *elem_name)
+</i><br><p>    This routine will yield an "Intelligent Array" from a multi array
+    Karma general data structure. The routine searches for a n-dimensional
+    array with a single atomic element at each point in multi-dimensional space
+<p><b>Parameters:</b><ul><li><i>multi_desc :</i> 
+    The multi array header pointer. The attachment count is
+    incremented on successful completion of this routine.
+<br><li><i>arrayname :</i> 
+    The name of the general data structure in the arrayfile to
+    search for. If this is NULL, the routine searches for the default name
+    "Intelligent Array". If the arrayfile has only one general data structure,
+    then this parameter is ignored.
+<br><li><i>num_dim :</i> 
+    If greater than 0, the routine will only return an array with
+    this many dimensions. If 0, then the routine will return an n-dimensional
+    array.
+<br><li><i>dim_names :</i> 
+    If <em>num_dim</em> is not 0, then if this NULL, the routine will
+    search for and return an array with the default dimension names (see
+    <em>iarray_create</em> for a list of these) if more than one n-dimensional,
+    single element array exists in the general data structure, or the only
+    n-dimensional array with the specified number of dimensions. If the routine
+    can't find an adequate default, it will not return an array. If <em>num_dim</em>
+    is not 0, and this points to an array of strings, then the routine will
+    only return an array which matches the specified dimension names. The first
+    name in the array of strings must be the highest order dimension.
+<br><li><i>elem_name :</i> 
+    If NULL, the routine will ignore the element name of the array
+    which is located, else it will insist on the array element name matching
+    this name.
+<br></ul><b>Returns:</b>     A dynamically allocated intelligent array on success, else an
+    error message is printed to the standard output and NULL is returned.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_dealloc></a> void
+ <b>iarray_dealloc</b><i>    (iarray array)
+</i><br><p>    This routine will deallocate an "Intelligent Array". If the
+    environment variable "IARRAY_ALLOC_DEBUG" is set to "TRUE" then the routine
+    will print deallocation debugging information.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_put_named_value></a> flag
+ <b>iarray_put_named_value</b><i>    (iarray array, CONST char *name, unsigned int type,
+			     double value[2])
+</i><br><p>    This routine will add a unique named value to the underlying
+    Karma general data structure of an "Intelligent Array".
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>name :</i> 
+    The name of the element to add.
+<br><li><i>type :</i> 
+    The type of the data which is to be written.
+<br><li><i>value :</i> 
+    The value of the data.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_put_named_string></a> flag
+ <b>iarray_put_named_string</b><i>    (iarray array, CONST char *name, char *string)
+</i><br><p>    This routine will add a unique named string to the underlying
+    Karma general data structure of an "Intelligent Array".
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>name :</i> 
+    The name of the element to add.
+<br><li><i>string :</i> 
+    The string data.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_named_value></a> flag
+ <b>iarray_get_named_value</b><i>    (iarray array, CONST char *name,
+			     unsigned int *type, double value[2])
+</i><br><p>    This routine will get a unique named value from the underlying
+    Karma general data structure of an "Intelligent Array".
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>name :</i> 
+    The name of the element.
+<br><li><i>type :</i> 
+    The type of the input data found will be written here. If this is
+    NULL, nothing is written here.
+<br><li><i>value :</i> 
+    The value of the converted data will be written here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_named_string></a> char *
+ <b>iarray_get_named_string</b><i>    (iarray array, CONST char *name)
+</i><br><p>    This routine will get a unique named string from the underlying
+    Karma general data structure of an "Intelligent Array".
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>name :</i> 
+    The name of the element.
+<br></ul><b>Returns:</b>     A pointer to a dynamically allocated copy of the string on
+    success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_copy_data></a> flag
+ <b>iarray_copy_data</b><i>    (iarray output, iarray input, flag magnitude)
+</i><br><p>    This routine will copy data from one "Intelligent Array" to
+    another. The sizes of the two arrays must be identical.
+    The routine can deal with the types of the two arrays being different
+<p><b>Parameters:</b><ul><li><i>output :</i> 
+    The output Intelligent Array.
+<br><li><i>input :</i> 
+    The input Intelligent Array.
+<br><li><i>magnitude :</i> 
+    If TRUE then when converting from a complex array to a real
+    array, the magnitude of the complex data is taken, else the real component
+    is copied.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     When converting from a real array to a complex data array, the
+    imaginary components are set to zero.
+</ul><p><hr> <a name=iarray_get_sub_array_2D></a> iarray
+ <b>iarray_get_sub_array_2D</b><i>    (iarray array, int starty, int startx,
+				unsigned int ylen, unsigned int xlen)
+</i><br><p>    This routine will create an "Intelligent Array" which is an alias
+    or a sub-array of another "Intelligent Array". Subsequent modification of
+    the alias array will modify the data of the original array. Sub-arrays may
+    be created from other sub-arrays. The attachment count of the underlying
+    <em>multi_array</em> data structure is incremented on successful completion.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The original array.
+<br><li><i>starty :</i> 
+    The starting y (row) index in the original array corresponding to
+    the first row of the alias array.
+<br><li><i>startx :</i> 
+    The starting x (column) index in the original array corresponding
+    to the first column of the alias array.
+<br><li><i>ylen :</i> 
+    The number of y co-ordinates (rows) in the alias array.
+<br><li><i>xlen :</i> 
+    The number of x co-ordinates (columns) in the alias array.
+<br></ul><b>Returns:</b>     A dynamically allocated intelligent array on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     Sub-arrays cannot be saved to disc.
+</ul><p><hr> <a name=iarray_get_2D_slice_from_3D></a> iarray
+ <b>iarray_get_2D_slice_from_3D</b><i>    (iarray cube, unsigned int ydim,
+				    unsigned int xdim, unsigned int slice_pos)
+</i><br><p>    This routine will create a 2-D "Intelligent Array" which is an
+    alias of an arbitrary slice of a 3-D array.
+<p><b>Parameters:</b><ul><li><i>cube :</i> 
+    The input 3-D array.
+<br><li><i>ydim :</i> 
+    The dimension in the 3-D array which will become the y dimension
+    (most significant) of the output array.
+<br><li><i>xdim :</i> 
+    The dimension in the 3-D array which will become the x dimension
+    (least significant) of the output array.
+<br><li><i>slice_pos :</i> 
+    The position of the slice along the unspecified (remaining)
+    dimension in the 3-D array.
+<br></ul><b>Returns:</b>     A dynamically allocated intelligent array on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     Alias arrays cannot be saved to disc.
+</ul><p><hr> <a name=iarray_dim_length></a> unsigned long
+ <b>iarray_dim_length</b><i>    (iarray array, unsigned int index)
+</i><br><p>    Get length of a dimension in an Intelligent Array.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>index :</i> 
+    The index of the dimension.
+<br></ul><b>Returns:</b>     The length of the specified dimension.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_restrictions></a> unsigned int
+ <b>iarray_get_restrictions</b><i>    (iarray array, char ***restr_names,
+				      double **restr_values)
+</i><br><p>    This routine will get any associated restrictions for an
+    Intelligent Array. The routine will dynamically allocate space for the
+    restriction data, which must be externally freed.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>restr_names :</i> 
+    The array of pointers to restrictions names will be written
+    here.
+<br><li><i>restr_values :</i> 
+    The array of restriction values will be written here.
+<br></ul><b>Returns:</b>     The number of restrictions. This may be 0.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_fill></a> flag
+ <b>iarray_fill</b><i>    (iarray array, double value[2])
+</i><br><p>    Fill an Intelligent Array with a single value.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>value :</i> 
+    The fill value.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_min_max></a> flag
+ <b>iarray_min_max</b><i>    (iarray array, unsigned int conv_type, double *min,
+		     double *max)
+</i><br><p>    Determine the minimum and maximum value of an Intelligent Array.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>conv_type :</i> 
+    The conversion type to use for complex numbers. This is ignored
+    if the array is not complex. See <a href=ds.html#DS_COMPLEX_CONVERSIONS>DS_COMPLEX_CONVERSIONS</a> for legal
+    values.
+<br><li><i>min :</i> 
+    The routine will write the minimum value here.
+<br><li><i>max :</i> 
+    The routine will write the maximum value here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe.
+<br><p><hr> <a name=iarray_scale_and_offset></a> flag
+ <b>iarray_scale_and_offset</b><i>    (iarray out, iarray inp, double scale[2],
+			      double offset[2], flag magnitude)
+</i><br><p>    This routine will perform a scale and offset on every element in
+    an "Intelligent Array" (output = input * scale + offset).
+<p><b>Parameters:</b><ul><li><i>out :</i> 
+    The output Intelligent Array.
+<br><li><i>inp :</i> 
+    The input Intelligent Array.
+<br><li><i>scale :</i> 
+    The complex scale value.
+<br><li><i>offset :</i> 
+    The complex offset value.
+<br><li><i>magnitude :</i> 
+    If TRUE and converting from a complex to a real array, the
+    magnitude of the complex data (after scale and offset have been applied) is
+    used, else the real component of the complex scaled data is used.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The input and output arrays MUST be the same size (though not
+    necessarily the same type).
+<li>     When converting from a real to a complex array, the imaginary
+    component of the output array is set to 0.
+</ul><p><hr> <a name=iarray_add_and_scale></a> flag
+ <b>iarray_add_and_scale</b><i>    (iarray out, iarray inp1, iarray inp2,
+			   double scale[2], flag magnitude)
+</i><br><p>    This routine will add two "Intelligent Array" to each other and
+    scales the result. The sizes of the two input arrays and the output must be
+    identical.
+    The routine performs the following computation:
+    OUT = INP1 + INP2 * scale
+    The routine will automatically perform type conversions if necessary.
+<p><b>Parameters:</b><ul><li><i>out :</i> 
+    The output Intelligent Array.
+<br><li><i>inp1 :</i> 
+    The first input Intelligent Array.
+<br><li><i>inp2 :</i> 
+    The second input Intelligent Array.
+<br><li><i>scale :</i> 
+    The complex scale value.
+<br><li><i>magnitude :</i> 
+    If TRUE then when converting from a complex to a real data
+    type, the magnitude is taken, else the real component is copied.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     When converting from a real to a complex data type, the imaginary
+    component is set to zero.
+</ul><p><hr> <a name=iarray_sub_and_scale></a> flag
+ <b>iarray_sub_and_scale</b><i>    (iarray out, iarray inp1, iarray inp2,
+			   double scale[2], flag magnitude)
+</i><br><p>    This routine will subtract two "Intelligent Array" from each
+    other and scales the result. The sizes of the two input arrays and the
+    output must be identical.
+    The routine performs the following computation:
+    OUT = INP1 - INP2 * scale
+    The routine will automatically perform type conversions if necessary.
+<p><b>Parameters:</b><ul><li><i>out :</i> 
+    The output Intelligent Array.
+<br><li><i>inp1 :</i> 
+    The first input Intelligent Array.
+<br><li><i>inp2 :</i> 
+    The second input Intelligent Array.
+<br><li><i>scale :</i> 
+    The complex scale value.
+<br><li><i>magnitude :</i> 
+    If TRUE then when converting from a complex to a real data
+    type, the magnitude is taken, else the real component is copied.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     When converting from a real to a complex data type, the imaginary
+    component is set to zero.
+</ul><p><hr> <a name=iarray_dim_name></a> CONST char *
+ <b>iarray_dim_name</b><i>    (iarray array, unsigned int index)
+</i><br><p>    This routine will get the name of a specified dimension in a
+    simple, n-dimensional array.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>index :</i> 
+    The index of the dimension.
+<br></ul><b>Returns:</b>     A pointer to the name of the specified dimension.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_remap_torus></a> void
+ <b>iarray_remap_torus</b><i>    (iarray array, unsigned int boundary_width)
+</i><br><p>    This routine will remap an N-dimensional "Intelligent Array" to a
+    pseudo-toroidal array.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>boundary_width :</i> 
+    The width of the array boundary within which the array
+    appears to be toroidal.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_set_world_coords></a> void
+ <b>iarray_set_world_coords</b><i>    (iarray array, unsigned int index, double first,
+			      double last)
+</i><br><p>    Set the world co-ordinates of an Intelligent Array dimension.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>index :</i> 
+    The index of the dimension.
+<br><li><i>first :</i> 
+    The first real world co-ordinate.
+<br><li><i>last :</i> 
+    The last real world co-ordinate.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_world_coords></a> void
+ <b>iarray_get_world_coords</b><i>    (iarray array, unsigned int index,
+			      double *first, double *last)
+</i><br><p>    Get the world co-ordinates of an Intelligent Array dimension.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>index :</i> 
+    The index of the dimension.
+<br><li><i>first :</i> 
+    The first real world co-ordinate is written here.
+<br><li><i>last :</i> 
+    The last real world co-ordinate is written here.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_dim_desc></a> dim_desc *
+ <b>iarray_get_dim_desc</b><i>    (iarray array, unsigned int index)
+</i><br><p>    Get a dimension descriptor from an Intelligent Array.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>index :</i> 
+    The index of the dimension.
+<br></ul><b>Returns:</b>     A pointer to the dimension descriptor.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_compute_histogram></a> flag
+ <b>iarray_compute_histogram</b><i>    (iarray array, unsigned int conv_type,
+			       double min, double max, unsigned long num_bins,
+			       unsigned long *histogram_array,
+			       unsigned long *histogram_peak,
+			       unsigned long *histogram_mode)
+</i><br><p>    Compute a histogram of an "Intelligent Array".
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The array.
+<br><li><i>conv_type :</i> 
+    The conversion type to use for complex numbers. See
+    <a href=ds.html#DS_COMPLEX_CONVERSIONS>DS_COMPLEX_CONVERSIONS</a> for legal values. CONV_CtoR_ENVELOPE is not
+    legal.
+<br><li><i>min :</i> 
+    Data values below this will be ignored.
+<br><li><i>max :</i> 
+    Data values above this will be ignored.
+<br><li><i>num_bins :</i> 
+    The number of histogram bins.
+<br><li><i>histogram_array :</i> 
+    A pointer to the histogram array. The values in this
+    array are updated, and hence must be initialised externally.
+<br><li><i>histogram_peak :</i> 
+    The peak of the histogram is written here. This value is
+    updated, and hence must be externally initialised to 0.
+<br><li><i>histogram_mode :</i> 
+    The mode of the histogram (index value of the peak) will
+    be written here. This value is updated, and hence must be externally
+    initialised to 0.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe.
+<br><p><hr> <a name=iarray_dim_index></a> unsigned int
+ <b>iarray_dim_index</b><i>    (iarray array, CONST char *name)
+</i><br><p>    This routine will find the index of a named dimension.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The array.
+<br><li><i>name :</i> 
+    The name of the dimension.
+<br></ul><b>Returns:</b>     The dimension index if found, else the number of dimension in the
+    array is returned.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_data_scaling></a> flag
+ <b>iarray_get_data_scaling</b><i>    (iarray array, double *scale, double *offset)
+</i><br><p>    This routine will determine the scale and offset for data in an
+    Intelligent Array. This may be important when a floating-point array has
+    been converted to an integer array to save space. Scaling information
+    should be attached to the array so that the original data values may be
+    reconstructed (aside from quantisation effects). The following expression
+    may be used to convert scaled values to real values:
+    (output = input * scale + offset). The scaling and offset values should
+    previously have been attached to the Intelligent Array using the
+    <a href=iarray.html#iarray_set_data_scaling>iarray_set_data_scaling</a> routine.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The array.
+<br><li><i>scale :</i> 
+    The scaling value will be written here. The name of the scaling
+    value is constructed by appending "__SCALE" to the array value name (see
+    <a href=iarray.html#iarray_get_value_name>iarray_get_value_name</a>). If no scaling value is found, 1.0 is written
+    here.
+<br><li><i>offset :</i> 
+    The offset value will be written here. The name of the offset
+    value is constructed by appending "__OFFSET" to the array value name (see
+    <a href=iarray.html#iarray_get_value_name>iarray_get_value_name</a>). If no offset value is found, 0.0 is written
+    here.
+<br></ul><b>Returns:</b>     TRUE if either the scaling or offset value were found, else FALSE
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_set_data_scaling></a> flag
+ <b>iarray_set_data_scaling</b><i>    (iarray array, double scale, double offset)
+</i><br><p>    This routine will set the scale and offset for data in an
+    Intelligent Array. This may be important when a floating-point array has
+    been converted to an integer array to save space. The scaling information
+    will be attached to the array so that the original data values may be
+    reconstructed (aside from quantisation effects). The following expression
+    may be used to convert scaled values to real values:
+    (output = input * scale + offset).
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The array.
+<br><li><i>scale :</i> 
+    The scaling value. The name of the scaling value is constructed by
+    appending "__SCALE" to the array value name (see <a href=iarray.html#iarray_get_value_name>iarray_get_value_name</a>)
+<br><li><i>offset :</i> 
+    The offset value. The name of the offset value is constructed by
+    appending "__OFFSET" to the array value name(see <a href=iarray.html#iarray_get_value_name>iarray_get_value_name</a>)
+<br></ul><b>Returns:</b>     TRUE if the scaling information is different from what was
+    already attached to the array, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_write_mono_ps></a> flag
+ <b>iarray_write_mono_ps</b><i>    (iarray image, PostScriptPage pspage,
+			   double xstart, double ystart,
+			   double xend, double yend, flag iscale)
+</i><br><p>    This routine will convert a 2-dimensional Intelligent Array to
+    monochrome PostScript. The routine does NOT write PostScript headers or
+    tails.
+<p><b>Parameters:</b><ul><li><i>image :</i> 
+    The Intelligent Array.
+<br><li><i>pspage :</i> 
+    The PostScriptPage object.
+<br><li><i>xstart :</i> 
+    The x starting point (scaled from 0.0 to 1.0).
+<br><li><i>ystart :</i> 
+    The y starting point (scaled from 0.0 to 1.0).
+<br><li><i>xend :</i> 
+    The x ending point (scaled from 0.0 to 1.0).
+<br><li><i>yend :</i> 
+    The y ending point (scaled from 0.0 to 1.0).
+<br><li><i>iscale :</i> 
+    If FALSE and the input Intelligent Array is of type K_UBYTE the
+    images values will be unscaled prior to PostScript conversion (0 = black,
+    255 = white), otherwise (min = black, max = white).
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_write_pseudocolour_ps></a> flag
+ <b>iarray_write_pseudocolour_ps</b><i>    (iarray image, PostScriptPage pspage,
+				   double xstart, double ystart,
+				   double xend, double yend,
+				   unsigned short *cmap,unsigned int cmap_size)
+</i><br><p>    This routine will convert a 2-dimensional Intelligent Array to
+    colour PostScript. The routine does NOT write PostScript headers or tails.
+<p><b>Parameters:</b><ul><li><i>image :</i> 
+    The Intelligent Array.
+<br><li><i>pspage :</i> 
+    The PostScriptPage object.
+<br><li><i>xstart :</i> 
+    The x starting point (scaled from 0.0 to 1.0).
+<br><li><i>ystart :</i> 
+    The y starting point (scaled from 0.0 to 1.0).
+<br><li><i>xend :</i> 
+    The x ending point (scaled from 0.0 to 1.0).
+<br><li><i>yend :</i> 
+    The y ending point (scaled from 0.0 to 1.0).
+<br><li><i>cmap :</i> 
+    The colourmap. This must be the same format as returned by
+    <a href=ds.html#ds_cmap_find_colourmap>ds_cmap_find_colourmap</a>.
+<br><li><i>cmap_size :</i> 
+    The size of the colourmap. The maximum size is 256.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_write_rgb_ps></a> flag
+ <b>iarray_write_rgb_ps</b><i>    (iarray image_red, iarray image_green,
+			  iarray image_blue, PostScriptPage pspage,
+			  double xstart, double ystart,
+			  double xend, double yend)
+</i><br><p>    This routine will convert three 2-dimensional Intelligent Arrays
+    to colour PostScript. The routine does NOT write PostScript headers or
+    tails.
+<p><b>Parameters:</b><ul><li><i>image_red :</i> 
+    The Intelligent Array containing the red image component.
+<br><li><i>image_green :</i> 
+    The Intelligent Array containing the green image component.
+<br><li><i>image_blue :</i> 
+    The Intelligent Array containing the blue image component.
+<br><li><i>pspage :</i> 
+    The PostScriptPage object.
+<br><li><i>xstart :</i> 
+    The x starting point (scaled from 0.0 to 1.0).
+<br><li><i>ystart :</i> 
+    The y starting point (scaled from 0.0 to 1.0).
+<br><li><i>xend :</i> 
+    The x ending point (scaled from 0.0 to 1.0).
+<br><li><i>yend :</i> 
+    The y ending point (scaled from 0.0 to 1.0).
+<br><li><i>cmap :</i> 
+    The colourmap. This must be the same format as returned by
+    <a href=ds.html#ds_cmap_find_colourmap>ds_cmap_find_colourmap</a>.
+<br><li><i>cmap_size :</i> 
+    The size of the colourmap. The maximum size is 256.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     Each of these Intelligent Arrays must be of type K_UBYTE.
+</ul><p><hr> <a name=iarray_create_1D></a> iarray
+ <b>iarray_create_1D</b><i>    (unsigned long xlen, unsigned int type)
+</i><br><p>    This routine will create a 1-dimensional "Intelligent Array",
+    using the Karma general data structure format as the underlying data format
+<p><b>Parameters:</b><ul><li><i>xlen :</i> 
+    The length of the dimension. The name of the dimension will be the
+    default: "Axis 0".
+<br><li><i>type :</i> 
+    The type of the data. See <a href=ds.html#DS_KARMA_DATA_TYPES>DS_KARMA_DATA_TYPES</a> for a list of
+    defined data types.
+<br></ul><b>Returns:</b>     A dynamically allocated intelligent array on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The name of the element will be the default name: "Intensity".
+</ul><p><hr> <a name=iarray_create_2D></a> iarray
+ <b>iarray_create_2D</b><i>    (unsigned long ylen, unsigned long xlen,
+			 unsigned int type)
+</i><br><p>    This routine will create a 2-dimensional "Intelligent Array",
+    using the Karma general data structure format as the underlying data format
+<p><b>Parameters:</b><ul><li><i>ylen :</i> 
+    The length of the most significant dimension (ie. the dimension with
+    the greatest stride in memory.
+<br><li><i>xlen :</i> 
+    The length of the least significant dimension.
+<br><li><i>type :</i> 
+    The type of the data. See <a href=ds.html#DS_KARMA_DATA_TYPES>DS_KARMA_DATA_TYPES</a> for a list of
+    defined data types.
+<br></ul><b>Returns:</b>     A dynamically allocated intelligent array on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The names of the dimensions will be the defaults: "Axis 0" and
+    "Axis 1", respectively.
+<li>     The name of the element will be the default name: "Intensity".
+</ul><p><hr> <a name=iarray_create_3D></a> iarray
+ <b>iarray_create_3D</b><i>    (unsigned long zlen, unsigned long ylen,
+			 unsigned long xlen, unsigned int type)
+</i><br><p>    This routine will create a 3-dimensional "Intelligent Array",
+    using the Karma general data structure format as the underlying data format
+<p><b>Parameters:</b><ul><li><i>zlen :</i> 
+    The length of the most significant dimension (ie. the dimension with
+    the greatest stride in memory).
+<br><li><i>ylen :</i> 
+    The length of the middle dimension.
+<br><li><i>xlen :</i> 
+    The length of the least significant dimension.
+<br><li><i>type :</i> 
+    The type of the data. See <a href=ds.html#DS_KARMA_DATA_TYPES>DS_KARMA_DATA_TYPES</a> for a list of
+    defined data types.
+<br></ul><b>Returns:</b>     A dynamically allocated intelligent array on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The names of the dimensions will be the defaults: "Axis 0",
+    "Axis 1" and "Axis 2", respectively.
+<li>     The name of the element will be the default name: "Intensity".
+</ul><p><hr> <a name=iarray_create_4D></a> iarray
+ <b>iarray_create_4D</b><i>    (unsigned long zlen, unsigned long ylen,
+			 unsigned long xlen, unsigned int wlen,
+			 unsigned int type)
+</i><br><p>    This routine will create a 4-dimensional "Intelligent Array",
+    using the Karma general data structure format as the underlying data format
+<p><b>Parameters:</b><ul><li><i>zlen :</i> 
+    The length of the most significant dimension (ie. the dimension with
+    the greatest stride in memory).
+<br><li><i>ylen :</i> 
+    The length of the second most significant dimension.
+<br><li><i>xlen :</i> 
+    The length of the second least significant dimension.
+<br><li><i>wlen :</i> 
+    The length of the least significant dimension.
+<br><li><i>type :</i> 
+    The type of the data. See <a href=ds.html#DS_KARMA_DATA_TYPES>DS_KARMA_DATA_TYPES</a> for a list of
+    defined data types.
+<br></ul><b>Returns:</b>     A dynamically allocated intelligent array on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The names of the dimensions will be the defaults: "Axis 0",
+    "Axis 1", "Axis 2" and "Axis 3", respectively.
+<li>     The name of the element will be the default name: "Intensity".
+</ul><p><hr> <a name=iarray_put_float></a> flag
+ <b>iarray_put_float</b><i>    (iarray array, CONST char *name, float value)
+</i><br><p>    This routine will put a unique named float value into the
+    underlying Karma general data structure of an "Intelligent Array".
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>name :</i> 
+    The name of the element.
+<br><li><i>value :</i> 
+    The value of the data.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_put_int></a> flag
+ <b>iarray_put_int</b><i>    (iarray array, CONST char *name, int value)
+</i><br><p>    This routine will put a unique named integer value into the
+    underlying Karma general data structure of an "Intelligent Array".
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>name :</i> 
+    The name of the element.
+<br><li><i>value :</i> 
+    The value of the data.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_float></a> float
+ <b>iarray_get_float</b><i>    (iarray array, CONST char *name)
+</i><br><p>    This routine will get a unique named float value from the
+    underlying Karma general data structure of an "Intelligent Array".
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>name :</i> 
+    The name of the element.
+<br></ul><b>Returns:</b>     The value on success, else the process is aborted on error.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_int></a> int
+ <b>iarray_get_int</b><i>    (iarray array, CONST char *name)
+</i><br><p>    This routine will get a unique named integer value from the
+    underlying Karma general data structure of an "Intelligent Array".
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>name :</i> 
+    The name of the element.
+<br></ul><b>Returns:</b>     The value on success, else the process is aborted on error.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_fill_float></a> flag
+ <b>iarray_fill_float</b><i>    (iarray array, float value)
+</i><br><p>    Fill an Intelligent Array with a single float value.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>value :</i> 
+    The fill value.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     If filling a complex array, both the real and imaginary components
+    are filled with the fill value.
+</ul><p><hr> <a name=iarray_fill_int></a> flag
+ <b>iarray_fill_int</b><i>    (iarray array, int value)
+</i><br><p>    Fill an Intelligent Array with a single integer value.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>value :</i> 
+    The fill value.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     If filling a complex array, both the real and imaginary components
+    are filled with the fill value.
+</ul><p><hr> <a name=iarray_min_max_float></a> flag
+ <b>iarray_min_max_float</b><i>    (iarray array, float *min, float *max)
+</i><br><p>    Determine the minimum and maximum value of an Intelligent Array.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>min :</i> 
+    The routine will write the minimum value here.
+<br><li><i>max :</i> 
+    The routine will write the maximum value here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe.
+<br><b>Note:</b><ul> <li>     If the array is a complex array, then the routine computes the
+    minimum and maximum magnitudes.
+</ul><p><hr> <a name=iarray_min_max_int></a> flag
+ <b>iarray_min_max_int</b><i>    (iarray array, int *min, int *max)
+</i><br><p>    Determine the minimum and maximum value of an Intelligent Array.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>min :</i> 
+    The routine will write the minimum value here.
+<br><li><i>max :</i> 
+    The routine will write the maximum value here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe.
+<br><b>Note:</b><ul> <li>     If the array is a complex array, then the routine computes the
+    minimum and maximum magnitudes.
+</ul><p><hr> <a name=iarray_scale_and_offset_float></a> flag
+ <b>iarray_scale_and_offset_float</b><i>    (iarray out, iarray inp, float scale, 
+				    float offset)
+</i><br><p>    This routine will perform a scale and offset on every element in
+    an "Intelligent Array" (output = input * scale + offset).
+<p><b>Parameters:</b><ul><li><i>out :</i> 
+    The output Intelligent Array.
+<br><li><i>inp :</i> 
+    The input Intelligent Array.
+<br><li><i>scale :</i> 
+    The complex scale value.
+<br><li><i>offset :</i> 
+    The complex offset value.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The input and output arrays MUST be the same size (though not
+    necessarily the same type).
+<li>     When converting from a complex to a real array, the magnitude is
+    scaled and offset.
+<li>     When converting from a real to a complex array, the imaginary
+    component of the output array is set to 0.
+</ul><p><hr> <a name=iarray_scale_and_offset_int></a> flag
+ <b>iarray_scale_and_offset_int</b><i>    (iarray out, iarray inp, int scale,int offset)
+</i><br><p>    This routine will perform a scale and offset on every element in
+    an "Intelligent Array" (output = input * scale + offset).
+<p><b>Parameters:</b><ul><li><i>out :</i> 
+    The output Intelligent Array.
+<br><li><i>inp :</i> 
+    The input Intelligent Array.
+<br><li><i>scale :</i> 
+    The complex scale value.
+<br><li><i>offset :</i> 
+    The complex offset value.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The input and output arrays MUST be the same size (though not
+    necessarily the same type).
+<li>     When converting from a complex to a real array, the magnitude is
+    scaled and offset.
+<li>     When converting from a real to a complex array, the imaginary
+    component of the output array is set to 0.
+</ul><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=IARRAY_PROTO_destroy_func></a> void
+ <b>IARRAY_PROTO_destroy_func</b><i>    (iarray array, void *info)
+</i><br><p>    Register destruction of an Intelligent Array.
+<p><b>Parameters:</b><ul><li><i>array
+    The Intelligent Array.
+:</i> <br><li><i>info
+    A pointer to the arbitrary information.
+:</i> <br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

@@ -3,7 +3,7 @@
 
     This code provides a high level data structure processing routine.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -56,7 +56,10 @@
 
     Updated by      Richard Gooch   19-APR-1995: Cleaned some code.
 
-    Last updated by Richard Gooch   13-JUL-1995: Cleaned some more code.
+    Updated by      Richard Gooch   13-JUL-1995: Cleaned some more code.
+
+    Last updated by Richard Gooch   10-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -77,69 +80,35 @@ void dsproc_object (char *object, char *array_names[], unsigned int num_arrays,
 		    flag save_unproc_data, flag (*pre_process) (),
 		    flag (*process_array) (), flag (*post_process) (),
 		    unsigned int mmap_option)
-/*  This routine will process the Karma array in the file which has a name
-    pointed to by  object  .This parameter is passed directly to the
-    dsxfr_get_multi  routine.
-    If the arrayfile name is "connection" or is of the form: "connection[#]"
-    then the routine will attempt to find data sent from a network connection
-    using the  multi_array  protocol and will also send the resultant
-    information down any network connections.
-    The various arrays in the multi array general data structure are selected
-    and processed by using various calls.
-    The array names which are to be processed must be pointed to by
-    array_names  and the number of these names must be in  num_arrays  .
-    If  num_arrays  is zero, all array names are matched.
-    If the flag  save_unproc_data  is TRUE, then arrays with names which
-    do not match are copied, rather than ignored.
-    All memory allocation and error handling required are performed.
-    The output multi_array data structure produced is deallocated once the data
-    is written.
-    The specific processing functions required in the module must be passed to
-    this routine. The interface to these functions are:
-
-    flag pre_process (multi_desc)
-    *	This routine will pre process the multi array general data
-	structure pointed to by  multi_desc  .
-	The routine returns TRUE if processing is to continue, else it
-	returns FALSE.
-    *
-    multi_array *multi_desc;
-    {}
-
-    flag process_array (inp_desc, inp_data, out_desc, out_data)
-    *	This routine will process the input data with descriptor and data
-	pointed to by  inp_desc  and  inp_data  respectively.
-	The output descriptor and data pointers are written to the storage
-	pointed to by  out_desc  and  out_data  respectively.
-	The routine returns TRUE on success, else it returns FALSE.
-    *
-    packet_desc *inp_desc;
-    char *inp_data;
-    packet_desc **out_desc;
-    char **out_data;
-    {}
-
-    flag post_process (inp_desc, out_desc)
-    *	This routine will perform post processing on the multi array
-	pointed to by  out_desc  .This routine is only called for disc
-	arrayfiles.
-	The input multi array must be pointed to by  inp_desc  .
-	This routine will usually add history information and copy over
-	history information from the input array.
-	The routine returns TRUE if the array is to be saved, else it
-	returns FALSE.
-    *
-    multi_array *inp_desc;
-    multi_array *out_desc;
-    {}
-
-    The  mmap_option  parameter is passed directly to the  dsxfr_get_multi
-    routine. In addition, the  cache  parameter for  dsxfr_get_multi  is set to
+/*  [SUMMARY] Process a Karma file.
+    <object> The name of the Karma file to process. This is passed directly to
+    [<dsxfr_get_multi>]. If this name is "connection" or is of the form:
+    "connection[#]" then the routine will attempt to find data sent from a
+    network connection using the "multi_array" protocol and will also send the
+    resultant information down any network connections.
+    <array_names> The array names (general data structures) which are to be
+    processed.
+    <num_arrays> The number of array names supplied. If this is 0, all array
+    names are processed.
+    <save_unproc_data> If TRUE, then arrays with names which do not match are
+    copied, rather than ignored.
+    <pre_process> The function which will process the input file prior to any
+    general data structures being processed. The prototype function is
+    [<DSPROC_PROTO_pre_process>]. If this returns FALSE further processing is
+    aborted.
+    <process_array> The function which is called to process each general data
+    structure. The prototype function is [<DSPROC_PROTO_process_array>].
+    <post_process> The function which is called to process the multi_array
+    descriptors prior to the output being saved/transmitted. The prototype
+    function is [<DSPROC_PROTO_post_process>]. This routine will usually add
+    history information and copy over history information from the input array.
+    <mmap_option> This is passed directly to the [<dsxfr_get_multi>] routine.
+    If the input data structure is likely to be modified, this value must be
+    K_CH_MAP_NEVER, otherwise the data may be read-only memory mapped and
+    writing to it will cause a segmentation fault.
+    In addition, the <<cache>> parameter for [<dsxfr_get_multi>] is set to
     TRUE.
-    If the input data structure is likely to be modified, the value of
-    mmap_option must be K_CH_MAP_NEVER, otherwise the data may be read-only
-    memory mapped and writing to it will cause a segmentation fault.
-    The routine returns nothing.
+    [RETURNS] Nothing.
 */
 {
     unsigned int array_count = 0;

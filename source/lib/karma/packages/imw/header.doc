@@ -1,0 +1,6 @@
+$SUMMARY          Routines to write raw images
+$PURPOSE
+    These routines provide a means to convert from image data to raw images
+    suitable for low level graphics display. Although these routines are made
+    public, their use is NOT recommended. The <-viewimg-> package is the
+    suggested means to manage image display.

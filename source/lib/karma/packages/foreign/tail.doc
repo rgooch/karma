@@ -1,0 +1,113 @@
+
+$TABLE            FOREIGN_ATT_FITS_READ_HEADER
+$COLUMNS          3
+$SUMMARY          List of attributes for reading FITS headers
+$TABLE_DATA
+|.Name                       |,Type  |,Meaning
+|.
+|.FA_FITS_READ_HEADER_END    |,      |,End of varargs list
+$END
+
+$TABLE            FOREIGN_ATT_FITS_READ_DATA
+$COLUMNS          3
+$SUMMARY          List of attributes for reading FITS data
+$TABLE_DATA
+|.Name                         |,Type            |,Meaning
+|.
+|.FA_FITS_READ_DATA_END        |,                |,End of varargs list
+|.FA_FITS_READ_DATA_NUM_BLANKS |,unsigned long * |,Number of blank values found
+$END
+
+$TABLE            FOREIGN_ATT_GUESS
+$COLUMNS          3
+$SUMMARY          List of attributes for guessing and reading data
+$TABLE_DATA
+|.Name                         |,Type    |,Meaning
+|.
+|.FA_GUESS_READ_END            |,        |,End of varargs list
+|.FA_GUESS_READ_FITS_TO_FLOAT  |,flag    |,Convert FITS data to floating point
+$END
+
+$TABLE            FOREIGN_ATT_MIRIAD_READ_HEADER
+$COLUMNS          3
+$SUMMARY          List of attributes for reading Miriad Image headers
+$TABLE_DATA
+|.Name                         |,Type    |,Meaning
+|.
+|.FA_MIRIAD_READ_HEADER_END    |,        |,End of varargs list
+$END
+
+$TABLE            FOREIGN_ATT_MIRIAD_READ_DATA
+$COLUMNS          3
+$SUMMARY          List of attributes for reading Miriad Image data
+$TABLE_DATA
+|.Name                           |,Type            |,Meaning
+|.
+|.FA_MIRIAD_READ_DATA_END        |,                |,End of varargs list
+|.FA_MIRIAD_READ_DATA_NUM_BLANKS |,unsigned long * |,Number of blank values
+|~                               |~                |~(includes masked values)
+|.FA_MIRIAD_READ_DATA_NUM_MASKED |,unsigned long * |,Number of masked values
+$END
+
+$TABLE            FOREIGN_ATT_MIRIAD_READ
+$COLUMNS          3
+$SUMMARY          List of attributes for reading Miriad Image files
+$TABLE_DATA
+|.Name                      |,Type            |,Meaning
+|.
+|.FA_MIRIAD_READ_END        |,                |,End of varargs list
+|.FA_MIRIAD_READ_NUM_BLANKS |,unsigned long * |,Number of blank values
+|~                          |~                |~(includes masked values)
+|.FA_MIRIAD_READ_NUM_MASKED |,unsigned long * |,Number of masked values
+$END
+
+$TABLE            FOREIGN_TYPES
+$COLUMNS          2
+$SUMMARY          List of foreign file types
+$TABLE_DATA
+|.Name                           |,Meaning
+|.
+|.FOREIGN_FILE_FORMAT_KARMA      |,Karma file (native format)
+|.FOREIGN_FILE_FORMAT_UNKNOWN    |,Unknown format
+|.FOREIGN_FILE_FORMAT_PPM        |,Portable PixMap format (PPM)
+|.FOREIGN_FILE_FORMAT_FITS       |,Flexible Image Transport System (FITS)
+|.FOREIGN_FILE_FORMAT_SUNRAS     |,Sun Rasterfile
+|.FOREIGN_FILE_FORMAT_MIRIAD     |,Miriad Image file
+$END
+
+$TABLE            FOREIGN_ATT_PPM_READ
+$COLUMNS          3
+$SUMMARY          List of attributes for reading PPM files
+$TABLE_DATA
+|.Name               |,Type    |,Meaning
+|.
+|.FA_PPM_READ_END    |,        |,End of varargs list
+$END
+
+$TABLE            FOREIGN_ATT_PPM_WRITE
+$COLUMNS          3
+$SUMMARY          List of attributes for writing PPM files
+$TABLE_DATA
+|.Name                |,Type    |,Meaning
+|.
+|.FA_PPM_WRITE_END    |,        |,End of varargs list
+$END
+
+$TABLE            FOREIGN_ATT_SUNRAS_READ
+$COLUMNS          3
+$SUMMARY          List of attributes for reading Sun Rasterfile files
+$TABLE_DATA
+|.Name                  |,Type    |,Meaning
+|.
+|.FA_SUNRAS_READ_END    |,        |,End of varargs list
+$END
+
+$TABLE            FOREIGN_ATT_SUNRAS_WRITE
+$COLUMNS          3
+$SUMMARY          List of attributes for writing Sun Rasterfile files
+$TABLE_DATA
+|.Name                      |,Type      |,Meaning
+|.
+|.FA_SUNRAS_WRITE_END       |,          |,End of varargs list
+|.FA_SUNRAS_WRITE_NO_IMAGE  |,flag *    |,No image found in data structure
+$END

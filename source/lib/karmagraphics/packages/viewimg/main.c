@@ -138,17 +138,70 @@
     Updated by      Richard Gooch   5-JAN-1996: Switched to
   <canvas_register_d_convert_func> routine.
 
-    Last updated by Richard Gooch   21-JAN-1996: Removed warnings about tiled
+    Updated by      Richard Gooch   21-JAN-1996: Removed warnings about tiled
   arrays for PseudoColour and added for TrueColour.
+
+    Updated by      Richard Gooch   19-FEB-1996: Created
+  <viewimg_partial_refresh> routine.
+
+    Updated by      Richard Gooch   28-FEB-1996: Prevent computing image twice
+  in some circumstances where not needed and initialise win_scale field of
+  viewable image properly. Uninitialised data caused problems in
+  <worldcanvas_size_control_func> on alpha_OSF1.
+
+    Updated by      Richard Gooch   27-MAR-1996: Check for genuine data change
+  in <worldcanvas_size_control_func> and clear changed flag and set recompute
+  flag to prevent message about spurious data change under some conditions.
+
+    Updated by      Richard Gooch   15-APR-1996: Changed to new documentation
+  format.
+
+    Updated by      Richard Gooch   12-MAY-1996: Added full support for
+  non-integral zooming.
+
+    Updated by      Richard Gooch   19-MAY-1996: Changed from using window
+  scale structure to using <canvas_get_attributes>.
+
+    Updated by      Richard Gooch   23-MAY-1996: Worked around problem with
+  floating point comparisons in <worldcanvas_size_control_func> when running
+  under i386_Linux with gcc 2.7.2
+
+    Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
+
+    Updated by      Richard Gooch   28-MAY-1996: Fixed bug in
+  <worldcanvas_refresh_func> which caused image to be drawn twice if cache is
+  invalidated within the <kwin> package (i.e. PostScriptPage refresh).
+
+    Updated by      Richard Gooch   31-MAY-1996: Fixed bug in <determine_size>
+  when zooming out without aspect ratio fixed: image could be smaller than
+  necessary.
+
+    Updated by      Richard Gooch   4-JUN-1996: Switched to left-right
+  bottom-top co-ordinate specification instead of min-max x and y.
+
+    Updated by      Richard Gooch   10-JUN-1996: Added panning support.
+
+    Updated by      Richard Gooch   12-JUN-1996: Optimised panning support.
+
+    Updated by      Richard Gooch   16-JUN-1996: Fixed handling of negative
+  co-ordinate systems in <worldcanvas_position_func>.
+
+    Last updated by Richard Gooch   21-JUN-1996: Created
+  <viewimg_get_worldcanvas>.
 
 
 */
 #include <stdio.h>
 #include <math.h>
+#include <unistd.h>
 #include <stdarg.h>
 #include <karma.h>
 #define KWIN_GENERIC_ONLY
+#define NEW_WIN_SCALE
 #include <karma_viewimg.h>
+#include <karma_iarray.h>
+#include <karma_imc.h>
 #include <karma_ds.h>
 #include <karma_st.h>
 #include <karma_a.h>
@@ -188,6 +241,10 @@ struct canvas_holder_type
     flag int_y;
     flag maintain_aspect_ratio;
     flag allow_truncation;
+    flag enable_panning;
+    long pan_centre_x;
+    long pan_centre_y;
+    int pan_magnification;
     packet_desc *old_cmap;
 };
 
@@ -226,8 +283,8 @@ struct viewableimage_type
     unsigned int tc_hstride;
     unsigned int tc_vstride;
     /*  Other information  */
-    flag recompute;
-    flag changed;
+    flag recompute;        /* Whether the image cache needs to be recomputed */
+    flag changed;          /* Whether the array data has changed             */
     int pixcanvas_width;
     int pixcanvas_height;
     SequenceHolder sequence;
@@ -265,7 +322,9 @@ STATIC_FUNCTION (void worldcanvas_refresh_func,
 		 (KWorldCanvas canvas, int width, int height,
 		  struct win_scale_type *win_scale,
 		  Kcolourmap cmap, flag cmap_resize,
-		  void **info, PostScriptPage pspage) );
+		  void **info, PostScriptPage pspage,
+		  unsigned int num_areas, KPixCanvasRefreshArea *areas,
+		  flag *honoured_areas) );
 STATIC_FUNCTION (void recompute_image,
 		 (CanvasHolder holder, int width, int height,
 		  struct win_scale_type *win_scale, Kcolourmap cmap,
@@ -274,6 +333,20 @@ STATIC_FUNCTION (void worldcanvas_size_control_func,
 		 (KWorldCanvas canvas, int width, int height,
 		  struct win_scale_type *win_scale, void **info,
 		  flag *boundary_clear) );
+STATIC_FUNCTION (flag determine_size,
+		 (CanvasHolder holder, int width, int height,
+		  struct win_scale_type *win_scale,
+		  long *hstart, long *hend, long *vstart, long *vend) );
+STATIC_FUNCTION (void aspect_zoom,
+		 (long hlength, int *hpixels, flag int_x,
+		  long vlength, int *vpixels, flag int_y) );
+STATIC_FUNCTION (void trunc_zoom,
+		 (flag maintain_aspect_ratio,
+		  long *hstart, long *hend, int *hpixels, flag int_x,
+		  long *vstart, long *vend, int *vpixels, flag int_y) );
+STATIC_FUNCTION (void draw_subcache,
+		 (CanvasHolder holder, ViewableImage vimage,
+		  int width, int height) );
 STATIC_FUNCTION (flag worldcanvas_position_func,
 		 (KWorldCanvas canvas, double x, double y,
 		  unsigned int event_code, void *e_info, void **f_info,
@@ -281,13 +354,6 @@ STATIC_FUNCTION (flag worldcanvas_position_func,
 STATIC_FUNCTION (flag position_event_func,
 		 (void *object, void *client1_data,
 		  void *call_data, void *client2_data) );
-STATIC_FUNCTION (void aspect_zoom,
-		 (int hlength, int *hpixels, flag int_x,
-		  int vlength, int *vpixels, flag int_y) );
-STATIC_FUNCTION (void trunc_zoom,
-		 (flag maintain_aspect_ratio,
-		  int *hstart, int *hend, int *x_pixels, flag int_x,
-		  int *vstart, int *vend, int *y_pixels, flag int_y) );
 STATIC_FUNCTION (flag coord_convert_func,
 		 (KWorldCanvas canvas, struct win_scale_type *win_scale,
 		  double *x, double *y, flag to_world, void **info) );
@@ -297,18 +363,18 @@ STATIC_FUNCTION (flag coord_convert_func,
 
 /*PUBLIC_FUNCTION*/
 void viewimg_init (KWorldCanvas canvas)
-/*  This routine will initialise the  viewimg_  package for a particular
-    world canvas. Calling this routine causes a number of callback routines
-    internal to the  viewimg_  package to be registered with the canvas (such
+/*  [SUMMARY] Initialise the package for a particular canvas.
+    [PURPOSE] This routine will initialise the [<viewimg>] package for a
+    particular world canvas. Calling this routine causes a number of callback
+    routines internal to the package to be registered with the canvas (such
     as refresh and position event callbacks). The use of this routine is
     optional at the moment: the routines which create viewable images perform
     this function automatically. In version 2.0 of Karma, this use of this
     routine before creating viewable images will become mandatory.
-    The world canvas must be given by  canvas  .
-    The routine returns nothing.
+    <canvas> The world canvas object.
+    [RETURNS] Nothing.
 */
 {
-    CanvasHolder holder;
     extern CanvasHolder first_canvas_holder;
     static char function_name[] = "viewimg_init";
 
@@ -336,7 +402,8 @@ ViewableImage viewimg_create_restr (KWorldCanvas canvas,
 				    unsigned int elem_index,
 				    unsigned num_restr,
 				    char **restr_names, double *restr_values)
-/*  [PURPOSE] This routine will create a PseudoColour viewable image object
+/*  [SUMMARY] Create viewable image from 2D slice with restrictions.
+    [PURPOSE] This routine will create a PseudoColour viewable image object
     from a 2-dimensional slice of a Karma data structure. At a later time, this
     viewable image may be made visible. This routine will not cause the canvas
     to be refreshed.
@@ -351,14 +418,14 @@ ViewableImage viewimg_create_restr (KWorldCanvas canvas,
     <vdim> The dimension index of the vertical dimension.
     <elem_index> The element index in the data packets.
     <num_restr> The number of matched restrictions. If this is 0, no
-    restrictions are recorded (this is the same as calling  viewimg_create  ).
+    restrictions are recorded (this is the same as calling [<viewimg_create>]).
     <restr_names> The restriction names.
     <restr_values> The restriction values.
-    [NOTES] Restriction information is automatically deallocated when
-    viewimg_destroy  is called.
-    [NOTES] The routine may produce cache data which will vastly increase the
+    [NOTE] Restriction information is automatically deallocated when
+    [<viewimg_destroy>] is called.
+    [NOTE] The routine may produce cache data which will vastly increase the
     speed of subsequent operations on this data. Prior to process exit, a call
-    MUST be made to  viewimg_destroy  ,otherwise shared memory segments could
+    MUST be made to [<viewimg_destroy>], otherwise shared memory segments could
     remain after the process exits.
     [RETURNS] A viewable image on success, NULL.
 */
@@ -468,6 +535,7 @@ ViewableImage viewimg_create_restr (KWorldCanvas canvas,
     vimage->num_restrictions = num_restr;
     vimage->restriction_names = restr_names;
     vimage->restriction_values = restr_values;
+    canvas_init_win_scale (&vimage->win_scale, K_WIN_SCALE_MAGIC_NUMBER);
     vimage->prev = NULL;
     /*  Do not make the first viewable image for this canvas viewable, else
 	the  viewimg_make_active  routine will not be able to detect a change
@@ -491,30 +559,29 @@ ViewableImage viewimg_create (KWorldCanvas canvas, multi_array *multi_desc,
 			      array_desc *arr_desc, char *slice,
 			      unsigned int hdim, unsigned int vdim,
 			      unsigned int elem_index)
-/*  This routine will create a viewable image object from a 2-dimensional slice
-    of a Karma data structure. At a later time, this viewable image may be made
-    visible. This routine will not cause the canvas to be refreshed.
-    The world canvas onto which the viewable image may be drawn must be given
-    by  canvas  .Many viewable images may be associated with a single canvas.
-    The  multi_array  descriptor which contains the Karma data structure must
-    be pointed to by  multi_desc  .The routine increments the attachment count
-    on the descriptor on successful completion.
-    The array descriptor must be pointed to by  arr_desc  .
-    The start of the slice data must be pointed to by  slice  .
-    The dimension index of the horizontal dimension must be given by  hdim  .
-    The dimension index of the vertical dimension must be given by  vdim  .
-    The element index in the data packets must be given by  elem_index  .
-    The routine may produce cache data which will vastly increase the speed of
-    subsequent operations on this data. Prior to process exit, a call MUST be
-    made to  viewimg_destroy  ,otherwise shared memory segments could remain
-    after the process exits.
-    The routine returns a viewable image on success, else it returns NULL.
+/*  [SUMMARY] Create viewable image from 2D slice.
+    [PURPOSE] This routine will create a PseudoColour viewable image object
+    from a 2-dimensional slice of a Karma data structure. At a later time, this
+    viewable image may be made visible. This routine will not cause the canvas
+    to be refreshed.
+    <canvas> The world canvas onto which the viewable image may be drawn. Many
+    viewable images may be associated with a single canvas.
+    <multi_desc> The  multi_array  descriptor which contains the Karma data
+    structure. The routine increments the attachment count on the descriptor
+    on successful completion. This may be NULL.
+    <arr_desc> The array descriptor.
+    <slice> The start of the slice data.
+    <hdim> The dimension index of the horizontal dimension.
+    <vdim> The dimension index of the vertical dimension.
+    <elem_index> The element index in the data packets.
+    [NOTE] The routine may produce cache data which will vastly increase the
+    speed of subsequent operations on this data. Prior to process exit, a call
+    MUST be made to [<viewimg_destroy>], otherwise shared memory segments could
+    remain after the process exits.
+    [RETURNS] A viewable image on success, NULL.
 */
 {
-    CanvasHolder holder;
-    ViewableImage vimage;
-    unsigned int dim_count;
-    static char function_name[] = "viewimg_create";
+    /*static char function_name[] = "viewimg_create";*/
 
     return ( viewimg_create_restr (canvas, multi_desc, arr_desc, slice,
 				   hdim, vdim, elem_index,
@@ -524,24 +591,23 @@ ViewableImage viewimg_create (KWorldCanvas canvas, multi_array *multi_desc,
 /*PUBLIC_FUNCTION*/
 ViewableImage viewimg_create_from_iarray (KWorldCanvas canvas, iarray array,
 					  flag swap)
-/*  This function will create a viewable image object from a 2-dimensional
-    Intelligant Array. At a later time, this viewable image may be made
-    visible. This routine will not cause the canvas to be refreshed.
-    The world canvas onto which the viewable image may be drawn must be given
-    by  canvas  .Many viewable images may be associated with a single canvas.
-    The Intelligent Array must be given by  array  .The underlying  multi_array
-    data strucuture will have its attachment count incremented upon successful
+/*  [SUMMARY] Create a viewable image from an Intelligent Array.
+    [PURPOSE] This routine will create a viewable image object from a
+    2-dimensional Intelligant Array. At a later time, this viewable image may
+    be made visible. This routine will not cause the canvas to be refreshed.
+    Many viewable images may be associated with a single canvas.
+    <canvas> The world canvas object.
+    <array> The Intelligent Array. The underlying <<multi_array>> data
+    structure will have its attachment count incremented upon successful
     completion.
-    If the y axis should be displayed horizontally, the value of  swap  must be
-    TRUE.
-    The routine may produce cache data which will vastly increase the speed of
-    subsequent operations on this data. Prior to process exit, a call MUST be
-    made to  viewimg_destroy  ,otherwise shared memory segments could remain
-    after the process exits.
-    The routine returns a viewable image on success, else it returns NULL.
+    <swap> If TRUE the y axis will be displayed horizontally.
+    [NOTE] The routine may produce cache data which will vastly increase the
+    speed of subsequent operations on this data. Prior to process exit, a call
+    MUST be made to [<viewimg_destroy>], otherwise shared memory segments could
+    remain after the process exits.
+    [RETURNS] A viewable image on success, else NULL.
 */
 {
-    ViewableImage vimage;
     unsigned int num_restr;
     char **restr_names;
     double *restr_values;
@@ -598,33 +664,31 @@ ViewableImage *viewimg_create_sequence (KWorldCanvas canvas,
 					unsigned int hdim, unsigned int vdim,
 					unsigned int fdim,
 					unsigned int elem_index)
-/*  This routine will create a sequence of viewable image objects from a
-    3-dimensional cube of a Karma data structure. At a later time, this
+/*  [SUMMARY] Create a sequence of viewable images from a 3D slice.
+    [PURPOSE] This routine will create a sequence of viewable image objects
+    from a 3-dimensional cube of a Karma data structure. At a later time, this
     sequence of viewable images may be made visible in any order.
     This routine will not cause the canvas to be refreshed.
-    The world canvas onto which the viewable image may be drawn must be given
-    by  canvas  .
-    The  multi_array  descriptor which contains the Karma data structure must
-    be pointed to by  multi_desc  .The routine increments the attachment count
-    on the descriptor on successful completion.
-    The array descriptor must be pointed to by  arr_desc  .
-    The start of the cube data must be pointed to by  cube  .
-    The dimension index of the horizontal dimension must be given by  hdim  .
-    The dimension index of the vertical dimension must be given by  vdim  .
-    The dimension index of the frame dimension (dimension containing the
-    sequence) must be given by  fdim  .The number of frames is the same as the
-    length of this dimension.
-    The element index in the data packets must be given by  elem_index  .
-    The routine may produce cache data which will vastly increase the speed of
-    subsequent operations on this data. Prior to process exit, a call MUST be
-    made to  viewimg_destroy  ,otherwise shared memory segments could remain
-    after the process exits.
-    An arbitrary number of dimension restrictions
-    The routine returns a pointer to a dynamically allocated array of viewable
-    image objects on success, else it returns NULL.
+    <canvas> The world canvas object.
+    <multi_desc> The  multi_array  descriptor which contains the Karma data
+    structure. The routine increments the attachment count on the descriptor
+    on successful completion. This may be NULL.
+    <arr_desc> The array descriptor.
+    <cube> The start of the cube data.
+    <hdim> The dimension index of the horizontal dimension.
+    <vdim> The dimension index of the vertical dimension.
+    <fdim> The dimension index of the frame dimension (dimension containing the
+    sequence). The number of frames is the same as the length of this
+    dimension.
+    <elem_index> The element index in the data packets.
+    [NOTE] The routine may produce cache data which will vastly increase the
+    speed of subsequent operations on this data. Prior to process exit, a call
+    MUST be made to [<viewimg_destroy>], otherwise shared memory segments could
+    remain after the process exits.
+    [RETURNS] A pointer to a dynamically allocated array of viewable image
+    objects on success, else NULL.
 */
 {
-    unsigned int dim_count;
     unsigned int num_frames;
     unsigned int frame_count;
     unsigned int num_restr = 1;
@@ -714,7 +778,8 @@ ViewableImage viewimg_create_rgb (KWorldCanvas canvas, multi_array *multi_desc,
 				  unsigned int green_index,
 				  unsigned int blue_index, unsigned num_restr,
 				  char **restr_names, double *restr_values)
-/*  [PURPOSE] This routine will create a TrueColour viewable image object from
+/*  [SUMMARY] Create a TrueColour viewable image.
+    [PURPOSE] This routine will create a TrueColour viewable image object from
     a 2-dimensional slice of a Karma data structure. At a later time, this
     viewable image may be made visible. This routine will not cause the canvas
     to be refreshed.
@@ -730,16 +795,16 @@ ViewableImage viewimg_create_rgb (KWorldCanvas canvas, multi_array *multi_desc,
     <red_index> The element index of the red component in the data packets.
     <green_index> The element index of the green component in the data packets.
     <blue_index> The element index of the blue component in the data packets.
-    [NOTES] The 3 colour components must be of type  K_UBYTE  .
+    [NOTE] The 3 colour components must be of type  K_UBYTE  .
     <num_restr> The number of matched restrictions. If this is 0, no
     restrictions are recorded.
     <restr_names> The restriction names.
     <restr_values> The restriction values.
-    [NOTES] Restriction information is automatically deallocated when
-    viewimg_destroy  is called.
-    [NOTES] The routine may produce cache data which will vastly increase the
+    [NOTE] Restriction information is automatically deallocated when
+    [<viewimg_destroy>] is called.
+    [NOTE] The routine may produce cache data which will vastly increase the
     speed of subsequent operations on this data. Prior to process exit, a call
-    MUST be made to  viewimg_destroy  ,otherwise shared memory segments could
+    MUST be made to [<viewimg_destroy>], otherwise shared memory segments could
     remain after the process exits.
     [RETURNS] A viewable image on success, else NULL.
 */
@@ -902,6 +967,7 @@ ViewableImage viewimg_create_rgb (KWorldCanvas canvas, multi_array *multi_desc,
     vimage->num_restrictions = num_restr;
     vimage->restriction_names = restr_names;
     vimage->restriction_values = restr_values;
+    canvas_init_win_scale (&vimage->win_scale, K_WIN_SCALE_MAGIC_NUMBER);
     vimage->prev = NULL;
     /*  Do not make the first viewable image for this canvas viewable, else
 	the  viewimg_make_active  routine will not be able to detect a change
@@ -933,7 +999,8 @@ ViewableImage *viewimg_create_rgb_sequence (KWorldCanvas canvas,
 					    unsigned num_restr,
 					    char **restr_names,
 					    double *restr_values)
-/*  [PURPOSE] This routine will create a sequence of TrueColour viewable image
+/*  [SUMMARY] Create sequence of TrueColour viewable images from 3D slice.
+    [PURPOSE] This routine will create a sequence of TrueColour viewable image
     objects from a 3-dimensional cube of a Karma data structure. At a later
     time, this sequence of viewable images may be made visible in any order.
     This routine will not cause the canvas to be refreshed.
@@ -951,23 +1018,22 @@ ViewableImage *viewimg_create_rgb_sequence (KWorldCanvas canvas,
     <red_index> The element index of the red component in the data packets.
     <green_index> The element index of the green component in the data packets.
     <blue_index> The element index of the blue component in the data packets.
-    [NOTES] The 3 colour components must be of type  K_UBYTE  .
+    [NOTE] The 3 colour components must be of type K_UBYTE.
     <num_restr> The number of matched restrictions. If this is 0, no
     restrictions are recorded.
     <restr_names> The restriction names.
     <restr_values> The restriction values.
-    [NOTES] Restriction information is copied into internally allocated
+    [NOTE] Restriction information is copied into internally allocated
     storage.
-    [NOTES] The routine may produce cache data which will vastly increase the
+    [NOTE] The routine may produce cache data which will vastly increase the
     speed of subsequent operations on this data. Prior to process exit, a call
-    MUST be made to  viewimg_destroy  ,otherwise shared memory segments could
+    MUST be made to [<viewimg_destroy>], otherwise shared memory segments could
     remain after the process exits.
     [RETURNS] A viewable image on success, else NULL.
 */
 {
-    ViewableImage vimage;
     SequenceHolder sequence;
-    unsigned int dim_count, frame_count;
+    unsigned int frame_count;
     unsigned int num_frames;
     unsigned int depth;
     unsigned int r_count;
@@ -1158,17 +1224,16 @@ ViewableImage *viewimg_create_rgb_sequence (KWorldCanvas canvas,
 
 /*PUBLIC_FUNCTION*/
 flag viewimg_make_active (ViewableImage vimage)
-/*  [PURPOSE] This routine will make a viewable image the active image for its
+/*  [SUMMARY] Make viewable image active and possibly refresh.
+    [PURPOSE] This routine will make a viewable image the active image for its
     associated world canvas. The canvas is then refreshed (possibly resized),
     provided that the new viewable image was not already active.
     <vimage> The viewable image.
     [RETURNS] TRUE on success, else FALSE.
-    [SEE ALSO] viewimg_set_active
+    [SEE ALSO] [<viewimg_set_active>].
 */
 {
     CanvasHolder holder;
-    unsigned int hdim, vdim;
-    dim_desc **dimensions;
     static char function_name[] = "viewimg_make_active";
 
     VERIFY_VIMAGE (vimage);
@@ -1179,13 +1244,14 @@ flag viewimg_make_active (ViewableImage vimage)
 
 /*PUBLIC_FUNCTION*/
 flag viewimg_set_active (ViewableImage vimage, flag refresh)
-/*  [PURPOSE] This routine will make a viewable image the active image for its
+/*  [SUMMARY] Make viewable image active with controlled refresh.
+    [PURPOSE] This routine will make a viewable image the active image for its
     associated world canvas.
     <vimage> The viewable image.
     <refresh> If TRUE, the canvas is always refreshed, if FALSE, the canvas is
     not refreshed.
     [RETURNS] TRUE on success, else FALSE.
-    [SEE ALSO] viewimg_make_active
+    [SEE ALSO] [<viewimg_make_active>].
 */
 {
     CanvasHolder holder;
@@ -1243,7 +1309,7 @@ void viewimg_control_autoscaling (KWorldCanvas canvas,
 /*  This routine will control the autoscaling options used when viewable images
     are displayed on their associated world canvas.
     THIS FUNCTION IS OBSOLETE. USE  VIEWIMG_SET_CANVAS_ATTRIBUTES  INSTEAD.
-    The world canvas must be given by  canvas  .
+    <canvas> The world canvas object.
     If  auto_x  is TRUE, then the horizontal window scaling information for the
     canvas is set to the horizontal range of the active viewable image. The
     default is TRUE.
@@ -1264,12 +1330,9 @@ void viewimg_control_autoscaling (KWorldCanvas canvas,
     If  maintain_aspect_ratio  is TRUE, then any zoom in or out factors will be
     the same (ie. the image aspect ratio is preserved). The default is FALSE.
     The canvas is not refreshed by this operation.
-    The routine returns nothing.
+    [RETURNS] Nothing.
 */
 {
-    CanvasHolder holder;
-    int width, height;
-    struct win_scale_type win_scale;
     static char function_name[] = "viewimg_control_autoscaling";
 
     (void) fprintf (stderr,
@@ -1292,11 +1355,12 @@ void viewimg_control_autoscaling (KWorldCanvas canvas,
 
 /*PUBLIC_FUNCTION*/
 flag viewimg_register_data_change (ViewableImage vimage)
-/*  This routine will register a change in the Karma data structure associated
-    with a viewable image. If the viewable image is active, it will be
-    immediately redrawn on its canvas.
-    The viewable image must be given by  vimage  .
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Notify data for viewable image has changed.
+    [PURPOSE] This routine will register a change in the Karma data structure
+    associated with a viewable image. If the viewable image is active, it will
+    be immediately redrawn on its canvas.
+    <vimage> The viewable image.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     CanvasHolder holder;
@@ -1304,7 +1368,6 @@ flag viewimg_register_data_change (ViewableImage vimage)
 
     VERIFY_VIMAGE (vimage);
     holder = vimage->canvas_holder;
-    vimage->recompute = TRUE;
     vimage->changed = TRUE;
     vimage->value_min = TOOBIG;
     vimage->value_max = TOOBIG;
@@ -1319,12 +1382,14 @@ flag viewimg_register_data_change (ViewableImage vimage)
 
 /*PUBLIC_FUNCTION*/
 void viewimg_destroy (ViewableImage vimage)
-/*  This routine will destroy a viewable image. If this is not called prior to
-    process exit, shared memory segments could remain after the process exits.
-    The viewable image must be given by  vimage  .
-    Note that the associated  multi_array  descriptor is also deallocated (or
+/*  [SUMMARY] Destroy viewable image.
+    [PURPOSE] This routine will destroy a viewable image. If this is not called
+    prior to process exit, shared memory segments could remain after the
+    process exits.
+    <vimage> The viewable image.
+    [NOTE] The associated <<multi_array>> descriptor is also deallocated (or
     at least, the attachment count is decreased).
-    The routine returns nothing.
+    [RETURNS] Nothing.
 */
 {
     CanvasHolder holder;
@@ -1388,16 +1453,13 @@ void viewimg_destroy (ViewableImage vimage)
 
 /*PUBLIC_FUNCTION*/
 ViewableImage viewimg_get_active (KWorldCanvas canvas)
-/*  This routine will get the active ViewableImage associated with a
-    KWorldCanvas object.
-    The canvas must be given by  canvas  .
-    The routine returns the active viewable image on success, else it returns
-    NULL (indicating no viewable image is active for the canvas).
+/*  [SUMMARY] Get the active ViewableImage associated with a world canvas.
+    <canvas> The world canvas object.
+    [RETURNS] The active viewable image on success, else NULL (indicating no
+    viewable image is active for the canvas).
 */
 {
     CanvasHolder holder;
-    int width, height;
-    struct win_scale_type win_scale;
     static char function_name[] = "viewimg_get_active";
 
     if (canvas == NULL)
@@ -1406,7 +1468,7 @@ ViewableImage viewimg_get_active (KWorldCanvas canvas)
 	a_prog_bug (function_name);
     }
     /*  Dummy operation to ensure canvas is OK  */
-    canvas_get_size (canvas, &width, &height, &win_scale);
+    canvas_get_attributes (canvas, CANVAS_ATT_END);
     if ( ( holder = get_canvas_holder (canvas, TRUE, function_name) ) == NULL )
     {
 	m_abort (function_name, "canvas holder");
@@ -1416,15 +1478,14 @@ ViewableImage viewimg_get_active (KWorldCanvas canvas)
 
 /*PUBLIC_FUNCTION*/
 flag viewimg_test_active (ViewableImage vimage)
-/*  This routine will test if a viewable image is the active image for its
-    associated world canvas.
-    The viewable image must be given by  vimage  .
-    The routine returns TRUE on if the viewable image is actice,
-    else it returns FALSE.
+/*  [SUMMARY] Test if viewable image is active.
+    [PURPOSE] This routine will test if a viewable image is the active image
+    for its associated world canvas.
+    <vimage> The viewable image.
+    [RETURNS] TRUE if the viewable image is actice, else FALSE.
 */
 {
     CanvasHolder holder;
-    dim_desc **dimensions;
     static char function_name[] = "viewimg_test_active";
 
     VERIFY_VIMAGE (vimage);
@@ -1437,45 +1498,18 @@ flag viewimg_test_active (ViewableImage vimage)
 KCallbackFunc viewimg_register_position_event_func (KWorldCanvas canvas,
 						    flag (*func) (),
 						    void *f_info)
-/*  [PURPOSE] This routine will register a position event function for a world
+/*  [SUMMARY] Register position event callback.
+    [PURPOSE] This routine will register a position event function for a world
     canvas which has a number of ViewableImage objects associated with it.
     The position event function will be called whenever a position event on the
     canvas has not been consumed. Many position event functions may be
     registered per canvas. The first function registered is the first function
     called upon a position event.
-    <canvas> The world canvas.
+    <canvas> The world canvas object.
     <func> The function that is called when a position event occurs. The
-    interface to this routine is as follows:
-    [<pre>]
-    flag func (ViewableImage vimage, double x, double y, void *value,
-               unsigned int event_code, void *e_info, void **f_info,
-	       double x_lin, double y_lin, unsigned int value_type)
-    *   [PURPOSE] This routine is a position event consumer for a world canvas
-        which has a number of ViewableImage objects associated with it.
-	<viewimg> The active viewable image.
-	<x> The horizontal world co-ordinate of the event.
-	<y> The vertical world co-ordinate of the event.
-	These values will have been transformed by the registered transform
-	function (see  canvas_register_transform_func  ) for the associated
-	world canvas.
-	<value> A pointer to the data value in the viewable image corresponding
-	to the event co-ordinates.
-	<event_code> The arbitrary event code.
-	<e_info> The arbitrary event information.
-	<f_info> The arbitrary function information pointer.
-	<x_lin> The linear horizontal world co-ordinate (the co-ordinate prior
-	to the transform function being called).
-	<y_lin> The linear vertical world co-ordinate (the co-ordinate prior
-	to the transform function being called).
-	<value_type> The type of the data value. This may be K_DCOMPLEX or
-	K_UB_RGB.
-	[RETURNS] TRUE if the event was consumed, else FALSE indicating that
-	the event is still to be processed.
-    *
-    [</pre>]
-
-    The initial arbitrary function information pointer must be given by  f_info
-    The routine returns a handle to a KWorldCanvasPositionFunc object.
+    prototype function is [<VIEWIMG_PROTO_position_func>].
+    <f_info> The initial arbitrary function information pointer.
+    [RETURNS] A handle to a KWorldCanvasPositionFunc object.
 */
 {
     CanvasHolder holder;
@@ -1500,15 +1534,17 @@ KCallbackFunc viewimg_register_position_event_func (KWorldCanvas canvas,
 flag viewimg_fill_ellipse (ViewableImage vimage,
 			   double centre_x, double centre_y,
 			   double radius_x, double radius_y, double value[2])
-/*  This routine will draw a filled ellipse into a 2 dimensional slice of
-    data associated with a viewable image.
-    The viewable image must be given by  vimage  .
-    The world co-ordinates of the centre of the ellipse must be given by
-    centre_x  and centre_y  .
-    The radii must be given by  radius_x  and  radius_y  .
-    The complex value to fill the ellipse with must be pointed to be  value  .
-    This must be of type K_DCOMPLEX.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Draw an ellipse into an array associated with a viewable image.
+    [PURPOSE] This routine will draw a filled ellipse into a 2 dimensional
+    slice of data associated with a viewable image.
+    <vimage> The viewable image.
+    <centre_x> The horizontal world co-ordinate of the centre of the ellipse.
+    <centre_y> The vertical world co-ordinate of the centre of the ellipse.
+    <radius_x> The horizontal radius.
+    <radius_y> The vertical radius.
+    <value> The complex value to fill the ellipse. This must be of type
+    K_DCOMPLEX.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     packet_desc *pack_desc;
@@ -1546,15 +1582,15 @@ flag viewimg_fill_ellipse (ViewableImage vimage,
 /*PUBLIC_FUNCTION*/
 flag viewimg_fill_polygon (ViewableImage vimage, edit_coord *coords,
 			   unsigned int num_vertices, double value[2])
-/*  This routine will draw a filled polygon into a 2 dimensional slice of data
-    associated with a viewable image.
-    The viewable image must be given by  vimage  .
-    The array of world co-ordinates of vertices of the polygon must be pointed
-    to by  coords  .
-    The number of vertices in the polygon must be given by  num_vertices  .
-    The complex value to fill the polygon with must be pointed to be  value  .
-    This must be of type K_DCOMPLEX.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Draw a polygon into an array associated with a viewable image.
+    [PURPOSE] This routine will draw a filled polygon into a 2 dimensional
+    slice of data associated with a viewable image.
+    <vimage> The viewable image.
+    <coords> The array of world co-ordinates of vertices of the polygon.
+    <num_vertices> The number of vertices in the polygon.
+    <value> The complex value to fill the polygon with. This must be of type
+    K_DCOMPLEX.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     packet_desc *pack_desc;
@@ -1591,20 +1627,17 @@ flag viewimg_fill_polygon (ViewableImage vimage, edit_coord *coords,
 
 /*PUBLIC_FUNCTION*/
 void viewimg_get_canvas_attributes (KWorldCanvas canvas, ...)
-/*  [PURPOSE] This routine will get the attributes for a world canvas.
-    <canvas> The world canvas.
-    [VARARGS] The list of parameter attribute-key attribute-value pairs must
-    follow. This list must be terminated with the value  VIEWIMG_ATT_END  .
-    See the documentation for the <viewimg_set_canvas_attributes> routine for
-    legal attributes.
+/*  [SUMMARY] Get the viewable image attributes for a world canvas.
+    <canvas> The world canvas object.
+    [VARARGS] The list of parameter attribute-key attribute-value-ptr pairs
+    must follow. This list must be terminated with the VIEWIMG_ATT_END.
+    See [<VIEWIMG_CANVAS_ATTRIBUTES>] for the list of attributes.
     [RETURNS] Nothing.
 */
 {
     CanvasHolder holder;
     va_list argp;
     unsigned int att_key;
-    int width, height;
-    struct win_scale_type win_scale;
     static char function_name[] = "viewimg_get_canvas_attributes";
 
     if (canvas == NULL)
@@ -1613,7 +1646,7 @@ void viewimg_get_canvas_attributes (KWorldCanvas canvas, ...)
 	a_prog_bug (function_name);
     }
     /*  Dummy operation to ensure canvas is OK  */
-    canvas_get_size (canvas, &width, &height, &win_scale);
+    canvas_get_attributes (canvas, CANVAS_ATT_END);
     if ( ( holder = get_canvas_holder (canvas, TRUE, function_name) ) == NULL )
     {
 	m_abort (function_name, "canvas holder");
@@ -1656,20 +1689,13 @@ void viewimg_get_canvas_attributes (KWorldCanvas canvas, ...)
 
 /*PUBLIC_FUNCTION*/
 void viewimg_set_canvas_attributes (KWorldCanvas canvas, ...)
-/*  [PURPOSE] This routine will control the autoscaling options used when
+/*  [SUMMARY] Set the viewable image attributes for a world canvas.
+    [PURPOSE] This routine will control the autoscaling options used when
     viewable images are displayed on their associated world canvas.
     <canvas> The world canvas.
-    [VARARGS] The list of parameter attribute-key attribute-value pairs must
-    follow. This list must be terminated with the value  VIEWIMG_ATT_END  .
-    Legal attributes are:
-  VIEWIMG_ATT_AUTO_X           Enable automatic horizontal scaling
-  VIEWIMG_ATT_AUTO_Y           Enable automatic vertical scaling
-  VIEWIMG_ATT_AUTO_V           Enable automatic intensity scaling
-  VIEWIMG_ATT_INT_X            Force integer horizontal zoom-in/zoom-out factor
-  VIEWIMG_ATT_INT_Y            Force integer vertical zoom-in/zoom-out factor
-  VIEWIMG_ATT_MAINTAIN_ASPECT  Maintain data image aspect ratio
-  VIEWIMG_ATT_ALLOW_TRUNCATION Allow shrunken images to be truncated.
-    See the include file  karma_viewimg.h  for matching attribute types.
+    [VARARGS] The list of parameter attribute-key attribute-value-ptr pairs
+    must follow. This list must be terminated with the VIEWIMG_ATT_END.
+    See [<VIEWIMG_CANVAS_ATTRIBUTES>] for the list of attributes.
     [NOTE] The canvas is not refreshed by this operation.
     [RETURNS] Nothing.
 */
@@ -1678,8 +1704,6 @@ void viewimg_set_canvas_attributes (KWorldCanvas canvas, ...)
     va_list argp;
     flag bool;
     unsigned int att_key;
-    int width, height;
-    struct win_scale_type win_scale;
     static char function_name[] = "viewimg_set_canvas_attributes";
 
     if (canvas == NULL)
@@ -1688,7 +1712,7 @@ void viewimg_set_canvas_attributes (KWorldCanvas canvas, ...)
 	a_prog_bug (function_name);
     }
     /*  Dummy operation to ensure canvas is OK  */
-    canvas_get_size (canvas, &width, &height, &win_scale);
+    canvas_get_attributes (canvas, CANVAS_ATT_END);
     if ( ( holder = get_canvas_holder (canvas, TRUE, function_name) ) == NULL )
     {
 	m_abort (function_name, "canvas holder");
@@ -1733,6 +1757,20 @@ void viewimg_set_canvas_attributes (KWorldCanvas canvas, ...)
 	    FLAG_VERIFY (bool);
 	    holder->allow_truncation = bool;
 	    break;
+	  case VIEWIMG_ATT_ENABLE_PANNING:
+	    bool = va_arg (argp, flag);
+	    FLAG_VERIFY (bool);
+	    holder->enable_panning = bool;
+	    break;
+	  case VIEWIMG_ATT_PAN_CENTRE_X:
+	    holder->pan_centre_x = va_arg (argp, unsigned long);
+	    break;
+	  case VIEWIMG_ATT_PAN_CENTRE_Y:
+	    holder->pan_centre_y = va_arg (argp, unsigned long);
+	    break;
+	  case VIEWIMG_ATT_PAN_MAGNIFICATION:
+	    holder->pan_magnification = va_arg (argp, unsigned int);
+	    break;
 	  default:
 	    (void) fprintf (stderr, "Illegal attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
@@ -1743,29 +1781,18 @@ void viewimg_set_canvas_attributes (KWorldCanvas canvas, ...)
 
 /*PUBLIC_FUNCTION*/
 void viewimg_get_attributes (ViewableImage vimage, ...)
-/*  [PURPOSE] This routine will get the attributes for a viewable image.
+/*  [SUMMARY] Get the attributes for a viewable image.
     <vimage> The ViewableImage.
-    [VARARGS] The list of parameter attribute-key attribute-value pairs must
-    follow. This list must be terminated with the value  VIEWIMG_VATT_END  .
-    Legal attributes are:
-  VIEWIMG_VATT_TRUECOLOUR                  Image is TrueColour
-  VIEWIMG_VATT_ARRAY_DESC                  The array descriptor for the image
-  VIEWIMG_VATT_SLICE                       Start of the image data
-  VIEWIMG_VATT_HDIM                        The horizontal dimension
-  VIEWIMG_VATT_VDIM                        The vertical dimension
-  VIEWIMG_VATT_PSEUDO_INDEX                The PseudoColour element index
-  VIEWIMG_VATT_RED_INDEX                   The TrueColour red element index
-  VIEWIMG_VATT_GREEN_INDEX                 The TrueColour green element index
-  VIEWIMG_VATT_BLUE_INDEX                  The TrueColour blue element index
+    [VARARGS] The list of parameter attribute-key attribute-value-ptr pairs
+    must follow. This list must be terminated with the VIEWIMG_VATT_END. See
+    [<VIEWIMG_VIMAGE_ATTRIBUTES>] for the list of attributes.
     [RETURNS] Nothing.
 */
 {
-    CanvasHolder holder;
     va_list argp;
     flag truecolour;
     unsigned int att_key;
     unsigned int hdim, vdim;
-    unsigned int elem_index, red_index, green_index, blue_index;
     char *slice;
     array_desc *arr_desc;
     static char function_name[] = "viewimg_get_attributes";
@@ -1836,6 +1863,71 @@ void viewimg_get_attributes (ViewableImage vimage, ...)
     va_end (argp);
 }   /*  End Function viewimg_get_attributes  */
 
+/*EXPERIMENTAL_FUNCTION*/
+flag viewimg_partial_refresh (KWorldCanvas canvas, unsigned int num_areas,
+			      KPixCanvasRefreshArea *areas)
+/*  [PURPOSE] This routine will perform a partial refresh of a canvas. This
+    call is similar to <<kwin_partial_refresh>> except that areas are not
+    cleared prior to drawing if they lie within the image boundary.
+    <canvas> The world canvas.
+    <num_areas> The number of areas in the pixel canvas to refresh.
+    <areas> The list of areas to refresh. The values here are updated to ensure
+    all points lie within the boundaries of the underlaying pixel canvas.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    CanvasHolder holder;
+    int x_offset, y_offset, x_pixels, y_pixels;
+    unsigned int count;
+    static char function_name[] = "viewimg_partial_refresh";
+
+    if (canvas == NULL)
+    {
+	(void) fprintf (stderr, "NULL canvas passed\n");
+	a_prog_bug (function_name);
+    }
+    canvas_get_attributes (canvas,
+			   CANVAS_ATT_X_OFFSET, &x_offset,
+			   CANVAS_ATT_Y_OFFSET, &y_offset,
+			   CANVAS_ATT_X_PIXELS, &x_pixels,
+			   CANVAS_ATT_Y_PIXELS, &y_pixels,
+			   CANVAS_ATT_END);
+    if ( ( holder = get_canvas_holder (canvas, TRUE, function_name) ) == NULL )
+    {
+	m_abort (function_name, "canvas holder");
+    }
+    if (holder->active_image == NULL)
+    {
+	return ( kwin_partial_refresh (canvas_get_pixcanvas (canvas),
+				       num_areas, areas, FALSE) );
+    }
+    for (count = 0; count < num_areas; ++count)
+    {
+	if (!areas[count].clear) continue;
+	if (areas[count].startx < x_offset) continue;
+	if (areas[count].endx >= x_offset + x_pixels) continue;
+	if (areas[count].starty < y_offset) continue;
+	if (areas[count].endy >= y_offset + y_pixels) continue;
+	/*  This area is entirely within image: no need to clear  */
+	areas[count].clear = FALSE;
+    }
+    return ( kwin_partial_refresh (canvas_get_pixcanvas (canvas),
+				   num_areas, areas, FALSE) );
+}   /*  End Function viewimg_partial_refresh  */
+
+/*PUBLIC_FUNCTION*/
+KWorldCanvas viewimg_get_worldcanvas (ViewableImage vimage)
+/*  [SUMMARY] Get the world canvas for a viewable image.
+    <vimage> The ViewableImage object.
+    [RETURNS] The KWorldCanvas object.
+*/
+{
+    static char function_name[] = "viewimg_get_worldcanvas";
+
+    VERIFY_VIMAGE (vimage);
+    return (vimage->canvas_holder->canvas);
+}   /*  End Function viewimg_get_worldcanvas  */
+
 
 /*  Private functions follow  */
 
@@ -1851,7 +1943,7 @@ static CanvasHolder get_canvas_holder (KWorldCanvas canvas, flag alloc,
 {
     CanvasHolder canvas_holder;
     extern CanvasHolder first_canvas_holder;
-    static char function_name[] = "get_canvas_holder";
+    /*static char function_name[] = "get_canvas_holder";*/
 
     /*  First search for existing canvas holder  */
     for (canvas_holder = first_canvas_holder; canvas_holder != NULL;
@@ -1900,6 +1992,10 @@ static CanvasHolder alloc_canvas_holder (KWorldCanvas canvas)
     canvas_holder->int_y = TRUE;
     canvas_holder->maintain_aspect_ratio = FALSE;
     canvas_holder->allow_truncation = FALSE;
+    canvas_holder->enable_panning = FALSE;
+    canvas_holder->pan_centre_x = 0;
+    canvas_holder->pan_centre_y = 0;
+    canvas_holder->pan_magnification = 4;
     canvas_holder->old_cmap = NULL;
     /*  Insert at beginning of list  */
     canvas_holder->next = first_canvas_holder;
@@ -1919,7 +2015,10 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas,
 				      int width, int height,
 				      struct win_scale_type *win_scale,
 				      Kcolourmap cmap, flag cmap_resize,
-				      void **info, PostScriptPage pspage)
+				      void **info, PostScriptPage pspage,
+				      unsigned int num_areas,
+				      KPixCanvasRefreshArea *areas,
+				      flag *honoured_areas)
 /*  [PURPOSE] This routine registers a refresh event for a world canvas.
     <canvas> The world canvas.
     <width> The width of the canvas in pixels.
@@ -1930,12 +2029,23 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas,
     <info> A pointer to the arbitrary information pointer.
     <pspage> The PostScriptPage object. If this is NULL, the refresh is *not*
     destined for a PostScript page.
+    <num_areas> The number of areas that need to be refreshed. If this is
+    0 then the entire pixel canvas needs to be refreshed.
+    <areas> The list of areas that need to be refreshed. Note that these
+    areas are given in pixel co-ordinates.
+    <honoured_areas> If the value TRUE is written here it is assumed the
+    routine honoured the list of refresh areas and did not write outside
+    these areas and hence the list of areas will be passed to subsequent
+    registered refresh routines. If FALSE is written here (or nothing is
+    written here), implying the routine refreshed the entire canvas,
+    subsequent refresh routines will be told to refresh the entire canvas.
     [RETURNS] Nothing.
 */
 {
     CanvasHolder holder;
     ViewableImage vimage;
-    static char function_name[] = "worldcanvas_refresh_func";
+    unsigned int visual;
+    static char function_name[] = "__viewimg_worldcanvas_refresh_func";
 
     if ( (holder = (CanvasHolder) *info) == NULL )
     {
@@ -1957,9 +2067,15 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas,
     vimage = holder->active_image;
     if ( (pspage != NULL) && (vimage->tc_arr_desc != NULL) )
     {
-	(void) fprintf (stderr,
-			"%s: drawing TrueColour image directly to PostScriptPage\n",
-			function_name, pspage);
+	kwin_get_attributes (canvas_get_pixcanvas (holder->canvas),
+			     KWIN_ATT_VISUAL, &visual,
+			     KWIN_ATT_END);
+	if (visual == KWIN_VISUAL_PSEUDOCOLOUR)
+	{
+	    (void) fprintf (stderr,
+			    "%s: drawing TrueColour image directly to PostScriptPage\n",
+			    function_name);
+	}
 	/*  Drawing TrueColour image to PostScript page  */
 	if ( !canvas_draw_rgb_image (holder->canvas,
 				     vimage->tc_arr_desc, vimage->tc_slice,
@@ -1970,8 +2086,8 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas,
 				     (KPixCanvasImageCache *) NULL) )
 	{
 	    (void) fprintf (stderr, "Error drawing image onto world canvas\n");
-	    return;
 	}
+	return;
     }
     /*  Do tests on image  */
     if (vimage->cache == NULL)
@@ -1980,9 +2096,18 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas,
 	recompute_image (holder, width, height, win_scale, cmap, vimage);
 	return;
     }
-    if (vimage->recompute)
+    if (vimage->changed)
     {
 	/*  Data has changed  */
+	(void) fprintf (stderr, "%s: spurious data change\n", function_name);
+	vimage->changed = FALSE;
+	vimage->recompute = TRUE;
+	recompute_image (holder, width, height, win_scale, cmap, vimage);
+	return;
+    }
+    if (vimage->recompute)
+    {
+	/*  Image cache is no longer valid for some reason  */
 	recompute_image (holder, width, height, win_scale, cmap, vimage);
 	return;
     }
@@ -1995,18 +2120,18 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas,
 #ifdef DEBUG
     (void) fprintf (stderr, "%s win_scale: %e %e  %e %e\n",
 		    function_name,
-		    win_scale->x_min, win_scale->x_max,
-		    win_scale->y_min, win_scale->y_max);
+		    win_scale->left_x, win_scale->right_x,
+		    win_scale->bottom_y, win_scale->top_y);
     (void) fprintf (stderr, "%s vimage.win_scale: %e %e  %e %e\n",
 		    function_name,
-		    vimage->win_scale.x_min, vimage->win_scale.x_max,
-		    vimage->win_scale.y_min, vimage->win_scale.y_max);
+		    vimage->win_scale.left_x, vimage->win_scale.right_x,
+		    vimage->win_scale.bottom_y, vimage->win_scale.top_y);
 #endif
     /*  More tests  */
     vimage->win_scale.x_offset = win_scale->x_offset;
     vimage->win_scale.y_offset = win_scale->y_offset;
     if (!m_cmp ( (char *) win_scale, (char *) &vimage->win_scale,
-		sizeof *win_scale ) )
+		 sizeof *win_scale ) )
     {
 	/*  Window scaling information has changed  */
 #ifdef DEBUG
@@ -2016,11 +2141,30 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas,
 	return;
     }
     /*  No significant changes: use image cache  */
-    if ( kwin_draw_cached_image (vimage->cache,
-				 win_scale->x_offset,
-				 win_scale->y_offset) )
+    if (holder->enable_panning && !holder->auto_v)
     {
-	/*  Cache OK  */
+	draw_subcache (holder, vimage, width, height);
+	return;
+    }
+    if (num_areas < 1)
+    {
+	if ( kwin_draw_cached_image (vimage->cache,
+				     win_scale->x_offset,
+				     win_scale->y_offset) )
+	{
+	    /*  Cache OK  */
+	    return;
+	}
+	/*  Something wrong with cache  */
+	recompute_image (holder, width, height, win_scale, cmap, vimage);
+	return;
+    }
+    /*  Only draw parts of the image  */
+    if ( kwin_draw_cached_subimages (vimage->cache,
+				     win_scale->x_offset, win_scale->y_offset,
+				     num_areas, areas) )
+    {
+	*honoured_areas = TRUE;
 	return;
     }
     /*  Something wrong with cache  */
@@ -2037,55 +2181,143 @@ static void recompute_image (CanvasHolder holder, int width, int height,
     The height of the canvas in pixels must be given by  height  .
     The window scaling information is pointed to by  win_scale  .
     The colourmap associated with the canvas must be given by  cmap  .
-    The viewable image must be given by  vimage  .
+    <vimage> The viewable image.
 */
 {
-    static char function_name[] = "__viewimg_recompute_image";
+    Kcolourmap kcmap;
+    unsigned int num_pixels, elem_index;
+    array_desc *arr_desc;
+    packet_desc *pack_desc;
+    unsigned long *pixel_values;    dim_desc *hdim, *vdim;
+    /*static char function_name[] = "__viewimg_recompute_image";*/
 
 #ifdef DEBUG
     (void) fprintf (stderr, "%s win_scale: %e %e  %e %e\n",
 		    function_name,
-		    win_scale->x_min, win_scale->x_max,
-		    win_scale->y_min, win_scale->y_max);
+		    win_scale->left_x, win_scale->right_x,
+		    win_scale->bottom_y, win_scale->top_y);
     (void) fprintf (stderr, "%s old vimage.win_scale: %e %e  %e %e\n",
 		    function_name,
-		    vimage->win_scale.x_min, vimage->win_scale.x_max,
-		    vimage->win_scale.y_min, vimage->win_scale.y_max);
+		    vimage->win_scale.left_x, vimage->win_scale.right_x,
+		    vimage->win_scale.bottom_y, vimage->win_scale.top_y);
 #endif
     m_copy ( (char *) &vimage->win_scale, (char *) win_scale,
 	    sizeof *win_scale );
     vimage->recompute = TRUE;
     /*  If a PseudoColour array exists, either the image is PseudoColour or the
 	canvas is PseudoColour  */
-    if (vimage->pc_arr_desc != NULL)
+    if (holder->enable_panning && !holder->auto_v)
     {
-	if ( !canvas_draw_image (holder->canvas,
-				 vimage->pc_arr_desc,
-				 vimage->pc_slice,
-				 vimage->pc_hdim,
-				 vimage->pc_vdim,
-				 vimage->pc_elem_index,
-				 &vimage->cache) )
+	/*  Compute a different kind of image cache which is the entire image
+	    magnified, irrespective of the canvas size, then draw the image
+	    cache
+	    */
+	if (vimage->pc_arr_desc != NULL)
 	{
-	    (void) fprintf (stderr, "Error drawing image onto world canvas\n");
-	    return;
+	    kcmap = canvas_get_cmap (holder->canvas);
+	    num_pixels = kcmap_get_pixels (kcmap, &pixel_values);
+	    arr_desc = vimage->pc_arr_desc;
+	    hdim = arr_desc->dimensions[vimage->pc_hdim];
+	    vdim = arr_desc->dimensions[vimage->pc_vdim];
+	    pack_desc = arr_desc->packet;
+	    elem_index = vimage->pc_elem_index;
+	    if ( !kwin_draw_pc_image (canvas_get_pixcanvas (holder->canvas),
+				      0, 0,
+				      hdim->length * holder->pan_magnification,
+				      vdim->length * holder->pan_magnification,
+				      vimage->pc_slice +
+				      ds_get_element_offset (pack_desc,
+							     elem_index),
+				      arr_desc->offsets[vimage->pc_hdim],
+				      arr_desc->offsets[vimage->pc_vdim],
+				      hdim->length, vdim->length,
+				      pack_desc->element_types[elem_index],
+				      win_scale->conv_type,
+				      num_pixels, pixel_values,
+				      win_scale->blank_pixel,
+				      win_scale->min_sat_pixel,
+				      win_scale->max_sat_pixel,
+				      win_scale->z_min, win_scale->z_max,
+				      win_scale->iscale_func,
+				      win_scale->iscale_info,
+				      &vimage->cache) )
+	    {
+		(void) fprintf (stderr,
+				"Error drawing image onto world canvas\n");
+		return;
+	    }
 	}
+	else
+	{
+	    arr_desc = vimage->tc_arr_desc;
+	    hdim = arr_desc->dimensions[vimage->tc_hdim];
+	    vdim = arr_desc->dimensions[vimage->tc_vdim];
+	    pack_desc = arr_desc->packet;
+	    if ( !kwin_draw_rgb_image(canvas_get_pixcanvas (holder->canvas),
+				      0, 0,
+				      hdim->length * holder->pan_magnification,
+				      vdim->length * holder->pan_magnification,
+				      (CONST unsigned char *)vimage->tc_slice +
+				      ds_get_element_offset (pack_desc,
+							     vimage->tc_red_index),
+				      (CONST unsigned char *)vimage->tc_slice +
+				      ds_get_element_offset (pack_desc,
+							     vimage->tc_green_index),
+				      (CONST unsigned char *)vimage->tc_slice +
+				      ds_get_element_offset (pack_desc,
+							     vimage->tc_blue_index),
+				      arr_desc->offsets[vimage->tc_hdim],
+				      arr_desc->offsets[vimage->tc_vdim],
+				      hdim->length, vdim->length,
+				      &vimage->cache) )
+	    {
+		(void) fprintf (stderr,
+				"Error drawing image onto world canvas\n");
+		return;
+	    }
+	}
+	/*  Now draw the desired part of this huge image cache  */
+	draw_subcache (holder, vimage, width, height);
     }
     else
     {
-	if ( !canvas_draw_rgb_image (holder->canvas,
-				     vimage->tc_arr_desc, vimage->tc_slice,
-				     vimage->tc_hdim, vimage->tc_vdim,
-				     vimage->tc_red_index,
-				     vimage->tc_green_index,
-				     vimage->tc_blue_index,
-				     &vimage->cache) )
+	/*  Compute image over region defined by world canvas  */
+	if (vimage->pc_arr_desc != NULL)
 	{
-	    (void) fprintf (stderr, "Error drawing image onto world canvas\n");
-	    return;
+	    if ( !canvas_draw_image (holder->canvas,
+				     vimage->pc_arr_desc,
+				     vimage->pc_slice,
+				     vimage->pc_hdim,
+				     vimage->pc_vdim,
+				     vimage->pc_elem_index,
+				     &vimage->cache) )
+	    {
+		(void) fprintf (stderr,
+				"Error drawing image onto world canvas\n");
+		return;
+	    }
+	}
+	else
+	{
+	    if ( !canvas_draw_rgb_image (holder->canvas,
+					 vimage->tc_arr_desc, vimage->tc_slice,
+					 vimage->tc_hdim, vimage->tc_vdim,
+					 vimage->tc_red_index,
+					 vimage->tc_green_index,
+					 vimage->tc_blue_index,
+					 &vimage->cache) )
+	    {
+		(void) fprintf (stderr,
+				"Error drawing image onto world canvas\n");
+		return;
+	    }
 	}
     }
     vimage->recompute = FALSE;
+    /*  Also need to clear the changed flag because the size control function
+	will only clear when auto intensity scaling is on, and it will not be
+	cleared on the first canvas refresh (i.e. when no cache is valid).  */
+    vimage->changed = FALSE;
 }   /*  End Function recompute_image  */
 
 static void worldcanvas_size_control_func (KWorldCanvas canvas,
@@ -2105,15 +2337,14 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
     the value FALSE is written here or nothing is written here, the
     canvas_resize  routine will clear the entire pixel canvas as
     appropriate.
-    The routine returns nothing.
+    [RETURNS] Nothing.
 */
 {
     CanvasHolder holder;
     ViewableImage vimage;
     Kcolourmap cmap;
     iarray pseudo_arr;
-    int hstart, hend, vstart, vend;  /*  Inclusive co-ordinates  */
-    int factor;
+    long hstart, hend, vstart, vend;  /*  Inclusive co-ordinates  */
     unsigned int canvas_visual, canvas_depth;
     flag scale_changed = FALSE;
     uaddr *hoffsets, *voffsets;
@@ -2172,19 +2403,39 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
 #ifdef DEBUG
     (void) fprintf (stderr, "%s: BEFORE: %e %e  %e %e\n",
 		    function_name,
-		    win_scale->x_min, win_scale->x_max,
-		    win_scale->y_min, win_scale->y_max);
+		    win_scale->left_x, win_scale->right_x,
+		    win_scale->bottom_y, win_scale->top_y);
 #endif
     /*  Determine canvas horizontal world co-ordinates  */
-    if (holder->auto_x)
+    if (holder->enable_panning)
+    {
+	hstart = holder->pan_centre_x - width / holder->pan_magnification / 2;
+	if (hstart < 0) hstart = 0;
+	hend = hstart + width / holder->pan_magnification - 1;
+	if (hend >= hdim->length)
+	{
+	    hend = hdim->length - 1;
+	    hstart = hend - width / holder->pan_magnification + 1;
+	}
+	if (hstart < 0) hstart = 0;
+	win_scale->x_pixels = (hend - hstart + 1) * holder->pan_magnification;
+    }
+    else if (holder->auto_x)
     {
 	hstart = 0;
 	hend = hdim->length - 1;
     }
     else
     {
-	hstart = ds_get_coord_num (hdim, win_scale->x_min,SEARCH_BIAS_CLOSEST);
-	hend = ds_get_coord_num (hdim, win_scale->x_max, SEARCH_BIAS_CLOSEST);
+	hstart = ds_get_coord_num (hdim, win_scale->left_x,
+				   SEARCH_BIAS_CLOSEST);
+	hend = ds_get_coord_num (hdim, win_scale->right_x,SEARCH_BIAS_CLOSEST);
+	if (hstart > hend)
+	{
+	    (void) fprintf (stderr, "hstart: %ld is larger than hend: %ld\n",
+			    hstart, hend);
+	    a_prog_bug (function_name);
+	}
 	if (hend == hstart)
 	{
 	    /*  Same dimension co-ordinate: separate  */
@@ -2193,15 +2444,35 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
 	}
     }
     /*  Determine canvas vertical world co-ordinates  */
-    if (holder->auto_y)
+    if (holder->enable_panning)
+    {
+	vstart = holder->pan_centre_y - height / holder->pan_magnification / 2;
+	if (vstart < 0) vstart = 0;
+	vend = vstart + height / holder->pan_magnification - 1;
+	if (vend >= vdim->length)
+	{
+	    vend = vdim->length - 1;
+	    vstart = vend - height / holder->pan_magnification + 1;
+	}
+	if (vstart < 0) vstart = 0;
+	win_scale->y_pixels = (vend - vstart + 1) * holder->pan_magnification;
+    }
+    else if (holder->auto_y)
     {
 	vstart = 0;
 	vend = vdim->length - 1;
     }
     else
     {
-	vstart = ds_get_coord_num (vdim, win_scale->y_min,SEARCH_BIAS_CLOSEST);
-	vend = ds_get_coord_num (vdim, win_scale->y_max, SEARCH_BIAS_CLOSEST);
+	vstart = ds_get_coord_num (vdim, win_scale->bottom_y,
+				   SEARCH_BIAS_CLOSEST);
+	vend = ds_get_coord_num (vdim, win_scale->top_y, SEARCH_BIAS_CLOSEST);
+	if (vstart > vend)
+	{
+	    (void) fprintf (stderr, "vstart: %ld is larger than vend: %ld\n",
+			    vstart, vend);
+	    a_prog_bug (function_name);
+	}
 	if (vend == vstart)
 	{
 	    /*  Same dimension co-ordinate: separate  */
@@ -2210,107 +2481,43 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
 	}
     }
     /*  Determine number of pixels required  */
-    if (holder->allow_truncation)
-    {
-	trunc_zoom (holder->maintain_aspect_ratio,
-		    &hstart, &hend, &win_scale->x_pixels, holder->int_x,
-		    &vstart, &vend, &win_scale->y_pixels, holder->int_y);
-    }
-    else if (holder->maintain_aspect_ratio)
-    {
-	/*  Image data aspect ratio must be preserved: think harder  */
-	aspect_zoom (hend - hstart + 1, &win_scale->x_pixels, holder->int_x,
-		     vend - vstart + 1, &win_scale->y_pixels, holder->int_y);
-    }
-    else
-    {
-	int hlength, vlength;
-
-	hlength = hend - hstart + 1;
-	vlength = vend - vstart + 1;
-	/* Can compute number of horizontal and vertical pixels independently*/
-	/*  Determine number of horizontal pixels required  */
-	if (holder->int_x)
-	{
-	    if (hlength <= width)
-	    {
-		/*  Zoom in or 1:1  */
-		win_scale->x_pixels = (width / hlength) * hlength;
-	    }
-	    else
-	    {
-		/*  Zoom out  */
-		factor = hlength / width + 1;
-		while (hlength % factor != 0) ++factor;
-		win_scale->x_pixels = hlength / factor;
-	    }
-	}
-	else
-	{
-	    win_scale->x_pixels = width;
-	}
-	/*  Determine number of vertical pixels required  */
-	if (holder->int_y)
-	{
-	    if (vlength <= height)
-	    {
-		/*  Zoom in  */
-		win_scale->y_pixels = (height / vlength) * vlength;
-	    }
-	    else
-	    {
-		/*  Zoom out or 1:1  */
-		factor = vlength / height + 1;
-		while (vlength % factor != 0) ++factor;
-		win_scale->y_pixels = vlength / factor;
-	    }
-	    win_scale->y_offset = (height - win_scale->y_pixels) / 2;
-	}
-	else
-	{
-	    win_scale->y_pixels = height;
-	}
-    }
+    if (!holder->enable_panning)
+	determine_size (holder, width, height, win_scale, &hstart, &hend,
+			&vstart, &vend);
+    /*  Centre image  */
     win_scale->x_offset = (width - win_scale->x_pixels) / 2;
     win_scale->y_offset = (height - win_scale->y_pixels) / 2;
-    win_scale->x_min = ds_get_coordinate (hdim, hstart);
-    win_scale->x_max = ds_get_coordinate (hdim, hend);
-    win_scale->y_min = ds_get_coordinate (vdim, vstart);
-    win_scale->y_max = ds_get_coordinate (vdim, vend);
+    win_scale->left_x = ds_get_coordinate (hdim, hstart);
+    win_scale->right_x = ds_get_coordinate (hdim, hend);
+    win_scale->bottom_y = ds_get_coordinate (vdim, vstart);
+    win_scale->top_y = ds_get_coordinate (vdim, vend);
+#ifdef MACHINE_i386
+    /*  Something wrong the following 4 floating point tests under i386_Linux,
+	gcc 2.7.2. Problem exists for both i486 and i586, so it looks like a
+	compiler bug. The following dummy call fixes things!
+	*/
+    (void) ds_element_is_atomic (K_FLOAT);
+#endif
     /*  Now know the number of horizontal and vertical pixels required  */
     /*  Check if window scaling changed  */
     /*  First check for world co-ordinate change  */
-    if (win_scale->x_min != vimage->win_scale.x_min)
+    if (win_scale->left_x != vimage->win_scale.left_x) scale_changed = TRUE;
+    if (win_scale->right_x != vimage->win_scale.right_x) scale_changed = TRUE;
+    if (win_scale->bottom_y != vimage->win_scale.bottom_y) scale_changed =TRUE;
+    if (win_scale->top_y != vimage->win_scale.top_y) scale_changed = TRUE;
+    if (scale_changed && holder->enable_panning && !holder->auto_v)
     {
-/*
-	vimage->win_scale.x_min = win_scale->x_min;
-*/
-	scale_changed = TRUE;
-    }
-    if (win_scale->x_max != vimage->win_scale.x_max)
-    {
-/*
-	vimage->win_scale.x_max = win_scale->x_max;
-*/
-	scale_changed = TRUE;
-    }
-    if (win_scale->y_min != vimage->win_scale.y_min)
-    {
-/*
-	vimage->win_scale.y_min = win_scale->y_min;
-*/
-	scale_changed = TRUE;
-    }
-    if (win_scale->y_max != vimage->win_scale.y_max)
-    {
-/*
-	vimage->win_scale.y_max = win_scale->y_max;
-*/
-	scale_changed = TRUE;
+	scale_changed = FALSE;
+	vimage->win_scale.left_x = win_scale->left_x;
+	vimage->win_scale.right_x = win_scale->right_x;
+	vimage->win_scale.bottom_y = win_scale->bottom_y;
+	vimage->win_scale.top_y = win_scale->top_y;
+	vimage->win_scale.x_pixels = win_scale->x_pixels;
+	vimage->win_scale.y_pixels = win_scale->y_pixels;
     }
     if (scale_changed)
     {
-	if (getuid () == 465)
+	if ( !vimage->recompute && (getuid () == 465) )
 	{
 	    (void) fprintf (stderr, "%s: scale changed\n", function_name);
 	}
@@ -2320,11 +2527,12 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
 	vimage->recompute = TRUE;
     }
 #ifdef DEBUG
-    (void) fprintf (stderr, "%s: AFTER: %e %e  %e %e\n",
-		    function_name,
-		    win_scale->x_min, win_scale->x_max,
-		    win_scale->y_min, win_scale->y_max);
+    fprintf (stderr, "%s: AFTER: %e %e  %e %e\n",
+	     function_name,
+	     win_scale->left_x, win_scale->right_x,
+	     win_scale->bottom_y, win_scale->top_y);
 #endif
+    /*  Automatic intensity scaling with PseudoColour image  */
     if ( holder->auto_v && (vimage->tc_arr_desc == NULL) )
     {
 	if ( (vimage->value_min >= TOOBIG) ||
@@ -2343,6 +2551,7 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
 		(void) fprintf (stderr, "Error getting data range\n");
 		a_prog_bug (function_name);
 	    }
+	    vimage->changed = FALSE;
 	    /*Image intensity range has changed: cached image no longer valid*/
 	    vimage->recompute = TRUE;
 	    /*  Ensure ranges are sensible  */
@@ -2369,6 +2578,13 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
 	win_scale->z_min = vimage->value_min;
 	win_scale->z_max = vimage->value_max;
     }
+    /*  No automatic intensity scaling, data changed and PseudoColour image  */
+    if ( !holder->auto_v && vimage->changed && (vimage->tc_arr_desc == NULL) )
+    {
+	vimage->changed = FALSE;
+	vimage->recompute = TRUE;
+    }
+    /*  Data changed and TrueColour image  */
     if ( vimage->changed && (vimage->tc_arr_desc != NULL) )
     {
 	if (vimage->tc_arr_desc->num_levels > 0)
@@ -2404,9 +2620,9 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
 	    m_abort (function_name, "PseudoColour image");
 	}
 	iarray_set_world_coords (pseudo_arr, 1,
-				 hdim->minimum, hdim->maximum);
+				 hdim->first_coord, hdim->last_coord);
 	iarray_set_world_coords (pseudo_arr, 0,
-				 vdim->minimum, vdim->maximum);
+				 vdim->first_coord, vdim->last_coord);
 	vimage->pc_multi_desc = pseudo_arr->multi_desc;
 	vimage->pc_arr_desc = pseudo_arr->arr_desc;
 	vimage->pc_slice = pseudo_arr->data;
@@ -2418,17 +2634,18 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
 	++pseudo_arr->multi_desc->attachments;
 	iarray_dealloc (pseudo_arr);
 	if ( !imc_24to8 (vdim->length * hdim->length,
-			 vimage->tc_slice +
+			 (unsigned char *) vimage->tc_slice +
 			 ds_get_element_offset (pack_desc,
 						vimage->tc_red_index),
-			 vimage->tc_slice +
+			 (unsigned char *) vimage->tc_slice +
 			 ds_get_element_offset (pack_desc,
 						vimage->tc_green_index),
-			 vimage->tc_slice +
+			 (unsigned char *) vimage->tc_slice +
 			 ds_get_element_offset (pack_desc,
 						vimage->tc_blue_index),
 			 ds_get_packet_size (pack_desc),
-			 vimage->pc_slice, 1, DEFAULT_NUMBER_OF_COLOURS,
+			 (unsigned char *) vimage->pc_slice, 1,
+			 DEFAULT_NUMBER_OF_COLOURS,
 			 0, &cmap_pack_desc, &cmap_packet) )
 	{
 	    (void) fprintf (stderr, "Error compressing image\n");
@@ -2447,6 +2664,366 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
     }
 }   /*  End Function worldcanvas_size_control_func  */
 
+static flag determine_size (CanvasHolder holder, int width, int height,
+			    struct win_scale_type *win_scale,
+			    long *hstart, long *hend, long *vstart, long *vend)
+/*  [SUMMARY] Determine size of image to be drawn.
+    <holder> The canvas holder.
+    <width> The width of the canvas in pixels.
+    <height> The height of the canvas in pixels.
+    <win_scale> The window scaling information. This is modified.
+    <hstart> The horizontal start index. This may be modified.
+    <hend> The horizontal end index. This may be modified.
+    <vstart> The vertical start index. This may be modified.
+    <vend> The vertical end index. This may be modified.
+    [RETURNS] TRUE if a size could be determined, else FALSE indicating the
+    sizing policy is not flexible enough.
+*/
+{
+    long hlength, vlength;
+    int factor;
+
+    hlength = *hend - *hstart + 1;
+    vlength = *vend - *vstart + 1;
+    /*  First test if 1:1 zooming is possible  */
+    if ( (width == hlength) && (height == vlength) )
+    {
+	win_scale->x_pixels = width;
+	win_scale->y_pixels = height;
+	return (TRUE);
+    }
+    /*  Determine number of pixels required  */
+    if (holder->allow_truncation)
+    {
+	/*  Permit a small number of data values at the end of each dimension
+	    to be ignored in order to allow images whose dimensions are
+	    mutually prime to be shrunk. The aspect ratio may need to be
+	    preserved
+	    */
+	trunc_zoom (holder->maintain_aspect_ratio,
+		    hstart, hend, &win_scale->x_pixels, holder->int_x,
+		    vstart, vend, &win_scale->y_pixels, holder->int_y);
+	return (TRUE);
+    }
+    if (holder->maintain_aspect_ratio)
+    {
+	/*  Must display all specified image values and also must maintain
+	    aspect ratio: think harder
+	    */
+	aspect_zoom (hlength, &win_scale->x_pixels, holder->int_x,
+		     vlength, &win_scale->y_pixels, holder->int_y);
+	return (TRUE);
+    }
+    /*  It is not necessary to maintain the aspect ratio: it is permissible
+	to shrink each dimension independently
+	*/
+    /*  Determine number of horizontal pixels required  */
+    if (holder->int_x)
+    {
+	if (hlength <= width)
+	{
+	    /*  Zoom in or 1:1  */
+	    win_scale->x_pixels = (width / hlength) * hlength;
+	}
+	else
+	{
+	    /*  Zoom out  */
+	    factor = hlength / width;
+	    while (hlength % factor != 0) ++factor;
+	    win_scale->x_pixels = hlength / factor;
+	}
+    }
+    else
+    {
+	win_scale->x_pixels = width;
+    }
+    /*  Determine number of vertical pixels required  */
+    if (holder->int_y)
+    {
+	if (vlength <= height)
+	{
+	    /*  Zoom in  */
+	    win_scale->y_pixels = (height / vlength) * vlength;
+	}
+	else
+	{
+	    /*  Zoom out or 1:1  */
+	    factor = vlength / height;
+	    while (vlength % factor != 0) ++factor;
+	    win_scale->y_pixels = vlength / factor;
+	}
+	win_scale->y_offset = (height - win_scale->y_pixels) / 2;
+    }
+    else
+    {
+	win_scale->y_pixels = height;
+    }
+    return (TRUE);
+}   /*  End Function determine_size  */
+
+static void aspect_zoom (long hlength, int *hpixels, flag int_x,
+			 long vlength, int *vpixels, flag int_y)
+/*  [PURPOSE] This routine will compute the number of horizontal and vertical
+    pixels to use whilst maintaining the image data aspect ratio.
+    <hlength> The number of horizontal data values.
+    <hpixels> The number of horizontal pixels available. This should be
+    modified to reflect the number of pixels required.
+    <int_x> If TRUE, the horizontal axis will have integral zooming.
+    <vlength> The number of vertical data values.
+    <vpixels> The number of vertical pixels available. This should be modified
+    to reflect the number of pixels required.
+    <int_y> If TRUE, the vertical axis will have integral zooming.
+    [RETURNS] Nothing.
+*/
+{
+    flag int_factor;
+    float hfactor, vfactor, factor;
+    float tiny_offset = 1e-3;
+    /*static char function_name[] = "aspect_zoom";*/
+
+    if (getuid () == 465)
+	fprintf (stderr,
+		 "h_values: %ld  h_pixels: %d  v_values: %ld v_pixels: %d\n",
+		 hlength, *hpixels, vlength, *vpixels);
+    /*  NOTE:  a 1:1 zoom ratio is termed a zoom in of factor 1  */
+    /*  Zoom in: replicate image data.    Zoom out: shrink image data  */
+    if ( (*hpixels >= hlength) && (*vpixels >= vlength) )
+    {
+	/*  Zoom in (expand) both axes  */
+	hfactor = (float) *hpixels / (float) hlength;
+	if (int_x) hfactor = floor (hfactor);
+	vfactor = (float) *vpixels / (float) vlength;
+	if (int_y) vfactor = floor (vfactor);
+	/*  Use smallest zoom in factor  */
+	factor = (hfactor > vfactor) ? vfactor : hfactor;
+	*hpixels = factor * hlength;
+	*vpixels = factor * vlength;
+	return;
+    }
+    /*  At least one axis must be zoomed out (shrunk)  */
+    int_factor = FALSE;
+    if (*hpixels < hlength)
+    {
+	/*  Horizontal axis must be zoomed out  */
+	hfactor = (float) hlength / (float) *hpixels;
+	if (int_x) int_factor = TRUE;
+    }
+    else
+    {
+	/*  Zoom out 1:1  */
+	hfactor = 1.0;
+    }
+    if (*vpixels < vlength)
+    {
+	/*  Vertical axis must be zoomed out  */
+	vfactor = (float) vlength / (float) *vpixels;
+	if (int_y) int_factor = TRUE;
+    }
+    else
+    {
+	/*  Zoom out 1:1  */
+	vfactor = 1.0;
+    }
+    /*  Start with largest zoom out factor  */
+    factor = (hfactor > vfactor) ? hfactor : vfactor;
+    if (!int_factor)
+    {
+	/*  Do not need integral factor: easy  */
+	*hpixels = (float) hlength / factor + tiny_offset;
+	*vpixels = (float) vlength / factor + tiny_offset;
+	return;
+    }
+    /*  Must have an integral factor: search for one  */
+    while ( (hlength % (int) factor != 0) || (vlength % (int) factor != 0) )
+    {
+	if (++factor > hlength)
+	{
+	    /*  Too much: fail  */
+	    (void) fprintf (stderr,
+			    "Cannot maintain aspect ratio without a bigger window\n");
+	    return;
+	}
+    }
+    *hpixels = (float) hlength / factor + tiny_offset;
+    *vpixels = (float) vlength / factor + tiny_offset;
+}   /*  End Function aspect_zoom  */
+
+static void trunc_zoom (flag maintain_aspect_ratio,
+			long *hstart, long *hend, int *hpixels, flag int_x,
+			long *vstart, long *vend, int *vpixels, flag int_y)
+/*  [PURPOSE] This routine will compute the number of horizontal and vertical
+    pixels to use, permitting the input image to be truncated.
+    <maintain_aspect_ratio> If TRUE, the aspect ratio must be preserved.
+    <hstart> The starting horizontal image value co-ordinate. This may be
+    modified inwards.
+    <hend> The end horizontal image value co-ordinate. This may be modified
+    inwards.
+    <hpixels> The number of horizontal pixels available. This may be modified
+    inwards.
+    <int_x> If TRUE, the horizontal axis must have integral zooming.
+    <vstart> The starting vertical image value co-ordinate. This may be
+    modified inwards.
+    <vend> The end vertical image value co-ordinate. This may be modified
+    inwards.
+    <vpixels> The number of vertical pixels available. This may be modified
+    inwards.
+    <int_y> If TRUE, the vertical axis must have integral zooming.
+    [RETURNS] Nothing.
+*/
+{
+    flag int_factor;
+    long hlength, vlength;
+    float hfactor, vfactor, factor;
+    float tiny_offset = 1e-3;
+    /*static char function_name[] = "trunc_zoom";*/
+
+    hlength = *hend - *hstart + 1;
+    vlength = *vend - *vstart + 1;
+    if (maintain_aspect_ratio)
+    {
+	if ( (*hpixels >= hlength) && (*vpixels >= vlength) )
+	{
+	    /*  Zoom in (expand) both axes. Don't truncate in this case since
+		data would be lost. Since the canvas is big enough to see the
+		whole image, it would be inappropriate to loose data
+	     */
+	    hfactor = (float) *hpixels / (float) hlength;
+	    if (int_x) hfactor = floor (hfactor);
+	    vfactor = (float) *vpixels / (float) vlength;
+	    if (int_y) vfactor = floor (vfactor);
+	    /*  Use smallest zoom in factor  */
+	    factor = (hfactor > vfactor) ? vfactor : hfactor;
+	    *hpixels = (factor * (float) hlength + tiny_offset);
+	    *vpixels = (factor * (float) vlength + tiny_offset);
+	    return;
+	}
+	/*  At least one axis must be zoomed out (shrunk)  */
+	int_factor = FALSE;
+	if (*hpixels < hlength)
+	{
+	    /*  Horizontal axis must be zoomed out  */
+	    hfactor = (float) hlength / (float) *hpixels;
+	    if (int_x) int_factor = TRUE;
+	}
+	else
+	{
+	    /*  Zoom out 1:1  */
+	    hfactor = 1.0;
+	}
+	if (*vpixels < vlength)
+	{
+	    /*  Vertical axis must be zoomed out  */
+	    vfactor = (float) vlength / (float) *vpixels;
+	    if (int_y) int_factor = TRUE;
+	}
+	else
+	{
+	    /*  Zoom out 1:1  */
+	    vfactor = 1.0;
+	}
+	/*  Start with largest zoom out factor  */
+	factor = (hfactor > vfactor) ? hfactor : vfactor;
+	if (!int_factor)
+	{
+	    /*  Do not need integral zoom factor: easy, no truncation needed */
+	    *hpixels = (float) hlength / factor + tiny_offset;
+	    *vpixels = (float) vlength / factor + tiny_offset;
+	    return;
+	}
+	/*  It seems we do need to truncate, since integral zoom is required */
+	factor = floor (factor);
+	while ( (hlength / (long) factor > *hpixels) ||
+		(vlength / (long) factor > *vpixels) ) ++factor;
+	/*  Modify input image co-ordinates  */
+	*hend = *hstart + (hlength / (long) factor) * (long) factor - 1;
+	*vend = *vstart + (vlength / (long) factor) * (long) factor - 1;
+	/*  Modify output pixels  */
+	*hpixels = ( (float) hlength / factor + tiny_offset );
+	*vpixels = ( (float) vlength / factor + tiny_offset );
+	return;
+    }
+    /*  Scale for each axis is independant  */
+    if (int_x)
+    {
+	/*  Must use integral zoom factor for horizontal dimension  */
+	if (hlength > *hpixels)
+	{
+	    /*  Must shrink horizontally  */
+	    factor = floor ( (float) hlength / (float) *hpixels );
+	    while (hlength / (int) factor > *hpixels) ++factor;
+	    /*  Modify input image co-ordinates  */
+	    *hend = *hstart + (hlength / (int) factor) * (int) factor - 1;
+	    /*  Modify output pixels  */
+	    *hpixels = ( (float) hlength / factor + tiny_offset );
+	}
+	else
+	{
+	    /*  Possible horizontal expansion  */
+	    *hpixels = (*hpixels / hlength) * hlength;
+	}
+    }
+    if (int_y)
+    {
+	if (vlength > *vpixels)
+	{
+	    /*  Must shrink vertically  */
+	    factor = floor ( (float) vlength / (float) *vpixels );
+	    while (vlength / (int) factor > *vpixels) ++factor;
+	    /*  Modify input image co-ordinates  */
+	    *vend = *vstart + (vlength / (int) factor) * (int) factor - 1;
+	    /*  Modify output pixels  */
+	    *vpixels = ( (float) vlength / factor + tiny_offset );
+	}
+	else
+	{
+	    /*  Possible horizontal expansion  */
+	    *vpixels = (*vpixels / vlength) * vlength;
+	}
+    }
+}   /*  End Function trunc_zoom  */
+
+static void draw_subcache (CanvasHolder holder, ViewableImage vimage,
+			   int width, int height)
+/*  [SUMMARY] Draw an image subcache.
+    <holder> The canvas holder object.
+    <vimage> The ViewableImage object.
+    [RETURNS] Nothing.
+*/
+{
+    KPixCanvasRefreshArea area;
+    int xstart, ystart;
+    dim_desc *hdim, *vdim;
+
+    /*  Compute part of image cache to draw  */
+    xstart = holder->pan_centre_x * holder->pan_magnification - width / 2;
+    if (vimage->pc_arr_desc != NULL)
+    {
+	hdim = vimage->pc_arr_desc->dimensions[vimage->pc_hdim];
+	vdim = vimage->pc_arr_desc->dimensions[vimage->pc_vdim];
+    }
+    else
+    {
+	hdim = vimage->tc_arr_desc->dimensions[vimage->tc_hdim];
+	vdim = vimage->tc_arr_desc->dimensions[vimage->tc_vdim];
+    }
+    ystart = (vdim->length - holder->pan_centre_y - 1) *
+	holder->pan_magnification;
+    ystart = ystart - height / 2;
+    area.startx = 0;
+    area.endx = width - 1;
+    area.starty = 0;
+    area.endy = height - 1;
+    if ( (xstart < 0) ||
+	 (holder->pan_centre_y - height / holder->pan_magnification / 2 < 0) ||
+	 (holder->pan_centre_x + width / holder->pan_magnification / 2 >
+	  hdim->length) ||
+	 (holder->pan_centre_y + height / holder->pan_magnification / 2 >=
+	  vdim->length) )
+    {
+	kwin_clear (canvas_get_pixcanvas (holder->canvas), 0, 0, -1, -1);
+    }
+    kwin_draw_cached_subimages (vimage->cache, -xstart, -ystart, 1, &area);
+}   /*  End Function draw_subcache  */
 
 static flag worldcanvas_position_func (KWorldCanvas canvas, double x, double y,
 				       unsigned int event_code,
@@ -2518,8 +3095,16 @@ static flag worldcanvas_position_func (KWorldCanvas canvas, double x, double y,
     pack_desc = arr_desc->packet;
     hdim = arr_desc->dimensions[hdim_index];
     vdim = arr_desc->dimensions[vdim_index];
-    x_coord = ds_get_coord_num (hdim, x_lin, SEARCH_BIAS_LOWER);
-    y_coord = ds_get_coord_num (vdim, y_lin, SEARCH_BIAS_LOWER);
+    if (hdim->first_coord < hdim->last_coord)
+    {
+	x_coord = ds_get_coord_num (hdim, x_lin, SEARCH_BIAS_LOWER);
+    }
+    else x_coord = ds_get_coord_num (hdim, x_lin, SEARCH_BIAS_UPPER);
+    if (vdim->first_coord < vdim->last_coord)
+    {
+	y_coord = ds_get_coord_num (vdim, y_lin, SEARCH_BIAS_LOWER);
+    }
+    else y_coord = ds_get_coord_num (vdim, y_lin, SEARCH_BIAS_UPPER);
     dx = ds_get_coordinate (hdim, x_coord);
     dy = ds_get_coordinate (vdim, y_coord);
     if (vimage->tc_arr_desc == NULL)
@@ -2614,209 +3199,6 @@ static flag position_event_func (void *object, void *client1_data,
 		      data->x_lin, data->y_lin, data->type) );
 }   /*  End Function position_event_func  */
 
-static void aspect_zoom (int hlength, int *hpixels, flag int_x,
-			 int vlength, int *vpixels, flag int_y)
-/*  [PURPOSE] This routine will compute the number of horizontal and vertical
-    pixels to use whilst maintaining the image data aspect ratio.
-    <hlength> The number of horizontal data values.
-    <hpixels> The number of horizontal pixels available. This should be
-    modified to reflect the number of pixels required.
-    <int_x> If TRUE, the horizontal axis will have integral zooming.
-    <vlength> The number of vertical data values.
-    <vpixels> The number of vertical pixels available. This should be modified
-    to reflect the number of pixels required.
-    <int_y> If TRUE, the vertical axis will have integral zooming.
-    [RETURNS] Nothing.
-*/
-{
-    int hfactor, vfactor;
-    int factor;
-    static char function_name[] = "aspect_zoom";
-
-    (void) fprintf (stderr,
-		    "h_values: %d  h_pixels: %d  v_values: %d v_pixels: %d\n",
-		    hlength, *hpixels, vlength, *vpixels);
-    /*  NOTE:  a 1:1 zoom ratio is termed a zoom out of factor 1  */
-    /*  Zoom in: replicate image data.    Zoom out: shrink image data  */
-    if (int_x && int_y)
-    {
-	/*  Both axes require integral zoom factors  */
-	if ( (*hpixels > hlength) && (*vpixels > vlength) )
-	{
-	    /*  Zoom in both axes  */
-	    hfactor = *hpixels / hlength;
-	    vfactor = *vpixels / vlength;
-	    /*  Use smallest zoom in factor  */
-	    factor = (hfactor > vfactor) ? vfactor : hfactor;
-	    *hpixels = factor * hlength;
-	    *vpixels = factor * vlength;
-	    return;
-	}
-	/*  At least one axis must be zoomed out  */
-	if (*hpixels < hlength)
-	{
-	    /*  Horizontal axis must be zoomed out  */
-	    hfactor = hlength / *hpixels;
-	}
-	else
-	{
-	    /*  Zoom out 1:1  */
-	    hfactor = 1;
-	}
-	if (*vpixels < vlength)
-	{
-	    /*  Vertical axis must be zoomed out  */
-	    vfactor = vlength / *vpixels;
-	}
-	else
-	{
-	    /*  Zoom out 1:1  */
-	    vfactor = 1;
-	}
-	/*  Start with largest zoom out factor  */
-	factor = (hfactor > vfactor) ? hfactor : vfactor;
-	while ( (hlength % factor != 0) || (vlength % factor != 0) )
-	{
-	    if (++factor > hlength)
-	    {
-		/*  Too much: fail  */
-		(void) fprintf (stderr,
-				"Cannot maintain aspect ratio without a bigger window\n");
-		return;
-	    }
-	}
-	*hpixels = hlength / factor;
-	*vpixels = vlength / factor;
-	return;
-    }
-    (void) fprintf (stderr, "Non-integral zooming not supported yet\n");
-    a_prog_bug (function_name);
-}   /*  End Function aspect_zoom  */
-
-static void trunc_zoom (flag maintain_aspect_ratio,
-			int *hstart, int *hend, int *x_pixels, flag int_x,
-			int *vstart, int *vend, int *y_pixels, flag int_y)
-/*  [PURPOSE] This routine will compute the number of horizontal and vertical
-    pixels to use, permitting the input image to be truncated.
-    <maintain_aspect_ratio> If TRUE, the aspect ratio must be preserved.
-    <hstart> The starting horizontal image value co-ordinate. This may be
-    modified inwards.
-    <hend> The end horizontal image value co-ordinate. This may be modified
-    inwards.
-    <x_pixels> The number of horizontal pixels available. This may be modified
-    inwards.
-    <int_x> If TRUE, the horizontal axis must have integral zooming.
-    <vstart> The starting vertical image value co-ordinate. This may be
-    modified inwards.
-    <vend> The end vertical image value co-ordinate. This may be modified
-    inwards.
-    <y_pixels> The number of vertical pixels available. This may be modified
-    inwards.
-    <int_y> If TRUE, the vertical axis must have integral zooming.
-    [RETURNS] Nothing.
-*/
-{
-    flag work;
-    int hlength, vlength;
-    int hfactor, vfactor, factor;
-    static char function_name[] = "trunc_zoom";
-
-    if (!int_x || !int_y)
-    {
-	(void) fprintf (stderr, "Non-integral zooming not supported yet\n");
-	a_prog_bug (function_name);
-    }
-    /*  Integral zooming required  */
-    hlength = *hend - *hstart + 1;
-    vlength = *vend - *vstart + 1;
-    if (maintain_aspect_ratio)
-    {
-	if ( (hlength > *x_pixels) || (vlength > *y_pixels) )
-	{
-	    /*  Must shrink image to fit  */
-	    hfactor = hlength / *x_pixels;
-	    vfactor = vlength / *y_pixels;
-	    factor = (hfactor > vfactor) ? hfactor : vfactor;
-	    work = TRUE;
-	    while (work)
-	    {
-		if ( (hlength / factor > *x_pixels) ||
-		    (vlength / factor > *y_pixels) )
-		{
-		    ++factor;
-		    continue;
-		}
-		work = FALSE;
-	    }
-	    /*  Modify input image co-ordinates  */
-	    *hend = *hstart + (hlength / factor) * factor - 1;
-	    *vend = *vstart + (vlength / factor) * factor - 1;
-	    /*  Modify output pixels  */
-	    *x_pixels = hlength / factor;
-	    *y_pixels = vlength / factor;
-	    return;
-	}
-	/*  No shrinkage, possible expansion  */
-	hfactor = *x_pixels / hlength;
-	vfactor = *y_pixels / vlength;
-	/*  Use smallest zoom in factor  */
-	factor = (hfactor > vfactor) ? vfactor : hfactor;
-	*x_pixels = factor * hlength;
-	*y_pixels = factor * vlength;
-	return;
-    }
-    /*  Scale for each axis is independant  */
-    if (hlength > *x_pixels)
-    {
-	/*  Must shrink horizontally  */
-	hfactor = hlength / *x_pixels;
-	work = TRUE;
-	while (work)
-	{
-	    if (hlength / hfactor > *x_pixels)
-	    {
-		++hfactor;
-		continue;
-	    }
-	    work = FALSE;
-	}
-	/*  Modify input image co-ordinates  */
-	*hend = *hstart + (hlength / hfactor) * hfactor - 1;
-	/*  Modify output pixels  */
-	*x_pixels = hlength / hfactor;
-    }
-    else
-    {
-	/*  Possible horizontal expansion  */
-	*x_pixels = (*x_pixels / hlength) * hlength;
-    }
-    if (vlength > *y_pixels)
-    {
-	/*  Must shrink vertically  */
-	vfactor = vlength / *y_pixels;
-	work = TRUE;
-	while (work)
-	{
-	    if (vlength / vfactor > *y_pixels)
-	    {
-		++vfactor;
-		continue;
-	    }
-	    work = FALSE;
-	}
-	/*  Modify input image co-ordinates  */
-	*vend = *vstart + (vlength / vfactor) * vfactor - 1;
-	/*  Modify output pixels  */
-	*y_pixels = vlength / vfactor;
-    }
-    else
-    {
-	/*  Possible horizontal expansion  */
-	*y_pixels = (*y_pixels / vlength) * vlength;
-    }
-}   /*  End Function trunc_zoom  */
-
-
 static flag coord_convert_func (KWorldCanvas canvas,
 				struct win_scale_type *win_scale,
 				double *x, double *y,
@@ -2841,7 +3223,6 @@ static flag coord_convert_func (KWorldCanvas canvas,
     ViewableImage vimage;
     int coord_num0, coord_num1;
     double coord0, coord1;
-    double world_x, world_y;
     double x_pix, y_pix;
     array_desc *arr_desc;
     packet_desc *pack_desc;
@@ -2879,10 +3260,10 @@ static flag coord_convert_func (KWorldCanvas canvas,
     }
     pack_desc = arr_desc->packet;
     /*  These are the correspondences we have to ensure:
-	wx = x_min              <-->    px = x_offset
-	wx = x_max + x_delta    <-->    px = x_offset + x_pixels
-	wy = y_min              <-->    py = y_offset + y_pixels - 1
-	wy = y_max + y_delta    <-->    py = y_offset - 1
+	wx = left_x             <-->    px = x_offset
+	wx = right_x + x_delta  <-->    px = x_offset + x_pixels
+	wy = bottom_y           <-->    py = y_offset + y_pixels - 1
+	wy = top_y + y_delta    <-->    py = y_offset - 1
 
 	where x_delta and y_delta are the world co-ordinate increments.
 	*/
@@ -2894,10 +3275,10 @@ static flag coord_convert_func (KWorldCanvas canvas,
 	y_pix = (double) (win_scale->y_pixels - 1) - y_pix;
 	/*  Removed offsets and flipped vertical  */
 	/*  Compute x co-ordinate  */
-	coord_num0 = ds_get_coord_num (hdim, win_scale->x_min,
+	coord_num0 = ds_get_coord_num (hdim, win_scale->left_x,
 				       SEARCH_BIAS_CLOSEST);
 	coord0 = ds_get_coordinate (hdim, coord_num0);
-	coord_num1 = ds_get_coord_num (hdim, win_scale->x_max,
+	coord_num1 = ds_get_coord_num (hdim, win_scale->right_x,
 				       SEARCH_BIAS_CLOSEST);
 	if (coord_num1 + 1 < hdim->length)
 	{
@@ -2912,10 +3293,10 @@ static flag coord_convert_func (KWorldCanvas canvas,
 	*x += coord0;
 	*x += (coord1 - coord0) / (double) (coord_num1 - coord_num0) / 1000.0;
 	/*  Compute y co-ordinate  */
-	coord_num0 = ds_get_coord_num (vdim, win_scale->y_min,
+	coord_num0 = ds_get_coord_num (vdim, win_scale->bottom_y,
 				       SEARCH_BIAS_CLOSEST);
 	coord0 = ds_get_coordinate (vdim, coord_num0);
-	coord_num1 = ds_get_coord_num (vdim, win_scale->y_max,
+	coord_num1 = ds_get_coord_num (vdim, win_scale->top_y,
 				       SEARCH_BIAS_CLOSEST);
 	if (coord_num1 + 1 < vdim->length)
 	{
@@ -2933,10 +3314,10 @@ static flag coord_convert_func (KWorldCanvas canvas,
     }
     /*  Convert from world to pixel co-ordinates  */
     /*  Compute x co-ordinate  */
-    coord_num0 = ds_get_coord_num (hdim, win_scale->x_min,
+    coord_num0 = ds_get_coord_num (hdim, win_scale->left_x,
 				   SEARCH_BIAS_CLOSEST);
     coord0 = ds_get_coordinate (hdim, coord_num0);
-    coord_num1 = ds_get_coord_num (hdim, win_scale->x_max,
+    coord_num1 = ds_get_coord_num (hdim, win_scale->right_x,
 				   SEARCH_BIAS_CLOSEST);
     if (coord_num1 + 1 < hdim->length)
     {
@@ -2950,11 +3331,11 @@ static flag coord_convert_func (KWorldCanvas canvas,
     x_pix = (*x - coord0) * (double) win_scale->x_pixels / (coord1 - coord0);
     *x = x_pix + (double) win_scale->x_offset;
     /*  Compute y co-ordinate  */
-    coord_num0 = ds_get_coord_num (vdim, win_scale->y_min,
+    coord_num0 = ds_get_coord_num (vdim, win_scale->bottom_y,
 				   SEARCH_BIAS_CLOSEST);
     coord0 = ds_get_coordinate (vdim, coord_num0);
     /*  Find co-ordinate one data value beyond canvas maximum  */
-    coord_num1 = ds_get_coord_num (vdim, win_scale->y_max,
+    coord_num1 = ds_get_coord_num (vdim, win_scale->top_y,
 				   SEARCH_BIAS_CLOSEST);
     coord1 = ds_get_coordinate (vdim, coord_num1);
     if (coord_num1 + 1 < vdim->length)

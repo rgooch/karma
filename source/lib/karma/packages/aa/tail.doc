@@ -1,0 +1,11 @@
+
+$TABLE            AA_REPLACEMENT_POLICIES
+$COLUMNS          2
+$SUMMARY          List of replacement policies when adding keys
+$TABLE_DATA
+|.Policy Name                           |,Meaning
+
+|.KAA_REPLACEMENT_POLICY_NEW            |,Fail if existing key found
+|.KAA_REPLACEMENT_POLICY_UPDATE         |,Fail if no existing key found
+|.KAA_REPLACEMENT_POLICY_PUT            |,Add pair, remove old key if exists
+$END

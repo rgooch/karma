@@ -3,7 +3,7 @@
 
     This code provides data structure attachment routines.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -58,9 +58,12 @@
 
     Updated by      Richard Gooch   15-JUN-1995: Made use of IS_ALIGNED macro.
 
-    Last updated by Richard Gooch   22-AUG-1995: Inserted code to handle
+    Updated by      Richard Gooch   22-AUG-1995: Inserted code to handle
   unaligned string types in <ds_put_unique_named_string> and
   <ds_get_unique_named_string>.
+
+    Last updated by Richard Gooch   9-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -73,30 +76,24 @@
 
 
 /*PUBLIC_FUNCTION*/
-flag ds_put_unique_named_value (pack_desc, packet, name, type, value, update)
-/*  This routine will add a unique named value to a Karma general data
-    structure.
-    The packet descriptor to add the name to must be pointed to by  pack_desc
-    This descriptor will be modified.
-    The pointer to the unique packet which is described by  pack_desc  must be
-    pointed to by  packet  .Note that the existing packet data is copied to a
-    new packet, and a pointer to this packet is written back to the storage
-    pointed to by  packet  .
-    The name of the element must be pointed to by  name  .
-    The type of the data which is to be written must be given by  type  .
-    The value of the data must be pointed to by  value  .
-    If the value of  update  is TRUE, then the routine will allow an existing
-    named value to be updated, otherwise the routine will fail if an update
-    (rather than a create) is attempted. The  type  parameters is ignored for
-    updates (ie. you can't change the type).
-    The routine returns TRUE on success, else it returns FALSE.
+flag ds_put_unique_named_value (packet_desc *pack_desc, char **packet,
+				CONST char *name, unsigned int type,
+				double value[2], flag update)
+/*  [SUMMARY] Add a unique named value to a Karma general data structure.
+    <pack_desc> The packet descriptor to add the name to. This descriptor will
+    be modified.
+    <packet> The pointer to the unique packet. Note that the existing packet
+    data is copied to a new packet, and a pointer to this packet is written
+    back here.
+    <name> The name of the element.
+    <type> The type of the data which is to be written.
+    <value> The value of the data.
+    <update> If TRUE, then the routine will allow an existing named value to be
+    updated, otherwise the routine will fail if an update (rather than a
+    create) is attempted. The <<type>> parameter is ignored for  updates (i.e.
+    you can't change the type).
+    [RETURNS] TRUE on success, else FALSE.
 */
-packet_desc *pack_desc;
-char **packet;
-CONST char *name;
-unsigned int type;
-double *value;
-flag update;
 {
     unsigned int old_packet_size;
     char *new_packet;
@@ -230,27 +227,22 @@ flag update;
 }   /*  End Function ds_put_unique_named_value  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_put_unique_named_string (pack_desc, packet, name, string, update)
-/*  This routine will add a unique named string to a Karma general data
-    structure.
-    The packet descriptor to add the name to must be pointed to by  pack_desc
-    This descriptor will be modified.
-    The pointer to the unique packet which is described by  pack_desc  must be
-    pointed to by  packet  .Note that the existing packet data is copied to a
-    new packet, and a pointer to this packet is written back to the storage
-    pointed to by  packet  .
-    The name of the element must be pointed to by  name  .
-    The string must be pointed to by  string  .
-    If the value of  update  is TRUE, then the routine will allow an existing
-    named string to be updated, otherwise the routine will fail if an update
-    (rather than a create) is attempted.
-    The routine returns TRUE on success, else it returns FALSE.
+flag ds_put_unique_named_string (packet_desc *pack_desc, char **packet,
+				 CONST char *name, CONST char *string,
+				 flag update)
+/*  [SUMMARY] Add a unique named string to a Karma general data structure.
+    <pack_desc> The packet descriptor to add the name to. This descriptor will
+    be modified.
+    <packet> The pointer to the unique packet. Note that the existing packet
+    data is copied to a new packet, and a pointer to this packet is written
+    back here.
+    <name> The name of the element.
+    <string> The string value.
+    <update> If TRUE, then the routine will allow an existing named string to
+    be updated, otherwise the routine will fail if an update (rather than a
+    create) is attempted.
+    [RETURNS] TRUE on success, else FALSE.
 */
-packet_desc *pack_desc;
-char **packet;
-CONST char *name;
-CONST char *string;
-flag update;
 {
     unsigned int old_packet_size;
     unsigned int elem_index;
@@ -409,11 +401,11 @@ flag update;
 }   /*  End Function ds_put_unique_named_string  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_get_unique_named_value (packet_desc *pack_desc, char *packet,
+flag ds_get_unique_named_value (CONST packet_desc *pack_desc,
+				CONST char *packet,
 				CONST char *name, unsigned int *type,
 				double value[2])
-/*  [PURPOSE] This routine will get a unique named value from a Karma general
-    data structure.
+/*  [SUMMARY] Get a unique named value from a Karma general data structure.
     <pack_desc> A pointer to the packet descriptor.
     <packet> A pointer to the packet containing the named value.
     <name> The name of the value.
@@ -460,10 +452,9 @@ flag ds_get_unique_named_value (packet_desc *pack_desc, char *packet,
 }   /*  End Function ds_get_unique_named_value  */
 
 /*PUBLIC_FUNCTION*/
-char *ds_get_unique_named_string (packet_desc *pack_desc, char *packet,
-				  CONST char *name)
-/*  [PURPOSE] This routine will get a unique named string from a Karma general
-    data structure.
+char *ds_get_unique_named_string (CONST packet_desc *pack_desc,
+				  CONST char *packet, CONST char *name)
+/*  [SUMMARY] Get a unique named string from a Karma general data structure.
     <pack_desc> The packet descriptor.
     <packet> The packet containing the named string.
     <name> The element name.
@@ -473,7 +464,7 @@ char *ds_get_unique_named_string (packet_desc *pack_desc, char *packet,
 {
     FString tmp;  /*  Assume this is always big enough  */
     unsigned int type, size, elem_num;
-    char *element;
+    CONST char *element;
     char *orig;
     char *copy;
     extern char host_type_sizes[NUMTYPES];

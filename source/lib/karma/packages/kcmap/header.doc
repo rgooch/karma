@@ -1,0 +1,5 @@
+$SUMMARY          Routines to manipulate colourmaps
+$PURPOSE
+    These routines are meant to provide a high level mechanism to create and
+    manipulate colourmaps, complete with colourmap sharing, dynamic allocation
+    and event management.

@@ -3,7 +3,7 @@
 
     This code provides conversion between host and cannonical data formats.
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -33,7 +33,10 @@
     Written by      Richard Gooch   31-JUL-1995: Copied hard bits from
   pio/misc.c
 
-    Last updated by Richard Gooch   31-JUL-1995
+    Updated by      Richard Gooch   31-JUL-1995
+
+    Last updated by Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -52,7 +55,7 @@ fortran int CRAY2IEG (int, int, char *, int, char *, int);
 
 /*PUBLIC_FUNCTION*/
 flag p_write_buf_float (char *buffer, float data)
-/*  [PURPOSE] This routine will write a floating point number to a buffer.
+/*  [SUMMARY] Write a floating point number to a buffer.
     <buffer> A pointer to the buffer. This buffer must be at least 4 bytes long
     <data> The data. This must be in host natural byte order. The data will be
     converted to IEEE network format prior to writing.
@@ -108,12 +111,12 @@ flag p_write_buf_float (char *buffer, float data)
 
 /*PUBLIC_FUNCTION*/
 flag p_read_buf_float (char *buffer, float *data)
-/*  [PURPOSE] This routine will read a floating point number from a buffer.
+/*  [SUMMARY] Read a floating point number from a buffer.
     <buffer> A pointer to the buffer. This buffer must be at least 4 bytes long
     <data> The output data will be written here. This will be in host natural
     byte order. The data will be converted from network byte order after
     reading.
-    [NOTES] The data will be converted from IEEE network format after reading.
+    [NOTE] The data will be converted from IEEE network format after reading.
     [RETURNS] TRUE on success, else FALSE.
 */
 {
@@ -166,8 +169,7 @@ flag p_read_buf_float (char *buffer, float *data)
 
 /*PUBLIC_FUNCTION*/
 flag p_write_buf_double (char *buffer, double data)
-/*  [PURPOSE] This routine will write a double precision floating point number
-    to a buffer.
+/*  [SUMMARY] Write a double precision floating point number to a buffer.
     <buffer> A pointer to the buffer. This buffer must be at least 8 bytes long
     <data> The data. This must be in host natural byte order. The data will be
     converted to IEEE network format prior to writing.
@@ -248,13 +250,12 @@ flag p_write_buf_double (char *buffer, double data)
 
 /*PUBLIC_FUNCTION*/
 flag p_read_buf_double (char *buffer, double *data)
-/*  [PURPOSE] This routine will read a double precision floating point number
-    from a buffer.
+/*  [SUMMARY] Read a double precision floating point number from a buffer.
     <buffer> A pointer to the buffer. This buffer must be at least 8 bytes long
     <data> The output data will be written here. This will be in host natural
     byte order. The data will be converted from network byte order after
     reading.
-    [NOTES] The data will be converted from IEEE network format after reading.
+    [NOTE] The data will be converted from IEEE network format after reading.
     [RETURNS] TRUE on success, else FALSE.
 */
 {

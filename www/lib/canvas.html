@@ -1,0 +1,986 @@
+<html><head><title>Package: canvas</title></head> 
+<body>
+<center><h1>The "canvas" Package</h1></center>    These routines are meant to provide a high level mechanism to create and
+    manipulate world canvases (canvases which have a co-ordinate system based
+    on real-world co-ordinates). These canvases utilise the pixel canvases
+    available in the <a href=kwin.html#kwin>kwin</a> package, hence the resulting code is device
+    independent.
+<p><b>Library:</b> karmagraphics
+<br><b>Link With:</b> -lkarmagraphics
+<br><p><a name=canvas></a></table><h4>Functions</h4><table><tr><td><a href=canvas.html#canvas_draw_edit_list>canvas_draw_edit_list</a></td><td>Draw a list of edit objects to a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_draw_edit_object>canvas_draw_edit_object</a></td><td>Draw one edit object to a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_create>canvas_create</a></td><td>Create world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_register_refresh_func>canvas_register_refresh_func</a></td><td>Register world canvas refresh callback.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_register_size_control_func>canvas_register_size_control_func</a></td><td>Register size control callback.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_register_position_event_func>canvas_register_position_event_func</a></td><td>Register position event callback.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_get_attributes>canvas_get_attributes</a></td><td>Get canvas attributes.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_set_attributes>canvas_set_attributes</a></td><td>Set canvas attributes.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_resize>canvas_resize</a></td><td>Resize a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_specify>canvas_specify</a></td><td>Set specification information for a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_get_specification>canvas_get_specification</a></td><td>Get specification information for a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_convert_to_canvas_coords>canvas_convert_to_canvas_coords</a></td><td>Convert pixel co-ordinates to world co-ordinates.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_convert_from_canvas_coord>canvas_convert_from_canvas_coord</a></td><td>Convert non-linear world co-ordinates to pixel co-ordinates
+</td></tr>
+<tr><td><a href=canvas.html#canvas_register_d_convert_func>canvas_register_d_convert_func</a></td><td>Register co-ordinate conversion function.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_coord_transform>canvas_coord_transform</a></td><td>Transform world co-ordinates.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_register_transforms_func>canvas_register_transforms_func</a></td><td>Register non-linear co-ordinate transformation function.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_get_pixcanvas>canvas_get_pixcanvas</a></td><td>Get the underlying pixel canvas of a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_get_colour>canvas_get_colour</a></td><td>Get (possibly allocating) a colourcell for a canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_set_dressing>canvas_set_dressing</a></td><td>Set dressing parameters for a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_sequence_dressing_refresh>canvas_sequence_dressing_refresh</a></td><td>Set order in which dressing is refreshed.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_draw_dressing>canvas_draw_dressing</a></td><td>Draw the dressing (axes, etc.) for a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_get_cmap>canvas_get_cmap</a></td><td>Get the Kcolourmap object associated with a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_draw_image>canvas_draw_image</a></td><td>Draw a PseudoColour image onto a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_draw_rgb_image>canvas_draw_rgb_image</a></td><td>Draw a TrueColour image onto a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_draw_point>canvas_draw_point</a></td><td>Draw a single point onto a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_draw_point_p>canvas_draw_point_p</a></td><td>Draw a single point onto a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_draw_line>canvas_draw_line</a></td><td>Draw a single line onto a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_draw_line_p>canvas_draw_line_p</a></td><td>Draw a single line onto a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_draw_ellipse>canvas_draw_ellipse</a></td><td>Draw an ellipse onto a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_draw_ellipse_p>canvas_draw_ellipse_p</a></td><td>Draw an ellipse onto a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_fill_ellipse>canvas_fill_ellipse</a></td><td>Draw a filled ellipse onto a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_fill_ellipse_p>canvas_fill_ellipse_p</a></td><td>Draw a filled ellipse onto a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_fill_polygon>canvas_fill_polygon</a></td><td>Draw a filled polygon onto a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_draw_rectangle>canvas_draw_rectangle</a></td><td>Draw a single rectangle onto a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_draw_rectangle_p>canvas_draw_rectangle_p</a></td><td>Draw a single rectangle onto a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_fill_rectangle>canvas_fill_rectangle</a></td><td>Fill a single rectangle onto a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_fill_rectangle_p>canvas_fill_rectangle_p</a></td><td>Fill a single rectangle onto a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_draw_lines>canvas_draw_lines</a></td><td>Draw multiple connected lines onto a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_draw_lines_p>canvas_draw_lines_p</a></td><td>Draw multiple connected lines onto a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_init_win_scale>canvas_init_win_scale</a></td><td>Initialise win_scale structure.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_use_log_scale>canvas_use_log_scale</a></td><td>Enable logarithmic scaling for a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_create_stroke_instruction>canvas_create_stroke_instruction</a></td><td>Create an image editing stroke instruction.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=canvas.html#CANVAS_PROTO_refresh_func>CANVAS_PROTO_refresh_func</a></td><td>Refresh event callback.
+</td></tr>
+<tr><td><a href=canvas.html#CANVAS_PROTO_size_control_func>CANVAS_PROTO_size_control_func</a></td><td>Size control callback.
+</td></tr>
+<tr><td><a href=canvas.html#CANVAS_PROTO_position_func>CANVAS_PROTO_position_func</a></td><td>Position event callback.
+</td></tr>
+<tr><td><a href=canvas.html#CANVAS_PROTO_coord_convert_func>CANVAS_PROTO_coord_convert_func</a></td><td>Co-ordinate conversion callback.
+</td></tr>
+<tr><td><a href=canvas.html#CANVAS_PROTO_coord_transform_func>CANVAS_PROTO_coord_transform_func</a></td><td>Co-ordinate transformation callback.
+</td></tr>
+</table><h4>Tables</h4><table><tr><td><a href=canvas.html#KWIN_ATTRIBUTES>KWIN_ATTRIBUTES</a></td><td>List of attributes for KWorldCanvas objects
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=canvas_draw_edit_list></a> flag
+ <b>canvas_draw_edit_list</b><i>    (KWorldCanvas canvas, KImageEditList ilist)
+</i><br><p>    Draw a list of edit objects to a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas.
+<br><li><i>ilist :</i> 
+    The instruction list.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_draw_edit_object></a> flag
+ <b>canvas_draw_edit_object</b><i>    (KWorldCanvas canvas, char *object)
+</i><br><p>    Draw one edit object to a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas.
+<br><li><i>object :</i> 
+    The edit object.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_create></a> KWorldCanvas
+ <b>canvas_create</b><i>    (KPixCanvas pixcanvas, Kcolourmap cmap,
+			    struct win_scale_type *win_scale)
+</i><br><p>    This routine will create a world canvas, ready for drawing, from
+    a KPixCanvas (pixel canvas) object. The origin of a KWorldCanvas is the
+    lower-left corner.
+<p><b>Parameters:</b><ul><li><i>pixcanvas :</i> 
+    The pixel canvas object.
+<br><li><i>cmap :</i> 
+    The colourmap. If this is NULL, the canvas will only permit drawing
+    using pixel values. This precludes the use of drawing PseudoColour images
+    and drawing geometric primitives using data values.
+<br><li><i>win_scale :</i> 
+    The window scaling information. The <em>x_offset</em> <em>x_pixels</em>
+    <em>y_offset</em> and <em>y_pixels</em> fields are determined internally.
+<br></ul><b>Returns:</b>     A world canvas object on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     Resize events on the colourmap will cause the canvas to be
+    refreshed.
+</ul><p><hr> <a name=canvas_register_refresh_func></a> KCallbackFunc
+ <b>canvas_register_refresh_func</b><i>    (KWorldCanvas canvas,
+					    void (*refresh_func) (),void *info)
+</i><br><p>    This routine will register a refresh function for a world canvas.
+    The refresh function will be called whenever the contents of the canvas
+    need to be redrawn. Many refresh functions may be registered per canvas.
+    The first function registered is the first function called upon refresh.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas.
+<br><li><i>refresh_func :</i> 
+    The function that is called when the canvas is to be
+    refreshed. The prototype function is <a href=canvas.html#CANVAS_PROTO_refresh_func>CANVAS_PROTO_refresh_func</a>.
+<br><li><i>info :</i> 
+    The initial arbitrary canvas information pointer.
+<br></ul><b>Returns:</b>     A KCallbackFunc object.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_register_size_control_func></a> void
+ <b>canvas_register_size_control_func</b><i>    (KWorldCanvas canvas,
+					void (*size_control_func) (),
+					void *info)
+</i><br><p>    This routine will register the size control function for a world
+    canvas. This function will be called whenever the lower level pixel canvas
+    resizes, or the associated Kcolourmap object is resized, OR a call is made
+    to <a href=canvas.html#canvas_resize>canvas_resize</a>. The function may alter the window scaling information
+    for the canvas. Only one size control function is permitted per canvas. The
+    size control routine is called before any refresh functions are called.
+    This is a means for a higher level object to take control of the world
+    canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>size_control_func :</i> 
+    The function that is called when the canvas is to be
+    refreshed. The prototype function is <a href=canvas.html#CANVAS_PROTO_size_control_func>CANVAS_PROTO_size_control_func</a>.
+<br><li><i>info :</i> 
+    The initial arbitrary canvas information pointer.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_register_position_event_func></a> KCallbackFunc
+ <b>canvas_register_position_event_func</b><i>    (KWorldCanvas canvas,
+						   flag (*func) (),
+						   void *f_info)
+</i><br><p>    This routine will register a position event function for a world
+    canvas. The position event function will be called whenever a position
+    event on the canvas has not been consumed. Many position event functions
+    may be registered per canvas. The first function registered is the first
+    function called upon a position event.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas.
+<br><li><i>func :</i> 
+    The function that is called when a position event occurs. The
+    prototype function is <a href=canvas.html#CANVAS_PROTO_position_func>CANVAS_PROTO_position_func</a>.
+<br><li><i>f_info :</i> 
+    The initial arbitrary function information pointer.
+<br></ul><b>Returns:</b>     A KCallbackFunc object.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_get_attributes></a> void
+ <b>canvas_get_attributes</b><i>    (KWorldCanvas canvas, ...)
+</i><br><p>    Get canvas attributes.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas.
+<br><li><i>... :</i> 
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pointer pairs. The list must be terminated with
+    CANVAS_ATT_END. See <a href=canvas.html#CANVAS_ATTRIBUTES>CANVAS_ATTRIBUTES</a> for the list of attributes.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_set_attributes></a> flag
+ <b>canvas_set_attributes</b><i>    (KWorldCanvas canvas, ...)
+</i><br><p>    Set canvas attributes.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas.
+<br><li><i>... :</i> 
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. The list must be terminated with
+    CANVAS_ATT_END. See <a href=canvas.html#CANVAS_ATTRIBUTES>CANVAS_ATTRIBUTES</a> for the list of attributes.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_resize></a> flag
+ <b>canvas_resize</b><i>    (KWorldCanvas canvas, struct win_scale_type *win_scale,
+		    flag always_clear)
+</i><br><p>    This routine will register a resize in the world canvas size.
+    This will cause any refresh routines registered for the canvas to be
+    called. The associated pixel canvas is refreshed, hence, refresh routines
+    registered for the pixel canvas will also be called.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>win_scale :</i> 
+    The new window scaling information. If this is NULL no change
+    is made to the window scaling information, and a simple refresh occurs.
+<br><li><i>always_clear :</i> 
+    If FALSE, <em>win_scale</em> is NULL and there is a size
+    control function registered for the world canvas, then if that function
+    does not change the values of the <em>x_offset</em>, <em>x_pixels</em>, <em>y_offset</em>
+    or <em>y_pixels</em> fields in the window scaling information, the associated
+    pixel canvas is NOT cleared. Under all other circumstances, the pixel
+    canvas is cleared prior to calling any refresh functions.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_specify></a> flag
+ <b>canvas_specify</b><i>    (KWorldCanvas canvas, char *xlabel, char *ylabel,
+		     unsigned int num_restr, char **restr_names,
+		     double *restr_values)
+</i><br><p>    This routine will change the specifications for a canvas. This
+    includes the horizontal and vertical dimension labels and any restrictions.
+    The entire specification is copied (i.e. the inputs may be freed).
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>xlabel :</i> 
+    The horizontal dimension label.
+<br><li><i>ylabel :</i> 
+    The vertical dimension label.
+<br><li><i>num_restr :</i> 
+    The number of restrictions.
+<br><li><i>restr_names :</i> 
+    The array of restriction names.
+<br><li><i>restr_values :</i> 
+    The restriction values.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine DOES NOT cause the canvas to be refreshed. It is highly
+    recommended that the canvas is refreshed after this routine, as higher
+    level packages may depend on the specification information.
+</ul><p><hr> <a name=canvas_get_specification></a> void
+ <b>canvas_get_specification</b><i>    (KWorldCanvas canvas, char **xlabel,
+			       char **ylabel, unsigned int *num_restr,
+			       char ***restr_names, double **restr_values)
+</i><br><p>    This routine will get the specifications for a canvas. This
+    includes the horizontal and vertical dimension labels and any restrictions.
+    Only pointers are copied (i.e. the outputs may NOT be freed).
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>xlabel :</i> 
+    The pointer to the horizontal dimension label will be written here
+<br><li><i>ylabel :</i> 
+    The pointer to the vertical dimension label will be written here.
+<br><li><i>num_restr :</i> 
+    The number of restrictions will be written here.
+<br><li><i>restr_names :</i> 
+    The pointer to the array of restriction names will be written
+    here.
+<br><li><i>restr_values :</i> 
+    The pointer to the array of restriction values will be
+    written here.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_convert_to_canvas_coords></a> void
+ <b>canvas_convert_to_canvas_coords</b><i>    (KWorldCanvas canvas, flag clip,
+				      unsigned int num_coords,
+				      CONST double *xin, CONST double *yin,
+				      double *xout_lin, double *yout_lin,
+				      double *xout, double *yout)
+</i><br><p>    Convert pixel co-ordinates to world co-ordinates.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>clip :</i> 
+    If TRUE, pixel co-ordinates are first clipped to the canvas
+    boundaries prior to conversion.
+<br><li><i>num_coords :</i> 
+    The number of co-ordinates to convert.
+<br><li><i>xin :</i> 
+    The array of input horizontal pixel co-ordinates.
+<br><li><i>yin :</i> 
+    The array of input vertical pixel co-ordinates.
+<br><li><i>xout_lin :</i> 
+    The array of output horizontal linear world co-ordinates are
+    written here. If this is NULL, nothing is written here.
+<br><li><i>yout_lin :</i> 
+    The array of output vertical linear world co-ordinates are
+    written here. If this is NULL, nothing is written here.
+<br><li><i>xout :</i> 
+    The array of output horizontal non-linear world co-ordinates are
+    written here. If this is NULL, nothing is written here.
+<br><li><i>yout :</i> 
+    The array of output vertical non-linear world co-ordinates are
+    written here. If this is NULL, nothing is written here.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_convert_from_canvas_coord></a> flag
+ <b>canvas_convert_from_canvas_coord</b><i>    (KWorldCanvas canvas,
+				       double xin, double yin,
+				       int *xout, int *yout)
+</i><br><p>    Convert non-linear world co-ordinates to pixel co-ordinates
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>xin :</i> 
+    The horizontal world co-ordinate.
+<br><li><i>yin :</i> 
+    The vertical world co-ordinate.
+<br><li><i>xout :</i> 
+    The lower level horizontal canvas co-ordinate will be written here.
+<br><li><i>yout :</i> 
+    The lower level vertical canvas co-ordinate will be written here.
+<br></ul><b>Returns:</b>     TRUE if the co-ordinate lies within the canvas boundaries,
+    else FALSE (although a conversion is still performed).
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_register_d_convert_func></a> void
+ <b>canvas_register_d_convert_func</b><i>    (KWorldCanvas canvas,
+				     flag (*coord_convert_func) (), void *info)
+</i><br><p>    This routine will register the co-ordinate conversion function
+    for a world canvas. This function will be called whenever conversions
+    between world co-ordinates and pixel co-ordinates are performed. Only one
+    co-ordinate conversion function is permitted per canvas. This is a means
+    for a higher level object to take control of the world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>func :</i> 
+    The function that is called when co-ordinates are to be converted.
+    The prototype function is <a href=canvas.html#CANVAS_PROTO_coord_convert_func>CANVAS_PROTO_coord_convert_func</a>.
+<br><li><i>info :</i> 
+    The initial arbitrary canvas information pointer.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_coord_transform></a> flag
+ <b>canvas_coord_transform</b><i>    (KWorldCanvas canvas, double *x, double *y,
+			     flag to_linear)
+</i><br><p>    This routine will transform co-ordinates in a world canvas using
+    the registered co-ordinate transform function (see
+    <a href=canvas.html#canvas_register_transforms_func>canvas_register_transforms_func</a>).
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>x :</i> 
+    A pointer to the horizontal world co-ordinate. This is modified.
+<br><li><i>y :</i> 
+    A pointer to the vertical world co-ordinate. This is modified.
+<br><li><i>to_linear :</i> 
+    If TRUE then the routine will transform (possibly) non-linear
+    world co-ordinates to linear world co-ordinates, else the transform is from
+    linear to non-linear co-ordinates.
+<br></ul><b>Returns:</b>     TRUE if the linear world co-ordinate lies within the canvas
+    boundaries, else FALSE (although a conversion is still performed).
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_register_transforms_func></a> void
+ <b>canvas_register_transforms_func</b><i>    (KWorldCanvas canvas,
+				      void (*coord_transform_func) (),
+				      void *info)
+</i><br><p>    This routine will register the co-ordinate transform function
+    for a world canvas. The co-ordinate transform function transforms the
+    linear world co-ordinates used internally by the world canvas to be
+    transformed into non-linear co-ordinates for external use. Only one
+    co-ordinate transform function is permitted per canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>coord_transform_func :</i> 
+    The function that is called when co-ordinates are to
+    be transformed. The prototype function is
+    <a href=canvas.html#CANVAS_PROTO_coord_transform_func>CANVAS_PROTO_coord_transform_func</a>.
+<br><li><i>info :</i> 
+    The initial arbitrary transform information pointer.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_get_pixcanvas></a> KPixCanvas
+ <b>canvas_get_pixcanvas</b><i>    (KWorldCanvas canvas)
+</i><br><p>    Get the underlying pixel canvas of a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br></ul><b>Returns:</b>     The KPixCanvas object.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_get_colour></a> flag
+ <b>canvas_get_colour</b><i>    (KWorldCanvas canvas, char *colourname,
+			unsigned long *pixel_value, unsigned short *red,
+			unsigned short *green, unsigned short *blue)
+</i><br><p>    Get (possibly allocating) a colourcell for a canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>colourname :</i> 
+    The name of the colour to get.
+<br><li><i>pixel_value :</i> 
+    The pixel value will be written here.
+<br><li><i>red :</i> 
+    The red intensity in the hardware colourmap for the pixel will be
+    written here. If this is NULL, nothing is written here.
+<br><li><i>green :</i> 
+    The green intensity in the hardware colourmap for the pixel will be
+    written here. If this is NULL, nothing is written here.
+<br><li><i>blue :</i> 
+    The blue intensity in the hardware colourmap for the pixel will be
+    written here. If this is NULL, nothing is written here.
+<br></ul><b>Returns:</b>     TRUE if the colourcell was allocated, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The pixel value is valid ONLY for the underlying pixel canvas.
+    ALSO: the pixel value becomes invalid EVERY time the underlying pixel
+    canvas is refreshed/ resized. If the pixel canvas is refreshed/ resized,
+    this routine MUST be called again.
+</ul><p><hr> <a name=canvas_set_dressing></a> void
+ <b>canvas_set_dressing</b><i>    (KWorldCanvas canvas, ...)
+</i><br><p>    Set dressing parameters for a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas.
+<br><li><i>... :</i> 
+    The list of parameter attribute-key attribute-value pairs. This
+    list must be terminated with the value KCD_END.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The dressing code is not yet complete.
+</ul><p><hr> <a name=canvas_sequence_dressing_refresh></a> void
+ <b>canvas_sequence_dressing_refresh</b><i>    (KWorldCanvas canvas)
+</i><br><p>    This routine will sequence the dressing (axes, etc.) refresh
+    function for a world canvas. If this routine is not called, the dressing
+    will be drawn after *all* registered refresh functions have been called
+    (see <a href=canvas.html#canvas_register_refresh_func>canvas_register_refresh_func</a>). If this routine is called, all
+    preceeding refresh functions (registered with
+    <a href=canvas.html#canvas_register_refresh_func>canvas_register_refresh_func</a>) will be called on refresh prior to the
+    dressing being drawn and all refresh functions registered after this
+    routine is called will be called *after* the dressing is drawn.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_draw_dressing></a> void
+ <b>canvas_draw_dressing</b><i>    (KWorldCanvas canvas)
+</i><br><p>    Draw the dressing (axes, etc.) for a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine is called automatically each time the canvas is
+    refreshed.
+</ul><p><hr> <a name=canvas_get_cmap></a> Kcolourmap
+ <b>canvas_get_cmap</b><i>    (KWorldCanvas canvas)
+</i><br><p>    Get the Kcolourmap object associated with a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br></ul><b>Returns:</b>     The Kcolourmap object. This may be NULL (indicating there is no
+    colourmap associated with the canvas).
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_draw_image></a> flag
+ <b>canvas_draw_image</b><i>    (KWorldCanvas canvas, array_desc *arr_desc, char *slice,
+			unsigned int hdim, unsigned int vdim,
+			unsigned int elem_index,
+			KPixCanvasImageCache *cache_ptr)
+</i><br><p>    This routine will draw a 2-dimensional PseudoColour slice of a
+    Karma array onto a world canvas. This slice may be tiled.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>arr_desc :</i> 
+    The array descriptor for the image.
+<br><li><i>slice :</i> 
+    The start of the slice (image) data.
+<br><li><i>hdim :</i> 
+    The dimension index of the horizontal dimension.
+<br><li><i>vdim :</i> 
+    The dimension index of the vertical dimension.
+<br><li><i>elem_index :</i> 
+    The element index of the data packets.
+<br><li><i>cache_ptr :</i> 
+    The routine may produce cache data which will vastly increase
+    the speed of subsequent operations on this data. The routine will write a
+    pointer to this data here. Prior to process exit, a call MUST be made to
+    <a href=kwin.html#kwin_free_cache_data>kwin_free_cache_data</a>, otherwise shared memory segments could remain
+    after the process exits.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_draw_rgb_image></a> flag
+ <b>canvas_draw_rgb_image</b><i>    (KWorldCanvas canvas, array_desc *arr_desc,
+			    CONST char *slice,
+			    unsigned int hdim, unsigned int vdim,
+			    unsigned int red_index, unsigned int green_index,
+			    unsigned int blue_index,
+			    KPixCanvasImageCache *cache_ptr)
+</i><br><p>    This routine will draw a 2-dimensional TrueColour slice of a
+    Karma array onto a world canvas. This slice may be tiled.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas.
+<br><li><i>arr_desc :</i> 
+    The array descriptor for the image.
+<br><li><i>slice :</i> 
+    The start of the slice (image) data.
+<br><li><i>hdim :</i> 
+    The dimension index of the horizontal dimension.
+<br><li><i>vdim :</i> 
+    The dimension index of the vertical dimension.
+<br><li><i>red_index :</i> 
+    The element index of the red components.
+<br><li><i>green_index :</i> 
+    The element index of the green components.
+<br><li><i>blue_index :</i> 
+    The element index of the blue components.
+<br><li><i>cache_ptr :</i> 
+    The routine may produce cache data which will vastly increase
+    the speed of subsequent operations on this data. The routine will write a
+    pointer to this data here. Prior to process exit, a call MUST be made to
+    <a href=kwin.html#kwin_free_cache_data>kwin_free_cache_data</a>, otherwise shared memory segments could remain
+    after the process exits.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_draw_point></a> void
+ <b>canvas_draw_point</b><i>    (KWorldCanvas canvas, double x, double y,
+			double value[2])
+</i><br><p>    Draw a single point onto a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>x :</i> 
+    The horizontal world co-ordinate of the point.
+<br><li><i>y :</i> 
+    The vertical world co-ordinate of the point.
+<br><li><i>value :</i> 
+    The data value to use. This is of type K_DCOMPLEX.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_draw_point_p></a> void
+ <b>canvas_draw_point_p</b><i>    (KWorldCanvas canvas, double x, double y,
+			  unsigned long pixel_value)
+</i><br><p>    Draw a single point onto a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>x :</i> 
+    The horizontal world co-ordinate of the point.
+<br><li><i>y :</i> 
+    The vertical world co-ordinate of the point.
+<br><li><i>pixel_value :</i> 
+    The pixel value to use.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_draw_line></a> void
+ <b>canvas_draw_line</b><i>    (KWorldCanvas canvas,
+		       double x0, double y0, double x1, double y1,
+		       double value[2])
+</i><br><p>    Draw a single line onto a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>x0 :</i> 
+    The horizontal world co-ordinate of the first point.
+<br><li><i>y0 :</i> 
+    The vertical world co-ordinate of the first point.
+<br><li><i>x1 :</i> 
+    The horizontal world co-ordinate of the second point.
+<br><li><i>y1 :</i> 
+    The vertical world co-ordinate of the second point.
+<br><li><i>value :</i> 
+    The data value to use. This is of type K_DCOMPLEX.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_draw_line_p></a> void
+ <b>canvas_draw_line_p</b><i>    (KWorldCanvas canvas,
+			 double x0, double y0, double x1, double y1,
+			 unsigned long pixel_value)
+</i><br><p>    Draw a single line onto a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>x0 :</i> 
+    The horizontal world co-ordinate of the first point.
+<br><li><i>y0 :</i> 
+    The vertical world co-ordinate of the first point.
+<br><li><i>x1 :</i> 
+    The horizontal world co-ordinate of the second point.
+<br><li><i>y1 :</i> 
+    The vertical world co-ordinate of the second point.
+<br><li><i>pixel_value :</i> 
+    The pixel value to use.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_draw_ellipse></a> void
+ <b>canvas_draw_ellipse</b><i>    (KWorldCanvas canvas,
+			  double centre_x, double centre_y,
+			  double radius_x, double radius_y, double value[2])
+</i><br><p>    Draw an ellipse onto a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>centre_x :</i> 
+    The horizontal world co-ordinate of the centre of the ellipse.
+<br><li><i>centre_y :</i> 
+    The vertical world co-ordinate of the centre of the ellipse.
+<br><li><i>radius_x :</i> 
+    The horizontal radius in world co-ordinates.
+<br><li><i>radius_y :</i> 
+    The vertical radius in world co-ordinates.
+<br><li><i>value :</i> 
+    The complex value to draw the ellipse with. This must be of type
+    K_DCOMPLEX.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_draw_ellipse_p></a> void
+ <b>canvas_draw_ellipse_p</b><i>    (KWorldCanvas canvas,
+			    double centre_x, double centre_y,
+			    double radius_x, double radius_y,
+			    unsigned long pixel_value)
+</i><br><p>    Draw an ellipse onto a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>centre_x :</i> 
+    The horizontal world co-ordinate of the centre of the ellipse.
+<br><li><i>centre_y :</i> 
+    The vertical world co-ordinate of the centre of the ellipse.
+<br><li><i>radius_x :</i> 
+    The horizontal radius in world co-ordinates.
+<br><li><i>radius_y :</i> 
+    The vertical radius in world co-ordinates.
+<br><li><i>pixel_value :</i> 
+    The pixel value to draw the ellipse with.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_fill_ellipse></a> void
+ <b>canvas_fill_ellipse</b><i>    (KWorldCanvas canvas,
+			  double centre_x, double centre_y,
+			  double radius_x, double radius_y, double value[2])
+</i><br><p>    Draw a filled ellipse onto a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>centre_x :</i> 
+    The horizontal world co-ordinate of the centre of the ellipse.
+<br><li><i>centre_y :</i> 
+    The vertical world co-ordinate of the centre of the ellipse.
+<br><li><i>radius_x :</i> 
+    The horizontal radius in world co-ordinates.
+<br><li><i>radius_y :</i> 
+    The vertical radius in world co-ordinates.
+<br><li><i>value :</i> 
+    The complex value to fill the ellipse with. This must be of type
+    K_DCOMPLEX.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_fill_ellipse_p></a> void
+ <b>canvas_fill_ellipse_p</b><i>    (KWorldCanvas canvas,
+			    double centre_x, double centre_y,
+			    double radius_x, double radius_y,
+			    unsigned long pixel_value)
+</i><br><p>    Draw a filled ellipse onto a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>centre_x :</i> 
+    The horizontal world co-ordinate of the centre of the ellipse.
+<br><li><i>centre_y :</i> 
+    The vertical world co-ordinate of the centre of the ellipse.
+<br><li><i>radius_x :</i> 
+    The horizontal radius in world co-ordinates.
+<br><li><i>radius_y :</i> 
+    The vertical radius in world co-ordinates.
+<br><li><i>pixel_value :</i> 
+    The pixel value to fill the ellipse with.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_fill_polygon></a> flag
+ <b>canvas_fill_polygon</b><i>    (KWorldCanvas canvas, edit_coord *coords,
+			  unsigned int num_vertices, double value[2],
+			  flag convex)
+</i><br><p>    Draw a filled polygon onto a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>coords :</i> 
+    The array of world co-ordinates of vertices of the polygon.
+<br><li><i>num_vertices :</i> 
+    The number of vertices in the polygon.
+<br><li><i>value :</i> 
+    The complex value to fill the polygon with. This must be of type
+    K_DCOMPLEX.
+<br><li><i>convex :</i> 
+    If TRUE, then the points must form a convex polygon.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_draw_rectangle></a> void
+ <b>canvas_draw_rectangle</b><i>    (KWorldCanvas canvas, double x, double y,
+			    double width, double height, double value[2])
+</i><br><p>    Draw a single rectangle onto a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>x :</i> 
+    The horizontal offset of the rectangle.
+<br><li><i>y :</i> 
+    The vertical offset of the rectangle.
+<br><li><i>width :</i> 
+    The width of the rectangle.
+<br><li><i>height :</i> 
+    The height of the rectangle.
+<br><li><i>value :</i> 
+    The data value to use. This is of type K_DCOMPLEX.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_draw_rectangle_p></a> void
+ <b>canvas_draw_rectangle_p</b><i>    (KWorldCanvas canvas, double x, double y,
+			      double width, double height,
+			      unsigned long pixel_value)
+</i><br><p>    Draw a single rectangle onto a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>x :</i> 
+    The horizontal offset of the rectangle.
+<br><li><i>y :</i> 
+    The vertical offset of the rectangle.
+<br><li><i>width :</i> 
+    The width of the rectangle.
+<br><li><i>height :</i> 
+    The height of the rectangle.
+<br><li><i>pixel_value :</i> 
+    The pixel value to use.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_fill_rectangle></a> void
+ <b>canvas_fill_rectangle</b><i>    (KWorldCanvas canvas, double x, double y,
+			    double width, double height, double value[2])
+</i><br><p>    Fill a single rectangle onto a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>x :</i> 
+    The horizontal offset of the rectangle.
+<br><li><i>y :</i> 
+    The vertical offset of the rectangle.
+<br><li><i>width :</i> 
+    The width of the rectangle.
+<br><li><i>height :</i> 
+    The height of the rectangle.
+<br><li><i>value :</i> 
+    The data value to use. This is of type K_DCOMPLEX.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_fill_rectangle_p></a> void
+ <b>canvas_fill_rectangle_p</b><i>    (KWorldCanvas canvas, double x, double y,
+			      double width, double height,
+			      unsigned long pixel_value)
+</i><br><p>    Fill a single rectangle onto a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>x :</i> 
+    The horizontal offset of the rectangle.
+<br><li><i>y :</i> 
+    The vertical offset of the rectangle.
+<br><li><i>width :</i> 
+    The width of the rectangle.
+<br><li><i>height :</i> 
+    The height of the rectangle.
+<br><li><i>pixel_value :</i> 
+    The pixel value to use.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_draw_lines></a> void
+ <b>canvas_draw_lines</b><i>    (KWorldCanvas canvas, double *x_array, double *y_array,
+			int num_points, double value[2])
+</i><br><p>    Draw multiple connected lines onto a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>x_array :</i> 
+    The horizontal world co-ordinates of the points. If this is NULL,
+    the routine assumes horizontal co-ordinates equally spaced across the world
+    canvas.
+<br><li><i>y_array :</i> 
+    The vertical world co-ordinates of the points. If this is NULL,
+    the routine assumes vertical co-ordinates equally spaced across the world
+    canvas.
+<br><li><i>num_points :</i> 
+    The number of points. The number of lines drawn is 1 less than
+    this value.
+<br><li><i>value :</i> 
+    The data value to use. This is of type K_DCOMPLEX.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_draw_lines_p></a> void
+ <b>canvas_draw_lines_p</b><i>    (KWorldCanvas canvas,
+			  double *x_array, double *y_array, int num_points,
+			  unsigned long pixel_value)
+</i><br><p>    Draw multiple connected lines onto a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>x_array :</i> 
+    The horizontal world co-ordinates of the points. If this is NULL,
+    the routine assumes horizontal co-ordinates equally spaced across the world
+    canvas.
+<br><li><i>y_array :</i> 
+    The vertical world co-ordinates of the points. If this is NULL,
+    the routine assumes vertical co-ordinates equally spaced across the world
+    canvas.
+<br><li><i>num_points :</i> 
+    The number of points. The number of lines drawn is 1 less than
+    this value.
+<br><li><i>pixel_value :</i> 
+    The pixel value to use.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_init_win_scale></a> void
+ <b>canvas_init_win_scale</b><i>    (struct win_scale_type *win_scale,
+			    unsigned int magic_number)
+</i><br><p>    This routine will initialise a window scaling structure with
+    sensible values. This routine may be used prior to calling <canvas_create>.
+<p><b>Parameters:</b><ul><li><i>win_scale :</i> 
+    A pointer to the window scaling structure.
+<br><li><i>magic_number :</i> 
+    The value of this must be K_WIN_SCALE_MAGIC_NUMBER.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_use_log_scale></a> void
+ <b>canvas_use_log_scale</b><i>    (KWorldCanvas canvas, flag x_log, flag y_log)
+</i><br><p>    This routine will enable logarithmic scaling of the co-ordinates
+    for a world canvas object.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>x_log :</i> 
+    If TRUE, the horizontal co-ordinates will be scaled
+    logarithmically, else they will be scaled linearly.
+<br><li><i>y_log :</i> 
+    If TRUE the vertical co-ordinates should be scaled logarithmically,
+    else they will be scaled linearly.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_create_stroke_instruction></a> flag
+ <b>canvas_create_stroke_instruction</b><i>    (KWorldCanvas canvas,
+				       double x0, double y0,
+				       double x1, double y1,
+				       unsigned int brush_width,
+				       double value[2], KImageEditList ilist)
+</i><br><p>    This routine will create a 2-dimensional edit stroke instruction,
+    according to the specification in the <a href=iedit.html#iedit>iedit</a> package and will append it
+    to a managed edit list.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas which contains the world co-ordinate system.
+<br><li><i>x0 :</i> 
+    The starting horizontal co-ordidinate of the stroke.
+<br><li><i>y0 :</i> 
+    The starting vertical co-ordidinate of the stroke.
+<br><li><i>x1 :</i> 
+    The ending horizontal co-ordidinate of the stroke.
+<br><li><i>y1 :</i> 
+    The ending vertical co-ordidinate of the stroke.
+<br><li><i>brush_width :</i> 
+    The width of the stroke (in canvas pixels). This must be at
+    least 1.
+<br><li><i>value :</i> 
+    The data value in the stroke instruction. This must be of type
+    K_DCOMPLEX.
+<br><li><i>ilist :</i> 
+    The managed edit list.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=CANVAS_PROTO_refresh_func></a> void
+ <b>CANVAS_PROTO_refresh_func</b><i>    (KWorldCanvas canvas, int width, int height,
+				struct win_scale_type *win_scale,
+				Kcolourmap cmap, flag cmap_resize, void **info,
+				PostScriptPage pspage,
+				unsigned int num_areas,
+				KPixCanvasRefreshArea *areas,
+				flag *honoured_areas)
+</i><br><p>    This routine is a refresh event consumer for a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas being refreshed.
+<br><li><i>width :</i> 
+    The width of the canvas in pixels.
+<br><li><i>height :</i> 
+    The height of the canvas in pixels.
+<br><li><i>win_scale :</i> 
+    A pointer to the window scaling information.
+<br><li><i>cmap :</i> 
+    The colourmap associated with the canvas.
+<br><li><i>cmap_resize :</i> 
+    TRUE if the refresh function was called as a result of a
+    colourmap resize, else FALSE.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary canvas information pointer.
+<br><li><i>pspage :</i> 
+    If not NULL, the PostScriptPage object the refresh is
+    redirected to.
+<br><li><i>num_areas :</i> 
+    The number of areas that need to be refreshed. If this is
+    0 then the entire pixel canvas needs to be refreshed.
+<br><li><i>areas :</i> 
+    The list of areas that need to be refreshed. Note that these
+    areas are given in pixel co-ordinates.
+<br><li><i>honoured_areas :</i> 
+    If the value TRUE is written here it is assumed the
+    routine honoured the list of refresh areas and did not write outside
+    these areas and hence the list of areas will be passed to subsequent
+    registered refresh routines. If FALSE is written here (or nothing is
+    written here), implying the routine refreshed the entire canvas,
+    subsequent refresh routines will be told to refresh the entire canvas.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=CANVAS_PROTO_size_control_func></a> void
+ <b>CANVAS_PROTO_size_control_func</b><i>    (KWorldCanvas canvas,
+				     int width, int height,
+				     struct win_scale_type *win_scale,
+				     void **info, flag *boundary_clear)
+</i><br><p>    This routine will modify the window scaling information for a
+    world canvas. While this routine is running, colourmap resize events are
+    ignored. Hence this routine may safely cause the associated Kcolourmap
+    object to be resized.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>width :</i> 
+    The width of the canvas in pixels.
+<br><li><i>height :</i> 
+    The height of the canvas in pixels.
+<br><li><i>win_scale :</i> 
+    The window scaling information. This may be modified.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary canvas information pointer.
+<br><li><i>boundary_clear :</i> 
+    If the value TRUE is written here then the
+    <a href=canvas.html#canvas_resize>canvas_resize</a> routine will attempt to clear only the boundary between
+    the pixel canvas and the world canvas. If the value FALSE is written here
+    or nothing is written here, the <a href=canvas.html#canvas_resize>canvas_resize</a> routine will clear the
+    entire pixel canvas as appropriate.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=CANVAS_PROTO_position_func></a> flag
+ <b>CANVAS_PROTO_position_func</b><i>    (KWorldCanvas canvas, double x, double y,
+				 unsigned int event_code, void *e_info,
+				 void **f_info, double x_lin, double y_lin)
+</i><br><p>    This routine is a position event consumer for a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas on which the event occurred.
+<br><li><i>x :</i> 
+    The horizontal world co-ordinate of the event.
+<br><li><i>y :</i> 
+    The vertical world co-ordinate of the event.
+<br><li><i>event_code :</i> 
+    The arbitrary event code.
+<br><li><i>e_info :</i> 
+    A pointer to arbitrary event information.
+<br><li><i>f_info :</i> 
+    A pointer to an arbitrary function information pointer.
+<br><li><i>x_lin :</i> 
+    The horizontal linear world co-ordinate prior to the transform
+    function being called.
+<br><li><i>y_lin :</i> 
+    The vertical linear world co-ordinate prior to the transform
+    function being called.
+<br></ul><b>Returns:</b>     TRUE if the event was consumed, else FALSE indicating that
+    the event is still to be processed.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     These values will have been transformed by the registered
+    transform function (see <a href=canvas.html#canvas_register_transform_func>canvas_register_transform_func</a>).
+</ul><p><hr> <a name=CANVAS_PROTO_coord_convert_func></a> flag
+ <b>CANVAS_PROTO_coord_convert_func</b><i>    (KWorldCanvas canvas,
+				      struct win_scale_type *win_scale,
+				      double *x, double *y,
+				      flag to_world, void **info)
+</i><br><p>    This routine will convert between world co-ordinates and pixel
+    co-ordinates for a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>win_scale :</i> 
+    A pointer to the window scaling information. The data
+    herein may be modified.
+<br><li><i>x :</i> 
+    A pointer to the horizontal co-ordinate storage. This is updated.
+<br><li><i>y :</i> 
+    A pointer to the vertical co-ordinate storage. This is updated.
+<br><li><i>to_world :</i> 
+    If TRUE, then a pixel to world co-ordinate transform is
+    required, else a world to pixel co-ordinate transform is required.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary canvas information pointer.
+<br></ul><b>Returns:</b>     TRUE if the conversion was completed, else FALSE indicating
+    that the default conversions should be used.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=CANVAS_PROTO_coord_transform_func></a> void
+ <b>CANVAS_PROTO_coord_transform_func</b><i>    (KWorldCanvas canvas,
+					unsigned int num_coords,
+					double *x, flag x_to_linear,
+					double *y, flag y_to_linear,
+					double left_x, double right_x,
+					double bottom_y, double top_y,
+					void **info)
+</i><br><p>    This routine will transform between linear and non-linear world
+    co-ordinates.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas on which the event occurred.
+<br><li><i>num_coords :</i> 
+    The number of co-ordinates to transform.
+<br><li><i>x :</i> 
+    The array of horizontal world co-ordinates. These are modified.
+<br><li><i>x_to_linear :</i> 
+    If TRUE, then the horizontal co-ordinates are converted from
+    non-linear to linear, else they are converted from linear to non-linear.
+<br><li><i>y :</i> 
+    The array of vertical world co-ordinates. These are modified.
+<br><li><i>y_to_linear :</i> 
+    If TRUE, then the vertical co-ordinates are converted from
+    non-linear to linear, else they are converted from linear to non-linear.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary transform information pointer.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Tables</h2></center><hr> <a name=KWIN_ATTRIBUTES><b>KWIN_ATTRIBUTES</b></a><p> <table><tr><td>Name                         </td><td>Get Type       </td><td>Set Type       </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>CANVAS_ATT_END               </td><td>               </td><td>              </td><td>End of varargs list             
+</td></tr><tr><td>CANVAS_ATT_X_OFFSET          </td><td>int *          </td><td>int           </td><td>X offset (pixels)
+</td></tr><tr><td>CANVAS_ATT_Y_OFFSET          </td><td>int *          </td><td>int           </td><td>Y offset (pixels)
+</td></tr><tr><td>CANVAS_ATT_X_PIXELS          </td><td>int *          </td><td>int           </td><td>X pixels
+</td></tr><tr><td>CANVAS_ATT_Y_PIXELS          </td><td>int *          </td><td>int           </td><td>Y pixels
+</td></tr><tr><td>CANVAS_ATT_BLANK_PIXEL       </td><td>unsigned long *</td><td>unsigned long </td><td>Blank pixel
+</td></tr><tr><td>CANVAS_ATT_MIN_SAT_PIXEL     </td><td>unsigned long *</td><td>unsigned long </td><td>Min saturation pixel
+</td></tr><tr><td>CANVAS_ATT_MAX_SAT_PIXEL     </td><td>unsigned long *</td><td>unsigned long </td><td>Max saturation pixel
+</td></tr><tr><td>CANVAS_ATT_LEFT_X            </td><td>double *       </td><td>double        </td><td>Left X
+</td></tr><tr><td>CANVAS_ATT_RIGHT_X           </td><td>double *       </td><td>double        </td><td>Right X
+</td></tr><tr><td>CANVAS_ATT_BOTTOM_Y          </td><td>double *       </td><td>double        </td><td>Bottom Y
+</td></tr><tr><td>CANVAS_ATT_TOP_Y             </td><td>double *       </td><td>double        </td><td>Top Y
+</td></tr><tr><td>CANVAS_ATT_VALUE_MIN         </td><td>double *       </td><td>double        </td><td>Minimum value
+</td></tr><tr><td>CANVAS_ATT_VALUE_MAX         </td><td>double *       </td><td>double        </td><td>Maximum value
+</td></tr><tr><td>CANVAS_ATT_ISCALE_FUNC       </td><td>               </td><td>flag (*) ()   </td><td>Intensity scale function
+</td></tr><tr><td>CANVAS_ATT_ISCALE_FREE_FUNC  </td><td>               </td><td>void (*) ()   </td><td>Free function
+</td></tr><tr><td>CANVAS_ATT_ISCALE_INFO       </td><td>void **        </td><td>void          </td><td>iscale info
+</td></tr><tr><td>CANVAS_ATT_AUTO_MIN_SAT      </td><td>flag *         </td><td>flag          </td><td>Auto min-sat
+</td></tr><tr><td>CANVAS_ATT_AUTO_MAX_SAT      </td><td>flag *         </td><td>flag          </td><td>Auto max-sat
+</table><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

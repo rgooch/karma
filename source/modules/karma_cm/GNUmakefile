@@ -2,7 +2,7 @@ ifeq ($(OS),Solaris)
 MODULELIBS = -lnsl
 endif
 
-include ../GNUmakefile.head
+include $(KARMAINCLUDEPATH)/gmakedefs/modules.head
 
 ifeq ($(OS),SunOS)
 ifdef VXHOME
@@ -55,5 +55,5 @@ depend:
 	makedepend -DMAKEDEPEND -D__$(MACHINE)__ -I$(KARMAINCLUDEPATH) $(vx_incswitch) -f$(machine_dir)/depend *.c
 
 
-include ../GNUmakefile.tail
+include $(KARMAINCLUDEPATH)/gmakedefs/modules.tail
 include $(machine_dir)/depend

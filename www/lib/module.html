@@ -1,0 +1,52 @@
+<html><head><title>Package: module</title></head> 
+<body>
+<center><h1>The "module" Package</h1></center>    These routines are meant to provide high level routines to perform
+    initialisation and execution of generic modules.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=module></a></table><h4>Functions</h4><table><tr><td><a href=module.html#module_run>module_run</a></td><td>Initialise and then run a generic module.
+</td></tr>
+<tr><td><a href=module.html#module_process_argvs>module_process_argvs</a></td><td>Process a shell command line.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=module_run></a> void
+ <b>module_run</b><i>    (int argc, char **argv, char *name_string,
+		 char *version_string, flag (*decode_func) (),
+		 int max_incoming, int max_outgoing, flag server)
+</i><br><p>    Initialise and then run a generic module.
+<p><b>Parameters:</b><ul><li><i>argc :</i> 
+    The number of command line arguments.
+<br><li><i>argv :</i> 
+    The command line arguments.
+<br><li><i>name_string :</i> 
+    The name of the module.
+<br><li><i>version_string :</i> 
+    The version date of the module.
+<br><li><i>decode_func :</i> 
+    The command line decode function. The prototype function is
+    <a href=panel.html#PANEL_PROTO_decode_func>PANEL_PROTO_decode_func</a>.
+<br><li><i>max_incoming :</i> 
+    The maximum number of incoming "multi_array" protocol
+    connections. If this is less than 0, no connections are permitted. If this
+    is 0, an unlimited number of connections is permitted.
+<br><li><i>max_outgoing :</i> 
+    The maximum number of outgoing "multi_array" protocol
+    connections. If this is less than 0, no connections are permitted. If this
+    is 0, an unlimited number of connections is permitted.
+<br><li><i>server :</i> 
+    If TRUE, the module can operate as a server (for at least one
+    protocol).
+<br></ul><b>Returns:</b>     Nothing. Upon return from the function, the module should exit.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=module_process_argvs></a> void
+ <b>module_process_argvs</b><i>    ( int argc, char **argv, flag (*unknown_func) () )
+</i><br><p>    This routine will process a shell command line, using the
+    <a href=panel.html#panel_process_command_with_stack>panel_process_command_with_stack</a> routine.
+<p><b>Parameters:</b><ul><li><i>argc :</i> 
+    The number of command line arguments.
+<br><li><i>argv :</i> 
+    The command line arguments. These do not include command used to
+    execute the process ( cf. main() ).
+<br><li><i>unknown_func :</i> 
+    The function which is called when the command is not
+    understood. The prototype function is <a href=panel.html#PANEL_PROTO_decode_func>PANEL_PROTO_decode_func</a>.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

@@ -2,7 +2,7 @@
 
     Source file for  collect_frames  (movie capture module).
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,8 +35,11 @@
     Updated by      Richard Gooch   6-OCT-1993: Changed over to  panel_
   package for command line user interface.
 
-    Last updated by Richard Gooch   19-FEB-1994: Added informative messages
+    Updated by      Richard Gooch   19-FEB-1994: Added informative messages
   when saving arrays.
+
+    Last updated by Richard Gooch   30-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -48,18 +51,24 @@
 #include <string.h>
 #include <os.h>
 #include <karma.h>
+#include <karma_module.h>
 #include <karma_panel.h>
 #include <karma_dsxfr.h>
 #include <karma_conn.h>
 #include <karma_dsrw.h>
+#include <karma_arln.h>
 #include <karma_chm.h>
 #include <karma_ds.h>
 #include <karma_ex.h>
 #include <karma_st.h>
 #include <karma_hi.h>
+#include <karma_im.h>
+#include <karma_ch.h>
 #include <karma_a.h>
 #include <karma_s.h>
 #include <karma_r.h>
+#include <karma_m.h>
+
 
 #define VERSION "1.1"
 
@@ -85,17 +94,11 @@ static flag internal_decode_func (/* line, fp */);
 static unsigned int frame_count = 0;
 static packet_desc *frame_top_pack_desc[MAX_ARRAYS];
 static char *frame_top_packet[MAX_ARRAYS];
-static unsigned int first_frame_width = 0;
-static unsigned int first_frame_height = 0;
-static unsigned int first_frame_type = NONE;
 
 
-main (argc, argv)
-int argc;       /*  Count of parameters on command line */
-char **argv;    /*  List of command line parameters     */
+int main (int argc, char **argv)
 {
     KControlPanel panel;
-    int arg_count;
     int def_port_number;
     unsigned int server_port_number;
     char line[COMMAND_LINE_LENGTH];
@@ -150,10 +153,12 @@ char **argv;    /*  List of command line parameters     */
     {
 	m_abort (function_name, "control panel form");
     }
-    panel_add_item (panel, "flush_data", "action", PIT_FUNCTION, flush_data,
+    panel_add_item (panel, "flush_data", "action",
+		    PIT_FUNCTION, (void *) flush_data,
 		    PIA_END);
-    panel_add_item (panel, "save_arrayfile", "action", PIT_FUNCTION,
-		    dump_arrays, PIA_END);
+    panel_add_item (panel, "save_arrayfile", "action",
+		    PIT_FUNCTION, (void *) dump_arrays,
+		    PIA_END);
     panel_push_onto_stack (panel);
     /*  Read in defaults  */
     hi_read (module_name, internal_decode_func);
@@ -269,7 +274,6 @@ void **info;
 {
     Channel channel;
     char *top_packet;
-    char *array;
     multi_array *multi_desc;
     packet_desc *top_pack_desc;
     array_desc *arr_desc;
@@ -277,7 +281,7 @@ void **info;
     extern unsigned int frame_count;
     extern char *frame_top_packet[MAX_ARRAYS];
     extern packet_desc *frame_top_pack_desc[MAX_ARRAYS];
-    static char function_name[] = "read_multi_array";
+    /*static char function_name[] = "read_multi_array";*/
 
     channel = conn_get_channel (connection);
     if ( ( multi_desc = dsrw_read_multi (channel) ) == NULL )
@@ -400,7 +404,6 @@ char *p;
     array_desc *arr_desc;
     dim_desc *dim;
     extern unsigned int frame_count;
-    extern unsigned int first_frame_type;
     extern char *frame_top_packet[MAX_ARRAYS];
     extern packet_desc *frame_top_pack_desc[MAX_ARRAYS];
     static char function_name[] = "dump_arrays";
@@ -488,7 +491,7 @@ char *p;
     extern unsigned int frame_count;
     extern char *frame_top_packet[MAX_ARRAYS];
     extern packet_desc *frame_top_pack_desc[MAX_ARRAYS];
-    static char function_name[] = "flush_data";
+    /*static char function_name[] = "flush_data";*/
 
     if (frame_count < 1)
     {
@@ -517,7 +520,7 @@ void **info;
     static char buffer[STRING_LENGTH];
     ERRNO_TYPE errno;
     extern char *sys_errlist[];
-    static char function_name[] = "command_read_func";
+    /*static char function_name[] = "command_read_func";*/
 
     if (ch_gets (conn_get_channel (connection), buffer, STRING_LENGTH) != TRUE)
     {

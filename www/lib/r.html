@@ -1,0 +1,316 @@
+<html><head><title>Package: r</title></head> 
+<body>
+<center><h1>The "r" Package</h1></center>    These routines are meant to provide a low level mechanism to create and
+    accept connections. Although these routines are made public, their use is
+    NOT recommended. The <a href=conn.html#conn>conn</a> package is the suggested means to create and
+    accept connections.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=r></a></table><h4>Functions</h4><table><tr><td><a href=r.html#r_alloc_port>r_alloc_port</a></td><td>Allocate a Karma port whic can receive connections.
+</td></tr>
+<tr><td><a href=r.html#r_close_dock>r_close_dock</a></td><td>Close a dock.
+</td></tr>
+<tr><td><a href=r.html#r_connect_to_port>r_connect_to_port</a></td><td>Make a connection to a Karma port on some machine.
+</td></tr>
+<tr><td><a href=r.html#r_accept_connection_on_dock>r_accept_connection_on_dock</a></td><td>Accept a connection on a dock.
+</td></tr>
+<tr><td><a href=r.html#r_close_connection>r_close_connection</a></td><td>Close a connection.
+</td></tr>
+<tr><td><a href=r.html#r_get_bytes_readable>r_get_bytes_readable</a></td><td>Get bytes readable on a connection.
+</td></tr>
+<tr><td><a href=r.html#r_get_inet_addr_from_host>r_get_inet_addr_from_host</a></td><td>Get the first listed Internet address of a hostname.
+</td></tr>
+<tr><td><a href=r.html#r_read>r_read</a></td><td>Read bytes from a file descriptor.
+</td></tr>
+<tr><td><a href=r.html#r_write>r_write</a></td><td>Write bytes to a file descriptor.
+</td></tr>
+<tr><td><a href=r.html#r_test_input_event>r_test_input_event</a></td><td>Test for activity on a connection.
+</td></tr>
+<tr><td><a href=r.html#r_open_stdin>r_open_stdin</a></td><td>Open the standard input.
+</td></tr>
+<tr><td><a href=r.html#r_getenv>r_getenv</a></td><td>Get the value of an environment variable.
+</td></tr>
+<tr><td><a href=r.html#r_setenv>r_setenv</a></td><td>Set an environment variable.
+</td></tr>
+<tr><td><a href=r.html#r_gethostname>r_gethostname</a></td><td>This routine will determine the local hostname.
+</td></tr>
+<tr><td><a href=r.html#r_get_fq_hostname>r_get_fq_hostname</a></td><td>This routine will get the fully qualified local hostname.
+</td></tr>
+<tr><td><a href=r.html#r_getppid>r_getppid</a></td><td>Get the parent process ID.
+</td></tr>
+<tr><td><a href=r.html#r_open_file>r_open_file</a></td><td>Open a named file.
+</td></tr>
+<tr><td><a href=r.html#r_create_pipe>r_create_pipe</a></td><td>Create an un-named pipe.
+</td></tr>
+<tr><td><a href=r.html#r_get_karmabase>r_get_karmabase</a></td><td>Get the pathname of the installed runtime Karma.
+</td></tr>
+<tr><td><a href=r.html#r_get_service_number>r_get_service_number</a></td><td>Get service number for a module.
+</td></tr>
+<tr><td><a href=r.html#r_get_host_from_display>r_get_host_from_display</a></td><td>Get the hostname in a display string.
+</td></tr>
+<tr><td><a href=r.html#r_get_display_num_from_display>r_get_display_num_from_display</a></td><td>Get display number from a display string.
+</td></tr>
+<tr><td><a href=r.html#r_get_screen_num_from_display>r_get_screen_num_from_display</a></td><td>Get the screen number in a display string.
+</td></tr>
+<tr><td><a href=r.html#r_get_def_port>r_get_def_port</a></td><td>Get the default Karma port number for a module.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=r_alloc_port></a> int *
+ <b>r_alloc_port</b><i>    (unsigned int *port_number, unsigned int retries,
+		   unsigned int *num_docks)
+</i><br><p>    This routine will allocate a Karma port for the module so that it
+    can operate as a server (able to receive network connections).
+    The routine will create a number of docks for one port. Each dock is an
+    alternative access point for other modules to connect to this port.
+    The close-on-exec flags of the docks are set such that the docks will
+    close on a call to execve(2V).
+    The docks are placed into non-blocking mode.
+<p><b>Parameters:</b><ul><li><i>port_number :</i> 
+    A pointer to the port number to allocate. The routine will
+    write the actual port number allocated to this address. This must point to
+    an address which lies on an <em>int</em> boundary.
+<br><li><i>retries :</i> 
+    The number of succsessive port numbers to attempt to allocate
+    before giving up. If this is 0, then the routine will give up immediately
+    if the specified port number is in use.
+<br><li><i>num_docs :</i> 
+    The number of docks allocated will be written here. This must
+    point to an address which lies on an <em>int</em> boundary.
+<br></ul><b>Returns:</b>     A pointer to a statically allocated array of docks on success,
+    else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_close_dock></a> void
+ <b>r_close_dock</b><i>    (int dock)
+</i><br><p>    This routine will close a dock. If the dock was the last open
+    dock for the port, then the entire port is closed and a new port may be
+    allocated.
+<p><b>Parameters:</b><ul><li><i>dock :</i> 
+    The dock to close.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_connect_to_port></a> int
+ <b>r_connect_to_port</b><i>    (unsigned long addr, unsigned int port_number,
+		       flag *local)
+</i><br><p>    Make a connection to a Karma port on some machine.
+<p><b>Parameters:</b><ul><li><i>addr :</i> 
+    The address of the machine to connect to. If the value of 0 is
+    supplied for the address, the connection is made to a Karma server running
+    on the local machine.
+<br><li><i>port_number :</i> 
+    The port number to connect to.
+<br><li><i>local :</i> 
+    If the connection is made to a port on the local host, then the
+    value TRUE will be written here, else the value FALSE will be written here.
+<br></ul><b>Returns:</b>     The file descriptor of the opened connection on success, else -1.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The close-on-exec flags of the socket is set such that the socket
+    will close on a call to execve(2V).
+</ul><p><hr> <a name=r_accept_connection_on_dock></a> int
+ <b>r_accept_connection_on_dock</b><i>    (int dock, unsigned long *addr, flag *local)
+</i><br><p>    Accept a connection on a dock.
+<p><b>Parameters:</b><ul><li><i>dock :</i> 
+    The dock.
+<br><li><i>addr :</i> 
+    The address of the host connecting to the dock will be written here.
+<br><li><i>local :</i> 
+    If the connection is a local connection, then the routine will
+    write the value TRUE here, else it will write the value FALSE.
+<br></ul><b>Returns:</b>     A connection on success, else -1.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_close_connection></a> flag
+ <b>r_close_connection</b><i>    (int connection)
+</i><br><p>    Close a connection.
+<p><b>Parameters:</b><ul><li><i>connection :</i> 
+    The connection to close.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_get_bytes_readable></a> int
+ <b>r_get_bytes_readable</b><i>    (int connection)
+</i><br><p>    This routine will determine the minimum number of bytes readable
+    on a connection. There may be more bytes readable than indicated.
+<p><b>Parameters:</b><ul><li><i>connection :</i> 
+    The connection.
+<br></ul><b>Returns:</b>     The number of bytes readable on success, else -1.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_get_inet_addr_from_host></a> unsigned long
+ <b>r_get_inet_addr_from_host</b><i>    (CONST char *host, flag *local)
+</i><br><p>    Get the first listed Internet address of a hostname.
+<p><b>Parameters:</b><ul><li><i>host :</i> 
+    The hostname.
+<br><li><i>local :</i> 
+    If the specified host is the local machine, then the routine will
+    write the value TRUE here, else it will write the value FALSE here. If
+    this is NULL, nothing is written here.
+<br></ul><b>Returns:</b>     The Internet address on success (in host byte order), else 0.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_read></a> int
+ <b>r_read</b><i>    (int fd, char *buf, int nbytes)
+</i><br><p>    This routine is similar to the system <em>read(2)</em> call, except
+    that the number of bytes requested is always returned (except on error or
+    closure). Hence, if the descriptor references a socket, the routine will
+    read as much data as was requested, rather than a lesser amount due to
+    packetisation or interrupted system calls.
+<p><b>Parameters:</b><ul><li><i>fd :</i> 
+    The file descriptor to read from. This descriptor must NOT be set to
+    non-blocking IO.
+<br><li><i>buf :</i> 
+    The buffer in which to write the data.
+<br><li><i>nbytes :</i> 
+    The number of bytes to read.
+<br></ul><b>Returns:</b>     The number of bytes requested on success, the number of bytes
+    read on end of file (or closure) and -1 on error.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_write></a> int
+ <b>r_write</b><i>    (int fd, CONST char *buf, int nbytes)
+</i><br><p>    This routine is similar to the system <em>write(2)</em> call, except
+    that the number of bytes requested is always returned (except on error).
+    Hence, if the descriptor references a socket, the routine will write as
+    much data as was requested, rather than a lesser amount due to
+    packetisation or interrupted system calls.
+<p><b>Parameters:</b><ul><li><i>fd :</i> 
+    The file descriptor to write to. This descriptor must NOT be set to
+    non-blocking IO.
+<br><li><i>buf :</i> 
+    The buffer in which to write the data.
+<br><li><i>nbytes :</i> 
+    The number of bytes to write.
+<br></ul><b>Returns:</b>     The number of bytes requested on success, else -1 indicating
+    error.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The routine will force  SIGPIPE  to be ignored.
+</ul><p><hr> <a name=r_test_input_event></a> flag
+ <b>r_test_input_event</b><i>    (int connection)
+</i><br><p>    This routine will test if there is input activity on a
+    connection. This activity also covers the case of connection closure. The
+    connection descriptor must be given by  connection  .
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     TRUE if there is some input activity, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine is only available on platforms which emulate the
+    communications facilities of Unix. It is NOT available on standard Unix
+    systems.
+</ul><p><hr> <a name=r_open_stdin></a> int
+ <b>r_open_stdin</b><i>    (flag *disc)
+</i><br><p>    Open the standard input.
+<p><b>Parameters:</b><ul><li><i>disc :</i> 
+    The routine will write the value TRUE here if the standard input is
+    a disc, else it will write FALSE.
+<br></ul><b>Returns:</b>     The descriptor on success, else -1.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_getenv></a> char *
+ <b>r_getenv</b><i>    (CONST char *name)
+</i><br><p>    Get the value of an environment variable.
+<p><b>Parameters:</b><ul><li><i>name :</i> 
+    The name of the environment variable.
+<br></ul><b>Returns:</b>     A pointer to the value string if present, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_setenv></a> int
+ <b>r_setenv</b><i>    (CONST char *env_name, CONST char *env_value)
+</i><br><p>    This routine will provide a consistent interface to set
+    environment variables. This is necessary because the "standard" C library
+    routines: <em>putenv</em> or <em>setenv</em> (depending on the particular standard
+    C library supplied with the operating system) are in fact not standard.
+<p><b>Parameters:</b><ul><li><i>env_name :</i> 
+    The environment variable to create or change.
+<br><li><i>env_value :</i> 
+    The string value to set the variable to.
+<br></ul><b>Returns:</b>     0 on success, else -1.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_gethostname></a> void
+ <b>r_gethostname</b><i>    (char *name, unsigned int namelen)
+</i><br><p>    This routine will determine the local hostname.
+<p><b>Parameters:</b><ul><li><i>name :</i> 
+    The hostname will be written here. It is guaranteed to be null
+    terminated.
+<br><li><i>namelen :</i> 
+    The size of the buffer.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_get_fq_hostname></a> flag
+ <b>r_get_fq_hostname</b><i>    (char *name, unsigned int namelen)
+</i><br><p>    This routine will get the fully qualified local hostname.
+<p><b>Parameters:</b><ul><li><i>name :</i> 
+    The hostname will be written here. It is guaranteed to be null
+    terminated.
+<br><li><i>namelen :</i> 
+    The size of the buffer.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_getppid></a> int
+ <b>r_getppid</b><i>    ()
+</i><br><p>    Get the parent process ID.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     The parent process ID.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_open_file></a> int
+ <b>r_open_file</b><i>    (CONST char *filename, int flags, int mode,
+		 unsigned int *filetype, unsigned int *blocksize)
+</i><br><p>    This routine will open a file. The file may be a regular disc
+    file, a named FIFO, a character special device, a Unix domain socket or a
+    TCP/IP connection (where supported). This routine provides an enhanced
+    interface to the <em>open(2)</em>, <em>socket(2)</em> and <em>connect(2)</em> routines.
+<p><b>Parameters:</b><ul><li><i>filename :</i> 
+    The pathname of the file to open. This parameter has the same
+    meaning as the first parameter to <em>open(2)</em>.
+    Filenames of the form: "//tcpIP/{hostname}:{port}" indicate a connection to
+    a TCP/IP port on host {hostname} with raw port number {port} is
+    requested.
+<br><li><i>flags :</i> 
+    The access flags. This parameter has the same meaning as the second
+    parameter to <em>open(2)</em>.
+<br><li><i>mode :</i> 
+    If the file is created, the file protection modes will be determined
+    by the combination of the process  umask  and this value. This parameter
+    has the same meaning as the third parameter to <em>open(2)</em>.
+<br><li><i>filetype :</i> 
+    The type of the file will be written here.
+<br><li><i>blocksize :</i> 
+    The blocksize (in bytes) of the file will be written here (this
+    is only valid for a disc file). If the blocksize cannot be determined, the
+    value 0 will be written here.
+<br></ul><b>Returns:</b>     The file descriptor on success, else -1 and sets <em>errno</em> with
+    the error code.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_create_pipe></a> int
+ <b>r_create_pipe</b><i>    (int *read_fd, int *write_fd)
+</i><br><p>    This routine will create an un-named pipe. This routine provides
+    an enhanced interface to the <em>pipe(2)</em> routine.
+<p><b>Parameters:</b><ul><li><i>read_fd :</i> 
+    The file descriptor corresponding to the read end of the pipe
+    will be written here.
+<br><li><i>write_fd :</i> 
+    The file descriptor corresponding to the write end of the pipe
+    will be written here.
+<br></ul><b>Returns:</b>     0 on success, else -1 and sets <em>errno</em> with the error code.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_get_karmabase></a> char *
+ <b>r_get_karmabase</b><i>    ()
+</i><br><p>    Get the pathname of the installed runtime Karma.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     The pathname.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_get_service_number></a> int
+ <b>r_get_service_number</b><i>    (CONST char *module_name)
+</i><br><p>    This routine uses a hashing function to determine the service
+    number of a module.
+<p><b>Parameters:</b><ul><li><i>module_name :</i> 
+    The name of the module.
+<br></ul><b>Returns:</b>     The service number.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_get_host_from_display></a> char *
+ <b>r_get_host_from_display</b><i>    (CONST char *display)
+</i><br><p>    This routine will get the hostname from a display string.
+    The syntax for the display string is the same as for the X Windows system
+    DISPLAY environmental variable.
+<p><b>Parameters:</b><ul><li><i>display :</i> 
+    The display string. If this is NULL, the host "unix" is returned.
+<br></ul><b>Returns:</b>     A pointer to a statically allocated string which will contain the
+    host name on success, else NULL.
+    
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_get_display_num_from_display></a> int
+ <b>r_get_display_num_from_display</b><i>    (CONST char *display)
+</i><br><p>    This routine will get the display number from a display string
+    (following the X Windows system syntax for the DISPLAY environmental
+    variable).
+<p><b>Parameters:</b><ul><li><i>display :</i> 
+    The display string. If this is NULL, the display number defaults
+    to 0.
+<br></ul><b>Returns:</b>     The display number on success, else -1.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_get_screen_num_from_display></a> int
+ <b>r_get_screen_num_from_display</b><i>    (CONST char *display)
+</i><br><p>    This routine will get the screen number from a display string
+    (following the X Windows system syntax for the DISPLAY environmental
+    variable).
+<p><b>Parameters:</b><ul><li><i>display :</i> 
+    The display string. If this is NULL, the screen number defaults
+    to 0.
+<br></ul><b>Returns:</b>     The display number on success, else -1.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=r_get_def_port></a> int
+ <b>r_get_def_port</b><i>    (CONST char *module_name, CONST char *display)
+</i><br><p>    Get the default Karma port number for a module.
+<p><b>Parameters:</b><ul><li><i>module_name :</i> 
+    The module name.
+<br><li><i>display :</i> 
+    The display string. The display number entry in the string is
+    also used to compute the port number. The syntax for this string is the
+    same as for the X Windows system DISPLAY environmental variable.
+<br></ul><b>Returns:</b>     The default port number on success, else -1.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine does not resolve multiple port numbers residing on the
+    same machine.
+</ul><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

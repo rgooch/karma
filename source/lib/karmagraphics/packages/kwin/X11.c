@@ -4,7 +4,7 @@
 
     This code provides KPixCanvas objects.
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -32,17 +32,49 @@
 
     Written by      Richard Gooch   20-SEP-1995
 
-    Last updated by Richard Gooch   22-SEP-1995: Completed passing of RGB masks
+    Updated by      Richard Gooch   22-SEP-1995: Completed passing of RGB masks
   and offsets to <kwin_create_generic>.
+
+    Updated by      Richard Gooch   19-FEB-1996: Modified interface for
+  <clear_area> to support width and height parameters.
+
+    Updated by      Richard Gooch   23-FEB-1996: Clip (sub)image to cache size
+  in <draw_cached_image> and added <<wait>> parameter.
+
+    Updated by      Richard Gooch   26-FEB-1996: Trap NULL GraphicsContext in
+  <kwin_set_gc_x>.
+
+    Updated by      Richard Gooch   13-APR-1996: Changed to new documentation
+  format.
+
+    Updated by      Richard Gooch   19-APR-1996: Added support for
+  KWIN_FUNC_SET_LINEWIDTH.
+
+    Updated by      Richard Gooch   22-APR-1996: Added support for non-1:1
+  image display with 16bit PseudoColour software colourmap.
+
+    Updated by      Richard Gooch   4-MAY-1996: Documentation improvement for
+  <draw_rectangle>.
+
+    Updated by      Richard Gooch   21-MAY-1996: Fixed bug in
+  <draw_cached_image> when offset in image exceeds image size.
+
+    Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   10-JUN-1996: Added clipping code to
+  <draw_cached_image>.
 
 
 */
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <unistd.h>
 #include <stdarg.h>
 #include <karma.h>
 #include <karma_kwin.h>
+#include <karma_kwin_hooks.h>
 #include <karma_drw.h>
 #include <karma_xi.h>
 #include <X11/Xutil.h>
@@ -162,7 +194,12 @@ STATIC_FUNCTION (flag draw_rgb_image,
 		  unsigned int width, unsigned int height,
 		  KPixCanvasImageCache *cache_ptr) );
 STATIC_FUNCTION (flag draw_cached_image,
-		 (KPixCanvasImageCache cache, int x_off, int y_off) );
+		 (KPixCanvasImageCache cache, flag wait,
+		  int parent_x_off, int parent_y_off,
+		  int image_width, int image_height,
+		  int image_x_off, int image_y_off,
+		  int canvas_x_off, int canvas_y_off,
+		  int canvas_width, int canvas_height) );
 STATIC_FUNCTION (void free_cache_data, (KPixCanvasImageCache cache) );
 STATIC_FUNCTION (flag draw_line, (X11Canvas x11canvas,
 				  double x0, double y0, double x1, double y1,
@@ -219,14 +256,15 @@ STATIC_FUNCTION (KPixCanvasImageCache size_cache,
 STATIC_FUNCTION (void alloc_points, (X11Canvas x11canvas, int num_points) );
 STATIC_FUNCTION (void alloc_arcs, (X11Canvas x11canvas, int num_arcs) );
 STATIC_FUNCTION (void alloc_segments, (X11Canvas x11canvas,int num_segments) );
-
+STATIC_FUNCTION (flag set_linewidth, (X11Canvas x11canvas, double linewidth) );
 
 /*  Public functions follow  */
 
 /*PUBLIC_FUNCTION*/
 KPixCanvas kwin_create_x (Display *display, Window window, GC gc,
 			  int xoff, int yoff, int width, int height)
-/*  [PURPOSE] This routine will create a pixel canvas, ready for drawing, from
+/*  [SUMMARY] Create a pixel canvas from an X window.
+    [PURPOSE] This routine will create a pixel canvas, ready for drawing, from
     an X window. Note that the origin of a KPixCanvas is the upper-left corner.
     [NOTE] This routine is only available with the X window system.
     <display> The X display.
@@ -244,10 +282,12 @@ KPixCanvas kwin_create_x (Display *display, Window window, GC gc,
     KPixCanvas canvas;
     KPixCanvasFont font;
     X11Canvas x11canvas;
-    uaddr red_offset, green_offset, blue_offset;
+    uaddr red_offset = 0;     /*  Initialised to keep compiler happy  */
+    uaddr green_offset = 0;   /*  Initialised to keep compiler happy  */
+    uaddr blue_offset = 0;    /*  Initialised to keep compiler happy  */
     XWindowAttributes window_attributes;
     int im_byte_order;
-    unsigned int visual;
+    unsigned int visual = 0;  /*  Initialised to keep compiler happy  */
     unsigned long im_red_mask, im_green_mask, im_blue_mask;
     unsigned char *ch_ptr;
     XVisualInfo *vinfo;
@@ -344,7 +384,7 @@ KPixCanvas kwin_create_x (Display *display, Window window, GC gc,
 	    break;
 	  default:
 	    (void) fprintf (stderr,
-			    "Red mask: 0x%x for %s visual is not valid\n",
+			    "Red mask: 0x%lx for %s visual is not valid\n",
 			    x11canvas->vinfo.red_mask,
 			    (x11canvas->vinfo.class ==
 			     DirectColor) ? "DirectColour" : "TrueColour");
@@ -367,7 +407,7 @@ KPixCanvas kwin_create_x (Display *display, Window window, GC gc,
 	    break;
 	  default:
 	    (void) fprintf (stderr,
-			    "Green mask: 0x%x for %s visual is not valid\n",
+			    "Green mask: 0x%lx for %s visual is not valid\n",
 			    x11canvas->vinfo.green_mask,
 			    (x11canvas->vinfo.class ==
 			     DirectColor) ? "DirectColour" : "TrueColour");
@@ -390,7 +430,7 @@ KPixCanvas kwin_create_x (Display *display, Window window, GC gc,
 	    break;
 	  default:
 	    (void) fprintf (stderr,
-			    "Blue mask: 0x%x for %s visual is not valid\n",
+			    "Blue mask: 0x%lx for %s visual is not valid\n",
 			    x11canvas->vinfo.blue_mask,
 			    (x11canvas->vinfo.class ==
 			     DirectColor) ? "DirectColour" : "TrueColour");
@@ -474,6 +514,7 @@ KPixCanvas kwin_create_x (Display *display, Window window, GC gc,
 		   KWIN_FUNC_GET_STRING_SIZE, get_string_size,
 		   KWIN_FUNC_SET_FONT, set_font,
 		   KWIN_FUNC_QUERY_COLOURMAP, query_colourmap,
+		   KWIN_FUNC_SET_LINEWIDTH, set_linewidth,
 		   KWIN_ATT_END) );
     }
     else
@@ -499,6 +540,7 @@ KPixCanvas kwin_create_x (Display *display, Window window, GC gc,
 		   KWIN_FUNC_GET_STRING_SIZE, get_string_size,
 		   KWIN_FUNC_SET_FONT, set_font,
 		   KWIN_FUNC_QUERY_COLOURMAP, query_colourmap,
+		   KWIN_FUNC_SET_LINEWIDTH, set_linewidth,
 		   KWIN_ATT_END) );
     }
     if (canvas == NULL) m_abort (function_name, "pixel canvas");
@@ -516,7 +558,8 @@ KPixCanvas kwin_create_x (Display *display, Window window, GC gc,
 
 /*PUBLIC_FUNCTION*/
 void kwin_set_gc_x (KPixCanvas canvas, GC gc)
-/*  [PURPOSE] This routine will register a new Graphics Context to be used
+/*  [SUMMARY] Set Graphics Context for an X-based pixel canavas.
+    [PURPOSE] This routine will register a new Graphics Context to be used
     when drawing into the pixel canvas. Subsequent drawing operations will use
     the new Graphics Context.
     [NOTE] This routine is only available with the X window system.
@@ -532,6 +575,11 @@ void kwin_set_gc_x (KPixCanvas canvas, GC gc)
 			 KWIN_ATT_LOWER_HANDLE, &x11canvas,
 			 KWIN_ATT_END);
     VERIFY_CANVAS (x11canvas);
+    if (gc == NULL)
+    {
+	(void) fprintf (stderr, "NULL GraphicsContext passed\n");
+	a_prog_bug (function_name);
+    }
     x11canvas->gc = gc;
     /*  Get GCValues  */
     if (XGetGCValues (x11canvas->display, x11canvas->gc,
@@ -551,7 +599,8 @@ void kwin_set_gc_x (KPixCanvas canvas, GC gc)
 
 /*PUBLIC_FUNCTION*/
 GC kwin_get_gc_x (KPixCanvas canvas)
-/*  [PURPOSE] This routine will get the Graphics Context used when drawing into
+/*  [SUMMARY] Get Graphics Context for an X-based pixel canavas.
+    [PURPOSE] This routine will get the Graphics Context used when drawing into
     the pixel canvas. If the Graphics Context is modified, it should be
     registered prior to drawing on the canvas by calling <<kwin_set_gc_x>>.
     [NOTE] This routine is only available with the X window system.
@@ -570,7 +619,7 @@ GC kwin_get_gc_x (KPixCanvas canvas)
 }   /*  End Function kwin_get_gc_x  */
 
 
-/*  Hook functions follow  */
+/*  Mandatory hook functions follow  */
 
 static flag draw_point (void *v_canvas, double x, double y,
 			unsigned long pixel_value)
@@ -624,8 +673,7 @@ static void *create_child (void *v_parent, KPixCanvas child)
     return ( (void *) x11child );
 }   /*  End Function create_child  */
 
-static flag clear_area (void *v_canvas, int x, int y,
-			int width, int height)
+static flag clear_area (void *v_canvas, int x, int y, int width, int height)
 /*  [PURPOSE] This routine will clear an area in an X11 canvas.
     <v_canvas> The X11 canvas.
     <x> The horizontal offset of the area.
@@ -643,6 +691,9 @@ static flag clear_area (void *v_canvas, int x, int y,
 		x, y, (unsigned int) width, (unsigned int) height, False);
     return (TRUE);
 }   /*  End Function clear_area  */
+
+
+/*  Optional hook functions follow  */
 
 static flag draw_pc_image (X11Canvas x11canvas, int x_off, int y_off,
 			   int x_pixels, int y_pixels, CONST char *slice,
@@ -721,7 +772,8 @@ static flag draw_pc_image (X11Canvas x11canvas, int x_off, int y_off,
     XImage *ximage;
     static char function_name[] = "__kwin_X11_draw_pc_image";
 
-    long compute_time, dump_time;
+    long compute_time = 0;  /*  Initialised to keep compiler happy  */
+    long dump_time;
     struct timeval start_time;
     struct timeval stop_time;
     static struct timezone tz = {0, 0};
@@ -733,7 +785,7 @@ static flag draw_pc_image (X11Canvas x11canvas, int x_off, int y_off,
 	return (FALSE);
     }
     ximage = (cache->ximage ==NULL) ? x11canvas->common_ximage : cache->ximage;
-    if (ximage->depth == 24)
+    if ( (ximage->depth == 24) && (getuid () == 465) )
     {
 	if (gettimeofday (&start_time, &tz) != 0)
 	{
@@ -805,6 +857,35 @@ static flag draw_pc_image (X11Canvas x11canvas, int x_off, int y_off,
 	    return (FALSE);
 	}
     }
+    else if ( (ximage->depth == 24) && (num_pixels == 65536) &&
+	     (type == K_USHORT) && (0 == (int) i_min) &&
+	     (65535 == (int) i_max) )
+    {
+	ub_ptr = (unsigned char *) pixel_values;
+	kwin_get_attributes (x11canvas->pixcanvas,
+			     KWIN_ATT_IM_RED_OFFSET, &im_red_offset,
+			     KWIN_ATT_IM_GREEN_OFFSET, &im_green_offset,
+			     KWIN_ATT_IM_BLUE_OFFSET, &im_blue_offset,
+			     KWIN_ATT_END);
+	if ( !imw_scmap_16to24_lossy ( (unsigned char *) ximage->data + im_red_offset,
+				   (unsigned char *) ximage->data + im_green_offset,
+				   (unsigned char *) ximage->data + im_blue_offset,
+				   FALSE, 4, ximage->bytes_per_line,
+				   x_pixels, y_pixels,
+				   (CONST unsigned short *) slice,
+				   width, height,
+				   (iaddr *) hoffsets, (iaddr *) voffsets,
+				   ub_ptr + im_red_offset,
+				   ub_ptr + im_green_offset,
+				   ub_ptr + im_blue_offset,
+				   sizeof *pixel_values) )
+	{
+	    (void) fprintf (stderr, "Error drawing image into X11Canvas\n");
+	    kwin_free_cache_data (cache);
+	    if (cache_ptr != NULL) *cache_ptr = NULL;
+	    return (FALSE);
+	}
+    }
     else if (ximage->depth == 8)
     {
 	if ( !imw_to8_lossy ( (unsigned char *) ximage->data, 1,
@@ -831,7 +912,7 @@ static flag draw_pc_image (X11Canvas x11canvas, int x_off, int y_off,
 	if (cache_ptr != NULL) *cache_ptr = NULL;
 	return (FALSE);
     }
-    if (ximage->depth == 24)
+    if ( (ximage->depth == 24) && (getuid () == 465) )
     {
 	if (gettimeofday (&stop_time, &tz) != 0)
 	{
@@ -862,7 +943,7 @@ static flag draw_pc_image (X11Canvas x11canvas, int x_off, int y_off,
 		   x11canvas->gc,
 		   0, 0, cache->width, cache->height, x_off, y_off);
     }
-    if (ximage->depth == 24)
+    if ( (ximage->depth == 24) && (getuid () == 465) )
     {
 	if (gettimeofday (&stop_time, &tz) != 0)
 	{
@@ -871,9 +952,9 @@ static flag draw_pc_image (X11Canvas x11canvas, int x_off, int y_off,
 	}
 	dump_time = 1000 * (stop_time.tv_sec - start_time.tv_sec);
 	dump_time += (stop_time.tv_usec - start_time.tv_usec) / 1000;
-	(void) fprintf(stderr,
-		       "image compute time(ms): %d\timage dump time(ms): %d\n",
-		       compute_time, dump_time);
+	fprintf (stderr,
+		 "image compute time(ms): %ld\timage dump time(ms): %ld\n",
+		 compute_time, dump_time);
     }
 /*
     XBell (canvas->display, 100);
@@ -1067,14 +1148,36 @@ static flag draw_rgb_image (X11Canvas x11canvas,
     return (TRUE);
 }   /*  End Function draw_rgb_image  */
 
-static flag draw_cached_image (KPixCanvasImageCache cache, int x_off,int y_off)
+static flag draw_cached_image (KPixCanvasImageCache cache, flag wait,
+			       int parent_x_off, int parent_y_off,
+			       int image_width, int image_height,
+			       int image_x_off, int image_y_off,
+			       int canvas_x_off, int canvas_y_off,
+			       int canvas_width, int canvas_height)
 /*  [PURPOSE] This routine will draw a previously computed image cache data
     (computed by <<kwin_draw_pc_image>>) onto the canvas which the original
     image was drawn.
     <cache> The cache data.
-    <x_off> The horizontal offset, relative to the top-left corner of the
-    canvas.
-    <y_off> The vertical offset, relative to the top-left corner of the canvas.
+    <wait> If TRUE and the cache data is accessable by the graphics system, the
+    routine waits for the drawing request to complete.
+    <parent_x_off> The horizontal offset, relative to the top-left corner of
+    the parent object, where the image will be drawn.
+    <parent_y_off> The vertical offset, relative to the top-left corner of the
+    parent object, where the image will be drawn.
+    <image_width> The width of the image segment to draw. If this is less than
+    1 the entire image is drawn.
+    <image_height> The height of the image segment to draw. If this is less
+    than 1 the entire image is drawn.
+    <image_x_off> The horizontal offset, relative to the top-left corner of the
+    image.
+    <image_y_off> The vertical offset, relative to the top-left corner of the
+    image.
+    <canvas_x_off> The horizontal offset, relative to the top-left corner of
+    the parent object, of the pixel canvas. Used for clipping purposes.
+    <canvas_y_off> The vertical offset, relative to the top-left corner of
+    the parent object, of the pixel canvas. Used for clipping purposes.
+    <canvas_width> The width of the pixel canvas. Used for clipping purposes.
+    <canvas_height> The height of the pixel canvas. Used for clipping purposes.
     [RETURNS] TRUE on success if there is valid cache data, else FALSE
     indicating that the image must be recomputed and drawn using
     <<kwin_draw_pc_image>>.
@@ -1090,27 +1193,73 @@ static flag draw_cached_image (KPixCanvasImageCache cache, int x_off,int y_off)
 	a_prog_bug (function_name);
     }
     x11canvas = cache->x11canvas;
+    if ( (image_width < 1) || (image_height < 1) )
+    {
+	image_width = cache->width;
+	image_height = cache->height;
+	image_x_off = 0;
+	image_y_off = 0;
+    }
+    /*  Discard if subimage is outside of cache size  */
+    if (image_x_off >= cache->width) return (TRUE);
+    if (image_y_off >= cache->height) return (TRUE);
+    /*  Trim subimage to cache size  */
+    if (image_x_off + image_width > cache->width)
+	image_width = cache->width - image_x_off;
+    if (image_y_off + image_height > cache->height)
+	image_height = cache->height - image_y_off;
+/*
+    fprintf (stderr,
+	     "im_x_off: %d  im_y_off: %d  width: %d  height: %d\n",
+	     image_x_off, image_y_off, image_width, image_height);
+    fprintf (stderr, "win_x_off: %d  win_y_off: %d\n\n",
+	     parent_x_off, parent_y_off);
+*/
+    /*  Discard if subimage is outside pixel canvas  */
+    if (parent_x_off >= canvas_x_off + canvas_width) return (TRUE);
+    if (parent_y_off >= canvas_y_off + canvas_height) return (TRUE);
+    if (parent_x_off + canvas_width <= canvas_x_off) return (TRUE);
+    if (parent_y_off + canvas_height <= canvas_y_off) return (TRUE);
+    /*  Trim subimage to pixel canvas size  */
+    if (parent_x_off < canvas_x_off)
+    {
+	parent_x_off = canvas_x_off;
+	image_width -= canvas_x_off - parent_x_off;
+    }
+    if (parent_x_off + image_width > canvas_x_off + canvas_width)
+    {
+	image_width = canvas_x_off + canvas_width - parent_x_off;
+    }
+    if (parent_y_off + image_height > canvas_y_off + canvas_height)
+    {
+	image_height = canvas_y_off + canvas_height - parent_y_off;
+    }
+    /*  Subimage should now be clipped to be within cache size and pixel canvas
+	boundaries  */
     if ( (cache->ximage != NULL) && cache->shared )
     {
 	xi_put_image (x11canvas->display, x11canvas->window, x11canvas->gc,
 		      cache->ximage,
-		      0, 0, x_off, y_off, cache->width, cache->height,
-		      cache->shared, TRUE);
+		      image_x_off, image_y_off,
+		      parent_x_off, parent_y_off, image_width, image_height,
+		      cache->shared, wait);
 	return (TRUE);
     }
     if (cache->pixmap != (Pixmap) NULL)
     {
 	XCopyArea (x11canvas->display, cache->pixmap, x11canvas->window,
 		   x11canvas->gc,
-		   0, 0, cache->width, cache->height, x_off, y_off);
+		   image_x_off, image_y_off,
+		   image_width, image_height, parent_x_off, parent_y_off);
 	return (TRUE);
     }
     if (cache->ximage == NULL) return (FALSE);
     /*  Call it again with non-pixmap, non-shared XImage  */
     xi_put_image (x11canvas->display, x11canvas->window, x11canvas->gc,
 		  cache->ximage,
-		  0, 0, x_off, y_off, cache->width, cache->height,
-		  cache->shared, TRUE);
+		  image_x_off, image_y_off,
+		  parent_x_off, parent_y_off, image_width, image_height,
+		  cache->shared, FALSE);
 /*
     XBell (canvas->display, 100);
 */
@@ -1164,6 +1313,7 @@ static flag draw_line (X11Canvas x11canvas,
     set_pixel_in_gc (x11canvas, pixel_value);
     XDrawLine (x11canvas->display, x11canvas->window, x11canvas->gc,
 	       (int) x0, (int) y0, (int) x1, (int) y1);
+    return (TRUE);
 }   /*  End Function draw_line  */
 
 static flag draw_arc (X11Canvas x11canvas,
@@ -1300,8 +1450,8 @@ static flag draw_rectangle (X11Canvas x11canvas,
     <x11canvas> The X11 canvas.
     <x> The horizontal offset of the rectangle.
     <y> The vertical offset of the rectangle.
-    <width> The width of the rectangle.
-    <height> The height of the rectangle.
+    <width> The width of the rectangle. The point <<x + width>> is a vertex.
+    <height> The height of the rectangle. The point <<y + height>> is a vertex.
     <pixel_value> The pixel value to use.
     [RETURNS] TRUE on success, else FALSE.
 */
@@ -1390,7 +1540,6 @@ static flag draw_arcs (X11Canvas x11canvas,
 */
 {
     int iarc_count, xarc_count;
-    short angle = 64 * 360;
     extern int num_xarcs_allocated;
     extern XArc *xarcs;
     static char function_name[] = "__kwin_X11_draw_arcs";
@@ -1654,6 +1803,7 @@ static flag query_colourmap (X11Canvas x11canvas, unsigned long *pixels,
     for (count = 0; count < num_colours; ++count)
     {
 	xcolours[count].pixel = pixels[count];
+	xcolours[count].flags = DoRed | DoGreen | DoBlue;  /*  Paranoia  */
     }
     XQueryColors (x11canvas->display, x11canvas->cmap, xcolours,
 		  (int) num_colours);
@@ -1666,6 +1816,24 @@ static flag query_colourmap (X11Canvas x11canvas, unsigned long *pixels,
     m_free ( (char *) xcolours );
     return (TRUE);
 }   /*  End Function query_colourmap  */
+
+static flag set_linewidth (X11Canvas x11canvas, double linewidth)
+/*  [SUMMARY] Set the linewidth for a canvas.
+    <x11canvas> The X11 canvas.
+    <linewidth> The linewidth, in pixels.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    int lw = linewidth;
+    static char function_name[] = "__kwin_X11_set_linewidth";
+
+    VERIFY_CANVAS (x11canvas);
+    if (lw == x11canvas->gcvalues.line_width) return (TRUE);
+    x11canvas->gcvalues.line_width = linewidth;
+    XChangeGC (x11canvas->display, x11canvas->gc, GCLineWidth,
+	       &x11canvas->gcvalues);
+    return (TRUE);
+}   /*  End Function set_linewidth  */
 
 
 /*  Private functions follow  */
@@ -1734,7 +1902,6 @@ static KPixCanvasImageCache size_cache (X11Canvas x11canvas,
 */
 {
     KPixCanvasImageCache cache;
-    flag allocate = FALSE;
     static flag first_time = TRUE;
     static flag enable_pixmaps = TRUE;
     static char function_name[] = "__kwin_X11_size_cache";

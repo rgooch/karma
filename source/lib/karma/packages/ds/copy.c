@@ -3,7 +3,7 @@
 
     This code provides data structure copying routines.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -56,7 +56,19 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/ds/copy.c
 
-    Last updated by Richard Gooch   19-APR-1995: Cleaned some code.
+    Updated by      Richard Gooch   19-APR-1995: Cleaned some code.
+
+    Updated by      Richard Gooch   9-APR-1996: Changed to new documentation
+  format.
+
+    Updated by      Richard Gooch   24-MAY-1996: Added some code to deal with
+  misaligned data accesses in <ds_copy_data>.
+
+    Updated by      Richard Gooch   30-MAY-1996: Fixed bug with copying VSTRING
+  type in <ds_copy_data> indroduced by last change.
+
+    Last updated by Richard Gooch   3-JUN-1996: Took account of new fields in
+  dimension descriptor for first and last co-ordinate.
 
 
 */
@@ -69,6 +81,8 @@
 #include <karma_st.h>
 #include <karma_m.h>
 #include <karma_a.h>
+#include <os.h>
+
 
 /*  Private routines  */
 static flag copy_tiled_data (/* arr_desc_inp, inp_data, arr_desc_out,
@@ -78,17 +92,17 @@ static flag copy_tiled_data (/* arr_desc_inp, inp_data, arr_desc_out,
 /*  Public routines follow  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_copy_packet (pack_desc, dest_packet, source_packet)
-/*  This routine will copy a packet with a packet descriptor pointed to by
-    pack_desc  from the storage pointed to by  source_packet  to the
-    storage pointed to by  dest_packet  .The routine will copy only the
-    data and pointers to arrays and linked lists in the packet, not the
-    arrays and linked lists which may be pointed to.
-    The routine returns TRUE on success, else it returns FALSE.
+flag ds_copy_packet (packet_desc *pack_desc, char *dest_packet,
+		     char *source_packet)
+/*  [SUMMARY] Copy a packet.
+    <pack_desc> The packet descriptor.
+    <dest_packet> The destination packet data will be written here.
+    <source_packet> The source packet data.
+    [NOTE] The routine will copy only the data and pointers to arrays and
+    linked lists in the packet, not the arrays and linked lists which may be
+    pointed to.
+    [RETURNS] TRUE on success, else FALSE.
 */
-packet_desc *pack_desc;
-char *dest_packet;
-char *source_packet;
 {
     if ( (pack_desc == NULL) || (dest_packet == NULL) ||
         (source_packet == NULL) )
@@ -104,23 +118,23 @@ char *source_packet;
 }   /*  End Funtion ds_copy_packet  */
 
 /*PUBLIC_FUNCTION*/
-packet_desc *ds_copy_desc_until (inp_desc, name)
-/*  This routine will copy a packet descriptor pointed to by  inp_desc  until
-    the element with name pointed to by  name  is found, at which time the
-    copying process stops.
-    If  name  is NULL, then the entire data structure descriptor is copied.
-    The routine will trap such errors as multiple occurences of  name  .
-    The routine returns a pointer to the new packet descriptor.
-    If there are any errors, the routine returns NULL.
+packet_desc *ds_copy_desc_until (packet_desc *inp_desc, CONST char *name)
+/*  [SUMMARY] Recursively copy a packet descriptor.
+    [PURPOSE] This routine will recursively copy a packet descriptor until
+    an element with a specified name is found, at which time the copying
+    process stops. The routine will trap such errors as multiple occurences of
+    the element name.
     This routine is useful to duplicate a data structure above a certain
     element or dimension. This simplifies the processing of data which is
     sitting near the bottom of a complex data structure.
     If an array or linked list pointer is one of the elements, and it is not
     successfully copied, the routine will set the output element type to NONE
     and the descriptor pointer for that element will be NULL.
+    <inp_desc> The input packet descriptor.
+    <name> The name of the element at which the copying process should stop.
+    If this is NULL, then the entire data structure descriptor is copied.
+    [RETURNS] A pointer to the new packet descriptor on success, else NULL.
 */
-packet_desc *inp_desc;
-CONST char *name;
 {
     unsigned int name_type;
     unsigned int elem_count;
@@ -245,8 +259,9 @@ CONST char *name;
 }   /*  End Function ds_copy_desc_until  */
 
 /*PUBLIC_FUNCTION*/
-array_desc *ds_copy_array_desc_until (inp_desc, name)
-/*  [PURPOSE] This routine will make a copy of an array descriptor and all
+array_desc *ds_copy_array_desc_until (array_desc *inp_desc, CONST char *name)
+/*  [SUMMARY] Recursively copy an array descriptor.
+    [PURPOSE] This routine will make a copy of an array descriptor and all
     sub-descriptors until a specified name is encountered. All tiling
     information is copied, but address offset arrays are NOT copied.
     <inp_desc> The input array descriptor.
@@ -254,8 +269,6 @@ array_desc *ds_copy_array_desc_until (inp_desc, name)
     the entire data structure descriptor is copied.
     [RETURNS] A pointer to the array descriptor created on success, else NULL.
 */
-array_desc *inp_desc;
-CONST char *name;
 {
     unsigned int dim_count;
     array_desc *return_value = NULL;
@@ -323,13 +336,12 @@ CONST char *name;
 }   /*  End Function ds_copy_array_desc_until  */
 
 /*PUBLIC_FUNCTION*/
-dim_desc *ds_copy_dim_desc (inp_desc)
-/*  This routine will copy the dimension descriptor pointed to by  inp_desc
-    to a freshly allocated dimension descriptor.
-    The routine returns a pointer to the new dimension descriptor, if there
-    any errors, NULL is returned.
+dim_desc *ds_copy_dim_desc (dim_desc *inp_desc)
+/*  [SUMMARY] Copy a dimension descriptor.
+    <inp_desc> The input 
+    [RETURNS] A pointer to a freshly allocated dimension descriptor on success,
+    else NULL.
 */
-dim_desc *inp_desc;
 {
     flag regular = TRUE;
     unsigned int coord_count = 0;
@@ -346,8 +358,8 @@ dim_desc *inp_desc;
     }
     if ( ( return_value = ds_alloc_dim_desc (inp_desc->name,
 					     inp_desc->length,
-					     inp_desc->minimum,
-					     inp_desc->maximum, regular) )
+					     inp_desc->first_coord,
+					     inp_desc->last_coord, regular) )
 	== NULL )
     {
 	m_error_notify (function_name, "dimension descriptor");
@@ -366,10 +378,12 @@ dim_desc *inp_desc;
 }   /*  End Function ds_copy_dim_desc  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_copy_data (inp_desc, inp_data, out_desc, out_data)
-/*  This routine will copy data from one data structure to another, provided
-    the two data structures have the same format. If there are any variations
-    in the two formats, the copying process is stopped at that level.
+flag ds_copy_data (packet_desc *inp_desc, char *inp_data,
+		   packet_desc *out_desc, char *out_data)
+/*  [SUMMARY] Copy data between Karma data structures.
+    [PURPOSE] This routine will copy data from one data structure to another,
+    provided the two data structures have the same format. If there are any
+    variations in the two formats, the copying process is stopped at that level
     If one or more elements are different, they are not copied, however, the
     other elements are copied. This also applies to array and linked list
     pointer elements. This condition only holds for packets with the same
@@ -377,19 +391,14 @@ flag ds_copy_data (inp_desc, inp_data, out_desc, out_data)
     elements must also be the same.
     The names of elements and dimensions must be the same, as well as the
     data types. For information on array and linked list copying, see
-    ds_copy_array  and  ds_copy_list  .
-    The input data structure descriptor must be pointed to by  inp_desc  and
-    the data must be pointed to by  inp_data  .
-    The output data structure descriptor must be pointed to by  out_desc  and
-    the output data memory allocation must be pointed to by  out_data  .
     The routine recursively copies data in arrays and linked lists.
-    The routine returns TRUE if the two packet descriptors are identical, else
-    it returns FALSE.
+    [<ds_copy_array>] and [<ds_copy_list>].
+    <inp_desc> The input data structure descriptor.
+    <inp_data> The input data.
+    <out_desc> The output data structure descriptor.
+    <out_data> The output data memory allocation.
+    [RETURNS] TRUE if the two packet descriptors are identical, else FALSE.
 */
-packet_desc *inp_desc;
-char *inp_data;
-packet_desc *out_desc;
-char *out_data;
 {
     flag return_value = TRUE;
     unsigned int inp_elem_type;
@@ -401,6 +410,7 @@ char *out_data;
     array_desc *out_array;
     packet_desc *inp_packet;
     packet_desc *out_packet;
+    char *inp_ptr, *out_ptr;
     FString *inp_fstring, *out_fstring;
     extern char host_type_sizes[NUMTYPES];
     static char function_name[] = "ds_copy_data";
@@ -462,34 +472,63 @@ char *out_data;
 		break;
 	      case K_ARRAY:
 		/*  Array pointer   */
-		inp_array = (array_desc *)
-		inp_desc->element_desc[elem_count];
-		out_array = (array_desc *)
-		out_desc->element_desc[elem_count];
-		(void) ds_copy_array (inp_array, *(char **) inp_data,
-				      out_array, *(char **) out_data);
+		inp_array = (array_desc *) inp_desc->element_desc[elem_count];
+		out_array = (array_desc *) out_desc->element_desc[elem_count];
+#ifdef NEED_ALIGNED_DATA
+		/*  The following stuffing around with <m_copy> is required in
+		    order to avoid bus errors on some systems
+		    */
+		m_copy ( (char *) &inp_ptr, inp_data, sizeof inp_ptr );
+		m_copy ( (char *) &out_ptr, out_data, sizeof out_ptr );
+#else
+		inp_ptr = *(char **) inp_data;
+		out_ptr = *(char **) out_data;
+#endif
+		(void) ds_copy_array (inp_array, inp_ptr, out_array, out_ptr);
 		break;
 	      case LISTP:
 		/*  Linked list pointer */
-		inp_packet = (packet_desc *)
-		inp_desc->element_desc[elem_count];
-		out_packet = (packet_desc *)
-		out_desc->element_desc[elem_count];
-		(void) ds_copy_list (inp_packet,
-				     *(list_header **) inp_data,
-				     out_packet,
-				     *(list_header **) out_data);
+		inp_packet = (packet_desc *)inp_desc->element_desc[elem_count];
+		out_packet = (packet_desc *)out_desc->element_desc[elem_count];
+#ifdef NEED_ALIGNED_DATA
+		/*  The following stuffing around with <m_copy> is required in
+		    order to avoid bus errors on some systems
+		    */
+		m_copy ( (char *) &inp_ptr, inp_data, sizeof inp_ptr );
+		m_copy ( (char *) &out_ptr, out_data, sizeof out_ptr );
+#else
+		inp_ptr = *(char **) inp_data;
+		out_ptr = *(char **) out_data;
+#endif
+		(void) ds_copy_list (inp_packet, (list_header *) inp_ptr,
+				     out_packet, (list_header *) out_ptr);
 		break;
 	      case K_VSTRING:
-		if ( ( *(char **) out_data =
-		      m_alloc (strlen (*(char **) inp_data) + 1) )
-		    == NULL )
+#ifdef NEED_ALIGNED_DATA
+		/*  The following stuffing around with <m_copy> is required in
+		    order to avoid bus errors on some systems
+		    */
+		m_copy ( (char *) &inp_ptr, inp_data, sizeof inp_ptr );
+#else
+		inp_ptr = *(char **) inp_data;
+#endif
+		if ( ( out_ptr = m_alloc (strlen (inp_ptr) + 1) ) == NULL )
 		{
 		    m_abort (function_name, "new variable string");
 		}
-		(void) strcpy ( *(char **) out_data, *(char **) inp_data);
+		(void) strcpy (out_ptr, inp_ptr);
+#ifdef NEED_ALIGNED_DATA
+		/*  The following stuffing around with <m_copy> is required in
+		    order to avoid bus errors on some systems
+		    */
+		m_copy (out_data, (char *) &out_ptr, sizeof out_ptr);
+#else
+		*(char **) out_data = out_ptr;
+#endif
 		break;
 	      case K_FSTRING:
+		/*  TODO: fix this so that misaligned accesses are dealt with
+		    properly  */
 		inp_fstring = (FString *) inp_data;
 		out_fstring = (FString *) out_data;
 		if ( ( out_fstring->string =
@@ -520,21 +559,20 @@ char *out_data;
 }   /*  End Function ds_copy_data  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_copy_array (inp_desc, inp_data, out_desc, out_data)
-/*  This routine will copy data from one array to another. The two arrays must
-    be the same, else the copying process will stop.
-    The routine recursively copies data in the array packet.
-    The input array descriptor must be pointed to by  inp_desc  and the output
-    array descriptor must be pointed to by  out_desc  .
-    The input data must be pointed to by  inp_data  and the output data must
-    be pointed to by  out_data  .
-    The routine returns TRUE if the arrays were identical, else it
-    returns FALSE.
+flag ds_copy_array (array_desc *inp_desc, char *inp_data,
+		    array_desc *out_desc, char *out_data)
+/*  [SUMMARY] Recursively copy array data.
+    [PURPOSE] This routine will copy data from one array to another. The two
+    arrays must be the same, else the copying process will stop.
+    The routine recursively copies data in the array packets.
+    For information on the copying rules when the two list descriptors differ,
+    see the routine [<ds_copy_data>].
+    <inp_desc> The input array descriptor.
+    <inp_data> The input array data.
+    <out_desc> The output array descriptor.
+    <out_data> The output data memory allocation.
+    [RETURNS] TRUE if the two array descriptors are identical, else FALSE.
 */
-array_desc *inp_desc;
-char *inp_data;
-array_desc *out_desc;
-char *out_data;
 {
     flag return_value = TRUE;
     unsigned int array_size;
@@ -576,22 +614,10 @@ char *out_data;
 	    (void) fprintf (stderr, "No array of output dimension pointers\n");
             a_prog_bug (function_name);
         }
-        if (inp_dim->length != out_dim->length)
-        {
-	    return (FALSE);
-        }
-        if (inp_dim->minimum != out_dim->minimum)
-        {
-	    return (FALSE);
-        }
-        if (inp_dim->maximum != out_dim->maximum)
-        {
-	    return (FALSE);
-        }
-        if (strcmp (inp_dim->name, out_dim->name) != 0)
-        {
-	    return (FALSE);
-        }
+        if (inp_dim->length != out_dim->length) return (FALSE);
+        if (inp_dim->first_coord != out_dim->first_coord) return (FALSE);
+        if (inp_dim->last_coord != out_dim->last_coord) return (FALSE);
+        if (strcmp (inp_dim->name, out_dim->name) != 0) return (FALSE);
         if (inp_dim->coordinates == NULL)
         {
 	    /*  Input dimension is regularly spaced */
@@ -657,24 +683,21 @@ char *out_data;
 }   /*  End Function ds_copy_array  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_copy_list (inp_desc, inp_head, out_desc, out_head)
-/*  This routine will copy a linked list to another.
-    The input list descriptor must be pointed to by  inp_desc  and the header
-    to the list must be pointed to by  inp_head  .
-    The output list descriptor must be pointed to by  out_desc  and the header
-    to the list must be pointed to by  out_head  .
+flag ds_copy_list (packet_desc *inp_desc, list_header *inp_head,
+		   packet_desc *out_desc, list_header *out_head)
+/*  [SUMMARY] Recursively copy linked lists.
+    [PURPOSE] This routine will copy a linked list to another.
+    The routine will recursively copy sub arrays and linked lists.
     The linked list entries and data fields will be allocated. The entries
     will be contiguous in memory.
-    The routine will recursively copy sub arrays and linked lists.
     For information on the copying rules when the two list descriptors differ,
-    see the routine  ds_copy_data  .
-    The routine returns TRUE if the two packet descriptors were identical,
-    else it returns FALSE.
+    see the routine [<ds_copy_data>].
+    <inp_desc> The input data structure descriptor.
+    <inp_head> The input linked list header.
+    <out_desc> The output data structure descriptor.
+    <out_head> The output linked list header.
+    [RETURNS] TRUE if the two packet descriptors are identical, else FALSE.
 */
-packet_desc *inp_desc;
-list_header *inp_head;
-packet_desc *out_desc;
-list_header *out_head;
 {
     flag return_value = TRUE;
     unsigned int inp_pack_size;
@@ -748,31 +771,27 @@ list_header *out_head;
 }   /*  End Function ds_copy_list  */
 
 /*PUBLIC_FUNCTION*/
-multi_array *ds_select_arrays (array_list, num_in_list, multi_desc,
-				      save_unproc, index_list)
-/*  This routine will create a multi array descriptor which contains a
-    selected number of array names.
-    The array names are copied from the input multi array descriptor pointed
-    to by  multi_desc  .
-    The array names that are copied must be in the array of strings pointed
-    to by  array_list  .The length of this array must be in  num_in_list  .
-    If this list is empty, all array names are copied.
-    If the logical  save_unproc  is TRUE, all array names are copied.
-    An array of unsigned ints will be allocated by the routine and the pointer
-    to this array will be written to the storage pointed to by  index_list  .
-    The length of this array is equal to the number of arrays in the input
-    multi array descriptor. This array contains the index of the array name
-    in the input multi array descriptor for each array name in the output
-    multi array descriptor. If there is no name match for an array, the index
-    value is equal to the number of arrays in the input multi array descriptor.
-    The routine returns a pointer to the created multi array descriptor.
-    If there are any errors, the routine returns NULL.
+multi_array *ds_select_arrays (char **array_list, unsigned int num_in_list,
+			       multi_array *multi_desc, flag save_unproc,
+			       unsigned int **index_list)
+/*  [SUMMARY] Select data structures in a multi_array descriptor.
+    [PURPOSE] This routine will create a multi array descriptor which contains
+    a selected number of array names.
+    <array_list> The array of array names that are to be copied.
+    <num_in_list> The number of array names in <<array_list>>. If this is 0,
+    all array names are copied.
+    <multi_desc> The input data structure.
+    <save_unproc> If TRUE, all array names are copied.
+    <index_list> An array of unsigned ints will be allocated by the routine and
+    the pointer written here. The length of this array is equal to the number
+    of arrays in the input multi_array descriptor. This array contains the
+    index of the array name in the input multi array descriptor for each array
+    name in the output multi_array descriptor. If there is no name match for an
+    array, the index value is equal to the number of arrays in the input
+    multi_array descriptor.
+    [RETURNS] A pointer to the created multi array descriptor on success,
+    else NULL.
 */
-char **array_list;
-unsigned int num_in_list;
-multi_array *multi_desc;
-flag save_unproc;
-unsigned int **index_list;
 {
     unsigned int num_arrays = 0;
     unsigned int array_count;

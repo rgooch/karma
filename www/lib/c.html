@@ -1,0 +1,91 @@
+<html><head><title>Package: c</title></head> 
+<body>
+<center><h1>The "c" Package</h1></center>    These routines are meant to provide a general purpose callback management
+    framework. Library packages and applications may use this package to
+    implement their own callback mechanisms. This package removes the need for
+    external code to maintain and traverse callback lists.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=c></a></table><h4>Functions</h4><table><tr><td><a href=c.html#c_register_callback>c_register_callback</a></td><td>Register a callback function with a list.
+</td></tr>
+<tr><td><a href=c.html#c_unregister_callback>c_unregister_callback</a></td><td>Unregister a callback function.
+</td></tr>
+<tr><td><a href=c.html#c_call_callbacks>c_call_callbacks</a></td><td>Call all registered callbacks for an object.
+</td></tr>
+<tr><td><a href=c.html#c_destroy_list>c_destroy_list</a></td><td>Destroy a callback list.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=c.html#C_PROTO_callback>C_PROTO_callback</a></td><td>Generic callback.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=c_register_callback></a> KCallbackFunc
+ <b>c_register_callback</b><i>    (KCallbackList *list, flag (*callback) (),
+				   void *object,
+				   void *client1_data, flag client1_indirect,
+				   void *client2_data, flag client2_indirect,
+				   flag quenchable)
+</i><br><p>    This routine will register a function which should be called when
+    the callbacks for an object should be called. When the object is destroyed
+    a call should be made to <a href=c.html#c_destroy_list>c_destroy_list</a>. The first callback registered
+    is the first one called. Multiple callback functions may be registered per
+    object.
+<p><b>Parameters:</b><ul><li><i>list :</i> 
+    A pointer to the callback list. This is changed. The initial value
+    must be NULL.
+<br><li><i>callback :</i> 
+    The function to be called when the object callbacks are called.
+    The prototype function is <a href=c.html#C_PROTO_callback>C_PROTO_callback</a>.
+<br><li><i>object :</i> 
+    The object pointer passed to the callback. This may be NULL.
+<br><li><i>client1_data :</i> 
+    The first client information pointer passed to the callback.
+    This may be NULL.
+<br><li><i>client1_indirect :</i> 
+    If TRUE the callback is passed a pointer to the storage
+    containing <em>client1_data</em>, else <em>client1_data</em> is passed directly to
+    the callback.
+<br><li><i>client2_data :</i> 
+    The second client information pointer passed to the callback
+    This may be NULL.
+<br><li><i>client2_indirect :</i> 
+    If TRUE the callback is passed a pointer to the storage
+    containing <em>client2_data</em>, else <em>client2_data</em> is passed directly to
+    the callback.
+<br><li><i>quenchable :</i> 
+    If TRUE then the routine is permitted to quench calls to the
+    following callbacks in the list.
+<br></ul><b>Returns:</b>     A KCallbackFunc on success. On failure, the process aborts.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=c_unregister_callback></a> void
+ <b>c_unregister_callback</b><i>    (KCallbackFunc callback)
+</i><br><p>    Unregister a callback function.
+<p><b>Parameters:</b><ul><li><i>callback :</i> 
+    The callback function.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=c_call_callbacks></a> flag
+ <b>c_call_callbacks</b><i>    (KCallbackList list, void *call_data)
+</i><br><p>    Call all registered callbacks for an object.
+<p><b>Parameters:</b><ul><li><i>list :</i> 
+    The callback list.
+<br><li><i>call_data :</i> 
+    The arbitrary call information pointer.
+<br></ul><b>Returns:</b>     TRUE if one of the callbacks quenched the further delivery of
+    callbacks, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=c_destroy_list></a> void
+ <b>c_destroy_list</b><i>    (KCallbackList list)
+</i><br><p>    This routine will unregister all callbacks in a callback list and
+    then destroys the list.
+<p><b>Parameters:</b><ul><li><i>list :</i> 
+    The callback list.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=C_PROTO_callback></a> flag
+ <b>C_PROTO_callback</b><i>    (void *object, void *client1_data, void *call_data,
+		      void *client2_data)
+</i><br><p>    This routine is called when object callbacks are called.
+<p><b>Parameters:</b><ul><li><i>object :</i> 
+    The object information pointer.
+<br><li><i>client1_data :</i> 
+    The first client information pointer.
+<br><li><i>call_data :</i> 
+    The call information pointer.
+<br><li><i>client2_data :</i> 
+    The second client information pointer.
+<br></ul><b>Returns:</b>     TRUE if further callbacks should not be called, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

@@ -1,158 +1,247 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the p_ package of routines in the Karma library.
-
+$PACKAGE          p
+$SUMMARY          Low level routines to convert data
+$PURPOSE
     These routines are meant to provide a low level means of converting C data
     types to the "network" data format (ie. big endian, IEEE 754).
     These are memory to memory routines only. Although they are made public,
     their use is NOT recommended.
-    When reading or writing raw data from and to files or connections, the pio_
-    routines are suggested.
+    When reading or writing raw data from and to files or connections, the
+    <-pio-> routines are suggested.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
-
-    Written by		Richard Gooch	31-Jul-1995
-
-    Last updated by	Richard Gooch	31-Jul-1995
-
-
-*/
-
-flag p_write_buf_float (char *buffer, float data)
-/*  [PURPOSE] This routine will write a floating point number to a buffer.
-    <buffer> A pointer to the buffer. This buffer must be at least 4 bytes long
-    <data> The data. This must be in host natural byte order. The data will be
+$FUNCTION         p_write_buf_float
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (char *buffer, float data)
+$SUMMARY          Write a floating point number to a buffer.
+$PURPOSE
+    Write a floating point number to a buffer.
+$PARAMETER        buffer :
+    A pointer to the buffer. This buffer must be at least 4 bytes long
+$PARAMETER        data :
+    The data. This must be in host natural byte order. The data will be
     converted to IEEE network format prior to writing.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag p_read_buf_float (char *buffer, float *data)
-/*  [PURPOSE] This routine will read a floating point number from a buffer.
-    <buffer> A pointer to the buffer. This buffer must be at least 4 bytes long
-    <data> The output data will be written here. This will be in host natural
+$FUNCTION         p_read_buf_float
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (char *buffer, float *data)
+$SUMMARY          Read a floating point number from a buffer.
+$PURPOSE
+    Read a floating point number from a buffer.
+$PARAMETER        buffer :
+    A pointer to the buffer. This buffer must be at least 4 bytes long
+$PARAMETER        data :
+    The output data will be written here. This will be in host natural
     byte order. The data will be converted from network byte order after
     reading.
-    [NOTES] The data will be converted from IEEE network format after reading.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$NOTE
+    The data will be converted from IEEE network format after reading.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag p_write_buf_double (char *buffer, double data)
-/*  [PURPOSE] This routine will write a double precision floating point number
-    to a buffer.
-    <buffer> A pointer to the buffer. This buffer must be at least 8 bytes long
-    <data> The data. This must be in host natural byte order. The data will be
+$FUNCTION         p_write_buf_double
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (char *buffer, double data)
+$SUMMARY          Write a double precision floating point number to a buffer.
+$PURPOSE
+    Write a double precision floating point number to a buffer.
+$PARAMETER        buffer :
+    A pointer to the buffer. This buffer must be at least 8 bytes long
+$PARAMETER        data :
+    The data. This must be in host natural byte order. The data will be
     converted to IEEE network format prior to writing.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag p_read_buf_double (char *buffer, double *data)
-/*  [PURPOSE] This routine will read a double precision floating point number
-    from a buffer.
-    <buffer> A pointer to the buffer. This buffer must be at least 8 bytes long
-    <data> The output data will be written here. This will be in host natural
+$FUNCTION         p_read_buf_double
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (char *buffer, double *data)
+$SUMMARY          Read a double precision floating point number from a buffer.
+$PURPOSE
+    Read a double precision floating point number from a buffer.
+$PARAMETER        buffer :
+    A pointer to the buffer. This buffer must be at least 8 bytes long
+$PARAMETER        data :
+    The output data will be written here. This will be in host natural
     byte order. The data will be converted from network byte order after
     reading.
-    [NOTES] The data will be converted from IEEE network format after reading.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$NOTE
+    The data will be converted from IEEE network format after reading.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag p_write_buf16s (char *buffer, long data)
-/*  [PURPOSE] This routine will write 16 bits of signed data to a buffer,
-    <buffer> A pointer to the buffer. This buffer must be at least 2 bytes long
-    <data> The data. This must be in host natural byte order. The data will be
+$FUNCTION         p_write_buf16s
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (char *buffer, long data)
+$SUMMARY          Write 16 bits of signed data to a buffer,
+$PURPOSE
+    Write 16 bits of signed data to a buffer,
+$PARAMETER        buffer :
+    A pointer to the buffer. This buffer must be at least 2 bytes long
+$PARAMETER        data :
+    The data. This must be in host natural byte order. The data will be
     converted to network byte order prior to writing.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag p_read_buf16s (char *buffer, long *data)
-/*  [PURPOSE] This routine will read 16 bits of signed data from a buffer.
-    <buffer> A pointer to the buffer. This buffer must be at least 2 bytes long
-    <data> The output data will be written here. This will be in host natural
+$FUNCTION         p_read_buf16s
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (char *buffer, long *data)
+$SUMMARY          Read 16 bits of signed data from a buffer.
+$PURPOSE
+    Read 16 bits of signed data from a buffer.
+$PARAMETER        buffer :
+    A pointer to the buffer. This buffer must be at least 2 bytes long
+$PARAMETER        data :
+    The output data will be written here. This will be in host natural
     byte order. The data will be converted from network byte order after
     reading.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag p_write_buf32s (char *buffer, long data)
-/*  [PURPOSE] This routine will write 32 bits of signed data to a buffer,
-    <buffer> A pointer to the buffer. This buffer must be at least 2 bytes long
-    <data> The data. This must be in host natural byte order. The data will be
+$FUNCTION         p_write_buf32s
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (char *buffer, long data)
+$SUMMARY          Write 32 bits of signed data to a buffer,
+$PURPOSE
+    Write 32 bits of signed data to a buffer,
+$PARAMETER        buffer :
+    A pointer to the buffer. This buffer must be at least 2 bytes long
+$PARAMETER        data :
+    The data. This must be in host natural byte order. The data will be
     converted to network byte order prior to writing.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag p_read_buf32s (char *buffer, long *data)
-/*  [PURPOSE] This routine will read 32 bits of signed data from a buffer.
-    <buffer> A pointer to the buffer. This buffer must be at least 2 bytes long
-    <data> The output data will be written here. This will be in host natural
+$FUNCTION         p_read_buf32s
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (char *buffer, long *data)
+$SUMMARY          Read 32 bits of signed data from a buffer.
+$PURPOSE
+    Read 32 bits of signed data from a buffer.
+$PARAMETER        buffer :
+    A pointer to the buffer. This buffer must be at least 2 bytes long
+$PARAMETER        data :
+    The output data will be written here. This will be in host natural
     byte order. The data will be converted from network byte order after
     reading.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag p_write_buf16 (char *buffer, unsigned long data)
-/*  [PURPOSE] This routine will write 16 bits of unsigned data to a buffer,
-    <buffer> A pointer to the buffer. This buffer must be at least 2 bytes long
-    <data> The data. This must be in host natural byte order. The data will be
+$FUNCTION         p_write_buf16
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (char *buffer, unsigned long data)
+$SUMMARY          Write 16 bits of unsigned data to a buffer,
+$PURPOSE
+    Write 16 bits of unsigned data to a buffer,
+$PARAMETER        buffer :
+    A pointer to the buffer. This buffer must be at least 2 bytes long
+$PARAMETER        data :
+    The data. This must be in host natural byte order. The data will be
     converted to network byte order prior to writing.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag p_read_buf16 (char *buffer, unsigned long *data)
-/*  [PURPOSE] This routine will read 16 bits of unsigned data from a buffer.
-    <buffer> A pointer to the buffer. This buffer must be at least 2 bytes long
-    <data> The output data will be written here. This will be in host natural
+$FUNCTION         p_read_buf16
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (char *buffer, unsigned long *data)
+$SUMMARY          Read 16 bits of unsigned data from a buffer.
+$PURPOSE
+    Read 16 bits of unsigned data from a buffer.
+$PARAMETER        buffer :
+    A pointer to the buffer. This buffer must be at least 2 bytes long
+$PARAMETER        data :
+    The output data will be written here. This will be in host natural
     byte order. The data will be converted from network byte order after
     reading.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag p_write_buf32 (char *buffer, unsigned long data)
-/*  [PURPOSE] This routine will write 32 bits of unsigned data to a buffer,
-    <buffer> A pointer to the buffer. This buffer must be at least 4 bytes long
-    <data> The data. This must be in host natural byte order. The data will be
+$FUNCTION         p_write_buf32
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (char *buffer, unsigned long data)
+$SUMMARY          Write 32 bits of unsigned data to a buffer,
+$PURPOSE
+    Write 32 bits of unsigned data to a buffer,
+$PARAMETER        buffer :
+    A pointer to the buffer. This buffer must be at least 4 bytes long
+$PARAMETER        data :
+    The data. This must be in host natural byte order. The data will be
     converted to network byte order prior to writing.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag p_read_buf32 (char *buffer, unsigned long *data)
-/*  [PURPOSE] This routine will read 32 bits of unsigned data from a buffer.
-    <buffer> A pointer to the buffer. This buffer must be at least 4 bytes long
-    <data> The output data will be written here. This will be in host natural
+$FUNCTION         p_read_buf32
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (char *buffer, unsigned long *data)
+$SUMMARY          Read 32 bits of unsigned data from a buffer.
+$PURPOSE
+    Read 32 bits of unsigned data from a buffer.
+$PARAMETER        buffer :
+    A pointer to the buffer. This buffer must be at least 4 bytes long
+$PARAMETER        data :
+    The output data will be written here. This will be in host natural
     byte order. The data will be converted from network byte order after
     reading.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag p_write_buf64 (buffer, data)
-/*  This routine will write 64 bits of data to the buffer pointed to by
-    buffer  .
-    The data must be given by  data  .This must be in host natural byte order.
-    The data will be converted to network byte order prior to writing.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-char *buffer;
-unsigned long data;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         p_write_buf64
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (char *buffer, unsigned long data)
+$SUMMARY          Write 64 bits of data to a buffer.
+$PURPOSE
+    Write 64 bits of data to a buffer.
+$PARAMETER        buffer :
+    A pointer to the buffer. This buffer must be at least 8 bytes long
+$PARAMETER        data :
+    The data. This must be in host natural byte order. The data will be
+    converted to network byte order prior to writing.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag p_read_buf64 (buffer, data)
-/*  This routine will read 64 bits of data from the buffer pointed to by
-    buffer  .This must be at least 8 bytes long.
-    The data will be written to the storage pointed to by  data  .This will be
-    in host natural byte order.
-    The data will be converted from network byte order after reading.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-char *buffer;
-unsigned long *data;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         p_read_buf64
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (char *buffer, unsigned long *data)
+$SUMMARY          Read 64 bits of signed data from a buffer.
+$PURPOSE
+    Read 64 bits of signed data from a buffer.
+$PARAMETER        buffer :
+    A pointer to the buffer. This buffer must be at least 8 bytes long
+$PARAMETER        data :
+    The output data will be written here. This will be in host natural
+    byte order. The data will be converted from network byte order after
+    reading.
+$RETURNS
+    TRUE on success, else FALSE.
+$END

@@ -2,7 +2,7 @@
 
     Source file for  chlen  (resampling module).
 
-    Copyright (C) 1993,1994,1995  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -60,14 +60,22 @@
     Updated by      Richard Gooch   24-JUN-1995: Improved interpolating TOOBIG
   values in <resample_dimension>.
 
-    Last updated by Richard Gooch   13-JUL-1995: Fixed bug in <post_process>
+    Updated by      Richard Gooch   13-JUL-1995: Fixed bug in <post_process>
   no value returned.
+
+    Updated by      Richard Gooch   1-JUN-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   4-JUN-1996: Took account of new fields in
+  dimension descriptor for first and last co-ordinate.
 
 
 */
 #include <stdio.h>
 #include <math.h>
 #include <karma.h>
+#include <karma_dsproc.h>
+#include <karma_module.h>
 #include <karma_panel.h>
 #include <karma_dsxfr.h>
 #include <karma_ds.h>
@@ -115,8 +123,8 @@ static flag save_unproc = TRUE;
 
 static char *array_names[NUMARRAYS];
 static unsigned int num_arrays = 0;
-static double new_min = 0.0;
-static double new_max = 1.0;
+static double new_first = 0.0;
+static double new_last = 1.0;
 static int num_coordinates = 1;
 static double filter_window[MAX_WINDOW_SIZE * 2];
 static unsigned int window_size = 0;
@@ -131,7 +139,7 @@ static unsigned int filter_step = 2;
 #define NUM_OPTIONS 5
 static char *option_alternatives[NUM_OPTIONS] =
 {
-    "min_max",
+    "first_last",
     "zero-pad",
     "truncate",
     "resample",
@@ -139,7 +147,7 @@ static char *option_alternatives[NUM_OPTIONS] =
 };
 static char *option_comments[NUM_OPTIONS] =
 {
-    "spec. new min&max(truncate or zero-pad)",
+    "spec. new first&last(truncate or zero-pad)",
     "zero-pad by num_coodinates",
     "truncate by num_coodinates",
     "oversample to num_coordinates",
@@ -160,12 +168,9 @@ static unsigned int resample_option = RESAMPLE_OPTION_DATA_COPY;
 static char *dim_name = NULL;
 
 
-main (argc, argv)
-int argc;       /*  Count of parameters on command line */
-char **argv;    /*  List of command line parameters     */
+int main (int argc, char **argv)
 {
     KControlPanel panel;
-    extern char *data_type_names[NUMTYPES];
     static char function_name[] = "main";
 
     if ( ( panel = panel_create (FALSE) ) == NULL )
@@ -186,9 +191,9 @@ char **argv;    /*  List of command line parameters     */
 		    PIA_END);
     panel_add_item (panel, "save_unproc_data", "", PIT_FLAG, &save_unproc,
 		    PIA_END);
-    panel_add_item (panel, "new_max", "co-ordinate value", K_DOUBLE, &new_max,
+    panel_add_item (panel, "new_last", "co-ordinate value", K_DOUBLE,&new_last,
 		    PIA_END);
-    panel_add_item (panel, "new_min", "co-ordinate value", K_DOUBLE, &new_min,
+    panel_add_item (panel, "new_first","co-ordinate value",K_DOUBLE,&new_first,
 		    PIA_END);
     panel_add_item (panel, "num_coordinates", "co-ordinates", K_INT,
 		    &num_coordinates,
@@ -219,18 +224,11 @@ FILE *fp;
     extern unsigned int num_arrays;
     extern char *dim_name;
     extern char *array_names[NUMARRAYS];
-    extern double new_min;
-    extern double new_max;
-    static char function_name[] = "chlen";
+    /*static char function_name[] = "chlen";*/
 
     if (num_coordinates < 1)
     {
 	(void) fprintf (stderr, "num_coordinates must be greater than zero\n");
-        return (TRUE);
-    }
-    if (new_max <= new_min)
-    {
-	(void) fprintf (stderr, "new_max must be greater than new_min\n");
         return (TRUE);
     }
     for ( ; p; p = ex_word_skip (p) )
@@ -348,13 +346,13 @@ static packet_desc *generate_desc (inp_desc)
 */
 packet_desc *inp_desc;
 {
-    unsigned int new_length;
+    unsigned int new_length = 0;   /*  Initialised to keep compiler happy  */
     unsigned int dim_num;
     unsigned int coord_count;
     unsigned int pad_coords;
-    double min;
-    double max;
-    double inp_dim_spacing;
+    double first = 0.0;            /*  Initialised to keep compiler happy  */
+    double last = 0.0;             /*  Initialised to keep compiler happy  */
+    double inp_dim_spacing = 0.0;  /*  Initialised to keep compiler happy  */
     packet_desc *return_value;
     array_desc *arr_desc;
     dim_desc *inp_dim;
@@ -366,8 +364,8 @@ packet_desc *inp_desc;
     extern unsigned int out_start_coord;
     extern unsigned int filter_step;
     extern unsigned int window_size;
-    extern double new_min;
-    extern double new_max;
+    extern double new_first;
+    extern double new_last;
     extern char *dim_name;
     static char function_name[] = "generate_desc";
 
@@ -378,18 +376,24 @@ packet_desc *inp_desc;
       case IDENT_NOT_FOUND:
 	(void) fprintf (stderr, "Dimension: \"%s\" not found\n", dim_name);
 	return (NULL);
+/*
 	break;
+*/
       case IDENT_ELEMENT:
 	(void) fprintf (stderr,
 			"Item: \"%s\" must be a dimension name, not an element\n",
 			dim_name);
 	return (NULL);
+/*
 	break;
+*/
       case IDENT_MULTIPLE:
 	(void) fprintf (stderr, "Item \"%s\" found more than once\n",
 			dim_name);
 	return (NULL);
+/*
 	break;
+*/
       case IDENT_DIMENSION:
 	break;
       case IDENT_GEN_STRUCT:
@@ -410,61 +414,109 @@ packet_desc *inp_desc;
 	return (NULL);
     }
     inp_dim = arr_desc->dimensions[dim_index];
-    if (inp_dim->coordinates == NULL)
-    {
-	/*  Compute dimension spacing  */
-	inp_dim_spacing = ( (inp_dim->maximum - inp_dim->minimum) /
-			   (double) (inp_dim->length - 1) );
-    }
+    /*  Compute dimension spacing  */
+    inp_dim_spacing = ( (inp_dim->last_coord - inp_dim->first_coord) /
+			(double) (inp_dim->length - 1) );
     /*  Compute output dimension info  */
     switch (option)
     {
       case OPTION_MIN_MAX:
-	/*  Compute new minimum and maximum  */
-	if ( ( (new_min < inp_dim->minimum) ||
-	      (new_max > inp_dim->maximum) ) &&
-	    (inp_dim->coordinates != NULL) )
+	/*  Compute new first and last co-ordinates  */
+	if (inp_dim->first_coord < inp_dim->last_coord)
+	{
+	    if ( ( (new_first < inp_dim->first_coord) ||
+		   (new_last > inp_dim->last_coord) ) &&
+		 (inp_dim->coordinates != NULL) )
+	    {
+		/*  Dimension extended and co-ordinates not evenly spaced  */
+		(void) fprintf (stderr,
+				"Cannot extend irregularly spaced dimension\n");
+		return (NULL);
+	    }
+	}
+	else if ( ( (new_first > inp_dim->first_coord) ||
+		    (new_last < inp_dim->last_coord) ) &&
+		  (inp_dim->coordinates != NULL) )
 	{
 	    /*  Dimension extended and co-ordinates not evenly spaced  */
 	    (void) fprintf (stderr,
 			    "Cannot extend irregularly spaced dimension\n");
 	    return (NULL);
 	}
-	/*  Compute new minimum  */
-	if (new_min < inp_dim->minimum)
+	/*  Compute new first and last co-ordinates  */
+	if (inp_dim->first_coord < inp_dim->last_coord)
 	{
-	    /*  Outside old dimension bounds: extrapolate  */
-	    inp_start_coord = 0;
-	    out_start_coord = floor ( (inp_dim->minimum - new_min) /
+	    if (new_first < inp_dim->first_coord)
+	    {
+		/*  Outside old dimension bounds: extrapolate  */
+		inp_start_coord = 0;
+		out_start_coord = floor ( (inp_dim->first_coord - new_first) /
+					  inp_dim_spacing );
+		first = inp_dim->first_coord;
+		first -= (double) out_start_coord * inp_dim_spacing;
+	    }
+	    else
+	    {
+		/*  Inside old dimension bounds  */
+		inp_start_coord = ds_get_coord_num (inp_dim, new_first,
+						    SEARCH_BIAS_UPPER);
+		out_start_coord = 0;
+		first = ds_get_coordinate (inp_dim, inp_start_coord);
+	    }
+	    if (new_last > inp_dim->last_coord)
+	    {
+		/*  Outside old dimension bounds: extrapolate  */
+		pad_coords = floor ( (new_last - inp_dim->last_coord) /
 				     inp_dim_spacing );
-	    min = inp_dim->minimum;
-	    min -= (double) out_start_coord * inp_dim_spacing;
+		inp_stop_coord = inp_dim->length;
+		last = inp_dim->last_coord;
+		last += (double) pad_coords * inp_dim_spacing;
+	    }
+	    else
+	    {
+		/*  Inside old dimension bounds  */
+		pad_coords = 0;
+		inp_stop_coord = ds_get_coord_num (inp_dim, new_last,
+						   SEARCH_BIAS_LOWER);
+		last = ds_get_coordinate (inp_dim, inp_stop_coord - 1);
+	    }
 	}
 	else
 	{
-	    /*  Inside old dimension bounds  */
-	    inp_start_coord = ds_get_coord_num (inp_dim, new_min,
-						SEARCH_BIAS_UPPER);
-	    out_start_coord = 0;
-	    min = ds_get_coordinate (inp_dim, inp_start_coord);
-	}
-	/*  Compute new maximum  */
-	if (new_max > inp_dim->maximum)
-	{
-	    /*  Outside old dimension bounds: extrapolate  */
-	    pad_coords = floor ( (new_max - inp_dim->maximum) /
-				inp_dim_spacing );
-	    inp_stop_coord = inp_dim->length;
-	    max = inp_dim->maximum;
-	    max += (double) pad_coords * inp_dim_spacing;
-	}
-	else
-	{
-	    /*  Inside old dimension bounds  */
-	    pad_coords = 0;
-	    inp_stop_coord = ds_get_coord_num (inp_dim, new_max,
-					       SEARCH_BIAS_LOWER);
-	    max = ds_get_coordinate (inp_dim, inp_stop_coord - 1);
+	    if (new_first > inp_dim->first_coord)
+	    {
+		/*  Outside old dimension bounds: extrapolate  */
+		inp_start_coord = 0;
+		out_start_coord = floor ( (inp_dim->first_coord - new_first) /
+					  inp_dim_spacing );
+		first = inp_dim->first_coord;
+		first -= (double) out_start_coord * inp_dim_spacing;
+	    }
+	    else
+	    {
+		/*  Inside old dimension bounds  */
+		inp_start_coord = ds_get_coord_num (inp_dim, new_first,
+						    SEARCH_BIAS_UPPER);
+		out_start_coord = 0;
+		first = ds_get_coordinate (inp_dim, inp_start_coord);
+	    }
+	    if (new_last < inp_dim->last_coord)
+	    {
+		/*  Outside old dimension bounds: extrapolate  */
+		pad_coords = floor ( (new_last - inp_dim->last_coord) /
+				     inp_dim_spacing );
+		inp_stop_coord = inp_dim->length;
+		last = inp_dim->last_coord;
+		last += (double) pad_coords * inp_dim_spacing;
+	    }
+	    else
+	    {
+		/*  Inside old dimension bounds  */
+		pad_coords = 0;
+		inp_stop_coord = ds_get_coord_num (inp_dim, new_last,
+						   SEARCH_BIAS_LOWER);
+		last = ds_get_coordinate (inp_dim, inp_stop_coord - 1);
+	    }
 	}
 	new_length = out_start_coord + pad_coords;
 	new_length += inp_stop_coord - inp_start_coord;
@@ -473,32 +525,32 @@ packet_desc *inp_desc;
 	inp_start_coord = 0;
 	out_start_coord = 0;
 	inp_stop_coord = inp_dim->length;
-	min = inp_dim->minimum;
-	max = inp_dim->maximum + (double) num_coordinates * inp_dim_spacing;
+	first = inp_dim->first_coord;
+	last = inp_dim->last_coord + (double) num_coordinates *inp_dim_spacing;
 	new_length = inp_dim->length + (unsigned int) num_coordinates;
 	break;
       case OPTION_TRUNCATE:
 	inp_start_coord = 0;
 	out_start_coord = 0;
 	inp_stop_coord = inp_dim->length - (unsigned int) num_coordinates;
-	min = inp_dim->minimum;
-	max = ds_get_coordinate (inp_dim, inp_stop_coord - 1);
+	first = inp_dim->first_coord;
+	last = ds_get_coordinate (inp_dim, inp_stop_coord - 1);
 	new_length = inp_dim->length - (unsigned int) num_coordinates;
 	break;
       case OPTION_RESAMPLE:
 	inp_start_coord = 0;
 	out_start_coord = 0;
 	inp_stop_coord = inp_dim->length;
-	min = inp_dim->minimum;
-	max = inp_dim->maximum;
+	first = inp_dim->first_coord;
+	last = inp_dim->last_coord;
 	new_length = (unsigned int) num_coordinates;
 	break;
       case OPTION_FILTER:
 	inp_start_coord = 0;
 	out_start_coord = 0;
 	inp_stop_coord = inp_dim->length;
-	min = inp_dim->minimum;
-	max = inp_dim->maximum;
+	first = inp_dim->first_coord;
+	last = inp_dim->last_coord;
 	if ( (pad_coords = inp_dim->length % filter_step) > 0 )
 	{
 	    pad_coords = filter_step - pad_coords;
@@ -561,8 +613,18 @@ packet_desc *inp_desc;
     out_dim->length = new_length;
     arr_desc->lengths[dim_num] = out_dim->length;
     /*  Change minimum and maximum co-ordinates of output dimension  */
-    out_dim->minimum = min;
-    out_dim->maximum = max;
+    out_dim->first_coord = first;
+    out_dim->last_coord = last;
+    if (first < last)
+    {
+	out_dim->minimum = first;
+	out_dim->maximum = last;
+    }
+    else
+    {
+	out_dim->minimum = last;
+	out_dim->maximum = first;
+    }
     switch (option)
     {
       case OPTION_RESAMPLE:
@@ -613,9 +675,8 @@ static flag post_process (inp_desc, out_desc)
 multi_array *inp_desc;
 multi_array *out_desc;
 {
-    char txt[STRING_LENGTH];
     extern char *dim_name;
-    static char function_name[] = "post_process";
+    /*static char function_name[] = "post_process";*/
 
 #ifdef dummy
     (void) sprintf (txt, "Changed length of dimension: \"%s\"", dim_name);
@@ -652,7 +713,7 @@ char *out_data;
     unsigned int iter_below_count;
     unsigned int stride;
     unsigned int pack_size;
-    unsigned int copy_bytes;
+    unsigned int copy_bytes = 0;  /*  Initialised to keep compiler happy  */
     char *inp_ptr;
     char *out_ptr;
     array_desc *arr_desc_inp;
@@ -993,7 +1054,7 @@ unsigned int window_size;
     char *out_ptr;
     double inp_values[MAX_WINDOW_SIZE * 2];
     extern char host_type_sizes[NUMTYPES];
-    static char function_name[] = "filter_dimension";
+    /*static char function_name[] = "filter_dimension";*/
 
     /*  Loop on elements  */
     for (elem_count = 0; elem_count < pack_desc->num_elements; ++elem_count)

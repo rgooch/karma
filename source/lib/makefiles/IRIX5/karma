@@ -1,7 +1,1 @@
-LIB = karma
-
-CFLAGS =
-LDFLAGS =
-DEPENDFLAGS =
-
-include $(KARMAROOT)/source/lib/makefiles/$(OS)/GNUmakefile.rules
+../generic/karma

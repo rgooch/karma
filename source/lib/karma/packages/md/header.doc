@@ -1,0 +1,4 @@
+$SUMMARY          Routines to produce message digests (secure hash functions)
+$PURPOSE
+    These routines are meant to provide message digests (secure hash functions)
+    These have application in message authentication/verification.

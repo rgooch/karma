@@ -1,0 +1,612 @@
+<html><head><title>Package: ch</title></head> 
+<body>
+<center><h1>The "ch" Package</h1></center>    These routines are meant to provide an alternative to the standard C
+    library streams (FILE *).
+    The channel package provides far more powerful channels (streams),
+    especially when transferring data over connections.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=ch></a></table><h4>Functions</h4><table><tr><td><a href=ch.html#ch_open_file>ch_open_file</a></td><td>Open a file.
+</td></tr>
+<tr><td><a href=ch.html#ch_map_disc>ch_map_disc</a></td><td>Map a disc file.
+</td></tr>
+<tr><td><a href=ch.html#ch_open_connection>ch_open_connection</a></td><td>Open a connection.
+</td></tr>
+<tr><td><a href=ch.html#ch_open_memory>ch_open_memory</a></td><td>Open a memory channel.
+</td></tr>
+<tr><td><a href=ch.html#ch_accept_on_dock>ch_accept_on_dock</a></td><td>Accept a connection.
+</td></tr>
+<tr><td><a href=ch.html#ch_alloc_port>ch_alloc_port</a></td><td>Allocate a port.
+</td></tr>
+<tr><td><a href=ch.html#ch_close>ch_close</a></td><td>Close a channel.
+</td></tr>
+<tr><td><a href=ch.html#ch_flush>ch_flush</a></td><td>Flush the write buffer of a channel object.
+</td></tr>
+<tr><td><a href=ch.html#ch_read>ch_read</a></td><td>Read from a channel.
+</td></tr>
+<tr><td><a href=ch.html#ch_write>ch_write</a></td><td>Write to a channel.
+</td></tr>
+<tr><td><a href=ch.html#ch_close_all_channels>ch_close_all_channels</a></td><td>Close all open channels.
+</td></tr>
+<tr><td><a href=ch.html#ch_seek>ch_seek</a></td><td>Move read/write pointer.
+</td></tr>
+<tr><td><a href=ch.html#ch_get_bytes_readable>ch_get_bytes_readable</a></td><td>Count unread bytes.
+</td></tr>
+<tr><td><a href=ch.html#ch_get_descriptor>ch_get_descriptor</a></td><td>Get the file descriptor associated with a channel.
+</td></tr>
+<tr><td><a href=ch.html#ch_open_stdin>ch_open_stdin</a></td><td>Create starndard input channel.
+</td></tr>
+<tr><td><a href=ch.html#ch_test_for_io>ch_test_for_io</a></td><td>Test if I/O possible on channel.
+</td></tr>
+<tr><td><a href=ch.html#ch_test_for_asynchronous>ch_test_for_asynchronous</a></td><td>Test if a channel object is an asynchronous channel.
+</td></tr>
+<tr><td><a href=ch.html#ch_test_for_connection>ch_test_for_connection</a></td><td>Test if a channel object is a connection channel.
+</td></tr>
+<tr><td><a href=ch.html#ch_test_for_local_connection>ch_test_for_local_connection</a></td><td>Test if a connection channel object is a local connection.
+</td></tr>
+<tr><td><a href=ch.html#ch_attach_to_asynchronous_descriptor>ch_attach_to_asynchronous_descriptor</a></td><td>Create a channel object from an asynchronous descriptor.
+</td></tr>
+<tr><td><a href=ch.html#ch_test_for_mmap>ch_test_for_mmap</a></td><td>Test if a channel object is a memory mapped disc channel.
+</td></tr>
+<tr><td><a href=ch.html#ch_tell>ch_tell</a></td><td>Get the read and write pointers for a channel.
+</td></tr>
+<tr><td><a href=ch.html#ch_get_mmap_addr>ch_get_mmap_addr</a></td><td>Get memory mapped address.
+</td></tr>
+<tr><td><a href=ch.html#ch_get_mmap_access_count>ch_get_mmap_access_count</a></td><td>Get memory mapped access count.
+</td></tr>
+<tr><td><a href=ch.html#ch_register_converter>ch_register_converter</a></td><td>Register channel converter function.
+</td></tr>
+<tr><td><a href=ch.html#ch_unregister_converter>ch_unregister_converter</a></td><td>Unregister converter.
+</td></tr>
+<tr><td><a href=ch.html#ch_create_pipe>ch_create_pipe</a></td><td>Create a pipe.
+</td></tr>
+<tr><td><a href=ch.html#ch_create_sink>ch_create_sink</a></td><td>Create data sink.
+</td></tr>
+<tr><td><a href=ch.html#ch_tap_io_events>ch_tap_io_events</a></td><td>Register I/O tap function.
+</td></tr>
+<tr><td><a href=ch.html#ch_open_and_fill_memory>ch_open_and_fill_memory</a></td><td>Create and fill memory channel.
+</td></tr>
+<tr><td><a href=ch.html#ch_gets>ch_gets</a></td><td>Read a line from a channel.
+</td></tr>
+<tr><td><a href=ch.html#ch_getl>ch_getl</a></td><td>Read a line from a channel.
+</td></tr>
+<tr><td><a href=ch.html#ch_puts>ch_puts</a></td><td>Write a character string to a channel.
+</td></tr>
+<tr><td><a href=ch.html#ch_drain>ch_drain</a></td><td>Drain bytes from a channel.
+</td></tr>
+<tr><td><a href=ch.html#ch_printf>ch_printf</a></td><td>Write formatted output to a channel.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=ch.html#CH_PROTO_size_func>CH_PROTO_size_func</a></td><td>Get number of bytes readable.
+</td></tr>
+<tr><td><a href=ch.html#CH_PROTO_read_func>CH_PROTO_read_func</a></td><td>Read bytes.
+</td></tr>
+<tr><td><a href=ch.html#CH_PROTO_write_func>CH_PROTO_write_func</a></td><td>Write bytes.
+</td></tr>
+<tr><td><a href=ch.html#CH_PROTO_flush_func>CH_PROTO_flush_func</a></td><td>Flush.
+</td></tr>
+<tr><td><a href=ch.html#CH_PROTO_close_func>CH_PROTO_close_func</a></td><td>Close.
+</td></tr>
+<tr><td><a href=ch.html#CH_PROTO_tap_func>CH_PROTO_tap_func</a></td><td>Tap I/O callback.
+</td></tr>
+</table><h4>Tables</h4><table><tr><td><a href=ch.html#CH_FILE_MODES>CH_FILE_MODES</a></td><td>List of defined file modes
+</td></tr>
+<tr><td><a href=ch.html#CH_MAP_CONTROLS>CH_MAP_CONTROLS</a></td><td>List of mapping control values
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=ch_open_file></a> Channel
+ <b>ch_open_file</b><i>    (CONST char *filename, CONST char *type)
+</i><br><p>    This routine will open a file channel. The file may be a regular
+    disc file, a named FIFO, a character special device, a Unix domain
+    connection or a TCP/IP connection. The channel may be later tested
+    to determine what the true channel type is by calling routines such as:
+    <a href=ch.html#ch_test_for_asynchronous>ch_test_for_asynchronous</a> and <a href=ch.html#ch_test_for_io>ch_test_for_io</a>.
+<p><b>Parameters:</b><ul><li><i>filename :</i> 
+    The pathname of the file to open. This parameter has the same
+    meaning as the first parameter to <em>open(2)</em>. Filenames of the form
+    "//tcpIP/<hostname>:<port>" indicate a connection to a TCP/IP port on host
+    <em>hostname</em> with raw port number <em>port</em> is requested.
+<br><li><i>type :</i> 
+    The mode of the file. See <a href=ch.html#CH_FILE_MODES>CH_FILE_MODES</a> for a list of allowable
+    modes.
+<br></ul><b>Returns:</b>     A channel object on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     For character special files and named FIFOs, these modes
+    degenerate into read-write, read-only and write-only.
+</ul><p><hr> <a name=ch_map_disc></a> Channel
+ <b>ch_map_disc</b><i>    (CONST char *filename, unsigned int option, flag writeable,
+		     flag update_on_write)
+</i><br><p>    This routine will open a memory channel with the memory pages
+    being mapped from a disc file. The disc file must already exist.
+<p><b>Parameters:</b><ul><li><i>filename :</i> 
+    The pathname of the file to open.
+<br><li><i>option :</i> 
+    Control value which determines whether the channel is opened as an
+    ordinary disc file or is mapped. See <a href=ch.html#CH_MAP_CONTROLS>CH_MAP_CONTROLS</a> for legal values.
+    If the file is not mapped then the routine will attempt to open an ordinary
+    disc channel. If the file is opened as a disc channel the access mode is:
+    "r".
+<br><li><i>writable :</i> 
+    If the mapped pages are to be writeable, this must be TRUE. If
+    this is FALSE and the memory pages are written to, a segmentation fault
+    occurs.
+<br><li><i>update_on_write :</i> 
+    If the disc file should be updated when the memory pages
+    are written to, this must be TRUE. If this is FALSE, then a write to a
+    memory page causes the page to be copied into swap space and the process
+    retains a private copy of the page from this point on.
+<br></ul><b>Returns:</b>     A channel object on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     If <em>update_on_write</em> is FALSE and <em>writeable</em> is TRUE, then some
+    systems require the allocation of normal virtual memory equal to the size
+    of the disc file at the time of mapping, while others will dynamically
+    allocate memory from swap space as pages are written into. In the latter
+    case, some systems will cause a segmentation fault if swap space is
+    exhausted, while other systems wait for space to be freed.
+<li>     The channel may be queried to determine if it has been memory mapped
+    using the call <em>ch_test_for_mmap</em>.
+</ul><p><hr> <a name=ch_open_connection></a> Channel
+ <b>ch_open_connection</b><i>    (unsigned long host_addr, unsigned int port_number)
+</i><br><p>    This routine will open a full-duplex connection channel to a
+    server running on another host machine.
+<p><b>Parameters:</b><ul><li><i>host_addr :</i> 
+    The Internet address of the host machine. If this is 0 the
+    connection is made to a server running on the same machine using the most
+    efficient transport available.
+<br><li><i>port_number :</i> 
+    The port number to connect to. This should not be confused
+    with Internet port numbers.
+<br></ul><b>Returns:</b>     A channel object on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The use of this routine is not recommended, see the <a href=conn.html#conn>conn</a>
+    package for more powerful functionality.
+</ul><p><hr> <a name=ch_open_memory></a> Channel
+ <b>ch_open_memory</b><i>    (char *buffer, unsigned int size)
+</i><br><p>    This routine will open a memory channel. A memory channel behaves
+    like a disc channel with a limited (specified) file (device) size. Data is
+    undefined when reading before writing has occurred.
+<p><b>Parameters:</b><ul><li><i>buffer :</i> 
+    The buffer to use. If this is NULL, the routine will allocate a
+    buffer of the specified size which is automatically deallocated upon
+    closure of the channel.
+<br><li><i>size :</i> 
+    The size of the buffer to allocate.
+<br></ul><b>Returns:</b>     A channel object on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_accept_on_dock></a> Channel
+ <b>ch_accept_on_dock</b><i>    (Channel dock, unsigned long *addr)
+</i><br><p>    This routine will open a full-duplex connection channel to the
+    first connection on a waiting dock.
+<p><b>Parameters:</b><ul><li><i>dock :</i> 
+    The dock.
+<br><li><i>addr :</i> 
+    The address of the host connecting to the dock will be written here.
+<br></ul><b>Returns:</b>     A channel object on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_alloc_port></a> Channel *
+ <b>ch_alloc_port</b><i>    (unsigned int *port_number, unsigned int retries,
+			unsigned int *num_docks)
+</i><br><p>    This routine will allocate a Karma port for the module so that it
+    can operate as a server (able to receive network connections).
+<p><b>Parameters:</b><ul><li><i>port_number :</i> 
+    A pointer to the port number to allocate. The routine will
+    write the actual port number allocated to this address. This must point to
+    an address which lies on an <em>int</em> boundary.
+<br><li><i>retries :</i> 
+    The number of succsessive port numbers to attempt to allocate
+    before giving up. If this is 0, then the routine will give up immediately
+    if the specified port number is in use.
+<br><li><i>num_docks :</i> 
+    The routine will create a number of docks for one port. Each
+    dock is an alternative access point for other modules to connect to this
+    port. The number of docks allocated will be written here. This must point
+    to an address which lies on an <em>int</em> boundary.
+<br></ul><b>Returns:</b>     A pointer to an array of channel docks on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The close-on-exec flags of the docks are set such that the docks
+    will close on a call to execve(2V).
+<li>     The docks are placed into blocking mode.
+</ul><p><hr> <a name=ch_close></a> flag
+ <b>ch_close</b><i>    (Channel channel)
+</i><br><p>    This routine will close a channel object. The write buffer will
+    be flushed prior to closure.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_flush></a> flag
+ <b>ch_flush</b><i>    (Channel channel)
+</i><br><p>    Flush the write buffer of a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_read></a> unsigned int
+ <b>ch_read</b><i>    (Channel channel, char *buffer, unsigned int length)
+</i><br><p>    This routine will read a number of bytes from a channel and
+    places them into a buffer.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>buffer :</i> 
+    The buffer to write the data into.
+<br><li><i>length :</i> 
+    The number of bytes to write into the buffer.
+<br></ul><b>Returns:</b>     The number of bytes read.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     If the channel is a connection and the number of bytes readable from
+    the connection is equal to or more than <em>length</em> the routine will NOT
+    block.
+</ul><p><hr> <a name=ch_write></a> unsigned int
+ <b>ch_write</b><i>    (Channel channel, CONST char *buffer,unsigned int length)
+</i><br><p>    This routine will write a number of bytes from a buffer to a
+    channel.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>buffer :</i> 
+    The buffer to read the data from.
+<br><li><i>length :</i> 
+    The number of bytes to read from the buffer and write to the
+    channel.
+<br></ul><b>Returns:</b>     The number of bytes written.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_close_all_channels></a> void
+ <b>ch_close_all_channels</b><i>    ()
+</i><br><p>    The routine will close all open channels. The routine is meant to
+    be called from the exit(3) function.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_seek></a> flag
+ <b>ch_seek</b><i>    (Channel channel, unsigned long position)
+</i><br><p>    This routine will position the read and write pointers for a
+    channel.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>position :</i> 
+    The position (relative to the start of the channel data).
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE (indicating a seek request beyond the
+    channel limits)
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine cannot be used for connection channels.
+</ul><p><hr> <a name=ch_get_bytes_readable></a> int
+ <b>ch_get_bytes_readable</b><i>    (Channel channel)
+</i><br><p>    This routine will determine the number of bytes currently
+    readable on a connection channel. This is equal to the maximum number of
+    bytes that could be read from the channel at this time without blocking
+    waiting for more input to be transmitted from the other end of the
+    connection.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br></ul><b>Returns:</b>     The number of bytes readable on success, else -1 indicating error
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_get_descriptor></a> int
+ <b>ch_get_descriptor</b><i>    (Channel channel)
+</i><br><p>    Get the file descriptor associated with a channel.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br></ul><b>Returns:</b>     The file descriptor on success, else -1 indicating error.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_open_stdin></a> void
+ <b>ch_open_stdin</b><i>    ()
+</i><br><p>    This routine will create a channel object for the standard input
+    descriptor (typically 0 on Unix systems).
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The standard input channel will be written to the external variable
+    <em>ch_stdin</em>.
+</ul><p><hr> <a name=ch_test_for_io></a> flag
+ <b>ch_test_for_io</b><i>    (Channel channel)
+</i><br><p>    This routine will test if a channel object is capable of
+    supporting reading and writing operations. Most channels fall under this
+    category. The notable exceptions are the dock channel and channels created
+    by a call to <em>ch_attach_to_asynchronous_descriptor</em>.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br></ul><b>Returns:</b>     TRUE if the channel is capable of reading and writing, else FALSE
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_test_for_asynchronous></a> flag
+ <b>ch_test_for_asynchronous</b><i>    (Channel channel)
+</i><br><p>    This routine will test if a channel object is an asynchronous
+    channel, i.e. a character special file, named FIFO, connection, a dock
+    channel or one created by a call to
+    <em>ch_attach_to_asynchronous_descriptor</em> or <em>ch_create_pipe</em>.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br></ul><b>Returns:</b>     TRUE if the channel is asynchronous, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_test_for_connection></a> flag
+ <b>ch_test_for_connection</b><i>    (Channel channel)
+</i><br><p>    Test if a channel object is a connection channel.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br></ul><b>Returns:</b>     TRUE if the channel object is a connection, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_test_for_local_connection></a> flag
+ <b>ch_test_for_local_connection</b><i>    (Channel channel)
+</i><br><p>    Test if a connection channel object is a local connection.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br></ul><b>Returns:</b>     TRUE if the channel object is a local connection, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_attach_to_asynchronous_descriptor></a> Channel
+ <b>ch_attach_to_asynchronous_descriptor</b><i>    (int fd)
+</i><br><p>    Create a channel object from an asynchronous descriptor.
+<p><b>Parameters:</b><ul><li><i>fd :</i> 
+    The descriptor.
+<br></ul><b>Returns:</b>     A channel object on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_test_for_mmap></a> flag
+ <b>ch_test_for_mmap</b><i>    (Channel channel)
+</i><br><p>    Test if a channel object is a memory mapped disc channel.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br></ul><b>Returns:</b>     TRUE if the channel object is memory mapped, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_tell></a> flag
+ <b>ch_tell</b><i>    (Channel channel, unsigned long *read_pos,
+	      unsigned long *write_pos)
+</i><br><p>    Get the read and write pointers for a channel.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>read_pos :</i> 
+    The read position (relative to the start of the channel data)
+    will be written here.
+<br><li><i>write_pos :</i> 
+    The write position (relative to the start of the channel data)
+    will be written here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_get_mmap_addr></a> char *
+ <b>ch_get_mmap_addr</b><i>    (Channel channel)
+</i><br><p>    This routine will get the starting address of the data for a
+    memory mapped disc channel. The channel MUST be a memory mapped disc
+    channel.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br></ul><b>Returns:</b>     The address of the memory mapped data.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     If the memory mapped address space is read-only, any attempt to
+    write to this address space will cause a segmentation fault.
+</ul><p><hr> <a name=ch_get_mmap_access_count></a> unsigned int
+ <b>ch_get_mmap_access_count</b><i>    (Channel channel)
+</i><br><p>    This routine will get the number of times a memory mapped disc
+    channel has been queried for the mapping address using <em>ch_get_mmap_addr</em>
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br></ul><b>Returns:</b>     The number of address queries.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The channel MUST be a memory mapped disc channel.
+</ul><p><hr> <a name=ch_register_converter></a> ChConverter
+ <b>ch_register_converter</b><i>    (Channel channel,
+				   unsigned int (*size_func) (),
+				   unsigned int (*read_func) (),
+				   unsigned int (*write_func) (),
+				   flag (*flush_func) (),
+				   void (*close_func) (),
+				   void *info)
+</i><br><p>    This routine will register a set of converter functions which
+    will be called when channel data is read or written. The operation of these
+    routines is transparent. Converter functions are useful for automatic
+    compression and encryption of data streams.
+    It is permissable to register multiple converter functions with a channel.
+    Converter functions are pushed down from the top (application) level. In
+    other words, the last converter functions registered are called first.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>size_func :</i> 
+    The function which will determine (approximately) how many
+    bytes would be returned by the <em>read_func</em>. This routine is called when
+    <a href=ch.html#ch_get_bytes_readable>ch_get_bytes_readable</a> is called for the channel. The prototype function
+    is <a href=ch.html#CH_PROTO_size_func>CH_PROTO_size_func</a>.
+<br><li><i>read_func :</i> 
+    The function which will convert data when reading.
+    The prototype function is <a href=ch.html#CH_PROTO_read_func>CH_PROTO_read_func</a>.
+<br><li><i>write_func :</i> 
+    The function which will convert data when writing. If this is
+    NULL, no write conversion is performed. The prototype function is
+    <a href=ch.html#CH_PROTO_write_func>CH_PROTO_write_func</a>.
+<br><li><i>flush_func :</i> 
+    The function which is called when the channel is to be flushed
+    The prototype function is <a href=ch.html#CH_PROTO_flush_func>CH_PROTO_flush_func</a>.
+<br><li><i>close_func :</i> 
+    The function which is called when the channel is closed. If
+    this is NULL, no special action is taken upon channel closure.
+    The prototype function is <a href=ch.html#CH_PROTO_close_func>CH_PROTO_close_func</a>.
+<br></ul><b>Returns:</b>     A ChConverter object on success (which may be used in a call to
+    <a href=ch.html#ch_unregister_converter>ch_unregister_converter</a>), else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     Converters may only be registered for disc, connection, character
+    special and FIFO channels (ie. those opened with <em>ch_open_file</em>), and
+    impose restrictions on channel operations (ie. <em>ch_seek</em> cannot be
+    called).
+<li>     Converter functions are expected to provide their own buffering as
+    needed.
+<li>     The <em>flush_func</em> will be called prior to the <em>close_func</em> upon
+    channel closure.
+<li>     will be called prior to the <em>close_func</em> upon
+    The sequence of events when the application level calls <a href=ch.html#ch_write>ch_write</a> is:
+    The last registered write converter is popped from the stack and called.
+    This write converter may buffer some or all of the data. It may call
+    <a href=ch.html#ch_write>ch_write</a> with some converted data.
+    When <a href=ch.html#ch_write>ch_write</a> is called from a write converter, the next last
+    registered write converter is popped from the stack and called.
+    This sequence is continued until data is actually transferred into the
+    channel write buffer.
+    A similar sequence of events occurs when  ch_read  is called.
+    The sequence of events when the application level calls  ch_flush  is:
+    The last registered flush converter is popped from the stack and called.
+    This flush converter MUST write all data in it's buffer using  ch_write
+    When  ch_write  is called from a flush converter, the next last
+    registered write converter is popped from the stack and called.
+    When the last registered flush converter returns, the sequence is
+    repeated with the next last flush converter, and so on, until all data
+    in all write buffers is flushed, including the channel write buffer.
+</ul><p><hr> <a name=ch_unregister_converter></a> void
+ <b>ch_unregister_converter</b><i>    (ChConverter converter)
+</i><br><p>    This routine will unregister a set of converter functions
+    previously registered with <a href=ch.html#ch_register_converter>ch_register_converter</a>. This will cause the
+    registered flush and close functions to be called.
+<p><b>Parameters:</b><ul><li><i>converter :</i> 
+    The ChConverter object.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_create_pipe></a> flag
+ <b>ch_create_pipe</b><i>    (Channel *read_ch, Channel *write_ch)
+</i><br><p>    This routine will create an un-named pipe (see <em>pipe(2)</em> for
+    details on un-named pipes).
+<p><b>Parameters:</b><ul><li><i>read_ch :</i> 
+    The channel corresponding to the read end of the pipe will be
+    written here.
+<br><li><i>write_ch :</i> 
+    The channel corresponding to the write end of the pipe will be
+    written here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE and sets <em>errno</em> with the error
+    code.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_create_sink></a> Channel
+ <b>ch_create_sink</b><i>    ()
+</i><br><p>    This routine will create a data sink channel. All writes to the
+    channel are discarded (and reported as having succeeded) and all reads
+    return an End-Of-File condition. Read and write operations modify the
+    absolute read and write pointers (obtainable with <a href=ch.html#ch_tell>ch_tell</a>) as expected.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     The channel object on succes, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_tap_io_events></a> KCallbackFunc
+ <b>ch_tap_io_events</b><i>    (void (*tap_func) (), void *info)
+</i><br><p>    This routine will tap I/O events by calling a registered function
+    whenever data is transferred to/from a disc, connection or FIFO channel.
+    Reading and writing memory mapped or memory channels does *not* constitute
+    an I/O event.
+    Multiple tap functions may be registered, with the first one registered
+    being the first one called upon a channel I/O event.
+<p><b>Parameters:</b><ul><li><i>tap_func :</i> 
+    The function which is called when I/O occurs. The prototype
+    function is <a href=ch.html#CH_PROTO_tap_func>CH_PROTO_tap_func</a>.
+<br><li><i>info :</i> 
+    The arbitrary information passed to the tap function. This may be
+    NULL.
+<br></ul><b>Returns:</b>     A KCallbackFunc. On failure, the process aborts.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_open_and_fill_memory></a> Channel
+ <b>ch_open_and_fill_memory</b><i>    (char **strings)
+</i><br><p>    This routine will open a memory channel with sufficient space to
+    contain a list of strings.
+<p><b>Parameters:</b><ul><li><i>strings :</i> 
+    The NULL terminated array of string pointers.
+    The strings are written with a NEWLINE character to terminate the string.
+    The NULL terminator character is not written.
+<br></ul><b>Returns:</b>     A channel object on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_gets></a> flag
+ <b>ch_gets</b><i>    (Channel channel, char *buffer, unsigned int length)
+</i><br><p>    This routine will read a character string from a channel into a
+    buffer.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>buffer :</i> 
+    The buffer to write the data into.
+    The routine will write a NULL terminator character at the end of the
+    string.
+<br><li><i>length :</i> 
+    The length of the buffer. If the buffer is not large enough to
+    contain the string, then the remainder of the string is NOT read. See also
+    the <a href=ch.html#ch_getl>ch_getl</a> routine.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE (indicating end-of-file was
+    encountered).
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The newline chanacter '\n' is NOT copied into the buffer.
+</ul><p><hr> <a name=ch_getl></a> flag
+ <b>ch_getl</b><i>    (Channel channel, char *buffer, unsigned int length)
+</i><br><p>    This routine will read a character string from a channel into a
+    buffer.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>buffer :</i> 
+    The buffer to write the data into.
+    The routine will write a NULL terminator character at the end of the
+    string.
+<br><li><i>length :</i> 
+    The length of the buffer. If the buffer is not large enough to
+    contain the string, then the remainder of the string (including the
+    newline character) is read in and discarded and a warning message is
+    displayed. See also the <a href=ch.html#ch_gets>ch_gets</a> routine.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE (indicating end-of-file was
+    encountered).
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The newline chanacter '\n' is NOT copied into the buffer.
+</ul><p><hr> <a name=ch_puts></a> flag
+ <b>ch_puts</b><i>    (Channel channel, CONST char *string, flag newline)
+</i><br><p>    Write a character string to a channel.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>string :</i> 
+    The string.
+<br><li><i>newline :</i> 
+    If TRUE, the routine will write a NEWLINE character after writing
+    the string.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The routine will not write the NULL terminator character.
+</ul><p><hr> <a name=ch_drain></a> unsigned int
+ <b>ch_drain</b><i>    (Channel channel, unsigned int length)
+</i><br><p>    This routine will drain (read) a specified number of bytes from a
+    channel, ignoring the data.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The Channel object.
+<br><li><i>length :</i> 
+    The number of bytes to drain.
+<br></ul><b>Returns:</b>     The number of bytes drained.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_printf></a> flag
+ <b>ch_printf</b><i>    (Channel channel, CONST char *format, ...)
+</i><br><p>    Write formatted output to a channel.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>format :</i> 
+    The format string. See <em>fprintf</em>.
+<br><li><i>... :</i> 
+    The optional parameters. See <em>fprintf</em>.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=CH_PROTO_size_func></a> unsigned int
+ <b>CH_PROTO_size_func</b><i>    (Channel channel, void **info)
+</i><br><p>    This routine will determine the approximate number of bytes that
+    the <em>read_func</em> will return.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary information pointer. This may be modified
+<br></ul><b>Returns:</b>     The number of bytes the <em>read_func</em> will return.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=CH_PROTO_read_func></a> unsigned int
+ <b>CH_PROTO_read_func</b><i>    (Channel channel, char *buffer,
+				 unsigned int length, void **info)
+</i><br><p>    This routine will convert bytes being read from a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object. It is permissable for the routine to call
+    <a href=ch.html#ch_read>ch_read</a> with this channel. If this is done, this function will be
+    bypassed.
+<br><li><i>buffer :</i> 
+    The buffer to write the data into.
+<br><li><i>length :</i> 
+    The number of bytes to write into the buffer.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary information pointer. This may be modified
+<br></ul><b>Returns:</b>     The number of bytes actually written to the buffer.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=CH_PROTO_write_func></a> unsigned int
+ <b>CH_PROTO_write_func</b><i>    (Channel channel, char *buffer,
+				  unsigned int length, void **info)
+</i><br><p>    This routine will convert bytes being written to a channel object
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object. It is permissable for the routine to call
+    <a href=ch.html#ch_write>ch_write</a> with this channel. If this is done, this function will be
+    bypassed.
+<br><li><i>buffer :</i> 
+    The buffer to read the data from. The contents of this buffer may
+    be modified if needed.
+<br><li><i>length :</i> 
+    The number of bytes to read from the buffer.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary information pointer. This may be modified
+<br></ul><b>Returns:</b>     The number of bytes read from the buffer.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=CH_PROTO_flush_func></a> flag
+ <b>CH_PROTO_flush_func</b><i>    (Channel channel, void **info)
+</i><br><p>    This routine will process a flush request for a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object. It is permissable for the routine to call
+    <a href=ch.html#ch_flush>ch_flush</a> with this channel. If this is done, this function will be
+    bypassed.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary information pointer. This may be modified
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=CH_PROTO_close_func></a> void
+ <b>CH_PROTO_close_func</b><i>    (void *info)
+</i><br><p>    This routine is called when a channel is closed.
+<p><b>Parameters:</b><ul><li><i>info :</i> 
+    The arbitrary information pointer.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=CH_PROTO_tap_func></a> void
+ <b>CH_PROTO_tap_func</b><i>    (void *info)
+</i><br><p>    This routine is called when I/O occurs.
+<p><b>Parameters:</b><ul><li><i>info :</i> 
+    The arbitrary information pointer.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Tables</h2></center><hr> <a name=CH_FILE_MODES><b>CH_FILE_MODES</b></a><p> <table><tr><td>Mode         </td><td>Meaning
+
+</td></tr><tr><td>"r"          </td><td>open for reading
+</td></tr><tr><td>"w"          </td><td>open (truncate) or create for writing
+</td></tr><tr><td>"a"          </td><td>open or create for writing at end of file (append)
+</td></tr><tr><td>"r+"         </td><td>open for update (reading and writing)
+</td></tr><tr><td>"w+"         </td><td>open for reading and writing after truncation
+</td></tr><tr><td>"a+"         </td><td>open or create for update (reading and writing) at EOF
+</td></tr><tr><td>"W"          </td><td>open for writing
+</table><p><hr> <a name=CH_MAP_CONTROLS><b>CH_MAP_CONTROLS</b></a><p> <table><tr><td>Control                      </td><td>Meaning
+
+</td></tr><tr><td>K_CH_MAP_NEVER               </td><td>Never map
+</td></tr><tr><td>K_CH_MAP_LARGE_LOCAL         </td><td>Map if local filesystem and file size > 1MB
+</td></tr><tr><td>K_CH_MAP_LOCAL               </td><td>Map if local filesystem
+</td></tr><tr><td>K_CH_MAP_LARGE               </td><td>Map if file over 1 MByte
+</td></tr><tr><td>K_CH_MAP_IF_AVAILABLE        </td><td>Map if operating system supports it
+</td></tr><tr><td>K_CH_MAP_ALWAYS              </td><td>Always map, fail if not supported.
+</table><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

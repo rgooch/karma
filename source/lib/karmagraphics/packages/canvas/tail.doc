@@ -1,0 +1,27 @@
+
+$TABLE            KWIN_ATTRIBUTES
+$COLUMNS          4
+$SUMMARY          List of attributes for KWorldCanvas objects
+$TABLE_DATA
+|.Name                         |,Get Type       |,Set Type       |,Meaning
+|.
+|.CANVAS_ATT_END               |,               |,              |,End of varargs list             
+|.CANVAS_ATT_X_OFFSET          |,int *          |,int           |,X offset (pixels)
+|.CANVAS_ATT_Y_OFFSET          |,int *          |,int           |,Y offset (pixels)
+|.CANVAS_ATT_X_PIXELS          |,int *          |,int           |,X pixels
+|.CANVAS_ATT_Y_PIXELS          |,int *          |,int           |,Y pixels
+|.CANVAS_ATT_BLANK_PIXEL       |,unsigned long *|,unsigned long |,Blank pixel
+|.CANVAS_ATT_MIN_SAT_PIXEL     |,unsigned long *|,unsigned long |,Min saturation pixel
+|.CANVAS_ATT_MAX_SAT_PIXEL     |,unsigned long *|,unsigned long |,Max saturation pixel
+|.CANVAS_ATT_LEFT_X            |,double *       |,double        |,Left X
+|.CANVAS_ATT_RIGHT_X           |,double *       |,double        |,Right X
+|.CANVAS_ATT_BOTTOM_Y          |,double *       |,double        |,Bottom Y
+|.CANVAS_ATT_TOP_Y             |,double *       |,double        |,Top Y
+|.CANVAS_ATT_VALUE_MIN         |,double *       |,double        |,Minimum value
+|.CANVAS_ATT_VALUE_MAX         |,double *       |,double        |,Maximum value
+|.CANVAS_ATT_ISCALE_FUNC       |,               |,flag (*) ()   |,Intensity scale function
+|.CANVAS_ATT_ISCALE_FREE_FUNC  |,               |,void (*) ()   |,Free function
+|.CANVAS_ATT_ISCALE_INFO       |,void **        |,void          |,iscale info
+|.CANVAS_ATT_AUTO_MIN_SAT      |,flag *         |,flag          |,Auto min-sat
+|.CANVAS_ATT_AUTO_MAX_SAT      |,flag *         |,flag          |,Auto max-sat
+$END

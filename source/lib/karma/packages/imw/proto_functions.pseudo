@@ -1,0 +1,19 @@
+/*PROTOTYPE_FUNCTION*/  /*
+flag IMW_PROTO_iscale_func (double *out, unsigned int out_stride,
+			    double *inp, unsigned int inp_stride,
+			    unsigned int num_values,
+			    double i_min, double i_max, void *info)
+    [SUMMARY] Intensity scaling callback.
+    [PURPOSE] This routine will perform an arbitrary intensity scaling on
+    an array of values. This routine may be called many times to scale an
+    image.
+    <out> The output array.
+    <out_stride> The stride (in doubles) of the output array.
+    <inp> The input array.
+    <inp_stride> The stride (in doubles) of the input array.
+    <num_values> The number of values to scale.
+    <i_min> The minimum intensity value.
+    <i_max> The maximum intensity value.
+    <info> A pointer to arbitrary information.
+    [RETURNS] TRUE on success, else FALSE.
+*/

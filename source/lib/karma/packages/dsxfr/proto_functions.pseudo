@@ -1,0 +1,20 @@
+/*PROTOTYPE_FUNCTION*/  /**/
+void DSXFR_PROTO_read_func (flag first_time_data, unsigned int connection_num)
+/*  [SUMMARY] New "multi_array" data callback.
+    [PURPOSE] This routine is called when new data arrives on any "multi_array"
+    connection.
+    <first_time_data> If data appears on a connection for the first time, this
+    will be TRUE. Any subsqeuent data that appears on a connection will not set
+    this flag.
+    <connection_num> The index number of the connection.
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /**/
+void DSXFR_PROTO_close_func (flag data_deallocated)
+/*  [SUMMARY] Callback for "multi_array" connection closures.
+    [PURPOSE] This routine is called when any "multi_array" connection closes.
+    <data_deallocated> If there was a multi_array data structure already
+    received over the connection, it is deallocated and this is TRUE.
+    [RETURNS] Nothing.
+*/

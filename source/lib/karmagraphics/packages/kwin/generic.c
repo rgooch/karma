@@ -169,8 +169,43 @@
     Updated by      Richard Gooch   22-OCT-1995: Do not draw cached image if
   canvas is not visible.
 
-    Last updated by Richard Gooch   6-JAN-1996: Fixed bug with image placement
+    Updated by      Richard Gooch   6-JAN-1996: Fixed bug with image placement
   when drawing to a PostScriptPage.
+
+    Updated by      Richard Gooch   19-FEB-1996: Created <kwin_partial_refresh>
+  routine.
+
+    Updated by      Richard Gooch   22-FEB-1996: Fixed bug in
+  <kwin_draw_cached_subimages> which did not draw correctly when the image
+  origin was not at 0,0.
+
+    Updated by      Richard Gooch   23-FEB-1996: Added KWIN_ATT_USER_PTR and
+  added <<wait>> parameter to <draw_cached_image> hook function.
+
+    Updated by      Richard Gooch   1-MAR-1996: Created <kwin_draw_points>
+  routine and added KWIN_FUNC_DRAW_POINTS attribute.
+
+    Updated by      Richard Gooch   13-APR-1996: Changed to new documentation
+  format.
+
+    Updated by      Richard Gooch   19-APR-1996: Added KWIN_ATT_LINE_WIDTH.
+
+    Updated by      Richard Gooch   4-MAY-1996: Documentation improvement for
+  <draw_rectangle>.
+
+    Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
+
+    Updated by      Richard Gooch   1-JUN-1996: Took account of colourmap when
+  drawing PostScript RGB images and the visual is DirectColour.
+
+    Updated by      Richard Gooch   4-JUN-1996: Fixed query of colourmap for
+  DirectColour visuals in <kwin_draw_rgb_image>. Pixels not properly
+  constructed.
+
+    Last updated by Richard Gooch   5-JUN-1996: Fixed bug introduced 1-JUN-1996
+  in <kwin_draw_rgb_image> when original visual is TrueColour: no PostScript
+  generated.
 
 
 */
@@ -179,7 +214,9 @@
 #include <math.h>
 #include <stdarg.h>
 #include <karma.h>
+#define NEW_WIN_SCALE
 #include <karma_kwin.h>
+#include <karma_kwin_hooks.h>
 #include <karma_psw.h>
 #include <karma_imw.h>
 #include <karma_ds.h>
@@ -228,6 +265,8 @@ struct pixcanvas_type
     PostScriptPage pspage;
     KPixCanvasFont font;
     KPixCanvas parent;
+    void *user_ptr;
+    double line_width;
     /*  The following are only used for TrueColour and DirectColour visuals  */
     unsigned long pix_red_mask;
     unsigned long pix_green_mask;
@@ -245,6 +284,8 @@ struct pixcanvas_type
     void *(*create_child) (void *parent, KPixCanvas child);
     flag (*clear_area) (void *info, int x, int y, int width, int height);
     /*  Optional graphics system specific hooks  */
+    flag (*draw_points) (void *info, double *x_arr, double *y_arr,
+			 unsigned int num_points, unsigned long pixel_value);
     flag (*draw_pc_image) (void *info, int x_off, int y_off,
 			   int x_pixels, int y_pixels,
 			   CONST char *slice,
@@ -266,10 +307,17 @@ struct pixcanvas_type
 			    CONST uaddr *hoffsets, CONST uaddr *voffsets,
 			    unsigned int width, unsigned int height,
 			    KPixCanvasImageCache *cache_ptr);
-    flag (*draw_cached_image) (KPixCanvasImageCache cache,int x_off,int y_off);
+    flag (*draw_cached_image) (KPixCanvasImageCache cache, flag wait,
+			       int parent_x_off, int parent_y_off,
+			       int image_width, int image_height,
+			       int image_x_off, int image_y_off,
+			       int canvas_x_off, int canvas_y_off,
+			       int canvas_width, int canvas_height);
     void (*free_cache_data) (KPixCanvasImageCache cache);
     flag (*draw_line) (void *info, double x0, double y0, double x1, double y1,
 		       unsigned long pixel_value);
+    flag (*draw_lines) (void *info, double *x_arr, double *y_arr,
+			unsigned int num_points, unsigned long pixel_value);
     flag (*draw_arc) (void *info, double x, double y,
 		      double width, double height, int angle1, int angle2,
 		      unsigned long pixel_value, flag fill);
@@ -281,8 +329,6 @@ struct pixcanvas_type
     flag (*draw_rectangle) (void *info,
 			    double x, double y, double width, double height,
 			    unsigned long pixel_value, flag fill);
-    flag (*draw_lines) (void *info, double *x_arr, double *y_arr,
-			unsigned int num_points, unsigned long pixel_value);
     flag (*draw_arcs) (void *info,
 		       double *x, double *y, double *width, double *height,
 		       int *angle1, int *angle2, unsigned int num_ellipses,
@@ -301,6 +347,7 @@ struct pixcanvas_type
 			     unsigned short *reds, unsigned short *greens,
 			     unsigned short *blues, unsigned int num_colours);
     flag (*resize) (void *info, int xoff, int yoff, int width, int height);
+    flag (*set_linewidth) (void *info, double linewidth);
 };
 
 struct cache_data_type
@@ -330,12 +377,20 @@ struct position_struct
     void *e_info;
 };
 
+typedef struct
+{
+    unsigned int num_areas;
+    KPixCanvasRefreshArea *areas;
+} KPixCanvasRefreshList;
+
 /*  Private functions  */
 STATIC_FUNCTION (KPixCanvas alloc_canvas, () );
 STATIC_FUNCTION (flag child_position_event_func,
 		 (KPixCanvas parent, int x, int y, unsigned int event_code,
 		  void *event_info, void **f_info) );
+#ifdef not_implemented
 STATIC_FUNCTION (void not_implemented, (char *s) );
+#endif
 STATIC_FUNCTION (flag refresh_event_func,
 		 (void *object, void *client1_data,
 		  void *call_data, void *client2_data) );
@@ -415,8 +470,6 @@ KPixCanvas kwin_create_generic (void *info, int xoff, int yoff,
 {
     va_list argp;
     KPixCanvas canvas;
-    KPixCanvasFont font;
-    flag bool;
     unsigned int att_key;
     void **ptr;
     static char function_name[] = "kwin_create_generic";
@@ -613,6 +666,10 @@ KPixCanvas kwin_create_generic (void *info, int xoff, int yoff,
 	    ptr = (void **) &canvas->resize;
 	    *ptr = va_arg (argp, void *);
 	    break;
+	  case KWIN_FUNC_SET_LINEWIDTH:
+	    ptr = (void **) &canvas->set_linewidth;
+	    *ptr = va_arg (argp, void *);
+	    break;
 	  default:
 	    (void) fprintf (stderr, "Illegal attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
@@ -626,7 +683,8 @@ KPixCanvas kwin_create_generic (void *info, int xoff, int yoff,
 /*PUBLIC_FUNCTION*/
 KPixCanvas kwin_create_child (KPixCanvas parent, int xoff, int yoff,
 			      int width, int height, flag absorb_events)
-/*  [PURPOSE] This routine will create a pixel canvas, ready for drawing,
+/*  [SUMMARY] Create a child pixel canvas.
+    [PURPOSE] This routine will create a pixel canvas, ready for drawing,
     within an existing pixel canvas. The new pixel canvas is a child of the
     parent pixel canvas. The child *does not* receive refresh events from the
     parent, it *does* receive position events from the parent, provided these
@@ -693,26 +751,14 @@ KPixCanvas kwin_create_child (KPixCanvas parent, int xoff, int yoff,
 /*PUBLIC_FUNCTION*/
 KCallbackFunc kwin_register_refresh_func (KPixCanvas canvas,
 					  void (*refresh_func) (), void *info)
-/*  [PURPOSE] This routine will register a refresh function for a pixel canvas.
+/*  [SUMMARY] Register a refresh callback.
+    [PURPOSE] This routine will register a refresh function for a pixel canvas.
     The refresh function will be called whenever the contents of the canvas
     need to be redrawn. Many refresh functions may be registered per canvas.
     The first function registered is the first function called upon refresh.
     <canvas> The pixel canvas.
     <func> The function that is called when the canvas is to be refreshed. The
-    interface to this routine is as follows:
-    [<pre>]
-    void refresh_func (KPixCanvas canvas, int width, int height, void **info,
-                       PostScriptPage pspage)
-    *   [PURPOSE] This routine will process a refresh event for a pixel canvas.
-        <canvas> The pixel canvas.
-	<width> The width of the canvas in pixels.
-	<height> The height of the canvas in pixels.
-	<info> A pointer to the arbitrary canvas information pointer.
-	<pspage> If not NULL, the PostScriptPage object the refresh is
-	redirected to.
-	[RETURNS] Nothing.
-    *
-    [</pre>]
+    prototype function is [<KWIN_PROTO_refresh_func>].
     <info> The initial arbitrary canvas information pointer.
     [RETURNS] A KCallbackFunc object.
 */
@@ -730,31 +776,17 @@ KCallbackFunc kwin_register_refresh_func (KPixCanvas canvas,
 /*PUBLIC_FUNCTION*/
 KCallbackFunc kwin_register_position_event_func (KPixCanvas canvas,
 						 flag (*func) (), void *f_info)
-/*  [PURPOSE] This routine will register a position event function for a pixel
+/*  [SUMMARY] Register position event callback.
+    [PURPOSE] This routine will register a position event function for a pixel
     canvas. The position event function will be called whenever a position
     event on the canvas has not been consumed. Many position event functions
     may be registered per canvas. The first function registered is the first
     function called upon a position event.
     <canvas> The pixel canvas.
     <func> The function that is called when a position event occurs. The
-    interface to this routine is as follows:
-    [<pre>]
-    flag func (KPixCanvas canvas, int x, int y, unsigned int event_code,
-               void *e_info, void **f_info)
-    *   [PURPOSE] This routine is a position event consumer for a pixel canvas.
-        <canvas> The pixel canvas on which the event occurred.
-	<x> The horizontal position of the event, relative to the canvas origin
-	<y> The vertical position of the event, relative to the canvas origin.
-	<event_code> The arbitrary event code.
-	<e_info> A pointer to arbitrary event information.
-	<f_info> A pointer to an arbitrary function information pointer.
-	[RETURNS] TRUE if the event was consumed, else FALSE indicating that
-	the event is still to be processed.
-    *
-    [</pre>]
-
+    prototype function is [<KWIN_PROTO_position_func>].
     <f_info> The initial arbitrary function information pointer.
-    [RETURNS] A KCallbackFunc object.
+    [RETURNS] A KCallbackFunc object. On failure, the process aborts.
 */
 {
     static char function_name[] = "kwin_register_position_func";
@@ -767,27 +799,26 @@ KCallbackFunc kwin_register_position_event_func (KPixCanvas canvas,
 }   /*  End Function kwin_register_position_func  */
 
 /*PUBLIC_FUNCTION*/
-flag kwin_resize (canvas, clear, xoff, yoff, width, height)
-/*  This routine will register a resize in the pixel canvas size. This will
-    cause any refresh routines registered for the canvas to be called. This
-    routine is meant to be called by an X event handler for the underlying
-    window, however the routine is available for all graphics systems.
-    The canvas must be given by  canvas  .
-    If the value of  clear  is TRUE, the canvas is first cleared.
-    The vertical offset of the canvas origin (upper-left corner) relative to
-    the parent window must be given by  yoff  .
-    The new width (vertical extent) of the canvas must be given by  width  .
-    The new height (horizontal extent) of the canvas must be given by  height
-    If either  width  or  height  are less than 1 the canvas is not resized,
-    it is only refreshed.
-    The routine returns TRUE on success, else it returns FALSE.
+flag kwin_resize (KPixCanvas canvas, flag clear, int xoff, int yoff,
+		  int width, int height)
+/*  [SUMMARY] Resize a pixel canvas.
+    [PURPOSE] This routine will register a resize in the pixel canvas size.
+    This will cause any refresh routines registered for the canvas to be
+    called. This routine is meant to be called by an X event handler for the
+    underlying window, however the routine is available for all graphics
+    systems.
+    <canvas> The canvas.
+    <clear> If TRUE, the canvas is first cleared.
+    <xoff> The horizontal offset of the canvas origin (upper-left corner)
+    relative to the parent window.
+    <yoff> The vertical offset of the canvas origin (upper-left corner)
+    relative to the parent window.
+    <width> The new width (horizontal extent) of the canvas. If this is less
+    than 1 canvas is not resized, it is only refreshed.
+    <height> The new height (vertical extent) of the canvas. If this is less
+    than 1 canvas is not resized, it is only refreshed.
+    [RETURNS] TRUE on success, else FALSE.
 */
-KPixCanvas canvas;
-flag clear;
-int xoff;
-int yoff;
-int width;
-int height;
 {
     static char function_name[] = "kwin_resize";
 
@@ -833,31 +864,105 @@ int height;
     return (TRUE);
 }   /*  End Function kwin_resize  */
 
-/*PUBLIC_FUNCTION*/
-flag kwin_process_position_event (canvas, x, y, clip, event_code, event_info)
-/*  This routine will process a position event on the lower level object
-    (parent, ie. X window) for a pixel canvas. This event is processed with all
-    position event consumer routines until one successfully consumes the event.
-    The canvas must be given by  canvas  .
-    The horizontal position of the event, relative to the parent window, must
-    be given by  x  .
-    The vertical position of the event, relative to the parent window, must be
-    given by  y  .
-    If the event is outside of the canvas boundaries, one of two things may
-    happen:
-        If  clip  is TRUE, the event co-ordinates are clipped to the nearest
-	boundary and passed on to the registered position event consumers.
-	If  clip  is FALSE, the event is not consumed.
-    The arbitrary event code must be given by  event_code  .
-    The arbitrary event information must be pointed to by  event_info  .
-    The routine returns TRUE if the event was consumed, else it returns FALSE.
+/*EXPERIMENTAL_FUNCTION*/
+flag kwin_partial_refresh (KPixCanvas canvas, unsigned int num_areas,
+			   KPixCanvasRefreshArea *areas, flag clear_all)
+/*  [PURPOSE] This routine will perform a partial refresh of a pixel canvas.
+    <canvas> The pixel canvas.
+    <num_areas> The number of areas in the pixel canvas to refresh.
+    <areas> The list of areas to refresh. The values here are updated to ensure
+    all points lie within the boundaries of the pixel canvas.
+    <clear_all> If TRUE, each refreshed region is first cleared, else the
+    <<clear>> field of each area determines whether an area is cleared.
+    [RETURNS] TRUE on success, else FALSE.
 */
-KPixCanvas canvas;
-int x;
-int y;
-flag clip;
-unsigned int event_code;
-void *event_info;
+{
+    KPixCanvasRefreshList refresh_list;
+    unsigned int count;
+    static char function_name[] = "kwin_partial_refresh";
+
+    VERIFY_CANVAS (canvas);
+    if (canvas->pspage != NULL)
+    {
+	(void) fprintf (stderr, "Previous PostScriptPage still active\n");
+	a_prog_bug (function_name);
+    }
+    if (num_areas < 1) return (TRUE);
+    if (areas == NULL)
+    {
+	(void) fprintf (stderr, "NULL areas pointer passed\n");
+	a_prog_bug (function_name);
+    }
+    /*  Sanitise co-ordinates and optionally clear  */
+    for (count = 0; count < num_areas; ++count)
+    {
+	FLAG_VERIFY (areas[count].clear);
+	if (areas[count].startx < 0) areas[count].startx = 0;
+	if (areas[count].startx >= canvas->width)
+	{
+	    areas[count].startx = 0;
+	    areas[count].endx = -1;
+	}
+	if (areas[count].endx < 0)
+	{
+	    areas[count].startx = 0;
+	    areas[count].endx = -1;
+	}
+	if (areas[count].endx >= canvas->width)
+	{
+	    areas[count].endx = canvas->width - 1;
+	}
+	if (areas[count].starty < 0) areas[count].starty = 0;
+	if (areas[count].starty >= canvas->height)
+	{
+	    areas[count].starty = 0;
+	    areas[count].endy = -1;
+	}
+	if (areas[count].endy < 0)
+	{
+	    areas[count].starty = 0;
+	    areas[count].endy = -1;
+	}
+	if (areas[count].endy >= canvas->height)
+	{
+	    areas[count].endy = canvas->height - 1;
+	}
+	if (clear_all || areas[count].clear)
+	{
+	    if ( !kwin_clear (canvas, areas[count].startx, areas[count].starty,
+			      areas[count].endx - areas[count].startx + 1,
+			      areas[count].endy - areas[count].starty + 1) )
+	    {
+		(void) fprintf (stderr, "Error clearing area: %u\n", count);
+		return (FALSE);
+	    }
+	}
+    }
+    refresh_list.num_areas = num_areas;
+    refresh_list.areas = areas;
+    (void) c_call_callbacks (canvas->refresh_list, &refresh_list);
+    return (TRUE);
+}   /*  End Function kwin_partial_refresh  */
+
+/*PUBLIC_FUNCTION*/
+flag kwin_process_position_event (KPixCanvas canvas, int x, int y, flag clip,
+				  unsigned int event_code, void *event_info)
+/*  [SUMMARY] Process position event on a pixel canvas.
+    [PURPOSE] This routine will process (inject) a position event on the lower
+    level object (parent: i.e. X window) for a pixel canvas. This event is
+    processed with all position event consumer routines until one successfully
+    consumes the event.
+    <canvas> The pixel canvas.
+    <x> The horizontal position of the event, relative to the parent window.
+    <y> The vertical position of the event, relative to the parent window.
+    <clip> If the event is outside of the canvas boundary and this is TRUE,
+    the event co-ordinates are clipped to the nearest boundary and passed on to
+    the registered position event consumers. If the event is outside of the
+    canvas boundary and this is FALSE, the event is not consumed.
+    <event_code> The arbitrary event code.
+    <event_info> The arbitrary event information.
+    [RETURNS] TRUE if the event was consumed, else FALSE.
+*/
 {
     struct position_struct data;
     static char function_name[] = "kwin_process_position_event";
@@ -918,13 +1023,15 @@ void *event_info;
 
 /*PUBLIC_FUNCTION*/
 flag kwin_write_ps (KPixCanvas canvas, PostScriptPage pspage)
-/*  This routine will refresh a pixel canvas, redirecting output to a
+/*  [SUMMARY] Refresh a pixel canvas onto a PostScriptPage object.
+    [PURPOSE] This routine will refresh a pixel canvas, redirecting output to a
     PostScriptPage object.
-    The pixel canvas must be given by  canvas  .
-    The PostScriptPage object must be given by  pspage  .
-    The routine returns TRUE on success, else it returns FALSE.
+    <canvas> The pixel canvas.
+    <pspage> The PostScriptPage object.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
+    double d_tmp;
     static char function_name[] = "kwin_write_ps";
 
     VERIFY_CANVAS (canvas);
@@ -939,6 +1046,16 @@ flag kwin_write_ps (KPixCanvas canvas, PostScriptPage pspage)
 	a_prog_bug (function_name);
     }
     canvas->pspage = pspage;
+    if (canvas->line_width > 0.0)
+    {
+	d_tmp = (canvas->width * canvas->width) +
+	    (canvas->height * canvas->height);
+	d_tmp = sqrt (d_tmp) / 1.414213562;
+	psw_set_attributes (canvas->pspage,
+			    PSW_ATT_LINEWIDTH_RELATIVE,
+			    canvas->line_width / d_tmp,
+			    PSW_ATT_END);
+    }
     /*  Call refresh functions  */
     (void) c_call_callbacks (canvas->refresh_list, NULL);
     canvas->pspage = NULL;
@@ -947,11 +1064,11 @@ flag kwin_write_ps (KPixCanvas canvas, PostScriptPage pspage)
 
 /*PUBLIC_FUNCTION*/
 void kwin_get_attributes (KPixCanvas canvas, ...)
-/*  [PURPOSE] This routine will get the attributes for a pixel canvas.
+/*  [SUMMARY] Get the attributes for a pixel canvas.
     <canvas> The pixel canvas.
-    [VARARGS] The optional list of parameter attribute-key attribute-value
-    pairs must follow. See the header file for details on defined attributes.
-    This list must be terminated with the value  KWIN_ATT_END  .
+    [VARARGS] The optional list of parameter attribute-key attribute-value-ptr
+    pairs must follow. This list must be terminated with the value
+    KWIN_ATT_END. See [<KWIN_ATTRIBUTES>] for the list of attributes.
     [RETURNS] Nothing.
 */
 {
@@ -1075,9 +1192,16 @@ void kwin_get_attributes (KPixCanvas canvas, ...)
 	  case KWIN_ATT_LOWER_HANDLE:
 	    *( va_arg (argp, void **) ) = canvas->info;
 	    break;
+	  case KWIN_ATT_USER_PTR:
+	    *( va_arg (argp, void **) ) = canvas->user_ptr;
+	    break;
+	  case KWIN_ATT_LINEWIDTH:
+	    *( va_arg (argp, double *) ) = canvas->line_width;
+	    break;
 	  default:
 	    (void) fprintf (stderr, "Illegal attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
+	    break;
 	}
     }
     va_end (argp);
@@ -1085,11 +1209,11 @@ void kwin_get_attributes (KPixCanvas canvas, ...)
 
 /*PUBLIC_FUNCTION*/
 void kwin_set_attributes (KPixCanvas canvas, ...)
-/*  [PURPOSE] This routine will set the attributes for a pixel canvas.
+/*  [SUMMARY] Set the attributes for a pixel canvas.
     <canvas> The pixel canvas.
     [VARARGS] The optional list of parameter attribute-key attribute-value
-    pairs must follow. See the header file for details on defined attributes.
-    This list must be terminated with the value  KWIN_ATT_END  .
+    pairs must follow. This list must be terminated with the value
+    KWIN_ATT_END. See [<KWIN_ATTRIBUTES>] for the list of attributes.
     [RETURNS] Nothing.
 */
 {
@@ -1097,6 +1221,7 @@ void kwin_set_attributes (KPixCanvas canvas, ...)
     KPixCanvasFont font;
     flag bool;
     unsigned int att_key;
+    double d_tmp;
     static char function_name[] = "kwin_set_attributes";
 
     va_start (argp, canvas);
@@ -1130,6 +1255,28 @@ void kwin_set_attributes (KPixCanvas canvas, ...)
 	    (*canvas->set_font) (canvas->info, font->info);
 	    canvas->font = font;
 	    break;
+	  case KWIN_ATT_USER_PTR:
+	    canvas->user_ptr = va_arg (argp, void *);
+	    break;
+	  case KWIN_ATT_LINEWIDTH:
+	    canvas->line_width = va_arg (argp, double);
+	    if (canvas->set_linewidth == NULL)
+	    {
+		(void) fprintf (stderr, "Linewidth setting not supported\n");
+		continue;
+	    }
+	    (*canvas->set_linewidth) (canvas->info, canvas->line_width);
+	    if (canvas->pspage != NULL)
+	    {
+		d_tmp = (canvas->width * canvas->width) +
+		    (canvas->height * canvas->height);
+		d_tmp = sqrt (d_tmp) / 1.414213562;
+		psw_set_attributes (canvas->pspage,
+				    PSW_ATT_LINEWIDTH_RELATIVE,
+				    canvas->line_width / d_tmp,
+				    PSW_ATT_END);
+	    }
+	    break;
 	  default:
 	    (void) fprintf (stderr, "Illegal attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
@@ -1143,7 +1290,7 @@ void kwin_set_attributes (KPixCanvas canvas, ...)
 
 /*PUBLIC_FUNCTION*/
 flag kwin_clear (KPixCanvas canvas, int x, int y, int width, int height)
-/*  [PURPOSE] This routine will clear a rectangular portion of a pixel canvas.
+/*  [SUMMARY] Clear a rectangular portion of a pixel canvas.
     <canvas> The canvas.
     <x> The horizontal offset of the rectangle.
     <y> The vertical offset of the rectangle.
@@ -1162,7 +1309,7 @@ flag kwin_clear (KPixCanvas canvas, int x, int y, int width, int height)
     if (canvas->pspage != NULL)
     {
 	(void) fprintf (stderr, "Cannot clear a PostScriptPage object\n");
-	return;
+	return (FALSE);
     }
     if (x < 0)
     {
@@ -1176,7 +1323,7 @@ flag kwin_clear (KPixCanvas canvas, int x, int y, int width, int height)
     }
     if (width < 0) width = canvas->width - x;
     if (height < 0) height = canvas->height - y;
-    if ( (width < 1) || (height < 1) ) return;
+    if ( (width < 1) || (height < 1) ) return (TRUE);
     return ( (*canvas->clear_area) (canvas->info,
 				    canvas->xoff + x, canvas->yoff + y,
 				    width, height) );
@@ -1245,14 +1392,14 @@ flag kwin_draw_image (KPixCanvas canvas, array_desc *arr_desc, char *slice,
 	a_prog_bug (function_name);
     }
     /*  Determine start and stop co-ordinates along each dimension  */
-    abs_start_coord = ds_get_coord_num (hdim_desc, win_scale->x_min,
+    abs_start_coord = ds_get_coord_num (hdim_desc, win_scale->left_x,
 					SEARCH_BIAS_CLOSEST);
-    abs_end_coord = ds_get_coord_num (hdim_desc, win_scale->x_max,
+    abs_end_coord = ds_get_coord_num (hdim_desc, win_scale->right_x,
 				      SEARCH_BIAS_CLOSEST);
     num_abs_coords = abs_end_coord - abs_start_coord + 1;
-    ord_start_coord = ds_get_coord_num (vdim_desc, win_scale->y_min,
+    ord_start_coord = ds_get_coord_num (vdim_desc, win_scale->bottom_y,
 					SEARCH_BIAS_CLOSEST);
-    ord_end_coord = ds_get_coord_num (vdim_desc, win_scale->y_max,
+    ord_end_coord = ds_get_coord_num (vdim_desc, win_scale->top_y,
 				      SEARCH_BIAS_CLOSEST);
     num_ord_coords = ord_end_coord - ord_start_coord + 1;
     return ( kwin_draw_pc_image (canvas,
@@ -1283,7 +1430,8 @@ flag kwin_draw_pc_image (KPixCanvas canvas, int x_off, int y_off,
 			 double i_min, double i_max,
 			 flag (*iscale_func) (), void *iscale_info,
 			 KPixCanvasImageCache *cache_ptr)
-/*  [PURPOSE] This routine will draw a 2-dimensional slice of a Karma array
+/*  [SUMMARY] Draw PseudoColour image to a pixel canvas.
+    [PURPOSE] This routine will draw a 2-dimensional slice of a Karma array
     onto a pixel canvas. This slice may be tiled. The slice is a PseudoColour
     image.
     <canvas> The pixel canvas.
@@ -1310,31 +1458,12 @@ flag kwin_draw_pc_image (KPixCanvas canvas, int x_off, int y_off,
     <i_min> The minimum intensity value.
     <i_max> The maximum intensity value.
     <iscale_func> The function to be called when non-linear intensity scaling
-    is required. If NULL, linear intensity scaling is used. The interface to
-    this function is as follows:
-    [<pre>]
-    flag iscale_func (double *out, unsigned int out_stride,
-                      double *inp, unsigned int inp_stride,
-		      unsigned int num_values, double i_min, double i_max,
-		      void *info)
-    *   [PURPOSE] This routine will perform an arbitrary intensity scaling on
-        an array of values. This routine may be called many times to scale an
-	image.
-        <out> The output array.
-	<out_stride> The stride (in doubles) of the output array.
-	<inp> The input array.
-	<inp_stride> The stride (in doubles) of the input array.
-	<num_values> The number of values to scale.
-	<i_min> The minimum intensity value.
-	<i_max> The maximum intensity value.
-	<info> A pointer to arbitrary information.
-	[RETURNS] TRUE on success, else FALSE.
-    *
-    [</pre>]
+    is required. If NULL, linear intensity scaling is used. The prototype
+    function is [<KWIN_PROTO_iscale_func>].
     <iscale_info> A pointer to arbitrary information for <<iscale_func>>.
     <cache_ptr> Cache data is written here. The routine may produce cache data
     which will vastly increase the speed of subsequent operations on this data.
-    Prior to process exit, a call MUST be made to <<kwin_free_cache_data>>,
+    Prior to process exit, a call MUST be made to [<kwin_free_cache_data>],
     otherwise shared memory segments could remain after the process exits.
     [MT-LEVEL] Unsafe.
     [RETURNS] TRUE on success, else FALSE.
@@ -1347,7 +1476,7 @@ flag kwin_draw_pc_image (KPixCanvas canvas, int x_off, int y_off,
     unsigned char pixel_val, red, green, blue;
     unsigned int x, y;
     unsigned int count, num_colours;
-    unsigned char *ubimage, *ub_ptr;
+    unsigned char *ubimage;
     double y0, y1;
     double val, factor;
     double toobig = TOOBIG;
@@ -1547,7 +1676,8 @@ flag kwin_draw_rgb_image (KPixCanvas canvas, int x_off, int y_off,
 			  CONST uaddr *hoffsets, CONST uaddr *voffsets,
 			  unsigned int width, unsigned int height,
 			  KPixCanvasImageCache *cache_ptr)
-/*  [PURPOSE] This routine will draw a 2-dimensional slice of a Karma array
+/*  [SUMMARY] Draw TrueColour image to a pixel canvas.
+    [PURPOSE] This routine will draw a 2-dimensional slice of a Karma array
     onto a pixel canvas. This slice may be tiled. The slice is a RGB image.
     <canvas> The pixel canvas.
     <x_off> The horizontal offset, relative to the top-left corner of the
@@ -1565,16 +1695,20 @@ flag kwin_draw_rgb_image (KPixCanvas canvas, int x_off, int y_off,
     <height> The height of the input image (in values).
     <cache_ptr> Cache data is written here. The routine may produce cache data
     which will vastly increase the speed of subsequent operations on this data.
-    Prior to process exit, a call MUST be made to <<kwin_free_cache_data>>,
+    Prior to process exit, a call MUST be made to [<kwin_free_cache_data>],
     otherwise shared memory segments could remain after the process exits.
     [MT-LEVEL] Unsafe.
     [RETURNS] TRUE on success, else FALSE.
 */
 {
+    flag ok;
+    unsigned char red, green, blue;
     unsigned int count;
+    float red_max, green_max, blue_max, col_scale;
     double y0, y1;
-    unsigned char *out_image;
-    unsigned char pixels[256];
+    unsigned char imap_red[256], imap_green[256], imap_blue[256];
+    unsigned short cmap_reds[256], cmap_greens[256], cmap_blues[256];
+    unsigned long cmap_pixels[256];
     static char function_name[] = "kwin_draw_rgb_image";
 
     VERIFY_CANVAS (canvas);
@@ -1583,18 +1717,67 @@ flag kwin_draw_rgb_image (KPixCanvas canvas, int x_off, int y_off,
 	/*  Flip  */
 	y0 = (double) (canvas->height - 1 - y_off);
 	y1 = (double) ( canvas->height - 1 - (y_off + y_pixels - 1) );
-	if ( !psw_rgb_image
-	    ( canvas->pspage, red_slice, green_slice, blue_slice,
-	     width, height,
-	     hoffsets, voffsets, hoffsets, voffsets, hoffsets, voffsets, 0,
-	     (double) x_off / (double) (canvas->width - 1),
-	     (double) y1 / (double) (canvas->height - 1),
-	     (double) (x_off + x_pixels - 1) / (double) (canvas->width - 1),
-	     (double) y0 / (double) (canvas->height - 1) ) )
+	if (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR)
 	{
+	    /*  DirectColour visual: no need to worry about the state of the
+		colourmap. Note that even if the visual is PseudoColour, there
+		is no need to worry about the colourmap, since in this case the
+		RGB image is not really destined for a PseudoColour visual, but
+		the <viewimg> package is drawing the RGB image instead of the
+		PseudoColour image because PostScript is being generated  */
+	    ok = psw_rgb_image
+		( canvas->pspage, red_slice, green_slice, blue_slice,
+		  width, height,
+		  hoffsets, voffsets, hoffsets, voffsets, hoffsets, voffsets,0,
+		  (double) x_off / (double) (canvas->width - 1),
+		  (double) y1 / (double) (canvas->height - 1),
+		  (double) (x_off + x_pixels -1) / (double) (canvas->width -1),
+		  (double) y0 / (double) (canvas->height - 1) );
+	    return (ok);
+	}
+	/*  DirectColour visual: have to get colourmap values  */
+	red_max = canvas->pix_red_mask;
+	green_max = canvas->pix_green_mask;
+	blue_max = canvas->pix_blue_mask;
+	for (count = 0; count < 256; ++count)
+	{
+	    /*  Have to construct pixel value from each mask  */
+	    col_scale = (float) count / 256.0;
+	    cmap_pixels[count] = ( (unsigned long) (red_max * col_scale) &
+				   canvas->pix_red_mask ) |
+		( (unsigned long) (green_max * col_scale) &
+		  canvas->pix_green_mask ) |
+		( (unsigned long) (blue_max * col_scale) &
+		  canvas->pix_blue_mask );
+	}
+	if ( !get_colours_from_pixels (canvas, cmap_pixels,
+				       cmap_reds, cmap_greens, cmap_blues,
+				       256) )
+	{
+	    (void) fprintf (stderr, "%s: cannot find RGB values\n",
+			    function_name);
 	    return (FALSE);
 	}
-	return (TRUE);
+	/*  Convert 16bit RGB values to 8bit  */
+	for (count = 0; count < 256; ++count)
+	{
+	    red = (int) cmap_reds[count] >> 8;
+	    green = (int) cmap_greens[count] >> 8;
+	    blue = (int) cmap_blues[count] >> 8;
+	    imap_red[count] = red;
+	    imap_green[count] = green;
+	    imap_blue[count] = blue;
+	}
+	ok = psw_directcolour_image
+	    ( canvas->pspage, red_slice, green_slice, blue_slice,
+	      width, height,
+	      hoffsets, voffsets, hoffsets, voffsets, hoffsets, voffsets, 0,
+	      imap_red, imap_green, imap_blue,
+	      (double) x_off / (double) (canvas->width - 1),
+	      (double) y1 / (double) (canvas->height - 1),
+	      (double) (x_off + x_pixels - 1) / (double) (canvas->width - 1),
+	      (double) y0 / (double) (canvas->height - 1) );
+	return (ok);
     }
     if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 	(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
@@ -1627,16 +1810,17 @@ flag kwin_draw_rgb_image (KPixCanvas canvas, int x_off, int y_off,
 
 /*PUBLIC_FUNCTION*/
 flag kwin_draw_cached_image (KPixCanvasImageCache cache, int x_off, int y_off)
-/*  [PURPOSE] This routine will draw a previously computed image cache data
-    (computed by <<kwin_draw_image>>) onto the canvas which the original image
-    was drawn.
+/*  [SUMMARY] Draw cached image to a pixel canvas.
+    [PURPOSE] This routine will draw a previously computed image cache data
+    (computed by [<kwin_draw_pc_image>]) onto the canvas on which the original
+    image was drawn.
     <cache> The cache data.
     <x_off> The horizontal offset, relative to the top-left corner of the
     canvas.
     <y_off> The vertical offset, relative to the top-left corner of the canvas.
     [RETURNS] TRUE on success if there is valid cache data, else FALSE
     indicating that the image must be recomputed and drawn using
-    <<kwin_draw_image>>.
+    [<kwin_draw_pc_image>].
 */
 {
     KPixCanvas canvas;
@@ -1653,14 +1837,84 @@ flag kwin_draw_cached_image (KPixCanvasImageCache cache, int x_off, int y_off)
 	return (FALSE);
     }
     if (!canvas->visible) return (TRUE);
-    return ( (*canvas->draw_cached_image) (cache, canvas->xoff + x_off,
-					   canvas->yoff + y_off) );
+    return ( (*canvas->draw_cached_image) (cache, TRUE, canvas->xoff + x_off,
+					   canvas->yoff + y_off, 0, 0, 0, 0,
+					   canvas->xoff, canvas->yoff,
+					   canvas->width, canvas->height) );
 }   /*  End Function kwin_draw_cached_image  */
+
+/*EXPERIMENTAL_FUNCTION*/
+flag kwin_draw_cached_subimages (KPixCanvasImageCache cache,
+				 int x_off, int y_off,
+				 unsigned int num_areas,
+				 KPixCanvasRefreshArea *areas)
+/*  [PURPOSE] This routine will draw sections of a previously computed image
+    cache data (computed by <<kwin_draw_pc_image>>) onto the canvas on which
+    the original image was drawn.
+    <cache> The cache data.
+    <x_off> The horizontal offset, relative to the top-left corner of the
+    canvas, which corresponds to the image origin.
+    <y_off> The vertical offset, relative to the top-left corner of the canvas,
+    which corresponds to the image origin.
+    <num_areas> The number of image areas to draw.
+    <areas> The list of image areas.
+    [RETURNS] TRUE on success if there is valid cache data, else FALSE
+    indicating that the image must be recomputed and drawn using
+    <<kwin_draw_pc_image>>.
+*/
+{
+    KPixCanvas canvas;
+    unsigned int count;
+    int im_x_off, im_y_off, width, height, ca_x_off, ca_y_off;
+    static char function_name[] = "kwin_draw_cached_subimages";
+
+    if (cache == NULL) return (FALSE);
+    canvas = cache->pixcanvas;
+    VERIFY_CANVAS (canvas);
+    /*  It's a shame to have to throw away the cache validity  */
+    if (canvas->pspage != NULL) return (FALSE);
+    if (canvas->draw_cached_image == NULL)
+    {
+	(void) fprintf (stderr, "Cache created but no support for drawing!\n");
+	return (FALSE);
+    }
+    if (!canvas->visible) return (TRUE);
+    for (count = 0; count < num_areas; ++count)
+    {
+	ca_x_off = areas[count].startx + canvas->xoff;
+	ca_y_off = areas[count].starty + canvas->yoff;
+	width = areas[count].endx - areas[count].startx + 1;
+	height = areas[count].endy - areas[count].starty + 1;
+	im_x_off = areas[count].startx - x_off;
+	im_y_off = areas[count].starty - y_off;
+	if (im_x_off < 0)
+	{
+	    ca_x_off -= im_x_off;
+	    width += im_x_off;
+	    im_x_off = 0;
+	}
+	if (im_y_off < 0)
+	{
+	    ca_y_off -= im_y_off;
+	    height += im_y_off;
+	    im_y_off = 0;
+	}
+	if ( (width < 1) || (height < 1) ) continue;
+	if ( !(*canvas->draw_cached_image) (cache,
+					    (count <num_areas-1) ? FALSE :TRUE,
+					    ca_x_off, ca_y_off, width, height,
+					    im_x_off, im_y_off,
+					    canvas->xoff, canvas->yoff,
+					    canvas->width, canvas->height) )
+	    return (FALSE);
+    }
+    return (TRUE);
+}   /*  End Function kwin_draw_cached_subimages  */
 
 /*PUBLIC_FUNCTION*/
 flag kwin_draw_point (KPixCanvas canvas, double x, double y,
 		      unsigned long pixel_value)
-/*  [PURPOSE] This routine will draw a single point onto a pixel canvas.
+/*  [SUMMARY] Draw a single point onto a pixel canvas.
     <canvas> The canvas.
     <x> The horizontal offset of the point.
     <y> The vertical offset of the point.
@@ -1674,16 +1928,49 @@ flag kwin_draw_point (KPixCanvas canvas, double x, double y,
     if (canvas->pspage != NULL)
     {
 	a_func_abort (function_name, "PostScript output not yet supported");
-	return;
+	return (FALSE);
     }
     return ( canvas->draw_point (canvas->info, (double) canvas->xoff + x,
 				 (double) canvas->yoff + y, pixel_value) );
 }   /*  End Function kwin_draw_point  */
 
 /*PUBLIC_FUNCTION*/
+flag kwin_draw_points (KPixCanvas canvas, double *x_array, double *y_array,
+		       unsigned int num_points, unsigned long pixel_value)
+/*  [SUMMARY] Draw multiple points onto a pixel canvas.
+    <canvas> The canvas.
+    <x_array> The horizontal co-ordinates of the points.
+    <y_array> The vetical co-ordinates of the points.
+    <num_points> The number of points.
+    <pixel_value> The pixel value to use.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    int count;
+    static char function_name[] = "kwin_draw_points";
+
+    VERIFY_CANVAS (canvas);
+    if (canvas->draw_points != NULL)
+    {
+	return ( (*canvas->draw_points) (canvas->info, x_array, y_array,
+					 num_points, pixel_value) );
+    }
+    /*  Do this the hard way  */
+    for (count = 0; count < num_points; ++count)
+    {
+	if ( !kwin_draw_point (canvas, x_array[count], y_array[count],
+			       pixel_value) )
+	{
+	    return (FALSE);
+	}
+    }
+    return (TRUE);
+}   /*  End Function kwin_draw_points  */
+
+/*PUBLIC_FUNCTION*/
 flag kwin_draw_line (KPixCanvas canvas, double x0, double y0,
 		     double x1, double y1, unsigned long pixel_value)
-/*  [PURPOSE] This routine will draw a single line onto a pixel canvas.
+/*  [SUMMARY] Draw a single line onto a pixel canvas.
     <canvas> The canvas.
     <x0> The horizontal offset of the first point.
     <y0> The vertical offset of the first point.
@@ -1807,10 +2094,75 @@ flag kwin_draw_line (KPixCanvas canvas, double x0, double y0,
 }   /*  End Function kwin_draw_line  */
 
 /*PUBLIC_FUNCTION*/
+flag kwin_draw_lines (KPixCanvas canvas, int *x_array, int *y_array,
+		      int num_points, unsigned long pixel_value)
+/*  [SUMMARY] Draw multiple connected lines onto a pixel canvas.
+    <canvas> The canvas.
+    <x_array> The horizontal co-ordinates of the points.
+    <y_array> The vetical co-ordinates of the points.
+    <num_points> The number of points. The number of lines drawn is 1 less than
+    this value.
+    <pixel_value> The pixel value to use.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    flag retval;
+    int count;
+    double *x_arr, *y_arr;
+    static char function_name[] = "kwin_draw_lines";
+
+    VERIFY_CANVAS (canvas);
+    if ( ( x_arr = (double *) m_alloc (sizeof *x_arr * num_points) ) == NULL )
+    {
+	m_error_notify (function_name, "x array");
+	return (FALSE);
+    }
+    if ( ( y_arr = (double *) m_alloc (sizeof *y_arr * num_points) ) == NULL )
+    {
+	m_error_notify (function_name, "y array");
+	m_free ( (char *) x_arr );
+	return (FALSE);
+    }
+    if (canvas->draw_lines != NULL)
+    {
+	for (count = 0; count < num_points; ++count)
+	{
+	    x_arr[count] = (double) (x_array[count] + canvas->xoff);
+	    y_arr[count] = (double) (y_array[count] + canvas->yoff);
+	}
+	retval = (*canvas->draw_lines) (canvas->info, x_arr, y_arr, num_points,
+					pixel_value);
+	m_free ( (char *) x_arr );
+	m_free ( (char *) y_arr );
+	return (retval);
+    }
+    /*  Do this the hard way  */
+    for (count = 0; count < num_points; ++count)
+    {
+	x_arr[count] = (double) x_array[count];
+	y_arr[count] = (double) y_array[count];
+    }
+    for (count = 0; count < num_points - 1; ++count)
+    {
+	if ( !kwin_draw_line (canvas, x_arr[count], y_arr[count],
+			      x_arr[count + 1], y_arr[count + 1],
+			      pixel_value) )
+	{
+	    m_free ( (char *) x_arr );
+	    m_free ( (char *) y_arr );
+	    return (FALSE);
+	}
+    }
+    m_free ( (char *) x_arr );
+    m_free ( (char *) y_arr );
+    return (TRUE);
+}   /*  End Function kwin_draw_lines  */
+
+/*PUBLIC_FUNCTION*/
 flag kwin_fill_ellipse (KPixCanvas canvas,
 			double cx, double cy, double rx, double ry,
 			unsigned long pixel_value)
-/*  [PURPOSE] This routine will draw a filled ellipse onto a pixel canvas.
+/*  [SUMMARY] Draw a filled ellipse onto a pixel canvas.
     <canvas> The canvas.
     <cx> The horizontal co-ordinate of the centre of the ellipse.
     <cy> The vertical co-ordinate of the centre of the ellipse.
@@ -1856,7 +2208,7 @@ flag kwin_fill_ellipse (KPixCanvas canvas,
 flag kwin_fill_polygon (KPixCanvas canvas, int *point_x, int *point_y,
 			unsigned int num_vertices, unsigned long pixel_value,
 			flag convex)
-/*  [PURPOSE] This routine will draw a filled polygon onto a pixel canvas.
+/*  [SUMMARY] Draw a filled polygon onto a pixel canvas.
     <canvas> The canvas.
     <point_x> The array of x co-ordinates of vertices of the polygon.
     <point_y> The array of y co-ordinates of vertices of the polygon.
@@ -1934,7 +2286,8 @@ flag kwin_fill_polygon (KPixCanvas canvas, int *point_x, int *point_y,
 flag kwin_draw_string (KPixCanvas canvas, double x, double y,
 		       CONST char *string, unsigned long pixel_value,
 		       flag clear_under)
-/*  [PURPOSE] This routine will draw a NULL terminated string onto a pixel
+/*  [SUMMARY] Draw a string onto a pixel canvas.
+    [PURPOSE] This routine will draw a NULL terminated string onto a pixel
     canvas, using the default font for the canvas.
     <canvas> The canvas.
     <x> The horizontal offset of the string origin.
@@ -1952,7 +2305,7 @@ flag kwin_draw_string (KPixCanvas canvas, double x, double y,
     if (canvas->pspage != NULL)
     {
 	a_func_abort (function_name, "PostScript output not yet supported");
-	return;
+	return (FALSE);
     }
     if (canvas->draw_string == NULL)
     {
@@ -1968,12 +2321,12 @@ flag kwin_draw_string (KPixCanvas canvas, double x, double y,
 flag kwin_draw_rectangle (KPixCanvas canvas, double x, double y,
 			  double width, double height,
 			  unsigned long pixel_value)
-/*  [PURPOSE] This routine will draw a single rectangle onto a pixel canvas.
+/*  [SUMMARY] Draw a single rectangle onto a pixel canvas.
     <canvas> The canvas.
     <x> The horizontal offset of the rectangle.
     <y> The vertical offset of the rectangle.
-    <width> The width of the rectangle.
-    <height> The height of the rectangle.
+    <width> The width of the rectangle. The point <<x + width>> is a vertex.
+    <height> The height of the rectangle. The point <<y + height>> is a vertex.
     <pixel_value> The pixel value to use.
     [RETURNS] TRUE on success, else FALSE.
 */
@@ -2003,12 +2356,12 @@ flag kwin_draw_rectangle (KPixCanvas canvas, double x, double y,
 flag kwin_fill_rectangle (KPixCanvas canvas, double x, double y,
 			  double width, double height,
 			  unsigned long pixel_value)
-/*  [PURPOSE] This routine will fill a single rectangle onto a pixel canvas.
+/*  [SUMMARY] Draw a single filled rectangle onto a pixel canvas.
     <canvas> The canvas.
     <x> The horizontal offset of the rectangle.
     <y> The vertical offset of the rectangle.
-    <width> The width of the rectangle.
-    <height> The height of the rectangle.
+    <width> The width of the rectangle. The point <<x + width>> is a vertex.
+    <height> The height of the rectangle. The point <<y + height>> is a vertex.
     <pixel_value> The pixel value to use.
     [RETURNS] TRUE on success, else FALSE.
 */
@@ -2017,7 +2370,7 @@ flag kwin_fill_rectangle (KPixCanvas canvas, double x, double y,
     static char function_name[] = "kwin_fill_rectangle";
 
     VERIFY_CANVAS (canvas);
-    if ( (width < 1.0) || (height < 1.0) ) return;
+    if ( (width < 1.0) || (height < 1.0) ) return (TRUE);
     if (canvas->draw_rectangle != NULL)
     {
 	return ( (*canvas->draw_rectangle) (canvas->info,
@@ -2039,75 +2392,9 @@ flag kwin_fill_rectangle (KPixCanvas canvas, double x, double y,
 }   /*  End Function kwin_fill_rectangle  */
 
 /*PUBLIC_FUNCTION*/
-flag kwin_draw_lines (KPixCanvas canvas, int *x_array, int *y_array,
-		      int num_points, unsigned long pixel_value)
-/*  [PURPOSE] This routine will draw multiple connected lines onto a pixel
-    canvas.
-    <canvas> The canvas.
-    <x_array> The horizontal co-ordinates of the points.
-    <y_array> The vetical co-ordinates of the points.
-    <num_points> The number of points. The number of lines drawn is 1 less than
-    this value.
-    <pixel_value> The pixel value to use.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-{
-    flag retval;
-    int count;
-    double *x_arr, *y_arr;
-    static char function_name[] = "kwin_draw_lines";
-
-    VERIFY_CANVAS (canvas);
-    if ( ( x_arr = (double *) m_alloc (sizeof *x_arr * num_points) ) == NULL )
-    {
-	m_error_notify (function_name, "x array");
-	return (FALSE);
-    }
-    if ( ( y_arr = (double *) m_alloc (sizeof *y_arr * num_points) ) == NULL )
-    {
-	m_error_notify (function_name, "y array");
-	m_free ( (char *) x_arr );
-	return (FALSE);
-    }
-    if (canvas->draw_lines != NULL)
-    {
-	for (count = 0; count < num_points; ++count)
-	{
-	    x_arr[count] = (double) (x_array[count] + canvas->xoff);
-	    y_arr[count] = (double) (y_array[count] + canvas->yoff);
-	}
-	retval = (*canvas->draw_lines) (canvas->info, x_arr, y_arr, num_points,
-					pixel_value);
-	m_free ( (char *) x_arr );
-	m_free ( (char *) y_arr );
-	return (retval);
-    }
-    /*  Do this the hard way  */
-    for (count = 0; count < num_points; ++count)
-    {
-	x_arr[count] = (double) x_array[count];
-	y_arr[count] = (double) y_array[count];
-    }
-    for (count = 0; count < num_points - 1; ++count)
-    {
-	if ( !kwin_draw_line (canvas, x_arr[count], y_arr[count],
-			      x_arr[count + 1], y_arr[count + 1],
-			      pixel_value) )
-	{
-	    m_free ( (char *) x_arr );
-	    m_free ( (char *) y_arr );
-	    return (FALSE);
-	}
-    }
-    m_free ( (char *) x_arr );
-    m_free ( (char *) y_arr );
-    return (TRUE);
-}   /*  End Function kwin_draw_lines  */
-
-/*PUBLIC_FUNCTION*/
 flag kwin_draw_ellipse (KPixCanvas canvas, double cx, double cy,
 			double rx, double ry, unsigned long pixel_value)
-/*  [PURPOSE] This routine will draw an ellipse onto a pixel canvas.
+/*  [SUMMARY] Draw an ellipse onto a pixel canvas.
     <canvas> The canvas.
     <cx> The horizontal co-ordinate of the centre of the ellipse.
     <cy> The vertical co-ordinate of the centre of the ellipse.
@@ -2152,7 +2439,7 @@ flag kwin_draw_ellipse (KPixCanvas canvas, double cx, double cy,
 /*PUBLIC_FUNCTION*/
 flag kwin_draw_ellipses (KPixCanvas canvas, int *cx, int *cy, int *rx, int *ry,
 			 int num_ellipses, unsigned long pixel_value)
-/*  [PURPOSE] This routine will draw multiple ellipses onto a pixel canvas.
+/*  [SUMMARY] Draw multiple ellipses onto a pixel canvas.
     <canvas> The canvas.
     <cx> The array of horizontal co-ordinate of the centre of the ellipse.
     <cy> The array of vertical co-ordinate of the centre of the ellipse.
@@ -2260,8 +2547,7 @@ flag kwin_draw_ellipses (KPixCanvas canvas, int *cx, int *cy, int *rx, int *ry,
 /*PUBLIC_FUNCTION*/
 flag kwin_fill_ellipses (KPixCanvas canvas, int *cx, int *cy, int *rx, int *ry,
 			 int num_ellipses, unsigned long pixel_value)
-/*  [PURPOSE] This routine will draw multiple filled ellipses onto a pixel
-    canvas.
+/*  [SUMMARY] Draw multiple filled ellipses onto a pixel canvas.
     <canvas> The canvas.
     <cx> The array of horizontal co-ordinate of the centre of the ellipse.
     <cy> The array of vertical co-ordinate of the centre of the ellipse.
@@ -2369,8 +2655,7 @@ flag kwin_fill_ellipses (KPixCanvas canvas, int *cx, int *cy, int *rx, int *ry,
 /*PUBLIC_FUNCTION*/
 flag kwin_draw_segments (KPixCanvas canvas, int *x0, int *y0, int *x1, int *y1,
 			 int num_segments, unsigned long pixel_value)
-/*  [PURPOSE] This routine will draw multiple disjoint lines onto a pixel
-    canvas.
+/*  [SUMMARY] Draw multiple disjoint lines onto a pixel canvas.
     <canvas> The canvas.
     <x0> The horizontal start co-ordinates of the segments.
     <y0> The vetical start co-ordinates of the segments.
@@ -2453,7 +2738,7 @@ flag kwin_draw_segments (KPixCanvas canvas, int *x0, int *y0, int *x1, int *y1,
 
 /*PUBLIC_FUNCTION*/
 void kwin_get_size (KPixCanvas canvas, int *width, int *height)
-/*  [PURPOSE] This routine will get the size of a pixel canvas.
+/*  [SUMMARY] Get the size of a pixel canvas.
     <width> The number of horizontal pixel will be written here.
     <height> The number of vertical pixel will be written here.
     [RETURNS] Nothing.
@@ -2468,8 +2753,7 @@ void kwin_get_size (KPixCanvas canvas, int *width, int *height)
 
 /*PUBLIC_FUNCTION*/
 void kwin_free_cache_data (KPixCanvasImageCache cache)
-/*  [PURPOSE] This routine will free some cache data allocated by
-    <<kwin_draw_image>>.
+/*  [SUMMARY] Free some cache data allocated by [<kwin_draw_pc_image>].
     <cache> The cache data.
     [RETURNS] Nothing.
 */
@@ -2501,7 +2785,8 @@ void kwin_free_all_cache_data ()
 /*PUBLIC_FUNCTION*/
 flag kwin_convert_to_canvas_coord (KPixCanvas canvas, int xin, int yin,
 				   int *xout, int *yout)
-/*  [PURPOSE] This routine will convert co-ordinates in a lower level object
+/*  [SUMMARY] Convert low-level co-ordinates to pixel co-ordinates.
+    [PURPOSE] This routine will convert co-ordinates in a lower level object
     (parent, ie. X window) to co-ordinates in a pixel canvas.
     <canvas> The canvas.
     <xin> The lower level horizontal co-ordinate.
@@ -2525,7 +2810,8 @@ flag kwin_convert_to_canvas_coord (KPixCanvas canvas, int xin, int yin,
 /*PUBLIC_FUNCTION*/
 flag kwin_convert_from_canvas_coord (KPixCanvas canvas, int xin, int yin,
 				     int *xout, int *yout)
-/*  [PURPOSE] This routine will convert co-ordinates in a pixel canvas to
+/*  [SUMMARY] Convert pixel co-ordinates to low-level co-ordinates.
+    [PURPOSE] This routine will convert co-ordinates in a pixel canvas to
     co-ordinates in a lower level object (parent, ie. X window).
     <canvas> The canvas.
     <xin> The horizontal canvas co-ordinate.
@@ -2550,8 +2836,7 @@ flag kwin_convert_from_canvas_coord (KPixCanvas canvas, int xin, int yin,
 flag kwin_get_colour (KPixCanvas canvas, CONST char *colourname,
 		      unsigned long *pixel_value, unsigned short *red,
 		      unsigned short *green, unsigned short *blue)
-/*  [PURPOSE] This routine will get (possibly allocating) a colourcell for a
-    canvas.
+/*  [SUMMARY] Get (possibly allocate) a colourcell for a canvas.
     <canvas> The canvas.
     <colourname> The name of the colour to get.
     <pixel_value> The pixel value will be written here.
@@ -2586,7 +2871,8 @@ flag kwin_get_colour (KPixCanvas canvas, CONST char *colourname,
 
 /*PUBLIC_FUNCTION*/
 KPixCanvasFont kwin_load_font (KPixCanvas canvas, CONST char *fontname)
-/*  [PURPOSE] This routine will load a font which may be then used to draw text
+/*  [SUMMARY] Load a font for later use.
+    [PURPOSE] This routine will load a font which may be then used to draw text
     onto a pixel canvas.
     <canvas> The pixel canvas for which the font is valid.
     <fontname> The name of the font.
@@ -2624,12 +2910,12 @@ KPixCanvasFont kwin_load_font (KPixCanvas canvas, CONST char *fontname)
 
 /*PUBLIC_FUNCTION*/
 flag kwin_get_string_size (KPixCanvasFont font, CONST char *string, ...)
-/*  [PURPOSE] This routine will determine the size of a string.
+/*  [SUMMARY] Determine the size of a string.
     <font> The font.
     <string> The string.
-    [VARARGS] The optional list of parameter attribute-key attribute-value
-    pairs must follow. See the header file for details on defined attributes.
-    This list must be terminated with the value  KWIN_STRING_END  .
+    [VARARGS] The optional list of parameter attribute-key attribute-value-ptr
+    pairs must follow. This list must be terminated with the value
+    KWIN_STRING_END. See [<KWIN_STRING_ATT>] for the list of attributes.
     [RETURNS] TRUE on success, else FALSE.
 */
 {
@@ -2689,6 +2975,8 @@ static KPixCanvas alloc_canvas ()
     canvas->info = NULL;
     canvas->draw_point = ( flag (*) () ) NULL;
     canvas->create_child = ( void *(*) () ) NULL;
+    canvas->user_ptr = NULL;
+    canvas->line_width = 0.0;
     canvas->magic_number = CANVAS_MAGIC_NUMBER;
     return (canvas);
 }   /*  End Function alloc_canvas  */
@@ -2727,30 +3015,51 @@ static flag child_position_event_func (KPixCanvas parent, int x, int y,
     return (FALSE);
 }   /*  End Function child_position_event_func  */
 
+#ifdef not_implemented
 static void not_implemented (char *s)
 {
     (void) fprintf (stderr, "%s: not implemented yet\n", s);
 }   /*  End Function not_implemented  */
+#endif
 
 static flag refresh_event_func (void *object, void *client1_data,
 				void *call_data, void *client2_data)
-/*  This routine is called when object callbacks are called.
-    The object information pointer will be given by  object  .
-    The first client information pointer will be given by  client1_data  .
-    The call information pointer will be given by  call_data  .
-    The second client information pointer will be given by  client2_data  .
-    The routine returns TRUE if further callbacks should not be called.
+/*  [PURPOSE] This routine is called when object callbacks are called.
+    <object> The object information pointer.
+    <client1_data> The first client information pointer.
+    <call_data> The call information pointer.
+    <client2_data> The second client information pointer.
+    [RETURNS] TRUE if further callbacks should not be called, else FALSE.
 */
 {
     KPixCanvas canvas;
+    flag honoured_areas;
+    unsigned int num_areas;
+    KPixCanvasRefreshArea *areas;
+    KPixCanvasRefreshList *refresh_list = (KPixCanvasRefreshList *) call_data;
     void (*func) ();
     static char function_name[] = "refresh_event_func";
 
     canvas = (KPixCanvas) object;
     VERIFY_CANVAS (canvas);
     func = ( void (*) () ) client2_data;
+    if (refresh_list == NULL)
+    {
+	num_areas = 0;
+	areas = NULL;
+    }
+    else
+    {
+	num_areas = refresh_list->num_areas;
+	areas = refresh_list->areas;
+    }
+    honoured_areas = FALSE;
     (*func) (canvas, canvas->width, canvas->height, client1_data,
-	     canvas->pspage);
+	     canvas->pspage, num_areas, areas, &honoured_areas);
+    if ( (refresh_list != NULL) && !honoured_areas )
+    {
+	refresh_list->num_areas = 0;
+    }
     return (FALSE);
 }   /*  End Function refresh_event_func  */
 

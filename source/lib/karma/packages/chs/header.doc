@@ -1,0 +1,5 @@
+$SUMMARY          Routines to scan values from channel objects
+$PURPOSE
+    These routines are meant to provide a simple method of reading (scanning)
+    channel objects for ASCII representations of floating point and integer
+    values.

@@ -3,7 +3,7 @@
 
     This code provides PostScript output for Intelligent Arrays.
 
-    Copyright (C) 1994,1995  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -38,7 +38,10 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/iarray/ps.c
 
-    Last updated by Richard Gooch   7-MAY-1995: Placate gcc -Wall
+    Updated by      Richard Gooch   7-MAY-1995: Placate gcc -Wall
+
+    Last updated by Richard Gooch   1-APR-1996: Moved remaing functions to new
+  documentation style.
 
 
 */
@@ -68,27 +71,24 @@ if (array->magic_number != MAGIC_NUMBER) \
 /*  Public routines follow  */
 
 /*PUBLIC_FUNCTION*/
-flag iarray_write_mono_ps (image, pspage, xstart, ystart, xend, yend, iscale)
-/*  This routine will convert a 2-dimensional Intelligent Array to monochrome
-    PostScript. The routine does NOT write PostScript headers or tails.
-    The Intelligent Array must be given by  image  .
-    The PostScriptPage object must be given by  pspage  .
-    The x starting point (scaled from 0.0 to 1.0) must be given by  xstart  .
-    The y starting point (scaled from 0.0 to 1.0) must be given by  ystart  .
-    The x ending point (scaled from 0.0 to 1.0) must be given by  xend  .
-    The y ending point (scaled from 0.0 to 1.0) must be given by  yend  .
-    If the input Intelligent Array is of type K_UBYTE and the value of  iscale
-    is  FALSE, the images values will be unscaled prior to PostScript
-    conversion (0 = black, 255 = white), otherwise (min = black, max = white).
-    The routine returns TRUE on success, else it returns FALSE.
+flag iarray_write_mono_ps (iarray image, PostScriptPage pspage,
+			   double xstart, double ystart,
+			   double xend, double yend, flag iscale)
+/*  [SUMMARY] Write an Intelligent Array as monochrome PostScript.
+    [PURPOSE] This routine will convert a 2-dimensional Intelligent Array to
+    monochrome PostScript. The routine does NOT write PostScript headers or
+    tails.
+    <image> The Intelligent Array.
+    <pspage> The PostScriptPage object.
+    <xstart> The x starting point (scaled from 0.0 to 1.0).
+    <ystart> The y starting point (scaled from 0.0 to 1.0).
+    <xend> The x ending point (scaled from 0.0 to 1.0).
+    <yend> The y ending point (scaled from 0.0 to 1.0).
+    <iscale> If FALSE and the input Intelligent Array is of type K_UBYTE the
+    images values will be unscaled prior to PostScript conversion (0 = black,
+    255 = white), otherwise (min = black, max = white).
+    [RETURNS] TRUE on success, else FALSE.
 */
-iarray image;
-PostScriptPage pspage;
-double xstart;
-double ystart;
-double xend;
-double yend;
-flag iscale;
 {
     iarray ubarray;
     flag retval;
@@ -122,8 +122,7 @@ flag iscale;
 	scale[1] = 0.0;
 	offset[0] = -255.0 * min / (max - min);
 	offset[1] = 0.0;
-	if (iarray_scale_and_offset (ubarray, image, scale, offset, FALSE)
-	    != TRUE)
+	if ( !iarray_scale_and_offset (ubarray, image, scale, offset, FALSE) )
 	{
 	    iarray_dealloc (ubarray);
 	    return (FALSE);
@@ -140,30 +139,24 @@ flag iscale;
 }   /*  End Function iarray_write_mono_ps  */
 
 /*PUBLIC_FUNCTION*/
-flag iarray_write_pseudocolour_ps (image, pspage, xstart, ystart, xend, yend,
-				   cmap, cmap_size)
-/*  This routine will convert a 2-dimensional Intelligent Array to colour
-    PostScript. The routine does NOT write PostScript headers or tails.
-    The Intelligent Array must be given by  image  .
-    The PostScriptPage object must be given by  pspage  .
-    The x starting point (scaled from 0.0 to 1.0) must be given by  xstart  .
-    The y starting point (scaled from 0.0 to 1.0) must be given by  ystart  .
-    The x ending point (scaled from 0.0 to 1.0) must be given by  xend  .
-    The y ending point (scaled from 0.0 to 1.0) must be given by  yend  .
-    The colourmap must be pointed to by  cmap  .This must be the same format as
-    returned by  ds_cmap_find_colourmap  .
-    The size of the colourmap must be given by  cmap_size  .The maximum size is
-    256.
-    The routine returns TRUE on success, else it returns FALSE.
+flag iarray_write_pseudocolour_ps (iarray image, PostScriptPage pspage,
+				   double xstart, double ystart,
+				   double xend, double yend,
+				   unsigned short *cmap,unsigned int cmap_size)
+/*  [SUMMARY] Write an Intelligent Array as PseudoColour PostScript.
+    [PURPOSE] This routine will convert a 2-dimensional Intelligent Array to
+    colour PostScript. The routine does NOT write PostScript headers or tails.
+    <image> The Intelligent Array.
+    <pspage> The PostScriptPage object.
+    <xstart> The x starting point (scaled from 0.0 to 1.0).
+    <ystart> The y starting point (scaled from 0.0 to 1.0).
+    <xend> The x ending point (scaled from 0.0 to 1.0).
+    <yend> The y ending point (scaled from 0.0 to 1.0).
+    <cmap> The colourmap. This must be the same format as returned by
+    [<ds_cmap_find_colourmap>].
+    <cmap_size> The size of the colourmap. The maximum size is 256.
+    [RETURNS] TRUE on success, else FALSE.
 */
-iarray image;
-PostScriptPage pspage;
-double xstart;
-double ystart;
-double xend;
-double yend;
-unsigned short *cmap;
-unsigned int cmap_size;
 {
     iarray ubarray;
     flag retval;
@@ -225,29 +218,28 @@ unsigned int cmap_size;
 }   /*  End Function iarray_write_pseudocolour_ps  */
 
 /*PUBLIC_FUNCTION*/
-flag iarray_write_rgb_ps (image_red, image_green, image_blue, pspage,
-			  xstart, ystart, xend, yend)
-/*  This routine will convert a 2-dimensional Intelligent Array to colour
-    PostScript. The routine does NOT write PostScript headers or tails.
-    The red component Intelligent Array must be given by  image_red  .
-    The green component Intelligent Array must be given by  image_green  .
-    The blue component Intelligent Array must be given by  image_blue  .
-    Each of these Intelligent Arrays must be of type K_UBYTE.
-    The PostScriptPage object must be given by  pspage  .
-    The x starting point (scaled from 0.0 to 1.0) must be given by  xstart  .
-    The y starting point (scaled from 0.0 to 1.0) must be given by  ystart  .
-    The x ending point (scaled from 0.0 to 1.0) must be given by  xend  .
-    The y ending point (scaled from 0.0 to 1.0) must be given by  yend  .
-    The routine returns TRUE on success, else it returns FALSE.
+flag iarray_write_rgb_ps (iarray image_red, iarray image_green,
+			  iarray image_blue, PostScriptPage pspage,
+			  double xstart, double ystart,
+			  double xend, double yend)
+/*  [SUMMARY] Write an Intelligent Array as TrueColour PostScript.
+    [PURPOSE] This routine will convert three 2-dimensional Intelligent Arrays
+    to colour PostScript. The routine does NOT write PostScript headers or
+    tails.
+    <image_red> The Intelligent Array containing the red image component.
+    <image_green> The Intelligent Array containing the green image component.
+    <image_blue> The Intelligent Array containing the blue image component.
+    [NOTE] Each of these Intelligent Arrays must be of type K_UBYTE.
+    <pspage> The PostScriptPage object.
+    <xstart> The x starting point (scaled from 0.0 to 1.0).
+    <ystart> The y starting point (scaled from 0.0 to 1.0).
+    <xend> The x ending point (scaled from 0.0 to 1.0).
+    <yend> The y ending point (scaled from 0.0 to 1.0).
+    <cmap> The colourmap. This must be the same format as returned by
+    [<ds_cmap_find_colourmap>].
+    <cmap_size> The size of the colourmap. The maximum size is 256.
+    [RETURNS] TRUE on success, else FALSE.
 */
-iarray image_red;
-iarray image_green;
-iarray image_blue;
-PostScriptPage pspage;
-double xstart;
-double ystart;
-double xend;
-double yend;
 {
     unsigned long xlen, ylen;
     static char function_name[] = "iarray_write_rgb_ps";

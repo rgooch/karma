@@ -1,7 +1,7 @@
 /*
     Definition of event codes.
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -35,6 +35,7 @@
 #define K_CANVAS_EVENT_LEFT_MOUSE_RELEASE (unsigned int) 7
 #define K_CANVAS_EVENT_MIDDLE_MOUSE_RELEASE (unsigned int) 8
 #define K_CANVAS_EVENT_RIGHT_MOUSE_RELEASE (unsigned int) 9
+#define K_CANVAS_EVENT_PLAIN_KEY_PRESS (unsigned int) 10
 
 #define K_CANVAS_EVENT_UNDEFINED (unsigned int) 29999
 

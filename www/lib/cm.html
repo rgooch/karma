@@ -1,0 +1,111 @@
+<html><head><title>Package: cm</title></head> 
+<body>
+<center><h1>The "cm" Package</h1></center>    These routines are meant to provide a generic and simple to use child
+    process management facility.
+    A similar set of routines: <a href=chx.html#chx_>chx_</a> provide identical functionality
+    (with the exception of the polling routine), except that they rely on the
+    Xt Intrinsics.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=cm></a></table><h4>Functions</h4><table><tr><td><a href=cm.html#cm_manage>cm_manage</a></td><td>Register a function to manage a child process.
+</td></tr>
+<tr><td><a href=cm.html#cm_unmanage>cm_unmanage</a></td><td>Terminate the management of a child process for state changes.
+</td></tr>
+<tr><td><a href=cm.html#cm_poll>cm_poll</a></td><td>Poll for child process state changes.
+</td></tr>
+<tr><td><a href=cm.html#cm_poll_silent>cm_poll_silent</a></td><td>Poll for child process state changes.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=cm.html#CM_PROTO_stop_func>CM_PROTO_stop_func</a></td><td>This routine is called when a child process is stopped.
+</td></tr>
+<tr><td><a href=cm.html#CM_PROTO_term_func>CM_PROTO_term_func</a></td><td>This routine is called when a child process is killed.
+</td></tr>
+<tr><td><a href=cm.html#CM_PROTO_exit_func>CM_PROTO_exit_func</a></td><td>This routine is called when a child process exits.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=cm_manage></a> flag
+ <b>cm_manage</b><i>    ( int pid, void (*stop_func) (), void (*term_func) (),
+		void (*exit_func) () )
+</i><br><p>    This routine will manage a child process for state changes by
+    registering callback routines.
+<p><b>Parameters:</b><ul><li><i>pid :</i> 
+    The child process ID to manage.
+<br><li><i>stop_func :</i> 
+    This routine is called when the child is stopped (by a SIGTTIN,
+    SIGTTOU, SIGTSTP, or SIGSTOP signal). If this is NULL, no callback routine
+    is installed. The prototype function is <a href=cm.html#CM_PROTO_stop_func>CM_PROTO_stop_func</a>
+<br><li><i>term_func :</i> 
+    This routine is called when the child terminates due to a
+    signal. If this is NULL, no callback routine is installed. The prototype
+    function is <a href=cm.html#CM_PROTO_term_func>CM_PROTO_term_func</a>.
+<br><li><i>exit_func :</i> 
+    This routine is called when the child exits due to a call to
+    <em>_exit</em>. If this is NULL, no callback routine is installed. The prototype
+    function is <a href=cm.html#CM_PROTO_exit_func>CM_PROTO_exit_func</a>.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     If a child process is killed or exits, its callback routines are
+    automatically removed. The <em>term_func</em> or <em>exit_func</em> MUST NOT unmanage
+    the child process.
+</ul><p><hr> <a name=cm_unmanage></a> void
+ <b>cm_unmanage</b><i>    (int pid)
+</i><br><p>    Terminate the management of a child process for state changes.
+<p><b>Parameters:</b><ul><li><i>pid :</i> 
+    The ID of the child process to unmanage.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cm_poll></a> void
+ <b>cm_poll</b><i>    (flag block)
+</i><br><p>    This routine will poll for any change in status of child
+    processes. If the operating system does not support forking, the routine
+    displays an error message. Those processes which have been registered using
+    <a href=cm.html#cm_manage>cm_manage</a> will have any callback routines called. If a child has not
+    been registered using <a href=cm.html#cm_manage>cm_manage</a> then the routine will print a warning
+    message stating that the child was not managed.
+<p><b>Parameters:</b><ul><li><i>block :</i> 
+    If TRUE, the routine will poll forever until a child changes status
+    or a signal is caught.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     If the process has no children, the routine will ALWAYS return
+    immediately.
+</ul><p><hr> <a name=cm_poll_silent></a> void
+ <b>cm_poll_silent</b><i>    (flag block)
+</i><br><p>    This routine will poll for any change in status of child
+    processes. If the operating system does not support forking, the routine
+    displays an error message. Those processes which have been registered using
+    <a href=cm.html#cm_manage>cm_manage</a> will have any callback routines called. If a child has not
+    been registered using <a href=cm.html#cm_manage>cm_manage</a> then the routine will print a warning
+    message stating that the child was not managed.
+<p><b>Parameters:</b><ul><li><i>block :</i> 
+    If TRUE, the routine will poll forever until a child changes status
+    or a signal is caught.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     If the process has no children, the routine will ALWAYS return
+    immediately.
+</ul><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=CM_PROTO_stop_func></a> void
+ <b>CM_PROTO_stop_func</b><i>    (int pid, int sig)
+</i><br><p>    This routine is called when a child process is stopped.
+<p><b>Parameters:</b><ul><li><i>pid :</i> 
+    The process ID.
+<br><li><i>sig :</i> 
+    The signal which stopped the process.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=CM_PROTO_term_func></a> void
+ <b>CM_PROTO_term_func</b><i>    (int pid, int sig, struct rusage *rusage)
+</i><br><p>    This routine is called when a child process is killed.
+<p><b>Parameters:</b><ul><li><i>pid :</i> 
+    The process ID.
+<br><li><i>sig :</i> 
+    The signal which killed the process.
+<br><li><i>rusage :</i> 
+    The resource usage information. If this is NULL, the platform does
+    not support this.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=CM_PROTO_exit_func></a> void
+ <b>CM_PROTO_exit_func</b><i>    (int pid, int value, struct rusage *rusage)
+</i><br><p>    This routine is called when a child process exits.
+<p><b>Parameters:</b><ul><li><i>pid :</i> 
+    The process ID.
+<br><li><i>value :</i> 
+    The value passed to <em>_exit</em>.
+<br><li><i>rusage :</i> 
+    The resource usage information. If this is NULL, the platform does
+    not support this.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

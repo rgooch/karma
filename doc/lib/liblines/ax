@@ -1,2 +1,0 @@
-/*  Routines to display axes in an X Window  */
-/*  Link with:    -lkarmaX11  */

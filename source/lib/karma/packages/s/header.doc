@@ -1,0 +1,7 @@
+$SUMMARY          Signal handling routines
+$PURPOSE
+    These routines are meant to provide a simplified interface to the Unix
+    signal management routines. These routines allow blocking and unblocking
+    of signals without the dangers of deadlock (common on multi-threaded
+    machines).
+    A few "standard" signal handlers are also provided.

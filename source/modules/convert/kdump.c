@@ -2,7 +2,7 @@
 
     Source file for  kdump  (data structure dumping module).
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -54,22 +54,29 @@
 
     Updated by      Richard Gooch   21-MAY-1994: Added  #include <karma_ch.h>
 
-    Last updated by Richard Gooch   7-AUG-1994: Added  descriptor_only
+    Updated by      Richard Gooch   7-AUG-1994: Added  descriptor_only
   parameter.
+
+    Last updated by Richard Gooch   1-JUN-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 #include <karma.h>
 #include <karma_module.h>
 #include <karma_dsxfr.h>
 #include <karma_panel.h>
 #include <karma_dsrw.h>
 #include <karma_dmp.h>
+#include <karma_ds.h>
 #include <karma_ch.h>
 #include <karma_ex.h>
 #include <karma_a.h>
+#include <karma_m.h>
+
 
 #define VERSION "1.2"
 
@@ -91,9 +98,7 @@ static char *data_format_alternatives[] =
 };
 static int data_format = DATA_FORMAT_ASCII;
 
-main (argc, argv)
-int argc;       /*  Count of parameters on command line */
-char **argv;    /*  List of command line parameters     */
+int main (int argc, char **argv)
 {
     KControlPanel panel;
     static char function_name[] = "main";

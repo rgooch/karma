@@ -1,0 +1,312 @@
+<html><head><title>Package: dsrw</title></head> 
+<body>
+<center><h1>The "dsrw" Package</h1></center>    These routines are meant to provide a mechanism to read and write the
+    recursive, heirarchical data structure supported in Karma from and to
+    open channels.
+    The use of these routines is NOT recommended. The <a href=dsxfr.html#dsxfr>dsxfr</a> routines are
+    the preferred means of transferring data structures.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=dsrw></a></table><h4>Functions</h4><table><tr><td><a href=dsrw.html#dsrw_write_multi>dsrw_write_multi</a></td><td>Write a multi_array data structure.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_write_packet_desc>dsrw_write_packet_desc</a></td><td>Write a packet descriptor in binary format.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_write_element_desc>dsrw_write_element_desc</a></td><td>Write an element descriptor in binary format.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_write_array_desc>dsrw_write_array_desc</a></td><td>Write an array descriptor in binary format.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_write_dim_desc>dsrw_write_dim_desc</a></td><td>Write a dimension descriptor in binary format.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_write_packet>dsrw_write_packet</a></td><td>Write packet data in binary format.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_write_element>dsrw_write_element</a></td><td>Write an element in binary format.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_write_array>dsrw_write_array</a></td><td>Write an array in binary format.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_write_list>dsrw_write_list</a></td><td>Write a linked list in binary format.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_write_packets>dsrw_write_packets</a></td><td>Write the binary representation of many data packets.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_write_flag>dsrw_write_flag</a></td><td>Write a boolean value in binary format to a channel object.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_read_multi>dsrw_read_multi</a></td><td>Read the binary representation of a multi_array structure.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_read_packet_desc>dsrw_read_packet_desc</a></td><td>Read the binary representation of a packet descriptor.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_read_array_desc>dsrw_read_array_desc</a></td><td>Read the binary representation of an array descriptor.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_read_dim_desc>dsrw_read_dim_desc</a></td><td>Read the binary representation of a dimension descriptor.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_read_packet>dsrw_read_packet</a></td><td>Read the binary representation of a data packet.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_read_element>dsrw_read_element</a></td><td>Read the binary representation of an element.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_read_array>dsrw_read_array</a></td><td>Read the binary representation of an array.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_read_list>dsrw_read_list</a></td><td>Read the binary representation of a linked list.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_read_packets>dsrw_read_packets</a></td><td>Read the binary representation of many data packets.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_read_flag>dsrw_read_flag</a></td><td>Read the binary representation of a boolean.
+</td></tr>
+<tr><td><a href=dsrw.html#dsrw_read_type>dsrw_read_type</a></td><td>Read the binary representation of a data type.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=dsrw_write_multi></a> void
+ <b>dsrw_write_multi</b><i>    (Channel channel, multi_array *multi_desc)
+</i><br><p>    This routine will write a binary multi_array descriptor to a
+    channel object. All descriptors and data, as well as history strings are
+    written.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>multi_desc :</i> 
+    The data structure.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_write_packet_desc></a> void
+ <b>dsrw_write_packet_desc</b><i>    (Channel channel, packet_desc *pack_desc)
+</i><br><p>    This routine will write the binary format of a packet descriptor
+    to a channel object. The routine will also write all lower levels of array
+    or linked list descriptors.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>pack_desc :</i> 
+    The packet descriptor.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_write_element_desc></a> void
+ <b>dsrw_write_element_desc</b><i>    (Channel channel, unsigned int type, char *desc)
+</i><br><p>    This routine will write the binary format of an element
+    descriptor to a channel object. If the element is an array pointer or a
+    linked list pointer, that descriptor will also be written.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>type :</i> 
+    The type of the element.
+<br><li><i>desc :</i> 
+    The element descriptor.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_write_array_desc></a> void
+ <b>dsrw_write_array_desc</b><i>    (Channel channel, array_desc *arr_desc)
+</i><br><p>    This routine will write the binary representation of an array
+    descriptor to a channel object. The packet descriptor for the array will
+    also be written (this is a recursive process).
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>arr_desc :</i> 
+    The array descriptor.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_write_dim_desc></a> void
+ <b>dsrw_write_dim_desc</b><i>    (Channel channel, dim_desc *dimension)
+</i><br><p>    This routine will write the binary representation of a dimension
+    descriptor to a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>dimension :</i> 
+    The dimension descriptor.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_write_packet></a> void
+ <b>dsrw_write_packet</b><i>    (Channel channel, CONST packet_desc *pack_desc,
+			CONST char *packet)
+</i><br><p>    This routine will write the binary representation of a data
+    packet to a channel object. The routine will recursively write sub arrays
+    and linked lists of packets.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>pack_desc :</i> 
+    The packet descriptor.
+<br><li><i>packet :</i> 
+    The packet data.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_write_element></a> void
+ <b>dsrw_write_element</b><i>    (Channel channel, unsigned int type, char *desc,
+			 CONST char *element)
+</i><br><p>    This routine will write the binary representation of an element
+    to a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>type :</i> 
+    The type of the element.
+<br><li><i>desc :</i> 
+    The descriptor for the element.
+<br><li><i>element :</i> 
+    A pointer to the element data.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_write_array></a> void
+ <b>dsrw_write_array</b><i>    (Channel channel, array_desc *arr_desc,
+		       CONST char *element, flag pad)
+</i><br><p>    This routine will write the binary representation of an array to
+    a channel object. The routine will recursively write any sub arrays or
+    linked lists of packets.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>element :</i> 
+    The element to write the array pointer to.
+<br><li><i>pad :</i> 
+    If TRUE the array will be padded on a selected boundary (this is the
+    case when writing .kf files).
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_write_list></a> void
+ <b>dsrw_write_list</b><i>    (Channel channel, packet_desc *pack_desc,
+		      list_header *list_head)
+</i><br><p>    This routine will write the binary representation of the data in
+    a linked list to a channel object. The routine will recursively write any
+    sub arrays or linked lists of packets.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>pack_desc :</i> 
+    The packet descriptor for the list entries.
+<br><li><i>list_head :</i> 
+    The linked list header.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_write_packets></a> flag
+ <b>dsrw_write_packets</b><i>    (Channel channel, CONST packet_desc *descriptor,
+			 CONST char *source, unsigned long num_packets)
+</i><br><p>    This routine will write the binary representation many data
+    packets to a channel object. The routine will recursively write out sub
+    arrays and linked lists.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>descriptor :</i> 
+    The descriptor for the packets.
+<br><li><i>source :</i> 
+    The packet data.
+<br><li><i>num_packets :</i> 
+    The number of packets to write.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_write_flag></a> void
+ <b>dsrw_write_flag</b><i>    (Channel channel, flag logical)
+</i><br><p>    Write a boolean value in binary format to a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>logical :</i> 
+    The boolean value.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_read_multi></a> multi_array *
+ <b>dsrw_read_multi</b><i>    (Channel channel)
+</i><br><p>    This routine will read the binary representation of a
+    multi_array general data structure header from a channel object and will
+    allocate the required descriptors. The routine will then read in the data
+    from the channel object and will write it into the data structure(s)
+    created.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br></ul><b>Returns:</b>     A pointer to the multi array header on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_read_packet_desc></a> packet_desc *
+ <b>dsrw_read_packet_desc</b><i>    (Channel channel)
+</i><br><p>    This routine will read the binary representation of a packet
+    descriptor from a channel object. The routine will recursively read in
+    array and linked list descriptors if required.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br></ul><b>Returns:</b>     A pointer to the packet descriptor on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_read_array_desc></a> array_desc *
+ <b>dsrw_read_array_desc</b><i>    (Channel channel, unsigned int type)
+</i><br><p>    This routine will read the binary representation of an array
+    descriptor from a channel object. The routine will recursively read the
+    packet descriptor for the array.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>type :</i> 
+    The type of the array. Legal values are:
+    ARRAYP   (old format)
+    K_ARRAY  (new format)
+<br></ul><b>Returns:</b>     A pointer to the array descriptor on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_read_dim_desc></a> dim_desc *
+ <b>dsrw_read_dim_desc</b><i>    (Channel channel)
+</i><br><p>    This routine will read the binary representation of a dimension
+    descriptor from a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br></ul><b>Returns:</b>     A pointer to the dimension descriptor on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_read_packet></a> flag
+ <b>dsrw_read_packet</b><i>    (Channel channel, CONST packet_desc *descriptor,
+		       char *packet)
+</i><br><p>    This routine will read the binary representation of a data packet
+    from a channel object. The routine will recursively read in sub arrays and
+    linked lists.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>descriptor :</i> 
+    The descriptor for the packet.
+<br><li><i>packet :</i> 
+    The packet data will be written here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_read_element></a> flag
+ <b>dsrw_read_element</b><i>    (Channel channel, unsigned int type, char *desc,
+			char *element)
+</i><br><p>    This routine will read the binary representation of an element
+    from a channel object. If the element type is a pointer to an array or
+    linked lists, the routine will recursively read in the array or linked
+    list of packets.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>type :</i> 
+    The type of the element.
+<br><li><i>desc :</i> 
+    The element descriptor.
+<br><li><i>element :</i> 
+    A pointer to the element storage. This will be written to.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_read_array></a> flag
+ <b>dsrw_read_array</b><i>    (Channel channel, CONST array_desc *descriptor,
+		      char *element, flag pad)
+</i><br><p>    This routine will read the binary representation of an array
+    from a channel object. The routine will recursively read in array packets.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>descriptor :</i> 
+    The array descriptor.
+<br><li><i>element :</i> 
+    The array pointer will be written here.
+<br><li><i>pad :</i> 
+    If TRUE the array will be padded on a selected boundary (this is the
+    case when reading .kf files).
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_read_list></a> flag
+ <b>dsrw_read_list</b><i>    (Channel channel, CONST packet_desc *descriptor,
+		     list_header *header)
+</i><br><p>    This routine will read in the binary representation of a linked
+    list of data from a channel object. The routine will recursively read in
+    sub arrays and linked lists.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>descriptor :</i> 
+    The packet descriptor for the list entries.
+<br><li><i>header :</i> 
+    The linked list header. The linked list entries and data will be
+    contiguous in memory.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_read_packets></a> flag
+ <b>dsrw_read_packets</b><i>    (Channel channel, CONST packet_desc *descriptor,
+			char *dest, unsigned long num_packets)
+</i><br><p>    This routine will read the binary representation many data
+    packets from a channel object. The routine will recursively read in sub
+    arrays and linked lists.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>descriptor :</i> 
+    The descriptor for the packets.
+<br><li><i>dest :</i> 
+    The packet data will be written here.
+<br><li><i>num_packets :</i> 
+    The number of packets to read.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_read_flag></a> flag
+ <b>dsrw_read_flag</b><i>    (Channel channel, flag *logical)
+</i><br><p>    This routine will read in the binary representation of a boolean
+    flag from a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>logical :</i> 
+    The boolean value is written here.
+<br></ul><b>Returns:</b>     TRUE if the flag was read in without error, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsrw_read_type></a> flag
+ <b>dsrw_read_type</b><i>    (Channel channel, unsigned int *type)
+</i><br><p>    This routine will read in the binary representation of a data
+    type from a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>type :</i> 
+    The type value is written here.
+<br></ul><b>Returns:</b>     TRUE if the type was read without error, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

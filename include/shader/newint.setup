@@ -10,7 +10,9 @@
 		       float _sh_min, float _sh_max,
 		       double *minimum_image_value,
 		       double *maximum_image_value,
-		       void *pixel_ptr)
+		       char *pixel_ptr,
+		       RotatedKcoord_3d normal, RotatedKcoord_3d vpc,
+		       float t_enter)
 /*  This routine will cast one ray in a cube.
     The cube data planes must be pointed to by  _sh_planes  .
     The dimension offset arrays must be pointed to by  _sh_dim_offsets_d

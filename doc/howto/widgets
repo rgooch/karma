@@ -69,7 +69,9 @@ widget. Please read the section on the MultiCanvas widget.
   ChoiceMenu widget
   =================
 
-An easy to construct non-exclusive menu widget.
+An easy to construct non-exclusive menu widget. There is no state
+associated with the widget. This widget is most useful for grouping
+together a set of related functions.
 
 
   Cmapwin widget
@@ -108,7 +110,8 @@ for implementing a last-minute filename query before doing something
   ====================
 
 Another menu widget, but the choices are exclusive: i.e. only one
-choice is allowed at a time. Good for implementing a mode menu.
+choice is allowed at a time. Good for implementing a mode menu. The
+current choice is displayed at all times.
 
 
   Filepopup widget
@@ -188,6 +191,22 @@ Holding down the mouse button over this widget will result in periodic
 invocation of the registered callbacks.
 
 
+  SimpleColourbar widget
+  ======================
+
+Another building block for the Cmapwin widget: a simple colour pallette.
+Unlike the Palette widget, this widget does not allow the user to
+choose a colour. While less functional, it is also more streamlined
+(most applications don't need the colour-picking feature).
+
+
+  SimpleSlider widget
+  ===================
+
+A slider widget with a nicer user interface than the Value widget, and
+with a few more resources.
+
+
   ThreeDeeSlice widget
   ====================
 
@@ -215,7 +234,7 @@ decremented with slow and fast Repeater widgets.
 Tutorial:
 ---------
 
-A quite powerful image display tool is <kview_2d>. The power user is
+A quite powerful image display tool is <kview>. The power user is
 urged to use this module and then read the source code to see how much
 functionality may be packed into so few lines of code, using the image
 display support in the Karma library and the ImageDisplay widget.
@@ -288,8 +307,6 @@ char **argv;
 				    NULL, 0,
 				    &argc, argv, fallback_resources,
 				    NULL, 0);
-    kcmap_init (xc_alloc_colours, xc_free_colours, xc_store_colours,
-		xc_get_location);
     /*  Initialise communications  */
     chx_register_app_context (app_context);
     image_display = XtVaCreateManagedWidget ("topForm",

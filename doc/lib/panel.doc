@@ -1,87 +1,162 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the panel_ package of routines in the Karma
-    library.
-
+$PACKAGE          panel
+$SUMMARY          Routines to manipulate control panels (user interface code)
+$PURPOSE
     These routines are meant to provide high level definition and processing of
     command lines.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
-
-    Written by		Richard Gooch	22-Jan-1996
-
-    Last updated by	Richard Gooch	5-OCT-1993
-
-
-*/
-
-KControlPanel panel_create (flag blank)
-/*  [PUEPOSE] This routine will create a control panel object.
-    <blank> If TRUE, then the routine will create a blank form, else it will
+$FUNCTION         panel_create
+$RETURN_TYPE      KControlPanel
+$PARAMETER_LIST
+    (flag blank)
+$SUMMARY          Create a control panel object.
+$PURPOSE
+    Create a control panel object.
+$PARAMETER        blank :
+    If TRUE, then the routine will create a blank form, else it will
     add some internally defined panel items.
-    [RETURNS] A KControlPanel object on success, else NULL.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    A KControlPanel object on success, else NULL.
+$END
 
-KControlPanel panel_create_group ()
-/*  [PURPOSE] This routine will create a control panel object which is a
+$FUNCTION         panel_create_group
+$RETURN_TYPE      KControlPanel
+$PARAMETER_LIST
+    ()
+$SUMMARY          Create a panel to contain a group.
+$PURPOSE
+    This routine will create a control panel object which is a
     container for a group of items. Panel items may be added to this panel
     object, and the panel object itself may be later added as panel item to
     another panel object (of type PIT_GROUP).
-    [RETURNS] A KControlPanel object on success, else NULL.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    A KControlPanel object on success, else NULL.
+$END
 
-void panel_add_item (KControlPanel panel, char *name, char *comment,
+$FUNCTION         panel_add_item
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (KControlPanel panel, char *name, char *comment,
 		     unsigned int type, void *value_ptr, ...)
-/*  [PURPOSE] This routine will add a panel item to a KControlPanel object.
+$SUMMARY          Add an item to a panel.
+$PURPOSE
+    This routine will add a panel item to a KControlPanel object.
     Each panel item has a number of "attributes". First come the "core"
     attributes, follwed by the optional attributes.
     Below are the core attributes:
-    <panel> The control panel to add to.
-    <name> The name of the panel item.
-    <comment> the comment (eg. name of the units: "(km/sec)").
-    <type> The type of the panel item.
-    <value_ptr> A pointer to the panel item data storage.
-    [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be PIA_END.
-    The attributes are passed using varargs.
-    [RETURNS] Nothing.
-*/
-/*---------------------------------------------------------------------------*/
+$PARAMETER        panel :
+    The control panel to add to.
+$PARAMETER        name :
+    The name of the panel item.
+$PARAMETER        comment :
+    the comment (eg. name of the units: "(km/sec)").
+$PARAMETER        type :
+    The type of the panel item. See <-DS_KARMA_DATA_TYPES-> and
+    <-PANEL_ITEM_TYPES-> for legal values.
+$PARAMETER        value_ptr :
+    A pointer to the panel item data storage.
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with the value PIA_END.
+    See <-PANEL_ATTRIBUTES-> for a list of defined attributes.
+$RETURNS
+    Nothing.
+$END
 
-void panel_push_onto_stack (KControlPanel panel)
-/*  [PURPOSE] This routine will push a control panel object onto the control
-    panel stack.
-    <panel> The control panel.
-    [RETURNS] Nothing.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         panel_push_onto_stack
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (KControlPanel panel)
+$SUMMARY          Push a control panel object onto the control panel stack.
+$PURPOSE
+    Push a control panel object onto the control panel stack.
+$PARAMETER        panel :
+    The control panel.
+$RETURNS
+    Nothing.
+$END
 
-void panel_pop_from_stack ()
-/*  [PURPOSE] This routine will pop the last pushed control panel object from
-    the control panel stack.
-    [RETURNS] Nothing.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         panel_pop_from_stack
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    ()
+$SUMMARY          Pop last pushed control panel object from control panel stack.
+$PURPOSE
+    Pop last pushed control panel object from control panel stack.
+$RETURNS
+    Nothing.
+$END
 
-flag panel_process_command_with_stack (char *cmd, flag (*unknown_func) (),
+$FUNCTION         panel_process_command_with_stack
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (char *cmd, flag (*unknown_func) (),
 				       FILE *fp)
-/*  [PURPOSE] This routine will process a command, using the top control panel
+$SUMMARY          Process a command.
+$PURPOSE
+    This routine will process a command, using the top control panel
     on the stack to interpret it.
-    <cmd> The command.
-    <unknown_func> The function that is called when the command is not
+$PARAMETER        cmd :
+    The command.
+$PARAMETER        unknown_func :
+    The function that is called when the command is not
     understood. If this is NULL, then a message is displayed if the command is
-    not understood. The interface to this routine is as follows:
-    [<pre>]
-    flag unknown_func (char *cmd, FILE *fp)
-    *   [PURPOSE] This routine will process a command.
-        <cmd> The command.
-	<fp> Output messages are directed here.
-	[RETURNS] TRUE if more commands should be processed, else FALSE,
-	indicating that the "exit" command was entered.
-    *
-    [</pre>]
-    <fp> Output messages are directed here.
-    [RETURNS] TRUE if more commands should be processed, else FALSE, indicating
+    not understood. The prototype function is <-PANEL_PROTO_decode_func->.
+$PARAMETER        fp :
+    Output messages are directed here.
+$RETURNS
+    TRUE if more commands should be processed, else FALSE, indicating
     that the control panel's "exit" command was entered.
-*/
-/*---------------------------------------------------------------------------*/
+$END
+
+$PROTO_FUNC       PANEL_PROTO_decode_func
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (char *command, FILE *fp)
+$SUMMARY          Command line decode callback.
+$PURPOSE
+    This function is called whenever a command string is to be
+    processed.
+$PARAMETER        command :
+    The command string.
+$PARAMETER        fp :
+    The output file.
+$RETURNS
+    TRUE if more commands should be processed, else FALSE,
+    indicating that the "exit" command was entered.
+$END
+
+$TABLE            PANEL_ATTRIBUTES
+$COLUMNS          3
+$SUMMARY          List of attributes for panel item objects
+$TABLE_DATA
+|.Name                    |,Type            |,Meaning
+|.
+|.PIA_END                 |,                |,End of varargs list
+|.PIA_NUM_CHOICE_STRINGS  |,unsigned int    |,Number of choice strings
+|.PIA_CHOICE_STRINGS      |,char **         |,Choice strings
+|.PIA_ARRAY_LENGTH        |,unsigned int *  |,Current array length
+|.PIA_ARRAY_MIN_LENGTH    |,unsigned int    |,Minimum array length
+|.PIA_ARRAY_MAX_LENGTH    |,unsigned int    |,Maximum array length
+|.PIA_CHOICE_COMMENTS     |,char **         |,Choice string comments
+|.PIA_MIN_VALUE           |,double          |,Minimum value
+|.PIA_MAX_VALUE           |,double          |,Maximum value
+|.PIA_TOP_OF_PANEL        |,flag            |,Place item at top of panel
+$END
+
+$TABLE            PANEL_ITEM_TYPES
+$COLUMNS          3
+$SUMMARY          List of Karma data types
+$TABLE_DATA
+|.Name              |,value_ptr type     |,Meaning
+|.
+|.PIT_FUNCTION      |,void (*) (char *)  |,Execute function
+|.PIT_EXIT_FORM     |,                   |,Exit form
+|.PIT_FLAG          |,flag *             |,Flag type
+|.PIT_CHOICE_INDEX  |,unsigned int *     |,Choice index (requires:
+|~                  |~                   |~PIA_NUM_CHOICE_STRINGS and
+|~                  |~                   |~PIA_CHOICE_STRINGS)
+|.PIT_GROUP         |,KControlPanel      |,Group item
+$END

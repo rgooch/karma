@@ -3,7 +3,7 @@
 
     This code provides routines to compute a raw image from a data structure.
 
-    Copyright (C) 1994,1995  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -58,9 +58,15 @@
 
     Updated by      Richard Gooch   7-MAY-1995: Placate gcc -Wall
 
-    Last updated by Richard Gooch   29-JUN-1995: Changed
+    Updated by      Richard Gooch   29-JUN-1995: Changed
   <setup_ubyte_lookup_table> and <setup_byte_lookup_table> to use floating
   point calculations with offset.
+
+    Updated by      Richard Gooch   22-FEB-1995: Trap and warn when i_min is
+  not less than i_max for integer images.
+
+    Last updated by Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -129,7 +135,8 @@ flag imw_to8_oi (unsigned char *out_image,
 		 unsigned char min_sat_pixel, unsigned char max_sat_pixel,
 		 double i_min, double i_max,
 		 flag (*iscale_func) (), void *iscale_info)
-/*  [PURPOSE] This routine will convert an image from one format to an 8 bit
+/*  [SUMMARY] Convert generic image to 8 bit image, preserving size.
+    [PURPOSE] This routine will convert an image from one format to an 8 bit
     image of pixels, maintaining the original image size. The output image is
     flipped vertically relative to the input image.
     <out_image> The output image will be written here.
@@ -153,28 +160,8 @@ flag imw_to8_oi (unsigned char *out_image,
     <i_min> The minimum intensity value.
     <i_max> The maximum intensity value.
     <iscale_func> The function to be called when non-linear intensity scaling
-    is required. If NULL, linear intensity scaling is used. The interface to
-    this function is as follows:
-    [<pre>]
-    flag iscale_func (double *out, unsigned int out_stride,
-                      double *inp, unsigned int inp_stride,
-		      unsigned int num_values, double i_min, double i_max,
-		      void *info)
-    *   [PURPOSE] This routine will perform an arbitrary intensity scaling on
-        an array of values. This routine may be called many times to scale an
-	image.
-        <out> The output array.
-	<out_stride> The stride (in doubles) of the output array.
-	<inp> The input array.
-	<inp_stride> The stride (in doubles) of the input array.
-	<num_values> The number of values to scale.
-	<i_min> The minimum intensity value.
-	<i_max> The maximum intensity value.
-	<info> A pointer to arbitrary information.
-	[RETURNS] TRUE on success, else FALSE.
-    *
-    [</pre>]
-
+    is required. If NULL, linear intensity scaling is used. The prototype
+    function is [<IMW_PROTO_iscale_func>].
     <iscale_info> A pointer to arbitrary information for <<iscale_func>>.
     [MT-LEVEL] Unsafe.
     [RETURNS] TRUE on success, else FALSE.
@@ -236,24 +223,43 @@ flag imw_to8_oi (unsigned char *out_image,
       case K_UBYTE:
 	l_min = i_min;
 	l_max = i_max;
+	if (l_min >= l_max)
+	{
+	    (void) fprintf (stderr,
+			    "%s: l_max: %ld  is not greater than l_min: %ld\n",
+			    function_name, l_max, l_min);
+	    return (FALSE);
+	}
 	/*  Unsigned bytes: can speed things up  */
-	setup_ubyte_lookup_table ( (long) i_min, (long) i_max,
-				  num_pixels, pixel_values,
-				  min_sat_pixel, max_sat_pixel );
+	setup_ubyte_lookup_table (l_min, l_max, num_pixels, pixel_values,
+				  min_sat_pixel, max_sat_pixel);
 	fast_conversion = TRUE;
 	break;
       case K_BYTE:
 	l_min = i_min;
 	l_max = i_max;
+	if (l_min >= l_max)
+	{
+	    (void) fprintf (stderr,
+			    "%s: l_max: %ld  is not greater than l_min: %ld\n",
+			    function_name, l_max, l_min);
+	    return (FALSE);
+	}
 	/*  Signed bytes: can speed things up  */
-	setup_byte_lookup_table ( (long) i_min, (long) i_max,
-				 num_pixels, pixel_values,
-				 blank_pixel, min_sat_pixel, max_sat_pixel );
+	setup_byte_lookup_table (l_min, l_max, num_pixels, pixel_values,
+				 blank_pixel, min_sat_pixel, max_sat_pixel);
 	fast_conversion = TRUE;
 	break;
       case K_SHORT:
 	l_min = i_min;
 	l_max = i_max;
+	if (l_min >= l_max)
+	{
+	    (void) fprintf (stderr,
+			    "%s: l_max: %ld  is not greater than l_min: %ld\n",
+			    function_name, l_max, l_min);
+	    return (FALSE);
+	}
 	l_blank = -32768;
 	fast_conversion = TRUE;
 	break;

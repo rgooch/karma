@@ -28,6 +28,7 @@ karma_cm_slave		Slave process for Connection Management
 kdump			Convert Karma file to ASCII-Karma
 kfuncgen		General 1-dimensional function generator
 kgen			Convert ASCII-Karma file to Karma
+kgetslice		Extract 2-dimensional slice from 3-dimensional datafile
 kminmax			Find the minimum and maximum of an element
 kimage			Display 2-D slice of data as an image (hard to use)
 kmovie			Display a movie (obsolete)

@@ -1,0 +1,65 @@
+/*PROTOTYPE_FUNCTION*/  /*
+unsigned int CH_PROTO_size_func (Channel channel, void **info)
+    [SUMMARY] Get number of bytes readable.
+    [PURPOSE] This routine will determine the approximate number of bytes that
+    the <<read_func>> will return.
+    <channel> The channel object.
+    <info> A pointer to the arbitrary information pointer. This may be modified
+    [RETURNS] The number of bytes the <<read_func>> will return.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+unsigned int CH_PROTO_read_func (Channel channel, char *buffer,
+				 unsigned int length, void **info)
+    [SUMMARY] Read bytes.
+    [PURPOSE] This routine will convert bytes being read from a channel object.
+    <channel> The channel object. It is permissable for the routine to call
+    [<ch_read>] with this channel. If this is done, this function will be
+    bypassed.
+    <buffer> The buffer to write the data into.
+    <length> The number of bytes to write into the buffer.
+    <info> A pointer to the arbitrary information pointer. This may be modified
+    [RETURNS] The number of bytes actually written to the buffer.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+unsigned int CH_PROTO_write_func (Channel channel, char *buffer,
+				  unsigned int length, void **info)
+    [SUMMARY] Write bytes.
+    [PURPOSE] This routine will convert bytes being written to a channel object
+    <channel> The channel object. It is permissable for the routine to call
+    [<ch_write>] with this channel. If this is done, this function will be
+    bypassed.
+    <buffer> The buffer to read the data from. The contents of this buffer may
+    be modified if needed.
+    <length> The number of bytes to read from the buffer.
+    <info> A pointer to the arbitrary information pointer. This may be modified
+    [RETURNS] The number of bytes read from the buffer.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+flag CH_PROTO_flush_func (Channel channel, void **info)
+    [SUMMARY] Flush.
+    [PURPOSE] This routine will process a flush request for a channel object.
+    <channel> The channel object. It is permissable for the routine to call
+    [<ch_flush>] with this channel. If this is done, this function will be
+    bypassed.
+    <info> A pointer to the arbitrary information pointer. This may be modified
+    [RETURNS] TRUE on success, else FALSE.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void CH_PROTO_close_func (void *info)
+    [SUMMARY] Close.
+    [PURPOSE] This routine is called when a channel is closed.
+    <info> The arbitrary information pointer.
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void CH_PROTO_tap_func (void *info)
+    [SUMMARY] Tap I/O callback.
+    [PURPOSE] This routine is called when I/O occurs.
+    <info> The arbitrary information pointer.
+    [RETURNS] Nothing.
+*/

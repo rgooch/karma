@@ -1,0 +1,116 @@
+<html><head><title>Package: chm</title></head> 
+<body>
+<center><h1>The "chm" Package</h1></center>    These routines are meant to provide a generic and simple to use channel
+    management facility (i.e. event processing on pipes, connections and
+    terminals).
+    A similar set of routines: chx_ provide identical functionality
+    (with the exception of the polling routine), except that they rely on the
+    Xt Intrinsics event dispatching system.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=chm></a></table><h4>Functions</h4><table><tr><td><a href=chm.html#chm_manage>chm_manage</a></td><td>Manage a channel for activity by registering callback routines.
+</td></tr>
+<tr><td><a href=chm.html#chm_unmanage>chm_unmanage</a></td><td>Terminate the management of a channel for activity.
+</td></tr>
+<tr><td><a href=chm.html#chm_poll>chm_poll</a></td><td>Poll all managed channels for any activity.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=chm.html#CHM_PROTO_input_func>CHM_PROTO_input_func</a></td><td>This routine is called when new input occurs on a channel.
+</td></tr>
+<tr><td><a href=chm.html#CHM_PROTO_close_func>CHM_PROTO_close_func</a></td><td>This routine is called when a channel closes.
+</td></tr>
+<tr><td><a href=chm.html#CHM_PROTO_output_func>CHM_PROTO_output_func</a></td><td>This routine is called when a channel becomes ready for writing.
+</td></tr>
+<tr><td><a href=chm.html#CHM_PROTO_exception_func>CHM_PROTO_exception_func</a></td><td>This routine is called when an exception occurs on channel.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=chm_manage></a> flag
+ <b>chm_manage</b><i>    ( Channel channel, void *info, flag (*input_func) (),
+		  void (*close_func) (), flag (*output_func) (),
+		  flag (*exception_func) () )
+</i><br><p>    Manage a channel for activity by registering callback routines.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to manage.
+<br><li><i>info :</i> 
+    The arbitrary information pointer associated with the managed
+    channel. This pointer may be modified by the callback routines.
+<br><li><i>input_func :</i> 
+    This routine is called when new input occurs on the channel.
+    If this is NULL, no callback routine is installed. The prototype function
+    is <a href=chm.html#CHM_PROTO_input_func>CHM_PROTO_input_func</a>.
+<br><li><i>close_func :</i> 
+    This routine is called when the channel closes. If this is
+    NULL, no callback routine is installed. The prototype function is
+    <a href=chm.html#CHM_PROTO_close_func>CHM_PROTO_close_func</a>. The channel object MUST be capable of detecting
+    closure if this routine is supplied (i.e. this routine cannot be supplied
+    for dock channels). Any unread buffered data in the channel will be lost
+    upon closure. The call to this function is the last chance to read this
+    buffered data.
+<br><li><i>output_func :</i> 
+    This routine is called when the channel becomes ready for
+    output. If this is NULL, no callback routine is installed. The prototype
+    function is <a href=chm.html#CHM_PROTO_output_func>CHM_PROTO_output_func</a>.
+<br><li><i>exception_func :</i> 
+    This routine is called when exceptions occur on the
+    channel. If this is NULL, no callback routine is installed. The prototype
+    function is <a href=chm.html#CHM_PROTO_exception_func>CHM_PROTO_exception_func</a>.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=chm_unmanage></a> void
+ <b>chm_unmanage</b><i>    (Channel channel)
+</i><br><p>    Terminate the management of a channel for activity.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to unmanage.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine will NOT close the channel (nor does it assume the
+    channel is open).
+</ul><p><hr> <a name=chm_poll></a> void
+ <b>chm_poll</b><i>    (long timeout_ms)
+</i><br><p>    Poll all managed channels for any activity.
+<p><b>Parameters:</b><ul><li><i>timeout_ms :</i> 
+    The time (in milliseconds) to poll. If this is less than 0 the
+    routine will poll forever (until some activity occurs or a signal is
+    caught).
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=CHM_PROTO_input_func></a> flag
+ <b>CHM_PROTO_input_func</b><i>    (Channel channel, void **info)
+</i><br><p>    This routine is called when new input occurs on a channel.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary information pointer. This may be modified
+<br></ul><b>Returns:</b>     TRUE if the channel is to remain managed and open, else FALSE
+    (indicating that the channel is to be unmanaged and closed).
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine MUST NOT unmanage or close the channel.
+<li>     The <em>close_func</em> will be called if this routine returns FALSE.
+</ul><p><hr> <a name=CHM_PROTO_close_func></a> void
+ <b>CHM_PROTO_close_func</b><i>    (Channel channel, void *info)
+</i><br><p>    This routine is called when a channel closes.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object. 
+<br><li><i>info :</i> 
+    The arbitrary pointer for the channel.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine MUST NOT unmanage the channel. The channel will be
+    automatically unmanaged and deleted upon closure (even if no <em>close_func</em>
+    is specified).
+</ul><p><hr> <a name=CHM_PROTO_output_func></a> flag
+ <b>CHM_PROTO_output_func</b><i>    (Channel channel, void **info)
+</i><br><p>    This routine is called when a channel becomes ready for writing.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary information pointer. This may be modified
+<br></ul><b>Returns:</b>     TRUE if the channel is to remain managed and open, else FALSE
+    (indicating that the channel is to be unmanaged and closed).
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine MUST NOT unmanage or close the channel.
+<li>     The <em>close_func</em> will be called if this routine returns FALSE.
+</ul><p><hr> <a name=CHM_PROTO_exception_func></a> flag
+ <b>CHM_PROTO_exception_func</b><i>    (Channel channel, void **info)
+</i><br><p>    This routine is called when an exception occurs on channel.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary information pointer. This may be modified
+<br></ul><b>Returns:</b>     TRUE if the channel is to remain managed and open, else FALSE
+    (indicating that the channel is to be unmanaged and closed).
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine MUST NOT unmanage or close the channel.
+<li>     The <em>close_func</em> will be called if this routine returns FALSE.
+</ul><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

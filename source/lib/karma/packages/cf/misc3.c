@@ -3,7 +3,7 @@
 
     This code provides simple colourmap generation routines.
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -34,7 +34,12 @@
 
     Updated by      Richard Gooch   5-MAY-1994
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/cf/misc3.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/cf/misc3.c
+
+    Updated by      Richard Gooch   31-MAR-1996: Changed documentation style.
+
+    Last updated by Richard Gooch   28-APR-1996: Made greyscale functions cope
+  with NULL colour arrays.
 
 
 */
@@ -102,9 +107,12 @@ Colour_struct      lut[];
 	m = ( (float) (LUT_SIZE-2) * yy + 1.5 );
 	if (m >= LUT_SIZE) 
 	m = LUT_SIZE-1;
-	reds[(pixel_count-1) * stride]    = lut[m].red*MAX_INTENSITY;
-	blues[(pixel_count-1) * stride]   = lut[m].blue*MAX_INTENSITY;
-	greens[(pixel_count-1) * stride]  = lut[m].green*MAX_INTENSITY;
+	if (reds != NULL)
+	    reds[(pixel_count-1) * stride]   = lut[m].red * MAX_INTENSITY;
+	if (greens != NULL)
+	    greens[(pixel_count-1) * stride] = lut[m].green * MAX_INTENSITY;
+	if (blues != NULL)
+	    blues[(pixel_count-1) * stride]  = lut[m].blue * MAX_INTENSITY;
     }
 }
 
@@ -889,49 +897,64 @@ static Colour_struct rainbow[LUT_SIZE] =
 };
 
 /*PUBLIC_FUNCTION*/
-void cf_mono (num_cells, reds, greens, blues, stride, x, y, var_param)
-unsigned int          num_cells;
-unsigned short        *reds;
-unsigned short        *greens;
-unsigned short        *blues;
-unsigned int          stride;
-double                x;
-double                y;
-void                  *var_param;
+void cf_mono (unsigned int num_cells, unsigned short *reds,
+	      unsigned short *greens, unsigned short *blues,
+	      unsigned int stride, double x, double y, void *var_param)
+/*  [SUMMARY] Compute a greyscale colourmap.
+    <num_cells> The number of colour cells to modify.
+    <reds> The red intensity values. This may be NULL.
+    <greens> The green intensity values. This may be NULL.
+    <blues> The blue intensity values. This may be NULL.
+    <stride> The stride (in unsigned shorts) between intensity values.
+    <x> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <y> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <var_param> A parameter used to compute the colour values. Ignored.
+    [RETURNS] Nothing.
+*/
 {
     extern Colour_struct   mono[];
 
     colour_table (num_cells, reds, greens, blues, stride, x, y, mono);
-}
+}   /*  End Function cf_mono  */
 
 /*PUBLIC_FUNCTION*/
-void cf_mousse (num_cells, reds, greens, blues, stride, x, y, var_param)
-unsigned int          num_cells;
-unsigned short        *reds;
-unsigned short        *greens;
-unsigned short        *blues;
-unsigned int          stride;
-double                x;
-double                y;
-void                  *var_param;
+void cf_mousse (unsigned int num_cells, unsigned short *reds,
+		unsigned short *greens, unsigned short *blues,
+		unsigned int stride, double x, double y, void *var_param)
+/*  [SUMMARY] Compute a mousse colourmap.
+    <num_cells> The number of colour cells to modify.
+    <reds> The red intensity values.
+    <greens> The green intensity values.
+    <blues> The blue intensity values.
+    <stride> The stride (in unsigned shorts) between intensity values.
+    <x> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <y> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <var_param> A parameter used to compute the colour values. Ignored.
+    [RETURNS] Nothing.
+*/
 {
     extern Colour_struct   mousse[];
 
     colour_table (num_cells, reds, greens, blues, stride, x, y, mousse);
-}
+}   /*  End Function cf_mousse  */
 
 /*PUBLIC_FUNCTION*/
-void cf_rainbow (num_cells, reds, greens, blues, stride, x, y, var_param)
-unsigned int          num_cells;
-unsigned short        *reds;
-unsigned short        *greens;
-unsigned short        *blues;
-unsigned int          stride;
-double                x;
-double                y;
-void                  *var_param;
+void cf_rainbow (unsigned int num_cells, unsigned short *reds,
+		 unsigned short *greens, unsigned short *blues,
+		 unsigned int stride, double x, double y, void *var_param)
+/*  [SUMMARY] Compute a rainbow colourmap.
+    <num_cells> The number of colour cells to modify.
+    <reds> The red intensity values.
+    <greens> The green intensity values.
+    <blues> The blue intensity values.
+    <stride> The stride (in unsigned shorts) between intensity values.
+    <x> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <y> A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    <var_param> A parameter used to compute the colour values. Ignored.
+    [RETURNS] Nothing.
+*/
 {
     extern Colour_struct   rainbow[];
 
     colour_table (num_cells, reds, greens, blues, stride, x, y, rainbow);
-}
+}   /*  End Function cf_rainbow  */

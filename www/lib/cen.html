@@ -1,0 +1,32 @@
+<html><head><title>Package: cen</title></head> 
+<body>
+<center><h1>The "cen" Package</h1></center>    These routines are meant to provide strong encryption for channel objects.
+    For greater efficiency and better security, data passed through should be
+    compressed.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=cen></a></table><h4>Functions</h4><table><tr><td><a href=cen.html#cen_idea>cen_idea</a></td><td>Add IDEA encryption to a channel object.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=cen_idea></a> ChConverter
+ <b>cen_idea</b><i>    (Channel channel, char read_key[EN_IDEA_KEY_SIZE],
+		      char read_init_vector[EN_IDEA_BLOCK_SIZE],
+		      char write_key[EN_IDEA_KEY_SIZE],
+		      char write_init_vector[EN_IDEA_BLOCK_SIZE], flag clear)
+</i><br><p>    This routine will register converter functions for a channel so
+    that all IO will be encrypted using the IDEA cipher in Cipher Feed Back
+    mode.
+<p><b>Parameters:</b><ul><li><i>read_key :</i> 
+    The 16 byte IDEA key used when reading.
+<br><li><i>read_init_vector :</i> 
+    The 8 byte initialisation vector used when reading.
+<br><li><i>write_key :</i> 
+    The 16 byte IDEA key used when writing.
+<br><li><i>write_init_vector :</i> 
+    The 8 byte initialisation vector used when writing.
+<br><li><i>clear :</i> 
+    If TRUE the keys and initialisation vectors will be cleared after
+    use (highly recommended if they will not be needed again), irrespective of
+    whether the routine fails.
+<br></ul><b>Returns:</b>     A ChConverter object on success (which may be used in a call to
+    ch_unregister_converter), else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

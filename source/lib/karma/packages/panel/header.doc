@@ -1,0 +1,4 @@
+$SUMMARY          Routines to manipulate control panels (user interface code)
+$PURPOSE
+    These routines are meant to provide high level definition and processing of
+    command lines.

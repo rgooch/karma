@@ -1,0 +1,526 @@
+<html><head><title>Package: viewimg</title></head> 
+<body>
+<center><h1>The "viewimg" Package</h1></center>    These routines are meant to provide a high level mechanism to create and
+    manipulate viewable images (2-dimensional slices of Karma data structures).
+    These viewable images utilise the world canvases available in the
+    <a href=canvas.html#canvas>canvas</a> package, hence the resulting code is device independent.
+<p><b>Library:</b> karmagraphics
+<br><b>Link With:</b> -lkarmagraphics
+<br><p><a name=viewimg></a></table><h4>Functions</h4><table><tr><td><a href=viewimg.html#viewimg_draw_edit_list>viewimg_draw_edit_list</a></td><td>Draw edit list into array associated with viewable image.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_draw_edit_object>viewimg_draw_edit_object</a></td><td>Draw edit object into array associated with viewable image.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_init>viewimg_init</a></td><td>Initialise the package for a particular canvas.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_create_restr>viewimg_create_restr</a></td><td>Create viewable image from 2D slice with restrictions.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_create>viewimg_create</a></td><td>Create viewable image from 2D slice.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_create_from_iarray>viewimg_create_from_iarray</a></td><td>Create a viewable image from an Intelligent Array.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_create_sequence>viewimg_create_sequence</a></td><td>Create a sequence of viewable images from a 3D slice.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_create_rgb>viewimg_create_rgb</a></td><td>Create a TrueColour viewable image.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_create_rgb_sequence>viewimg_create_rgb_sequence</a></td><td>Create sequence of TrueColour viewable images from 3D slice.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_make_active>viewimg_make_active</a></td><td>Make viewable image active and possibly refresh.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_set_active>viewimg_set_active</a></td><td>Make viewable image active with controlled refresh.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_register_data_change>viewimg_register_data_change</a></td><td>Notify data for viewable image has changed.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_destroy>viewimg_destroy</a></td><td>Destroy viewable image.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_get_active>viewimg_get_active</a></td><td>Get the active ViewableImage associated with a world canvas.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_test_active>viewimg_test_active</a></td><td>Test if viewable image is active.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_register_position_event_func>viewimg_register_position_event_func</a></td><td>Register position event callback.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_fill_ellipse>viewimg_fill_ellipse</a></td><td>Draw an ellipse into an array associated with a viewable image.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_fill_polygon>viewimg_fill_polygon</a></td><td>Draw a polygon into an array associated with a viewable image.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_get_canvas_attributes>viewimg_get_canvas_attributes</a></td><td>Get the viewable image attributes for a world canvas.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_set_canvas_attributes>viewimg_set_canvas_attributes</a></td><td>Set the viewable image attributes for a world canvas.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_get_attributes>viewimg_get_attributes</a></td><td>Get the attributes for a viewable image.
+</td></tr>
+<tr><td><a href=viewimg.html#viewimg_get_worldcanvas>viewimg_get_worldcanvas</a></td><td>Get the world canvas for a viewable image.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=viewimg.html#VIEWIMG_PROTO_position_func>VIEWIMG_PROTO_position_func</a></td><td>Position event callback.
+</td></tr>
+</table><h4>Tables</h4><table><tr><td><a href=viewimg.html#VIEWIMG_CANVAS_ATTRIBUTES>VIEWIMG_CANVAS_ATTRIBUTES</a></td><td>List of canvas attributes for viewable images
+</td></tr>
+<tr><td><a href=viewimg.html#VIEWIMG_VIEWIMG_ATTRIBUTES>VIEWIMG_VIEWIMG_ATTRIBUTES</a></td><td>List of attributes for viewable images
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=viewimg_draw_edit_list></a> flag
+ <b>viewimg_draw_edit_list</b><i>    (ViewableImage vimage, KImageEditList ilist)
+</i><br><p>    This routine will draw a list of edit objects to the
+    2-dimensional data associated with a viewable image object.
+<p><b>Parameters:</b><ul><li><i>vimage :</i> 
+    The viewable image.
+<br><li><i>ilist :</i> 
+    The list of edit objects.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=viewimg_draw_edit_object></a> flag
+ <b>viewimg_draw_edit_object</b><i>    (ViewableImage vimage, char *object)
+</i><br><p>    This routine will draw one edit object to the 2-dimensional data
+    associated with a viewable image object.
+<p><b>Parameters:</b><ul><li><i>vimage :</i> 
+    The viewable image.
+<br><li><i>object :</i> 
+    The edit object.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=viewimg_init></a> void
+ <b>viewimg_init</b><i>    (KWorldCanvas canvas)
+</i><br><p>    This routine will initialise the <a href=viewimg.html#viewimg>viewimg</a> package for a
+    particular world canvas. Calling this routine causes a number of callback
+    routines internal to the package to be registered with the canvas (such
+    as refresh and position event callbacks). The use of this routine is
+    optional at the moment: the routines which create viewable images perform
+    this function automatically. In version 2.0 of Karma, this use of this
+    routine before creating viewable images will become mandatory.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=viewimg_create_restr></a> ViewableImage
+ <b>viewimg_create_restr</b><i>    (KWorldCanvas canvas,
+				    multi_array *multi_desc,
+				    array_desc *arr_desc, char *slice,
+				    unsigned int hdim, unsigned int vdim,
+				    unsigned int elem_index,
+				    unsigned num_restr,
+				    char **restr_names, double *restr_values)
+</i><br><p>    This routine will create a PseudoColour viewable image object
+    from a 2-dimensional slice of a Karma data structure. At a later time, this
+    viewable image may be made visible. This routine will not cause the canvas
+    to be refreshed.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas onto which the viewable image may be drawn. Many
+    viewable images may be associated with a single canvas.
+<br><li><i>multi_desc :</i> 
+    The  multi_array  descriptor which contains the Karma data
+    structure. The routine increments the attachment count on the descriptor
+    on successful completion. This may be NULL.
+<br><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>slice :</i> 
+    The start of the slice data.
+<br><li><i>hdim :</i> 
+    The dimension index of the horizontal dimension.
+<br><li><i>vdim :</i> 
+    The dimension index of the vertical dimension.
+<br><li><i>elem_index :</i> 
+    The element index in the data packets.
+<br><li><i>num_restr :</i> 
+    The number of matched restrictions. If this is 0, no
+    restrictions are recorded (this is the same as calling <a href=viewimg.html#viewimg_create>viewimg_create</a>).
+<br><li><i>restr_names :</i> 
+    The restriction names.
+<br><li><i>restr_values :</i> 
+    The restriction values.
+<br></ul><b>Returns:</b>     A viewable image on success, NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     Restriction information is automatically deallocated when
+    <a href=viewimg.html#viewimg_destroy>viewimg_destroy</a> is called.
+<li>     The routine may produce cache data which will vastly increase the
+    speed of subsequent operations on this data. Prior to process exit, a call
+    MUST be made to <a href=viewimg.html#viewimg_destroy>viewimg_destroy</a>, otherwise shared memory segments could
+    remain after the process exits.
+</ul><p><hr> <a name=viewimg_create></a> ViewableImage
+ <b>viewimg_create</b><i>    (KWorldCanvas canvas, multi_array *multi_desc,
+			      array_desc *arr_desc, char *slice,
+			      unsigned int hdim, unsigned int vdim,
+			      unsigned int elem_index)
+</i><br><p>    This routine will create a PseudoColour viewable image object
+    from a 2-dimensional slice of a Karma data structure. At a later time, this
+    viewable image may be made visible. This routine will not cause the canvas
+    to be refreshed.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas onto which the viewable image may be drawn. Many
+    viewable images may be associated with a single canvas.
+<br><li><i>multi_desc :</i> 
+    The  multi_array  descriptor which contains the Karma data
+    structure. The routine increments the attachment count on the descriptor
+    on successful completion. This may be NULL.
+<br><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>slice :</i> 
+    The start of the slice data.
+<br><li><i>hdim :</i> 
+    The dimension index of the horizontal dimension.
+<br><li><i>vdim :</i> 
+    The dimension index of the vertical dimension.
+<br><li><i>elem_index :</i> 
+    The element index in the data packets.
+<br></ul><b>Returns:</b>     A viewable image on success, NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The routine may produce cache data which will vastly increase the
+    speed of subsequent operations on this data. Prior to process exit, a call
+    MUST be made to <a href=viewimg.html#viewimg_destroy>viewimg_destroy</a>, otherwise shared memory segments could
+    remain after the process exits.
+</ul><p><hr> <a name=viewimg_create_from_iarray></a> ViewableImage
+ <b>viewimg_create_from_iarray</b><i>    (KWorldCanvas canvas, iarray array,
+					  flag swap)
+</i><br><p>    This routine will create a viewable image object from a
+    2-dimensional Intelligant Array. At a later time, this viewable image may
+    be made visible. This routine will not cause the canvas to be refreshed.
+    Many viewable images may be associated with a single canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>array :</i> 
+    The Intelligent Array. The underlying <em>multi_array</em> data
+    structure will have its attachment count incremented upon successful
+    completion.
+<br><li><i>swap :</i> 
+    If TRUE the y axis will be displayed horizontally.
+<br></ul><b>Returns:</b>     A viewable image on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The routine may produce cache data which will vastly increase the
+    speed of subsequent operations on this data. Prior to process exit, a call
+    MUST be made to <a href=viewimg.html#viewimg_destroy>viewimg_destroy</a>, otherwise shared memory segments could
+    remain after the process exits.
+</ul><p><hr> <a name=viewimg_create_sequence></a> ViewableImage *
+ <b>viewimg_create_sequence</b><i>    (KWorldCanvas canvas,
+					multi_array *multi_desc,
+					array_desc *arr_desc, char *cube,
+					unsigned int hdim, unsigned int vdim,
+					unsigned int fdim,
+					unsigned int elem_index)
+</i><br><p>    This routine will create a sequence of viewable image objects
+    from a 3-dimensional cube of a Karma data structure. At a later time, this
+    sequence of viewable images may be made visible in any order.
+    This routine will not cause the canvas to be refreshed.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>multi_desc :</i> 
+    The  multi_array  descriptor which contains the Karma data
+    structure. The routine increments the attachment count on the descriptor
+    on successful completion. This may be NULL.
+<br><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>cube :</i> 
+    The start of the cube data.
+<br><li><i>hdim :</i> 
+    The dimension index of the horizontal dimension.
+<br><li><i>vdim :</i> 
+    The dimension index of the vertical dimension.
+<br><li><i>fdim :</i> 
+    The dimension index of the frame dimension (dimension containing the
+    sequence). The number of frames is the same as the length of this
+    dimension.
+<br><li><i>elem_index :</i> 
+    The element index in the data packets.
+<br></ul><b>Returns:</b>     A pointer to a dynamically allocated array of viewable image
+    objects on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The routine may produce cache data which will vastly increase the
+    speed of subsequent operations on this data. Prior to process exit, a call
+    MUST be made to <a href=viewimg.html#viewimg_destroy>viewimg_destroy</a>, otherwise shared memory segments could
+    remain after the process exits.
+</ul><p><hr> <a name=viewimg_create_rgb></a> ViewableImage
+ <b>viewimg_create_rgb</b><i>    (KWorldCanvas canvas, multi_array *multi_desc,
+				  array_desc *arr_desc, char *slice,
+				  unsigned int hdim, unsigned int vdim,
+				  unsigned int red_index,
+				  unsigned int green_index,
+				  unsigned int blue_index, unsigned num_restr,
+				  char **restr_names, double *restr_values)
+</i><br><p>    This routine will create a TrueColour viewable image object from
+    a 2-dimensional slice of a Karma data structure. At a later time, this
+    viewable image may be made visible. This routine will not cause the canvas
+    to be refreshed.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas onto which the viewable image may be drawn. Many
+    viewable images may be associated with a single canvas.
+<br><li><i>multi_desc :</i> 
+    The  multi_array  descriptor which contains the Karma data
+    structure. The routine increments the attachment count on the descriptor on
+    successful completion. This may be NULL.
+<br><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>slice :</i> 
+    The start of the slice data.
+<br><li><i>hdim :</i> 
+    The dimension index of the horizontal dimension.
+<br><li><i>vdim :</i> 
+    The dimension index of the vertical dimension.
+<br><li><i>red_index :</i> 
+    The element index of the red component in the data packets.
+<br><li><i>green_index :</i> 
+    The element index of the green component in the data packets.
+<br><li><i>blue_index :</i> 
+    The element index of the blue component in the data packets.
+<br><li><i>num_restr :</i> 
+    The number of matched restrictions. If this is 0, no
+    restrictions are recorded.
+<br><li><i>restr_names :</i> 
+    The restriction names.
+<br><li><i>restr_values :</i> 
+    The restriction values.
+<br></ul><b>Returns:</b>     A viewable image on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The 3 colour components must be of type  K_UBYTE  .
+<li>     Restriction information is automatically deallocated when
+    <a href=viewimg.html#viewimg_destroy>viewimg_destroy</a> is called.
+<li>     The routine may produce cache data which will vastly increase the
+    speed of subsequent operations on this data. Prior to process exit, a call
+    MUST be made to <a href=viewimg.html#viewimg_destroy>viewimg_destroy</a>, otherwise shared memory segments could
+    remain after the process exits.
+</ul><p><hr> <a name=viewimg_create_rgb_sequence></a> ViewableImage *
+ <b>viewimg_create_rgb_sequence</b><i>    (KWorldCanvas canvas,
+					    multi_array *multi_desc,
+					    array_desc *arr_desc, char *cube,
+					    unsigned int hdim,
+					    unsigned int vdim,
+					    unsigned int fdim,
+					    unsigned int red_index,
+					    unsigned int green_index,
+					    unsigned int blue_index,
+					    unsigned num_restr,
+					    char **restr_names,
+					    double *restr_values)
+</i><br><p>    This routine will create a sequence of TrueColour viewable image
+    objects from a 3-dimensional cube of a Karma data structure. At a later
+    time, this sequence of viewable images may be made visible in any order.
+    This routine will not cause the canvas to be refreshed.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas onto which the viewable image may be drawn. Many
+    viewable images may be associated with a single canvas.
+<br><li><i>multi_desc :</i> 
+    The  multi_array  descriptor which contains the Karma data
+    structure must. The routine increments the attachment count on the
+    descriptor on successful completion. This may be NULL.
+<br><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>cube :</i> 
+    The start of the cube data.
+<br><li><i>hdim :</i> 
+    The dimension index of the horizontal dimension.
+<br><li><i>vdim :</i> 
+    The dimension index of the vertical dimension.
+<br><li><i>fdim :</i> 
+    The dimension index of the frame dimension (dimension containing the
+    sequence). The number of frames is the same as the length of this dimension
+<br><li><i>red_index :</i> 
+    The element index of the red component in the data packets.
+<br><li><i>green_index :</i> 
+    The element index of the green component in the data packets.
+<br><li><i>blue_index :</i> 
+    The element index of the blue component in the data packets.
+<br><li><i>num_restr :</i> 
+    The number of matched restrictions. If this is 0, no
+    restrictions are recorded.
+<br><li><i>restr_names :</i> 
+    The restriction names.
+<br><li><i>restr_values :</i> 
+    The restriction values.
+<br></ul><b>Returns:</b>     A viewable image on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The 3 colour components must be of type K_UBYTE.
+<li>     Restriction information is copied into internally allocated
+    storage.
+<li>     The routine may produce cache data which will vastly increase the
+    speed of subsequent operations on this data. Prior to process exit, a call
+    MUST be made to <a href=viewimg.html#viewimg_destroy>viewimg_destroy</a>, otherwise shared memory segments could
+    remain after the process exits.
+</ul><p><hr> <a name=viewimg_make_active></a> flag
+ <b>viewimg_make_active</b><i>    (ViewableImage vimage)
+</i><br><p>    This routine will make a viewable image the active image for its
+    associated world canvas. The canvas is then refreshed (possibly resized),
+    provided that the new viewable image was not already active.
+<p><b>Parameters:</b><ul><li><i>vimage :</i> 
+    The viewable image.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>See Also:</b>     ALSO] <a href=viewimg.html#viewimg_set_active>viewimg_set_active</a>.
+<br><p><hr> <a name=viewimg_set_active></a> flag
+ <b>viewimg_set_active</b><i>    (ViewableImage vimage, flag refresh)
+</i><br><p>    This routine will make a viewable image the active image for its
+    associated world canvas.
+<p><b>Parameters:</b><ul><li><i>vimage :</i> 
+    The viewable image.
+<br><li><i>refresh :</i> 
+    If TRUE, the canvas is always refreshed, if FALSE, the canvas is
+    not refreshed.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>See Also:</b>     ALSO] <a href=viewimg.html#viewimg_make_active>viewimg_make_active</a>.
+<br><p><hr> <a name=viewimg_register_data_change></a> flag
+ <b>viewimg_register_data_change</b><i>    (ViewableImage vimage)
+</i><br><p>    This routine will register a change in the Karma data structure
+    associated with a viewable image. If the viewable image is active, it will
+    be immediately redrawn on its canvas.
+<p><b>Parameters:</b><ul><li><i>vimage :</i> 
+    The viewable image.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=viewimg_destroy></a> void
+ <b>viewimg_destroy</b><i>    (ViewableImage vimage)
+</i><br><p>    This routine will destroy a viewable image. If this is not called
+    prior to process exit, shared memory segments could remain after the
+    process exits.
+<p><b>Parameters:</b><ul><li><i>vimage :</i> 
+    The viewable image.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The associated <em>multi_array</em> descriptor is also deallocated (or
+    at least, the attachment count is decreased).
+</ul><p><hr> <a name=viewimg_get_active></a> ViewableImage
+ <b>viewimg_get_active</b><i>    (KWorldCanvas canvas)
+</i><br><p>    Get the active ViewableImage associated with a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br></ul><b>Returns:</b>     The active viewable image on success, else NULL (indicating no
+    viewable image is active for the canvas).
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=viewimg_test_active></a> flag
+ <b>viewimg_test_active</b><i>    (ViewableImage vimage)
+</i><br><p>    This routine will test if a viewable image is the active image
+    for its associated world canvas.
+<p><b>Parameters:</b><ul><li><i>vimage :</i> 
+    The viewable image.
+<br></ul><b>Returns:</b>     TRUE if the viewable image is actice, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=viewimg_register_position_event_func></a> KCallbackFunc
+ <b>viewimg_register_position_event_func</b><i>    (KWorldCanvas canvas,
+						    flag (*func) (),
+						    void *f_info)
+</i><br><p>    This routine will register a position event function for a world
+    canvas which has a number of ViewableImage objects associated with it.
+    The position event function will be called whenever a position event on the
+    canvas has not been consumed. Many position event functions may be
+    registered per canvas. The first function registered is the first function
+    called upon a position event.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>func :</i> 
+    The function that is called when a position event occurs. The
+    prototype function is <a href=viewimg.html#VIEWIMG_PROTO_position_func>VIEWIMG_PROTO_position_func</a>.
+<br><li><i>f_info :</i> 
+    The initial arbitrary function information pointer.
+<br></ul><b>Returns:</b>     A handle to a KWorldCanvasPositionFunc object.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=viewimg_fill_ellipse></a> flag
+ <b>viewimg_fill_ellipse</b><i>    (ViewableImage vimage,
+			   double centre_x, double centre_y,
+			   double radius_x, double radius_y, double value[2])
+</i><br><p>    This routine will draw a filled ellipse into a 2 dimensional
+    slice of data associated with a viewable image.
+<p><b>Parameters:</b><ul><li><i>vimage :</i> 
+    The viewable image.
+<br><li><i>centre_x :</i> 
+    The horizontal world co-ordinate of the centre of the ellipse.
+<br><li><i>centre_y :</i> 
+    The vertical world co-ordinate of the centre of the ellipse.
+<br><li><i>radius_x :</i> 
+    The horizontal radius.
+<br><li><i>radius_y :</i> 
+    The vertical radius.
+<br><li><i>value :</i> 
+    The complex value to fill the ellipse. This must be of type
+    K_DCOMPLEX.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=viewimg_fill_polygon></a> flag
+ <b>viewimg_fill_polygon</b><i>    (ViewableImage vimage, edit_coord *coords,
+			   unsigned int num_vertices, double value[2])
+</i><br><p>    This routine will draw a filled polygon into a 2 dimensional
+    slice of data associated with a viewable image.
+<p><b>Parameters:</b><ul><li><i>vimage :</i> 
+    The viewable image.
+<br><li><i>coords :</i> 
+    The array of world co-ordinates of vertices of the polygon.
+<br><li><i>num_vertices :</i> 
+    The number of vertices in the polygon.
+<br><li><i>value :</i> 
+    The complex value to fill the polygon with. This must be of type
+    K_DCOMPLEX.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=viewimg_get_canvas_attributes></a> void
+ <b>viewimg_get_canvas_attributes</b><i>    (KWorldCanvas canvas, ...)
+</i><br><p>    Get the viewable image attributes for a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>... :</i> 
+    The list of parameter attribute-key attribute-value-ptr pairs
+    must follow. This list must be terminated with the VIEWIMG_ATT_END.
+    See <a href=viewimg.html#VIEWIMG_CANVAS_ATTRIBUTES>VIEWIMG_CANVAS_ATTRIBUTES</a> for the list of attributes.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=viewimg_set_canvas_attributes></a> void
+ <b>viewimg_set_canvas_attributes</b><i>    (KWorldCanvas canvas, ...)
+</i><br><p>    This routine will control the autoscaling options used when
+    viewable images are displayed on their associated world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas.
+<br><li><i>... :</i> 
+    The list of parameter attribute-key attribute-value-ptr pairs
+    must follow. This list must be terminated with the VIEWIMG_ATT_END.
+    See <a href=viewimg.html#VIEWIMG_CANVAS_ATTRIBUTES>VIEWIMG_CANVAS_ATTRIBUTES</a> for the list of attributes.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The canvas is not refreshed by this operation.
+</ul><p><hr> <a name=viewimg_get_attributes></a> void
+ <b>viewimg_get_attributes</b><i>    (ViewableImage vimage, ...)
+</i><br><p>    Get the attributes for a viewable image.
+<p><b>Parameters:</b><ul><li><i>vimage :</i> 
+    The ViewableImage.
+<br><li><i>... :</i> 
+    The list of parameter attribute-key attribute-value-ptr pairs
+    must follow. This list must be terminated with the VIEWIMG_VATT_END. See
+    <a href=viewimg.html#VIEWIMG_VIMAGE_ATTRIBUTES>VIEWIMG_VIMAGE_ATTRIBUTES</a> for the list of attributes.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=viewimg_get_worldcanvas></a> KWorldCanvas
+ <b>viewimg_get_worldcanvas</b><i>    (ViewableImage vimage)
+</i><br><p>    Get the world canvas for a viewable image.
+<p><b>Parameters:</b><ul><li><i>vimage :</i> 
+    The ViewableImage object.
+<br></ul><b>Returns:</b>     The KWorldCanvas object.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=VIEWIMG_PROTO_position_func></a> flag
+ <b>VIEWIMG_PROTO_position_func</b><i>    (ViewableImage vimage, double x, double y,
+				  void *value, unsigned int event_code,
+				  void *e_info, void **f_info,
+				  double x_lin, double y_lin,
+				  unsigned int value_type)
+</i><br><p>    This routine is a position event consumer for a world canvas
+    which has a number of ViewableImage objects associated with it.
+<p><b>Parameters:</b><ul><li><i>viewimg :</i> 
+    The active viewable image.
+<br><li><i>x :</i> 
+    The horizontal world co-ordinate of the event.
+<br><li><i>y :</i> 
+    The vertical world co-ordinate of the event.
+    These values will have been transformed by the registered transform
+    function (see <a href=canvas.html#canvas_register_transform_func>canvas_register_transform_func</a>) for the associated
+    world canvas.
+<br><li><i>value :</i> 
+    A pointer to the data value in the viewable image corresponding
+    to the event co-ordinates.
+<br><li><i>event_code :</i> 
+    The arbitrary event code.
+<br><li><i>e_info :</i> 
+    The arbitrary event information.
+<br><li><i>f_info :</i> 
+    The arbitrary function information pointer.
+<br><li><i>x_lin :</i> 
+    The linear horizontal world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+<br><li><i>y_lin :</i> 
+    The linear vertical world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+<br><li><i>value_type :</i> 
+    The type of the data value. This may be K_DCOMPLEX or
+    K_UB_RGB.
+<br></ul><b>Returns:</b>     TRUE if the event was consumed, else FALSE indicating that
+    the event is still to be processed.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Tables</h2></center><hr> <a name=VIEWIMG_CANVAS_ATTRIBUTES><b>VIEWIMG_CANVAS_ATTRIBUTES</b></a><p> <table><tr><td>Name                         </td><td>Get Type  </td><td>Set Type  </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>VIEWIMG_ATT_END              </td><td>          </td><td>          </td><td>End of varargs list
+</td></tr><tr><td>VIEWIMG_ATT_AUTO_X           </td><td>flag *    </td><td>flag      </td><td>Enable automatic horizontal scaling
+</td></tr><tr><td>VIEWIMG_ATT_AUTO_Y           </td><td>flag *    </td><td>flag      </td><td>Enable automatic vertical scaling
+</td></tr><tr><td>VIEWIMG_ATT_AUTO_V           </td><td>flag *    </td><td>flag      </td><td>Enable automatic intensity scaling
+</td></tr><tr><td>VIEWIMG_ATT_INT_X            </td><td>flag *    </td><td>flag      </td><td>Force integer horizontal zoom-in/zoom-out factor
+</td></tr><tr><td>VIEWIMG_ATT_INT_Y            </td><td>flag *    </td><td>flag      </td><td>Force integer vertical zoom-in/zoom-out factor
+</td></tr><tr><td>VIEWIMG_ATT_MAINTAIN_ASPECT  </td><td>flag *    </td><td>flag      </td><td>Maintain data image aspect ratio
+</td></tr><tr><td>VIEWIMG_ATT_ALLOW_TRUNCATION </td><td>flag *    </td><td>flag      </td><td>Allow shrunken images to be truncated.
+</table><p><hr> <a name=VIEWIMG_VIEWIMG_ATTRIBUTES><b>VIEWIMG_VIEWIMG_ATTRIBUTES</b></a><p> <table><tr><td>Name                      </td><td>Get Type       </td><td>Set Type     </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>VIEWIMG_VATT_END          </td><td>               </td><td>             </td><td>End of varargs list
+</td></tr><tr><td>VIEWIMG_VATT_TRUECOLOUR   </td><td>flag *         </td><td>flag         </td><td>Image is TrueColour
+</td></tr><tr><td>VIEWIMG_VATT_ARRAY_DESC   </td><td>array_desc **  </td><td>array_desc * </td><td>The array descriptor for the image
+</td></tr><tr><td>VIEWIMG_VATT_SLICE        </td><td>char **        </td><td>char *       </td><td>Start of the image data
+</td></tr><tr><td>VIEWIMG_VATT_HDIM         </td><td>unsigned int * </td><td>unsigned int </td><td>The horizontal dimension
+</td></tr><tr><td>VIEWIMG_VATT_VDIM         </td><td>unsigned int * </td><td>unsigned int </td><td>The vertical dimension
+</td></tr><tr><td>VIEWIMG_VATT_PSEUDO_INDEX </td><td>unsigned int * </td><td>unsigned int </td><td>The PseudoColour element index
+</td></tr><tr><td>VIEWIMG_VATT_RED_INDEX    </td><td>unsigned int * </td><td>unsigned int </td><td>The TrueColour red element index
+</td></tr><tr><td>VIEWIMG_VATT_GREEN_INDEX  </td><td>unsigned int * </td><td>unsigned int </td><td>The TrueColour green element index
+</td></tr><tr><td>VIEWIMG_VATT_BLUE_INDEX   </td><td>unsigned int * </td><td>unsigned int </td><td>The TrueColour blue element index
+</table><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

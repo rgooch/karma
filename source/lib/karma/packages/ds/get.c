@@ -92,8 +92,27 @@
     Updated by      Richard Gooch   11-JAN-1995: Minor documentation
   improvement for <ds_get_element>.
 
-    Last updated by Richard Gooch   21-JAN-1995: Documented that
+    Updated by      Richard Gooch   21-JAN-1995: Documented that
   <ds_get_scattered_elements> is MT-Safe.
+
+    Updated by      Richard Gooch   9-APR-1996: Changed to new documentation
+  format.
+
+    Uupdated by     Richard Gooch   30-MAY-1996: Moved a few routines to CONST
+  packet descriptor pointers.
+
+    Updated by      Richard Gooch   3-JUN-1996: Took account of new fields in
+  dimension descriptor for first and last co-ordinate.
+
+    Updated by      Richard Gooch   25-JUN-1996: Created
+  <ds_can_swaptransfer_element>.
+
+    Updated by      Richard Gooch   28-JUN-1996: Changed more pointers to
+  CONST.
+
+    Last updated by Richard Gooch   29-JUN-1996: Fixed bug in
+  <ds_can_swaptransfer_element> where some swappable types were not correctly
+  reported as being such.
 
 
 */
@@ -111,24 +130,24 @@
 /*PUBLIC_FUNCTION*/
 double ds_convert_atomic (CONST char *datum, unsigned int datum_type,
 			  double *real_out, double *imag_out)
-/*  This routine will convert an atomic datum to a double precision value.
-    The datum to be converted must be pointed to by  datum  and the data type
-    value must be in  datum_type  .
-    Complex data types are converted to their absolute value.
-    The following data types are not convertible, and the routine will return
-    the value TOOBIG:
-        NONE, K_ARRAY, LISTP, MULTI_ARRAY.
-    The routine will write the real and imaginary components into the storage
-    pointed to by  real_out  and  imag_out  ,respectively, if these pointers
-    are not NULL. For a real value, the imaginary value is 0.0 .
-    These storages MUST lie on a  double  boundary.
-    The routine returns the converted value on success, else it returns TOOBIG.
+/*  [SUMMARY] Convert an atomic datum to a double precision value.
+    <datum> The datum to be converted.
+    <datum_type> The type of the datum. See [<DS_KARMA_DATA_TYPES>] for a list
+    of legal values. The following data types are not convertible, and the
+    routine will return the value TOOBIG:  NONE, K_ARRAY, LISTP, MULTI_ARRAY.
+    <real_out> The real component of the data is written here. If this is NULL,
+    nothing is written here. This must lie on a <<double>> boundary.
+    <imag_out> The imaginary component of the data is written here. If this is
+    NULL, nothing is written here. This must lie on a <<double>> boundary. For
+    a real value, 0.0 is written.
+    [RETURNS] The absolute magnitude of the converted value on success,
+    else TOOBIG.
 */
 {
     flag complex;
     double zero = 0.0;
     double value[2];
-    static char function_name[] = "ds_convert_atomic";
+    /*static char function_name[] = "ds_convert_atomic";*/
 
     if ( !ds_get_element (datum, datum_type, value, &complex) ) return TOOBIG;
     if (real_out != NULL) *real_out = value[0];
@@ -146,10 +165,10 @@ double ds_convert_atomic (CONST char *datum, unsigned int datum_type,
 
 /*PUBLIC_FUNCTION*/
 double ds_get_coordinate (dim_desc *dimension, unsigned long coord_num)
-/*  This routine will calculate or extract from a list the co-ordinate number
-    coord_num  in the dimension descriptor pointed to by  dimension  .
-    The co-ordinate is returned. If the co-ordinate is not obtainable, for
-    any reason, the value TOOBIG is returned.
+/*  [SUMMARY] Get a co-ordinate along a dimension.
+    <dimension> The dimension descriptor.
+    <coord_num> The co-ordinate index.
+    [RETURNS] The co-ordinate on success, else TOOBIG.
 */
 {
     if (dimension == NULL)
@@ -164,32 +183,30 @@ double ds_get_coordinate (dim_desc *dimension, unsigned long coord_num)
     }
     if (coord_num == 0)
     {
-	return ( dimension->minimum );
+	return (dimension->first_coord);
     }
-    if ( dimension->coordinates == NULL )
+    if (dimension->coordinates == NULL)
     {
 	/*  Co-ordinate list not present: calculate co-ordinate */
-        return ( dimension->minimum + (double) coord_num *
-                ( dimension->maximum - dimension->minimum ) /
-                (double) ( dimension->length - 1 ) );
+        return ( dimension->first_coord + (double) coord_num *
+		 (dimension->last_coord - dimension->first_coord) /
+		 (double) (dimension->length - 1) );
     }
     else
     {
-	return ( dimension->coordinates[coord_num] );
+	return (dimension->coordinates[coord_num]);
     }
 }   /*  End Function ds_get_coordinate  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int ds_get_element_offset (pack_desc, elem_num)
-/*  This routine will calculate the byte offset of the start of a data element
-    in a data packet. The descriptor for the data packet must be pointed to
-    by  pack_desc  and the number of the element must be in  elem_num  .
-    If  elem_num  is greater or equal to the number of elements in the packet,
-    then the length of the packet is returned.
-    The routine returns the byte offset of the element in the packet.
+unsigned int ds_get_element_offset (CONST packet_desc *pack_desc,
+				    unsigned int elem_num)
+/*  [SUMMARY] Calculate the offset of the start of a data element in a packet.
+    <pack_desc> The descriptor for the data packet.
+    <elem_num> The number of the element.
+    [RETURNS] The byte offset of the element in the packet on success, else the
+    length of the packet is returned.
 */
-packet_desc *pack_desc;
-unsigned int elem_num;
 {
     unsigned int elem_count = 0;
     unsigned int byte_offset = 0;
@@ -214,12 +231,11 @@ unsigned int elem_num;
 }   /*  End Function ds_get_element_offset  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int ds_get_packet_size (pack_desc)
-/*  This routine will calculate the size (in bytes) of a data packet pointed
-    to by  pack_desc  .
-    The routine returns the size in bytes.
+unsigned int ds_get_packet_size (CONST packet_desc *pack_desc)
+/*  [SUMMARY] Calculate size in bytes of a packet.
+    <pack_desc> The packet descriptor.
+    [RETURNS] The size in bytes.
 */
-packet_desc *pack_desc;
 {
     static char function_name[] = "ds_get_packet_size";
 
@@ -233,10 +249,10 @@ packet_desc *pack_desc;
 }   /*  End Function ds_get_packet_size  */
 
 /*PUBLIC_FUNCTION*/
-unsigned long ds_get_array_size (array_desc *arr_desc)
-/*  This routine will calculate the number of co-ordinate points in an array.
-    The array descriptor must be pointed to by  arr_desc  .
-    The routine returns the size of the array.
+unsigned long ds_get_array_size (CONST array_desc *arr_desc)
+/*  [SUMMARY] Calculate the number of co-ordinate points in an array.
+    <arr_desc> The array descriptor.
+    [RETURNS] The size of the array (in co-ordinate points).
 */
 {
     unsigned long array_points = 1;
@@ -256,16 +272,15 @@ unsigned long ds_get_array_size (array_desc *arr_desc)
 }   /*  End Function ds_get_array_size  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_packet_all_data (pack_desc)
-/*  This routine will determine if the packet descriptor pointed to by
-    pack_desc  is composed only of atomic data elements (ie. no sub arrays
-    or linked lists or strings).
-    All element types in the packet descriptor must be legal, else the routine
-    will print an error message and abort processing.
-    The routine will return TRUE if the data elements are all atomic, else
-    it will return FALSE.
+flag ds_packet_all_data (CONST packet_desc *pack_desc)
+/*  [SUMMARY] Test if packet contains only atomic data elements.
+    [PURPOSE] This routine will determine if all the elements in a packet are
+    atomic (i.e. no sub-arrays, linked lists or strings). All element types in
+    the packet descriptor must be legal, else the routine will print an error
+    message and abort processing.
+    <pack_desc> The packet descriptor.
+    [RETURNS] TRUE if the data elements are all atomic, else FALSE.
 */
-packet_desc *pack_desc;
 {
     unsigned int elem_count = 0;
     static char function_name[] = "ds_packet_all_data";
@@ -277,8 +292,7 @@ packet_desc *pack_desc;
     }
     while (elem_count < pack_desc->num_elements)
     {
-	if (ds_element_is_atomic ( pack_desc->element_types[elem_count] )
-            != TRUE)
+	if ( !ds_element_is_atomic (pack_desc->element_types[elem_count]) )
         {
 	    return (FALSE);
         }
@@ -288,15 +302,14 @@ packet_desc *pack_desc;
 }   /*  End Function ds_packet_all_data  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_element_is_atomic (element_type)
-/*  This routine will determine if the type of an element is atomic or not.
-    The element type must be in  element_type  .
-    The element type must be legal, else the routine will print an error
-    message and abort processing.
-    The routine returns TRUE if the element type is atomic, else
-    it returns FALSE.
+flag ds_element_is_atomic (unsigned int element_type)
+/*  [SUMMARY] Test if an element is atomic.
+    [PURPOSE] This routine will determine if an element is atomic (i.e. not a
+    sub-array, linked list or string). The element type must be legal, else the
+    routine will print an error message and abort processing.
+    <element_type> The type of the element.
+    [RETURNS] TRUE if the element is atomic, else FALSE.
 */
-unsigned int element_type;
 {
     static char function_name[] = "ds_element_is_atomic";
 
@@ -343,15 +356,14 @@ unsigned int element_type;
 }   /*  End Function ds_element_is_atomic  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_element_is_named (element_type)
-/*  This routine will determine if an element type is named or not.
-    The element type must be in  element_type  .
-    The element type must be legal, else the routine will print an error
-    message and abort processing.
-    The routine returns TRUE if the element type is atomic, else
-    it returns FALSE.
+flag ds_element_is_named (unsigned int element_type)
+/*  [SUMMARY] Test if an element is a named data type.
+    [PURPOSE] This routine will determine if an element is a named data type
+    (i.e. not a sub-array or linked list). The element type must be legal, else
+    the routine will print an error message and abort processing.
+    <element_type> The type of the element.
+    [RETURNS] TRUE if the element is a named type, else FALSE.
 */
-unsigned int element_type;
 {
     static char function_name[] = "ds_element_is_named";
 
@@ -398,13 +410,11 @@ unsigned int element_type;
 }   /*  End Function ds_element_is_named  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_element_is_legal (element_type)
-/*  This routine will determine if the element type in  element_type  is a
-    legal value.
-    The routine returns TRUE if the element type is legal, else it
-    returns FALSE.
+flag ds_element_is_legal (unsigned int element_type)
+/*  [SUMMARY] Test if an element is legal.
+    <element_type> The type of the element.
+    [RETURNS] TRUE if the element type is legal, else FALSE.
 */
-unsigned int element_type;
 {
     switch (element_type)
     {
@@ -445,23 +455,19 @@ unsigned int element_type;
 }   /*  End Function ds_element_is_legal  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int ds_identify_name (multi_desc, name, encls_desc, index)
-/*  This routine will search the multi array general data structure with
-    descriptor pointed to by  multi_desc  for an occurrence of the name
-    pointed to by  name  .
-    The routine will write a pointer to the enclosing descriptor of the item
-    to the storage pointed to by  encls_desc  .
-    The index (general data structure number, dimension number or element
-    number) of the item in the enclosing structure will be written to the
-    storage pointed to by  index  .
-    If these are NULL, nothing is written there.
-    The routine will return a code based on the type of the item with the
-    same name. These codes are defined in the file: general_struct.h
+unsigned int ds_identify_name (multi_array *multi_desc, CONST char *name,
+			       char **encls_desc, unsigned int *index)
+/*  [SUMMARY] Search a data structure for a name.
+    <multi_desc> The multi_array descriptor.
+    <name> The name of the item to search for.
+    <encls_desc> A pointer to the enclosing descriptor of the item is written
+    here. If this is NULL, nothing is written here.
+    <index> The index (general data structure number, dimension number or
+    element number) of the item in the enclosing structure will be written
+    here. If this is NULL, nothing is written here.
+    [RETURNS] A code based on the type of the item with the same name. See
+    [<DS_IDENT_TABLE>] for a list of possible values.
 */
-multi_array *multi_desc;
-CONST char *name;
-char **encls_desc;
-unsigned int *index;
 {
     unsigned int array_count = 0;
     unsigned int temp_ident;
@@ -472,7 +478,7 @@ unsigned int *index;
     {
 	return (IDENT_NOT_FOUND);
     }
-    if ( multi_desc->headers == NULL )
+    if (multi_desc->headers == NULL)
     {
 	(void) fprintf (stderr,
 			"Multi array descriptor has no list of packet descriptors\n");
@@ -487,8 +493,8 @@ unsigned int *index;
     {
 	/*  Search one array    */
         if ( ( temp_ident =
-	      ds_f_name_in_packet ( multi_desc->headers[array_count],
-				   name, encls_desc, index ) )
+	      ds_f_name_in_packet (multi_desc->headers[array_count],
+				   name, encls_desc, index) )
             != IDENT_NOT_FOUND )
         {
 	    if (return_value != IDENT_NOT_FOUND)
@@ -503,24 +509,21 @@ unsigned int *index;
 }   /*  End Function ds_identify_name  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int ds_f_array_name (multi_desc, name, encls_desc, index)
-/*  This routine will search the multi array general data structure header
-    pointed to by  multi_desc  for an occurrence of the array name pointed
-    to by  name  .
-    If it is found, the pointer to the multi array header will be written to
-    the storage pointed to by  encls_desc  .
-    The index number of the general data structure with name pointed to by
-    name  will be written to the storage pointed to by  index  .
-    If these are NULL, nothing is written here.
-    Note that the routine will not search the packet descriptors for name
-    matches.
-    The routine will return a code based on the number of matches found.
-    These codes are defined in the file: general_struct.h
+unsigned int ds_f_array_name (multi_array *multi_desc, CONST char *name,
+			      char **encls_desc, unsigned int *index)
+/*  [SUMMARY] Search a the top level of a data structure for a name.
+    [PURPOSE] This routine will search a multi array general data structure
+    header for an occurrence of an array name.
+    <multi_desc> The multi_array data structure.
+    <name> The array name.
+    <encls_desc> If the array name is found, the pointer to the multi array
+    header will be written here. If this is NULL, nothing is written here.
+    <index> The index number of the general data structure with will be written
+    here. If this is NULL, nothing is written here.
+    [NOTE] The routine will not search the packet descriptors for name matches.
+    [RETURNS] A code based on the number of matches found. See
+    [<DS_IDENT_TABLE>] for a list of possible values.
 */
-multi_array *multi_desc;
-CONST char *name;
-char **encls_desc;
-unsigned int *index;
 {
     unsigned int array_count = 0;
     unsigned int return_value = IDENT_NOT_FOUND;
@@ -530,16 +533,16 @@ unsigned int *index;
     {
 	return (IDENT_NOT_FOUND);
     }
-    if ( multi_desc->headers == NULL )
+    if (multi_desc->headers == NULL)
     {
 	(void) fprintf (stderr,
 			"Multi array descriptor has no list of packet descriptors\n");
         a_prog_bug (function_name);
     }
-    if ( multi_desc->num_arrays == 1 )
+    if (multi_desc->num_arrays == 1)
     {
 	/*  Only one array  */
-        if ( multi_desc->array_names != NULL )
+        if (multi_desc->array_names != NULL)
         {
 	    /*  Should be a NULL pointer    */
             (void) fprintf (stderr,
@@ -563,7 +566,7 @@ unsigned int *index;
         return (return_value);
     }
     /*  Many arrays */
-    if ( multi_desc->array_names == NULL )
+    if (multi_desc->array_names == NULL)
     {
 	(void) fprintf (stderr,
 			"Multi array descriptor has many arrays and no list of array names\n");
@@ -576,7 +579,7 @@ unsigned int *index;
     }
     while (array_count < multi_desc->num_arrays)
     {
-	if ( multi_desc->array_names[array_count] == NULL )
+	if (multi_desc->array_names[array_count] == NULL)
         {
 	    (void) fprintf (stderr, "Multiple arrays without names given\n");
             a_prog_bug (function_name);
@@ -605,39 +608,34 @@ unsigned int *index;
 }   /*  End Function ds_f_array_name  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int ds_f_name_in_packet (pack_desc, name, encls_desc, index)
-/*  This routine will search for occurrences of the name pointed to by  name
-    in the packet descriptor pointed to by  pack_desc  .
-    If  name  is NULL, then the routine will not find anything.
-    The routine will recursively search for names in sub array and linked list
-    descriptors.
-    The pointer to the enclosing structure of the named item will be written
-    to the storage pointed to by  encls_desc  .
-    The index (dimension number or element number) of the item will be written
-    to the storage pointed to by  index  .
-    If these are NULL, nothing is written there.
-    The routine will return a code based on the type of the item with the
-    same name. These codes are defined in the file: general_struct.h
+unsigned int ds_f_name_in_packet (CONST packet_desc *pack_desc,
+				  CONST char *name,
+				  char **encls_desc, unsigned int *index)
+/*  [SUMMARY] Recursively search for named item under a packet.
+    <pack_desc> The packet descriptor.
+    <name> The name of the item to search form. If NULL, then the routine will
+    not find anything.
+    <encls_desc> The pointer to the enclosing structure of the named item will
+    be written here. If this is NULL, nothing is written here.
+    <index> The index (dimension number or element number) of the item will be
+    written here. If this is NULL, nothing is written here.
+    [RETURNS] A code based on the type of the item with the same name. See
+    [<DS_IDENT_TABLE>] for a list of possible values.
 */
-packet_desc *pack_desc;
-CONST char *name;
-char **encls_desc;
-unsigned int *index;
 {
     unsigned int elem_count;
     unsigned int temp_ident;
     unsigned int return_value = IDENT_NOT_FOUND;
     static char function_name[] = "ds_f_name_in_packet";
 
-    if ( (pack_desc == NULL) || ( pack_desc->num_elements < 1 )
+    if ( (pack_desc == NULL) || (pack_desc->num_elements < 1)
 	|| (name == NULL) )
     {
 	return (IDENT_NOT_FOUND);
     }
     for (elem_count = 0; elem_count < pack_desc->num_elements; ++elem_count)
     {
-	if (ds_element_is_named ( pack_desc->element_types[elem_count] )
-            == TRUE)
+	if ( ds_element_is_named (pack_desc->element_types[elem_count]) )
         {
 	    /*  Atomic data type    */
 	    if (strcmp (name, pack_desc->element_desc[elem_count])
@@ -660,7 +658,7 @@ unsigned int *index;
 	    continue;
 	}
 	/*  Not a named element  */
-	switch ( pack_desc->element_types[elem_count] )
+	switch (pack_desc->element_types[elem_count])
 	{
 	  case K_ARRAY:
 	    if ( ( temp_ident =
@@ -702,25 +700,23 @@ unsigned int *index;
 }   /*  End Function ds_f_name_in_packet  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int ds_f_name_in_array (arr_desc, name, encls_desc, index)
-/*  This routine will search for occurrences of the name pointed by  name
-    in the array descriptor pointed to by  arr_desc  .
-    If  name  is NULL, then the routine will not find anything.
-    The routine searches both the dimension names and the packet associated
-    with the array.
-    The routine recursively searches the array packet descriptor.
-    The pointer to the descriptor of the enclosing structure of the named item
-    is written to the storage pointed to by  encls_desc  .
-    The index (dimension number or element number) of the item will be written
-    to the storage pointed to by  index  .
-    If these are NULL, nothing is written there.
-    The routine will return a code based on the type of the item with the
-    same name. These codes are defined in the file: general_struct.h
+unsigned int ds_f_name_in_array (array_desc *arr_desc, CONST char *name,
+				 char **encls_desc, unsigned int *index)
+/*  [SUMMARY] Recursively search for named item under an array.
+    [PURPOSE] This routine will search an array descriptor for occurrences of a
+    named item. The routine searches both the dimension names and the packet
+    associated with the array. The routine recursively searches the array
+    packet descriptor.
+    <arr_desc> The array descriptor.
+    <name> The name of the item to search form. If NULL, then the routine will
+    not find anything.
+    <encls_desc> The pointer to the enclosing structure of the named item will
+    be written here. If this is NULL, nothing is written here.
+    <index> The index (dimension number or element number) of the item will be
+    written here. If this is NULL, nothing is written here.
+    [RETURNS] A code based on the type of the item with the same name. See
+    [<DS_IDENT_TABLE>] for a list of possible values.
 */
-array_desc *arr_desc;
-CONST char *name;
-char **encls_desc;
-unsigned int *index;
 {
     unsigned int dim_count = 0;
     unsigned int temp_ident;
@@ -750,12 +746,12 @@ unsigned int *index;
         }
         ++dim_count;
     }
-    if ( arr_desc->packet == NULL )
+    if (arr_desc->packet == NULL)
     {
 	return (return_value);
     }
-    if ( ( temp_ident = ds_f_name_in_packet ( arr_desc->packet, name,
-					  encls_desc, index ) )
+    if ( ( temp_ident = ds_f_name_in_packet (arr_desc->packet, name,
+					  encls_desc, index) )
         != IDENT_NOT_FOUND )
     {
 	if (return_value != IDENT_NOT_FOUND)
@@ -768,19 +764,16 @@ unsigned int *index;
 }   /*  End Function ds_f_name_in_array  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int ds_f_elem_in_packet (pack_desc, name)
-/*  This routine will determine if a particular named element is in the
-    packet descriptor pointed to by  pack_desc  .The name of the element
-    to find must be pointed to by  name  .
-    If  name  is NULL, then the routine will not find anything.
-    The routine will only find named elements in this packet: it is not
-    recursive.
-    The routine returns the number of the element in the packet if it was found
-    else it returns the number of elements in the packet.
-    If the specified name occurs twice, the program aborts.
+unsigned int ds_f_elem_in_packet (CONST packet_desc *pack_desc,
+				  CONST char *name)
+/*  [SUMMARY] Search for a named element in a packet, without recursion.
+    <pack_desc> The packet descriptor.
+    <name> The element name to search for. If this is NULL, then the routine
+    will not find anything.
+    [NOTE] If the specified name occurs twice, the program aborts.
+    [RETURNS] The number of the element in the packet if it was found, else the
+    number of elements in the packet.
 */
-packet_desc *pack_desc;
-CONST char *name;
 {
     unsigned int elem_count = 0;
     unsigned int return_value;
@@ -791,15 +784,14 @@ CONST char *name;
 	(void) fprintf (stderr, "NULL  pack_desc  pointer passed\n");
 	a_prog_bug (function_name);
     }
-    if ( ( pack_desc->num_elements < 1 ) || (name == NULL) )
+    if ( ( pack_desc->num_elements < 1) || (name == NULL) )
     {
-	return ( pack_desc->num_elements );
+	return (pack_desc->num_elements);
     }
     return_value = pack_desc->num_elements;
     while (elem_count < pack_desc->num_elements)
     {
-	if (ds_element_is_named ( pack_desc->element_types[elem_count] )
-            == TRUE)
+	if ( ds_element_is_named (pack_desc->element_types[elem_count]) )
         {
 	    /*  Atomic data type    */
             if (strcmp (name, pack_desc->element_desc[elem_count]) == 0)
@@ -821,19 +813,19 @@ CONST char *name;
 }   /*  End Function ds_f_elem_in_packet  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int ds_find_hole (inp_desc, out_desc, elem_num)
-/*  This routine will recursively search the packet descriptor pointed to by
-    inp_desc  for a hole (element type NONE or element descriptor pointer NULL)
-    A pointer to the packet descriptor which contains the hole is written to
-    the storage pointed to by  out_desc  and the element number in that packet
-    which corresponds to the hole is written to the storage pointed to by
-    elem_num  .If these are NULL, nothing is written to them.
-    The routine returns a value indicating the status of the search. These
-    codes are defined in the file: general_struct.h
+unsigned int ds_find_hole (packet_desc *inp_desc, packet_desc **out_desc,
+			   unsigned int *elem_num)
+/*  [SUMMARY] Recursively search packet for a hole.
+    [PURPOSE] This routine will recursively search a packet descriptor for a
+    hole (element type NONE or element descriptor pointer NULL).
+    <inp_desc> The packet descriptor to search.
+    <out_desc> A pointer to the packet descriptor which contains the hole is
+    written here. If this is NULL, nothing is written here.
+    <elem_num> The element number in that packet which corresponds to the hole
+    is written here. If this is NULL, nothing is written here.
+    [RETURNS] A code indicating the status of the search. See
+    [<DS_IDENT_TABLE>] for a list of possible values.
 */
-packet_desc *inp_desc;
-packet_desc **out_desc;
-unsigned int *elem_num;
 {
     unsigned int elem_count = 0;
     unsigned int temp_ident;
@@ -845,7 +837,7 @@ unsigned int *elem_num;
     {
 	return (IDENT_NOT_FOUND);
     }
-    if ( inp_desc->num_elements < 1 )
+    if (inp_desc->num_elements < 1)
     {
 	return (IDENT_NOT_FOUND);
     }
@@ -853,7 +845,7 @@ unsigned int *elem_num;
     while (elem_count < inp_desc->num_elements)
     {
 	elem_desc =(packet_desc *) inp_desc->element_desc[elem_count];
-        if ( ( inp_desc->element_types[elem_count] == NONE ) ||
+        if ( (inp_desc->element_types[elem_count] == NONE) ||
 	    (elem_desc == NULL) )
         {
 	    if (return_value != IDENT_NOT_FOUND)
@@ -864,11 +856,11 @@ unsigned int *elem_num;
             *out_desc = inp_desc;
             *elem_num = elem_count;
         }
-        if ( inp_desc->element_types[elem_count] == K_ARRAY )
+        if (inp_desc->element_types[elem_count] == K_ARRAY)
         {
 	    arr_desc = (array_desc *) elem_desc;
-            if ( ( temp_ident = ds_find_hole ( arr_desc->packet, out_desc,
-					      elem_num ) ) != IDENT_NOT_FOUND )
+            if ( ( temp_ident = ds_find_hole (arr_desc->packet, out_desc,
+					      elem_num) ) != IDENT_NOT_FOUND )
             {
 		if (return_value != IDENT_NOT_FOUND)
                 {
@@ -877,7 +869,7 @@ unsigned int *elem_num;
                 return_value = temp_ident;
             }
         }
-        if ( inp_desc->element_types[elem_count] == LISTP )
+        if (inp_desc->element_types[elem_count] == LISTP)
         {
 	    if ( ( temp_ident = ds_find_hole (elem_desc, out_desc, elem_num) )
                 != IDENT_NOT_FOUND )
@@ -895,17 +887,15 @@ unsigned int *elem_num;
 }   /*  End Function ds_find_hole  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_compare_packet_desc (desc1, desc2, recursive)
-/*  This routine will compare two packet descriptors, pointed to by  desc1  and
-    desc2  .
-    The routine will perform a recursive comparison of sub arrays and linked
-    list descriptors if the value of  recursive  is TRUE.
-    The routine returns TRUE if the two packet descriptors are equal,
-    else it returns FALSE.
+flag ds_compare_packet_desc (packet_desc *desc1, packet_desc *desc2,
+			     flag recursive)
+/*  [SUMMARY] Recursively compare two packet descriptors.
+    <desc1> One of the packet descriptors.
+    <desc2> The other packet descriptor.
+    <recursive> If TRUE the routine will perform a recursive comparison of
+    sub-arrays and linked list descriptors.
+    [RETURNS] TRUE if the two packet descriptors are equal, else FALSE.
 */
-packet_desc *desc1;
-packet_desc *desc2;
-flag recursive;
 {
     unsigned int elem_count = 0;
     unsigned int elem_type1;
@@ -919,7 +909,7 @@ flag recursive;
 	a_func_abort (function_name, "NULL descriptor pointer(s)");
         return (FALSE);
     }
-    if ( desc1->num_elements != desc2->num_elements )
+    if (desc1->num_elements != desc2->num_elements)
     {
 	return (FALSE);
     }
@@ -932,29 +922,29 @@ flag recursive;
         if (elem_type1 == elem_type2)
         {
 	    /*  Element types are the same  */
-            if (ds_element_is_named (elem_type1) == TRUE)
+            if ( ds_element_is_named (elem_type1) )
             {
 		if (strcmp (elem_name1, elem_name2) != 0)
                     return (FALSE);
             }
             else
             {
-		if ( (recursive == TRUE) && (elem_type1 == K_ARRAY) )
+		if ( recursive && (elem_type1 == K_ARRAY) )
                 {
-		    if (ds_compare_array_desc ( (array_desc *)
-					       elem_name1,
-					       (array_desc *)
-					       elem_name2,
-					       recursive) != TRUE)
+		    if ( !ds_compare_array_desc ( (array_desc *)
+						  elem_name1,
+						  (array_desc *)
+						  elem_name2,
+						  recursive) )
                         return (FALSE);
                 }
-                if ( (recursive == TRUE) &&(elem_type1 == LISTP) )
+                if ( recursive &&(elem_type1 == LISTP) )
                 {
-		    if (ds_compare_packet_desc ( (packet_desc *)
-						elem_name1,
-						(packet_desc *)
-						elem_name2,
-						recursive) != TRUE)
+		    if ( !ds_compare_packet_desc ( (packet_desc *)
+						   elem_name1,
+						   (packet_desc *)
+						   elem_name2,
+						   recursive) )
                         return (FALSE);             
                 }
             }
@@ -963,13 +953,13 @@ flag recursive;
         {
 	    /*  Element types are not the same  */
             /*  Trap for bad element types  */
-            if (ds_element_is_legal (elem_type1) != TRUE)
+            if ( !ds_element_is_legal (elem_type1) )
             {
 		(void) fprintf (stderr, "Element type: %u is not legal\n",
 				elem_type1);
                 a_prog_bug (function_name);
             }
-            if (ds_element_is_legal (elem_type2) != TRUE)
+            if ( !ds_element_is_legal (elem_type2) )
             {
 		(void) fprintf (stderr, "Element type: %u is not legal\n",
 				elem_type2);
@@ -983,17 +973,15 @@ flag recursive;
 }   /*  End Function ds_compare_packet_desc  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_compare_array_desc (desc1, desc2, recursive)
-/*  This routine will compare two array descriptors, pointed to by  desc1  and
-    desc2  .
-    The routine will perform a recursive comparison of the array packet
-    descriptors if the value of  recursive  is TRUE.
-    The routine returns TRUE if the two array descriptors are equal,
-    else it returns FALSE.
+flag ds_compare_array_desc (array_desc *desc1, array_desc *desc2,
+			    flag recursive)
+/*  [SUMMARY] Recursively compare two array descriptors.
+    <desc1> One of the array descriptors.
+    <desc2> The other array descriptor.
+    <recursive> If TRUE the routine will perform a recursive comparison of the
+    array packet descriptors.
+    [RETURNS] TRUE if the two array descriptors are equal, else FALSE.
 */
-array_desc *desc1;
-array_desc *desc2;
-flag recursive;
 {
     unsigned int dim_count = 0;
     static char function_name[] = "ds_compare_array_desc";
@@ -1003,36 +991,32 @@ flag recursive;
 	a_func_abort (function_name, "NULL descriptor pointer(s)");
         return (FALSE);
     }
-    if ( desc1->num_dimensions != desc2->num_dimensions )
+    if (desc1->num_dimensions != desc2->num_dimensions)
     {
 	return (FALSE);
     }
     while (dim_count < desc1->num_dimensions)
     {
-	if (ds_compare_dim_desc ( desc1->dimensions[dim_count],
-				 desc2->dimensions[dim_count] ) != TRUE)
+	if ( !ds_compare_dim_desc (desc1->dimensions[dim_count],
+				   desc2->dimensions[dim_count]) )
 	return (FALSE);
         ++dim_count;
     }
-    if (recursive == TRUE)
+    if (recursive)
     {
-	if (ds_compare_packet_desc ( desc1->packet, desc2->packet,
-				    recursive )
-            != TRUE)
+	if ( !ds_compare_packet_desc (desc1->packet, desc2->packet,recursive) )
 	return (FALSE);
     }
     return (TRUE);
 }   /*  End Function ds_compare_array_desc  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_compare_dim_desc (desc1, desc2)
-/*  This routine will compare two dimension descriptors pointed to by  desc1
-    and  desc2  .
-    The routine returns TRUE if the two descriptors are equal, else it
-    returns FALSE.
+flag ds_compare_dim_desc (dim_desc *desc1, dim_desc *desc2)
+/*  [SUMMARY] Compare two dimension descriptors.
+    <desc1> One of the dimension descriptors.
+    <desc2> The other dimension descriptor.
+    [RETURNS] TRUE if the two dimension descriptors are equal, else FALSE.
 */
-dim_desc *desc1;
-dim_desc *desc2;
 {
     unsigned int coord_count = 0;
     static char function_name[] = "ds_compare_dim_desc";
@@ -1042,32 +1026,29 @@ dim_desc *desc2;
 	a_func_abort (function_name, "NULL descriptor pointer(s)");
         return (FALSE);
     }
-    if ( ( desc1->name == NULL ) || ( desc2->name == NULL ) )
+    if ( (desc1->name == NULL) || (desc2->name == NULL) )
     {
 	(void) fprintf (stderr, "Dimension name is a NULL pointer\n");
         a_prog_bug (function_name);
     }
-    if (strcmp ( desc1->name, desc2->name ) != 0)
+    if (strcmp (desc1->name, desc2->name) != 0)
     return (FALSE);
-    if ( desc1->length != desc2->length )
-    return (FALSE);
-    if ( desc1->minimum != desc2->minimum )
-    return (FALSE);
-    if ( desc1->maximum != desc2->maximum )
-    return (FALSE);
-    if ( desc1->coordinates == NULL )
+    if (desc1->length != desc2->length) return (FALSE);
+    if (desc1->first_coord != desc2->first_coord) return (FALSE);
+    if (desc1->last_coord != desc2->last_coord) return (FALSE);
+    if (desc1->coordinates == NULL)
     {
-	if ( desc2->coordinates != NULL )
+	if (desc2->coordinates != NULL)
 	return (FALSE);
     }
     else
     {
-	if ( desc2->coordinates == NULL )
+	if (desc2->coordinates == NULL)
 	return (FALSE);
         while (coord_count < desc1->length)
         {
-	    if ( desc1->coordinates[coord_count] !=
-                desc2->coordinates[coord_count] )
+	    if (desc1->coordinates[coord_count] !=
+                desc2->coordinates[coord_count])
 	    return (FALSE);
             ++coord_count;
         }
@@ -1076,17 +1057,15 @@ dim_desc *desc2;
 }   /*  End Function ds_compare_dim_desc  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int ds_f_dim_in_array (arr_desc, name)
-/*  This routine will determine if a particular dimension is in the array
-    descriptor pointed to by  arr_desc  .
-    The name of the dimension to find must be pointed to by  name  .
-    If  name  is NULL, then the routine will not find anything.
-    The routine returns the number of the dimension in the array if it was
-    found else it returns the number of dimensions in the array.
-    If the specified name occurs twice, the program aborts.
+unsigned int ds_f_dim_in_array (array_desc *arr_desc, CONST char *name)
+/*  [SUMMARY] Find dimension in array.
+    <arr_desc> The array descriptor.
+    <name> The name of the dimension to find. If this is NULL, then the routine
+    will not find anything.
+    [NOTE] If the specified name occurs twice, the program aborts.
+    [RETURNS] The number of the dimension in the array if it was found, else
+    the number of dimensions in the array.
 */
-array_desc *arr_desc;
-CONST char *name;
 {
     unsigned int dim_count;
     unsigned int return_value;
@@ -1097,9 +1076,9 @@ CONST char *name;
 	(void) fprintf (stderr, "NULL  arr_desc  pointer passed\n");
 	a_prog_bug (function_name);
     }
-    if ( ( arr_desc->num_dimensions < 1 ) || (name == NULL) )
+    if ( (arr_desc->num_dimensions < 1) || (name == NULL) )
     {
-	return ( arr_desc->num_dimensions );
+	return (arr_desc->num_dimensions);
     }
     return_value = arr_desc->num_dimensions;
     for (dim_count = 0; dim_count < arr_desc->num_dimensions; ++dim_count)
@@ -1122,11 +1101,11 @@ CONST char *name;
 /*PUBLIC_FUNCTION*/
 unsigned long ds_get_array_offset (array_desc *arr_desc,
 				   unsigned long *coordinates)
-/*  This routine will calculate the offset in array co-odinates of a packet.
-    The array descriptor must be pointed to by  arr_desc  .
-    The array of dimension co-ordinates which specifies which packet must be
-    pointed to by  coordinates  .
-    The routine returns the offset of the packet.
+/*  [SUMMARY] Compute offset of a co-ordinate in an array.
+    <arr_desc> The array descriptor.
+    <coordinates> The array of dimension co-ordinates which specifies the
+    co-ordinate.
+    [RETURNS] The offset of the co-ordinate in packets.
 */
 {
     unsigned int dim_count;
@@ -1160,14 +1139,13 @@ unsigned long ds_get_array_offset (array_desc *arr_desc,
 /*PUBLIC_FUNCTION*/
 unsigned long ds_get_coord_num (dim_desc *dimension, double coordinate,
 				unsigned int bias)
-/*  This routine will determine the co-ordinate number of a co-ordinate.
-    The dimension descriptor must be pointed to by  dimension  .
-    The co-ordinate to find the number of must be in  coordinate  .
-    If the specified co-ordinate lies between two dimension co-ordinates, then
-    the routine will find the co-ordinate which is lesser, closer or higher,
-    depending on the value of  bias  .Legal values for  bias  are:
-        SEARCH_BIAS_LOWER, SEARCH_BIAS_CLOSEST, SEARCH_BIAS_UPPER.
-    The routine returns the index number of the co-ordinate found.
+/*  [SUMMARY] Get index of a co-ordinate along a dimension.
+    <dimension> The dimension descriptor.
+    <coordinate> The co-ordinate to find.
+    <bias> This specifies which co-ordinate index to pick when the co-ordinate
+    lies between two dimension co-ordinates. See [<DS_SEARCH_BIASES>] for legal
+    values.
+    [RETURNS] The index number of the co-ordinate found.
 */
 {
     unsigned long coord_num;
@@ -1181,27 +1159,36 @@ unsigned long ds_get_coord_num (dim_desc *dimension, double coordinate,
     }
     /*  Check if co-ordinate specified is within range
 	of dimension co-ordinates  */
-    if (coordinate <= dimension->minimum)
-    {
-	return (0);
-    }
-    if (coordinate >= dimension->maximum)
-    {
-	return ( dimension->length - 1 );
-    }
-    if ( dimension->coordinates == NULL )
+    if ( (dimension->first_coord < dimension->last_coord) &&
+	 (coordinate <= dimension->first_coord) ) return (0);
+    if ( (dimension->first_coord > dimension->last_coord) &&
+	 (coordinate >= dimension->first_coord) ) return (0);
+    if ( (dimension->first_coord < dimension->last_coord) &&
+	 (coordinate >= dimension->last_coord) ) return (dimension->length -1);
+    if ( (dimension->first_coord > dimension->last_coord) &&
+	 (coordinate <= dimension->last_coord) ) return (dimension->length -1);
+    if (dimension->coordinates == NULL)
     {
 	/*  Dimension co-ordinates are regularly spaced  */
-	coord_num = ( (coordinate - dimension->minimum) /
-		     ( dimension->maximum - dimension->minimum ) *
-		     (double) ( dimension->length - 1 ) );
+	coord_num = ( (coordinate - dimension->first_coord) /
+		     (dimension->last_coord - dimension->first_coord) *
+		     (double) (dimension->length - 1) );
     }
     else
     {
 	/*  Search through co-ordinate list  */
-	for (coord_num = 0;
-	     dimension->coordinates[coord_num + 1] < coordinate;
-	     ++coord_num);
+	if (dimension->first_coord < dimension->last_coord)
+	{
+	    for (coord_num = 0;
+		 dimension->coordinates[coord_num + 1] < coordinate;
+		 ++coord_num);
+	}
+	else
+	{
+	    for (coord_num = 0;
+		 dimension->coordinates[coord_num + 1] > coordinate;
+		 ++coord_num);
+	}
     }
     tmp_found_coord = ds_get_coordinate (dimension, coord_num);
     if (coordinate == tmp_found_coord)
@@ -1213,13 +1200,14 @@ unsigned long ds_get_coord_num (dim_desc *dimension, double coordinate,
     {
       case SEARCH_BIAS_LOWER:
 	/*  Co-ordinate number is lower one due to integer truncation  */
-	return (coord_num);
+	if (dimension->first_coord < dimension->last_coord) return (coord_num);
+	else return (coord_num + 1);
 /*
 	break;
 */
       case SEARCH_BIAS_CLOSEST:
-	if (coordinate - tmp_found_coord <
-	    ds_get_coordinate (dimension, coord_num + 1) - coordinate)
+	if ( fabs (coordinate - tmp_found_coord) <
+	     fabs (ds_get_coordinate (dimension, coord_num + 1) - coordinate) )
 	{
 	    /*  Closest co-ordinate is lower one  */
 	    return (coord_num);
@@ -1233,7 +1221,11 @@ unsigned long ds_get_coord_num (dim_desc *dimension, double coordinate,
 	break;
 */
       case SEARCH_BIAS_UPPER:
-	return (coord_num + 1);
+	if (dimension->first_coord < dimension->last_coord)
+	{
+	    return (coord_num + 1);
+	}
+	else return (coord_num);
 /*
 	break;
 */
@@ -1249,8 +1241,7 @@ unsigned long ds_get_coord_num (dim_desc *dimension, double coordinate,
 /*PUBLIC_FUNCTION*/
 flag ds_get_element (CONST char *datum, unsigned int datum_type,
 		     double value[2], flag *complex)
-/*  [PURPOSE] This routine will convert an atomic datum to a double precision
-    complex value.
+/*  [SUMMARY] Convert an atomic datum to a double precision complex value.
     <datum> A pointer to the datum to be converted.
     <datum_type> The type of the datum.
     <value> The data value will be written here.
@@ -1420,20 +1411,16 @@ flag ds_get_element (CONST char *datum, unsigned int datum_type,
 flag ds_get_elements (CONST char *data, unsigned int data_type,
 		      unsigned int data_stride, double *values, flag *complex,
 		      unsigned int num_values)
-/*  This routine will convert many atomic data to an array of double precision
-    complex values.
-    The data to be converted must be pointed to by  data  and the data type
-    value must be in  data_type  .
-    The stride of data elements in memory (in bytes) must be given by
-    data_stride  .
-    The data values will be written to the storage pointed to by  values  .
-    These storages MUST lie on a  double  boundary.
-    If the data are a complex type, then the value of TRUE is written to the
-    storage pointed to by  complex  ,else the value FALSE is written here. If
-    this is NULL, nothing is written here.
-    The number of data values to convert must be pointed to by  num_values  .
-    The routine returns TRUE if the data was successfully converted,
-    else it returns FALSE.
+/*  [SUMMARY] Convert atomic data values to double precision complex values.
+    <data> The data to be converted.
+    <data_type> The type of the data.
+    <data_stride> The stride of data elements in memory (in bytes).
+    <values> The data values will be written here. This MUST lie on a
+    <<double>> boundary.
+    <complex> TRUE is written here if the data are a complex type, else FALSE
+    is written here. If this is NULL, nothing is written here.
+    <num_values> The number of data values to convert.
+    [RETURNS] TRUE if the data was successfully converted, else FALSE.
 */
 {
     flag tmp_complex = FALSE;
@@ -1671,14 +1658,14 @@ flag ds_get_elements (CONST char *data, unsigned int data_type,
 }   /*  End Function ds_get_elements  */
 
 /*PUBLIC_FUNCTION*/
-double *ds_get_coordinate_array (dimension)
-/*  This routine will get a co-ordinate array for a dimension. If the dimension
-    is regularly spaced, then the co-ordinate array is computed, else if it is
-    irregularly spaced, it is copied from the dimension descriptor.
-    The routine returns a pointer to a co-ordinate array on success, else it
-    returns NULL.
+double *ds_get_coordinate_array (dim_desc *dimension)
+/*  [SUMMARY] Get co-ordinate array for a dimension.
+    [PURPOSE] This routine will get a co-ordinate array for a dimension. If the
+    dimension is regularly spaced, then the co-ordinate array is computed, else
+    if it is irregularly spaced, it is copied from the dimension descriptor.
+    <dimension> The dimension descriptor.
+    [RETURNS] A pointer to a co-ordinate array on success, else NULL.
 */
-dim_desc *dimension;
 {
     unsigned int coord_count;
     double *return_value;
@@ -1696,7 +1683,7 @@ dim_desc *dimension;
 	m_error_notify (function_name, "co-ordinate array");
 	return (NULL);
     }
-    if ( dimension->coordinates == NULL )
+    if (dimension->coordinates == NULL)
     {
 	/*  Regularly spaced: compute  */
 	for (coord_count = 0; coord_count < dimension->length; ++coord_count)
@@ -1717,15 +1704,12 @@ dim_desc *dimension;
 }   /*  End Function ds_get_coordinate_array  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_element_is_complex (element_type)
-/*  This routine will determine if the type of an element is complex or not.
-    The element type must be in  element_type  .
-    The element type must be atomic, else the routine will print an error
-    message and abort processing.
-    The routine returns TRUE if the element type is complex, else
-    it returns FALSE.
+flag ds_element_is_complex (unsigned int element_type)
+/*  [SUMMARY] Test if the type of an element is complex or not.
+    <element_type> The element type. If this is not atomic the routine will
+    print an error message and abort processing.
+    [RETURNS] TRUE if the element type is complex, else FALSE.
 */
-unsigned int element_type;
 {
     flag complex = FALSE;
     static char function_name[] = "ds_element_is_complex";
@@ -1771,10 +1755,12 @@ unsigned int element_type;
 flag ds_get_scattered_elements (CONST char *data, unsigned int data_type,
 				CONST uaddr *offsets, double *values,
 				flag *complex, unsigned int num_values)
-/*  [PURPOSE] This routine will convert many atomic data to an array of double
+/*  [SUMMARY] Convert scattered atomic data to double precision complex values.
+    [PURPOSE] This routine will convert many atomic data to an array of double
     precision complex values. The data values may be scattered randomly (an
     offset array is used to index to the actual data).
-    <data> The data to be converted.
+    <data> The data to be converted. Misaligned data will cause bus errors on
+    some platforms.
     <data_type> The type of the data.
     <offsets> The offset array (in bytes).
     <values> The data values will be written here. Must be a  double  boundary.
@@ -2026,7 +2012,8 @@ flag ds_get_scattered_elements (CONST char *data, unsigned int data_type,
 
 /*PUBLIC_FUNCTION*/
 flag ds_can_transfer_element_as_block (unsigned int type)
-/*  [PURPOSE] This routine will determine if an element can be transferred as a
+/*  [SUMMARY] Test if an element can be transferred in one block.
+    [PURPOSE] This routine will determine if an element can be transferred as a
     single block of data (i.e. no conversion between host and network format is
     needed).
     <type> The type of the element.
@@ -2050,10 +2037,13 @@ flag ds_can_transfer_element_as_block (unsigned int type)
 	break;
       case K_FLOAT:
       case K_DOUBLE:
-      case K_INT:
-      case K_SHORT:
       case K_COMPLEX:
       case K_DCOMPLEX:
+#ifndef HAS_IEEE
+	return (FALSE);
+#endif
+      case K_INT:
+      case K_SHORT:
       case K_ICOMPLEX:
       case K_SCOMPLEX:
       case K_LONG:
@@ -2066,11 +2056,11 @@ flag ds_can_transfer_element_as_block (unsigned int type)
       case K_ULCOMPLEX:
 	/*  Non-byte atomic data types  */
 #ifdef MACHINE_BIG_ENDIAN
-	if (host_type_sizes[type] !=network_type_bytes[type]) return FALSE;
+	if (host_type_sizes[type] != network_type_bytes[type]) return (FALSE);
+	break;
 #else
 	return (FALSE);
 #endif
-	break;
       case K_VSTRING:
       case K_FSTRING:
       case K_ARRAY:
@@ -2090,8 +2080,9 @@ flag ds_can_transfer_element_as_block (unsigned int type)
 }   /*  End Function ds_can_transfer_element_as_block  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_can_transfer_packet_as_block (packet_desc *pack_desc)
-/*  [PURPOSE] This routine will determine if a packet can be transferred as a
+flag ds_can_transfer_packet_as_block (CONST packet_desc *pack_desc)
+/*  [SUMMARY] Test if a packet can be transferred in one block.
+    [PURPOSE] This routine will determine if a packet can be transferred as a
     single block of data (i.e. no conversion between host and network format is
     needed).
     <pack_desc> A pointer to the packet descriptor.
@@ -2125,10 +2116,13 @@ flag ds_can_transfer_packet_as_block (packet_desc *pack_desc)
 	    break;
 	  case K_FLOAT:
 	  case K_DOUBLE:
-	  case K_INT:
-	  case K_SHORT:
 	  case K_COMPLEX:
 	  case K_DCOMPLEX:
+#ifndef HAS_IEEE
+	    return (FALSE);
+#endif
+	  case K_INT:
+	  case K_SHORT:
 	  case K_ICOMPLEX:
 	  case K_SCOMPLEX:
 	  case K_LONG:
@@ -2142,10 +2136,10 @@ flag ds_can_transfer_packet_as_block (packet_desc *pack_desc)
 	    /*  Non-byte atomic data types  */
 #ifdef MACHINE_BIG_ENDIAN
 	    if (host_type_sizes[type] !=network_type_bytes[type]) return FALSE;
+	    break;
 #else
 	    return (FALSE);
 #endif
-	    break;
 	  case K_VSTRING:
 	  case K_FSTRING:
 	  case K_ARRAY:
@@ -2164,3 +2158,72 @@ flag ds_can_transfer_packet_as_block (packet_desc *pack_desc)
     }
     return (TRUE);
 }   /*  End Function ds_can_transfer_packet_as_block  */
+
+/*PUBLIC_FUNCTION*/
+flag ds_can_swaptransfer_element (unsigned int type)
+/*  [SUMMARY] Test if an element can be swapped and transferred in one block.
+    [PURPOSE] This routine will determine if an element can be transferred as a
+    single block of data with swapping (i.e. no extra conversion other than
+    byte-swapping between host and network format is needed).
+    <type> The type of the element.
+    [RETURNS] TRUE if the element may be byteswapped and transferred in a
+    single block, else FALSE.
+*/
+{
+#ifdef MACHINE_LITTLE_ENDIAN
+    extern char host_type_sizes[NUMTYPES];
+    extern char network_type_bytes[NUMTYPES];
+#endif
+    static char function_name[] = "ds_can_swaptransfer_element";
+
+    switch (type)
+    {
+      case K_BYTE:
+      case K_BCOMPLEX:
+      case K_UBYTE:
+      case K_UBCOMPLEX:
+	/*  Byte types are always transferrable  */
+	break;
+      case K_FLOAT:
+      case K_DOUBLE:
+      case K_COMPLEX:
+      case K_DCOMPLEX:
+#ifndef HAS_IEEE
+	return (FALSE);
+#endif
+      case K_INT:
+      case K_SHORT:
+      case K_ICOMPLEX:
+      case K_SCOMPLEX:
+      case K_LONG:
+      case K_LCOMPLEX:
+      case K_UINT:
+      case K_USHORT:
+      case K_ULONG:
+      case K_UICOMPLEX:
+      case K_USCOMPLEX:
+      case K_ULCOMPLEX:
+	/*  Non-byte atomic data types  */
+#ifdef MACHINE_LITTLE_ENDIAN
+	if (host_type_sizes[type] != network_type_bytes[type]) return (FALSE);
+	break;
+#else
+	return (FALSE);
+#endif
+      case K_VSTRING:
+      case K_FSTRING:
+      case K_ARRAY:
+      case LISTP:
+	/*  Not atomic data type  */
+	return (FALSE);
+/*
+	break;
+*/
+      default:
+	/*  Illegal data type  */
+	(void) fprintf (stderr, "Illegal data type: %u\n", type);
+	a_prog_bug (function_name);
+	break;
+    }
+    return (TRUE);
+}   /*  End Function ds_can_swaptransfer_element  */

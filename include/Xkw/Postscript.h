@@ -9,6 +9,7 @@
  pageVerticalOffset      PageVerticalOffset    Int             10
  pageHorizontalSize      PageHorizontalSize    Int             180
  pageVerticalSize        PageVerticalSize      Int             180
+ XkwNautoIncrement       AutoIncrement         Bool            FALSE
 */
 /*----------------------------------------------------------------------*/
 
@@ -26,12 +27,14 @@ typedef struct _PostscriptRec *PostscriptWidget;
 #define XkwNpageVerticalOffset "pageVerticalOffset"
 #define XkwNpageHorizontalSize "pageHorizontalSize"
 #define XkwNpageVerticalSize "pageVerticalSize"
+#define XkwNautoIncrement "autoIncrement"
 
 #define XkwCPortraitOrientation "PortraitOrientation"
 #define XkwCPageHorizontalOffset "PageHorizontalOffset"
 #define XkwCPageVerticalOffset "PageVerticalOffset"
 #define XkwCPageHorizontalSize "PageHorizontalSize"
 #define XkwCPageVerticalSize "PageVerticalSize"
+#define XkwCAutoIncrement "AutoIncrement"
 
 #define XtIsPostscript(w) XtIsSubclass((w), postscriptWidgetClass)
 

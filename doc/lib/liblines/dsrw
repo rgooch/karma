@@ -1,2 +1,0 @@
-/*  Routines to read and write a data structure from/ to an open channel  */
-/*  Link with:    -lkarma  */

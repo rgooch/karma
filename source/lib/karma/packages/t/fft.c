@@ -3,7 +3,7 @@
 
     This code provides simple Fourier Transform operations.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -37,7 +37,10 @@
     Updated by      Richard Gooch   6-JAN-1993: Changed from  #include "*.h"
   to  #include <*.h>
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/t/fft.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/t/fft.c
+
+    Last updated by Richard Gooch   13-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -55,18 +58,21 @@
 unsigned int t_c_to_c_1D_fft_float (float *real, float *imag,
 				    unsigned int length, unsigned int stride,
 				    int direction)
-/*  This routine will perform a complex to complex 1 dimensional FFT on an
-    array of single precision complex data.
-    The array of real components must be pointed to by  real  .
-    The array of imaginary components must be pointed to by  imag  .
-    The number of complex values in the array to transform must be given by
-    length  .
-    The stride (in bytes) of successive components must be given by  stride  .
-    The routine will perform an inverse transform (with appropriate 1 / length
-    scaling) if  direction  is KARMA_FFT_INVERSE.
+/*  [SUMMARY] Compute a 1D complex to complex single precision FFT.
+    [PURPOSE] This routine will perform a complex to complex 1 dimensional FFT
+    on an array of single precision complex data.
     The routine performs the transform in situ.
-    The routine returns a value indicating the success / failure status of the
-    transform.
+    <real> The array of real components. This is modified.
+    <imag> The array of imaginary components. This is modified.
+    <length> The number of complex values in the array to transform.
+    <stride> The stride (in bytes) of successive components.
+    <direction> If the value is KARMA_FFT_FORWARD, the forward transform is
+    performed. If the value is KARMA_FFT_INVERSE, the inverse transform is
+    performed.
+    [RETURNS] A value indicating the success / failure status of the transform.
+    See [<T_FFT_STATUS>] for a list of possible values.
+*/
+/*
     This routine has been pinched from Patrick Jordan, who pinched and modified
     the Numerical Recipes in C routine.
 */
@@ -255,22 +261,23 @@ unsigned int t_c_to_c_many_1D_fft_float (float *real, float *imag,
 					 unsigned int number,
 					 unsigned int dim_stride,
 					 int direction)
-/*  This routine will perform a number of complex to complex 1 dimensional FFTs
-    on an array of single precision complex data.
-    The array of real components must be pointed to by  real  .
-    The array of imaginary components must be pointed to by  imag  .
-    The number of complex values in the array to transform must be given by
-    length  .
-    The stride (in bytes) of successive components must be given by
-    elem_stride  .
-    The number of 1 dimensional FFTs to perform must be given by  number  .
-    The stride (in bytes) between successive data sets must be given by
-    dim_stride  .
-    The routine will perform an inverse transform (with appropriate 1 / length
-    scaling) if  direction  is KARMA_FFT_INVERSE.
-    The routine performs the transform in situ.
-    The routine returns a value indicating the success / failure status of the
-    transform.
+/*  [SUMMARY] Compute many 1D complex to complex single precision FFTs.
+    [PURPOSE] This routine will perform a number of complex to complex 1
+    dimensional FFTs on an array of single precision complex data.
+    The routine performs the transforms in situ.
+    <real> The array of real components.
+    <imag> The array of imaginary components.
+    <length> The number of complex values in the array to transform.
+    <elem_stride> The stride (in bytes) of successive components.
+    <number> The number of 1 dimensional FFTs to perform.
+    <dim_stride> The stride (in bytes) between successive data sets.
+    <direction> If the value is KARMA_FFT_FORWARD, the forward transform is
+    performed. If the value is KARMA_FFT_INVERSE, the inverse transform is
+    performed.
+    [RETURNS] A value indicating the success / failure status of the transform.
+    See [<T_FFT_STATUS>] for a list of possible values.
+*/
+/*
     This routine has been pinched from Patrick Jordan, who pinched and modified
     the Numerical Recipes in C routine.
 */
@@ -478,10 +485,9 @@ unsigned int t_c_to_c_many_1D_fft_float (float *real, float *imag,
 
 /*PUBLIC_FUNCTION*/
 flag t_check_power_of_2 (unsigned int number)
-/*  This routine will check if a number is a power of 2.
-    The number must be given by  number  .
-    The routine returns TRUE if the number is a power of 2,
-    else it returns FALSE.
+/*  [SUMMARY] Check if a number is a power of 2.
+    <number> The number.
+    [RETURNS] TRUE if the number is a power of 2, else FALSE.
 */
 {
     unsigned int i;
@@ -510,18 +516,19 @@ unsigned int t_r_to_c_many_1D_fft_float (float *a, unsigned int length,
 					 unsigned int number,
 					 unsigned int dim_stride,
 					 int direction)
-/*  This routine will perform a real to complex or complex to real FFT.
-    The array must be pointed to by  a  .
-    The number of elements to transform must be given by  n  .
-    The stride (in floats) of sucessive data elements must be given by
-    elem_stride  .
-    The number of transforms to perform must be given by  number  .
-    The stride (in floats) between sucessive data sets must be given by
-    dim_stride  .
-    The routine will perform the forward, real to complex FFT if  direction  is
-    KARMA_FFT_FORWARD  else it will perform the inverse, complex to real FFT.
-    The routine returns a value indicating the success / failure status of the
-    transform.
+/*  [SUMMARY] Compute many 1D real to complex single precision FFTs.
+    [PURPOSE] This routine will perform a real to complex or complex to real
+    FFT.
+    <a> The array.
+    <n> The number of elements to transform.
+    <elem_stride> The stride (in floats) of sucessive data elements.
+    <number> The number of transforms to perform.
+    <dim_stride> The stride (in floats) between sucessive data sets.
+    <direction> If the value is KARMA_FFT_FORWARD, the forward, real to complex
+    transform is performed. If the value is KARMA_FFT_INVERSE, the inverse,
+    complex to real transform is performed.
+    [RETURNS] A value indicating the success / failure status of the transform.
+    See [<T_FFT_STATUS>] for a list of possible values.
 */
 {
     int i1,i2,i3,i4,count,err;
@@ -539,7 +546,8 @@ unsigned int t_r_to_c_many_1D_fft_float (float *a, unsigned int length,
 	err=t_c_to_c_many_1D_fft_float(&a[0],&a[elem_stride],length,4*stride2,number,
 				       4*dim_stride,direction);
 	if(err!=0)
-	printf("ERROR: (r_to_c_fft_fp_many) : Karma fft returned %d\n",err);
+	fprintf(stderr,
+		"ERROR: (r_to_c_fft_fp_many) : Karma fft returned %d\n",err);
     }
   
     for(count=0;count<number;count++,aa+=dim_stride)
@@ -579,7 +587,8 @@ unsigned int t_r_to_c_many_1D_fft_float (float *a, unsigned int length,
 	err=t_c_to_c_many_1D_fft_float(&a[0],&a[elem_stride],length,4*stride2,number,
 				       4*dim_stride,direction);
 	if(err!=0)
-	printf("ERROR: (r_to_c_fft_fp_many) : Karma fft returned %d\n",err);
+	fprintf(stderr,
+		"ERROR: (r_to_c_fft_fp_many) : Karma fft returned %d\n",err);
     }
     /*  Return OK  */
     return (KARMA_FFT_OK);

@@ -29,7 +29,8 @@
 
     Written by      Richard Gooch   25-JAN-1996
 
-    Last updated by Richard Gooch   25-JAN-1996
+    Last updated by Richard Gooch   1-JUN-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -46,6 +47,9 @@
 #include <karma_ex.h>
 #include <karma_m.h>
 #include <karma_n.h>
+#include <karma_a.h>
+#include <karma_s.h>
+
 
 #define VERSION "1.0"
 
@@ -147,9 +151,7 @@ STATIC_FUNCTION (flag compute_ratio_of_polynomials,
 
 /*  Public functions follow  */
 
-main (argc, argv)
-int argc;
-char **argv;
+int main (int argc, char **argv)
 {
     KControlPanel panel, group;
     extern char *data_type_names[];
@@ -257,7 +259,7 @@ FILE *fp;
     return (TRUE);
 }   /*  End Function kfuncgen  */
 
-void generate_file (char *arrayname, unsigned int elem_type)
+static void generate_file (char *arrayname, unsigned int elem_type)
 /*  This routine will generate a Karma arrayfile with a 1-dimensional array of
     a single atomic element.
     The name of the Karma arrayfile must be pointed to by  arrayname  .
@@ -274,13 +276,13 @@ void generate_file (char *arrayname, unsigned int elem_type)
     extern double maxima[MAX_DIMENSIONS];
     extern char *names[MAX_DIMENSIONS];
     extern char *elem_name;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "generate_file";
 
     if ( ( array = ds_easy_alloc_array (&multi_desc,
 					(unsigned int) num_dimensions,
-					lengths, minima, maxima, names,
+					lengths, minima, maxima,
+					(CONST char **) names,
 					elem_type, elem_name) )
 	== NULL )
     {
@@ -625,19 +627,14 @@ static flag compute_random (unsigned int length, char *array,
 */
 {
     unsigned int array_count;
-    unsigned int gauss_count;
-    unsigned int auto_seed;
     unsigned int elem_size;
-    unsigned long rand_max;
     double uniform_scale;
-    double gauss_scale;
-    double noise_val;
+    double noise_val = 0.0;  /*  Initialised to keep compiler happy  */
     extern double amplitude;
     extern double minimum_value;
     extern double maximum_value;
     extern double offset;
     extern char host_type_sizes[NUMTYPES];
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "compute_random";
 

@@ -2,7 +2,7 @@
 
     Header for  ds_  package. This file ONLY contains the structure definitions
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   13-SEP-1992
 
-    Last updated by Richard Gooch   7-APR-1995
+    Last updated by Richard Gooch   3-JUN-1996
 
 */
 
@@ -180,11 +180,13 @@ typedef struct
 */
 typedef struct
 {
-    char *name;             /*  Name of the dimension               */
-    unsigned long length;   /*  Number of dimension co-ordinates    */
-    double minimum;         /*  Minimum dimension co-ordinate       */
-    double maximum;         /*  Maximum dimension co-ordinate       */
-    double *coordinates;    /*  Array of dimension co-ordinates     */
+    char *name;             /*  Name of the dimension                    */
+    unsigned long length;   /*  Number of dimension co-ordinates         */
+    double first_coord;     /*  First co-ordinate                        */
+    double last_coord;      /*  Last co-ordinate                         */
+    double minimum;         /*  OBSOLETE: will be removed in Karma v2.0  */
+    double maximum;         /*  OBSOLETE: will be removed in Karma v2.0  */
+    double *coordinates;    /*  Array of dimension co-ordinates          */
 } dim_desc;
 
 

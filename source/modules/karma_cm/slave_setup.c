@@ -54,6 +54,8 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <karma.h>
@@ -87,10 +89,9 @@ void (*close_func) ();
     flag local;
     int display_num;
     int screen_num;
-    int out_fd, tmp_fd;
+    int out_fd;
     int port_number;
     pid_t sid;
-    char *display;
     char *host;
     char *path;
     char *display_host;

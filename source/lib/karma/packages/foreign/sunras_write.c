@@ -3,7 +3,7 @@
 
     This code provides a Sun rasterfile write facility.
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -37,7 +37,16 @@
     Updated by      Richard Gooch   24-AUG-1995: Added code to pad image lines
   to 16 bits.
 
-    Last updated by Richard Gooch   6-SEP-1995: Added _NO_IMAGE attribute.
+    Updated by      Richard Gooch   6-SEP-1995: Added _NO_IMAGE attribute.
+
+    Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
+
+    Updated by      Richard Gooch   30-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   4-JUN-1996: Added intensity mapping for
+  <foreign_sunras_write_rgb>.
 
 
 */
@@ -88,7 +97,7 @@ struct rasterfile
 };
 
 
-/*  Private routines  */
+/*  Private functions  */
 STATIC_FUNCTION (double *alloc_values_buffer, (unsigned int num_values) );
 
 
@@ -96,14 +105,14 @@ STATIC_FUNCTION (double *alloc_values_buffer, (unsigned int num_values) );
 
 /*PUBLIC_FUNCTION*/
 flag foreign_sunras_write (Channel channel, multi_array *multi_desc, ...)
-/*  [PURPOSE] This routine will write a colour image to a channel in Sun
-    rasterfile format
+/*  [SUMMARY] Write a colour image to a channel in Sun rasterfile format
     <channel> The channel to write to. The channel is not flushed.
     <multi_desc> The multi_array descriptor pointer. The routine will find a
     TrueColour image or a PseudoColour image within the data structure.
     [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be FA_SUNRAS_WRITE_END.
-    The attributes are passed using varargs.
+    attribute-value pairs. This list must be terminated with
+    FA_SUNRAS_WRITE_END. See [<FOREIGN_ATT_SUNRAS_WRITE>] for a list of defined
+    attributes.
     [MT-LEVEL] Unsafe.
     [RETURNS] TRUE on succes, else FALSE.
 */
@@ -113,7 +122,7 @@ flag foreign_sunras_write (Channel channel, multi_array *multi_desc, ...)
     flag ok;
     unsigned int cmap_index;
     unsigned int att_key;
-    int width, height, x, y;
+    int width, height;
     va_list argp;
     flag *no_image = NULL;
     static char function_name[] = "foreign_sunras_write";
@@ -170,16 +179,15 @@ flag foreign_sunras_write (Channel channel, multi_array *multi_desc, ...)
 				      (CONST unsigned char *) image_blue->data,
 				      image_red->offsets[1],
 				      image_red->offsets[0],
-				      width, height);
+				      width, height, NULL, NULL, NULL, 0);
 	iarray_dealloc (image_red);
 	iarray_dealloc (image_green);
 	iarray_dealloc (image_blue);
 	return (ok);
     }
     a_func_abort (function_name,  "PseudoColour images not supported yet");
-    return (FALSE);
     iarray_dealloc (image_pseudo);
-    return (TRUE);
+    return (FALSE);
 }   /*  End Function foreign_sunras_write  */
 
 /*EXPERIMENTAL_FUNCTION*/
@@ -193,8 +201,7 @@ flag foreign_sunras_write_pseudo (Channel channel,
 				  unsigned int cmap_size,
 				  unsigned int cmap_stride,
 				  double i_min, double i_max)
-/*  [PURPOSE] This routine will write a PseudoColor image to a channel in Sun
-    rasterfile format
+/*  [SUMMARY] Write a PseudoColor image to a channel in Sun rasterfile format
     <channel> The channel to write to. The channel is not flushed.
     <image> The image data.
     <type> The type of the image data.
@@ -334,9 +341,12 @@ flag foreign_sunras_write_rgb (Channel channel,
 			       CONST unsigned char *image_green,
 			       CONST unsigned char *image_blue,
 			       uaddr *hoffsets, uaddr *voffsets,
-			       unsigned int width, unsigned int height)
-/*  [PURPOSE] This routine will write a TrueColor image to a channel in Sun
-    rasterfile format
+			       unsigned int width, unsigned int height,
+			       CONST unsigned short *cmap_red,
+			       CONST unsigned short *cmap_green,
+			       CONST unsigned short *cmap_blue,
+			       unsigned int cmap_stride)
+/*  [SUMMARY] Write a TrueColor image to a channel in Sun rasterfile format
     <channel> The channel to write to. The channel is not flushed.
     <red_image> The red image data.
     <green_image> The green image data.
@@ -345,11 +355,19 @@ flag foreign_sunras_write_rgb (Channel channel,
     <voffsets> The array of vertical byte offsets.
     <width> The width of the image.
     <height> The height of the image.
+    <cmap_red> The red component colourmap entries. 256 entries required. If
+    this is NULL a linear mapping is assumed.
+    <cmap_green> The green component colourmap entries. 256 entries required.
+    If this is NULL a linear mapping is assumed.
+    <cmap_blue> The blue component colourmap entries. 256 entries required. If
+    this is NULL a linear mapping is assumed.
+    <cmap_stride> The stride (in unsigned shorts) between colourmap values.
     [MT-LEVEL] Unsafe.
     [RETURNS] TRUE on succes, else FALSE.
 */
 {
     int hcount, vcount;
+    int red, green, blue;
     long line_length;
     uaddr voffset;
     unsigned char pixel[3];
@@ -376,9 +394,18 @@ flag foreign_sunras_write_rgb (Channel channel,
 	voffset = voffsets[vcount];
 	for (hcount = 0; hcount < width; ++hcount)
 	{
-	    pixel[0] = image_red[hoffsets[hcount] + voffset];
-	    pixel[1] = image_green[hoffsets[hcount] + voffset];
-	    pixel[2] = image_blue[hoffsets[hcount] + voffset];
+	    red = image_red[hoffsets[hcount] + voffset];
+	    if (cmap_red != NULL) red = (cmap_red[red * cmap_stride] >>
+					 8) & 0xff;
+	    pixel[0] = red;
+	    green = image_green[hoffsets[hcount] + voffset];
+	    if (cmap_green != NULL) green = (cmap_green[green * cmap_stride] >>
+					     8) & 0xff;
+	    pixel[1] = green;
+	    blue = image_blue[hoffsets[hcount] + voffset];
+	    if (cmap_blue != NULL) blue = (cmap_blue[blue * cmap_stride] >>
+					   8) & 0xff;
+	    pixel[2] = blue;
 	    if (ch_write (channel, (char *) pixel, 3) < 3) return (FALSE);
 	}
 	/*  Line written: maybe need to pad  */
@@ -390,6 +417,9 @@ flag foreign_sunras_write_rgb (Channel channel,
     }
     return (TRUE);
 }   /*  End Function foreign_sunras_write_rgb  */
+
+
+/*  Private functions follow  */
 
 static double *alloc_values_buffer (unsigned int num_values)
 /*  This routine will allocate a buffer space for generic data values.

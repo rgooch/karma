@@ -8,22 +8,10 @@
 
 #include <Xkw/ImageDisplay.h>
 
-struct crosshair_type
-{
-    double x;
-    double y;
-};
-
-struct dual_crosshair_type
-{
-    struct crosshair_type first;
-    struct crosshair_type second;
-    unsigned int num_crosshairs;
-};
-
 typedef struct _ImageDisplayPart
 {
     /*  Public resources  */
+    /*  The main window  */
     KWorldCanvas  pseudoCanvas;
     KWorldCanvas  directCanvas;
     KWorldCanvas  trueCanvas;
@@ -34,30 +22,38 @@ typedef struct _ImageDisplayPart
     KWorldCanvas  trueCanvasLeft;
     KWorldCanvas  trueCanvasRight;
     KWorldCanvas  visibleCanvas;
+    /*  The magnifier window  */
+    KWorldCanvas  magnifierPseudoCanvas;
+    KWorldCanvas  magnifierDirectCanvas;
+    KWorldCanvas  magnifierTrueCanvas;
+    KWorldCanvas  magnifierVisibleCanvas;
+    /*  Other public resources  */
     String        imageName;
     Bool          enableAnimation;
     Bool          showAnimateButton;
     Bool          showQuitButton;
     Bool          fullscreen;
     int           cmapSize;
+    Bool          autoIntensityScale;
     Bool          verbose;
+    Cardinal      numTrackLabels;
     /*  Private resources  */
-    Widget filepopup;
-    Widget trackLabel;
-    Widget izoomwinpopup;
-    Widget animatepopup;
-    Widget pswinpopup;
-    Widget multi_canvas;
-    Widget override_shell;
-    GC pseudo_main_gc;
-    GC pseudo_crosshair_gc;
-    GC direct_main_gc;
-    GC direct_crosshair_gc;
-    GC true_main_gc;
-    GC true_crosshair_gc;
-    Widget cmap_btn;
-    struct dual_crosshair_type crosshairs;
-    Kcolourmap pseudo_cmap;
+    Widget        filepopup;
+    Widget        izoomwinpopup;
+    Widget        animatepopup;
+    Widget        pswinpopup;
+    Widget        multi_canvas;
+    Widget        override_shell;
+    Widget        cmapwinpopup_psuedo;
+    Widget        cmapwinpopup_direct;
+    Widget        cmap_btn;
+    Widget        zoom_policy_popup;
+    flag          set_canvases;
+    Kcolourmap    pseudo_cmap;
+    Kcolourmap    direct_cmap;
+    Widget        magnifier_pseudo_canvas;
+    Widget        magnifier_direct_canvas;
+    Widget        magnifier_true_canvas;
 } ImageDisplayPart, *ImageDisplayPartPtr;
 
 typedef struct _ImageDisplayRec

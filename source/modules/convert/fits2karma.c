@@ -2,7 +2,7 @@
 
     Source file for  fits2karma  (module to convert FITS format to Karma).
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -105,7 +105,10 @@
     Updated by      Richard Gooch   17-MAY-1995: Made use of
   FA_FITS_READ_DATA_NUM_BLANKS attribute.
 
-    Last updated by Richard Gooch   1-OCT-1995: Cosmetic changes.
+    Updated by      Richard Gooch   1-OCT-1995: Cosmetic changes.
+
+    Last updated by Richard Gooch   30-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -407,7 +410,7 @@ char *arrayfile;
     ds_dealloc_multi (multi_desc);
     if (toobig_count > 0)
     {
-	(void) fprintf (stderr, "Number of blank values: %u\n", toobig_count);
+	(void) fprintf (stderr, "Number of blank values: %lu\n", toobig_count);
     }
 }   /*  End Function generate_file  */
 

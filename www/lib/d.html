@@ -1,0 +1,20 @@
+<html><head><title>Package: d</title></head> 
+<body>
+<center><h1>The "d" Package</h1></center>    These routines are meant to provide a mechanism for a process to enter
+    daemon mode (ie. to dissociate from a controlling terminal).
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=d></a></table><h4>Functions</h4><table><tr><td><a href=d.html#d_enter_daemon_mode>d_enter_daemon_mode</a></td><td>Enter daemon mode.
+</td></tr>
+<tr><td><a href=d.html#d_test_daemon_mode>d_test_daemon_mode</a></td><td>Test if the module is running in daemon mode.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=d_enter_daemon_mode></a> void
+ <b>d_enter_daemon_mode</b><i>    ()
+</i><br><p>    This routine will cause the module to enter daemon mode. This
+    involves detatching from a terminal.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=d_test_daemon_mode></a> flag
+ <b>d_test_daemon_mode</b><i>    ()
+</i><br><p>    Test if the module is running in daemon mode.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     TRUE if the module is running in daemon mode, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

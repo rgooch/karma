@@ -2,7 +2,7 @@
 
     Source file for  kminmax  (scalar min-max determination module).
 
-    Copyright (C) 1994,1995  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -30,13 +30,17 @@
 
     Updated by      Richard Gooch   21-APR-1994
 
-    Last updated by Richard Gooch   31-JUL-1995: Cosmetic changes.
+    Updated by      Richard Gooch   31-JUL-1995: Cosmetic changes.
+
+    Last updated by Richard Gooch   30-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
 #include <stdio.h>
 #include <math.h>
 #include <karma.h>
+#include <karma_module.h>
 #include <karma_panel.h>
 #include <karma_dsxfr.h>
 #include <karma_ds.h>
@@ -72,12 +76,9 @@ char *array_names[NUMARRAYS];
 unsigned int num_arrays = 0;
 
 
-main (argc, argv)
-int argc;       /*  Count of parameters on command line */
-char **argv;    /*  List of command line parameters     */
+int main (int argc, char **argv)
 {
     KControlPanel panel;
-    extern char *data_type_names[NUMTYPES];
     static char function_name[] = "main";
 
     if ( ( panel = panel_create (FALSE) ) == NULL )
@@ -101,7 +102,7 @@ FILE *fp;
     extern unsigned int num_arrays;
     extern char *element_name;
     extern char *array_names[NUMARRAYS];
-    static char function_name[] = "kminmax";
+    /*static char function_name[] = "kminmax";*/
 
     for ( ; p; p = ex_word_skip (p) )
     {
@@ -351,8 +352,6 @@ unsigned int index;
     array_desc *arr_desc;
     list_header *list_head;
     list_entry *curr_entry;
-    extern double element_min;
-    extern double element_max;
     static char function_name[] = "find_scale";
 
     if ( (encls_desc == NULL) || (data == NULL) )
@@ -447,8 +446,6 @@ unsigned int stride;
     double toobig = TOOBIG;
     double *val;
     double values[2 * BLOCK_LENGTH];
-    extern double element_min;
-    extern double element_max;
     static char function_name[] = "find_array_minmax";
 
     if (data == NULL)

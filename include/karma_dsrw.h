@@ -2,7 +2,7 @@
 
     Header for  dsrw_  package.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   14-SEP-1992
 
-    Last updated by Richard Gooch   7-APR-1995
+    Last updated by Richard Gooch   29-JUN-1996
 
 */
 
@@ -63,34 +63,40 @@ EXTERN_FUNCTION (void dsrw_write_array_desc, (Channel channel,
 					      array_desc *arr_desc) );
 EXTERN_FUNCTION (void dsrw_write_dim_desc, (Channel channel,
 					    dim_desc *dimension) );
-EXTERN_FUNCTION (void dsrw_write_packet, (Channel channel,
-					  packet_desc *pack_desc,
-					  char *packet) );
+EXTERN_FUNCTION (void dsrw_write_packet,
+		 (Channel channel, CONST packet_desc *pack_desc,
+		  CONST char *packet) );
 EXTERN_FUNCTION (void dsrw_write_element, (Channel channel, unsigned int type,
-					   char *desc, char *element) );
-EXTERN_FUNCTION (void dsrw_write_array, (Channel channel,
-					 array_desc *arr_desc,
-					 char *element, flag pad) );
-EXTERN_FUNCTION (void dsrw_write_list, (Channel channel,
-					packet_desc *pack_desc,
-					list_header *list_head) );
+					   char *desc, CONST char *element) );
+EXTERN_FUNCTION (void dsrw_write_array,
+		 (Channel channel, array_desc *arr_desc,
+		  CONST char *element, flag pad) );
+EXTERN_FUNCTION (void dsrw_write_list,
+		 (Channel channel, packet_desc *pack_desc,
+		  list_header *list_head) );
+EXTERN_FUNCTION (flag dsrw_write_packets,
+		 (Channel channel, CONST packet_desc *descriptor,
+		  CONST char *source, unsigned long num_packets) );
 EXTERN_FUNCTION (void dsrw_write_flag, (Channel channel, flag logical) );
 EXTERN_FUNCTION (multi_array *dsrw_read_multi, (Channel channel) );
 EXTERN_FUNCTION (packet_desc *dsrw_read_packet_desc, (Channel channel) );
 EXTERN_FUNCTION (array_desc *dsrw_read_array_desc, (Channel channel,
 						    unsigned int type) );
 EXTERN_FUNCTION (dim_desc *dsrw_read_dim_desc, (Channel channel) );
-EXTERN_FUNCTION (flag dsrw_read_packet, (Channel channel,
-					 packet_desc *descriptor,
-					 char *packet) );
+EXTERN_FUNCTION (flag dsrw_read_packet,
+		 (Channel channel, CONST packet_desc *descriptor,
+		  char *packet) );
 EXTERN_FUNCTION (flag dsrw_read_element, (Channel channel, unsigned int type,
 					  char *desc, char *element) );
-EXTERN_FUNCTION (flag dsrw_read_array, (Channel channel,
-					array_desc *descriptor,
-					char *element, flag pad) );
-EXTERN_FUNCTION (flag dsrw_read_list, (Channel channel,
-				       packet_desc *descriptor,
-				       list_header *header) );
+EXTERN_FUNCTION (flag dsrw_read_array,
+		 (Channel channel, CONST array_desc *descriptor,
+		  char *element, flag pad) );
+EXTERN_FUNCTION (flag dsrw_read_list,
+		 (Channel channel, CONST packet_desc *descriptor,
+		  list_header *header) );
+EXTERN_FUNCTION (flag dsrw_read_packets,
+		 (Channel channel, CONST packet_desc *descriptor,
+		  char *dest, unsigned long num_packets) );
 EXTERN_FUNCTION (flag dsrw_read_flag, (Channel channel, flag *logical) );
 EXTERN_FUNCTION (flag dsrw_read_type, (Channel channel, unsigned int *type) );
 

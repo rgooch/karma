@@ -2,7 +2,7 @@
 
     Source file for  conv_24to8  (colourmap compression module).
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,7 +37,10 @@
     Updated by      Richard Gooch   23-NOV-1993: Changed to use of
   ex_word_skip  .
 
-    Last updated by Richard Gooch   9-JUN-1995: Added #include <karma_ds.h>.
+    Updated by      Richard Gooch   9-JUN-1995: Added #include <karma_ds.h>.
+
+    Last updated by Richard Gooch   30-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -46,12 +49,15 @@
 #include <string.h>
 #include <karma.h>
 #include <karma_iarray.h>
+#include <karma_module.h>
 #include <karma_panel.h>
 #include <karma_imc.h>
 #include <karma_ds.h>
 #include <karma_ex.h>
 #include <karma_st.h>
 #include <karma_a.h>
+#include <karma_m.h>
+
 
 #define VERSION "1.1"
 
@@ -80,9 +86,7 @@ char *compression_alternatives[NUM_COMPRESSIONS] =
 };
 
 
-main (argc, argv)
-int argc;       /*  Count of parameters on command line */
-char **argv;    /*  List of command line parameters     */
+int main (int argc, char **argv)
 {
     KControlPanel panel;
     static char function_name[] = "main";
@@ -132,16 +136,12 @@ static void process_arrayfile (arrayfile)
 char *arrayfile;
 {
     iarray cube24, cube8;
-    unsigned int cmap_size;
     char *top_packet;
     array_desc *arr_desc;
     packet_desc *top_pack_desc;
     char txt[STRING_LENGTH];
     unsigned long dim_lengths[3];
-    char *dim_names[3];
-    unsigned char *palette_reds[MAX_COLOURS];
-    unsigned char *palette_greens[MAX_COLOURS];
-    unsigned char *palette_blues[MAX_COLOURS];
+    CONST char *dim_names[3];
     extern int compression_type;
     extern char module_name[STRING_LENGTH + 1];
     static char function_name[] = "process_arrayfile";
@@ -152,7 +152,7 @@ char *arrayfile;
 	a_prog_bug (function_name);
     }
     /*  Load input array  */
-    if ( ( cube24 = iarray_read_nD (arrayfile, TRUE, NULL, 3, (char **) NULL,
+    if ( ( cube24 = iarray_read_nD (arrayfile, TRUE, NULL, 3, NULL,
 				    "Red Intensity", K_CH_MAP_IF_AVAILABLE) )
 	== NULL )
     {

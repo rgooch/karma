@@ -34,8 +34,19 @@
     Updated by      Richard Gooch   3-JAN-1996: Implemented all useful existing
   features in the old volume rendering tool that belong here.
 
-    Last updated by Richard Gooch   18-JAN-1996: Fixed bug in
+    Updated by      Richard Gooch   18-JAN-1996: Fixed bug in
   <vrender_project_3d> which falsely decided some corner points were invisible.
+
+    Updated by      Richard Gooch   13-APR-1996: Changed to new documentation
+  format.
+
+    Updated by      Richard Gooch   3-MAY-1996: Changed to shared thread pool.
+
+    Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   4-JUN-1996: Took account of new fields in
+  dimension descriptor for first and last co-ordinate.
 
 
 */
@@ -81,6 +92,13 @@ if (context->magic_number != CONTEXT_MAGIC_NUMBER) \
 
 /*  Structure declarations follow  */
 
+typedef struct
+{
+    float h;
+    float v;
+    float d;
+} RotatedKcoord_3d;
+
 typedef struct shader_type
 {
     void (*slow_func) (signed char **_sh_planes,
@@ -95,7 +113,9 @@ typedef struct shader_type
 		       float _sh_min_d, float _sh_max_d,
 		       double *minimum_image_value,
 		       double *maximum_image_value,
-		       void *pixel_ptr);
+		       char *pixel_ptr,
+		       RotatedKcoord_3d normal, RotatedKcoord_3d vpc,
+		       float t_enter);
     void (*fast_func) (signed char *ray, int length,
 		       double *minimum_image_value,
 		       double *maximum_image_value,
@@ -105,13 +125,6 @@ typedef struct shader_type
     unsigned int packet_size;
     void *info;
 } *Shader;
-
-typedef struct
-{
-    float h;
-    float v;
-    float d;
-} RotatedKcoord_3d;
 
 typedef struct
 {
@@ -134,6 +147,7 @@ typedef struct
 {
     int start_plane;
     int length;
+    float t_enter;
     signed char *ray;
 } ray_data;
 
@@ -187,7 +201,6 @@ struct vrendercontext_type
     dim_desc h_dim;
     dim_desc v_dim;
     flag valid_view_info_cache;
-    KThreadPool pool;
     job_info *job_data;
     eye_info cyclops, left, right;
     signed char *query_ray;
@@ -263,17 +276,22 @@ STATIC_FUNCTION (void geom_vector_multiply,
 		 (Kcoord_3d *out, Kcoord_3d vec1, Kcoord_3d vec2) );
 STATIC_FUNCTION (float geom_vector_dot_product,
 		 (Kcoord_3d vec1, Kcoord_3d vec2) );
+STATIC_FUNCTION (float geom_intersect_plane_with_ray,
+		 (Kcoord_3d point, Kcoord_3d normal,
+		  Kcoord_3d start, Kcoord_3d direction,
+		  Kcoord_3d *intersection_point) );
 
 
 /*  Public functions follow  */
 
 /*PUBLIC_FUNCTION*/
 KVolumeRenderContext vrender_create_context (void *info, ...)
-/*  [PURPOSE] This routine will create a context for volume rendering.
+/*  [SUMMARY] Create a context for volume rendering.
     <info> An arbitrary information pointer associated with the context.
     [VARARGS] The optional list of parameter attribute-key attribute-value
     pairs must follow. This list must be terminated with the value
-    VRENDER_CONTEXT_ATT_END.
+    VRENDER_CONTEXT_ATT_END. See [<VRENDER_ATTRIBUTES>] for a list of defined
+    attributes.
     [RETURNS] A KVolumeRenderContext on success, else NULL.
 */
 {
@@ -289,10 +307,6 @@ KVolumeRenderContext vrender_create_context (void *info, ...)
 	return (NULL);
     }
     m_clear ( (char *) context, sizeof *context );
-    if ( ( context->pool = mt_create_pool (NULL) ) == NULL )
-    {
-	m_abort (function_name, "thread pool");
-    }
     context->info = info;
     context->magic_number = CONTEXT_MAGIC_NUMBER;
     context->projection = VRENDER_PROJECTION_PARALLEL;
@@ -352,12 +366,12 @@ KVolumeRenderContext vrender_create_context (void *info, ...)
 
 /*PUBLIC_FUNCTION*/
 flag vrender_set_context_attributes (KVolumeRenderContext context, ...)
-/*  [PURPOSE] This routine will set the attributes for a volume rendering
-    context.
+/*  [SUMMARY] Set the attributes for a volume rendering context.
     <context> The volume rendering context.
-    [VARARGS] The optinal list of parameter attribute-key attribute-value
-    pairs must follow. See the header file for details on defined attributes.
-    This list must be terminated with the value  VRENDER_CONTEXT_ATT_END  .
+    [VARARGS] The optional list of parameter attribute-key attribute-value
+    pairs must follow. This list must be terminated with the value
+    VRENDER_CONTEXT_ATT_END. See [<VRENDER_ATTRIBUTES>] for a list of defined
+    attributes.
     [RETURNS] TRUE on success, else FALSE.
 */
 {
@@ -372,12 +386,12 @@ flag vrender_set_context_attributes (KVolumeRenderContext context, ...)
 
 /*PUBLIC_FUNCTION*/
 flag vrender_get_context_attributes (KVolumeRenderContext context, ...)
-/*  [PURPOSE] This routine will get the attributes for a volume rendering
-    context.
+/*  [SUMMARY] Get the attributes for a volume rendering context.
     <context> The volume rendering context.
-    [VARARGS] The optinal list of parameter attribute-key attribute-value
-    pairs must follow. See the header file for details on defined attributes.
-    This list must be terminated with the value  VRENDER_CONTEXT_ATT_END  .
+    [VARARGS] The optional list of parameter attribute-key attribute-value-ptr
+    pairs must follow. This list must be terminated with the value
+    VRENDER_CONTEXT_ATT_END. See [<VRENDER_ATTRIBUTES>] for a list of defined
+    attributes.
     [RETURNS] TRUE on success, else FALSE.
 */
 {
@@ -486,9 +500,10 @@ void vrender_register_shader (void (*slow_func) (), void (*fast_func) (),
 			      CONST char *name,
 			      packet_desc *pack_desc, CONST char *blank_packet,
 			      void *info, flag front)
-/*  [PURPOSE] This routine will register a shader function.
+/*  [SUMMARY] Register a shader function.
     <slow_func> The slow shader function.
-    <fast_func> The fast shader function.
+    <fast_func> The fast shader function. If this is NULL the slow function
+    will always be used.
     <name> The name of the shader function.
     <pack_desc> The packet descriptor describing the output image pixels. A
     copy is made, hence the original may be deallocated.
@@ -535,7 +550,8 @@ void vrender_register_shader (void (*slow_func) (), void (*fast_func) (),
 /*PUBLIC_FUNCTION*/
 void vrender_change_shader_blank_packet (CONST char *name,
 					 CONST char *blank_packet)
-/*  [PURPOSE] This routine will change the data used to write blank values for
+/*  [SUMMARY] Change blank value for a particular shader.
+    [PURPOSE] This routine will change the data used to write blank values for
     a particular shader.
     <name> The name of the shader.
     <blank_packet> A pointer to a sample packet containing blank data.
@@ -556,7 +572,7 @@ void vrender_change_shader_blank_packet (CONST char *name,
 
 /*PUBLIC_FUNCTION*/
 CONST char **vrender_get_shaders (unsigned int *num_shaders)
-/*  [PURPOSE] This routine will get the names of all registered shaders.
+/*  [SUMMARY] Get the names of all registered shaders.
     <num_shaders> The number of registered shaders is written here.
     [RETURNS] An array of shader names on success, else NULL. This array must
     be deallocated when no longer needed. The individual names must NOT be
@@ -596,8 +612,7 @@ CONST char **vrender_get_shaders (unsigned int *num_shaders)
 flag vrender_to_buffer (KVolumeRenderContext context, char *left_buffer,
 			char *right_buffer, double *min, double *max,
 			void (*notify_func) (void *info), void *info)
-/*  [PURPOSE] This routine will render a scene in a volume rendering context to
-    a buffer.
+/*  [SUMMARY] Render a scene in a volume rendering context to a buffer.
     <context> The volume rendering context.
     <left_buffer> The left eye buffer to render into. This must be correctly
     allocated.
@@ -609,21 +624,14 @@ flag vrender_to_buffer (KVolumeRenderContext context, char *left_buffer,
     <notify_func> The function that is called when the rendering is completed.
     If this is NULL this routine blocks. Note that even if this function is
     specified, the routine may still block until the render completes if the
-    operating system does not have thread support. The interface to this
-    routine is as follows:
-    [<pre>]
-    void notify_func (void *info)
-    *   [PURPOSE] This routine registers the completion of a volume render
-        request.
-	<info> The arbitrary information pointer.
-	[RETURNS] Nothing.
-    *
-    [</pre>]
+    operating system does not have thread support. The prototype function is
+    [<VRENDER_PROTO_render_notify_func>].
     <info> The arbitrary information pointer.
     [MT-LEVEL] Unsafe per context.
     [RETURNS] TRUE on success, else FALSE.
 */
 {
+    KThreadPool pool;
     unsigned int job_count, y_coord, y_step;
     unsigned int v_stride;
     double minimum_image_value;
@@ -652,8 +660,9 @@ flag vrender_to_buffer (KVolumeRenderContext context, char *left_buffer,
     minimum_image_value = TOOBIG;
     maximum_image_value = -TOOBIG;
     /*  Setup job structures  */
-    if (mt_num_threads (context->pool) < 2) y_step = context->v_dim.length;
-    else y_step = context->v_dim.length / mt_num_threads (context->pool) / 4;
+    pool = mt_get_shared_pool ();
+    if (mt_num_threads (pool) < 2) y_step = context->v_dim.length;
+    else y_step = context->v_dim.length / mt_num_threads (pool) / 4;
     v_stride = context->shader->packet_size * context->h_dim.length;
     job_data = context->job_data;
     for (y_coord = 0, job_count = 0; y_coord < context->v_dim.length;
@@ -669,10 +678,10 @@ flag vrender_to_buffer (KVolumeRenderContext context, char *left_buffer,
 	if (right_buffer == NULL) job_data[job_count].right_line = NULL;
 	else job_data[job_count].right_line = right_buffer + y_coord *v_stride;
 	job_data[job_count].context = context;
-	mt_launch_job (context->pool, generate_line,
+	mt_launch_job (pool, generate_line,
 		       job_data + job_count, NULL, NULL, NULL);
     }
-    mt_wait_for_all_jobs (context->pool);
+    mt_wait_for_all_jobs (pool);
     /*  Aggregate minima and maxima  */
     for (y_coord = 0, job_count = 0; y_coord < context->v_dim.length;
 	 y_coord += y_step, ++job_count)
@@ -709,17 +718,22 @@ flag vrender_to_buffer (KVolumeRenderContext context, char *left_buffer,
 
 /*PUBLIC_FUNCTION*/
 CONST signed char *vrender_collect_ray (KVolumeRenderContext context,
-					Kcoord_2d pos_2d, Kcoord_3d *pos_3d,
-					Kcoord_3d *direction,
+					unsigned int eye_view,
+					Kcoord_2d pos_2d, Kcoord_3d *ray_start,
+					Kcoord_3d *direction, float *t_enter,
 					unsigned int *ray_length)
-/*  [PURPOSE] This routine will collect a ray projected from an image plane
-    into a volume.
+/*  [SUMMARY] Collect a ray projected from an image plane into a volume.
     <context> The volume rendering context. This specifies the volume and view
     information.
+    <eye_view> The eye which sees the ray. See [<VRENDER_EYES>] for a list of
+    legal values.
     <pos_2d> The 2-dimensional position in the image plane to project from.
-    <pos_3d> The 3-dimensional position of the starting point of the ray is
-    written here.
+    <ray_start> The 3-dimensional position of the starting point of the ray is
+    written here. This point lies on the raster plane.
     <direction> The 3-dimensional direction vector of the ray is written here.
+    This is not normalised.
+    <t_enter> The distance down the ray corresponding to the first voxel is
+    written here.
     <ray_length> The length of the ray through the volume is written here. If
     the ray does not intersect the volume, 0 is written here.
     [MT-LEVEL] Unsafe per context.
@@ -727,13 +741,13 @@ CONST signed char *vrender_collect_ray (KVolumeRenderContext context,
     array per context which is updated on each call. On error NULL is returned.
 */
 {
-    RotatedKcoord_3d vo, ray_direction, one_on_ray_dir, ray_start;
-    eye_info *eye;
+    RotatedKcoord_3d ray_direction, one_on_ray_dir, rot_ray_start;
+    eye_info *eye = NULL;  /*  Initialised to keep compiler happy  */
     ray_data *ray;
     int x_coord, y_coord;
     unsigned int length;
     float min_d, max_d;
-    float t_enter, t_leave;
+    float t_leave;
     static char function_name[] = "vrender_collect_ray";
 
     VERIFY_CONTEXT (context);
@@ -743,20 +757,53 @@ CONST signed char *vrender_collect_ray (KVolumeRenderContext context,
 	a_prog_bug (function_name);
     }
     compute_view_info_cache (context);
-    eye = &context->cyclops;
-    /*  Determine point in 3D space which corresponds to this pixel  */
-    vo.h = pos_2d.y * eye->rot_vertical.h;
-    vo.v = pos_2d.y * eye->rot_vertical.v;
-    vo.d = pos_2d.y * eye->rot_vertical.d;
-    pos_3d->x = (eye->orig_ras_plane_centre.x + pos_2d.x * eye->orig_horizontal.x
-		 + pos_2d.y * context->view.vertical.x);
-    pos_3d->y = (eye->orig_ras_plane_centre.y + pos_2d.x * eye->orig_horizontal.y
-		 + pos_2d.y * context->view.vertical.y);
-    pos_3d->z = (eye->orig_ras_plane_centre.z + pos_2d.x * eye->orig_horizontal.z
-		 + pos_2d.y * context->view.vertical.z);
-    ray_start.h = eye->rot_ras_plane_centre.h + pos_2d.x *eye->rot_horizontal.h +vo.h;
-    ray_start.v = eye->rot_ras_plane_centre.v + pos_2d.x *eye->rot_horizontal.v +vo.v;
-    ray_start.d = eye->rot_ras_plane_centre.d + pos_2d.x *eye->rot_horizontal.d +vo.d;
+    switch (eye_view)
+    {
+      case VRENDER_EYE_CHOICE_CYCLOPS:
+	eye = &context->cyclops;
+	break;
+      case VRENDER_EYE_CHOICE_LEFT:
+	eye = &context->left;
+	break;
+      case VRENDER_EYE_CHOICE_RIGHT:
+	eye = &context->right;
+	break;
+      default:
+	(void) fprintf (stderr, "Illegal value of eye_view: %u\n", eye_view);
+	a_prog_bug (function_name);
+	break;
+    }
+    x_coord = ds_get_coord_num (&context->h_dim, pos_2d.x,
+				SEARCH_BIAS_CLOSEST);
+    y_coord = ds_get_coord_num (&context->v_dim, pos_2d.y,
+				SEARCH_BIAS_CLOSEST);
+    /*  Do a quick check if point has a ray which interesects the volume  */
+    if (y_coord < eye->num_lines_computed)
+    {
+	if ( (x_coord < eye->lines[y_coord].start) ||
+	     (x_coord >= eye->lines[y_coord].stop) ) return (NULL);
+    }
+    /*  Determine point in raster plane which corresponds to this pixel  */
+    /*  For the benefit of the application  */
+    ray_start->x = (eye->orig_ras_plane_centre.x +
+		    pos_2d.x * eye->orig_horizontal.x +
+		    pos_2d.y * context->view.vertical.x);
+    ray_start->y = (eye->orig_ras_plane_centre.y +
+		    pos_2d.x * eye->orig_horizontal.y +
+		    pos_2d.y * context->view.vertical.y);
+    ray_start->z = (eye->orig_ras_plane_centre.z +
+		    pos_2d.x * eye->orig_horizontal.z +
+		    pos_2d.y * context->view.vertical.z);
+    /*  For my purposes  */
+    rot_ray_start.h = (eye->rot_ras_plane_centre.h +
+		       pos_2d.x * eye->rot_horizontal.h +
+		       pos_2d.y * eye->rot_vertical.h);
+    rot_ray_start.v = (eye->rot_ras_plane_centre.v +
+		       pos_2d.x * eye->rot_horizontal.v +
+		       pos_2d.y * eye->rot_vertical.v);
+    rot_ray_start.d = (eye->rot_ras_plane_centre.d +
+		       pos_2d.x * eye->rot_horizontal.d +
+		       pos_2d.y * eye->rot_vertical.d);
     if (context->projection == VRENDER_PROJECTION_PARALLEL)
     {
 	ray_direction = eye->rot_direction;
@@ -769,20 +816,22 @@ CONST signed char *vrender_collect_ray (KVolumeRenderContext context,
 	/*  For perspective projection need to compute ray direction
 	    for each point.
 	    */
-	ray_direction.h = ray_start.h - eye->rot_position.h;
-	ray_direction.v = ray_start.v - eye->rot_position.v;
-	ray_direction.d = ray_start.d - eye->rot_position.d;
-	direction->x = pos_3d->x - eye->orig_position.x;
-	direction->y = pos_3d->y - eye->orig_position.y;
-	direction->z = pos_3d->z - eye->orig_position.z;
+	ray_direction.h = rot_ray_start.h - eye->rot_position.h;
+	ray_direction.v = rot_ray_start.v - eye->rot_position.v;
+	ray_direction.d = rot_ray_start.d - eye->rot_position.d;
+	direction->x = ray_start->x - eye->orig_position.x;
+	direction->y = ray_start->y - eye->orig_position.y;
+	direction->z = ray_start->z - eye->orig_position.z;
     }
-    x_coord = ds_get_coord_num (&context->h_dim, pos_2d.x,
-				SEARCH_BIAS_CLOSEST);
-    y_coord = ds_get_coord_num (&context->v_dim, pos_2d.y,
-				SEARCH_BIAS_CLOSEST);
     if (y_coord < eye->num_reordered_lines)
     {
 	ray = eye->reorder_rays + x_coord + y_coord * context->h_dim.length;
+	if (ray->ray == NULL)
+	{
+	    (void) fprintf (stderr, "NULL ray  %f  %f\n", pos_2d.x, pos_2d.y);
+	    return (NULL);
+	}
+	*t_enter = ray->t_enter;
 	*ray_length = ray->length;
 	return ( (CONST signed char *) ray->ray );
     }
@@ -792,11 +841,11 @@ CONST signed char *vrender_collect_ray (KVolumeRenderContext context,
 			0.0) ? TOOBIG : 1.0 / ray_direction.v;
     one_on_ray_dir.d = (ray_direction.d ==
 			0.0) ? TOOBIG : 1.0 / ray_direction.d;
-    if ( !get_ray_intersections_with_cube (&ray_start, &ray_direction,
+    if ( !get_ray_intersections_with_cube (&rot_ray_start, &ray_direction,
 					   &one_on_ray_dir,
 					   &eye->rot_subcube_start,
 					   &eye->rot_subcube_end,
-					   &min_d, &max_d, &t_enter,&t_leave) )
+					   &min_d, &max_d, t_enter,&t_leave) )
     {
 	*ray_length = 0;
 	return (NULL);
@@ -818,34 +867,33 @@ CONST signed char *vrender_collect_ray (KVolumeRenderContext context,
 	}
 	context->query_ray_length = length;
     }
-    collect_ray_rough (context->cube, eye, ray_start, ray_direction,
-		       t_enter, t_leave, context->query_ray, length);
+    collect_ray_rough (context->cube, eye, rot_ray_start, ray_direction,
+		       *t_enter, t_leave, context->query_ray, length);
     *ray_length = length;
     return ( (CONST signed char *) context->query_ray );
 }   /*  End Function vrender_collect_ray  */
 
 /*PUBLIC_FUNCTION*/
 flag vrender_project_3d (KVolumeRenderContext context, unsigned int eye_view,
-			 Kcoord_3d point_3d, Kcoord_2d *point_2d)
-/*  [PURPOSE] This routine will project a point in 3-dimensional space onto a
-    view plane.
+			 Kcoord_3d point_3d, Kcoord_2d *point_2d,
+			 flag test_visible)
+/*  [SUMMARY] Project a point in 3-dimensional space onto a view plane.
     <context> The volume render context which determines the view information.
-    <eye_view> The eye which will see the point. Legal values are:
-        VRENDER_EYE_CHOICE_CYCLOPS    VRENDER_EYE_CHOICE_LEFT
-	VRENDER_EYE_CHOICE_RIGHT
+    <eye_view> The eye which will see the point. See [<VRENDER_EYES>] for a
+    list of legal values.
     <point_3d> The 3 dimensional point to be projected.
     <point_2d> The projected 2 dimensional point will be written here.
+    <test_visible> If TRUE, the point is tested for visibility.
     [RETURNS] TRUE if the point is visible, else FALSE if it would be obscured
-    by the volume.
+    by the volume or <<test_visible>> is FALSE.
 */
 {
     Kcoord_3d ray_direction, subcube_start, subcube_end, ray_start, tmp3d;
     Kcoord_3d one_on_ray_dir;
     float mag, distance_down_ray;
-    float t, t_enter, t_leave, tmp;
-    float min, max;
+    float t, t_enter, t_leave;
     float offset = 1e-3;
-    eye_info *eye;
+    eye_info *eye = NULL;  /*  Initialised to keep compiler happy  */
     static char function_name[] = "vrender_project_3d";
 
     VERIFY_CONTEXT (context);
@@ -880,6 +928,7 @@ flag vrender_project_3d (KVolumeRenderContext context, unsigned int eye_view,
 					       ray_direction);
 	point_2d->y = geom_vector_dot_product (context->view.vertical,
 					       ray_direction);
+	if (!test_visible) return (FALSE);
 	ray_start.x = eye->orig_position.x;
 	ray_start.x += point_2d->x * eye->orig_horizontal.x;
 	ray_start.x += point_2d->y * context->view.vertical.x;
@@ -896,21 +945,11 @@ flag vrender_project_3d (KVolumeRenderContext context, unsigned int eye_view,
     else
     {
 	/*  Perspective projection  */
-/*
-	(void) fprintf (stderr, "%s: point: %e  %e  %e\n",
-			function_name, point_3d.x, point_3d.y, point_3d.z);
-*/
 	/*  Find distance down ray where view plane is intersected  */
-	t = eye->orig_direction.x * (eye->orig_position.x -
-				     eye->orig_ras_plane_centre.x);
-	t += eye->orig_direction.y * (eye->orig_position.y -
-				      eye->orig_ras_plane_centre.y);
-	t += eye->orig_direction.z * (eye->orig_position.z -
-				      eye->orig_ras_plane_centre.z);
-	tmp = -eye->orig_direction.x * ray_direction.x;
-	tmp -= eye->orig_direction.y * ray_direction.y;
-	tmp -= eye->orig_direction.z * ray_direction.z;
-	t /= tmp;
+	t = geom_intersect_plane_with_ray (eye->orig_ras_plane_centre,
+					   eye->orig_direction,
+					   eye->orig_position, ray_direction,
+					   NULL);
 	/*  Convert distance to a ray of required length  */
 	tmp3d.x = t * ray_direction.x;
 	tmp3d.y = t * ray_direction.y;
@@ -919,6 +958,7 @@ flag vrender_project_3d (KVolumeRenderContext context, unsigned int eye_view,
 					       tmp3d);
 	point_2d->y = geom_vector_dot_product (context->view.vertical,
 					       tmp3d);
+	if (!test_visible) return (FALSE);
 	ray_start = eye->orig_position;
     }
     subcube_start.x = (float) context->subcube_x_start;
@@ -986,16 +1026,16 @@ flag vrender_project_3d (KVolumeRenderContext context, unsigned int eye_view,
 /*PUBLIC_FUNCTION*/
 void vrender_compute_caches (KVolumeRenderContext context, unsigned int eyes,
 			     flag notify)
-/*  [PURPOSE] This routine will compute the caches for the specified eyes. This
+/*  [SUMMARY] Compute cache for volume rendering context.
+    [PURPOSE] This routine will compute the caches for the specified eyes. This
     speeds up subsequent rendering several times. Nothing is done if the
     cache(s) are already computed.
     <context> The volume render context.
     <eyes> A bitmask specifying which eye views to compute. The bitmask may be
-    constructed by ORing the following values:
-        VRENDER_EYE_MASK_CYCLOPS     VRENDER_EYE_MASK_LEFT
-        VRENDER_EYE_MASK_RIGHT
+    constructed by ORing some values. See [<VRENDER_EYE_MASKS>] for a list of
+    masks.
     <notify> If TRUE any functions registered with
-    <<vrender_cache_notify_func>> will be called.
+    [<vrender_cache_notify_func>] will be called.
     [RETURNS] Nothing.
 */
 {
@@ -1017,25 +1057,16 @@ void vrender_compute_caches (KVolumeRenderContext context, unsigned int eyes,
 }   /*  End Function vrender_compute_caches  */
 
 /*PUBLIC_FUNCTION*/
-KCallbackFunc vrender_image_desc_notify_func (KVolumeRenderContext context,
-					      void (*func)
-					      (KVolumeRenderContext context,
-					       void **info),
-					      void *info)
-/*  [PURPOSE] This routine will register a function which should be called
+KCallbackFunc vrender_image_desc_notify_func
+    (KVolumeRenderContext context,
+     void (*func) (KVolumeRenderContext context, void **info),
+     void *info)
+/*  [SUMMARY] Register image descriptor change callback.
+    [PURPOSE] This routine will register a function which should be called
     whenever the output image descriptor is changed.
     <context> The volume render context.
-    <func> The routine to be called. The interface to this routine is as
-    follows:
-    [<pre>]
-    void func (KVolumeRenderContext context, void **info)
-    *   [PURPOSE] This routine is called when the output image descriptor is
-        changed.
-	<context> The volume render context.
-        <info> A pointer to the arbitrary information pointer.
-	[RETURNS] Nothing.
-    *
-    [</pre>]
+    <func> The routine to be called. The prototype function is
+    [<VRENDER_PROTO_image_desc_notify_func>]
     <info> The initial arbitrary information pointer.
     [RETURNS] A KCallbackFunc object on success. On failure, the process aborts
 */
@@ -1049,30 +1080,16 @@ KCallbackFunc vrender_image_desc_notify_func (KVolumeRenderContext context,
 }   /*  End Function vrender_image_desc_notify_func  */
 
 /*PUBLIC_FUNCTION*/
-KCallbackFunc vrender_cache_notify_func (KVolumeRenderContext context,
-					 void (*func)
-					 (KVolumeRenderContext context,
-					  void **info,
-					  uaddr eyes),
-					 void *info)
-/*  [PURPOSE] This routine will register a function which should be called
+KCallbackFunc vrender_cache_notify_func
+    (KVolumeRenderContext context,
+     void (*func) (KVolumeRenderContext context, void **info, uaddr eyes),
+     void *info)
+/*  [SUMMARY] Register cache computed callback.
+    [PURPOSE] This routine will register a function which should be called
     whenever the cache for one or more eye views is computed.
     <context> The volume render context.
-    <func> The routine to be called. The interface to this routine is as
-    follows:
-    [<pre>]
-    void func (KVolumeRenderContext context, void **info, uaddr eyes)
-    *   [PURPOSE] This routine is called when the cache for one or more eye
-        views is computed.
-	<context> The volume render context.
-        <info> A pointer to the arbitrary information pointer.
-	<eyes> A bitmask specifying which eye views were computed. The bitmask
-	may be constructed as the OR of the following values:
-            VRENDER_EYE_MASK_CYCLOPS     VRENDER_EYE_MASK_LEFT
-            VRENDER_EYE_MASK_RIGHT
-	[RETURNS] Nothing.
-    *
-    [</pre>]
+    <func> The routine to be called. The The prototype function is
+    [<VRENDER_PROTO_cache_notify_func>]
     <info> The initial arbitrary information pointer.
     [RETURNS] A KCallbackFunc object on success. On failure, the process aborts
 */
@@ -1449,10 +1466,14 @@ static void compute_output_image_desc (KVolumeRenderContext context)
     context->h_dim.length = length;
     context->v_dim.length = length;
     /*  Compute minima and maxima  */
-    context->h_dim.minimum = min;
-    context->h_dim.maximum = max;
-    context->v_dim.minimum = min;
-    context->v_dim.maximum = max;
+    context->h_dim.first_coord = min;
+    context->h_dim.last_coord = max;
+    context->h_dim.minimum = context->h_dim.first_coord;
+    context->h_dim.maximum = context->h_dim.last_coord;
+    context->v_dim.first_coord = min;
+    context->v_dim.last_coord = max;
+    context->v_dim.minimum = context->v_dim.first_coord;
+    context->v_dim.maximum = context->v_dim.last_coord;
     context->h_dim.name = HORIZONTAL_DIMENSION_NAME;
     context->v_dim.name = VERTICAL_DIMENSION_NAME;
     if (context->arr_desc == NULL)
@@ -1496,7 +1517,7 @@ static void compute_view_info_cache (KVolumeRenderContext context)
 */
 {
     float mag, factor;
-    Kcoord_3d direction, horizontal, position;
+    Kcoord_3d direction, horizontal;
     eye_info *eye;
     static char function_name[] = "__vrender_compute_view_info_cache";
 
@@ -1582,8 +1603,10 @@ static void compute_eye_info_cache (eye_info *eye)
 {
     KVolumeRenderContext context = eye->context;
     uaddr cube_size, plane_size;
-    int depth_dim_index, i_tmp;
-    unsigned int y_coord, step;
+    int depth_dim_index = 0;  /*  Initialised to keep compiler happy  */
+    unsigned int i_tmp;
+    unsigned int y_coord;
+    unsigned int step = 0;    /*  Initialised to keep compiler happy  */
     float mag, f_tmp, t, half_cube_size;
     RotatedKcoord_3d cube_centre;
     static char function_name[] = "__vrender_compute_eye_info_cache";
@@ -1833,28 +1856,26 @@ static void generate_line (void *pool_info,
     KVolumeRenderContext context;
     RotatedKcoord_3d vo, ray_direction, one_on_ray_dir, ray_start;
     flag stereo;
-    int i_max_pixel = -129;
-    int i_min_pixel = 128;
-    int i_pixel;
     unsigned int x_coord, y_coord;
     float x, y;
     float min_d, max_d;
     float x_min, x_scale, y_min, y_scale;
+    float t_enter;
     Shader shader;
     eye_info *eye = NULL;
     ray_data *curr_ray;
     char *left_image = info->left_line;
     char *right_image = info->right_line;
-    static char function_name[] = "__vrender_generate_line";
+    /*static char function_name[] = "__vrender_generate_line";*/
 
     context = info->context;
     info->min = TOOBIG;
     info->max = -TOOBIG;
-    x_min = context->h_dim.minimum;
-    x_scale = context->h_dim.maximum - x_min;
+    x_min = context->h_dim.first_coord;
+    x_scale = context->h_dim.last_coord - x_min;
     x_scale /= (float) (context->h_dim.length - 1);
-    y_min = context->v_dim.minimum;
-    y_scale = context->v_dim.maximum - y_min;
+    y_min = context->v_dim.first_coord;
+    y_scale = context->v_dim.last_coord - y_min;
     y_scale /= (float) (context->v_dim.length - 1);
     stereo = (info->right_line == NULL) ? FALSE : TRUE;
     shader = context->shader;
@@ -1862,8 +1883,7 @@ static void generate_line (void *pool_info,
     {
 	y = y_min + (float) y_coord * y_scale;
 	/*  LEFT  */
-	if (stereo) eye = &context->left;
-	else eye = &context->cyclops;
+	eye = stereo ? &context->left : &context->cyclops;
 	/*  First write blanks up to the start pixel  */
 	for (x_coord = 0; x_coord < eye->lines[y_coord].start;
 	     ++x_coord, left_image += context->shader->packet_size)
@@ -1871,7 +1891,8 @@ static void generate_line (void *pool_info,
 	    m_copy (left_image, context->shader->blank_packet,
 		    context->shader->packet_size);
 	}
-	if (y_coord < eye->num_reordered_lines)
+	if ( (y_coord < eye->num_reordered_lines) &&
+	     (shader->fast_func != NULL) )
 	{
 	    /*  YES! We can use the re-ordered cube  */
 	    curr_ray = eye->reorder_rays + y_coord * context->h_dim.length + x_coord;
@@ -1937,7 +1958,7 @@ static void generate_line (void *pool_info,
 						   &eye->rot_subcube_start,
 						   &eye->rot_subcube_end,
 						   &min_d, &max_d,
-						   NULL, NULL) )
+						   &t_enter, NULL) )
 	    {
 		m_copy (left_image, context->shader->blank_packet,
 			context->shader->packet_size);
@@ -1965,7 +1986,9 @@ static void generate_line (void *pool_info,
 				  ray_direction.h,
 				  one_on_ray_dir.d,
 				  min_d, max_d,
-				  &info->min, &info->max, (void *) left_image);
+				  &info->min, &info->max, (void *) left_image,
+				  eye->rot_direction,
+				  eye->rot_ras_plane_centre, t_enter);
 	}
 	/*  Write blanks past stop pixel  */
 	for (; x_coord < context->h_dim.length;
@@ -1977,23 +2000,6 @@ static void generate_line (void *pool_info,
 	/*  RIGHT  */
 	if (!stereo) continue;
 	eye = &context->right;
-	vo.h = y * eye->rot_vertical.h;
-	vo.v = y * eye->rot_vertical.v;
-	vo.d = y * eye->rot_vertical.d;
-	if (context->projection == VRENDER_PROJECTION_PARALLEL)
-	{
-	    /*  For parallel projection need to compute ray direction
-		only once.  */
-	    ray_direction.h = eye->rot_direction.h;
-	    ray_direction.v = eye->rot_direction.v;
-	    ray_direction.d = eye->rot_direction.d;
-	    one_on_ray_dir.h = (ray_direction.h ==
-				0.0) ? TOOBIG : 1.0 / ray_direction.h;
-	    one_on_ray_dir.v = (ray_direction.v ==
-				0.0) ? TOOBIG : 1.0 / ray_direction.v;
-	    one_on_ray_dir.d = (ray_direction.d ==
-				0.0) ? TOOBIG : 1.0 / ray_direction.d;
-	}
 	/*  First write blanks up to the start pixel  */
 	for (x_coord = 0; x_coord < eye->lines[y_coord].start;
 	     ++x_coord, right_image += context->shader->packet_size)
@@ -2001,9 +2007,44 @@ static void generate_line (void *pool_info,
 	    m_copy (right_image, context->shader->blank_packet,
 		    context->shader->packet_size);
 	}
-	/*  Process all pixels in this row  */
-	for (x_coord = eye->lines[y_coord].start;
-	     x_coord < eye->lines[y_coord].stop;
+	if ( (y_coord < eye->num_reordered_lines) &&
+	     (shader->fast_func != NULL) )
+	{
+	    /*  YES! We can use the re-ordered cube  */
+	    curr_ray = eye->reorder_rays + y_coord * context->h_dim.length + x_coord;
+	    for (; x_coord < eye->lines[y_coord].stop;
+		 ++x_coord, right_image += context->shader->packet_size,
+		 ++curr_ray)
+	    {
+		(*shader->fast_func) (curr_ray->ray, curr_ray->length,
+				      &info->min, &info->max,
+				      (void *) right_image);
+	    }
+	}
+	else
+	{
+	    /*  Oh, well, we have to do things the slow way  */
+	    vo.h = y * eye->rot_vertical.h;
+	    vo.v = y * eye->rot_vertical.v;
+	    vo.d = y * eye->rot_vertical.d;
+	    if (context->projection == VRENDER_PROJECTION_PARALLEL)
+	    {
+		/*  For parallel projection need to compute ray direction
+		    only once.  */
+		ray_direction.h = eye->rot_direction.h;
+		ray_direction.v = eye->rot_direction.v;
+		ray_direction.d = eye->rot_direction.d;
+		one_on_ray_dir.h = (ray_direction.h ==
+				    0.0) ? TOOBIG : 1.0 / ray_direction.h;
+		one_on_ray_dir.v = (ray_direction.v ==
+				    0.0) ? TOOBIG : 1.0 / ray_direction.v;
+		one_on_ray_dir.d = (ray_direction.d ==
+				    0.0) ? TOOBIG : 1.0 / ray_direction.d;
+	    }
+	}
+	/*  Process all (unprocessed) pixels in this row. Note how x_coord is
+	    remembered from last loop.  */
+	for (; x_coord < eye->lines[y_coord].stop;
 	     ++x_coord, right_image += context->shader->packet_size)
 	{
 	    /*  Raycast this image pixel  */
@@ -2033,7 +2074,7 @@ static void generate_line (void *pool_info,
 						   &eye->rot_subcube_start,
 						   &eye->rot_subcube_end,
 						   &min_d, &max_d,
-						   NULL, NULL) )
+						   &t_enter, NULL) )
 	    {
 		m_copy (right_image, context->shader->blank_packet,
 			context->shader->packet_size);
@@ -2054,7 +2095,9 @@ static void generate_line (void *pool_info,
 				  one_on_ray_dir.d,
 				  min_d, max_d,
 				  &info->min, &info->max,
-				  (void *) right_image);
+				  (void *) right_image,
+				  eye->rot_direction,
+				  eye->rot_ras_plane_centre, t_enter);
 	}
 	/*  Write blanks past stop pixel  */
 	for (; x_coord < context->h_dim.length;
@@ -2361,7 +2404,7 @@ static void collect_ray_rough (iarray cube, eye_info *eye,
     float half = 0.5;
     float offset = 0.01;
     float h, v, t, one_on_direction_d;
-    static char function_name[] = "__vrender_collect_ray_rough";
+/*    static char function_name[] = "__vrender_collect_ray_rough";*/
 
     /*  Find enter co-ordinate  */
     enter.h = ray_start.h + t_enter * direction.h;
@@ -2412,9 +2455,9 @@ static void collect_ray_smooth (iarray cube, eye_info *eye,
     float offset = 0.01;
     float h, v, t, one_on_direction_d;
     float h1, v1;
-    float val, val_00, val_10, val_01, val_11;
+    float val, val_10, val_01, val_11;
     float dh0, dv0, dh1, dv1;
-    static char function_name[] = "__vrender_collect_ray_smooth";
+    /*static char function_name[] = "__vrender_collect_ray_smooth";*/
 
     /*  Find enter co-ordinate  */
     enter.h = ray_start.h + t_enter * direction.h;
@@ -2486,16 +2529,16 @@ static flag test_pixel_sees_cube (KVolumeRenderContext context, eye_info *eye,
     float x_scale, y_scale;
     float min_d, max_d;
 
-    x_scale = context->h_dim.maximum - context->h_dim.minimum;
+    x_scale = context->h_dim.last_coord - context->h_dim.first_coord;
     x_scale /= (float) (context->h_dim.length - 1);
-    y_scale = context->v_dim.maximum - context->v_dim.minimum;
+    y_scale = context->v_dim.last_coord - context->v_dim.first_coord;
     y_scale /= (float) (context->v_dim.length - 1);
-    x = context->h_dim.minimum + (float) x_coord * x_scale;
-    y = context->v_dim.minimum + (float) y_coord * y_scale;
+    x = context->h_dim.first_coord + (float) x_coord * x_scale;
+    y = context->v_dim.first_coord + (float) y_coord * y_scale;
     vo.h = y * eye->rot_vertical.h;
     vo.v = y * eye->rot_vertical.v;
     vo.d = y * eye->rot_vertical.d;
-    /*  Determine point in 3D space which corresponds to this pixel  */
+    /*  Determine point in raster plane which corresponds to this pixel  */
     ray_start.h = eye->rot_ras_plane_centre.h + x * eye->rot_horizontal.h + vo.h;
     ray_start.v = eye->rot_ras_plane_centre.v + x * eye->rot_horizontal.v + vo.v;
     ray_start.d = eye->rot_ras_plane_centre.d + x * eye->rot_horizontal.d + vo.d;
@@ -2532,7 +2575,7 @@ static flag test_pixel_sees_cube (KVolumeRenderContext context, eye_info *eye,
 static void reorder_job (void *pool_info, void *call_info1, void *call_info2,
 			 void *call_info3, void *call_info4, void *thread_info)
 /*  [PURPOSE] This routine will compute the re-ordered cube for a single line.
-    This routine is meant to be called through the multi threading (<mt_>)
+    This routine is meant to be called through the multi threading [<mt>]
     package.
     <pool_info> The arbitrary pool pointer.
     <call_info1> An arbitrary job pointer.
@@ -2547,18 +2590,18 @@ static void reorder_job (void *pool_info, void *call_info1, void *call_info2,
     uaddr y_coord = (uaddr) call_info2;
     unsigned int x_coord;
     float x, y;
-    float min_d, max_d, t_enter, t_leave;
+    float min_d, max_d, t_leave;
     float x_min, x_scale, y_min, y_scale;
     eye_info *eye = (eye_info *) call_info1;
     ray_data *ray;
     static char function_name[] = "__vrender_compute_reordered_cube_for_line";
 
     context = eye->context;
-    x_min = context->h_dim.minimum;
-    x_scale = context->h_dim.maximum - x_min;
+    x_min = context->h_dim.first_coord;
+    x_scale = context->h_dim.last_coord - x_min;
     x_scale /= (float) (context->h_dim.length - 1);
-    y_min = context->v_dim.minimum;
-    y_scale = context->v_dim.maximum - y_min;
+    y_min = context->v_dim.first_coord;
+    y_scale = context->v_dim.last_coord - y_min;
     y_scale /= (float) (context->v_dim.length - 1);
     if (context->projection == VRENDER_PROJECTION_PARALLEL)
     {
@@ -2587,7 +2630,7 @@ static void reorder_job (void *pool_info, void *call_info1, void *call_info2,
     {
 	/*  Raycast this image pixel  */
 	x = x_min + (float) x_coord * x_scale;
-	/*  Determine point in 3D space which corresponds to this pixel  */
+	/*  Determine point in raster plane which corresponds to this pixel  */
 	ray_start.h = eye->rot_ras_plane_centre.h + x*eye->rot_horizontal.h + vo.h;
 	ray_start.v = eye->rot_ras_plane_centre.v + x*eye->rot_horizontal.v + vo.v;
 	ray_start.d = eye->rot_ras_plane_centre.d + x*eye->rot_horizontal.d + vo.d;
@@ -2612,7 +2655,7 @@ static void reorder_job (void *pool_info, void *call_info1, void *call_info2,
 					       &eye->rot_subcube_start,
 					       &eye->rot_subcube_end,
 					       &min_d, &max_d,
-					       &t_enter, &t_leave) )
+					       &ray->t_enter, &t_leave) )
 	{
 	    ray->length = 0;
 	    ray->ray = NULL;
@@ -2636,10 +2679,10 @@ static void reorder_job (void *pool_info, void *call_info1, void *call_info2,
 	if (context->smooth_cache)
 	{
 	    collect_ray_smooth (context->cube, eye, ray_start, ray_direction,
-				t_enter, t_leave, ray->ray, ray->length);
+				ray->t_enter, t_leave, ray->ray, ray->length);
 	}
 	else collect_ray_rough (context->cube, eye, ray_start, ray_direction,
-				t_enter, t_leave, ray->ray, ray->length);
+				ray->t_enter, t_leave, ray->ray, ray->length);
     }
 }   /*  End Function reorder_job  */
 
@@ -2650,6 +2693,7 @@ static flag reorder_worker (eye_info *eye)
 */
 {
     KVolumeRenderContext context = eye->context;
+    KThreadPool pool;
     uaddr y_coord;
     int x_coord;
     unsigned int count, num_to_compute, num_threads;
@@ -2714,15 +2758,16 @@ static flag reorder_worker (eye_info *eye)
     /*  Now proceed and collect rays  */
     if (eye->num_reordered_lines >= context->v_dim.length) return (FALSE);
     num_to_compute = context->v_dim.length - eye->num_reordered_lines;
-    num_threads = mt_num_threads (context->pool);
+    pool = mt_get_shared_pool ();
+    num_threads = mt_num_threads (pool);
     if (num_to_compute > num_threads) num_to_compute = num_threads;
     for (count = 0, y_coord = eye->num_reordered_lines; count < num_to_compute;
 	 ++count, ++y_coord)
     {
-	mt_launch_job (context->pool, reorder_job,
+	mt_launch_job (pool, reorder_job,
 		       (void *) eye, (void *) y_coord, NULL, NULL);
     }
-    mt_wait_for_all_jobs (context->pool);
+    mt_wait_for_all_jobs (pool);
     eye->num_reordered_lines += num_to_compute;
     return (TRUE);
 }   /*  End Function reorder_worker  */
@@ -2760,7 +2805,7 @@ static flag eye_worker (eye_info *eye)
     [RETURNS] TRUE if more work needs to be done, else FALSE.
 */
 {
-    static char function_name[] = "eye_worker";
+    /*static char function_name[] = "eye_worker";*/
 
     /*  First ensure line cache for eye is done.  */
     if ( compute_line_for_cache (eye) ) return (TRUE);
@@ -2912,3 +2957,35 @@ static float geom_vector_dot_product (Kcoord_3d vec1, Kcoord_3d vec2)
 {
     return (vec1.x * vec2.x + vec1.y * vec2.y + vec1.z * vec2.z);
 }   /*  End Function geom_vector_dot_product  */
+
+static float geom_intersect_plane_with_ray (Kcoord_3d point, Kcoord_3d normal,
+					    Kcoord_3d start,
+					    Kcoord_3d direction,
+					    Kcoord_3d *intersection_point)
+/*  [PURPOSE] This routine will compute the intersection of a ray with a plane.
+    The ray is assumed to intersect the plane, else a floating point error may
+    occur.
+    <point> Any point on the plane.
+    <normal> The normal vector to the plane.
+    <start> The starting point of the ray. The ray is considered bi-directional
+    <direction> The direction vector of the ray. This need not be normalised.
+    <intersection_point> The intersection point will be written here. If this
+    is NULL nothing is written here.
+    [RETURNS] The distance from the ray start of the intersection, given in
+    units of the ray direction.
+*/
+{
+    float t;
+
+    t = ( normal.x * (point.x - start.x) + normal.y * (point.y - start.y) +
+	  normal.z * (point.z - start.z) ) /
+	(normal.x * direction.x + normal.y * direction.y +
+	 normal.z * direction.z);
+    if (intersection_point != NULL)
+    {
+	intersection_point->x = start.x + t * direction.x;
+	intersection_point->y = start.y + t * direction.y;
+	intersection_point->z = start.z + t * direction.z;
+    }
+    return (t);
+}   /*  End Function geom_intersect_plane_with_ray  */

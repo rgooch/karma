@@ -3,7 +3,7 @@
 
     This code provides PGP (Pretty Good Privacy) support.
 
-    Copyright (C) 1994,1995  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -36,7 +36,10 @@
     Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
 
-    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Last updated by Richard Gooch   13-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -77,7 +80,7 @@ STATIC_FUNCTION (int spawn_job,
 char *pgp_encrypt (CONST char *plaintext, unsigned int plaintext_length,
 		   CONST char **recipients, unsigned int num_recipients,
 		   unsigned int *ciphertext_length, flag ascii_armour)
-/*  [PURPOSE] Encrypt a block of data using PGP.
+/*  [SUMMARY] Encrypt a block of data using PGP.
     <plaintext> The input plaintext data.
     <plaintext_length> The length of the input plaintext data.
     <recipients> The list of recipients to encrypt for.

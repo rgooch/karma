@@ -2,7 +2,7 @@
 
     Source file for  kftp  (file transfer module).
 
-    Copyright (C) 1994,1995  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,24 +37,34 @@
     Updated by      Richard Gooch   4-SEP-1994: Supported "." as local filename
   on get and changed printing interval of '.' characters to 1/80th file size.
 
-    Last updated by Richard Gooch   22-NOV-1994: Display transfer rate.
+    Updated by      Richard Gooch   22-NOV-1994: Display transfer rate.
+
+    Updated by      Richard Gooch   1-JUN-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   12-JUL-1996: Switched to utime() call.
 
 
 */
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <utime.h>
 #include <karma.h>
 #include <karma_conn.h>
 #include <karma_chm.h>
 #include <karma_pio.h>
 #include <karma_ch.h>
+#include <karma_im.h>
 #include <karma_a.h>
 #include <karma_r.h>
 #include "kftp.h"
+
 
 #define VERSION "1.1"
 
@@ -70,21 +80,16 @@ static unsigned int operation;
 static flag failure = TRUE;
 
 
-main (argc, argv)
-int argc;
-char **argv;
+int main (int argc, char **argv)
 {
-    int arg_count;
     int port_number;
     char *source;
     char *dest;
     char *ptr;
     char hostname[STRING_LENGTH];
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
-    extern char module_name[STRING_LENGTH + 1];
     static char usage_string[] ="Usage:\tkftp [-port port_number] source dest";
-    static char function_name[] = "main";
+    /*static char function_name[] = "main";*/
 
     /*  Process arguments  */
     if ( (argc != 3) && (argc != 5) )
@@ -174,19 +179,17 @@ void **info;
     unsigned long length;
     unsigned long mode;
     unsigned long mtime;
-    unsigned int name_len;
     char dummy;
     float wall_clock_time_taken;
     float transfer_rate = 0.0;
     struct stat statbuf;
     struct timeval start_time;
     struct timeval stop_time;
-    static struct timezone tz = {0, 0};
     char *ptr;
-    struct timeval tvp[2];
+    struct utimbuf ut;
     extern flag failure;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
+    static struct timezone tz = {0, 0};
 
     channel = conn_get_channel (connection);
     if ( !pio_write32 (channel, operation) ) return (FALSE);
@@ -321,11 +324,9 @@ void **info;
 	wall_clock_time_taken += 1e3 * (stop_time.tv_sec - start_time.tv_sec);
 	transfer_rate = (float) length / wall_clock_time_taken;
 	(void) ch_close (fch);
-	tvp[0].tv_sec = mtime;
-	tvp[0].tv_usec = 0;
-	tvp[1].tv_sec = mtime;
-	tvp[1].tv_usec = 0;
-	(void) utimes (localfile, tvp);
+	ut.actime = mtime;
+	ut.modtime = mtime;
+	(void) utime (localfile, &ut);
 	failure = FALSE;
 	break;
       default:

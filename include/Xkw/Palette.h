@@ -8,13 +8,13 @@
 /* <Btn1Down>: set()*/
 /* <Btn1Motion>: set() drag()*/
 /**/
-/* Resources:               Type:                Defaults:*/
-/* XtNforeground          : pixel      : XtNDefaultForeground*/
-/* XtNvalue               : float      : 0.0*/
-/* XkNminimum             : float      : 0.0*/
-/* XkNmaximum             : float      : 1.0*/
-/* XkNvalueChangeCallback : callback   : NULL*/
-/* XkNkarmaColourmap      : kcolourmap : NULL*/
+/* Resources:                Type:                Defaults:*/
+/* XtNforeground           : pixel      : XtNDefaultForeground*/
+/* XtNvalue                : float      : 0.0*/
+/* XkwNminimum             : float      : 0.0*/
+/* XkwNmaximum             : float      : 1.0*/
+/* XkwNvalueChangeCallback : callback   : NULL*/
+/* XkwNkarmaColourmap      : kcolourmap : NULL*/
 /*----------------------------------------------------------------------*/
 
 #ifndef PALETTE__H

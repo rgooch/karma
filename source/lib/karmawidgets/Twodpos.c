@@ -3,7 +3,7 @@
 
     This code provides a 2-dimensional position widget for Xt.
 
-    Copyright (C) 1993, 1994  Patrick Jordan
+    Copyright (C) 1993-1996  Patrick Jordan
     Incorporated into Karma by permission.
 
     This library is free software; you can redistribute it and/or
@@ -32,7 +32,10 @@
 
     Written by      Patrick Jordan  3-JUL-1993
 
-    Last updated by Patrick Jordan  28-JAN-1994: Added centering action
+    Updated by      Patrick Jordan  28-JAN-1994: Added centering action
+
+    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -301,14 +304,13 @@ static void Redisplay(Widget W,XEvent *event,Region region)
 
 static Boolean SetValues(Widget Current,Widget Request,Widget New)
 {
-  TwodposWidget current = (TwodposWidget) Current;
-  TwodposWidget request = (TwodposWidget) Request;
-  TwodposWidget new = (TwodposWidget) New;
-  Boolean redisplay = FALSE;
-  Display *display = XtDisplay(new);
-  Boolean newErase = FALSE;
-  XGCValues eraseGCValues, gcVal;
-  int eraseMask = 0;
+    TwodposWidget current = (TwodposWidget) Current;
+    /*TwodposWidget request = (TwodposWidget) Request;*/
+    TwodposWidget new = (TwodposWidget) New;
+    Boolean redisplay = FALSE;
+    Boolean newErase = FALSE;
+    XGCValues eraseGCValues, gcVal;
+    int eraseMask = 0;
 
   check_values
     (&new->twodpos.minimum_y,&new->twodpos.maximum_y,&new->twodpos.value_y);
@@ -403,16 +405,15 @@ static void Set(Widget W,XEvent *event,String *argv,int *argc)
 /* Drag action*/
 /*----------------------------------------------------------------------*/
 
-static void Drag(Widget W,XMotionEvent *xme)
+static void Drag (Widget W, XMotionEvent *xme)
 {
-  TwodposWidget w = (TwodposWidget) W;
-  XButtonEvent xe;
+    XButtonEvent xe;
 
-  xe.type = ButtonPress;
-  xe.x = xme->x;
-  xe.y = xme->y;
+    xe.type = ButtonPress;
+    xe.x = xme->x;
+    xe.y = xme->y;
 
-  Set(W, (XEvent *)&xe, NULL, NULL);
+    Set(W, (XEvent *) &xe, NULL, NULL);
 }
 
 /*----------------------------------------------------------------------*/

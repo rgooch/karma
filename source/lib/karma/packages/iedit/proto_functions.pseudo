@@ -1,0 +1,31 @@
+/*PROTOTYPE_FUNCTION*/  /*
+void IEDIT_PROTO_add_func (KImageEditList ilist, list_entry *instruction,
+			   void **info)
+    [SUMMARY] Image edit instruction add callback.
+    [PURPOSE] This routine will process a single edit instruction which has
+    been added to a managed image edit instruction list.
+    <ilist> The managed image edit instruction list.
+    <instruction> The edit instruction.
+    <info> A pointer to the arbitrary information pointer for the list.
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void IEDIT_PROTO_loss_func (KImageEditList ilist, void **info)
+    [SUMMARY] Image edit instruction loss callback.
+    [PURPOSE] This routine will process the loss of an edit instruction from a
+    managed image edit instruction list.
+    <ilist> The managed image edit instruction list.
+    <info> A pointer to the arbitrary information pointer for the list.
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void IEDIT_PROTO_apply_func (KImageEditList ilist, void **info)
+    [SUMMARY] Image edit instruction apply callback.
+    [PURPOSE] This routine will apply (commit) an edit list prior to the list
+    being cleared.
+    <ilist> The managed image edit instruction list.
+    <info> A pointer to the arbitrary information pointer for the list.
+    [RETURNS] Nothing.
+*/

@@ -2,7 +2,7 @@
 
     Header for  m_  package.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   12-SEP-1992
 
-    Last updated by Richard Gooch   7-APR-1995
+    Last updated by Richard Gooch   15-JUN-1996
 
 */
 
@@ -63,6 +63,9 @@ EXTERN_FUNCTION (void m_copy_blocks, (char *dest, CONST char *source,
 				      unsigned int source_stride,
 				      unsigned int block_size,
 				      unsigned int num_blocks) );
+EXTERN_FUNCTION (void m_copy_and_swap_blocks,
+		 (char *dest, CONST char *source, uaddr dest_stride,
+		  uaddr source_stride, uaddr block_size, uaddr num_blocks) );
 EXTERN_FUNCTION (void m_fill, (char *dest, uaddr stride,
 			       CONST char *source, uaddr size,
 			       unsigned int num) );

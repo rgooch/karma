@@ -3,7 +3,7 @@
 
     This code provides routines to compute an XImage from a data structure.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -52,25 +52,31 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/drw/main.c
 
-    Last updated by Richard Gooch   7-DEC-1994: Stripped declaration of  errno
+    Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
+
+    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
 
 #include <stdio.h>
 #include <math.h>
-#include <karma.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <signal.h>
 #include <sys/resource.h>
 #include <errno.h>
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <karma.h>
 #include <karma_drw.h>
 #include <karma_ds.h>
-#include <os.h>
 #include <karma_m.h>
 #include <karma_a.h>
+#include <os.h>
 
 #define UBYTE_TABLE_LENGTH 256
 
@@ -82,6 +88,7 @@ extern flag misalign__drw_single_plane (/* ximage, num_pixels, pixel_values,
 					   ord_dim_desc, ord_dim_stride,
 					   win_scale */);
 #endif  /*  NEEDS_MISALIGN_COMPILE  */
+EXTERN_FUNCTION (void _XInitImageFuncPtrs, (XImage *ximage) );
 
 
 /*  Private functions  */
@@ -140,7 +147,6 @@ struct win_scale_type *win_scale;
     struct rusage stop_usage;
 #endif
     extern char *sys_errlist[];
-    int x;
     int y;
     unsigned int abs_start_coord;
     unsigned int abs_end_coord;
@@ -149,34 +155,37 @@ struct win_scale_type *win_scale;
     unsigned int num_abs_coords;
     unsigned int num_ord_coords;
     char *image_ptr;
+#ifdef NEEDS_MISALIGN_COMPILE
     extern char host_type_sizes[NUMTYPES];
+#endif
     static int my_uid = -1;
     static char function_name[] = "drw_single_plane";
 
-    if ( (*win_scale).z_max <= (*win_scale).z_min )
+    if ( win_scale->z_max <= win_scale->z_min )
     {
 	(void) fprintf (stderr,
 			"Minimum intensity: %e  must be less than maximum: %e\n",
-			(*win_scale).z_min, (*win_scale).z_max);
+			win_scale->z_min, win_scale->z_max);
 	return (FALSE);
     }
     if (elem_type == K_UBYTE)
     {
 	/*  Precompute pixel index  */
-	if ( (long) (*win_scale).z_min == (long) (*win_scale).z_max )
+	if ( (long) win_scale->z_min == (long) win_scale->z_max )
 	{
-	    (void) fprintf (stderr,
-			    "Minimum: %e  and maximum: %e  intensity have difference less than 1\n");
+	    fprintf (stderr,
+		     "Minimum: %e  and maximum: %e  intensity have difference less than 1\n",
+		     win_scale->z_min, win_scale->z_max);
 	    (void) fprintf (stderr, "This is an error with K_UBYTE data\n");
 	    return (FALSE);
 	}
-	setup_ubyte_lookup_table ( (long) (*win_scale).z_min,
-				  (long) (*win_scale).z_max,
-				  (int) (*win_scale).z_scale,
+	setup_ubyte_lookup_table ( (long) win_scale->z_min,
+				  (long) win_scale->z_max,
+				  (int) win_scale->z_scale,
 				  num_pixels, pixel_values,
-				  (*win_scale).blank_pixel,
-				  (*win_scale).min_sat_pixel,
-				  (*win_scale).max_sat_pixel );
+				  win_scale->blank_pixel,
+				  win_scale->min_sat_pixel,
+				  win_scale->max_sat_pixel );
     }
     /*  Awful hack preparation  */
     if (my_uid < 0) my_uid = getuid ();
@@ -185,8 +194,8 @@ struct win_scale_type *win_scale;
     {
 	(void) fprintf (stderr,
 			"Minimum intensity: %e  maximum: %e  z_scale: %u\n",
-			(*win_scale).z_min, (*win_scale).z_max,
-			(*win_scale).z_scale);
+			win_scale->z_min, win_scale->z_max,
+			win_scale->z_scale);
     }
 #ifdef NEEDS_MISALIGN_COMPILE
     /*  Test if data is not aligned  */
@@ -251,14 +260,14 @@ struct win_scale_type *win_scale;
 	a_prog_bug (function_name);
     }
     /*  Determine start and stop co-ordinates along each dimension  */
-    abs_start_coord = ds_get_coord_num (abs_dim_desc, (*win_scale).x_min,
+    abs_start_coord = ds_get_coord_num (abs_dim_desc, win_scale->x_min,
 					SEARCH_BIAS_CLOSEST);
-    abs_end_coord = ds_get_coord_num (abs_dim_desc, (*win_scale).x_max,
+    abs_end_coord = ds_get_coord_num (abs_dim_desc, win_scale->x_max,
 				      SEARCH_BIAS_CLOSEST);
     num_abs_coords = abs_end_coord - abs_start_coord + 1;
-    ord_start_coord = ds_get_coord_num (ord_dim_desc, (*win_scale).y_min,
+    ord_start_coord = ds_get_coord_num (ord_dim_desc, win_scale->y_min,
 					SEARCH_BIAS_CLOSEST);
-    ord_end_coord = ds_get_coord_num (ord_dim_desc, (*win_scale).y_max,
+    ord_end_coord = ds_get_coord_num (ord_dim_desc, win_scale->y_max,
 				      SEARCH_BIAS_CLOSEST);
     num_ord_coords = ord_end_coord - ord_start_coord + 1;
     data = data + ord_dim_stride * ord_start_coord;
@@ -269,18 +278,18 @@ struct win_scale_type *win_scale;
 	(void)fprintf(stderr,
 		      "num_abs: %u  num_ord: %u  x_pixels: %d  y_pixels: %d\n",
 		      num_abs_coords, num_ord_coords,
-		      (*win_scale).x_pixels, (*win_scale).y_pixels);
+		      win_scale->x_pixels, win_scale->y_pixels);
     }
     _XInitImageFuncPtrs (ximage);
 
-    if ( (num_abs_coords == (*win_scale).x_pixels) &&
-	(num_ord_coords == (*win_scale).y_pixels) )
+    if ( (num_abs_coords == win_scale->x_pixels) &&
+	(num_ord_coords == win_scale->y_pixels) )
     {
 	/*  The same number of coordinates in the data to be plotted as
 	    the number of pixels to be plotted and the scales are linear:
 	    can use fast algorithm  */
 	/*  Generate all of image  */
-	for (y = 0; y < (*win_scale).y_pixels; ++y, data += ord_dim_stride)
+	for (y = 0; y < win_scale->y_pixels; ++y, data += ord_dim_stride)
 	{
 	    /*  Generate all of line  */
 	    /*  Switch on image depth  */
@@ -288,16 +297,16 @@ struct win_scale_type *win_scale;
 	    {
 	      case sizeof (char) * 8:
 		/*  Do a fast conversion  */
-		image_ptr = (*ximage).data + ( (*win_scale).y_pixels - 1 - y )
+		image_ptr = (*ximage).data + ( win_scale->y_pixels - 1 - y )
 		* (*ximage).bytes_per_line;
 		if (fast_draw_to_char (image_ptr, data, elem_type,
-				       abs_dim_stride, (*win_scale).x_pixels,
+				       abs_dim_stride, win_scale->x_pixels,
 				       conv_type, num_pixels, pixel_values,
-				       (*win_scale).blank_pixel,
-				       (*win_scale).min_sat_pixel,
-				       (*win_scale).max_sat_pixel,
-				       (*win_scale).z_min, (*win_scale).z_max,
-				       (*win_scale).z_scale) != TRUE)
+				       win_scale->blank_pixel,
+				       win_scale->min_sat_pixel,
+				       win_scale->max_sat_pixel,
+				       win_scale->z_min, win_scale->z_max,
+				       win_scale->z_scale) != TRUE)
 		{
 		    return (FALSE);
 		}
@@ -343,23 +352,23 @@ struct win_scale_type *win_scale;
 #endif  /*  HAS_GETRUSAGE  */
 	return (TRUE);
     }
-    if ( ( (*win_scale).x_pixels % num_abs_coords == 0 ) &&
-	( (*win_scale).y_pixels % num_ord_coords == 0 ) )
+    if ( ( win_scale->x_pixels % num_abs_coords == 0 ) &&
+	( win_scale->y_pixels % num_ord_coords == 0 ) )
     {
 	/*  Number of pixels to draw is an integer multiple of number of data
 	    points to draw and the scales are linear: this is a zoom in  */
 	/*  Use fast algorithm  */
 	if (fast_draw_zoom_in (ximage, data, elem_type,
 			       abs_dim_stride, num_abs_coords,
-			       (*win_scale).x_pixels / num_abs_coords,
+			       win_scale->x_pixels / num_abs_coords,
 			       ord_dim_stride, num_ord_coords,
-			       (*win_scale).y_pixels / num_ord_coords,
+			       win_scale->y_pixels / num_ord_coords,
 			       conv_type, num_pixels, pixel_values,
-			       (*win_scale).blank_pixel,
-			       (*win_scale).min_sat_pixel,
-			       (*win_scale).max_sat_pixel,
-			       (*win_scale).z_min, (*win_scale).z_max,
-			       (*win_scale).z_scale) != TRUE)
+			       win_scale->blank_pixel,
+			       win_scale->min_sat_pixel,
+			       win_scale->max_sat_pixel,
+			       win_scale->z_min, win_scale->z_max,
+			       win_scale->z_scale) != TRUE)
 	{
 	    return (FALSE);
 	}
@@ -397,23 +406,23 @@ struct win_scale_type *win_scale;
 #endif  /*  HAS_GETRUSAGE  */
 	return (TRUE);
     }
-    if ( (num_abs_coords % (*win_scale).x_pixels == 0) &&
-	(num_ord_coords % (*win_scale).y_pixels == 0) )
+    if ( (num_abs_coords % win_scale->x_pixels == 0) &&
+	(num_ord_coords % win_scale->y_pixels == 0) )
     {
 	/*  Number of data points to draw is an integer multiple of number of
 	    pixels to draw and the  scales are linear: this is a zoom out  */
 	/*  Use fast algorithm  */
 	if (fast_draw_zoom_out (ximage, data, elem_type,
 				abs_dim_stride, num_abs_coords,
-				num_abs_coords / (*win_scale).x_pixels,
+				num_abs_coords / win_scale->x_pixels,
 				ord_dim_stride, num_ord_coords,
-				num_ord_coords / (*win_scale).y_pixels,
+				num_ord_coords / win_scale->y_pixels,
 				conv_type, num_pixels, pixel_values,
-				(*win_scale).blank_pixel,
-				(*win_scale).min_sat_pixel,
-				(*win_scale).max_sat_pixel,
-				(*win_scale).z_min, (*win_scale).z_max,
-				(*win_scale).z_scale) != TRUE)
+				win_scale->blank_pixel,
+				win_scale->min_sat_pixel,
+				win_scale->max_sat_pixel,
+				win_scale->z_min, win_scale->z_max,
+				win_scale->z_scale) != TRUE)
 	{
 	    return (FALSE);
 	}
@@ -533,7 +542,7 @@ unsigned int z_scale;
     int pixel_count;
     long l_mul;
     long l_div;
-    long l_data;
+    long l_data = 0;      /*  Initialised to keep compiler happy  */
     long l_min = z_min;
     long l_max = z_max;
     long l_blank;
@@ -544,7 +553,7 @@ unsigned int z_scale;
     float f_toobig = TOOBIG;
     double d_toobig = TOOBIG;
     double d_mul;
-    double d_data;
+    double d_data = 0.0;  /*  Initialised to keep compiler happy  */
     double *values;
     extern unsigned long ubyte_lookup_table[UBYTE_TABLE_LENGTH];
     static char function_name[] = "fast_draw_to_char";
@@ -568,7 +577,7 @@ unsigned int z_scale;
 	l_blank = -32768;
 	break;
       default:
-	l_blank = -2147483648;
+	l_blank = 0x80000000;
 	break;
     }
     /*  Allocate values buffer  */
@@ -862,7 +871,7 @@ unsigned int z_scale;
     int x;
     int y;
     unsigned long pixel;
-    double d_data;
+    double d_data = 0.0;      /*  Initialised to keep compiler happy  */
     double mul;
     double toobig = TOOBIG;
     char *image;

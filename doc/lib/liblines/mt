@@ -1,2 +1,0 @@
-/*  Routines to manage a thread pool (MultiThreading support)  */
-/*  Link with:    -lkarma  */

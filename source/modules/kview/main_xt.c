@@ -2,7 +2,7 @@
 
     Main file for  kview  (X11 image/movie display tool for Karma).
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -42,7 +42,41 @@
     Updated by      Richard Gooch   8-SEP-1995: Added experimental fullscreen
   option.
 
-    Last updated by Richard Gooch   28-SEP-1995: Added Miriad Image support.
+    Updated by      Richard Gooch   28-SEP-1995: Added Miriad Image support.
+
+    Updated by      Richard Gooch   29-FEB-1996: Made background colour for
+  both mono and stereo canvases black.
+
+    Updated by      Richard Gooch   17-MAR-1996: Added icon.
+
+    Updated by      Richard Gooch   30-APR-1996: Added -verbose option.
+
+    Updated by      Richard Gooch   4-MAY-1996: Switched to KtoggleWidget
+  resources.
+
+    Updated by      Richard Gooch   16-MAY-1996: Made use of
+  XkwNautoIntensityScale resource for ImageDisplay widget.
+
+    Updated by      Richard Gooch   5-JUN-1996: Added resources for sliders.
+
+    Updated by      Richard Gooch   7-JUN-1996: Added filename to title.
+
+    Updated by      Richard Gooch   11-JUN-1996: Added magnifier support.
+
+    Updated by      Richard Gooch   15-JUN-1996: Tidied up astronomical
+  projection support.
+
+    Updated by      Richard Gooch   16-JUN-1996: Added check for *__SCALE and
+  *__OFFSET data.
+
+    Updated by      Richard Gooch   19-JUN-1996: Made use of
+  <iarray_format_value> routine.
+
+    Updated by      Richard Gooch   22-JUN-1996: Made use of
+  <XkwFilewinStandardFileTester_nD> routine.
+
+    Last updated by Richard Gooch   27-JUN-1996: Switched to
+  <canvas_use_astro_transform>
 
 
 */
@@ -50,17 +84,23 @@
 #include <X11/Xatom.h>
 #include <X11/Intrinsic.h>
 #include <X11/StringDefs.h>
+#include <X11/Xaw/Label.h>
 #include <karma.h>
+#define NEW_WIN_SCALE
 #include <k_event_codes.h>
 #include <karma_foreign.h>
 #include <karma_overlay.h>
 #include <karma_viewimg.h>
+#include <karma_xtmisc.h>
 #include <karma_conn.h>
+#include <karma_wcs.h>
 #include <karma_dir.h>
 #include <karma_chx.h>
+#include <karma_ds.h>
 #include <karma_im.h>
 #include <karma_hi.h>
 #include <karma_xc.h>
+#include <karma_ic.h>
 #include <karma_a.h>
 #include <Xkw/ImageDisplay.h>
 #include <Xkw/Filewin.h>
@@ -68,17 +108,21 @@
 #  include <floatingpoint.h>
 #endif
 
-#define VERSION "1.3"
+#define VERSION "1.4"
 
 
 /*  External functions  */
 /*  File: generic.c  */
 EXTERN_FUNCTION (void setup_comms, (Display *display) );
 EXTERN_FUNCTION (flag display_file,
-		 (CONST char *inp_filename, KWorldCanvas pseudo_canvas,
-		  KWorldCanvas rgb_canvas, iarray *pseudo_arr,
-		  ViewableImage *image,
-		  ViewableImage **movie, unsigned int *num_frames) );
+		 (CONST char *inp_filename,
+		  KWorldCanvas pseudo_canvas, KWorldCanvas rgb_canvas,
+		  KWorldCanvas mag_pseudo_canvas, KWorldCanvas mag_rgb_canvas,
+		  iarray *pseudo_arr,
+		  ViewableImage *image, ViewableImage **movie,
+		  ViewableImage *magnified_image,
+		  ViewableImage **magnified_movie,
+		  unsigned int *num_frames) );
 
 
 /*  Local functions  */
@@ -86,7 +130,6 @@ EXTERN_FUNCTION (void load_and_setup, (CONST char *filename) );
 
 
 /*  Private functions  */
-STATIC_FUNCTION (flag accept_file, (KFileInfo finfo) );
 STATIC_FUNCTION (void fileselect_cbk, (Widget w, XtPointer client_data,
 				       XtPointer call_data) );
 STATIC_FUNCTION (flag dirselect_cbk,
@@ -104,58 +147,68 @@ STATIC_FUNCTION (void new_frame_cbk, (Widget w, XtPointer client_data,
 String fallback_resources[] =
 {
     "Kview*pseudoColourCanvas*background:            black",
-    "Kview*hugeColourCanvas*background:              black",
+    "Kview*directColourCanvas*background:            black",
+    "Kview*trueColourCanvas*background:              black",
+    "Kview*pseudoColourStereoCanvas*background:      black",
+    "Kview*directColourStereoCanvas*background:      black",
+    "Kview*trueColourStereoCanvas*background:        black",
     "Kview*AnimateControl*positionCanvas.background: black",
     "Kview*pseudoColourCanvas*foreground:            white",
     "Kview*Command*background:                       grey70",
     "Kview*Repeater*background:                      grey70",
-    "Kview*Toggle*background:                        grey80",
+    "Kview*Ktoggle*background:                       grey80",
     "Kview*closeButton*background:                   grey90",
     "Kview*ChoiceMenu.background:                    turquoise",
     "Kview*ExclusiveMenu.background:                 turquoise",
     "Kview*Value*background:                         #d0a0a0",
     "Kview*ImageDisplay*quit*background:             orange",
     "Kview*background:                               aquamarine",
-    "Kview*ImageDisplay*trackLabel*font :            8x13bold",
+    "Kview*SimpleSlider.foreground:                  Sea Green",
+    "Kview*ImageDisplay*trackLabel0*font:            8x13bold",
+    "Kview*ImageDisplay*trackLabel1*font:            8x13bold",
+    "Kview*ImageDisplay*trackLabel2*font:            8x13bold",
     "Kview*ImageDisplay*zoomMenu*font:               10x20",
     "Kview*ImageDisplay*crosshairMenu*font:          10x20",
     "Kview*ImageDisplay*exportMenu*font:             10x20",
     "Kview*AnimateControl*modeMenu*font:             10x20",
     "Kview*ImageDisplay.Command.font:                7x13bold",
-    "Kview*ImageDisplay.Toggle.font:                 7x13bold",
+    "Kview*ImageDisplay.Ktoggle.font:                7x13bold",
     "Kview*ImageDisplay.ChoiceMenu.font:             7x13bold",
     "Kview*ImageDisplay*zoomMenu*Unzoom*foreground:  red",
     "Kview*Dataclip.AutoValueScale:                  False",
+    "Kview*SimpleSlider.borderWidth:                 0",
     "Kview*font:                                     9x15bold",
     NULL
 };
 static XrmOptionDescRec Options[] =
 {
     {"-private_cmap", ".topForm.multiCanvas.pseudoColourCanvas.forceNewCmap",
-     XrmoptionNoArg, (XtPointer) "True"},
-    {"-num_colours", ".topForm.cmapSize", XrmoptionSepArg, (XtPointer) NULL},
-    {"-fullscreen", ".topForm.fullscreen", XrmoptionNoArg, (XtPointer) "True"}
+     XrmoptionNoArg, (XPointer) "True"},
+    {"-num_colours", ".topForm.cmapSize", XrmoptionSepArg, (XPointer) NULL},
+    {"-fullscreen", ".topForm.fullscreen", XrmoptionNoArg, (XPointer) "True"},
+    {"-verbose", "*verbose", XrmoptionNoArg, (XPointer) "True"},
 };
+static Widget main_shell = NULL;
 static Widget image_display = NULL;
 static ViewableImage image = NULL;
+static ViewableImage magnified_image = NULL;
 static iarray pseudo_arr = NULL;
 static ViewableImage *movie = NULL;
+static ViewableImage *magnified_movie = NULL;
 static unsigned int num_frames = 0;
+static double pseudo_scale = 1.0;
+static double pseudo_offset = 0.0;
 
 
-main (argc, argv)
-int argc;
-char **argv;
+int main (int argc, char **argv)
 {
     KWorldCanvas wc_pseudo, wc_direct, wc_true;
     KOverlayList olist;
     XtAppContext app_context;
-    Widget main_shell;
-    Widget filewin, filepopup, track_label, animate_control;
+    Widget filewin, filepopup, animate_control;
     Display *dpy;
-    extern Widget image_display;
-    extern char module_name[STRING_LENGTH + 1];
-    ERRNO_TYPE errno;
+    extern KwcsAstro astro_projection;
+    extern Widget main_shell, image_display;
     extern char *sys_errlist[];
 
 #ifdef SIGFPE_ABORT
@@ -170,9 +223,12 @@ char **argv;
 				    Options, XtNumber (Options),
 				    &argc, argv, fallback_resources,
 				    NULL, 0);
+    xtmisc_set_icon (main_shell, ic_write_kimage_icon);
     /*  Initialise communications  */
     chx_register_app_context (app_context);
-    conn_register_managers (chx_manage, chx_unmanage, ( void (*) () ) NULL);
+    conn_register_managers ( ( flag (*) () ) chx_manage,
+			     ( void (*) () ) chx_unmanage,
+			     ( void (*) () ) NULL );
     dpy = XtDisplay (main_shell);
     setup_comms (dpy);
     image_display = XtVaCreateManagedWidget ("topForm",
@@ -180,13 +236,14 @@ char **argv;
 					     main_shell,
 					     XtNborderWidth, 0,
 					     XkwNenableAnimation, True,
+					     XkwNautoIntensityScale, False,
+					     XkwNnumTrackLabels, 3,
 					     NULL);
     filepopup = XtNameToWidget (image_display, "filewinPopup");
     filewin = XtNameToWidget (filepopup, "form.selector");
     animate_control = XtNameToWidget (image_display, "animatepopup");
-    track_label = XtNameToWidget (image_display, "trackLabel");
     XtVaSetValues (filepopup,
-		   XkwNfilenameTester, accept_file,
+		   XkwNfilenameTester, XkwFilewinStandardFileTester_nD,
 		   NULL);
     XtAddCallback (filepopup, XkwNfileSelectCallback, fileselect_cbk, NULL);
     (void) XkwFilewinRegisterDirCbk (filewin, dirselect_cbk,
@@ -200,21 +257,24 @@ char **argv;
 		   NULL);
     if (wc_pseudo != NULL)
     {
-	viewimg_register_position_event_func (wc_pseudo, track_canvas_event,
-					      (void *) track_label);
-	viewimg_set_canvas_attributes (wc_pseudo,
-				       VIEWIMG_ATT_AUTO_V, FALSE,
-				       VIEWIMG_ATT_END);
+	canvas_use_astro_transform (wc_pseudo, &astro_projection);
+	viewimg_register_position_event_func (wc_pseudo,
+					      ( flag (*) () ) track_canvas_event,
+					      (void *) image_display);
     }
     if (wc_direct != NULL)
     {
-	viewimg_register_position_event_func (wc_direct, track_canvas_event,
-					      (void *) track_label);
+	canvas_use_astro_transform (wc_pseudo, &astro_projection);
+	viewimg_register_position_event_func (wc_direct,
+					      ( flag (*) () ) track_canvas_event,
+					      (void *) image_display);
     }
     if (wc_true != NULL)
     {
-	viewimg_register_position_event_func (wc_true, track_canvas_event,
-					      (void *) track_label);
+	canvas_use_astro_transform (wc_pseudo, &astro_projection);
+	viewimg_register_position_event_func (wc_true,
+					      ( flag (*) () ) track_canvas_event,
+					      (void *) image_display);
     }
     if ( (argc == 2) && (strcmp (argv[1], "-overlay") == 0) )
     {
@@ -231,14 +291,18 @@ char **argv;
 void load_and_setup (CONST char *filename)
 {
     KWorldCanvas pseudo_canvas, direct_canvas, true_canvas, rgb_canvas;
+    KWorldCanvas mag_pseudo_canvas, mag_direct_canvas, mag_true_canvas;
+    KWorldCanvas mag_rgb_canvas;
     Widget izoomwinpopup, animate_winpopup;
     char *ptr;
     char stripped_filename[STRING_LENGTH];
-    extern ViewableImage image;
+    extern ViewableImage image, magnified_image;
     extern iarray pseudo_arr;
-    extern ViewableImage *movie;
+    extern double pseudo_scale, pseudo_offset;
+    extern ViewableImage *movie, *magnified_movie;
     extern unsigned int num_frames;
-    extern Widget image_display;
+    extern Widget main_shell, image_display;
+    static char title_name[STRING_LENGTH];
 
     (void) strcpy (stripped_filename, filename);
     if ( ( ptr = strrchr (stripped_filename, '.') ) != NULL )
@@ -249,17 +313,28 @@ void load_and_setup (CONST char *filename)
 		   XkwNpseudoColourCanvas, &pseudo_canvas,
 		   XkwNdirectColourCanvas, &direct_canvas,
 		   XkwNtrueColourCanvas, &true_canvas,
+		   XkwNmagnifierPseudoColourCanvas, &mag_pseudo_canvas,
+		   XkwNmagnifierDirectColourCanvas, &mag_direct_canvas,
+		   XkwNmagnifierTrueColourCanvas, &mag_true_canvas,
 		   NULL);
     izoomwinpopup = XtNameToWidget (image_display, "izoomwinpopup");
     animate_winpopup = XtNameToWidget (image_display, "animatepopup");
-/*
     rgb_canvas = (direct_canvas == NULL) ? true_canvas : direct_canvas;
-*/
-    rgb_canvas = (true_canvas == NULL) ? direct_canvas : true_canvas;
-    if ( !display_file (filename, pseudo_canvas, rgb_canvas, &pseudo_arr,
-			&image, &movie, &num_frames) ) return;
+    mag_rgb_canvas = (mag_direct_canvas == NULL) ?
+	mag_true_canvas : mag_direct_canvas;
+    if ( !display_file (filename, pseudo_canvas, rgb_canvas,
+			mag_pseudo_canvas, mag_rgb_canvas,
+			&pseudo_arr, &image, &movie,
+			&magnified_image, &magnified_movie,
+			&num_frames) ) return;
+    (void) sprintf (title_name, "kview  file: %s\n", filename);
+    XtVaSetValues (main_shell,
+		   XtNtitle, title_name,
+		   NULL);
     /*  Deal with the animate widget  */
-    XtVaSetValues (animate_winpopup, XkwNnumFrames, num_frames, NULL);
+    XtVaSetValues (animate_winpopup,
+		   XkwNnumFrames, num_frames,
+		   NULL);
     if (num_frames > 0) XtPopup (animate_winpopup, XtGrabNone);
     else XtPopdown (animate_winpopup);
     XtVaSetValues (image_display,
@@ -285,22 +360,12 @@ void load_and_setup (CONST char *filename)
 	XtVaSetValues (image_display,
 		       XkwNvisibleCanvas, pseudo_canvas,
 		       NULL);
+	iarray_get_data_scaling (pseudo_arr, &pseudo_scale, &pseudo_offset);
     }
 }   /*  End Function load_and_setup  */
 
 
 /*  Private routines follow  */
-
-static flag accept_file (finfo)
-KFileInfo finfo;
-{
-    /*  Accept all directories  */
-    if (finfo.type == KFILETYPE_DIRECTORY) return (TRUE);
-    if (foreign_guess_format_from_filename (finfo.filename)
-	== FOREIGN_FILE_FORMAT_UNKNOWN) return (FALSE);
-    /*  Filetype understood: accept it  */
-    return (TRUE);
-}   /*  End Function accept_file  */
 
 static void fileselect_cbk (Widget w, XtPointer client_data,
 			    XtPointer call_data)
@@ -348,42 +413,122 @@ static flag track_canvas_event (ViewableImage vimage, double x, double y,
     the event is still to be processed.
 */
 {
-    Widget track_label = (Widget) *f_info;
+    KWorldCanvas magnifier_canvas;
+    unsigned int hdim, vdim, rdim;
+    unsigned int num_restr, count;
+    unsigned long pointer_x_index, pointer_y_index, r_index;
+    Widget image_display = (Widget) *f_info;
+    Widget first_track_label, second_track_label, third_track_label;
     unsigned char *rgb_ptr = (unsigned char *) value;
-    char window_string[STRING_LENGTH];
+    char *xlabel, *ylabel;
+    char **restr_names;
+    double *restr_values;
+    array_desc *arr_desc;
+    char txt[STRING_LENGTH];
+    char value_string[STRING_LENGTH], index_string[STRING_LENGTH];
+    char world_string[STRING_LENGTH], extra_string[STRING_LENGTH];
+    extern iarray pseudo_arr;
+    extern KwcsAstro astro_projection;
+    extern double pseudo_scale, pseudo_offset;
     static char function_name[] = "track_canvas_event";
 
     if (event_code != K_CANVAS_EVENT_POINTER_MOVE) return (FALSE);
+    /*  Create value string  */
     switch (value_type)
     {
       case K_DCOMPLEX:
-	(void) sprintf (window_string, "abs: %5e  ord: %5e      value: %e",
-			x, y, *(double *) value);
+	/*  Compute value  */
+	iarray_format_value (pseudo_arr, value_string,
+			     *(double *) value, pseudo_scale, pseudo_offset);
 	break;
       case K_UB_RGB:
-	(void) sprintf (window_string, "abs: %5e  ord: %5e      RGB: %u %u %u",
-			x, y, rgb_ptr[0], rgb_ptr[1], rgb_ptr[2]);
+	(void) sprintf (value_string, "RGB: %u %u %u",
+			rgb_ptr[0], rgb_ptr[1], rgb_ptr[2]);
 	break;
       default:
 	(void) fprintf (stderr, "Illegal type: %u\n", value_type);
 	a_prog_bug (function_name);
 	break;
     }
-    XtVaSetValues (track_label, XtNlabel, window_string, NULL);
+    canvas_get_specification (viewimg_get_worldcanvas (vimage),
+			      &xlabel, &ylabel, &num_restr,
+			      &restr_names, &restr_values);
+    viewimg_get_attributes (vimage,
+			    VIEWIMG_VATT_ARRAY_DESC, &arr_desc,
+			    VIEWIMG_VATT_HDIM, &hdim,
+			    VIEWIMG_VATT_VDIM, &vdim,
+			    VIEWIMG_VATT_END);
+    /*  Convert linear world co-ordinates to array indices and display  */
+    pointer_x_index = ds_get_coord_num (arr_desc->dimensions[hdim], x_lin,
+					SEARCH_BIAS_CLOSEST);
+    pointer_y_index = ds_get_coord_num (arr_desc->dimensions[vdim], y_lin,
+					SEARCH_BIAS_CLOSEST);
+    (void) sprintf (index_string, "x: %lu  y: %lu  ",
+		    pointer_x_index, pointer_y_index);
+    /*  Add any restriction information  */
+    for (count = 0; count < num_restr; ++count)
+    {
+	if ( ( rdim = ds_f_dim_in_array (arr_desc, restr_names[count]) )
+	     >= arr_desc->num_dimensions ) continue;
+	r_index = ds_get_coord_num (arr_desc->dimensions[rdim],
+				    restr_values[count], SEARCH_BIAS_CLOSEST);
+	(void) sprintf (txt, "z%u: %lu  ", rdim, r_index);
+	(void) strcat (index_string, txt);
+    }
+    (void) strcat (index_string, value_string);
+    first_track_label = XtNameToWidget (image_display, "trackLabel0");
+    second_track_label = XtNameToWidget (image_display, "trackLabel1");
+    third_track_label = XtNameToWidget (image_display, "trackLabel2");
+    XtVaSetValues (first_track_label, XtNlabel, index_string, NULL);
+    /*  Now display the world co-ordinate information  */
+    if (astro_projection == NULL)
+    {
+	(void) sprintf (world_string, "%5e %s  %5e %s  ",
+			x, xlabel, y, ylabel);
+    }
+    else
+    {
+	wcs_format_all (astro_projection, world_string,
+			xlabel, x_lin, ylabel, y_lin, NULL, 0.0,
+			num_restr, (CONST char **) restr_names, restr_values,
+			extra_string);
+	XtVaSetValues (second_track_label, XtNlabel, world_string, NULL);
+	XtVaSetValues (third_track_label, XtNlabel, extra_string, NULL);
+	return (TRUE);
+    }
+    /*  Add any restriction information  */
+    for (count = 0; count < num_restr; ++count)
+    {
+	(void) sprintf (txt, "%5e %s  ",
+			restr_values[count], restr_names[count]);
+	(void) strcat (world_string, txt);
+    }
+    XtVaSetValues (second_track_label, XtNlabel, world_string, NULL);
+    XtVaGetValues (image_display,
+		   XkwNmagnifierVisibleCanvas, &magnifier_canvas,
+		   NULL);
+    viewimg_set_canvas_attributes (magnifier_canvas,
+				   VIEWIMG_ATT_PAN_CENTRE_X, pointer_x_index,
+				   VIEWIMG_ATT_PAN_CENTRE_Y, pointer_y_index,
+				   VIEWIMG_ATT_END);
+    kwin_resize (canvas_get_pixcanvas (magnifier_canvas), FALSE, 0, 0, 0, 0);
     return (TRUE);
 }   /*  End Function track_canvas_event  */
 
-static void new_frame_cbk (w, client_data, call_data)
+static void new_frame_cbk (Widget w, XtPointer client_data,
+			   XtPointer call_data)
 /*  This is the new frame callback.
 */
-Widget w;
-XtPointer client_data;
-XtPointer call_data;
 {
     int frame_number = *(int *) call_data;
-    extern ViewableImage *movie;
+    extern ViewableImage *movie, *magnified_movie;
 
-    if (movie == NULL) return;
-    if (movie[frame_number] == NULL) return;
-    (void) viewimg_make_active (movie[frame_number]);
+    if ( (movie != NULL) && (movie[frame_number] != NULL) )
+    {
+	(void) viewimg_make_active (movie[frame_number]);
+    }
+    if ( (magnified_movie != NULL) && (magnified_movie[frame_number] != NULL) )
+    {
+	(void) viewimg_make_active (magnified_movie[frame_number]);
+    }
 }   /*  End Function new_frame_cbk   */

@@ -3,7 +3,7 @@
 
     This code provides miscellaneous routines for world canvases.
 
-    Copyright (C) 1993,1994,1995  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -42,21 +42,46 @@
     Updated by      Richard Gooch   10-APR-1995: Added initialisation of
   conv_type  field in <canvas_init_win_scale>.
 
-    Last updated by Richard Gooch   26-APR-1995: Added initialisation of
+    Updated by      Richard Gooch   26-APR-1995: Added initialisation of
   iscale_func  and  iscale_info  fields in <canvas_init_win_scale>.
+
+    Updated by      Richard Gooch   14-APR-1996: Changed to new documentation
+  format.
+
+    Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
+
+    Updated by      Richard Gooch   4-JUN-1996: Switched to left-right
+  bottom-top co-ordinate specification instead of min-max x and y.
+
+    Last updated by Richard Gooch   15-JUN-1996: Switched new co-ordinate
+  transformation interface.
 
 
 */
 #include <stdio.h>
 #include <math.h>
+#define NEW_WIN_SCALE
 #include <karma_canvas.h>
+#include <karma_wcs.h>
 #include <karma_m.h>
+#include <karma_a.h>
 
 
 /*  Private functions  */
 STATIC_FUNCTION (void log_transform_func,
-		 (double *x, double *y, flag to_linear,
-		  double x_min, double x_max, double y_min, double y_max,
+		 (KWorldCanvas canvas, unsigned int num_coords,
+		  double *x, flag x_to_linear,
+		  double *y, flag y_to_linear,
+		  double left_x, double right_x,
+		  double bottom_y, double top_y,
+		  void **info) );
+STATIC_FUNCTION (void astro_transform_func,
+		 (KWorldCanvas canvas, unsigned int num_coords,
+		  double *x, flag x_to_linear,
+		  double *y, flag y_to_linear,
+		  double left_x, double right_x,
+		  double bottom_y, double top_y,
 		  void **info) );
 
 
@@ -73,7 +98,8 @@ struct log_transform_info
 /*PUBLIC_FUNCTION*/
 void canvas_init_win_scale (struct win_scale_type *win_scale,
 			    unsigned int magic_number)
-/*  [PURPOSE] This routine will initialise a window scaling structure with
+/*  [SUMMARY] Initialise win_scale structure.
+    [PURPOSE] This routine will initialise a window scaling structure with
     sensible values. This routine may be used prior to calling <canvas_create>.
     <win_scale> A pointer to the window scaling structure.
     <magic_number> The value of this must be K_WIN_SCALE_MAGIC_NUMBER.
@@ -91,10 +117,10 @@ void canvas_init_win_scale (struct win_scale_type *win_scale,
     }
     m_clear ( (char *) win_scale, sizeof *win_scale );
     win_scale->magic_number = K_WIN_SCALE_MAGIC_NUMBER;
-    win_scale->x_min = 0.0;
-    win_scale->x_max = 1.0;
-    win_scale->y_min = 0.0;
-    win_scale->y_max = 1.0;
+    win_scale->left_x = 0.0;
+    win_scale->right_x = 1.0;
+    win_scale->bottom_y = 0.0;
+    win_scale->top_y = 1.0;
     win_scale->z_scale = K_INTENSITY_SCALE_LINEAR; /*  Remove in Karma v2.0  */
     win_scale->iscale_func = ( flag (*) () ) NULL;
     win_scale->iscale_free_info_func = ( void (*) (void *info) ) NULL;
@@ -104,14 +130,15 @@ void canvas_init_win_scale (struct win_scale_type *win_scale,
 
 /*PUBLIC_FUNCTION*/
 void canvas_use_log_scale (KWorldCanvas canvas, flag x_log, flag y_log)
-/*  This routine will enable logarithmic scaling of the co-ordinates for a
-    world canvas object.
-    The world canvas must be given by  canvas  .
-    If the horizontal co-ordinates should be scaled logarithmically, the value
-    of  x_log  must be TRUE, else they will be scaled linearly.
-    If the vertical co-ordinates should be scaled logarithmically, the value
-    of  y_log  must be TRUE, else they will be scaled linearly.
-    The routine returns nothing.
+/*  [SUMMARY] Enable logarithmic scaling for a world canvas.
+    [PURPOSE] This routine will enable logarithmic scaling of the co-ordinates
+    for a world canvas object.
+    <canvas> The world canvas object.
+    <x_log> If TRUE, the horizontal co-ordinates will be scaled
+    logarithmically, else they will be scaled linearly.
+    <y_log> If TRUE the vertical co-ordinates should be scaled logarithmically,
+    else they will be scaled linearly.
+    [RETURNS] Nothing.
 */
 {
     struct log_transform_info *info;
@@ -123,73 +150,151 @@ void canvas_use_log_scale (KWorldCanvas canvas, flag x_log, flag y_log)
     {
 	m_abort (function_name, "logarithmic info");
     }
-    (*info).x = x_log;
-    (*info).y = y_log;
-    canvas_register_transform_func (canvas, log_transform_func, (void *) info);
+    info->x = x_log;
+    info->y = y_log;
+    canvas_register_transforms_func (canvas, log_transform_func,
+				     (void *) info);
 }   /*  End Function canvas_use_log_scale  */
+
+/*EXPERIMENTAL_FUNCTION*/
+void canvas_use_astro_transform (KWorldCanvas canvas, KwcsAstro *ap)
+/*  [SUMMARY] Use astronomical sky projections for a canvas.
+    <canvas> The world canvas object.
+    <ap> A pointer to the storage for a KwcsAstro object. The storage may
+    contain a NULL object.
+    [RETURNS] Nothing.
+*/
+{
+    static char function_name[] = "canvas_use_astro_transform";
+
+    if (ap == NULL)
+    {
+	(void) fprintf (stderr, "NULL pointer passed\n");
+	a_prog_bug (function_name);
+    }
+    canvas_register_transforms_func (canvas, astro_transform_func, ap);
+}   /*  End Function canvas_use_astro_transform  */
 
 
 /*  Private functions follow  */
-static void log_transform_func (double *x, double *y, flag to_linear,
-				double x_min, double x_max,
-				double y_min, double y_max, void **info)
-/*  This routine will transform between linear and logarithmic world
+
+static void log_transform_func (KWorldCanvas canvas, unsigned int num_coords,
+				double *x, flag x_to_linear,
+				double *y, flag y_to_linear,
+				double left_x, double right_x,
+				double bottom_y, double top_y,
+				void **info)
+/*  [SUMMARY] Co-ordinate transformation callback.
+    [PURPOSE] This routine will transform between linear and logarithmic world
     co-ordinates. This routine is intended to be registered with the
-    canvas_register_transform_func  routine.
-    The window scaling information is pointed to by  win_scale  .
-    The horizontal world co-ordinate storage must be pointed to by  x  .
-    The vertical world co-ordinate storage must be pointed to by  y  .
-    If the value of  to_linear  is TRUE, then a non-linear to linear
-    transform is required, else a linear to non-linear transform is
-    required.
-    The arbitrary transform information pointer is pointed to by  info  .
-    The routine returns nothing.
+    [<canvas_register_transforms_func>]
+    <canvas> The canvas on which the event occurred.
+    <num_coords> The number of co-ordinates to transform.
+    <x> The array of horizontal world co-ordinates. These are modified.
+    <x_to_linear> If TRUE, then the horizontal co-ordinates are converted from
+    non-linear to linear, else they are converted from linear to non-linear.
+    <y> The array of vertical world co-ordinates. These are modified.
+    <y_to_linear> If TRUE, then the vertical co-ordinates are converted from
+    non-linear to linear, else they are converted from linear to non-linear.
+    <info> A pointer to the arbitrary transform information pointer.
+    [RETURNS] Nothing.
 */
 {
+    unsigned int count;
     double tmp;
+    double zero = 0.0;
     struct log_transform_info *log_info;
     static char function_name[] = "__canvas_log_transform_func";
 
-    FLAG_VERIFY (to_linear);
+    FLAG_VERIFY (x_to_linear);
+    FLAG_VERIFY (y_to_linear);
     log_info = (struct log_transform_info *) *info;
-    if ( (*log_info).x )
+    if (log_info->x)
     {
-	if ( (*x < x_min) || (x_min <= 0.0) || (x_max <= 0.0) )
+	for (count = 0; count < num_coords; ++count)
 	{
-	    *x = x_min;
-	}
-	else
-	{
-	    if (to_linear)
+	    if ( (x[count] < left_x) || (left_x <= zero) || (right_x <= zero) )
 	    {
-		*x = log (*x / x_min) / log (x_max /
-					     x_min) * (x_max - x_min) + x_min;
+		x[count] = left_x;
 	    }
 	    else
 	    {
-		tmp = (*x - x_min) / (x_max - x_min);
-		*x = exp (log (x_max / x_min) * tmp) * x_min;
+		if (x_to_linear)
+		{
+		    x[count] = log (x[count] / left_x) /
+			log (right_x / left_x) * (right_x - left_x) + left_x;
+		}
+		else
+		{
+		    tmp = (x[count] - left_x) / (right_x - left_x);
+		    x[count] = exp (log (right_x / left_x) * tmp) * left_x;
+		}
 	    }
 	}
     }
-    if ( (*log_info).y )
+    if (log_info->y)
     {
-	if ( (*y < y_min) || (y_min <= 0.0) || (y_max <= 0.0) )
+	for (count = 0; count < num_coords; ++count)
 	{
-	    *y = y_min;
-	}
-	else
-	{
-	    if (to_linear)
+	    if ( (y[count] < bottom_y) || (bottom_y <=zero) || (top_y <=zero) )
 	    {
-		*y = log (*y / y_min) / log (y_max /
-					     y_min) * (y_max - y_min) + y_min;
+		y[count] = bottom_y;
 	    }
 	    else
 	    {
-		tmp = (*y - y_min) / (y_max - y_min);
-		*y = exp (log (y_max / y_min) * tmp) * y_min;
+		if (y_to_linear)
+		{
+		    y[count] = log (y[count] / bottom_y) /
+			log (top_y / bottom_y) * (top_y - bottom_y) + bottom_y;
+		}
+		else
+		{
+		    tmp = (y[count] - bottom_y) / (top_y - bottom_y);
+		    y[count] = exp (log (top_y / bottom_y) * tmp) * bottom_y;
+		}
 	    }
 	}
     }
 }   /*  End Function log_transform_func  */
+
+static void astro_transform_func (KWorldCanvas canvas, unsigned int num_coords,
+				  double *x, flag x_to_linear,
+				  double *y, flag y_to_linear,
+				  double left_x, double right_x,
+				  double bottom_y, double top_y,
+				  void **info)
+/*  [SUMMARY] Co-ordinate transformation callback.
+    [PURPOSE] This routine will transform between linear and non-linear world
+    co-ordinates.
+    <canvas> The canvas on which the event occurred.
+    <num_coords> The number of co-ordinates to transform.
+    <x> The array of horizontal world co-ordinates. These are modified.
+    <x_to_linear> If TRUE, then the horizontal co-ordinates are converted from
+    non-linear to linear, else they are converted from linear to non-linear.
+    <y> The array of vertical world co-ordinates. These are modified.
+    <y_to_linear> If TRUE, then the vertical co-ordinates are converted from
+    non-linear to linear, else they are converted from linear to non-linear.
+    <info> A pointer to the arbitrary transform information pointer.
+    [RETURNS] Nothing.
+*/
+{
+    KwcsAstro astro_projection = *(KwcsAstro *) *info;
+    unsigned int num_restr;
+    char *xlabel, *ylabel;
+    char **restr_names;
+    double *restr_values;
+
+    if (astro_projection == NULL) return;
+    if (x_to_linear != y_to_linear)
+    {
+	(void) fprintf (stderr, "x_lin: %d  y_lin: %d\n",
+			x_to_linear, y_to_linear);
+    }
+    canvas_get_specification (canvas, &xlabel, &ylabel, &num_restr,
+			      &restr_names, &restr_values);
+    wcs_astro_transform3 (astro_projection, num_coords,
+			  xlabel, x, x_to_linear,
+			  ylabel, y, y_to_linear,
+			  NULL, NULL, FALSE,
+			  num_restr, (CONST char **)restr_names, restr_values);
+}   /*  End Function astro_transform_func  */

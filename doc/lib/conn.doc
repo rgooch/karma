@@ -1,351 +1,422 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the conn_ package of routines in the Karma
-    library.
-
+$PACKAGE          conn
+$SUMMARY          Routines to manipulate connections
+$PURPOSE
     These routines are meant to provide a high level mechanism to create and
     accept connections, complete with protocols, callback functions and
     security mechanisms.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
-
-    Written by		Richard Gooch	5-Dec-1995
-
-    Last updated by	Richard Gooch	5-Dec-1995
-
-
-*/
-
-void conn_register_managers (manage_func, unmanage_func, exit_schedule_func)
-/*  This routine will register the channel management functions. This routine
-    MUST be called prior to the routine:  conn_become_server  .
-    See the  chm_  routines for information on channel management.
-    The function pointer  manage_func  must refer to a function with the same
-    interface definition as the  chm_manage  function.
-    The function pointer  unmanage_func  must refer to a function with the same
-    interface definition as the  chm_unmanage  function.
-    The routine which should be called when a clean exit is to be scheduled
-    must be pointed to by  exit_schedule_func  .
-    The interface to this routine is as follows:
-
-    void exit_schedule_func ()
-    *   This routine is called when the  conn_  package wishes to schedule a
-        clean exit from the module.
-	This routine may return (ie. it need not exit).
-	The routine returns nothing.
-    *
-
+$FUNCTION         conn_register_managers
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    ( flag (*manage_func) (), void (*unmanage_func) (),
+			      void (*exit_schedule_func) () )
+$SUMMARY          Register the channel management functions.
+$PURPOSE
+    Register the channel management functions.
+$NOTE
+    This routine MUST be called prior to the <-conn_become_server->
+    routine.
+    See the <-chm-> package for information on channel management.
+$PARAMETER        manage_func :
+    The routine to manage channels. See the <-chm_manage->
+    routine for the interface definition.
+$PARAMETER        unmanage_func :
+    The routine to unmanage channels. See the <-chm_unmanage->
+    routine for the interface definition.
+$PARAMETER        exit_shedule_func :
+    The routine which should be called when a clean exit is
+    to be scheduled. The prototype function is
+    <-CONN_PROTO_exit_schedule_func->.
     If this is NULL, then exit(3) is called instead.
+$RETURNS
+    Nothing.
+$END
 
-    The routine returns nothing.
-*/
-flag (*manage_func) ();
-void (*unmanage_func) ();
-void (*exit_schedule_func) ();
-/*---------------------------------------------------------------------------*/
+$FUNCTION         conn_register_server_protocol
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    ( CONST char *protocol_name,
+				     unsigned int version,
+				     unsigned int max_connections,
+				     flag (*open_func) (),
+				     flag (*read_func) (),
+				     void (*close_func) () )
+$SUMMARY          Register server protocol support.
+$PURPOSE
+    This routine will register the support of a new Karma protocol
+    for the Karma ports which are being managed by the various routines in the
+    <-conn-> package. This routine may be called at any time.
+$PARAMETER        protocol_name :
+    The name of the new protocol to support. Note that this is
+    only for incoming connections.
+$PARAMETER        version :
+    The version number for the protocol. When any changes to the
+    protocol are made, this should be increased.
+$PARAMETER        max_connections :
+    The maximum number of incoming connections to this server
+    If this is 0, an unlimited number of connections is permitted.
+$PARAMETER        open_func :
+    The routine which is called when a new connection is opened.
+    The prototype function is <-CONN_PROTO_open_func->.
+$PARAMETER        read_func :
+    The function which will be called when data is ready to be read
+    data from the connection. The prototype function is
+    <-CONN_PROTO_read_func->.
+$PARAMETER        close_func :
+    The function which will be called prior to closure of a
+    connection. The prototype function is <-CONN_PROTO_close_func->.
+$RETURNS
+    Nothing.
+$END
 
-void conn_register_server_protocol (protocol_name, version, max_connections,
-				    open_func, read_func, close_func)
-/*  This routine will register the support of a new Karma protocol for the
-    Karma ports which are being managed by the various routines in this file.
-    This routine may be called at any time.
-    The name of the new protocol to support must be pointed to by
-    protocol_name  .Note that this is only for incoming connections.
-    The version number for the protocol must be given by  version  .When any
-    changes to the protocol are made, this should be increased.
-    The maximum number of incoming connections to this server must be given by
-    max_connections  .If this is 0, an unlimited number of connections is
-    permitted.
-    The function which will register the opening of a connection must be
-    pointed to by  open_func  .
-    The interface to this function is given below:
+$FUNCTION         conn_register_client_protocol
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    ( CONST char *protocol_name,
+				     unsigned int version,
+				     unsigned int max_connections,
+				     flag (*validate_func) (),
+				     flag (*open_func) (),
+				     flag (*read_func) (),
+				     void (*close_func) () )
+$SUMMARY          Register client protocol support.
+$PURPOSE
+    This routine will register the support of a new Karma protocol
+    for outgoing (client) connections. This routine may be called at any time.
+$PARAMETER        protocol_name :
+    The name of the new protocol to support. Note that this is
+    only for outgoing connections.
+$PARAMETER        version :
+    The version number for the protocol. When any changes to the
+    protocol are made, this should be increased.
+$PARAMETER        max_connections :
+    The maximum number of outgoing connections from this
+    client. If this is 0, an unlimited number of connections is permitted.
+$PARAMETER        validate_func :
+    The function which will validate the opening of a new
+    connection (prior to any attempts to connect to the server). The prototype
+    function is <-CONN_PROTO_client_validate_func->.
+$PARAMETER        open_func :
+    The routine which is called when a new connection is opened.
+    The prototype function is <-CONN_PROTO_open_func->.
+$PARAMETER        read_func :
+    The function which will be called when data is ready to be read
+    data from the connection. The prototype function is
+    <-CONN_PROTO_read_func->.
+$PARAMETER        close_func :
+    The function which will be called prior to closure of a
+    connection. The prototype function is <-CONN_PROTO_close_func->.
+$RETURNS
+    Nothing.
+$END
 
-    flag open_func (connection, info)
-    *   This routine will register the opening of a connection.
-        The connection will be given by  connection  .
-	The routine will write any appropriate information to the pointer
-	pointed to by  info  .
-	The routine returns TRUE on successful registration,
-	else it returns FALSE (indicating the connection should be closed).
-	Note that the  close_func  will not be called if this routine returns
-	FALSE.
-    *
-    Connection connection;
-    void **info;
+$FUNCTION         conn_get_channel
+$RETURN_TYPE      Channel
+$PARAMETER_LIST
+    (Connection connection)
+$SUMMARY          Extract the channel object associated with a connection.
+$PURPOSE
+    Extract the channel object associated with a connection.
+$PARAMETER        connection :
+    The connection object.
+$RETURNS
+    The channel object.
+$END
 
-    The function which will read data from the connection must be pointed to by
-    read_func  .
-    The interface to this function is given below:
-
-    flag read_func (connection, info)
-    *   This routine will read in data from the connection given by  connection
-        and will write any appropriate information to the pointer pointed to by
-	info  .
-	The routine returns TRUE on successful reading,
-	else it returns FALSE (indicating the connection should be closed).
-	Note that the  close_func  will be called if this routine returns FALSE
-    *
-    Connection connection;
-    void **info;
-
-    The function which will be called prior to closure of a connection must be
-    pointed to by  close_func  .
-    The interface to this function is given below:
-
-    void close_func (connection, info)
-    *   This routine will register the closure of a connection.
-	When this routine is called, this is the last chance to read any
-	buffered data from the channel associated with the connection object.
-        The connection will be given by  connection  .
-        The connection information pointer will be given by  info  .
-	The routine returns nothing.
-    *
-    Connection connection;
-    void *info;
-
-    The routine returns nothing.
-*/
-char *protocol_name;
-unsigned int version;
-unsigned int max_connections;
-flag (*open_func) ();
-flag (*read_func) ();
-void (*close_func) ();
-/*---------------------------------------------------------------------------*/
-
-void conn_register_client_protocol (protocol_name, version, max_connections,
-				    validate_func,
-				    open_func, read_func, close_func)
-/*  This routine will register the support of a new Karma protocol for outgoing
-    (client) connections.
-    This routine may be called at any time.
-    The name of the new protocol to support must be pointed to by
-    protocol_name  .Note that this is only for outgoing connections.
-    The version number for the protocol must be given by  version  .When any
-    changes to the protocol are made, this should be increased.
-    The maximum number of outgoing connections from this client must be given
-    by max_connections  .If this is 0, an unlimited number of connections is
-    permitted.
-    The function which will validate the opening of a new connection (prior to
-    any attempts to connect to the server) must be pointed to by
-    validate_func  .
-    The interface to this function is given below:
-
-    flag validate_func (info)
-    *   This routine will validate whether it is appropriate to open a
-        connection.
-	The routine will write any appropriate information to the pointer
-	pointed to by  info  .The pointer value written here will be passed
-	to the other routines.
-	The routine returns TRUE if the connection should be attempted,
-	else it returns FALSE (indicating the connection should be aborted).
-	NOTE: Even if this routine is called and returns TRUE, there is no
-	guarantee that the connection will be subsequently opened.
-    *
-    void **info;
-
-    The function which will register the opening of a connection must be
-    pointed to by  open_func  .
-    The interface to this function is given below:
-
-    flag open_func (connection, info)
-    *   This routine will register the opening of a connection.
-        The connection will be given by  connection  .
-	The routine will write any appropriate information to the pointer
-	pointed to by  info  .
-	The routine returns TRUE on successful registration,
-	else it returns FALSE (indicating the connection should be closed).
-	Note that the  close_func  will not be called if this routine returns
-	FALSE.
-    *
-    Connection connection;
-    void **info;
-
-    The function which will read data from the connection must be pointed to by
-    read_func  .
-    The interface to this function is given below:
-
-    flag read_func (connection, info)
-    *   This routine will read in data from the connection given by  connection
-        and will write any appropriate information to the pointer pointed to by
-	info  .
-	The routine returns TRUE on successful reading,
-	else it returns FALSE (indicating the connection should be closed).
-	Note that the  close_func  will be called if this routine returns FALSE
-    *
-    Connection connection;
-    void **info;
-
-    The function which will be called prior to closure of a connection must be
-    pointed to by  close_func  .
-    The interface to this function is given below:
-
-    void close_func (connection, info)
-    *   This routine will register a closure of a connection.
-	When this routine is called, this is the last chance to read any
-	buffered data from the channel associated with the connection object.
-        The connection will be given by  connection  .
-        The connection information pointer will be given by  info  .
-	The routine returns nothing.
-    *
-    Connection connection;
-    void *info;
-
-    The routine returns nothing.
-*/
-char *protocol_name;
-unsigned int version;
-unsigned int max_connections;
-flag (*validate_func) ();
-flag (*open_func) ();
-flag (*read_func) ();
-void (*close_func) ();
-/*---------------------------------------------------------------------------*/
-
-Channel conn_get_channel (connection)
-/*  This routine will extract the channel object associated with a connection.
-    The connection object must be given by  connection  .
-    The routine returns the channel object.
-*/
-Connection connection;
-/*---------------------------------------------------------------------------*/
-
-flag conn_attempt_connection (hostname, port_number, protocol_name)
-/*  This routine will attempt to make a connection to a server. The routine
-    always makes a connection using the most efficient transport layer
+$FUNCTION         conn_attempt_connection
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (CONST char *hostname, unsigned int port_number,
+			      CONST char *protocol_name)
+$SUMMARY          Attempt connection.
+$PURPOSE
+    This routine will attempt to make a connection to a server. The
+    routine always makes a connection using the most efficient transport layer
     available.
-    The hostname of the machine on which the server is running must be pointed
-    to by  hostname  .
-    The Karma port number to connect to must be given by  port_number  .
-    The protocol to connect with must be pointed to by  protocol_name  .
-    The routine returns TRUE if the connection was successfull,
-    else it returns FALSE. Note that this will cause the appropriate callback
-    functions registered with  conn_register_client_protocol  to be called.
-*/
-char *hostname;
-unsigned int port_number;
-char *protocol_name;
-/*---------------------------------------------------------------------------*/
+$PARAMETER        hostname :
+    The hostname of the machine on which the server is running.
+$PARAMETER        port_number :
+    The Karma port number to connect to.
+$PARAMETER        protocol_name :
+    The protocol to connect with.
+$RETURNS
+    TRUE if the connection was successful, else FALSE.
+$NOTE
+    The appropriate callback functions registered with
+    <-conn_register_client_protocol-> will be called.
+$END
 
-flag conn_close (connection)
-/*  This routine will close a connection. This will cause the closure callback
-    routine registered to be executed.
-    The connection object must be given by  connection  .
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-Connection connection;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         conn_close
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Connection connection)
+$SUMMARY          Close connection.
+$PURPOSE
+    This routine will close a connection. This will cause the closure
+    callback routine registered to be executed.
+$PARAMETER        connection :
+    The connection object.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag conn_become_server (port_number, retries)
-/*  This routine will allocate a Karma port for the module so that it can
-    operate as a server (able to receive network connections).
-    The port number to allocate must be pointed to by  port_number  .The
-    routine will write the actual port number allocated to this address. This
-    must point to an address which lies on an  int  boundary.
-    The number of succsessive port numbers to attempt to allocate before giving
-    up must be given by  retries  .If this is 0, then the routine will give up
-    immediately if the specified port number is in use.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-unsigned int *port_number;
-unsigned int retries;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         conn_become_server
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (unsigned int *port_number, unsigned int retries)
+$SUMMARY          Become a Karma server.
+$PURPOSE
+    This routine will allocate a Karma port for the module so that it
+    can operate as a server (able to receive network connections).
+$PARAMETER        port_number :
+    The port number to allocate. The routine will write the
+    actual port number allocated to this address. This must point to an address
+    which lies on an <<int>> boundary.
+$PARAMETER        retries :
+    The number of succsessive port numbers to attempt to allocate
+    before giving up. If this is 0, then the routine will give up immediately
+    if the specified port number is in use.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-unsigned int conn_get_num_serv_connections (protocol_name)
-/*  This routine will get the number of connections to the server with a
-    specified protocol.
-    The protocol name must be pointed to by  protocol_name  .
-    The routine returns the number of current connections. A return value of
-    0 indicates that the protocol is not supported or there are no current
-    connections.
-*/
-char *protocol_name;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         conn_get_num_serv_connections
+$RETURN_TYPE      unsigned int
+$PARAMETER_LIST
+    (CONST char *protocol_name)
+$SUMMARY          Get number of server connections.
+$PURPOSE
+    This routine will get the number of connections to the server
+    with a specified protocol.
+$PARAMETER        protocol_name :
+    The protocol name.
+$RETURNS
+    The number of current connections. A return value of 0 indicates
+    that the protocol is not supported or there are no current connections.
+$END
 
-unsigned int conn_get_num_client_connections (protocol_name)
-/*  This routine will get the number of connections from the client with a
-    specified protocol.
-    The protocol name must be pointed to by  protocol_name  .
-    The routine returns the number of current connections. A return value of
-    0 indicates that the protocol is not supported or there are no current
-    connections.
-*/
-char *protocol_name;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         conn_get_num_client_connections
+$RETURN_TYPE      unsigned int
+$PARAMETER_LIST
+    (CONST char *protocol_name)
+$SUMMARY          Get number of client connections.
+$PURPOSE
+    This routine will get the number of connections from the client
+    with a specified protocol.
+$PARAMETER        protocol_name :
+    The protocol name.
+$RETURNS
+    The number of current connections. A return value of 0 indicates
+    that the protocol is not supported or there are no current connections.
+$END
 
-Connection conn_get_serv_connection (protocol_name, number)
-/*  This routine will get Nth connection to the server with a specified
-    protocol. The first connection is numbered 0.
-    The protocol name must be pointed to by  protocol_name  .
-    The number of the connection to get must be given by  number  .
-    The routine returns the connection on success, else it returns NULL.
-*/
-char *protocol_name;
-unsigned int number;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         conn_get_serv_connection
+$RETURN_TYPE      Connection
+$PARAMETER_LIST
+    (CONST char *protocol_name,
+				     unsigned int number)
+$SUMMARY          Get a numbered server connection.
+$PURPOSE
+    This routine will get Nth connection to the server with a
+    specified protocol. The first connection is numbered 0.
+$PARAMETER        protocol_name :
+    The protocol name.
+$PARAMETER        number :
+    The number of the connection to get.
+$RETURNS
+    The connection object on success, else NULL.
+$END
 
-Connection conn_get_client_connection (protocol_name, number)
-/*  This routine will get Nth connection from the client with a specified
-    protocol. The first connection is numbered 0.
-    The protocol name must be pointed to by  protocol_name  .
-    The number of the connection to get must be given by  number  .
-    The routine returns the connection on success, else it returns NULL.
-*/
-char *protocol_name;
-unsigned int number;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         conn_get_client_connection
+$RETURN_TYPE      Connection
+$PARAMETER_LIST
+    (CONST char *protocol_name,
+				       unsigned int number)
+$SUMMARY          Get a numbered client connection.
+$PURPOSE
+    This routine will get Nth connection from the client with a
+    specified protocol. The first connection is numbered 0.
+$PARAMETER        protocol_name :
+    The protocol name.
+$PARAMETER        number :
+    The number of the connection to get.
+$RETURNS
+    The connection object on success, else NULL.
+$END
 
-void *conn_get_connection_info (connection)
-/*  This routine will get the arbitrary information for a connection.
-    The connection must be given by  connection  .
-    The routine aborts the process if  connection  is not valid.
-    The routine returns a pointer to the arbitrary information. This may be a
-    NULL pointer.
-*/
-Connection connection;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         conn_get_connection_info
+$RETURN_TYPE      void *
+$PARAMETER_LIST
+    (Connection connection)
+$SUMMARY          Get the arbitrary information for a connection.
+$PURPOSE
+    Get the arbitrary information for a connection.
+$PARAMETER        connection :
+    The connection object. The routine aborts the process if the
+    connection is not valid.
+$RETURNS
+    A pointer to the arbitrary information. This may be NULL.
+$END
 
-flag conn_controlled_by_cm_tool ()
-/*  This routine will determine if the module is being controlled by the
-    Connection Management tool.
-    The routine returns TRUE if the module is controlled, else it returns FALSE
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         conn_controlled_by_cm_tool
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    ()
+$SUMMARY          Check if controlled by CM tool.
+$PURPOSE
+    This routine will determine if the module is being controlled by
+    the Connection Management tool.
+$RETURNS
+    TRUE if the module is controlled, else FALSE
+$END
 
-char *conn_get_connection_module_name (connection)
-/*  This routine will get the name of the module at the other end of a
-    connection.
-    The connection must be given by  connection  .
-    The routine aborts the process if  connection  is not valid.
-    The routine returns a pointer to the module name.
-*/
-Connection connection;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         conn_get_connection_module_name
+$RETURN_TYPE      char *
+$PARAMETER_LIST
+    (Connection connection)
+$SUMMARY          Get the name of the module at the other end of a connection.
+$PURPOSE
+    Get the name of the module at the other end of a connection.
+$PARAMETER        connection :
+    The connection object. The routine aborts the process if the
+    connection is not valid.
+$RETURNS
+    A pointer to the module name.
+$END
 
-void conn_register_cm_quiescent_func (func)
-/*  This routine will register a callback function to be called when the
-    Connection Management tool or shell is quiescent (ie. all modules have
+$FUNCTION         conn_register_cm_quiescent_func
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    ( void (*func) () )
+$SUMMARY          Register callback for quiescence.
+$PURPOSE
+    This routine will register a callback function to be called when
+    the Connection Management tool or shell is quiescent (ie. all modules have
     started and all initial connections made). The function is ONLY called if
     the module is running under the Connection Management tool or shell.
+$NOTE
     Only one callback may be registered.
-    The routine which should be called when the Connection Management tool or
-    shell is quiescent must be pointed to by  func  .
-    The interface to this routine is as follows:
+$PARAMETER        quiescent_func :
+    The routine which will be called when the Connection
+    Management tool or shell is quiescent. The prototype function is
+    <-CONN_PROTO_quiescent_func->.
+$RETURNS
+    Nothing.
+$END
 
-    void func ()
-    *   This routine is called when the Connection Management tool or
-        shell is quiescent.
-	The routine returns nothing.
-    *
+$FUNCTION         conn_extract_protocols
+$RETURN_TYPE      char **
+$PARAMETER_LIST
+    ()
+$SUMMARY          Get supported protocols.
+$PURPOSE
+    This routine will extract all the supported protocols and
+    produces a dynamically allocated array of strings which may be later
+    displayed.
+$RETURNS
+    A pointer to a dynamically allocated array of dynamically
+    allocated strings on success, else NULL. The end of the array is marked
+    with a NULL string pointer.
+$END
 
-    The routine returns nothing.
-*/
-void (*func) ();
-/*---------------------------------------------------------------------------*/
+$PROTO_FUNC       exit_schedule_func
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    ()
+$SUMMARY          Exit schedule function.
+$PURPOSE
+    This routine is called when the <-conn-> package wishes to
+    schedule a clean exit from the module.
+    This routine may return (ie. it need not exit).
+$RETURNS
+    Nothing.
+$END
 
-char **conn_extract_protocols ()
-/*  This routine will extract all the supported protocols and produces a
-    dynamically allocated array of strings which may be later displayed.
-    The routine returns a pointer to a dynamically allocated array of
-    dynamically allocated strings on success, else it returns NULL. The end
-    of the array is marked with a NULL string pointer.
-*/
-/*---------------------------------------------------------------------------*/
+$PROTO_FUNC       CONN_PROTO_client_validate_func
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (void **info)
+$SUMMARY          Client connection validate event callback.
+$PURPOSE
+    This routine is called to validate whether it is appropriate to
+    open a connection.
+$PARAMETER        info :
+    A pointer to the arbitrary information pointer. This may be modified
+$RETURNS
+    TRUE if the connection should be attempted, else FALSE
+    indicating the connection should be aborted.
+$NOTE
+    Even if this routine is called and returns TRUE, there is no
+    guarantee that the connection will be subsequently opened.
+$END
+
+$PROTO_FUNC       CONN_PROTO_open_func
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Connection connection, void **info)
+$SUMMARY          Connection open event callback.
+$PURPOSE
+    This routine is called when a connection opens.
+$PARAMETER        connection :
+    The connection object.
+$PARAMETER        info :
+    A pointer to the arbitrary information pointer. This may be modified
+$RETURNS
+    TRUE on successful registration, else FALSE (indicating the
+    connection should be closed).
+$NOTE
+    The <<close_func>> will not be called if this routine returns
+    FALSE.
+$END
+
+$PROTO_FUNC       CONN_PROTO_read_func
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Connection connection, void **info)
+$SUMMARY          Connection read event callback.
+$PURPOSE
+    This routine is called when data is ready to be read from a
+    connection.
+$PARAMETER        connection :
+    The connection object.
+$PARAMETER        info :
+    A pointer to the arbitrary information pointer. This may be modified
+$RETURNS
+    TRUE on successful reading, else FALSE (indicating the connection
+    should be closed).
+$NOTE
+    The <<close_func>> will not be called if this routine returns
+    FALSE.
+$END
+
+$PROTO_FUNC       CONN_PROTO_close_func
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (Connection connection, void *info)
+$SUMMARY          Connection close event callback.
+$PURPOSE
+    This routine is called when a connection closed.
+    When this routine is called, this is the last chance to read any
+    buffered data from the channel associated with the connection object.
+$PARAMETER        connection :
+    The connection object.
+$PARAMETER        info :
+    The arbitrary connection information pointer.
+$RETURNS
+    Nothing.
+$END
+
+$PROTO_FUNC       CONN_PROTO_quiescent_func
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    ()
+$SUMMARY          Quiescence callback.
+$PURPOSE
+    This routine is called when the Connection Management tool or
+    shell is quiescent.
+$RETURNS
+    Nothing.
+$END

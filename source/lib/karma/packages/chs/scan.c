@@ -3,7 +3,7 @@
 
     This code provides Channel scanning routines.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -47,7 +47,10 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/chs/scan.c
 
-    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Last updated by Richard Gooch   1-APR-1996: Moved remaing functions to new
+  documentation style.
 
 
 */
@@ -61,18 +64,15 @@
 #include <karma_m.h>
 #include <karma_a.h>
 
+
 /*PUBLIC_FUNCTION*/
-unsigned int chs_get_value (channel, string, length)
-/*  This routine will scan a channel object for a whitespace separated value.
-    The channel to read from must be given by  channel  .
-    The routine will write the value into the buffer pointed to by  string  .
-    The size of the buffer (in bytes) must be given by  length  .
-    The routine returns the length of the string scanned on success,
-    else it returns 0.
+unsigned int chs_get_value (Channel channel, char *string, unsigned int length)
+/*  [SUMMARY] Scan a channel object for a whitespace separated value.
+    <channel> The channel to read from.
+    <string> The routine will write the value here.
+    <length> The size of the buffer (in bytes).
+    [RETURNS] The length of the string scanned on success, else 0.
 */
-Channel channel;
-char *string;
-unsigned int length;
 {
     unsigned int char_pos;
     static char function_name[] = "chs_get_value";
@@ -104,13 +104,14 @@ unsigned int length;
 }   /*  End Function chs_get_value  */
 
 /*PUBLIC_FUNCTION*/
-double chs_get_float (channel)
-/*  This routine will scan a channel object for the ASCII representaion of a
-    floating point number. Any leading whitespace will be ignored.
-    The channel to read from must be given by  channel  .
-    The routine will return the value scanned.
+double chs_get_float (Channel channel)
+/*  [SUMMARY] Scan a channel object for a float value.
+    [PURPOSE] This routine will scan a channel object for the ASCII
+    representation of a floating point number. Any leading whitespace will be
+    ignored.
+    <channel> The channel to read from.
+    [RETURNS] The value scanned. On error the process exits.
 */
-Channel channel;
 {
     char *p;
     char string[STRING_LENGTH];
@@ -126,13 +127,14 @@ Channel channel;
 }   /*  End Function chs_get_float  */
 
 /*PUBLIC_FUNCTION*/
-int chs_get_int (channel)
-/*  This routine will scan a channel object for the ASCII representaion of a
-    integer number. Any leading whitespace will be ignored.
-    The channel to read from must be given by  channel  .
-    The routine will return the value scanned.
+int chs_get_int (Channel channel)
+/*  [SUMMARY] Scan a channel object for an integer value.
+    [PURPOSE] This routine will scan a channel object for the ASCII
+    representation of an integer number. Any leading whitespace will be
+    ignored.
+    <channel> The channel object to read from.
+    [RETURNS] The value scanned. On error the process exits.
 */
-Channel channel;
 {
     char *p;
     char string[STRING_LENGTH];
@@ -148,18 +150,15 @@ Channel channel;
 }   /*  End Function chs_get_int  */
 
 /*PUBLIC_FUNCTION*/
-flag chs_get_line (channel, buffer, length)
-/*  This routine will read a line from a channel, stripping all comments,
-    leading and trailing whitespace. The comment character is '#'.
-    The channel must be given by  channel  .
-    The buffer to write the line into must be pointed to by  buffer  .
-    The size of the buffer must be given by  length  .
-    The routine returns TRUE on success, else it returns FALSE (indicating
-    End-Of-File).
+flag chs_get_line (Channel channel, char *buffer, unsigned int length)
+/*  [SUMMARY] Scan a channel object for a line.
+    [PURPOSE] This routine will read a line from a channel, stripping all
+    comments, leading and trailing whitespace. The comment character is '#'.
+    <channel> The channel object to read from.
+    <buffer> The buffer to write the line into.
+    <length> The size of the buffer.
+    [RETURNS] TRUE on success, else FALSE (indicating End-Of-File).
 */
-Channel channel;
-char *buffer;
-unsigned int length;
 {
     int len;
     char *ch;

@@ -1,0 +1,35 @@
+/*PROTOTYPE_FUNCTION*/  /*
+flag DS_PROTO_foreach_func (char *encls_desc, unsigned int type, char *data,
+			    unsigned int index)
+    [SUMMARY] Process an occurrence of an item in a data structure.
+    <encls_desc> The enclosing descriptor.
+    <type> The type of the enclosing descriptor. See [<DS_PARENT_TYPES>] for a
+    list of possible values.
+    <data> A pointer to the item data. This is:
+	    A pointer to the first element (for a packet descriptor)
+	    A pointer to a portion of the array (for an array or dimension
+	    descriptor)
+	    A pointer to the linked list header (for a linked list descriptor)
+    <index> The index number of the item in the enclosing descriptor, for the
+    cases where the enclosing descriptor is a packet, array or linked list
+    descriptor. For the case where the enclosing descriptor is a dimension
+    descriptor, this  carries the stride (in bytes) between consecutive
+    co-ordinates in the dimension.
+    [RETURNS] TRUE on success, else FALSE
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+flag DS_PROTO_traverse_function (char *desc1, unsigned int type1,
+				 char *data1, char *desc2,
+				 unsigned int type2, char *data2)
+    [SUMMARY] Process an occurrence of a divergence between two data structures
+    <desc1> One of the descriptors where the divergence occurred.
+    <type1> The type of the first descriptor. See [<DS_PARENT_TYPES>] for a
+    list of possible values. The value IDENT_DIMENSION is not possible.
+    <data> The data for the first descriptor.
+    <desc2> The other descriptor where the divergence occurred.
+    <type2> The type of the other descriptor. See [<DS_PARENT_TYPES>] for a
+    list of possible values. The value IDENT_DIMENSION is not possible.
+    <data2> The data for the other descriptor.
+    [RETURNS] TRUE on success, else FALSE.
+*/

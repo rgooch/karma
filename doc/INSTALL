@@ -188,9 +188,10 @@ endif
   If everything is set up properly, you should be able to type  gmake  (or
   gnumake  or  make) in each of these directories, and the libraries will be
   built.
-  There should be a  Makefile  in  $KARMABASE/lib  which recursively makes in
-  each library directory. Just type  gmake  in this directory. This also
-  requires GNUmake (but is not named so that you'd know: sorry).
+  There should be a  Makefile  in  $KARMAROOT/build/$MACHINE_OS/lib  which
+  recursively makes in each library directory. Just type  gmake  in this
+  directory. This also requires GNUmake (but is not named so that you'd know:
+  sorry).
 
   Some platforms require symbolic links to the shared libraries. You can run
   the  remove_oldlibs  script to create these links. In particular, because of

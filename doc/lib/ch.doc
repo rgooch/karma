@@ -1,600 +1,844 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the ch_ package of routines in the Karma library.
-
+$PACKAGE          ch
+$SUMMARY          Routines to manipulate channel objects
+$PURPOSE
     These routines are meant to provide an alternative to the standard C
     library streams (FILE *).
     The channel package provides far more powerful channels (streams),
     especially when transferring data over connections.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
-
-    Written by		Richard Gooch	29-Sep-1995
-
-    Last updated by	Richard Gooch	29-Sep-1995
-
-
-*/
-
-Channel ch_open_file (filename, type)
-/*  This routine will open a file channel. The file may be a regular disc file,
-    a named FIFO, a character special device, a Unix domain connection or a
-    TCP/IP connection. The channel may be later tested
+$FUNCTION         ch_open_file
+$RETURN_TYPE      Channel
+$PARAMETER_LIST
+    (CONST char *filename, CONST char *type)
+$SUMMARY          Open a file.
+$PURPOSE
+    This routine will open a file channel. The file may be a regular
+    disc file, a named FIFO, a character special device, a Unix domain
+    connection or a TCP/IP connection. The channel may be later tested
     to determine what the true channel type is by calling routines such as:
-    ch_test_for_asynchronous  and  ch_test_for_io  .
-    The pathname of the file to open must be given by  filename  .This
-    parameter has the same meaning as the first parameter to  open(2).
-    Filenames of the form: "//tcpIP/<hostname>:<port>" indicate a connection to
-    a TCP/IP port on host  <hostname>  with raw port number  <port>  is
-    requested.
-    The mode of the file must be pointed to by  type  .The following modes are
-    allowed:
-        "r"         open for reading
-	"w"         open (truncate) or create for writing
-	"a"         open or create for writing at end of file (append)
-	"r+"        open for update (reading and writing)
-	"w+"        open for reading and writing after truncation
-	"a+"        open or create for update (reading and writing) at EOF
-	"W"         open for writing
-    Note that for character special files and named FIFOs, these modes
+    <-ch_test_for_asynchronous-> and <-ch_test_for_io->.
+$PARAMETER        filename :
+    The pathname of the file to open. This parameter has the same
+    meaning as the first parameter to <<open(2)>>. Filenames of the form
+    "//tcpIP/<hostname>:<port>" indicate a connection to a TCP/IP port on host
+    <<hostname>> with raw port number <<port>> is requested.
+$PARAMETER        type :
+    The mode of the file. See <-CH_FILE_MODES-> for a list of allowable
+    modes.
+$NOTE
+    For character special files and named FIFOs, these modes
     degenerate into read-write, read-only and write-only.
-    The routine returns a channel object on success, else it returns NULL.
-*/
-CONST char *filename;
-CONST char *type;
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    A channel object on success, else NULL.
+$END
 
-Channel ch_map_disc (filename, option, writeable, update_on_write)
-/*  This routine will open a memory channel with the memory pages being mapped
-    from a disc file. The disc file must already exist.
-    The pathname of the file to open must be given by  filename  .
-    The channel may be opened as an ordinary disc file depending on the value
-    of  option  .Legal values for this are:
-        K_CH_MAP_NEVER           Never map
-	K_CH_MAP_LARGE_LOCAL     Map if local filesystem and file size > 1MB
-	K_CH_MAP_LOCAL           Map if local filesystem
-	K_CH_MAP_LARGE           Map if file over 1 MByte
-	K_CH_MAP_IF_AVAILABLE    Map if operating system supports it
-	K_CH_MAP_ALWAYS          Always map, fail if not supported.
+$FUNCTION         ch_map_disc
+$RETURN_TYPE      Channel
+$PARAMETER_LIST
+    (CONST char *filename, unsigned int option, flag writeable,
+		     flag update_on_write)
+$SUMMARY          Map a disc file.
+$PURPOSE
+    This routine will open a memory channel with the memory pages
+    being mapped from a disc file. The disc file must already exist.
+$PARAMETER        filename :
+    The pathname of the file to open.
+$PARAMETER        option :
+    Control value which determines whether the channel is opened as an
+    ordinary disc file or is mapped. See <-CH_MAP_CONTROLS-> for legal values.
     If the file is not mapped then the routine will attempt to open an ordinary
-    disc channel, provided  option  is not equal to  K_CH_MAP_ALWAYS  .
-    If the file is opened as a disc channel the access mode is: "r".
-    If the mapped pages are to be writeable, the value of  writeable  must be
-    TRUE. If this is FALSE and the memory pages are written to, a segmentation
-    fault occurs.
-    If the disc file should be updated when the memory pages are written to,
-    the value of  update_on_write  must be TRUE. If this is FALSE, then a write
-    to a memory page causes the page to be copied into swap space and the
-    process retains a private copy of the page from this point on.
-    If  update_on_write  is FALSE and  writeable  is TRUE, then some systems
-    require the allocation of normal virtual memory equal to the size of the
-    disc file at the time of mapping, while others will dynamically allocate
-    memory from swap space as pages are written into.
-    In the latter case, some systems will cause a segmentation fault if swap
-    space is exhausted, while other systems wait for space to be freed.
-    The channel may be queried to determine if it has been memory mapped using
-    the call:  ch_test_for_mmap
-    The routine returns a channel object on success, else it returns NULL.
-*/
-CONST char *filename;
-unsigned int option;
-flag writeable;
-flag update_on_write;
-/*---------------------------------------------------------------------------*/
+    disc channel. If the file is opened as a disc channel the access mode is:
+    "r".
+$PARAMETER        writable :
+    If the mapped pages are to be writeable, this must be TRUE. If
+    this is FALSE and the memory pages are written to, a segmentation fault
+    occurs.
+$PARAMETER        update_on_write :
+    If the disc file should be updated when the memory pages
+    are written to, this must be TRUE. If this is FALSE, then a write to a
+    memory page causes the page to be copied into swap space and the process
+    retains a private copy of the page from this point on.
+$NOTE
+    If <<update_on_write>> is FALSE and <<writeable>> is TRUE, then some
+    systems require the allocation of normal virtual memory equal to the size
+    of the disc file at the time of mapping, while others will dynamically
+    allocate memory from swap space as pages are written into. In the latter
+    case, some systems will cause a segmentation fault if swap space is
+    exhausted, while other systems wait for space to be freed.
+$NOTE
+    The channel may be queried to determine if it has been memory mapped
+    using the call <<ch_test_for_mmap>>.
+$RETURNS
+    A channel object on success, else NULL.
+$END
 
-Channel ch_open_connection (unsigned long host_addr, unsigned int port_number)
-/*  This routine will open a full-duplex connection channel to a server running
-    on another host machine.
-    The Internet address of the host machine must be given by  host_addr  .
-    If this is 0 the connection is made to a server running on the same machine
-    using the most efficient transport available.
-    The port number to connect to must be given by  port_number  .This should
-    not be confused with Internet port numbers.
-    The use of this routine is not recommended: see the  conn_  package for
-    more powerful functionality.
-    The routine returns a channel object on success, else it returns NULL.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         ch_open_connection
+$RETURN_TYPE      Channel
+$PARAMETER_LIST
+    (unsigned long host_addr, unsigned int port_number)
+$SUMMARY          Open a connection.
+$PURPOSE
+    This routine will open a full-duplex connection channel to a
+    server running on another host machine.
+$PARAMETER        host_addr :
+    The Internet address of the host machine. If this is 0 the
+    connection is made to a server running on the same machine using the most
+    efficient transport available.
+$PARAMETER        port_number :
+    The port number to connect to. This should not be confused
+    with Internet port numbers.
+$NOTE
+    The use of this routine is not recommended, see the <-conn->
+    package for more powerful functionality.
+$RETURNS
+    A channel object on success, else NULL.
+$END
 
-Channel ch_open_memory (buffer, size)
-/*  This routine will open a memory channel. A memory channel behaves like a
-    disc channel with a limited (specified) file (device) size.
-    Data is undefined when reading before writing has occurred.
-    The buffer to use must be pointed to by  buffer  .If this is NULL, the
-    routine will allocate a buffer of the specified size which is automatically
-    deallocated upon closure of the channel.
-    The size of the buffer to allocate must be given by  size  .
-    The routine returns a channel object on success, else it returns NULL.
-*/
-char *buffer;
-unsigned int size;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         ch_open_memory
+$RETURN_TYPE      Channel
+$PARAMETER_LIST
+    (char *buffer, unsigned int size)
+$SUMMARY          Open a memory channel.
+$PURPOSE
+    This routine will open a memory channel. A memory channel behaves
+    like a disc channel with a limited (specified) file (device) size. Data is
+    undefined when reading before writing has occurred.
+$PARAMETER        buffer :
+    The buffer to use. If this is NULL, the routine will allocate a
+    buffer of the specified size which is automatically deallocated upon
+    closure of the channel.
+$PARAMETER        size :
+    The size of the buffer to allocate.
+$RETURNS
+    A channel object on success, else NULL.
+$END
 
-Channel ch_accept_on_dock (dock, addr)
-/*  This routine will open a full-duplex connection channel to the first
-    connection to a waiting dock.
-    The dock must be given by  dock  .
-    The address of the host connecting to the dock will be written to the
-    storage pointed to by  addr  .
-    The routine returns a channel object on success, else it returns NULL.
-*/
-Channel dock;
-unsigned long *addr;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         ch_accept_on_dock
+$RETURN_TYPE      Channel
+$PARAMETER_LIST
+    (Channel dock, unsigned long *addr)
+$SUMMARY          Accept a connection.
+$PURPOSE
+    This routine will open a full-duplex connection channel to the
+    first connection on a waiting dock.
+$PARAMETER        dock :
+    The dock.
+$PARAMETER        addr :
+    The address of the host connecting to the dock will be written here.
+$RETURNS
+    A channel object on success, else NULL.
+$END
 
-Channel *ch_alloc_port (port_number, retries, num_docks)
-/*  This routine will allocate a Karma port for the module so that it can
-    operate as a server (able to receive network connections).
-    The port number to allocate must be pointed to by  port_number  .The
-    routine will write the actual port number allocated to this address. This
-    must point to an address which lies on an  int  boundary.
-    The number of succsessive port numbers to attempt to allocate before giving
-    up must be given by  retries  .If this is 0, then the routine will give up
-    immediately if the specified port number is in use.
-    The routine will create a number of docks for one port. Each dock is an
-    alternative access point for other modules to connect to this port.
-    The number of docks allocated will be written to the storage pointed to by
-    num_docks  .This must point to an address which lies on an  int
-    boundary.
-    The close-on-exec flags of the docks are set such that the docks will
-    close on a call to execve(2V).
+$FUNCTION         ch_alloc_port
+$RETURN_TYPE      Channel *
+$PARAMETER_LIST
+    (unsigned int *port_number, unsigned int retries,
+			unsigned int *num_docks)
+$SUMMARY          Allocate a port.
+$PURPOSE
+    This routine will allocate a Karma port for the module so that it
+    can operate as a server (able to receive network connections).
+$PARAMETER        port_number :
+    A pointer to the port number to allocate. The routine will
+    write the actual port number allocated to this address. This must point to
+    an address which lies on an <<int>> boundary.
+$PARAMETER        retries :
+    The number of succsessive port numbers to attempt to allocate
+    before giving up. If this is 0, then the routine will give up immediately
+    if the specified port number is in use.
+$PARAMETER        num_docks :
+    The routine will create a number of docks for one port. Each
+    dock is an alternative access point for other modules to connect to this
+    port. The number of docks allocated will be written here. This must point
+    to an address which lies on an <<int>> boundary.
+$NOTE
+    The close-on-exec flags of the docks are set such that the docks
+    will close on a call to execve(2V).
+$NOTE
     The docks are placed into blocking mode.
-    The routine returns a pointer to an array of channel docks on success,
-    else it returns NULL.
-*/
-unsigned int *port_number;
-unsigned int retries;
-unsigned int *num_docks;
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    A pointer to an array of channel docks on success, else NULL.
+$END
 
-flag ch_close (channel)
-/*  This routine will close a channel object. The write buffer will be flushed
-    prior to closure.
-    The channel object must be given by  channel  .
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-Channel channel;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         ch_close
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel)
+$SUMMARY          Close a channel.
+$PURPOSE
+    This routine will close a channel object. The write buffer will
+    be flushed prior to closure.
+$PARAMETER        channel :
+    The channel object.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag ch_flush (channel)
-/*  This routine will flush the write buffer of a channel object.
-    The channel object must be given by  channel  .
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-Channel channel;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         ch_flush
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel)
+$SUMMARY          Flush the write buffer of a channel object.
+$PURPOSE
+    Flush the write buffer of a channel object.
+$PARAMETER        channel :
+    The channel object.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-unsigned int ch_read (channel, buffer, length)
-/*  This routine will read a number of bytes from a channel and places them
-    into a buffer.
-    The channel object must be given by  channel  .
-    The buffer to write the data into must be pointed to by  buffer  .
-    The number of bytes to write into the buffer must be pointed to by  length
-    If the channel is a connection and the number of bytes readable from the
-    connection is equal to or more than  length  the routine will NOT block.
-    The routine returns the number of bytes read.
-*/
-Channel channel;
-char *buffer;
-unsigned int length;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         ch_read
+$RETURN_TYPE      unsigned int
+$PARAMETER_LIST
+    (Channel channel, char *buffer, unsigned int length)
+$SUMMARY          Read from a channel.
+$PURPOSE
+    This routine will read a number of bytes from a channel and
+    places them into a buffer.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        buffer :
+    The buffer to write the data into.
+$PARAMETER        length :
+    The number of bytes to write into the buffer.
+$NOTE
+    If the channel is a connection and the number of bytes readable from
+    the connection is equal to or more than <<length>> the routine will NOT
+    block.
+$RETURNS
+    The number of bytes read.
+$END
 
-unsigned int ch_write (channel, buffer, length)
-/*  This routine will write a number of bytes from a buffer to a channel.
-    The channel object must be given by  channel  .
-    The buffer to read the data from must be pointed to by  buffer  .
-    The number of bytes to read from the buffer must be given by  length
-    The routine returns the number of bytes written.
-*/
-Channel channel;
-CONST char *buffer;
-unsigned int length;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         ch_write
+$RETURN_TYPE      unsigned int
+$PARAMETER_LIST
+    (Channel channel, CONST char *buffer,unsigned int length)
+$SUMMARY          Write to a channel.
+$PURPOSE
+    This routine will write a number of bytes from a buffer to a
+    channel.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        buffer :
+    The buffer to read the data from.
+$PARAMETER        length :
+    The number of bytes to read from the buffer and write to the
+    channel.
+$RETURNS
+    The number of bytes written.
+$END
 
-void ch_close_all_channels ()
-/*  This routine will close all open channels.
-    The routine is meant to be called from the exit(3) function.
-    The routine returns nothing.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         ch_close_all_channels
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    ()
+$SUMMARY          Close all open channels.
+$PURPOSE
+    The routine will close all open channels. The routine is meant to
+    be called from the exit(3) function.
+$RETURNS
+    Nothing.
+$END
 
-flag ch_seek (Channel channel, unsigned long position)
-/*  This routine will position the read and write pointers for a channel.
-    The channel object must be given by  channel  .
-    The position (relative to the start of the channel data) must be given
-    by  position  .
+$FUNCTION         ch_seek
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, unsigned long position)
+$SUMMARY          Move read/write pointer.
+$PURPOSE
+    This routine will position the read and write pointers for a
+    channel.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        position :
+    The position (relative to the start of the channel data).
+$NOTE
     This routine cannot be used for connection channels.
-    The routine returns TRUE on success,
-    else it returns FALSE (indicating a seek request beyond the channel limits)
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE on success, else FALSE (indicating a seek request beyond the
+    channel limits)
+$END
 
-int ch_get_bytes_readable (channel)
-/*  This routine will determine the number of bytes currently readable on
-    a connection channel. This is equal to the maximum number of bytes that
-    could be read from the channel at this time without blocking waiting for
-    more input to be transmitted from the other end of the connection.
-    The channel object must be given by  channel  .
-    The routine returns the number of bytes readable on success,
-    else it returns -1 indicating error.
-*/
-Channel channel;
-/*---------------------------------------------------------------------------*/
-
-int ch_get_descriptor (channel)
-/*  This routine will get the file descriptor associated with a channel.
-    The channel object must be given by  channel  .
-    The routine returns the file descriptor on success,
-    else it returns -1 indicating error.
-*/
-Channel channel;
-/*---------------------------------------------------------------------------*/
-
-void ch_open_stdin ()
-/*  This routine will create a channel object for the standard input descriptor
-    (typically 0 on Unix systems).
-    The standard input channel will be written to the external variable
-    ch_stdin  .
-    The routine returns nothing.
-*/
-/*---------------------------------------------------------------------------*/
-
-flag ch_test_for_io (channel)
-/*  This routine will test if a channel object is capable of supporting reading
-    and writing operations. Most channels fall under this category. The notable
-    exceptions are the dock channel and channels created by a call to
-    ch_attach_to_asynchronous_descriptor  .
-    The channel object must be given by  channel  .
-    The routine returns TRUE if the channel is capable of reading and writing,
-    else it returns FALSE.
-*/
-Channel channel;
-/*---------------------------------------------------------------------------*/
-
-flag ch_test_for_asynchronous (channel)
-/*  This routine will test if a channel object is an asynchronous channel,
-    ie. a character special file, named FIFO, connection, a dock channel or one
-    created by a call to  ch_attach_to_asynchronous_descriptor  or
-    ch_create_pipe  .
-    The channel object must be given by  channel  .
-    The routine returns TRUE if the channel is asynchronous,
-    else it returns FALSE.
-*/
-Channel channel;
-/*---------------------------------------------------------------------------*/
-
-flag ch_test_for_connection (channel)
-/*  This routine will test if a channel object is a connection channel.
-    The channel object must be given by  channel  .
-    The routine returns TRUE if the channel object is a connection,
-    else it returns FALSE.
-*/
-Channel channel;
-/*---------------------------------------------------------------------------*/
-
-flag ch_test_for_local_connection (channel)
-/*  This routine will test if a connection channel object is a local
+$FUNCTION         ch_get_bytes_readable
+$RETURN_TYPE      int
+$PARAMETER_LIST
+    (Channel channel)
+$SUMMARY          Count unread bytes.
+$PURPOSE
+    This routine will determine the number of bytes currently
+    readable on a connection channel. This is equal to the maximum number of
+    bytes that could be read from the channel at this time without blocking
+    waiting for more input to be transmitted from the other end of the
     connection.
-    The channel object must be given by  channel  .
-    The routine returns TRUE if the channel object is a local connection,
-    else it returns FALSE.
-*/
-Channel channel;
-/*---------------------------------------------------------------------------*/
+$PARAMETER        channel :
+    The channel object.
+$RETURNS
+    The number of bytes readable on success, else -1 indicating error
+$END
 
-Channel ch_attach_to_asynchronous_descriptor (fd)
-/*  This routine will create a channel object from an asynchronous descriptor.
-    The descriptor must be given by  fd  .
-    The routine returns a channel object on success, else it returns NULL.
-*/
-int fd;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         ch_get_descriptor
+$RETURN_TYPE      int
+$PARAMETER_LIST
+    (Channel channel)
+$SUMMARY          Get the file descriptor associated with a channel.
+$PURPOSE
+    Get the file descriptor associated with a channel.
+$PARAMETER        channel :
+    The channel object.
+$RETURNS
+    The file descriptor on success, else -1 indicating error.
+$END
 
-flag ch_test_for_mmap (channel)
-/*  This routine will test if a channel object is a memory mapped disc channel.
-    The channel object must be given by  channel  .
-    The routine returns TRUE if the channel object is memory mapped,
-    else it returns FALSE.
-*/
-Channel channel;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         ch_open_stdin
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    ()
+$SUMMARY          Create starndard input channel.
+$PURPOSE
+    This routine will create a channel object for the standard input
+    descriptor (typically 0 on Unix systems).
+$NOTE
+    The standard input channel will be written to the external variable
+    <<ch_stdin>>.
+$RETURNS
+    Nothing.
+$END
 
-flag ch_tell (channel, read_pos, write_pos)
-/*  This routine will determine the read and write pointers for a channel.
-    The channel object must be given by  channel  .
-    The read position (relative to the start of the channel data) will be
-    written to the storage pointed to by  read_pos  .
-    The write position (relative to the start of the channel data) will be
-    written to the storage pointed to by  write_pos  .
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-Channel channel;
-unsigned long *read_pos;
-unsigned long *write_pos;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         ch_test_for_io
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel)
+$SUMMARY          Test if I/O possible on channel.
+$PURPOSE
+    This routine will test if a channel object is capable of
+    supporting reading and writing operations. Most channels fall under this
+    category. The notable exceptions are the dock channel and channels created
+    by a call to <<ch_attach_to_asynchronous_descriptor>>.
+$PARAMETER        channel :
+    The channel object.
+$RETURNS
+    TRUE if the channel is capable of reading and writing, else FALSE
+$END
 
-char *ch_get_mmap_addr (channel)
-/*  This routine will get the starting address of the data for a memory mapped
-    disc channel. The channel MUST be a memory mapped disc channel.
-    The routine returns the address of the memory mapped data.
-    NOTE: the if memory mapped address space is read-only, any attempt to write
-    to this address space will cause a segmentation fault.
-*/
-Channel channel;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         ch_test_for_asynchronous
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel)
+$SUMMARY          Test if a channel object is an asynchronous channel.
+$PURPOSE
+    This routine will test if a channel object is an asynchronous
+    channel, i.e. a character special file, named FIFO, connection, a dock
+    channel or one created by a call to
+    <<ch_attach_to_asynchronous_descriptor>> or <<ch_create_pipe>>.
+$PARAMETER        channel :
+    The channel object.
+$RETURNS
+    TRUE if the channel is asynchronous, else FALSE.
+$END
 
-unsigned int ch_get_mmap_access_count (channel)
-/*  This routine will get the number of times a memory mapped disc channel has
-    been queried for the mapping address (using  ch_get_mmap_addr  ).
-    The channel object must be given by  channel  .
+$FUNCTION         ch_test_for_connection
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel)
+$SUMMARY          Test if a channel object is a connection channel.
+$PURPOSE
+    Test if a channel object is a connection channel.
+$PARAMETER        channel :
+    The channel object.
+$RETURNS
+    TRUE if the channel object is a connection, else FALSE.
+$END
+
+$FUNCTION         ch_test_for_local_connection
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel)
+$SUMMARY          Test if a connection channel object is a local connection.
+$PURPOSE
+    Test if a connection channel object is a local connection.
+$PARAMETER        channel :
+    The channel object.
+$RETURNS
+    TRUE if the channel object is a local connection, else FALSE.
+$END
+
+$FUNCTION         ch_attach_to_asynchronous_descriptor
+$RETURN_TYPE      Channel
+$PARAMETER_LIST
+    (int fd)
+$SUMMARY          Create a channel object from an asynchronous descriptor.
+$PURPOSE
+    Create a channel object from an asynchronous descriptor.
+$PARAMETER        fd :
+    The descriptor.
+$RETURNS
+    A channel object on success, else NULL.
+$END
+
+$FUNCTION         ch_test_for_mmap
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel)
+$SUMMARY          Test if a channel object is a memory mapped disc channel.
+$PURPOSE
+    Test if a channel object is a memory mapped disc channel.
+$PARAMETER        channel :
+    The channel object.
+$RETURNS
+    TRUE if the channel object is memory mapped, else FALSE.
+$END
+
+$FUNCTION         ch_tell
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, unsigned long *read_pos,
+	      unsigned long *write_pos)
+$SUMMARY          Get the read and write pointers for a channel.
+$PURPOSE
+    Get the read and write pointers for a channel.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        read_pos :
+    The read position (relative to the start of the channel data)
+    will be written here.
+$PARAMETER        write_pos :
+    The write position (relative to the start of the channel data)
+    will be written here.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION         ch_get_mmap_addr
+$RETURN_TYPE      char *
+$PARAMETER_LIST
+    (Channel channel)
+$SUMMARY          Get memory mapped address.
+$PURPOSE
+    This routine will get the starting address of the data for a
+    memory mapped disc channel. The channel MUST be a memory mapped disc
+    channel.
+$PARAMETER        channel :
+    The channel object.
+$RETURNS
+    The address of the memory mapped data.
+$NOTE
+    If the memory mapped address space is read-only, any attempt to
+    write to this address space will cause a segmentation fault.
+$END
+
+$FUNCTION         ch_get_mmap_access_count
+$RETURN_TYPE      unsigned int
+$PARAMETER_LIST
+    (Channel channel)
+$SUMMARY          Get memory mapped access count.
+$PURPOSE
+    This routine will get the number of times a memory mapped disc
+    channel has been queried for the mapping address using <<ch_get_mmap_addr>>
+$PARAMETER        channel :
+    The channel object.
+$NOTE
     The channel MUST be a memory mapped disc channel.
-    The routine returns the number of address queries.
-*/
-Channel channel;
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    The number of address queries.
+$END
 
-ChConverter ch_register_converter (channel, size_func, read_func, write_func,
-				   flush_func, close_func, info)
-/*  This routine will register a set of converter functions which will be
-    called when channel data is read or written. The operation of these
+$FUNCTION         ch_register_converter
+$RETURN_TYPE      ChConverter
+$PARAMETER_LIST
+    (Channel channel,
+				   unsigned int (*size_func) (),
+				   unsigned int (*read_func) (),
+				   unsigned int (*write_func) (),
+				   flag (*flush_func) (),
+				   void (*close_func) (),
+				   void *info)
+$SUMMARY          Register channel converter function.
+$PURPOSE
+    This routine will register a set of converter functions which
+    will be called when channel data is read or written. The operation of these
     routines is transparent. Converter functions are useful for automatic
     compression and encryption of data streams.
-    NOTE: converters may only be registered for disc, connection, character
-    special and FIFO channels (ie. those opened with  ch_open_file  ), and
-    impose restrictions on channel operations (ie.  ch_seek  cannot be called).
-    Converter functions are expected to provide their own buffering as needed.
-    The channel object must be given by  channel  .
-    The function which will determine (approximately) how many bytes would be
-    returned by the  read_func  must be pointed to by  size_func  .This routine
-    is called when  ch_get_bytes_readable  is called for the channel.
-    The interface to this function is given below:
-
-    unsigned int size_func (channel, info)
-    *   This routine will determine the approximate number of bytes that the
-        read_func  will return.
-	The channel object will be given by  channel  .
-	The arbitrary information pointer will be pointed to by  info  .The
-	information pointer may be modified.
-	The routine returns the number of bytes the  read_func  will return.
-    *
-    Channel channel;
-    void **info;
-
-    The function which will convert data when reading must be pointed to by
-    read_func  .
-    The interface to this function is given below:
-
-    unsigned int read_func (channel, buffer, length, info)
-    *   This routine will convert bytes being read from a channel object.
-        The channel object will be given by  channel  .It is permissable for
-	the routine to call  ch_read  with this channel. If this is done,
-	this  read_func  will be bypassed.
-	The buffer to write the data into will be pointed to by  buffer  .
-	The number of bytes to write into the buffer will be pointed to by
-	length  .
-	The arbitrary information pointer will be pointed to by  info  .The
-	information pointer may be modified.
-	The routine returns the number of bytes actually written to the buffer.
-    *
-    Channel channel;
-    char *buffer;
-    unsigned int length;
-    void **info;
-
-    The function which will convert data when writing must be pointed to by
-    write_func  .If this is NULL, no write conversion is performed.
-    The interface to this function is given below:
-
-    unsigned int write_func (channel, buffer, length, info)
-    *   This routine will convert bytes being written to a channel object.
-        The channel object will be given by  channel  .It is permissable for
-	the routine to call  ch_write  with this channel. If this is done,
-	this  write_func  will be bypassed.
-	The buffer to read the data from will be pointed to by  buffer  .The
-	contents of this buffer may be modified if needed.
-	The number of bytes to read from the buffer will be given by  length
-	The arbitrary information pointer will be pointed to by  info  .The
-	information pointer may be modified.
-	The routine returns the number of bytes read from the buffer.
-    *
-    Channel channel;
-    char *buffer;
-    unsigned int length;
-    void **info;
-
-    The function which is called when the channel is to be flushed must be
-    pointed to by  flush_func  .
-    The interface to this function is given below:
-
-    flag flush_func (channel, info)
-    *   This routine will process a flush request for a channel object.
-        The channel object will be given by  channel  .It is permissable for
-	the routine to call  ch_write  with this channel. If this is done,
-	this  write_func  will be bypassed.
-	The arbitrary information pointer will be pointed to by  info  .The
-	information pointer may be modified.
-	The routine returns TRUE on success, else it returns FALSE.
-    *
-    Channel channel;
-    void **info;
-
-    The function which is called when the channel is closed must be pointed to
-    by  close_func  .If this is NULL, no special action is taken upon channel
-    closure. Note that the  flush_func  will be called prior to the  close_func
-    upon channel closure.
-    The interface to this function is given below:
-
-    void close_func (info)
-    *   This routine is called when a channel is closed.
-	The arbitrary information pointer will be given by  info  .
-	The routine returns nothing.
-    *
-    void *info;
-
     It is permissable to register multiple converter functions with a channel.
     Converter functions are pushed down from the top (application) level. In
     other words, the last converter functions registered are called first.
-    The sequence of events when the application level calls  ch_write  is:
-      The last registered write converter is popped from the stack and called.
-      This write converter may buffer some or all of the data. It may call
-        ch_write  with some converted data.
-      When  ch_write  is called from a write converter, the next last
-        registered write converter is popped from the stack and called.
-      This sequence is continued until data is actually transferred into the
-      channel write buffer.
+$NOTE
+    Converters may only be registered for disc, connection, character
+    special and FIFO channels (ie. those opened with <<ch_open_file>>), and
+    impose restrictions on channel operations (ie. <<ch_seek>> cannot be
+    called).
+$NOTE
+    Converter functions are expected to provide their own buffering as
+    needed.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        size_func :
+    The function which will determine (approximately) how many
+    bytes would be returned by the <<read_func>>. This routine is called when
+    <-ch_get_bytes_readable-> is called for the channel. The prototype function
+    is <-CH_PROTO_size_func->.
+$PARAMETER        read_func :
+    The function which will convert data when reading.
+    The prototype function is <-CH_PROTO_read_func->.
+$PARAMETER        write_func :
+    The function which will convert data when writing. If this is
+    NULL, no write conversion is performed. The prototype function is
+    <-CH_PROTO_write_func->.
+$PARAMETER        flush_func :
+    The function which is called when the channel is to be flushed
+    The prototype function is <-CH_PROTO_flush_func->.
+$PARAMETER        close_func :
+    The function which is called when the channel is closed. If
+    this is NULL, no special action is taken upon channel closure.
+    The prototype function is <-CH_PROTO_close_func->.
+$NOTE
+    The <<flush_func>> will be called prior to the <<close_func>> upon
+    channel closure.
+$NOTE
+    will be called prior to the <<close_func>> upon
+    The sequence of events when the application level calls <-ch_write-> is:
+    The last registered write converter is popped from the stack and called.
+    This write converter may buffer some or all of the data. It may call
+    <-ch_write-> with some converted data.
+    When <-ch_write-> is called from a write converter, the next last
+    registered write converter is popped from the stack and called.
+    This sequence is continued until data is actually transferred into the
+    channel write buffer.
     A similar sequence of events occurs when  ch_read  is called.
     The sequence of events when the application level calls  ch_flush  is:
-      The last registered flush converter is popped from the stack and called.
-      This flush converter MUST write all data in it's buffer using  ch_write
-      When  ch_write  is called from a flush converter, the next last
-        registered write converter is popped from the stack and called.
-      When the last registered flush converter returns, the sequence is
-      repeated with the next last flush converter, and so on, until all data
-      in all write buffers is flushed, including the channel write buffer.
-    The routine returns a ChConverter object on success (which may be used in a
-    call to  ch_unregister_converter), else it returns NULL.
-*/
-Channel channel;
-unsigned int (*size_func) ();
-unsigned int (*read_func) ();
-unsigned int (*write_func) ();
-flag (*flush_func) ();
-void (*close_func) ();
-void *info;
-/*---------------------------------------------------------------------------*/
+    The last registered flush converter is popped from the stack and called.
+    This flush converter MUST write all data in it's buffer using  ch_write
+    When  ch_write  is called from a flush converter, the next last
+    registered write converter is popped from the stack and called.
+    When the last registered flush converter returns, the sequence is
+    repeated with the next last flush converter, and so on, until all data
+    in all write buffers is flushed, including the channel write buffer.
+$RETURNS
+    A ChConverter object on success (which may be used in a call to
+    <-ch_unregister_converter->), else NULL.
+$END
 
-void ch_unregister_converter (converter)
-/*  This routine will unregister a set of converter functions previously
-    registered with  ch_register_converter  .This will cause the registered
-    flush and close functions to be called.
-    The ChConverter object must be given by  converter  .
-    The routine returns nothing.
-*/
-ChConverter converter;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         ch_unregister_converter
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (ChConverter converter)
+$SUMMARY          Unregister converter.
+$PURPOSE
+    This routine will unregister a set of converter functions
+    previously registered with <-ch_register_converter->. This will cause the
+    registered flush and close functions to be called.
+$PARAMETER        converter :
+    The ChConverter object.
+$RETURNS
+    Nothing.
+$END
 
-flag ch_create_pipe (read_ch, write_ch)
-/*  This routine will create an un-named pipe (see  pipe(2)  for details on
-    un-named pipes).
-    The channel corresponding to the read end of the pipe will be written to
-    the storage pointed to by  read_ch  .
-    The channel corresponding to the write end of the pipe will be written to
-    the storage pointed to by  write_ch  .
-    The routine returns TRUE on success, else it returns FALSE and sets  errno
-    with the error code.
-*/
-Channel *read_ch;
-Channel *write_ch;
-/*---------------------------------------------------------------------------*/
+$FUNCTION         ch_create_pipe
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel *read_ch, Channel *write_ch)
+$SUMMARY          Create a pipe.
+$PURPOSE
+    This routine will create an un-named pipe (see <<pipe(2)>> for
+    details on un-named pipes).
+$PARAMETER        read_ch :
+    The channel corresponding to the read end of the pipe will be
+    written here.
+$PARAMETER        write_ch :
+    The channel corresponding to the write end of the pipe will be
+    written here.
+$RETURNS
+    TRUE on success, else FALSE and sets <<errno>> with the error
+    code.
+$END
 
-Channel ch_create_sink ()
-/*  This routine will create a data sink channel. All writes to the channel are
-    discarded (and reported as having succeeded) and all reads return an
-    End-Of-File condition. Read and write operations modify the absolute read
-    and write pointers (obtainable with  ch_tell  ) as expected.
-    The routine returns the channel object on succes, else it returns NULL.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         ch_create_sink
+$RETURN_TYPE      Channel
+$PARAMETER_LIST
+    ()
+$SUMMARY          Create data sink.
+$PURPOSE
+    This routine will create a data sink channel. All writes to the
+    channel are discarded (and reported as having succeeded) and all reads
+    return an End-Of-File condition. Read and write operations modify the
+    absolute read and write pointers (obtainable with <-ch_tell->) as expected.
+$RETURNS
+    The channel object on succes, else NULL.
+$END
 
-KCallbackFunc ch_tap_io_events ( void (*tap_func) (), void *info )
-/*  This routine will tap I/O events by calling a registered function whenever
-    data is transferred to/from a disc, connection or FIFO channel. Reading and
-    writing memory mapped or memory channels does *not* constitute an I/O event
-
-    The function which is called when I/O occurs must be pointed to by
-    tap_func  .
-    The interface to this function is given below:
-
-    void tap_func (info)
-    *   This routine is called when I/O occurs.
-	The arbitrary information pointer will be given by  info  .
-	The routine returns nothing.
-    *
-    void *info;
-
+$FUNCTION         ch_tap_io_events
+$RETURN_TYPE      KCallbackFunc
+$PARAMETER_LIST
+    (void (*tap_func) (), void *info)
+$SUMMARY          Register I/O tap function.
+$PURPOSE
+    This routine will tap I/O events by calling a registered function
+    whenever data is transferred to/from a disc, connection or FIFO channel.
+    Reading and writing memory mapped or memory channels does *not* constitute
+    an I/O event.
     Multiple tap functions may be registered, with the first one registered
     being the first one called upon a channel I/O event.
+$PARAMETER        tap_func :
+    The function which is called when I/O occurs. The prototype
+    function is <-CH_PROTO_tap_func->.
+$PARAMETER        info :
+    The arbitrary information passed to the tap function. This may be
+    NULL.
+$RETURNS
+    A KCallbackFunc. On failure, the process aborts.
+$END
 
-    The arbitrary information passed to the tap function must be pointed to
-    by  info  .This may be NULL.
-    The routine returns a KCallbackFunc. On failure, the process aborts.
-*/
-/*---------------------------------------------------------------------------*/
-
-Channel ch_open_and_fill_memory (strings)
-/*  This routine will open a memory channel with sufficient space to contain
-    a list of strings.
-    The NULL terminated array of string pointers must be pointed to by  strings
+$FUNCTION         ch_open_and_fill_memory
+$RETURN_TYPE      Channel
+$PARAMETER_LIST
+    (char **strings)
+$SUMMARY          Create and fill memory channel.
+$PURPOSE
+    This routine will open a memory channel with sufficient space to
+    contain a list of strings.
+$PARAMETER        strings :
+    The NULL terminated array of string pointers.
     The strings are written with a NEWLINE character to terminate the string.
     The NULL terminator character is not written.
-    The routine returns a channel object on success, else it returns NULL.
-*/
-char **strings;
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    A channel object on success, else NULL.
+$END
 
-flag ch_gets (channel, buffer, length)
-/*  This routine will read a character string from a channel into a buffer.
-    The channel object must be given by  channel  .
-    The buffer to write the data to must be pointed to by  buffer  .
+$FUNCTION         ch_gets
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, char *buffer, unsigned int length)
+$SUMMARY          Read a line from a channel.
+$PURPOSE
+    This routine will read a character string from a channel into a
+    buffer.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        buffer :
+    The buffer to write the data into.
     The routine will write a NULL terminator character at the end of the
     string.
-    NOTE: the newline chanacter '\n' is NOT copied into the buffer.
-    The length of the buffer must be given by  length  .If the buffer is not
-    large enough to contain the string, then the remainder of the string is NOT
-    read. See also the  ch_getl  routine.
-    The routine returns TRUE on success,
-    else it returns FALSE (indicating end-of-file was encountered).
-*/
-Channel channel;
-char *buffer;
-unsigned int length;
-/*---------------------------------------------------------------------------*/
+$NOTE
+    The newline chanacter '\n' is NOT copied into the buffer.
+$PARAMETER        length :
+    The length of the buffer. If the buffer is not large enough to
+    contain the string, then the remainder of the string is NOT read. See also
+    the <-ch_getl-> routine.
+$RETURNS
+    TRUE on success, else FALSE (indicating end-of-file was
+    encountered).
+$END
 
-flag ch_getl (channel, buffer, length)
-/*  This routine will read a character string from a channel into a buffer.
-    The channel object must be given by  channel  .
-    The buffer to write the data to must be pointed to by  buffer  .
+$FUNCTION         ch_getl
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, char *buffer, unsigned int length)
+$SUMMARY          Read a line from a channel.
+$PURPOSE
+    This routine will read a character string from a channel into a
+    buffer.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        buffer :
+    The buffer to write the data into.
     The routine will write a NULL terminator character at the end of the
     string.
-    NOTE: the newline chanacter '\n' is NOT copied into the buffer.
-    The length of the buffer must be given by  length  .If the buffer is not
-    large enough to contain the string, then the remainder of the string
-    (including the newline character) is read in and discarded and a warning
-    message is displayed. See also the ch_gets  routine.
-    The routine returns TRUE on success,
-    else it returns FALSE (indicating end-of-file was encountered).
-*/
-Channel channel;
-char *buffer;
-unsigned int length;
-/*---------------------------------------------------------------------------*/
+$NOTE
+    The newline chanacter '\n' is NOT copied into the buffer.
+$PARAMETER        length :
+    The length of the buffer. If the buffer is not large enough to
+    contain the string, then the remainder of the string (including the
+    newline character) is read in and discarded and a warning message is
+    displayed. See also the <-ch_gets-> routine.
+$RETURNS
+    TRUE on success, else FALSE (indicating end-of-file was
+    encountered).
+$END
 
-flag ch_puts (channel, string, newline)
-/*  This routine will write a character stream to a channel.
-    The channel object must be given by  channel  .
-    The strings must be pointed to by  string  .
-    The routine will write a NEWLINE character after writing the string if the
-    value of  newline  is TRUE.
+$FUNCTION         ch_puts
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, CONST char *string, flag newline)
+$SUMMARY          Write a character string to a channel.
+$PURPOSE
+    Write a character string to a channel.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        string :
+    The string.
+$PARAMETER        newline :
+    If TRUE, the routine will write a NEWLINE character after writing
+    the string.
+$NOTE
     The routine will not write the NULL terminator character.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-Channel channel;
-CONST char *string;
-flag newline;
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-unsigned int ch_drain (Channel channel, unsigned int length)
-/*  [PURPOSE] This routine will drain (read) a specified number of bytes from a
+$FUNCTION         ch_drain
+$RETURN_TYPE      unsigned int
+$PARAMETER_LIST
+    (Channel channel, unsigned int length)
+$SUMMARY          Drain bytes from a channel.
+$PURPOSE
+    This routine will drain (read) a specified number of bytes from a
     channel, ignoring the data.
-    <channel> The Channel object.
-    <length> The number of bytes to drain.
-    [RETURNS] The number of bytes drained.
-*/
-/*---------------------------------------------------------------------------*/
+$PARAMETER        channel :
+    The Channel object.
+$PARAMETER        length :
+    The number of bytes to drain.
+$RETURNS
+    The number of bytes drained.
+$END
 
-flag ch_printf (Channel channel, CONST char *format, ...)
-/*  [PURPOSE] This routine provides writing of formatted output to a channel.
-    <channel> The channel object.
-    <format> The format string. See <<fprintf>>.
-    [VARARGS] The optional parameters. See <<fprintf>>.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         ch_printf
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, CONST char *format, ...)
+$SUMMARY          Write formatted output to a channel.
+$PURPOSE
+    Write formatted output to a channel.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        format :
+    The format string. See <<fprintf>>.
+$PARAMETER        ... :
+    The optional parameters. See <<fprintf>>.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$PROTO_FUNC       CH_PROTO_size_func
+$RETURN_TYPE      unsigned int
+$PARAMETER_LIST
+    (Channel channel, void **info)
+$SUMMARY          Get number of bytes readable.
+$PURPOSE
+    This routine will determine the approximate number of bytes that
+    the <<read_func>> will return.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        info :
+    A pointer to the arbitrary information pointer. This may be modified
+$RETURNS
+    The number of bytes the <<read_func>> will return.
+$END
+
+$PROTO_FUNC       CH_PROTO_read_func
+$RETURN_TYPE      unsigned int
+$PARAMETER_LIST
+    (Channel channel, char *buffer,
+				 unsigned int length, void **info)
+$SUMMARY          Read bytes.
+$PURPOSE
+    This routine will convert bytes being read from a channel object.
+$PARAMETER        channel :
+    The channel object. It is permissable for the routine to call
+    <-ch_read-> with this channel. If this is done, this function will be
+    bypassed.
+$PARAMETER        buffer :
+    The buffer to write the data into.
+$PARAMETER        length :
+    The number of bytes to write into the buffer.
+$PARAMETER        info :
+    A pointer to the arbitrary information pointer. This may be modified
+$RETURNS
+    The number of bytes actually written to the buffer.
+$END
+
+$PROTO_FUNC       CH_PROTO_write_func
+$RETURN_TYPE      unsigned int
+$PARAMETER_LIST
+    (Channel channel, char *buffer,
+				  unsigned int length, void **info)
+$SUMMARY          Write bytes.
+$PURPOSE
+    This routine will convert bytes being written to a channel object
+$PARAMETER        channel :
+    The channel object. It is permissable for the routine to call
+    <-ch_write-> with this channel. If this is done, this function will be
+    bypassed.
+$PARAMETER        buffer :
+    The buffer to read the data from. The contents of this buffer may
+    be modified if needed.
+$PARAMETER        length :
+    The number of bytes to read from the buffer.
+$PARAMETER        info :
+    A pointer to the arbitrary information pointer. This may be modified
+$RETURNS
+    The number of bytes read from the buffer.
+$END
+
+$PROTO_FUNC       CH_PROTO_flush_func
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, void **info)
+$SUMMARY          Flush.
+$PURPOSE
+    This routine will process a flush request for a channel object.
+$PARAMETER        channel :
+    The channel object. It is permissable for the routine to call
+    <-ch_flush-> with this channel. If this is done, this function will be
+    bypassed.
+$PARAMETER        info :
+    A pointer to the arbitrary information pointer. This may be modified
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$PROTO_FUNC       CH_PROTO_close_func
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (void *info)
+$SUMMARY          Close.
+$PURPOSE
+    This routine is called when a channel is closed.
+$PARAMETER        info :
+    The arbitrary information pointer.
+$RETURNS
+    Nothing.
+$END
+
+$PROTO_FUNC       CH_PROTO_tap_func
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (void *info)
+$SUMMARY          Tap I/O callback.
+$PURPOSE
+    This routine is called when I/O occurs.
+$PARAMETER        info :
+    The arbitrary information pointer.
+$RETURNS
+    Nothing.
+$END
+
+$TABLE            CH_FILE_MODES
+$COLUMNS          2
+$SUMMARY          List of defined file modes
+$TABLE_DATA
+|.Mode         |,Meaning
+
+|."r"          |,open for reading
+|."w"          |,open (truncate) or create for writing
+|."a"          |,open or create for writing at end of file (append)
+|."r+"         |,open for update (reading and writing)
+|."w+"         |,open for reading and writing after truncation
+|."a+"         |,open or create for update (reading and writing) at EOF
+|."W"          |,open for writing
+$END
+
+$TABLE            CH_MAP_CONTROLS
+$COLUMNS          2
+$SUMMARY          List of mapping control values
+$TABLE_DATA
+|.Control                      |,Meaning
+
+|.K_CH_MAP_NEVER               |,Never map
+|.K_CH_MAP_LARGE_LOCAL         |,Map if local filesystem and file size > 1MB
+|.K_CH_MAP_LOCAL               |,Map if local filesystem
+|.K_CH_MAP_LARGE               |,Map if file over 1 MByte
+|.K_CH_MAP_IF_AVAILABLE        |,Map if operating system supports it
+|.K_CH_MAP_ALWAYS              |,Always map, fail if not supported.
+$END

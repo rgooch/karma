@@ -1,0 +1,11 @@
+
+$TABLE            PSW_ATTRIBUTES
+$COLUMNS          3
+$SUMMARY          List of attributes for PostScriptPage object
+$TABLE_DATA
+|.Name                        |,Set Type  |,Meaning
+|.
+|.PSW_ATT_END                 |,          |,End of varargs list     
+|.PSW_ATT_LINEWIDTH_MM        |,double    |,Linewidth in mm
+|.PSW_ATT_LINEWIDTH_RELATIVE  |,double    |,Linewidth scaled to page size
+$END

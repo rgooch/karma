@@ -1,2 +1,0 @@
-/*  Routines to perform asynchronous reads from the standard input  */
-/*  Link with:    -lkarma  */

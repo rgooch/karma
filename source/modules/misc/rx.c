@@ -2,7 +2,7 @@
 
     Source file for  rx  (data srtucture receiver module).
 
-    Copyright (C) 1993,1994,1995  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -43,8 +43,11 @@
     Updated by      Richard Gooch   3-NOV-1994: Switched to OS_ and MACHINE_
   macros for machine determination.
 
-    Last updated by Richard Gooch   10-MAR-1995: Added support for "spray"
+    Updated by      Richard Gooch   10-MAR-1995: Added support for "spray"
   protocol.
+
+    Last updated by Richard Gooch   30-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -66,13 +69,18 @@
 #include <karma_dsxfr.h>
 #include <karma_conn.h>
 #include <karma_dsrw.h>
+#include <karma_arln.h>
 #include <karma_chm.h>
 #include <karma_ds.h>
+#include <karma_ch.h>
 #include <karma_ex.h>
 #include <karma_hi.h>
+#include <karma_im.h>
 #include <karma_a.h>
 #include <karma_s.h>
 #include <karma_r.h>
+#include <karma_m.h>
+
 
 #define VERSION "1.1"
 
@@ -90,12 +98,9 @@ STATIC_FUNCTION (flag read_spray, (Connection connection, void **info) );
 static char *arrayfile = "";
 
 
-main (argc, argv)
-int argc;
-char **argv;
+int main (int argc, char **argv)
 {
     KControlPanel panel;
-    int arg_count;
     int def_port_number;
     unsigned int server_port_number;
     char line[COMMAND_LINE_LENGTH];

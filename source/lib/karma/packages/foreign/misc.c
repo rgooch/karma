@@ -1,7 +1,7 @@
 /*LINTLIBRARY*/
 /*  misc.c
 
-    This code provides miscellaneous functions for the <foreign_> package.
+    This code provides miscellaneous functions for the <foreign> package.
 
     Copyright (C) 1995-1996  Richard Gooch
 
@@ -26,7 +26,7 @@
 
 /*
 
-    This file contains the various utility routines for the <foreign_> package.
+    This file contains the various utility routines for the <foreign> package.
 
 
     Written by      Richard Gooch   20-APR-1995: 
@@ -41,8 +41,13 @@
     Updated by      Richard Gooch   28-SEP-1995: Added support for Miriad Image
   format.
 
-    Last updated by Richard Gooch   10-JAN-1996: Recognise *.mt files as FITS
+    Updated by      Richard Gooch   10-JAN-1996: Recognise *.mt files as FITS
   files (blunder in GIPSY which thinks all FITS is on tape).
+
+    Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   21-JUN-1996: Added support for GIPSY files.
 
 
 */
@@ -65,11 +70,11 @@
 
 /*PUBLIC_FUNCTION*/
 unsigned int foreign_guess_format_from_filename (CONST char *filename)
-/*  [PURPOSE] This routine will attempt to guess the format of a file by
-    examining its filename.
+/*  [SUMMARY] Attempt to guess the format of a file by examining its filename.
     <filename> The name of the file.
     [RETURNS] A value indicating the format of the file. The value
-    FOREIGN_FILE_FORMAT_KARMA is returned if the extension is ".kf".
+    FOREIGN_FILE_FORMAT_KARMA is returned if the extension is ".kf". See
+    [<FOREIGN_TYPES>] for a list of possible values.
 */
 {
     CONST char *end;
@@ -84,5 +89,6 @@ unsigned int foreign_guess_format_from_filename (CONST char *filename)
     if (strcmp  (end - 4, ".ras")  == 0) return (FOREIGN_FILE_FORMAT_SUNRAS);
     if (st_icmp (end - 5, ".fits") == 0) return (FOREIGN_FILE_FORMAT_FITS);
     if ( foreign_miriad_test (filename) ) return (FOREIGN_FILE_FORMAT_MIRIAD);
+    if ( foreign_gipsy_test (filename) ) return (FOREIGN_FILE_FORMAT_GIPSY);
     return (FOREIGN_FILE_FORMAT_UNKNOWN);
 }   /*  End Function foreign_guess_format_from_filename  */

@@ -1,0 +1,201 @@
+<html><head><title>Package: wcs</title></head> 
+<body>
+<center><h1>The "wcs" Package</h1></center>    These routines are meant to provide support for Astronomical
+    sky-projections.
+    NOTE: THIS PACKAGE IS WORK IN PROGRESS. THE INTERFACE MAY CHANGE IN THE
+    NEXT RELEASE, POSSIBLY WITHOUT NOTICE.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=wcs></a></table><h4>Functions</h4><table><tr><td><a href=wcs.html#wcs_astro_setup>wcs_astro_setup</a></td><td>Setup for Astronomical Sky Co-ordinate projections.
+</td></tr>
+<tr><td><a href=wcs.html#wcs_astro_destroy>wcs_astro_destroy</a></td><td>Destroy KwcsAstro object.
+</td></tr>
+<tr><td><a href=wcs.html#wcs_astro_transform>wcs_astro_transform</a></td><td>Transform between linear and projected co-ordinates.
+</td></tr>
+<tr><td><a href=wcs.html#wcs_astro_transform3>wcs_astro_transform3</a></td><td>Transform between linear and projected co-ordinates.
+</td></tr>
+<tr><td><a href=wcs.html#wcs_astro_format_ra>wcs_astro_format_ra</a></td><td>Format a Right Ascension value into a string.
+</td></tr>
+<tr><td><a href=wcs.html#wcs_astro_format_dec>wcs_astro_format_dec</a></td><td>Format a Declination value into a string.
+</td></tr>
+<tr><td><a href=wcs.html#wcs_astro_format_vel>wcs_astro_format_vel</a></td><td>Format a velocity value into a string.
+</td></tr>
+<tr><td><a href=wcs.html#wcs_astro_format>wcs_astro_format</a></td><td>Format a value.
+</td></tr>
+<tr><td><a href=wcs.html#wcs_astro_format_extra>wcs_astro_format_extra</a></td><td>Format extra information.
+</td></tr>
+<tr><td><a href=wcs.html#wcs_format_all>wcs_format_all</a></td><td>Transform and format all available information.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=wcs_astro_setup></a> KwcsAstro
+ <b>wcs_astro_setup</b><i>    (CONST packet_desc *pack_desc, CONST char *packet)
+</i><br><p>    Setup for Astronomical Sky Co-ordinate projections.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The packet descriptor containing the FITS-style keywords.
+<br><li><i>packet :</i> 
+    The packet data containing the FITS-stype keyword data.
+<br></ul><b>Returns:</b>     A KwcsAstro object on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wcs_astro_destroy></a> void
+ <b>wcs_astro_destroy</b><i>    (KwcsAstro ap)
+</i><br><p>    Destroy KwcsAstro object.
+<p><b>Parameters:</b><ul><li><i>ap :</i> 
+    The KwcsAstro object.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wcs_astro_transform></a> void
+ <b>wcs_astro_transform</b><i>    (KwcsAstro ap, unsigned int num_coords,
+			  double *ra, flag ra_to_linear,
+			  double *dec, flag dec_to_linear,
+			  double *vel, flag vel_to_linear,
+			  unsigned int num_restr, CONST char **restr_names,
+			  CONST double *restr_values)
+</i><br><p>    Transform between linear and projected co-ordinates.
+<p><b>Parameters:</b><ul><li><i>ap :</i> 
+    The KwcsAstro object.
+<br><li><i>num_coords :</i> 
+    The number of co-ordinates to transform.
+<br><li><i>ra :</i> 
+    A pointer to the right ascension values. These will be modified.
+<br><li><i>ra_to_linear :</i> 
+    If TRUE the right ascension values are transformed to linear
+    co-ordinates, else they are transformed to non-linear co-ordinates.
+<br><li><i>dec :</i> 
+    A pointer to the declination values. These will be modified.
+<br><li><i>dec_to_linear :</i> 
+    If TRUE the declination values are transformed to linear
+    co-ordinates, else they are transformed to non-linear co-ordinates.
+<br><li><i>vel :</i> 
+    A pointer to the velocity values. These will be modified.
+<br><li><i>vel_to_linear :</i> 
+    If TRUE the velocity values are transformed to linear
+    co-ordinates, else they are transformed to non-linear co-ordinates.
+<br><li><i>num_restr :</i> 
+    The number of restrictions.
+<br><li><i>restr_names :</i> 
+    The array of restriction names.
+<br><li><i>restr_values :</i> 
+    The restriction values.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wcs_astro_transform3></a> void
+ <b>wcs_astro_transform3</b><i>    (KwcsAstro ap, unsigned int num_coords,
+			   CONST char *name0, double *coords0, flag to_lin0,
+			   CONST char *name1, double *coords1, flag to_lin1,
+			   CONST char *name2, double *coords2, flag to_lin2,
+			   unsigned int num_restr, CONST char **restr_names,
+			   CONST double *restr_values)
+</i><br><p>    This routine will convert up to three arrays of co-ordinates
+    using an astronomical projection system. The co-ordinate arrays are named.
+    If a co-ordinate array is not defined the co-ordinates are unchanged.
+<p><b>Parameters:</b><ul><li><i>ap :</i> 
+    The KwcsAstro object.
+<br><li><i>num_coords :</i> 
+    The number of co-ordinates to transform.
+<br><li><i>name0 :</i> 
+    The name of co-ordinate array 0.
+<br><li><i>coords0 :</i> 
+    Co-ordinate array 0.
+<br><li><i>to_lin0 :</i> 
+    If TRUE the co-ordinate 0 values are transformed to linear
+    co-ordinates, else they are transformed to non-linear co-ordinates.
+<br><li><i>name1 :</i> 
+    The name of co-ordinate array 1.
+<br><li><i>coords1 :</i> 
+    Co-ordinate array 1.
+<br><li><i>to_lin1 :</i> 
+    If TRUE the co-ordinate 1 values are transformed to linear
+    co-ordinates, else they are transformed to non-linear co-ordinates.
+<br><li><i>name2 :</i> 
+    The name of co-ordinate array 2.
+<br><li><i>coords2 :</i> 
+    Co-ordinate array 2.
+<br><li><i>to_lin2 :</i> 
+    If TRUE the co-ordinate 2 values are transformed to linear
+    co-ordinates, else they are transformed to non-linear co-ordinates.
+<br><li><i>num_restr :</i> 
+    The number of restrictions.
+<br><li><i>restr_names :</i> 
+    The array of restriction names.
+<br><li><i>restr_values :</i> 
+    The restriction values.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wcs_astro_format_ra></a> void
+ <b>wcs_astro_format_ra</b><i>    (char *string, double ra)
+</i><br><p>    Format a Right Ascension value into a string.
+<p><b>Parameters:</b><ul><li><i>string :</i> 
+    The string to write to. Sufficient storage must be available.
+<br><li><i>ra :</i> 
+    The Right Ascension value.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wcs_astro_format_dec></a> void
+ <b>wcs_astro_format_dec</b><i>    (char *string, double dec)
+</i><br><p>    Format a Declination value into a string.
+<p><b>Parameters:</b><ul><li><i>string :</i> 
+    The string to write to. Sufficient storage must be available.
+<br><li><i>dec :</i> 
+    The Declination value.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wcs_astro_format_vel></a> void
+ <b>wcs_astro_format_vel</b><i>    (KwcsAstro ap, char *string, double vel)
+</i><br><p>    Format a velocity value into a string.
+<p><b>Parameters:</b><ul><li><i>ap :</i> 
+    The KwcsAstro object.
+<br><li><i>string :</i> 
+    The string to write to. Sufficient storage must be available.
+<br><li><i>vel :</i> 
+    The velocity value.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wcs_astro_format></a> void
+ <b>wcs_astro_format</b><i>    (KwcsAstro ap, CONST char *dim_name,
+		       char string[STRING_LENGTH], double value)
+</i><br><p>    Format a value.
+<p><b>Parameters:</b><ul><li><i>ap :</i> 
+    The KwcsAstro object.
+<br><li><i>dim_name :</i> 
+    The name of the dimension.
+<br><li><i>string :</i> 
+    The string to write to.
+<br><li><i>value :</i> 
+    The value.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wcs_astro_format_extra></a> void
+ <b>wcs_astro_format_extra</b><i>    (KwcsAstro ap, char string[STRING_LENGTH])
+</i><br><p>    Format extra information.
+<p><b>Parameters:</b><ul><li><i>ap :</i> 
+    The KwcsAstro object.
+<br><li><i>string :</i> 
+    The string to write to.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wcs_format_all></a> void
+ <b>wcs_format_all</b><i>    (KwcsAstro ap, char coord_string[STRING_LENGTH],
+		     CONST char *name0, double coord0,
+		     CONST char *name1, double coord1,
+		     CONST char *name2, double coord2,
+		     unsigned int num_restr, CONST char **restr_names,
+		     CONST double *restr_values,
+		     char other_string[STRING_LENGTH])
+</i><br><p>    This routine will transform and format all available information.
+    The data is transformed from linear to non-linear values.
+<p><b>Parameters:</b><ul><li><i>ap :</i> 
+    The KwcsAstro object.
+<br><li><i>coord_string :</i> 
+    Formatted co-ordinate information is written here.
+<br><li><i>name0 :</i> 
+    The name of co-ordinate 0.
+<br><li><i>coord0 :</i> 
+    Co-ordinate 0.
+<br><li><i>name1 :</i> 
+    The name of co-ordinate 1. If this is NULL, it is ignored.
+<br><li><i>coord1 :</i> 
+    Co-ordinate 1.
+<br><li><i>name2 :</i> 
+    The name of co-ordinate 2. If this is NULL, it is ignored.
+<br><li><i>coord2 :</i> 
+    Co-ordinate 2.
+<br><li><i>num_restr :</i> 
+    The number of restrictions.
+<br><li><i>restr_names :</i> 
+    The array of restriction names.
+<br><li><i>restr_values :</i> 
+    The restriction values.
+<br><li><i>other_string :</i> 
+    Formatted extra information is written here.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

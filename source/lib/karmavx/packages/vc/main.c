@@ -3,7 +3,7 @@
 
     This code provides VX colourmap manipulation routines.
 
-    Copyright (C) 1993,1994  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -43,7 +43,10 @@
     Updated by      Richard Gooch   22-NOV-1994: Moved typedef of  Kdisplay  to
   header file.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/vc/main.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/vc/main.c
+
+    Last updated by Richard Gooch   27-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -75,9 +78,8 @@ struct kdisplay_handle_type
 
 /*PUBLIC_FUNCTION*/
 Kdisplay vc_get_dpy_handle ()
-/*  This routine will generate a display handle for later use.
-    The routine returns a pointer to the display handle on success,
-    else it returns NULL.
+/*  [SUMMARY] Generate a display handle for later use.
+    [RETURNS] A pointer to the display handle on success, else NULL.
 */
 {
     unsigned int count;
@@ -108,22 +110,21 @@ Kdisplay vc_get_dpy_handle ()
 }   /*  End Function vc_get_dpy_handle  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int vc_alloc_colours (num_cells, pixel_values, min_cells, dpy_handle)
-/*  This routine will allocate a number of colourcells in a low level
-    colourmap.
-    The number of colourcells to allocate must be given by  num_cells  .
-    The pixel values allocated will be written to the array pointed to by
-    pixel_values  .
-    The minimum number of colourcells to allocate must be given by  min_cells
-    The routine will try to allocate at least this number of colourcells.
-    The low level display handle must be pointed to by  dpy_handle  .The
-    meaning of this value depends on the lower level graphics library used.
-    The routine returns the number of colourcells allocated.
+unsigned int vc_alloc_colours (unsigned int num_cells,
+			       unsigned long *pixel_values,
+			       unsigned int min_cells, Kdisplay dpy_handle)
+/*  [SUMMARY] Allocate colourcells.
+    [PURPOSE] This routine will allocate a number of colourcells in a low level
+    colourmap (e.g. using the Xlib routine XAllocColorCells).
+    <num_cells> The number of colourcells to allocate.
+    <pixel_values> A pointer to the array where the pixel values allocated will
+    be written.
+    <min_cells> The minimum number of colourcells to allocate. The routine will
+    try to allocate at least this number of colourcells.
+    <dpy_handle> The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+    [RETURNS] The number of colourcells allocated.
 */
-unsigned int num_cells;
-unsigned long *pixel_values;
-unsigned int min_cells;
-Kdisplay dpy_handle;
 {
     unsigned int count;
     unsigned int num_free_cells;
@@ -171,18 +172,15 @@ Kdisplay dpy_handle;
 }   /*  End Function vc_alloc_colours  */
 
 /*PUBLIC_FUNCTION*/
-void vc_free_colours (num_cells, pixel_values, dpy_handle)
-/*  This routine will free a number of colourcells in a low level colourmap
-    The number of colourcells to free must be given by  num_cells  .
-    The pixel values (colourcells) to free must be pointed to by
-    pixel_values  .
-    The low level display handle must be pointed to by  dpy_handle  .The
-    meaning of this value depends on the lower level graphics library used.
-    The routine returns nothing.
+void vc_free_colours (unsigned int num_cells, unsigned long *pixel_values,
+		      Kdisplay dpy_handle)
+/*  [SUMMARY] Free a number of colourcells in a low level colourmap.
+    <num_cells> The number of colourcells to free.
+    <pixel_values> The array of pixel values (colourcells) to free.
+    <dpy_handle> The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+    [RETURNS] Nothing.
 */
-unsigned int num_cells;
-unsigned long *pixel_values;
-Kdisplay dpy_handle;
 {
     unsigned int count;
     static char function_name[] = "vc_free_colours";
@@ -205,28 +203,22 @@ Kdisplay dpy_handle;
 }   /*  End Function vc_free_colours  */
 
 /*PUBLIC_FUNCTION*/
-void vc_store_colours (num_cells, pixel_values, reds, greens, blues, stride,
-		       dpy_handle)
-/*  This routine will store colours into a low level colourmap. The colours are
-    stored for the PseudoColour (8 bit) visual type.
-    The number of colourcells to store must be given by  num_cells  .
-    The pixel values must be pointed to by  pixel_values  .
-    The red intensity values must be pointed to by  reds  .
-    The green intensity values must be pointed to by  greens  .
-    The blue intensity values must be pointed to by  blues  .
-    The stride (in unsigned shorts) between intensity values in each array
-    must be given by  stride  .
-    The low level display handle must be pointed to by  dpy_handle  .The
-    meaning of this value depends on the lower level graphics library used.
-    The routine returns nothing.
+void vc_store_colours (unsigned int num_cells, unsigned long *pixel_values,
+		       unsigned short *reds, unsigned short *greens,
+		       unsigned short *blues, unsigned int stride,
+		       Kdisplay dpy_handle)
+/*  [SUMMARY] Store colours into a low level colourmap.
+    <num_cells> The number of colourcells to store.
+    <pixel_values> The array of pixel values.
+    <reds> The array of red intensity values.
+    <greens> The array of green intensity values.
+    <blues> The array of blue intensity values.
+    <stride> The stride (in unsigned shorts) between intensity values in each
+    array.
+    <dpy_handle> The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+    [RETURNS] Nothing.
 */
-unsigned int num_cells;
-unsigned long *pixel_values;
-unsigned short *reds;
-unsigned short *greens;
-unsigned short *blues;
-unsigned int stride;
-Kdisplay dpy_handle;
 {
     unsigned int colour;
     unsigned int count;
@@ -255,28 +247,24 @@ Kdisplay dpy_handle;
 }   /*  End Function vc_store_colours  */
 
 /*PUBLIC_FUNCTION*/
-void vc_store_colours_24bit (num_cells, pixel_values, reds, greens, blues,
-			     stride, dpy_handle)
-/*  This routine will store colours into a low level colourmap. The colours are
-    stored for the DirectColour (24 bit) visual type.
-    The number of colourcells to store must be given by  num_cells  .
-    The pixel values must be pointed to by  pixel_values  .
-    The red intensity values must be pointed to by  reds  .
-    The green intensity values must be pointed to by  greens  .
-    The blue intensity values must be pointed to by  blues  .
-    The stride (in unsigned shorts) between intensity values in each array
-    must be given by  stride  .
-    The low level display handle must be pointed to by  dpy_handle  .The
-    meaning of this value depends on the lower level graphics library used.
-    The routine returns nothing.
+void vc_store_colours_24bit (unsigned int num_cells,
+			     unsigned long *pixel_values, unsigned short *reds,
+			     unsigned short *greens, unsigned short *blues,
+			     unsigned int stride, Kdisplay dpy_handle)
+/*  [SUMMARY] Store colours into a low level colourmap.
+    [PURPOSE] This routine will store colours into a low level colourmap. The
+    colours are stored for the DirectColour (24 bit) visual type.
+    <num_cells> The number of colourcells to store.
+    <pixel_values> The array of pixel values.
+    <reds> The array of red intensity values.
+    <greens> The array of green intensity values.
+    <blues> The array of blue intensity values.
+    <stride> The stride (in unsigned shorts) between intensity values in each
+    array.
+    <dpy_handle> The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+    [RETURNS] Nothing.
 */
-unsigned int num_cells;
-unsigned long *pixel_values;
-unsigned short *reds;
-unsigned short *greens;
-unsigned short *blues;
-unsigned int stride;
-Kdisplay dpy_handle;
 {
     unsigned int colour;
     unsigned int count;
@@ -305,20 +293,16 @@ Kdisplay dpy_handle;
 }   /*  End Function vc_store_colours_24bit  */
 
 /*PUBLIC_FUNCTION*/
-void vc_get_location (dpy_handle, serv_hostaddr, serv_display_num)
-/*  This routine will determine the location of the graphics display being
-    used.
-    The low level display handle must be given by  dpy_handle  .The meaning
-    of this value depends on the lower level graphics library used.
-    The Internet address of the host on which the display is running will
-    be written to the storage pointed to by  serv_hostaddr  .
-    The number of the display will be written to the storage pointed to by
-    serv_display_num  .
-    The routine returns nothing.
+void vc_get_location (Kdisplay dpy_handle, unsigned long *serv_hostaddr,
+		      unsigned long *serv_display_num)
+/*  [SUMMARY] Determine the location of the graphics display being used.
+    <dpy_handle> The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+    <serv_hostaddr> The Internet address of the host on which the display is
+    running will be written here.
+    <serv_display_num> The number of the display will be written here.
+    [RETURNS] Nothing.
 */
-Kdisplay dpy_handle;
-unsigned long *serv_hostaddr;
-unsigned long *serv_display_num;
 {
     static char function_name[] = "vc_get_location";
 
@@ -331,8 +315,8 @@ unsigned long *serv_display_num;
     *serv_display_num = 0;
 }   /*  End Function vc_get_location  */
 
-/*PUBLIC_FUNCTION*/
-void vc_set_visual (dpy_handle, pseudo_colour)
+/*OBSOLETE_FUNCTION*/
+void vc_set_visual (Kdisplay dpy_handle, flag pseudo_colour)
 /*  This routine will set the current visual of the viewable colourmap. This
     routine is obsoleted by  vc_set_visualtype  .
     If  pseudo_colour  is TRUE, this routine translates to:
@@ -341,8 +325,6 @@ void vc_set_visual (dpy_handle, pseudo_colour)
         vc_set_visualtype (dpy_handle, VC_VX_VISUAL_DIRECTCOLOUR, FALSE);
     The routine returns nothing.
 */
-Kdisplay dpy_handle;
-flag pseudo_colour;
 {
     unsigned int visual;
 
@@ -358,28 +340,25 @@ flag pseudo_colour;
 }   /*  End Function vc_set_visual  */
 
 /*PUBLIC_FUNCTION*/
-void vc_set_visualtype (dpy_handle, visual, overlay)
-/*  This routine will set the current visual of the viewable colourmap.
-    The low level display handle must be pointed to by  dpy_handle  .
-    The visual type for the canvas must be given by  visual  .Legal values are:
+void vc_set_visualtype (Kdisplay dpy_handle, unsigned int visual, flag overlay)
+/*  [SUMMARY] Set the current visual of the viewable colourmap.
+    <dpy_handle> The low level display handle.
+    <visual> The visual type for the canvas. Legal values are:
         VC_VX_VISUAL_PSEUDOCOLOUR0    8  bits deep (alpha/overlay channel)
         VC_VX_VISUAL_PSEUDOCOLOUR1    8  bits deep (blue channel)
         VC_VX_VISUAL_PSEUDOCOLOUR2    8  bits deep (green channel)
         VC_VX_VISUAL_PSEUDOCOLOUR3    8  bits deep (red channel)
         VC_VX_VISUAL_DIRECTCOLOUR     24 bits deep
-    Note that PseudoColour channels 1, 2 and 3 occupy the same area of screen
+    [NOTE] PseudoColour channels 1, 2 and 3 occupy the same area of screen
     memory as the DirectColour channel. When viewing a PseudoColour canvas,
     the lower appropriate 8 bits are used. When viewing a DirectColour
     canvas, the lower 24 bits (big endian) are used. Bits 0-7, 8-15
     and 16-23 contain the red, green and blue components, respectively.
-    If the value of  overlay  is TRUE and PseudoColour channel 0 is NOT
-    selected, the overlay channel is displayed. A non-zero pixel in the overlay
-    channel will override the PseudoColour/DirectColour pixel.
-    The routine returns nothing.
+    <overlay> If TRUE and PseudoColour channel 0 is NOT selected, the overlay
+    channel is displayed. A non-zero pixel in the overlay channel will override
+    the PseudoColour/DirectColour pixel.
+    [RETURNS] Nothing.
 */
-Kdisplay dpy_handle;
-unsigned int visual;
-flag overlay;
 {
     int channel;
     Vx_color_map cmap;
@@ -445,18 +424,15 @@ flag overlay;
 }   /*  End Function vc_set_visualtype  */
 
 /*PUBLIC_FUNCTION*/
-void vc_get_visualtype (dpy_handle, visual, overlay)
-/*  This routine will get the current visual of the viewable colourmap.
-    The low level display handle must be pointed to by  dpy_handle  .
-    The visual type for the canvas will be written to the storage pointed to by
-    visual  .
-    If the overlay channel is visible, the value  TRUE  will be written to the
-    storage pointed to by  overlay  ,else the value FALSE will be written here.
-    The routine returns nothing.
+void vc_get_visualtype (Kdisplay dpy_handle, unsigned int *visual,
+			flag *overlay)
+/*  [SUMMARY] Get the current visual of the viewable colourmap.
+    <dpy_handle> The low level display handle.
+    <visual> The visual type for the canvas will be written here.
+    <overlay> If the overlay channel is visible, the value TRUE will be written
+    here, else the value FALSE will be written here.
+    [RETURNS] Nothing.
 */
-Kdisplay dpy_handle;
-unsigned int *visual;
-flag *overlay;
 {
     int channel;
     static char function_name[] = "vc_get_visualtype";

@@ -1,0 +1,11 @@
+/*PROTOTYPE_FUNCTION*/  /*
+flag PANEL_PROTO_decode_func (char *command, FILE *fp)
+    [SUMMARY] Command line decode callback.
+    [PURPOSE] This function is called whenever a command string is to be
+    processed.
+    <command> The command string.
+    <fp> The output file.
+    [RETURNS] TRUE if more commands should be processed, else FALSE,
+    indicating that the "exit" command was entered.
+*/
+    

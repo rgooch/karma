@@ -1,0 +1,64 @@
+/*PROTOTYPE_FUNCTION*/  /*
+void exit_schedule_func ()
+    [SUMMARY] Exit schedule function.
+    [PURPOSE] This routine is called when the [<conn>] package wishes to
+    schedule a clean exit from the module.
+    This routine may return (ie. it need not exit).
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+flag CONN_PROTO_client_validate_func (void **info)
+    [SUMMARY] Client connection validate event callback.
+    [PURPOSE] This routine is called to validate whether it is appropriate to
+    open a connection.
+    <info> A pointer to the arbitrary information pointer. This may be modified
+    [RETURNS] TRUE if the connection should be attempted, else FALSE
+    indicating the connection should be aborted.
+    [NOTE] Even if this routine is called and returns TRUE, there is no
+    guarantee that the connection will be subsequently opened.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+flag CONN_PROTO_open_func (Connection connection, void **info)
+    [SUMMARY] Connection open event callback.
+    [PURPOSE] This routine is called when a connection opens.
+    <connection> The connection object.
+    <info> A pointer to the arbitrary information pointer. This may be modified
+    [RETURNS] TRUE on successful registration, else FALSE (indicating the
+    connection should be closed).
+    [NOTE] The <<close_func>> will not be called if this routine returns
+    FALSE.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+flag CONN_PROTO_read_func (Connection connection, void **info)
+    [SUMMARY] Connection read event callback.
+    [PURPOSE] This routine is called when data is ready to be read from a
+    connection.
+    <connection> The connection object.
+    <info> A pointer to the arbitrary information pointer. This may be modified
+    [RETURNS] TRUE on successful reading, else FALSE (indicating the connection
+    should be closed).
+    [NOTE] The <<close_func>> will not be called if this routine returns
+    FALSE.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void CONN_PROTO_close_func (Connection connection, void *info)
+    [SUMMARY] Connection close event callback.
+    [PURPOSE] This routine is called when a connection closed.
+    When this routine is called, this is the last chance to read any
+    buffered data from the channel associated with the connection object.
+    <connection> The connection object.
+    <info> The arbitrary connection information pointer.
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void CONN_PROTO_quiescent_func ()
+    [SUMMARY] Quiescence callback.
+    [PURPOSE] This routine is called when the Connection Management tool or
+    shell is quiescent.
+    [RETURNS] Nothing.
+*/

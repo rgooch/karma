@@ -1,0 +1,8 @@
+$SUMMARY          Routines to manipulate associative arrays
+$PURPOSE
+    These routines are meant to provide general purpose associative array
+    support. This can save a lot of code when you maintain lists of pairs of
+    items (e.g. pairs of names and objects).
+$NOTE
+    THIS PACKAGE IS WORK IN PROGRESS. THE INTERFACE MAY CHANGE IN THE
+    NEXT RELEASE, POSSIBLY WITHOUT NOTICE.

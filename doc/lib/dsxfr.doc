@@ -1,40 +1,48 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the dsxfr_ package of routines in the Karma
-    library.
-
+$PACKAGE          dsxfr
+$SUMMARY          Routines to transfer data structures over connections
+$PURPOSE
     These routines are meant to provide high level transfer of the recursive,
     heirarchical data structure supported in Karma from and to files and
     connections.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
-
-    Written by		Richard Gooch	5-Jun-1995
-
-    Last updated by	Richard Gooch	5-Jun-1995
-
-
-*/
-
-void dsxfr_register_connection_limits (int max_incoming, int max_outgoing)
-/*  [PURPOSE] This routine will register the maximum number of incoming
+$FUNCTION         dsxfr_register_connection_limits
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (int max_incoming, int max_outgoing)
+$SUMMARY          Register connection limits for "multi_array" protocol.
+$PURPOSE
+    This routine will register the maximum number of incoming
     (server) and outgoing (client) connections for the transfer of the general
     data structure. The protocol used is: "multi_array".
-    <max_incoming> The maximum number of incoming connections. If this is less
+$PARAMETER        max_incoming :
+    The maximum number of incoming connections. If this is less
     than 0, no connections are permitted. If this is 0, an unlimited number of
     connections is permitted.
-    <max_outgoing> The maximum number of outgoing connections. If this is less
+$PARAMETER        max_outgoing :
+    The maximum number of outgoing connections. If this is less
     than 0, no connections are permitted. If this is 0, an unlimited number of
     connections is permitted.
-    [NOTE] This routine ONLY registers the server and client callback routines,
+$NOTE
+    This routine ONLY registers the server and client callback routines,
     the application must first call <conn_register_managers> in all cases and
     must call <conn_become_server> if it wishes to accept connections.
-    [RETURNS] Nothing.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    Nothing.
+$END
 
-flag dsxfr_put_multi (CONST char *object, multi_array *multi_desc)
-/*  [PURPOSE] This routine will put (write to disc, transmit over connection) a
+$FUNCTION         dsxfr_put_multi
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (CONST char *object, multi_array *multi_desc)
+$SUMMARY          Write a multi_array data structure.
+$PURPOSE
+    This routine will put (write to disc, transmit over connection) a
     multi_desc general data structure to a named object.
-    <object> The object name. If the object is named "connections" then the
+$PARAMETER        object :
+    The object name. If the object is named "connections" then the
     data will be transmitted to all available connections with the
     "multi_array" protocol. If the object is named "connections:{module_name}"
     then the data will be transmitted to all available connections to modules
@@ -50,21 +58,29 @@ flag dsxfr_put_multi (CONST char *object, multi_array *multi_desc)
     will append a ".kf" extension if not already specified. If the disc file
     already exists, the old data file is first renamed to have a trailing '~'
     (tilde) character.
-    <multi_desc> A pointer to the data structure.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$PARAMETER        multi_desc :
+    A pointer to the data structure.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-multi_array *dsxfr_get_multi (CONST char *object, flag cache,
+$FUNCTION         dsxfr_get_multi
+$RETURN_TYPE      multi_array *
+$PARAMETER_LIST
+    (CONST char *object, flag cache,
 			      unsigned int mmap_option, flag writeable)
-/*  [PURPOSE] This routine will get (read from disc, read from connection) a
+$SUMMARY          Read a multi_array data structure.
+$PURPOSE
+    This routine will get (read from disc, read from connection) a
     multi_desc general data structure from a named object.
-    <object> The object name. If the object is named "connection[#]" then
+$PARAMETER        object :
+    The object name. If the object is named "connection[#]" then
     whatever data has been previously sent over the "multi_array" protocol
     connection with index: # (starting from 0) will be returned.
     In all other cases the data will be read from a disc file. The routine will
     append a ".kf" extension if not already specified.
-    <cache> If TRUE and the data is read from a disc, the data structure and
+$PARAMETER        cache :
+    If TRUE and the data is read from a disc, the data structure and
     filename relationship is cached. This means that a subsequent attempt to
     read the data will not require the disc to be accessed. This relationship
     is lost if the data structure is destroyed. Also, in both this case and the
@@ -73,62 +89,81 @@ multi_array *dsxfr_get_multi (CONST char *object, flag cache,
     called. Read the documentation for the <ds_dealloc_multi> routine for
     information on attachment counts. The attachment count is *not* incremented
     when reading a disc file without adding it to the cache list.
-    <mmap_option> Option to control memory mapping when reading from disc.
-    Legal values are:
-    [<pre>]
-        K_CH_MAP_NEVER           Never map
-	K_CH_MAP_LARGE_LOCAL     Map if local filesystem and file size > 1MB
-	K_CH_MAP_LOCAL           Map if local filesystem
-	K_CH_MAP_LARGE           Map if file over 1 MByte
-	K_CH_MAP_IF_AVAILABLE    Map if operating system supports it
-	K_CH_MAP_ALWAYS          Always map, fail if not supported.
-    [</pre>]
-    <writeable> If TRUE, the mapped structure will be writeable. When the data
+$PARAMETER        mmap_option :
+    Option to control memory mapping when reading from disc. See
+    <-CH_MAP_CONTROLS-> for a list of legal values.
+$PARAMETER        writeable :
+    If TRUE, the mapped structure will be writeable. When the data
     structure data is modified these changes will be reflected in the disc
     file. The shape of the data structure cannot be changed though mapping.
     If FALSE and the structure is written to, a segmentation fault occurs.
-    [RETURNS] A pointer to the data structure on success, else NULL.
-    [NOTE] Reading from a connection with this routine does *not* block, if no
+$RETURNS
+    A pointer to the data structure on success, else NULL.
+$NOTE
+    Reading from a connection with this routine does *not* block, if no
     prior data was transmitted, the routine returns NULL. Multiple calls to
     this routine will return the same data structure *until* new data is
     received over the connection.
-*/
-/*---------------------------------------------------------------------------*/
+$END
 
-void dsxfr_register_read_func (void (*read_func) ())
-/*  [PURPOSE] This routine will register a function which is to be called when
+$FUNCTION         dsxfr_register_read_func
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (void (*read_func) ())
+$SUMMARY          Register callback for new "multi_array" data.
+$PURPOSE
+    This routine will register a function which is to be called when
     new data arrives on a "multi_array" connection.
-    <read_func> A pointer to the function. The interface to this function is
-    given below:
+$PARAMETER        read_func :
+    A pointer to the function. The prototype function is
+    <-DSXFR_PROTO_read_func->.
+$RETURNS
+    Nothing.
+$END
 
-    void read_func (flag first_time_data, unsigned int connection_num)
-    *   This routine is called when new data arrives on any "multi_array"
-        connection.
-	If data appears on a connection for the first time, the value of
-	first_time_data  will be TRUE. Any subsqeuent data that appears on a
-	connection will not set this flag.
-	The index number of the connection will be given by  connection_num  .
-	The routine returns nothing.
-    *
-
-    [RETURNS] Nothing.
-*/
-/*---------------------------------------------------------------------------*/
-
-void dsxfr_register_close_func (void (*close_func) ())
-/*  [PURPOSE] This routine will register a function which is to be called when
+$FUNCTION         dsxfr_register_close_func
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    ( void (*close_func) () )
+$SUMMARY          Register callback for closed "multi_array" connection.
+$PURPOSE
+    This routine will register a function which is to be called when
     a "multi_array" connection closes.
-    <close_func> A pointer to the function. The interface to this function is
-    given below:
+$PARAMETER        close_func :
+    A pointer to the function. The prototype function is
+    <-DSXFR_PROTO_close_func->.
+$RETURNS
+    Nothing.
+$END
 
-    void close_func (data_deallocated)
-    *   This routine is called when any "multi_array" connection closes.
-        If there was a multi_array data structure already received over the
-	connection, it is deallocated and  data_deallocated  will be TRUE.
-	The routine returns nothing.
-    *
-    flag data_deallocated;
+$PROTO_FUNC       DSXFR_PROTO_read_func
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (flag first_time_data, unsigned int connection_num)
+$SUMMARY          New "multi_array" data callback.
+$PURPOSE
+    This routine is called when new data arrives on any "multi_array"
+    connection.
+$PARAMETER        first_time_data :
+    If data appears on a connection for the first time, this
+    will be TRUE. Any subsqeuent data that appears on a connection will not set
+    this flag.
+$PARAMETER        connection_num :
+    The index number of the connection.
+$RETURNS
+    Nothing.
+$END
 
-    [RETURNS] Nothing.
-*/
-/*---------------------------------------------------------------------------*/
+$PROTO_FUNC       DSXFR_PROTO_close_func
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (flag data_deallocated)
+$SUMMARY          Callback for "multi_array" connection closures.
+$PURPOSE
+    This routine is called when any "multi_array" connection closes.
+$PARAMETER        data_deallocated :
+    If there was a multi_array data structure already
+    received over the connection, it is deallocated and this is TRUE.
+$RETURNS
+    Nothing.
+$END

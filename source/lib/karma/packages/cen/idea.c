@@ -3,7 +3,7 @@
 
     This code provides IDEA encryption/decryption for channel objects.
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -48,8 +48,10 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/cen/idea.c
 
-    Last updated by Richard Gooch   4-DEC-1994: Improved scrubbing of
+    Updated by      Richard Gooch   4-DEC-1994: Improved scrubbing of
   sensitive data.
+
+    Last updated by Richard Gooch   31-MAR-1996: Changed documentation style.
 
 
 */
@@ -97,7 +99,8 @@ ChConverter cen_idea (Channel channel, char read_key[EN_IDEA_KEY_SIZE],
 		      char read_init_vector[EN_IDEA_BLOCK_SIZE],
 		      char write_key[EN_IDEA_KEY_SIZE],
 		      char write_init_vector[EN_IDEA_BLOCK_SIZE], flag clear)
-/*  [PURPOSE] This routine will register converter functions for a channel so
+/*  [SUMMARY] Add IDEA encryption to a channel object.
+    [PURPOSE] This routine will register converter functions for a channel so
     that all IO will be encrypted using the IDEA cipher in Cipher Feed Back
     mode.
     <read_key> The 16 byte IDEA key used when reading.
@@ -142,8 +145,8 @@ ChConverter cen_idea (Channel channel, char read_key[EN_IDEA_KEY_SIZE],
 	}
 	return (NULL);
     }
-    (*converter_info).magic_number = MAGIC_NUMBER;
-    if ( ( (*converter_info).read_status = en_idea_init (read_key, TRUE,
+    converter_info->magic_number = MAGIC_NUMBER;
+    if ( ( converter_info->read_status = en_idea_init (read_key, TRUE,
 							 read_init_vector,
 							 FALSE) ) == NULL )
     {
@@ -157,11 +160,11 @@ ChConverter cen_idea (Channel channel, char read_key[EN_IDEA_KEY_SIZE],
 	}
 	return (NULL);
     }
-    if ( ( (*converter_info).write_status = en_idea_init (write_key, FALSE,
+    if ( ( converter_info->write_status = en_idea_init (write_key, FALSE,
 							  write_init_vector,
 							  clear) ) == NULL )
     {
-	en_idea_close ( (*converter_info).read_status );
+	en_idea_close (converter_info->read_status);
 	m_free ( ( char *) converter_info );
 	if (clear)
 	{
@@ -182,8 +185,8 @@ ChConverter cen_idea (Channel channel, char read_key[EN_IDEA_KEY_SIZE],
 					      close_func, converter_info) )
 	== NULL )
     {
-	en_idea_close ( (*converter_info).read_status );
-	en_idea_close ( (*converter_info).write_status );
+	en_idea_close (converter_info->read_status);
+	en_idea_close (converter_info->write_status);
 	m_free ( ( char *) converter_info );
 	return (NULL);
     }
@@ -230,7 +233,7 @@ static unsigned int read_func (Channel channel, char *buffer,
     converter_info = (struct converter_info_type *) *info;
     VERIFY_INFO (converter_info);
     if (ch_read (channel, buffer, length) < length) return (0);
-    en_idea_cfb ( (*converter_info).read_status, buffer, length );
+    en_idea_cfb (converter_info->read_status, buffer, length);
     return (length);
 }   /*  End Function read_func  */
 
@@ -253,8 +256,8 @@ static unsigned int write_func (Channel channel, char *buffer,
 
     converter_info = (struct converter_info_type *) *info;
     VERIFY_INFO (converter_info);
-    en_idea_cfb ( (*converter_info).write_status, buffer, length );
-    return ( ch_write (channel, buffer, length) );
+    en_idea_cfb (converter_info->write_status, buffer, length);
+    return (ch_write (channel, buffer, length) );
 }   /*  End Function write_func  */
 
 static flag flush_func (Channel channel, void **info)
@@ -286,6 +289,6 @@ static void close_func (void *info)
 
     converter_info = (struct converter_info_type *) info;
     VERIFY_INFO (converter_info);
-    en_idea_close ( (*converter_info).read_status );
-    en_idea_close ( (*converter_info).write_status );
+    en_idea_close (converter_info->read_status);
+    en_idea_close (converter_info->write_status);
 }   /*  End Function close_func  */

@@ -1,0 +1,4 @@
+$SUMMARY          Routines to convert between colour spaces
+$PURPOSE
+    These routines are meant to provide basic conversions between colours in
+    different colour spaces.

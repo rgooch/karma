@@ -1,0 +1,40 @@
+<html><head><title>Package: pgp</title></head> 
+<body>
+<center><h1>The "pgp" Package</h1></center>    These routines are meant to provide a simple interface to PGP.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=pgp></a></table><h4>Functions</h4><table><tr><td><a href=pgp.html#pgp_decrypt>pgp_decrypt</a></td><td>Decrypt a block of data using PGP and PGPdaemon.
+</td></tr>
+<tr><td><a href=pgp.html#pgp_encrypt>pgp_encrypt</a></td><td>Encrypt a block of data using PGP.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=pgp_decrypt></a> char *
+ <b>pgp_decrypt</b><i>    (CONST char *ciphertext, unsigned int ciphertext_length,
+		   unsigned int *plaintext_length)
+</i><br><p>    Decrypt a block of data using PGP and PGPdaemon.
+<p><b>Parameters:</b><ul><li><i>ciphertext :</i> 
+    The input ciphertext data.
+<br><li><i>ciphertext_length :</i> 
+    The length of the input ciphertext data.
+<br><li><i>plaintext_length :</i> 
+    The length of the decrypted data is written here.
+<br></ul><b>Returns:</b>     A pointer to the plaintext data on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pgp_encrypt></a> char *
+ <b>pgp_encrypt</b><i>    (CONST char *plaintext, unsigned int plaintext_length,
+		   CONST char **recipients, unsigned int num_recipients,
+		   unsigned int *ciphertext_length, flag ascii_armour)
+</i><br><p>    Encrypt a block of data using PGP.
+<p><b>Parameters:</b><ul><li><i>plaintext :</i> 
+    The input plaintext data.
+<br><li><i>plaintext_length :</i> 
+    The length of the input plaintext data.
+<br><li><i>recipients :</i> 
+    The list of recipients to encrypt for.
+<br><li><i>num_recipients :</i> 
+    The number of recipients in the recipient list.
+<br><li><i>ciphertext_length :</i> 
+    The length of the encrypted data is written here.
+<br><li><i>ascii_armour :</i> 
+    If TRUE, the ciphertext is ASCII armoured, suitable for
+    transmitting through Email.
+<br></ul><b>Returns:</b>     A pointer to the ciphertext data on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

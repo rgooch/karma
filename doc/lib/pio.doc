@@ -1,220 +1,347 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the pio_ package of routines in the Karma
-    library.
-
+$PACKAGE          pio
+$SUMMARY          Routines to convert and transfer host data to channel objects
+$PURPOSE
     These routines are meant to provide a high level means of converting C data
     types to the "network" data format (ie. big endian, IEEE 754).
     These routines transfer data between host memory and files/ connections.
     These routines are NOT recommended as a means to transfer the recursive,
-    heirarchical data structure supported in Karma, use the dsxfr_ routines
+    heirarchical data structure supported in Karma, use the <-dsxfr-> routines
     instead.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
+$FUNCTION         pio_write64
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, unsigned long data)
+$SUMMARY          Write 64 bits of data to a channel object.
+$PURPOSE
+    Write 64 bits of data to a channel object.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        data :
+    The data. This must be in host natural byte order. The data will be
+    converted to network byte order prior to writing.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-    Written by		Richard Gooch	22-Aug-1995
+$FUNCTION         pio_read64
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, unsigned long *data)
+$SUMMARY          Read 64 bits of data from a channel object.
+$PURPOSE
+    Read 64 bits of data from a channel object.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        data :
+    The data will be written here. This will be in host natural byte
+    order. The data will be converted from network byte order after reading.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-    Last updated by	Richard Gooch	22-Aug-1995
+$FUNCTION         pio_write32
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, unsigned long data)
+$SUMMARY          Write 32 bits of data to a channel object.
+$PURPOSE
+    Write 32 bits of data to a channel object.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        data :
+    The data. This must be in host natural byte order. The data will be
+    converted to network byte order prior to writing.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
+$FUNCTION         pio_read32
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, unsigned long *data)
+$SUMMARY          Read 32 bits of data from a channel object.
+$PURPOSE
+    Read 32 bits of data from a channel object.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        data :
+    The data will be written here. This will be in host natural byte
+    order. The data will be converted from network byte order after reading.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-*/
+$FUNCTION         pio_write16
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, unsigned long data)
+$SUMMARY          Write 16 bits of data to a channel object.
+$PURPOSE
+    Write 16 bits of data to a channel object.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        data :
+    The data. This must be in host natural byte order. The data will be
+    converted to network byte order prior to writing.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag pio_write64 (Channel channel, unsigned long data)
-/*  This routine will write 64 bits of data to the channel object given by
-    channel  .
-    The data must be given by  data  .This must be in host natural byte order.
-    The data will be converted to network byte order prior to writing.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         pio_read16
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, unsigned long *data)
+$SUMMARY          Read 16 bits of data from a channel object.
+$PURPOSE
+    Read 16 bits of data from a channel object.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        data :
+    The data will be written here. This will be in host natural byte
+    order. The data will be converted from network byte order after reading.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag pio_read64 (Channel channel, unsigned long *data)
-/*  This routine will read 64 bits of data from the channel object given by
-    channel  .
-    The data will be written to the storage pointed to by  data  .This will be
-    in host natural byte order.
-    The data will be converted from network byte order after reading.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-/*---------------------------------------------------------------------------*/
-
-flag pio_write32 (Channel channel, unsigned long data)
-/*  This routine will write 32 bits of data to the channel object given by
-    channel  .
-    The data must be given by  data  .This must be in host natural byte order.
-    The data will be converted to network byte order prior to writing.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-/*---------------------------------------------------------------------------*/
-
-flag pio_read32 (Channel channel, unsigned long *data)
-/*  This routine will read 32 bits of data from the channel object given by
-    channel  .
-    The data will be written to the storage pointed to by  data  .This will be
-    in host natural byte order.
-    The data will be converted from network byte order after reading.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-/*---------------------------------------------------------------------------*/
-
-flag pio_write16 (Channel channel, unsigned long data)
-/*  This routine will write 16 bits of data to the channel object given by
-    channel  .
-    The data must be given by  data  .This must be in host natural byte order.
-    The data will be converted to network byte order prior to writing.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-/*---------------------------------------------------------------------------*/
-
-flag pio_read16 (Channel channel, unsigned long *data)
-/*  This routine will read 16 bits of data from the channel object given by
-    channel  .
-    The data will be written to the storage pointed to by  data  .This will be
-    in host natural byte order.
-    The data will be converted from network byte order after reading.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-/*---------------------------------------------------------------------------*/
-
-flag pio_write_float (Channel channel, float data)
-/*  [PURPOSE] This routine will write a floating point number to a channel
-    object.
-    <channel> The channel object.
-    <data> The data. This must be in host natural format. The data will be
+$FUNCTION         pio_write_float
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, float data)
+$SUMMARY          Write a floating point number to a channel object.
+$PURPOSE
+    Write a floating point number to a channel object.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        data :
+    The data. This must be in host natural format. The data will be
     converted to IEEE network format prior to writing.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag pio_read_float (Channel channel, float *data)
-/*  [PURPOSE] This routine will read a floating point number from a channel
-    object.
-    <channel> The channel object.
-    <data> The data will be written here. This will be written in host natural
+$FUNCTION         pio_read_float
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, float *data)
+$SUMMARY          Read a floating point number from a channel object.
+$PURPOSE
+    Read a floating point number from a channel object.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        data :
+    The data will be written here. This will be written in host natural
     format. The data will be converted from IEEE network format prior to
     writing.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag pio_read_float_nantrap (Channel channel, float *data, flag *was_nan)
-/*  [PURPOSE] This routine will read a floating point number from a channel
+$FUNCTION         pio_read_float_nantrap
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, float *data, flag *was_nan)
+$SUMMARY          Read floating point data from a channel object, trapping NaNs.
+$PURPOSE
+    This routine will read a floating point number from a channel
     object and will trap IEEE Not-A-Number (NaN) values.
-    <channel> The channel object.
-    <data> The data will be written here. This will be written in host natural
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        data :
+    The data will be written here. This will be written in host natural
     format. The data will be converted from IEEE network format prior to
     writing.
-    <was_nan> The value TRUE will be written here if the value was NaN, else
+$PARAMETER        was_nan :
+    The value TRUE will be written here if the value was NaN, else
     FALSE is written here.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag pio_write_double (Channel channel, double data)
-/*  [PURPOSE] This routine will write a double precision floating point number
-    to a channel object.
-    <channel> The channel object.
-    <data> The data. This must be in host natural format. The data will be
+$FUNCTION         pio_write_double
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, double data)
+$SUMMARY          Write double precision floating point data to a channel object.
+$PURPOSE
+    Write double precision floating point data to a channel object.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        data :
+    The data. This must be in host natural format. The data will be
     converted to IEEE network format prior to writing.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag pio_read_double (Channel channel, double *data)
-/*  [PURPOSE] This routine will read a double precision floating point number
-    from a channel object.
-    <channel> The channel object.
-    <data> The data will be written here. This will be written in host natural
+$FUNCTION         pio_read_double
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, double *data)
+$SUMMARY          Read double precision floating point data from a channel object.
+$PURPOSE
+    Read double precision floating point data from a channel object.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        data :
+    The data will be written here. This will be written in host natural
     format. The data will be converted from IEEE network format prior to
     writing.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag pio_read_double_nantrap (Channel channel, double *data, flag *was_nan)
-/*  [PURPOSE] This routine will read a double precision floating point number
+$FUNCTION         pio_read_double_nantrap
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, double *data, flag *was_nan)
+$SUMMARY          Read floating point data from a channel object, trapping NaNs.
+$PURPOSE
+    This routine will read a double precision floating point number
     from a channel object and will trap IEEE Not-A-Number (NaN) values.
-    <channel> The channel object.
-    <data> The data will be written here. This will be written in host natural
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        data :
+    The data will be written here. This will be written in host natural
     format. The data will be converted from IEEE network format prior to
     writing.
-    <was_nan> The value TRUE will be written here if the value was NaN, else
+$PARAMETER        was_nan :
+    The value TRUE will be written here if the value was NaN, else
     FALSE is written here.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag pio_write32s (Channel channel, long data)
-/*  This routine will write 32 bits of signed data to the channel object
-    given by  channel  .
-    The data must be given by  data  .This must be in host natural byte order.
-    The data will be converted to network byte order prior to writing.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         pio_write32s
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, long data)
+$SUMMARY          Write 32 bits of signed data to a channel object.
+$PURPOSE
+    Write 32 bits of signed data to a channel object.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        data :
+    The data. This must be in host natural byte order. The data will be
+    converted to network byte order prior to writing.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag pio_read32s (Channel channel, long *data)
-/*  This routine will read 32 bits of data from the channel object given by
-    channel  .
-    The data will be written to the storage pointed to by  data  .This will be
-    in host natural byte order.
-    The data will be converted from network byte order after reading.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         pio_read32s
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, long *data)
+$SUMMARY          Read 32 bits of signed data from a channel object.
+$PURPOSE
+    Read 32 bits of signed data from a channel object.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        data :
+    The data will be written here. This will be in host natural byte
+    order. The data will be converted from network byte order after reading.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag pio_write16s (Channel channel, long data)
-/*  This routine will write 16 bits of signed data to the channel object
-    given by  channel  .
-    The data must be given by  data  .This must be in host natural byte order.
-    The data will be converted to network byte order prior to writing.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         pio_write16s
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, long data)
+$SUMMARY          Write 16 bits of signed data to a channel object.
+$PURPOSE
+    Write 16 bits of signed data to a channel object.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        data :
+    The data. This must be in host natural byte order. The data will be
+    converted to network byte order prior to writing.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag pio_read16s (Channel channel, long *data)
-/*  This routine will read 16 bits of data from the channel object given by
-    channel  .
-    The data will be written to the storage pointed to by  data  .This will be
-    in host natural byte order.
-    The data will be converted from network byte order after reading.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         pio_read16s
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, long *data)
+$SUMMARY          Read 16 bits of signed data from a channel object.
+$PURPOSE
+    Read 16 bits of signed data from a channel object.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        data :
+    The data will be written here. This will be in host natural byte
+    order. The data will be converted from network byte order after reading.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag pio_write_swap (Channel channel, char *data, unsigned int length)
-/*  This routine will a swap a number of bytes of data and write them to the
-    channel object given by  channel  .
-    The data to be written must be pointed to by  data  .
-    The number of bytes to swap and then write must be given by  length  .
-    Note that the routine will not swap the data in the original buffer.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         pio_write_swap
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, CONST char *data, unsigned int length)
+$SUMMARY          Swap and write bytes to a channel object.
+$PURPOSE
+    Swap and write bytes to a channel object.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        data :
+    A pointer to the data bytes.
+$PARAMETER        length :
+    The number of bytes to swap and then write.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag pio_read_swap (Channel channel, char *data, unsigned int length)
-/*  This routine will read a number of bytes from the channel object given by
-    channel  and will then swap them.
-    The data will be written to the storage pointed to by  data  .
-    The number of bytes to read and then swap must be given by  length  .
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         pio_read_swap
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, char *data, unsigned int length)
+$SUMMARY          Read from a channel object and swap bytes.
+$PURPOSE
+    Read from a channel object and swap bytes.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        data :
+    The data bytes will be written here.
+$PARAMETER        length :
+    The number of bytes to read and then swap.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-flag pio_write_string (Channel channel, char *string)
-/*  This routine will write a string to a channel.
-    The channel object must be given by  channel  .
-    The string must be pointed to by  string  .If this is NULL, a zero length
-    string is written.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         pio_write_string
+$RETURN_TYPE      flag
+$PARAMETER_LIST
+    (Channel channel, CONST char *string)
+$SUMMARY          Write a string to a channel object.
+$PURPOSE
+    Write a string to a channel object.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        string :
+    The string. If this is NULL, a zero length string is written.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
 
-char *pio_read_string (Channel channel, unsigned int *length)
-/*  This routine will read a string from a channel.
-    The channel object must be given by  channel  .
-    The length of the string will be written to the storage pointed to by
-    length  .If this is NULL, nothing is written here.
-    The routine returns a pointer to a dynamically allocated string on success,
-    else it returns NULL. If a zero length string was read, the returned buffer
-    is one character long and contains the '\0' character.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         pio_read_string
+$RETURN_TYPE      char *
+$PARAMETER_LIST
+    (Channel channel, unsigned int *length)
+$SUMMARY          Read a string from a channel object.
+$PURPOSE
+    Read a string from a channel object.
+$PARAMETER        channel :
+    The channel object.
+$PARAMETER        length :
+    The length of the string will be written here. If this is NULL,
+    nothing is written here.
+$RETURNS
+    A pointer to a dynamically allocated string on success,
+    else NULL. If a zero length string was read, the returned buffer is one
+    character long and contains the '\0' character.
+$END

@@ -3,7 +3,7 @@
 # This C shell script will create the library build tree under:
 # $KARMABASE/build.lib
 
-#   Copyright (C) 1993,1994,1995  Richard Gooch
+#   Copyright (C) 1993-1996  Richard Gooch
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 
 # Written by		Richard Gooch	6-JAN-1993
 
-# Last updated by	Richard Gooch	9-JUN-1995
+# Last updated by	Richard Gooch	10-MAY-1996
 
 
 set karmalibdir = $KARMAROOT/build/$MACHINE_OS/lib
@@ -38,8 +38,12 @@ if ( ! -f $dir/$OS/GNUmakefile.rules ) then
     exit 1
 endif
 
-echo "Cleaning..."
-find . \( -name '*~' -o -name '.*~' \) -print -exec rm {} \;
+touch zzz_write_test >& /dev/null
+if ("$status" == "0") then
+    rm -f zzz_write_test
+    echo "Cleaning..."
+    find . \( -name '*~' -o -name '.*~' \) -print -exec rm {} \;
+endif
 
 cd $dir
 

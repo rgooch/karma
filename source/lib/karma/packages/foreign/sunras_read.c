@@ -3,7 +3,7 @@
 
     This code provides a Sun rasterfile read facility.
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -34,8 +34,11 @@
 
     Updated by      Richard Gooch   21-MAY-1995
 
-    Last updated by Richard Gooch   24-AUG-1995: Added code to pad image lines
+    Updated by      Richard Gooch   24-AUG-1995: Added code to pad image lines
   to 16 bits.
+
+    Last updated by Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -88,12 +91,12 @@ struct rasterfile
 
 /*PUBLIC_FUNCTION*/
 multi_array *foreign_sunras_read (Channel channel, ...)
-/*  [PURPOSE] This routine will read an image in Sun rasterfile format from a
-    channel.
+/*  [SUMMARY] Read an image in Sun rasterfile format from a channel.
     <channel> The channel to read from.
     [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be FA_SUNRAS_READ_END.
-    The attributes are passed using varargs.
+    attribute-value pairs. This list must be terminated with
+    FA_SUNRAS_READ_END. See [<FOREIGN_ATT_SUNRAS_READ>] for a list of defined
+    attributes.
     [RETURNS] A pointer to the multi_array data structure on success, else NULL
 */
 {
@@ -205,12 +208,11 @@ multi_array *foreign_sunras_read (Channel channel, ...)
 		    header.ras_maptype, header.ras_maplength);
     lengths[0] = header.ras_height;
     lengths[1] = header.ras_width;
-    if ( ( array = ds_easy_alloc_n_element_array (&multi_desc, 2, lengths,
-						  (double *) NULL,
-						  (double *) NULL,
-						  (char **) NULL,
-						  3, elem_types,
-						  elem_names) ) == NULL )
+    if ( ( array = ds_easy_alloc_n_element_array
+	   (&multi_desc, 2, lengths,
+	    (CONST double *) NULL, (CONST double *) NULL,
+	    (CONST char **) NULL, 3, elem_types,
+	    (CONST char **) elem_names) ) == NULL )
     {
 	return (NULL);
     }

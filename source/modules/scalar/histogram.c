@@ -2,7 +2,7 @@
 
     Source file for  histogram  (histogram generation module).
 
-    Copyright (C) 1993,1994  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -45,14 +45,19 @@
     Updated by      Richard Gooch   23-NOV-1993: Fixed bug in call to
   panel_add_item  for  array_names  parameter.
 
-    Last updated by Richard Gooch   29-NOV-1993: Fixed bug in
+    Updated by      Richard Gooch   29-NOV-1993: Fixed bug in
   compute_histogram  .
+
+    Last updated by Richard Gooch   30-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
 #include <stdio.h>
 #include <math.h>
 #include <karma.h>
+#include <karma_module.h>
+#include <karma_dsproc.h>
 #include <karma_panel.h>
 #include <karma_dsxfr.h>
 #include <karma_ds.h>
@@ -94,12 +99,9 @@ unsigned int *hist_array = NULL;
 unsigned int elem_index;
 
 
-main (argc, argv)
-int argc;       /*  Count of parameters on command line */
-char **argv;    /*  List of command line parameters     */
+int main (int argc, char **argv)
 {
     KControlPanel panel;
-    extern char *data_type_names[NUMTYPES];
     static char function_name[] = "main";
 
     if ( ( panel = panel_create (FALSE) ) == NULL )
@@ -128,7 +130,7 @@ FILE *fp;
     extern int save_unproc;
     extern char *element_name;
     extern char *array_names[NUMARRAYS];
-    static char function_name[] = "histogram";
+    /*static char function_name[] = "histogram";*/
 
     for ( ; p; p = ex_word_skip (p) )
     {
@@ -161,7 +163,6 @@ flag pre_process (multi_desc)
 */
 multi_array *multi_desc;
 {
-    unsigned int index;
     char txt[STRING_LENGTH];
     extern char *element_name;
     static char function_name[] = "pre_process";
@@ -196,7 +197,6 @@ char **out_data;
 {
     extern unsigned int *hist_array;
     extern char *element_name;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "process_array";
 

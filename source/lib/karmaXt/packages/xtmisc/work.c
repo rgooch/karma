@@ -3,7 +3,7 @@
 
     This code provides miscellaneous routines for the X Intrinsics toolkit
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -30,7 +30,8 @@
 
     Written by      Richard Gooch   30-DEC-1995
 
-    Last updated by Richard Gooch   30-DEC-1995
+    Last updated by Richard Gooch   16-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -64,8 +65,9 @@ STATIC_FUNCTION (void new_work_func, (void *info) );
 
 /*PUBLIC_FUNCTION*/
 void xtmisc_support_work_funcs (XtAppContext app_context)
-/*  [PURPOSE] This routine will register Xt support for work functions using
-    the <<wf_>> package.
+/*  [SUMMARY] Register support for work functions within an Xt application.
+    [PURPOSE] This routine will register Xt support for work functions using
+    the [<wf>] package.
     <app_context> The Xt application context.
     [RETURNS] Nothing. On failure the process aborts.
 */

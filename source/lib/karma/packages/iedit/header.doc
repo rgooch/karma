@@ -1,0 +1,5 @@
+$SUMMARY          Routines to manipulate 2D (image) editing instructions
+$PURPOSE
+    These routines provide a simple interface to the recursive,
+    heirarchical data structure supported in Karma, to define 2-dimensional
+    (image) editing instructions.

@@ -1,0 +1,632 @@
+<html><head><title>Package: cf</title></head> 
+<body>
+<center><h1>The "cf" Package</h1></center>    These routines are meant to provide a VERY primitive mechanism to generate
+    simple colourmaps. Although these routines are made public, their use is
+    NOT recommended. The <a href=kcmap.html#kcmap_>kcmap_</a> package is the suggested means to create
+    and manipulate colourmaps.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=cf></a></table><h4>Functions</h4><table><tr><td><a href=cf.html#cf_mandelbrot>cf_mandelbrot</a></td><td>Compute a mandelbrot colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_greyscale1>cf_greyscale1</a></td><td>Compute a greyscale colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_greyscale2>cf_greyscale2</a></td><td>Compute a greyscale colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_greyscale3>cf_greyscale3</a></td><td>Compute a greyscale colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_rainbow1>cf_rainbow1</a></td><td>Compute a rainbow colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_rainbow2>cf_rainbow2</a></td><td>Compute a rainbow colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_rainbow3>cf_rainbow3</a></td><td>Compute a rainbow colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_cyclic1>cf_cyclic1</a></td><td>Compute a rainbow colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_stripchart>cf_stripchart</a></td><td>Compute a rainbow colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_random_grey>cf_random_grey</a></td><td>Compute a random grey colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_random_pseudocolour>cf_random_pseudocolour</a></td><td>Compute a random pseudocolour colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_velocity_compensating_tones>cf_velocity_compensating_tones</a></td><td>Compute a Velocity (compensating tones) colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_compressed_colourmap_3r2g2b>cf_compressed_colourmap_3r2g2b</a></td><td>Compute a compressed colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_ronekers>cf_ronekers</a></td><td>Compute a Ron Ekers colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_background>cf_background</a></td><td>Compute a background colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_heat>cf_heat</a></td><td>Compute a heat colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_isophot>cf_isophot</a></td><td>Compute an isophot colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_mono>cf_mono</a></td><td>Compute a greyscale colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_mousse>cf_mousse</a></td><td>Compute a mousse colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_rainbow>cf_rainbow</a></td><td>Compute a rainbow colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_random>cf_random</a></td><td>Compute a rainbow colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_rgb>cf_rgb</a></td><td>Compute an rainbow colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_smooth>cf_smooth</a></td><td>Compute a rainbow colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_staircase>cf_staircase</a></td><td>Compute a staircase colourmap.
+</td></tr>
+<tr><td><a href=cf.html#cf_mirp>cf_mirp</a></td><td>Compute a MIRP colourmap.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=cf_mandelbrot></a> void
+ <b>cf_mandelbrot</b><i>    (unsigned int num_cells, unsigned short *reds,
+		    unsigned short *greens, unsigned short *blues,
+		    unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    Compute a mandelbrot colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_greyscale1></a> void
+ <b>cf_greyscale1</b><i>    (unsigned int num_cells, unsigned short *reds,
+		    unsigned short *greens, unsigned short *blues,
+		    unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    Compute a greyscale colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The array of red intensity values. This may be NULL.
+<br><li><i>greens :</i> 
+    The array of green intensity values. This may be NULL.
+<br><li><i>blues :</i> 
+    The array of blue intensity values. This may be NULL.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values in the
+    array.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values.
+<br><li><i>max_cells :</i> 
+    A parameter used to compute the colour values.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_greyscale2></a> void
+ <b>cf_greyscale2</b><i>    (unsigned int num_cells, unsigned short *reds,
+		    unsigned short *greens, unsigned short *blues,
+		    unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    Compute a greyscale colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The array of red intensity values. This may be NULL.
+<br><li><i>greens :</i> 
+    The array of green intensity values. This may be NULL.
+<br><li><i>blues :</i> 
+    The array of blue intensity values. This may be NULL.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values in the
+    array.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values.
+<br><li><i>max_cells :</i> 
+    A parameter used to compute the colour values.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_greyscale3></a> void
+ <b>cf_greyscale3</b><i>    (unsigned int num_cells, unsigned short *reds,
+		    unsigned short *greens, unsigned short *blues,
+		    unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    This routine will compute a greyscale colourmap using the Glynn
+    Rogers curvature function.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values. This may be NULL.
+<br><li><i>greens :</i> 
+    The green intensity values. This may be NULL.
+<br><li><i>blues :</i> 
+    The blue intensity values. This may be NULL.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_rainbow1></a> void
+ <b>cf_rainbow1</b><i>    (unsigned int num_cells, unsigned short *reds,
+		  unsigned short *greens, unsigned short *blues,
+		  unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    This routine will compute a colourmap using the Glynn Rogers
+    curvature function. This map goes: blue-cyan-green-yellow-red-magenta.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_rainbow2></a> void
+ <b>cf_rainbow2</b><i>    (unsigned int num_cells, unsigned short *reds,
+		  unsigned short *greens, unsigned short *blues,
+		  unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    This routine will compute a colourmap using the Glynn Rogers
+    curvature function. This map goes: black-blue-cyan-green-yellow-red.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_rainbow3></a> void
+ <b>cf_rainbow3</b><i>    (unsigned int num_cells, unsigned short *reds,
+		  unsigned short *greens, unsigned short *blues,
+		  unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    This routine will compute a colourmap using the Glynn Rogers
+    curvature function. This map goes: black-blue-cyan-green-yellow-white.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_cyclic1></a> void
+ <b>cf_cyclic1</b><i>    (unsigned int num_cells, unsigned short *reds,
+		 unsigned short *greens, unsigned short *blues,
+		 unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    This routine will compute a colourmap using the Glynn Rogers
+    curvature function. This map goes: blue-cyan-green-yellow-white.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_stripchart></a> void
+ <b>cf_stripchart</b><i>    (unsigned int num_cells, unsigned short *reds,
+		    unsigned short *greens, unsigned short *blues,
+		    unsigned int stride, double x, double y, void *chart)
+</i><br><p>    This routine will compute a colourmap using the Glynn Rogers
+    curvature function and a strip chart.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values. This may be NULL.
+<br><li><i>greens :</i> 
+    The green intensity values. This may be NULL.
+<br><li><i>blues :</i> 
+    The blue intensity values. This may be NULL.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    This changes the curvature of the ramping function.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+    This changes the curvature of the ramping function.
+<br><li><i>chart :</i> 
+    A pointer to a stripchart of type <em>stripchart</em>.
+    The following values are used to determine the shape of the graph:
+    0 : graph is at zero for this interval
+    99 : graph is at maximum
+    1 : graph ramps up from zero to max using Glynn Rogers function
+    -1 : graph ramps down from max to zero using Glynn Rogers function
+    2 (-2) : graph ramps up (down) using the sine of Glynn Rogers function
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_random_grey></a> void
+ <b>cf_random_grey</b><i>    (unsigned int num_cells, unsigned short *reds,
+		     unsigned short *greens, unsigned short *blues,
+		     unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    Compute a random grey colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values. This may be NULL.
+<br><li><i>greens :</i> 
+    The green intensity values. This may be NULL.
+<br><li><i>blues :</i> 
+    The blue intensity values. This may be NULL.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_random_pseudocolour></a> void
+ <b>cf_random_pseudocolour</b><i>    (unsigned int num_cells, unsigned short *reds,
+			     unsigned short *greens, unsigned short *blues,
+			     unsigned int stride, double x, double y,
+			     void *var_param)
+</i><br><p>    Compute a random pseudocolour colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_velocity_compensating_tones></a> void
+ <b>cf_velocity_compensating_tones</b><i>    (unsigned int num_cells,
+				     unsigned short *reds,
+				     unsigned short *greens,
+				     unsigned short *blues,
+				     unsigned int stride, double x, double y,
+				     void *var_param)
+</i><br><p>    Compute a Velocity (compensating tones) colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_compressed_colourmap_3r2g2b></a> void
+ <b>cf_compressed_colourmap_3r2g2b</b><i>    (unsigned int num_cells,
+				     unsigned short *reds,
+				     unsigned short *greens,
+				     unsigned short *blues,
+				     unsigned int stride, double x, double y,
+				     void *var_param)
+</i><br><p>    Compute a compressed colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_ronekers></a> void
+ <b>cf_ronekers</b><i>    (unsigned int num_cells, unsigned short *reds,
+		  unsigned short *greens, unsigned short *blues,
+		  unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    Compute a Ron Ekers colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_background></a> void
+ <b>cf_background</b><i>    (unsigned int num_cells, unsigned short *reds,
+		    unsigned short *greens, unsigned short *blues,
+		    unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    Compute a background colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_heat></a> void
+ <b>cf_heat</b><i>    (unsigned int num_cells, unsigned short *reds,
+	      unsigned short *greens, unsigned short *blues,
+	      unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    Compute a heat colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_isophot></a> void
+ <b>cf_isophot</b><i>    (unsigned int num_cells, unsigned short *reds,
+		 unsigned short *greens, unsigned short *blues,
+		 unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    Compute an isophot colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_mono></a> void
+ <b>cf_mono</b><i>    (unsigned int num_cells, unsigned short *reds,
+	      unsigned short *greens, unsigned short *blues,
+	      unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    Compute a greyscale colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values. This may be NULL.
+<br><li><i>greens :</i> 
+    The green intensity values. This may be NULL.
+<br><li><i>blues :</i> 
+    The blue intensity values. This may be NULL.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_mousse></a> void
+ <b>cf_mousse</b><i>    (unsigned int num_cells, unsigned short *reds,
+		unsigned short *greens, unsigned short *blues,
+		unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    Compute a mousse colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_rainbow></a> void
+ <b>cf_rainbow</b><i>    (unsigned int num_cells, unsigned short *reds,
+		 unsigned short *greens, unsigned short *blues,
+		 unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    Compute a rainbow colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_random></a> void
+ <b>cf_random</b><i>    (unsigned int num_cells, unsigned short *reds,
+		unsigned short *greens, unsigned short *blues,
+		unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    Compute a rainbow colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_rgb></a> void
+ <b>cf_rgb</b><i>    (unsigned int num_cells, unsigned short *reds,
+	     unsigned short *greens, unsigned short *blues,
+	     unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    Compute an rainbow colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_smooth></a> void
+ <b>cf_smooth</b><i>    (unsigned int num_cells, unsigned short *reds,
+		unsigned short *greens, unsigned short *blues,
+		unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    Compute a rainbow colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_staircase></a> void
+ <b>cf_staircase</b><i>    (unsigned int num_cells, unsigned short *reds,
+		   unsigned short *greens, unsigned short *blues,
+		   unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    Compute a staircase colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_mirp></a> void
+ <b>cf_mirp</b><i>    (unsigned int num_cells, unsigned short *reds,
+	      unsigned short *greens, unsigned short *blues,
+	      unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    Compute a MIRP colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

@@ -1,0 +1,195 @@
+<html><head><title>Package: st</title></head> 
+<body>
+<center><h1>The "st" Package</h1></center>    These routines are meant to supplement the standard C library str* routines
+    Since each version of Unix has a different set of "extra" string functions,
+    this package is meant to bridge the gap, and provides some of the more
+    useful "extras".
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=st></a></table><h4>Functions</h4><table><tr><td><a href=st.html#st_find>st_find</a></td><td>Search a list of strings for a string.
+</td></tr>
+<tr><td><a href=st.html#st_chr>st_chr</a></td><td>Search a string for the first occurrence of a character.
+</td></tr>
+<tr><td><a href=st.html#st_cmp_wild>st_cmp_wild</a></td><td>Compare strings with wildcard support.
+</td></tr>
+<tr><td><a href=st.html#st_cspn>st_cspn</a></td><td>Find maximum leading segment in string with exclusion.
+</td></tr>
+<tr><td><a href=st.html#st_icmp>st_icmp</a></td><td>Compare strings, ignoring case.
+</td></tr>
+<tr><td><a href=st.html#st_lwr>st_lwr</a></td><td>Convert a string to lowercase.
+</td></tr>
+<tr><td><a href=st.html#st_nicmp>st_nicmp</a></td><td>Compare strings, ignoring case, up to a specified length.
+</td></tr>
+<tr><td><a href=st.html#st_nupr>st_nupr</a></td><td>Convert a string to uppercase, up to a specified length.
+</td></tr>
+<tr><td><a href=st.html#st_nlwr>st_nlwr</a></td><td>Convert a string to lowercase, up to a specified length.
+</td></tr>
+<tr><td><a href=st.html#st_pbrk>st_pbrk</a></td><td>Search a string for a character from a set.
+</td></tr>
+<tr><td><a href=st.html#st_rchr>st_rchr</a></td><td>Search a string for the last occurrence of a character.
+</td></tr>
+<tr><td><a href=st.html#st_spn>st_spn</a></td><td>Find maximum leading segment in string with inclusion.
+</td></tr>
+<tr><td><a href=st.html#st_tok>st_tok</a></td><td>Extract token from string.
+</td></tr>
+<tr><td><a href=st.html#st_tol>st_tol</a></td><td>Convert a string to a long integer.
+</td></tr>
+<tr><td><a href=st.html#st_upr>st_upr</a></td><td>Convert a string to uppercase.
+</td></tr>
+<tr><td><a href=st.html#st_dup>st_dup</a></td><td>Make a duplicate copy of a string.
+</td></tr>
+<tr><td><a href=st.html#st_qsort>st_qsort</a></td><td>Perform a quicksort on an array of strings.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=st_find></a> unsigned int
+ <b>st_find</b><i>    ( CONST char **string_list, unsigned int list_length,
+		      CONST char *string, int (*function) () )
+</i><br><p>    Search a list of strings for a string.
+<p><b>Parameters:</b><ul><li><i>string_list :</i> 
+    The list of strings to search.
+<br><li><i>list_length :</i> 
+    The length of the string list.
+<br><li><i>string :</i> 
+    The string to search for.
+<br><li><i>function :</i> 
+    The function to use for string comparisons. This has the same
+    interface as the <em>strcmp</em> function.
+<br></ul><b>Returns:</b>     The index of the found string in the string list. If no match is
+    found, the <em>list_length</em> is returned. The routine returns on the first
+    match.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=st_chr></a> CONST char *
+ <b>st_chr</b><i>    (CONST char *string, char c)
+</i><br><p>    Search a string for the first occurrence of a character.
+<p><b>Parameters:</b><ul><li><i>string :</i> 
+    The string to search.
+<br><li><i>c :</i> 
+    The character to search for.
+<br></ul><b>Returns:</b>     A pointer to the found character in the string. If no match is
+    found, NULL is returned.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=st_cmp_wild></a> int
+ <b>st_cmp_wild</b><i>    (CONST char *a, CONST char *b)
+</i><br><p>    Compare strings with wildcard support.
+<p><b>Parameters:</b><ul><li><i>a :</i> 
+    One of the strings. Wildcards are permitted.
+<br><li><i>b :</i> 
+    The other string. Wildcards are not permitted.
+<br></ul><b>Returns:</b>     The difference between the strings.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=st_cspn></a> int
+ <b>st_cspn</b><i>    (CONST char *string, CONST char *charset)
+</i><br><p>    Find maximum leading segment in string with exclusion.
+<p><b>Parameters:</b><ul><li><i>string :</i> 
+    The string.
+<br><li><i>charset :</i> 
+    The set of exclusion characters.
+<br></ul><b>Returns:</b>     The number of characters in the leading segment.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=st_icmp></a> int
+ <b>st_icmp</b><i>    (CONST char *string1, CONST char *string2)
+</i><br><p>    Compare strings, ignoring case.
+<p><b>Parameters:</b><ul><li><i>string1 :</i> 
+    One of the strings.
+<br><li><i>string2 :</i> 
+    The other string.
+<br></ul><b>Returns:</b>     The comparison value. 0 indicates equality.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=st_lwr></a> char *
+ <b>st_lwr</b><i>    (char *string)
+</i><br><p>    Convert a string to lowercase.
+<p><b>Parameters:</b><ul><li><i>string :</i> 
+    The string.
+<br></ul><b>Returns:</b>     The address of the string.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=st_nicmp></a> int
+ <b>st_nicmp</b><i>    (CONST char *string1, CONST char *string2, int str_len)
+</i><br><p>    Compare strings, ignoring case, up to a specified length.
+<p><b>Parameters:</b><ul><li><i>string1 :</i> 
+    One of the strings.
+<br><li><i>string2 :</i> 
+    The other string.
+<br><li><i>str_len :</i> 
+    The maximum number of characters to compare.
+<br></ul><b>Returns:</b>     The comparison value. 0 indicates equality.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=st_nupr></a> char *
+ <b>st_nupr</b><i>    (char *string, int str_len)
+</i><br><p>    Convert a string to uppercase, up to a specified length.
+<p><b>Parameters:</b><ul><li><i>string :</i> 
+    The string.
+<br><li><i>str_len :</i> 
+    The maximum number of characters to convert.
+<br></ul><b>Returns:</b>     The address of the string.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=st_nlwr></a> char *
+ <b>st_nlwr</b><i>    (char *string, int str_len)
+</i><br><p>    Convert a string to lowercase, up to a specified length.
+<p><b>Parameters:</b><ul><li><i>string :</i> 
+    The string.
+<br><li><i>str_len :</i> 
+    The maximum number of characters to convert.
+<br></ul><b>Returns:</b>     The address of the string.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=st_pbrk></a> char *
+ <b>st_pbrk</b><i>    (CONST char *string, CONST char *brkset)
+</i><br><p>    Search a string for a character from a set.
+<p><b>Parameters:</b><ul><li><i>string :</i> 
+    The string to search.
+<br><li><i>brkset :</i> 
+    The set of characters to search for.
+<br></ul><b>Returns:</b>     A pointer to the found character in the string. If no match is
+    found, NULL is returned.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=st_rchr></a> CONST char *
+ <b>st_rchr</b><i>    (CONST char *string, char c)
+</i><br><p>    Search a string for the last occurrence of a character.
+<p><b>Parameters:</b><ul><li><i>string :</i> 
+    The string to search.
+<br><li><i>c :</i> 
+    The character to search for.
+<br></ul><b>Returns:</b>     A pointer to the found character in the string. If no match is
+    found, NULL is returned.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=st_spn></a> int
+ <b>st_spn</b><i>    (CONST char *string, CONST char *charset)
+</i><br><p>    Find maximum leading segment in string with inclusion.
+<p><b>Parameters:</b><ul><li><i>string :</i> 
+    The string.
+<br><li><i>charset :</i> 
+    The set of inclusion characters.
+<br></ul><b>Returns:</b>     The number of characters in the leading segment.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=st_tok></a> char *
+ <b>st_tok</b><i>    (char *string, CONST char *sepset)
+</i><br><p>    This routine will break a string into a series of tokens. This
+    routine should be called until no more tokens are found.
+<p><b>Parameters:</b><ul><li><i>string :</i> 
+    The string. On subsequent calls (for a series of tokens), NULL
+    should be passed.
+<br><li><i>sepset :</i> 
+    The set of delimiters (separators between tokens).
+<br></ul><b>Returns:</b>     A pointer to the next token. NULL is returned if no tokens are
+    found.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=st_tol></a> long
+ <b>st_tol</b><i>    (CONST char *str, char **ptr, int base)
+</i><br><p>    Convert a string to a long integer.
+<p><b>Parameters:</b><ul><li><i>str :</i> 
+    The string.
+<br><li><i>ptr :</i> 
+    A pointer to the first invalid character is written here. If this is
+    NULL, nothing is written here.
+<br><li><i>base :</i> 
+    The base of the number system.
+<br></ul><b>Returns:</b>     The integer value.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=st_upr></a> char *
+ <b>st_upr</b><i>    (char *string)
+</i><br><p>    Convert a string to uppercase.
+<p><b>Parameters:</b><ul><li><i>string :</i> 
+    The string.
+<br></ul><b>Returns:</b>     The address of the string.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=st_dup></a> char *
+ <b>st_dup</b><i>    (CONST char *input)
+</i><br><p>    Make a duplicate copy of a string.
+<p><b>Parameters:</b><ul><li><i>string :</i> 
+    The input string.
+<br></ul><b>Returns:</b>     A pointer to a copy of the string (allocated using <a href=m.html#m_alloc>m_alloc</a>)
+    on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=st_qsort></a> void
+ <b>st_qsort</b><i>    (char **v, int left, int right)
+</i><br><p>    Perform a quicksort on an array of strings.
+<p><b>Parameters:</b><ul><li><i>v :</i> 
+    The array of strings.
+<br><li><i>left :</i> 
+    The left string index.
+<br><li><i>right :</i> 
+    The right string index.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

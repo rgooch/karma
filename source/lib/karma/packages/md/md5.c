@@ -3,7 +3,7 @@
 
     This code provides support for the MD5 message digest algorithm.
 
-    Copyright (C) 1994,1995  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     Based on code obtained from Colin Plumb  (colin@nyx10.cs.du.edu)
     The MD5 algorithm is due to Ron Rivest.
@@ -47,7 +47,10 @@
 
     Updated by      Richard Gooch   7-MAY-1995: Placate gcc -Wall
 
-    Last updated by Richard Gooch   8-JUN-1995: Added temporary hack for Cray.
+    Updated by      Richard Gooch   8-JUN-1995: Added temporary hack for Cray.
+
+    Last updated by Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -206,11 +209,14 @@ static void transform (Kword32u buf[4], CONST Kword32u in[16])
 
 /*PUBLIC_FUNCTION*/
 MD5Context md_md5_init ()
+/*  [SUMMARY] Initialise MD5 context.
+    [RETURNS] An MD5 context.
+*/
+{
 /*
  * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
  * initialization constants.
  */
-{
     MD5Context ctx;
     static char function_name[] = "md_md5_init";
 
@@ -231,11 +237,17 @@ MD5Context md_md5_init ()
 
 /*PUBLIC_FUNCTION*/
 void md_md5_update (MD5Context ctx, CONST unsigned char *buf, unsigned int len)
+/*  [SUMMARY] Add data to an MD5 context.
+    <ctx> The MD5 context.
+    <buf> The block of bytes to add.
+    <len> The length of the block.
+    [RETURNS] Nothing.
+*/
+{
 /*
  * Update context to reflect the concatenation of another buffer full
  * of bytes.
  */
-{
     Kword32u t;
 
     /*  Update byte count  */
@@ -272,11 +284,16 @@ void md_md5_update (MD5Context ctx, CONST unsigned char *buf, unsigned int len)
 
 /*PUBLIC_FUNCTION*/
 void md_md5_final (MD5Context ctx, unsigned char digest[16])
+/*  [SUMMARY] Close an MD5 context.
+    <ctx> The MD5 context.
+    <digest> The message digest is written here.
+    [RETURNS] Nothing.
+*/
+{
 /*
  * Final wrapup - pad to 64-byte boundary with the bit pattern 
  * 1 0* (64-bit count of bits processed, MSB-first)
  */
-{
     int count = ctx->bytes[0] & 0x3f; /* Number of bytes in ctx->in */
     unsigned char *p = (unsigned char *)ctx->in + count;
 
@@ -309,10 +326,10 @@ void md_md5_final (MD5Context ctx, unsigned char digest[16])
 
 /*PUBLIC_FUNCTION*/
 void md_md5_transform (unsigned char buf[16], CONST unsigned char in[64])
-/*  This routine will run the core MD5 transform over a block of data.
-    The digest accumulation buffer must be pointed to by  buf  .
-    The block of data must be pointed to by  in  .
-    The routine returns nothing.
+/*  [SUMMARY] Run the core MD5 transform over a block of data.
+    <buf> The digest accumulation buffer.
+    <in> The block of data.
+    [RETURNS] Nothing.
 */
 {
     Kword32u w_in[16];

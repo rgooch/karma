@@ -3,7 +3,7 @@
 
     This code provides high level data structure transfer routines.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -106,13 +106,31 @@
     Updated by      Richard Gooch   28-FEB-1995: Added extra parameter to
   read callback function.
 
-    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Updated by      Richard Gooch   11-APR-1996: Changed to new documentation
+  format.
+
+    Updated by      Richard Gooch   14-JUN-1996: Created <fix_descriptor>
+  routine to correct old Karma files which could not deal with decreasing
+  co-ordinate systems.
+
+    Updated by      Richard Gooch   16-JUN-1996: Improved <fix_descriptor>
+  routine to always compute dimension limits. Required because reference pixel
+  index was not used properly in some readers.
+
+    Last updated by Richard Gooch   19-JUN-1996: Improved <fix_descriptor>
+  routine to strip quote characters in FITS-style keywords and created
+  <find_dimension> to support a more flexible (robust) algorithm for finding
+  dimensions which correspond to FITS-style "CTYPEn" values. Also compare data
+  name with "BUNIT" value.
 
 
 */
 
 #include <stdio.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <errno.h>
 #include <math.h>
 #include <stdlib.h>
@@ -177,6 +195,10 @@ STATIC_FUNCTION (void close_mmap_channel,
 STATIC_FUNCTION (void remove_conn_data,
 		 (void *object, void *client1_data,
 		  void *call_data, void *client2_data) );
+STATIC_FUNCTION (flag fix_descriptor, (multi_array *multi_desc) );
+STATIC_FUNCTION (dim_desc *find_dimension,
+		 (packet_desc *top_pack_desc, CONST char *ctype,
+		  unsigned int axis_num, flag *changed) );
 
 
 /*  Private functions follow  */
@@ -515,12 +537,233 @@ static void remove_conn_data (void *object, void *client1_data,
     a_prog_bug (function_name);
 }   /*  End Function remove_conn_data  */
 
+static flag fix_descriptor (multi_array *multi_desc)
+/*  [SUMMARY] Fix multi_array descriptor.
+    [PURPOSE] This routine will find internal discrepencies in the descriptor
+    of a multi_array and correct them.
+    <multi_desc> The multi_array descriptor.
+    [RETURNS] TRUE if discrepencies were found, else FALSE.
+*/
+{
+    flag changed = FALSE;
+    unsigned int count;
+    double cdelta, crval, crpix, first_coord, last_coord, thres;
+    char *dim_name, *ptr, *bunit;
+    char *top_packet, **top_packet_ptr;
+    packet_desc *top_pack_desc;
+    array_desc *arr_desc;
+    dim_desc *dim;
+    char dname[STRING_LENGTH];
+    char txt[STRING_LENGTH];
+    char next_ctype[STRING_LENGTH];
+    double value[2];
+    static char function_name[] = "__dsxfr_fix_descriptor";
+
+    top_pack_desc = multi_desc->headers[0];
+    top_packet_ptr = multi_desc->data;
+    top_packet = multi_desc->data[0];
+    /*  Check for missmatch between negative FITS "CDELT" values and dimension
+	descriptors  */
+    /*  Theoretically, one should use the "NAXIS" keyword to determine how many
+	axes there are to check, but since perhaps not everyone writes this
+	keyword, I just keep searching until there are no more "CTYPEn"
+	keywords. If "CTYPEn" does not exist, assume "CTYPEm" (where m > n)
+	does not exist.
+	Note that this whole scheme depends on the Karma dimension names being
+	the same as those in the FITS header, or, as a fallback position, the
+	Karma dimension names must be "Axis m" where
+	m = number_of_dimensions - n. In this case, the Karma dimension name is
+	corrected. The number of dimensions is taken from the array with a
+	dimension name "Axis 0"
+	*/
+    if ( (dim_name = ds_get_unique_named_string (top_pack_desc, top_packet,
+						 "CTYPE1") ) == NULL )
+    {
+	return (FALSE);
+    }
+    for ( count = 1; dim_name != NULL; ++count,
+	  dim_name = ds_get_unique_named_string (top_pack_desc,
+						 top_packet, next_ctype) )
+    {
+	/*  Copy and deallocate  */
+	(void) strcpy (dname, dim_name);
+	m_free (dim_name);
+	/*  Prepare for next one  */
+	(void) sprintf (next_ctype, "CTYPE%u", count + 1);
+	/*  Now ready to start doing some processing. First strip any quote
+	    characters  */
+	if (dname[0] == '\'')
+	{
+	    /*  Strip quote  */
+	    (void) strcpy (txt, dname + 1);
+	    (void) strcpy (dname, txt);
+	    if ( ( ptr = strrchr (dname, '\'') ) != NULL ) *ptr = '\0';
+	    /*  Strip trailing whitespace  */
+	    while ( (ptr > dname) && isspace (*ptr) ) *ptr-- = '\0';
+	    (void) sprintf (txt, "CTYPE%u", count);
+	    if ( !ds_put_unique_named_string (top_pack_desc, top_packet_ptr,
+					      txt, dname, TRUE) )
+	    {
+		m_abort (function_name, "string");
+	    }
+	    changed = TRUE;
+	}
+	if ( ( dim = find_dimension (top_pack_desc, dname, count, &changed) )
+	     == NULL )
+	{
+	    /*  No corresponding dimension name: assume degenerate axis  */
+	    continue;
+	}
+	(void) sprintf (txt, "CDELT%u", count);
+	if ( !ds_get_unique_named_value (top_pack_desc, top_packet, txt, NULL,
+					 value) ) continue;
+	cdelta = value[0];
+	(void) sprintf (txt, "CRVAL%u", count);
+	if ( !ds_get_unique_named_value (top_pack_desc, top_packet, txt, NULL,
+					 value) ) continue;
+	crval = value[0];
+	(void) sprintf (txt, "CRPIX%u", count);
+	if ( !ds_get_unique_named_value (top_pack_desc, top_packet, txt, NULL,
+					 value) ) continue;
+	crpix = value[0];
+	first_coord = crval - (crpix - 1.0) * cdelta;
+	last_coord = first_coord + cdelta * (double) (dim->length - 1);
+	/*  I would prefer to test for equality between computed and found
+	    dimension limits, but non-deterministic roundoff errors prevent
+	    this, requiring me to use a threshold. Roundoff errors could still
+	    pose a problem if the dimension length is 1e8 or greater, but this
+	    is rather unlikely
+	    */
+	thres = fabs (cdelta) * 1e-6;
+	if ( (fabs (first_coord - dim->first_coord) > thres) ||
+	     (fabs (last_coord - dim->last_coord) > thres) )
+	{
+	    (void) fprintf (stderr, "Fixing dimension limits: \"%s\"\n",
+			    dname);
+	    dim->first_coord = first_coord;
+	    dim->last_coord = last_coord;
+	    changed = TRUE;
+	}
+    }
+    /*  Check the name of the element in the main array and compare with the
+	"BUNIT" value  */
+    if (top_pack_desc->element_types[0] != K_ARRAY) return (changed);
+    arr_desc = (array_desc *) top_pack_desc->element_desc[0];
+    if (arr_desc->packet->num_elements != 1) return (changed);
+    if (strcmp (arr_desc->packet->element_desc[0], "Data Value") != 0)
+    {
+	/*  Not default, so don't molest  */
+	return (changed);
+    }
+    /*  Descriptor has "Data Value": check for scaling and offset data  */
+    if (ds_f_elem_in_packet (top_pack_desc, "Data Value__SCALE") <
+	top_pack_desc->num_elements)
+    {
+	/*  Scale value found: don't molest  */
+	return (changed);
+    }
+    if ( ( bunit = ds_get_unique_named_string (top_pack_desc, top_packet,
+					       "BUNIT") ) == NULL )
+	return (changed);
+    /*  Fiddle descriptor  */
+    (void) fprintf (stderr, "Changed array element: \"%s\" to \"%s\"\n",
+		    arr_desc->packet->element_desc[0], bunit);
+    m_free (arr_desc->packet->element_desc[0]);
+    arr_desc->packet->element_desc[0] = bunit;
+    changed = TRUE;
+    return (changed);
+}   /*  End Function fix_descriptor  */
+
+static dim_desc *find_dimension (packet_desc *top_pack_desc, CONST char *ctype,
+				 unsigned int axis_num, flag *changed)
+/*  [SUMMARY] Find a dimension descriptor.
+    [PURPOSE] This routine will find a dimension descriptor with a specified
+    name. If the descriptor is not found, a dimension with an alternative name
+    is searched for.
+    <top_pack_desc> The top level packet descriptor under which the dimension
+    descriptor may lie.
+    <ctype> The dimension name to search for.
+    <axis_num> If the <<ctype>> name is not found, a dimension of name "Axis n"
+    where n is computed from this value. If this name is found the dimension
+    descriptor name is changed to this.
+    <changed> The value TRUE is written here if the dimension descriptor is
+    changed, else nothing is written here.
+    [RETURNS] The dimension descriptor if found, else NULL.
+*/
+{
+    unsigned int item_index;
+    char *encls_desc;
+    array_desc *arr_desc;
+    dim_desc *dim;
+    char txt[STRING_LENGTH];
+    static char function_name[] = "dsxfr__find_dimension";
+
+    /*  Search for specified name first  */
+    switch ( ds_f_name_in_packet (top_pack_desc, ctype, &encls_desc,
+				  &item_index) )
+    {
+      case IDENT_DIMENSION:
+	/*  Found the one we wanted  */
+	arr_desc = (array_desc *) encls_desc;
+	dim = arr_desc->dimensions[item_index];
+	return (dim);
+/*
+	break;
+*/
+      default:
+	break;
+    }
+    /*  Have to search for "Axis n" where n = number_of_dimensions - <axis_num>
+	So first search for "Axis 0" so that the number of dimensions may be
+	found  */
+    sprintf (txt, "Axis 0");
+    switch ( ds_f_name_in_packet (top_pack_desc, txt, &encls_desc,
+				  &item_index) )
+    {
+      case IDENT_DIMENSION:
+	break;
+      default:
+	/*  Just give up  */
+	return (NULL);
+/*
+	break;
+*/
+    }
+    arr_desc = (array_desc *) encls_desc;
+    /*  Now construct the dimension name we are interested in and go forth  */
+    sprintf (txt, "Axis %u", arr_desc->num_dimensions - axis_num);
+    switch ( ds_f_name_in_packet (top_pack_desc, txt, &encls_desc,
+				  &item_index) )
+    {
+      case IDENT_DIMENSION:
+	break;
+      default:
+	/*  Still not found  */
+	return (NULL);
+/*
+	break;
+*/
+    }
+    arr_desc = (array_desc *) encls_desc;
+    dim = arr_desc->dimensions[item_index];
+    m_free (dim->name);
+    if ( ( dim->name = st_dup (ctype) ) == NULL )
+    {
+	m_abort (function_name, "dimension name");
+    }
+    (void) fprintf (stderr, "Changed dimension name: \"%s\" to \"%s\"\n",
+		    txt, ctype);
+    *changed = TRUE;
+    return (dim);
+}   /*  End Function find_dimension  */
+
 
 /*  Public functions follow  */
 
 /*PUBLIC_FUNCTION*/
 void dsxfr_register_connection_limits (int max_incoming, int max_outgoing)
-/*  [PURPOSE] This routine will register the maximum number of incoming
+/*  [SUMMARY] Register connection limits for "multi_array" protocol.
+    [PURPOSE] This routine will register the maximum number of incoming
     (server) and outgoing (client) connections for the transfer of the general
     data structure. The protocol used is: "multi_array".
     <max_incoming> The maximum number of incoming connections. If this is less
@@ -556,7 +799,8 @@ void dsxfr_register_connection_limits (int max_incoming, int max_outgoing)
 
 /*PUBLIC_FUNCTION*/
 flag dsxfr_put_multi (CONST char *object, multi_array *multi_desc)
-/*  [PURPOSE] This routine will put (write to disc, transmit over connection) a
+/*  [SUMMARY] Write a multi_array data structure.
+    [PURPOSE] This routine will put (write to disc, transmit over connection) a
     multi_desc general data structure to a named object.
     <object> The object name. If the object is named "connections" then the
     data will be transmitted to all available connections with the
@@ -756,7 +1000,7 @@ flag dsxfr_put_multi (CONST char *object, multi_array *multi_desc)
 	/*  File does not exist  */
 	rename_file = FALSE;
     }
-    if (rename_file == TRUE)
+    if (rename_file)
     {
 	if ( ( tilde_filename = m_alloc (strlen (filename) + 2) ) == NULL )
 	{
@@ -796,7 +1040,8 @@ flag dsxfr_put_multi (CONST char *object, multi_array *multi_desc)
 /*PUBLIC_FUNCTION*/
 multi_array *dsxfr_get_multi (CONST char *object, flag cache,
 			      unsigned int mmap_option, flag writeable)
-/*  [PURPOSE] This routine will get (read from disc, read from connection) a
+/*  [SUMMARY] Read a multi_array data structure.
+    [PURPOSE] This routine will get (read from disc, read from connection) a
     multi_desc general data structure from a named object.
     <object> The object name. If the object is named "connection[#]" then
     whatever data has been previously sent over the "multi_array" protocol
@@ -812,16 +1057,8 @@ multi_array *dsxfr_get_multi (CONST char *object, flag cache,
     called. Read the documentation for the <ds_dealloc_multi> routine for
     information on attachment counts. The attachment count is *not* incremented
     when reading a disc file without adding it to the cache list.
-    <mmap_option> Option to control memory mapping when reading from disc.
-    Legal values are:
-    [<pre>]
-        K_CH_MAP_NEVER           Never map
-	K_CH_MAP_LARGE_LOCAL     Map if local filesystem and file size > 1MB
-	K_CH_MAP_LOCAL           Map if local filesystem
-	K_CH_MAP_LARGE           Map if file over 1 MByte
-	K_CH_MAP_IF_AVAILABLE    Map if operating system supports it
-	K_CH_MAP_ALWAYS          Always map, fail if not supported.
-    [</pre>]
+    <mmap_option> Option to control memory mapping when reading from disc. See
+    [<CH_MAP_CONTROLS>] for a list of legal values.
     <writeable> If TRUE, the mapped structure will be writeable. When the data
     structure data is modified these changes will be reflected in the disc
     file. The shape of the data structure cannot be changed though mapping.
@@ -956,6 +1193,13 @@ multi_array *dsxfr_get_multi (CONST char *object, flag cache,
 	m_free (filename);
 	return (NULL);
     }
+    if ( fix_descriptor (multi_desc) )
+    {
+	(void) fprintf (stderr,
+			"Karma descriptor fixed. Saving new file: \"%s\"\n",
+			object);
+	(void) dsxfr_put_multi (object, multi_desc);
+    }
     if ( ch_test_for_mmap (channel) )
     {
 	/*  Channel was mapped: see if mapping used  */
@@ -967,7 +1211,7 @@ multi_array *dsxfr_get_multi (CONST char *object, flag cache,
     if (cache)
     {
 	if ( !add_to_cache_list (filename, multi_desc, mapped ? channel : NULL,
-			       mapped, writeable) )
+				 mapped, writeable) )
 	{
 	    (void) fprintf (stderr, "Error cacheing data structure\n");
 	}
@@ -996,21 +1240,11 @@ multi_array *dsxfr_get_multi (CONST char *object, flag cache,
 
 /*PUBLIC_FUNCTION*/
 void dsxfr_register_read_func (void (*read_func) ())
-/*  [PURPOSE] This routine will register a function which is to be called when
+/*  [SUMMARY] Register callback for new "multi_array" data.
+    [PURPOSE] This routine will register a function which is to be called when
     new data arrives on a "multi_array" connection.
-    <read_func> A pointer to the function. The interface to this function is
-    given below:
-
-    void read_func (flag first_time_data, unsigned int connection_num)
-    *   This routine is called when new data arrives on any "multi_array"
-        connection.
-	If data appears on a connection for the first time, the value of
-	first_time_data  will be TRUE. Any subsqeuent data that appears on a
-	connection will not set this flag.
-	The index number of the connection will be given by  connection_num  .
-	The routine returns nothing.
-    *
-
+    <read_func> A pointer to the function. The prototype function is
+    [<DSXFR_PROTO_read_func>].
     [RETURNS] Nothing.
 */
 {
@@ -1026,20 +1260,12 @@ void dsxfr_register_read_func (void (*read_func) ())
 }   /*  End Function dsxfr_register_read_func  */
 
 /*PUBLIC_FUNCTION*/
-void dsxfr_register_close_func (void (*close_func) ())
-/*  [PURPOSE] This routine will register a function which is to be called when
+void dsxfr_register_close_func ( void (*close_func) () )
+/*  [SUMMARY] Register callback for closed "multi_array" connection.
+    [PURPOSE] This routine will register a function which is to be called when
     a "multi_array" connection closes.
-    <close_func> A pointer to the function. The interface to this function is
-    given below:
-
-    void close_func (data_deallocated)
-    *   This routine is called when any "multi_array" connection closes.
-        If there was a multi_array data structure already received over the
-	connection, it is deallocated and  data_deallocated  will be TRUE.
-	The routine returns nothing.
-    *
-    flag data_deallocated;
-
+    <close_func> A pointer to the function. The prototype function is
+    [<DSXFR_PROTO_close_func>].
     [RETURNS] Nothing.
 */
 {

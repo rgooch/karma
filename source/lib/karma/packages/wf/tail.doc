@@ -1,0 +1,15 @@
+
+$TABLE            WF_PRIORITIES
+$COLUMNS          2
+$SUMMARY          List work function priorities
+$TABLE_DATA
+|.Name                    |,Meaning
+|.
+|.KWF_PRIORITY_HIGHEST    |,Place function at top of list, any work
+|~                        |,functions registered while this one is running
+|~                        |,will be placed second in the list
+|.KWF_PRIORITY_HIGH       |,Place function at top of list, any work
+|~                        |,functions registered while this one is running
+|~                        |,will be placed at the top of the list
+|.KWF_PRIORITY_LOWEST     |,Place function at bottom of the list
+$END

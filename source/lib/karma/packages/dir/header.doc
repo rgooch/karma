@@ -1,0 +1,4 @@
+$SUMMARY          Routines to scan directories
+$PURPOSE
+    These routines are meant to provide an enhanced, portable method for
+    scanning directories and automatically obtaining file status information.

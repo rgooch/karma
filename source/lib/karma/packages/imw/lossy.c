@@ -3,7 +3,7 @@
 
     This code provides routines to compute a raw image from a data structure.
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -37,8 +37,11 @@
     Updated by      Richard Gooch   26-JUL-1995: Fixed bug which appeared now
   that routine is finally being used.
 
-    Last updated by Richard Gooch   10-DEC-1995: Fixed bug in computation of
+    Updated by      Richard Gooch   10-DEC-1995: Fixed bug in computation of
   horizontal and vertical scale factors.
+
+    Last updated by Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -73,7 +76,8 @@ flag imw_to8_lossy (unsigned char *out_image,
 		    unsigned char max_sat_pixel,
 		    double i_min, double i_max,
 		    flag (*iscale_func) (), void *iscale_info)
-/*  [PURPOSE] This routine will convert an image from one format to an 8 bit
+/*  [SUMMARY] Convert generic image to 8 bit image, with resizing.
+    [PURPOSE] This routine will convert an image from one format to an 8 bit
     image of pixels, permitting the input and output sizes to differ. If the
     input image is effectively shrunk, the input data is subsampled. The output
     image is flipped vertically relative to the input image.
@@ -100,28 +104,8 @@ flag imw_to8_lossy (unsigned char *out_image,
     <i_min> The minimum intensity value.
     <i_max> The maximum intensity value.
     <iscale_func> The function to be called when non-linear intensity scaling
-    is required. If NULL, linear intensity scaling is used. The interface to
-    this function is as follows:
-    [<pre>]
-    flag iscale_func (double *out, unsigned int out_stride,
-                      double *inp, unsigned int inp_stride,
-		      unsigned int num_values, double i_min, double i_max,
-		      void *info)
-    *   [PURPOSE] This routine will perform an arbitrary intensity scaling on
-        an array of values. This routine may be called many times to scale an
-	image.
-        <out> The output array.
-	<out_stride> The stride (in doubles) of the output array.
-	<inp> The input array.
-	<inp_stride> The stride (in doubles) of the input array.
-	<num_values> The number of values to scale.
-	<i_min> The minimum intensity value.
-	<i_max> The maximum intensity value.
-	<info> A pointer to arbitrary information.
-	[RETURNS] TRUE on success, else FALSE.
-    *
-    [</pre>]
-
+    is required. If NULL, linear intensity scaling is used. The prototype
+    function is [<IMW_PROTO_iscale_func>].
     <iscale_info> A pointer to arbitrary information for <<iscale_func>>.
     [MT-LEVEL] Unsafe.
     [RETURNS] TRUE on success, else FALSE.

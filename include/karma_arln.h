@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   11-OCT-1992
 
-    Last updated by Richard Gooch   7-APR-1995
+    Last updated by Richard Gooch   31-MAR-1996
 
 */
 
@@ -44,13 +44,15 @@
 
 
 /*  File:   arln.c   */
-EXTERN_FUNCTION (flag arln_read_from_stdin, (char *buffer, unsigned int length,
-					     char *prompt) );
-EXTERN_FUNCTION (float arln_read_float, (char *prompt, float default_value) );
-EXTERN_FUNCTION (int arln_read_int, (char *prompt, int default_value) );
-EXTERN_FUNCTION (flag arln_read_flag, (char *prompt, flag default_value) );
-EXTERN_FUNCTION (flag arln_read_line, (char *buffer, unsigned int length,
-				       char *prompt) );
+EXTERN_FUNCTION (flag arln_read_from_stdin,
+		 (char *buffer, unsigned int length, CONST char *prompt) );
+EXTERN_FUNCTION (float arln_read_float,
+		 (CONST char *prompt, float default_value) );
+EXTERN_FUNCTION (int arln_read_int, (CONST char *prompt, int default_value) );
+EXTERN_FUNCTION (flag arln_read_flag,
+		 (CONST char *prompt, flag default_value) );
+EXTERN_FUNCTION (flag arln_read_line,
+		 (char *buffer, unsigned int length, CONST char *prompt) );
 
 
 #endif /*  KARMA_ARLN_H  */

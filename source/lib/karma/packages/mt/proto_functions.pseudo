@@ -1,0 +1,13 @@
+/*PROTOTYPE_FUNCTION*/  /*
+void MT_PROTO_func (void *pool_info, void *call_info1, void *call_info2,
+		    void *call_info3, void *call_info4, void *thread_info)
+    [SUMMARY] Perform a job.
+    <pool_info> The arbitrary pool information pointer.
+    <call_info1> The first arbitrary call information pointer.
+    <call_info2> The second arbitrary call information pointer.
+    <call_info3> The third arbitrary call information pointer.
+    <call_info4> The fourth arbitrary call information pointer.
+    <thread_info> A pointer to arbitrary, per thread, information. This
+    information is private to the thread.
+    [RETURNS] Nothing.
+*/

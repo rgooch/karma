@@ -68,7 +68,16 @@
     Updated by      Richard Gooch   21-JAN-1996: Switched to <stdarg.h> and new
   documentation format. Support PIA_TOP_OF_PANEL attribute.
 
-    Last updated by Richard Gooch   29-JAN-1996: Added "show_version" function.
+    Updated by      Richard Gooch   29-JAN-1996: Added "show_version" function.
+
+    Updated by      Richard Gooch   20-FEB-1996: Fixed bug in test for
+  PIA_MAX_VALUE value greater than PIA_MIN_VALUE value.
+
+    Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   30-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -177,7 +186,7 @@ STATIC_FUNCTION (void show_group, (KPanelItem item, flag screen_display,
 
 /*PUBLIC_FUNCTION*/
 KControlPanel panel_create (flag blank)
-/*  [PUEPOSE] This routine will create a control panel object.
+/*  [SUMMARY] Create a control panel object.
     <blank> If TRUE, then the routine will create a blank form, else it will
     add some internally defined panel items.
     [RETURNS] A KControlPanel object on success, else NULL.
@@ -207,21 +216,26 @@ KControlPanel panel_create (flag blank)
     panel_add_item (panel, "exit", "exit panel", PIT_EXIT_FORM, NULL, PIA_END);
     panel_add_item (panel, "add_connection",
 		    "hostname port_number protocol_name",
-		    PIT_FUNCTION, add_conn_func, PIA_END);
+		    PIT_FUNCTION, (void *) add_conn_func,
+		    PIA_END);
     panel_add_item (panel, "show_version",
 		    "this will show version information",
-		    PIT_FUNCTION, show_version_func, PIA_END);
+		    PIT_FUNCTION, (void *) show_version_func,
+		    PIA_END);
     panel_add_item (panel, "show_protocols",
 		    "this will show all supported protocols",
-		    PIT_FUNCTION, show_protocols_func, PIA_END);
+		    PIT_FUNCTION, (void *) show_protocols_func,
+		    PIA_END);
     panel_add_item (panel, "abort", "abort without saving panel values",
-		    PIT_FUNCTION, abort_func, PIA_END);
+		    PIT_FUNCTION, (void *) abort_func,
+		    PIA_END);
     return (panel);
 }   /*  End Function panel_create  */
 
 /*PUBLIC_FUNCTION*/
 KControlPanel panel_create_group ()
-/*  [PURPOSE] This routine will create a control panel object which is a
+/*  [SUMMARY] Create a panel to contain a group.
+    [PURPOSE] This routine will create a control panel object which is a
     container for a group of items. Panel items may be added to this panel
     object, and the panel object itself may be later added as panel item to
     another panel object (of type PIT_GROUP).
@@ -246,18 +260,20 @@ KControlPanel panel_create_group ()
 /*PUBLIC_FUNCTION*/
 void panel_add_item (KControlPanel panel, char *name, char *comment,
 		     unsigned int type, void *value_ptr, ...)
-/*  [PURPOSE] This routine will add a panel item to a KControlPanel object.
+/*  [SUMMARY] Add an item to a panel.
+    [PURPOSE] This routine will add a panel item to a KControlPanel object.
     Each panel item has a number of "attributes". First come the "core"
     attributes, follwed by the optional attributes.
     Below are the core attributes:
     <panel> The control panel to add to.
     <name> The name of the panel item.
     <comment> the comment (eg. name of the units: "(km/sec)").
-    <type> The type of the panel item.
+    <type> The type of the panel item. See [<DS_KARMA_DATA_TYPES>] and
+    [<PANEL_ITEM_TYPES>] for legal values.
     <value_ptr> A pointer to the panel item data storage.
     [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be PIA_END.
-    The attributes are passed using varargs.
+    attribute-value pairs. This list must be terminated with the value PIA_END.
+    See [<PANEL_ATTRIBUTES>] for a list of defined attributes.
     [RETURNS] Nothing.
 */
 {
@@ -534,9 +550,10 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
     }
     /*  Check for valid minimum and maximum  */
     if ( (item->min_value > -TOOBIG) && (item->max_value < TOOBIG) &&
-	(item->max_value >= item->max_value) )
+	(item->min_value >= item->max_value) )
     {
-	(void) fprintf (stderr, "Maximum value: %e less than minimum: %e\n",
+	(void) fprintf (stderr,
+			"Maximum value: %e not greater than minimum: %e\n",
 			item->max_value, item->min_value);
 	a_prog_bug (function_name);
     }
@@ -628,8 +645,7 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
 
 /*PUBLIC_FUNCTION*/
 void panel_push_onto_stack (KControlPanel panel)
-/*  [PURPOSE] This routine will push a control panel object onto the control
-    panel stack.
+/*  [SUMMARY] Push a control panel object onto the control panel stack.
     <panel> The control panel.
     [RETURNS] Nothing.
 */
@@ -650,8 +666,7 @@ void panel_push_onto_stack (KControlPanel panel)
 
 /*PUBLIC_FUNCTION*/
 void panel_pop_from_stack ()
-/*  [PURPOSE] This routine will pop the last pushed control panel object from
-    the control panel stack.
+/*  [SUMMARY] Pop last pushed control panel object from control panel stack.
     [RETURNS] Nothing.
 */
 {
@@ -670,21 +685,13 @@ void panel_pop_from_stack ()
 /*PUBLIC_FUNCTION*/
 flag panel_process_command_with_stack (char *cmd, flag (*unknown_func) (),
 				       FILE *fp)
-/*  [PURPOSE] This routine will process a command, using the top control panel
+/*  [SUMMARY] Process a command.
+    [PURPOSE] This routine will process a command, using the top control panel
     on the stack to interpret it.
     <cmd> The command.
     <unknown_func> The function that is called when the command is not
     understood. If this is NULL, then a message is displayed if the command is
-    not understood. The interface to this routine is as follows:
-    [<pre>]
-    flag unknown_func (char *cmd, FILE *fp)
-    *   [PURPOSE] This routine will process a command.
-        <cmd> The command.
-	<fp> Output messages are directed here.
-	[RETURNS] TRUE if more commands should be processed, else FALSE,
-	indicating that the "exit" command was entered.
-    *
-    [</pre>]
+    not understood. The prototype function is [<PANEL_PROTO_decode_func>].
     <fp> Output messages are directed here.
     [RETURNS] TRUE if more commands should be processed, else FALSE, indicating
     that the control panel's "exit" command was entered.

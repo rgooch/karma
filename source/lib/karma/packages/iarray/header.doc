@@ -1,0 +1,5 @@
+$SUMMARY          Routines to manipulate Intelligent Arrays
+$PURPOSE
+    These routines provide a simple interface to the recursive,
+    heirarchical data structure supported in Karma, when only n-dimensional
+    data is to be represented.

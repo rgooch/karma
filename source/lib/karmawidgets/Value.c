@@ -64,8 +64,11 @@
     Updated by      Richard Gooch   5-DEC-1995: Update valuePtr whenever value
   changes (or is initialised), not just when a button is pressed.
 
-    Last updated by Richard Gooch   7-JAN-1996: Tested for aligned valuePtr in
+    Updated by      Richard Gooch   7-JAN-1996: Tested for aligned valuePtr in
   <SetValues> before calling <modify_value>, rather than after.
+
+    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -104,10 +107,9 @@
 /* Methods*/
 
 STATIC_FUNCTION (void modify_value, (ValueWidget vw, int multiplier) );
-STATIC_FUNCTION (void Initialise, (Widget request, Widget new) );
-STATIC_FUNCTION (Boolean SetValues,
+STATIC_FUNCTION (void Value__Initialise, (Widget request, Widget new) );
+STATIC_FUNCTION (Boolean Value__SetValues,
 		 (Widget current, Widget request, Widget new) );
-STATIC_FUNCTION (void ConstraintInitialise, (Widget request, Widget new) );
 
 /*----------------------------------------------------------------------*/
 /* Default Resources*/
@@ -154,7 +156,7 @@ ValueClassRec valueClassRec =
     NULL,                          /* class_initialise */
     NULL,                          /* class_part_initialise */
     FALSE,                         /* class_init */
-    (XtInitProc) Initialise,       /* initialise */
+    (XtInitProc) Value__Initialise,/* initialise */
     NULL,                          /* initialise_hook */
     XtInheritRealize,              /* realize */
     NULL,                          /* actions */
@@ -169,7 +171,7 @@ ValueClassRec valueClassRec =
     NULL,                          /* destroy */
     NULL,                          /* resize */
     NULL,                          /* expose */
-    (XtSetValuesFunc) SetValues,   /* set_values */
+    (XtSetValuesFunc) Value__SetValues,  /* set_values */
     NULL,                          /* set_values_hook */
     XtInheritSetValuesAlmost,      /* set_values_almost */
     NULL,                          /* get_values_hook */
@@ -296,11 +298,11 @@ static Widget create_btn (Widget parent, char *name,int multiplier,char *label)
 /* Initialisation method*/
 /*----------------------------------------------------------------------*/
 
-static void Initialise (Widget Request, Widget New)
+static void Value__Initialise (Widget Request, Widget New)
 {
-    ValueWidget request = (ValueWidget) Request;
+    /*ValueWidget request = (ValueWidget) Request;*/
     ValueWidget new = (ValueWidget) New;
-    Widget w, box, label, upbtn, downbtn, upfastbtn, downfastbtn, box2;
+    Widget w, box, upbtn, downbtn, upfastbtn, downfastbtn, box2;
 
     if ( (*new).value.layout == XtorientVertical )
     {
@@ -352,10 +354,10 @@ static void Initialise (Widget Request, Widget New)
 /* SetVaues method*/
 /*----------------------------------------------------------------------*/
 
-static Boolean SetValues (Widget Current, Widget Request, Widget New)
+static Boolean Value__SetValues (Widget Current, Widget Request, Widget New)
 {
     ValueWidget current = (ValueWidget) Current;
-    ValueWidget request = (ValueWidget) Request;
+    /*ValueWidget request = (ValueWidget) Request;*/
     ValueWidget new = (ValueWidget) New;
     static char function_name[] = "ValueWidget::SetValues";
 

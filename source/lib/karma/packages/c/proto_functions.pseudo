@@ -1,0 +1,11 @@
+/*PROTOTYPE_FUNCTION*/  /*
+flag C_PROTO_callback (void *object, void *client1_data, void *call_data,
+		      void *client2_data)
+    [SUMMARY] Generic callback.
+    [PURPOSE] This routine is called when object callbacks are called.
+    <object> The object information pointer.
+    <client1_data> The first client information pointer.
+    <call_data> The call information pointer.
+    <client2_data> The second client information pointer.
+    [RETURNS] TRUE if further callbacks should not be called, else FALSE.
+*/

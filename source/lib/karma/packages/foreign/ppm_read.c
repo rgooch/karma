@@ -3,7 +3,7 @@
 
     This code provides a PPM read facility.
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -32,7 +32,12 @@
 
     Written by      Richard Gooch   15-APR-1995
 
-    Last updated by Richard Gooch   16-APR-1995
+    Updated by      Richard Gooch   16-APR-1995
+
+    Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
+
+    Last updated by Richard Gooch   16-MAY-1996: Fixed bug reading ASCII files.
 
 
 */
@@ -65,12 +70,11 @@ STATIC_FUNCTION (unsigned int get_value,
 
 /*PUBLIC_FUNCTION*/
 multi_array *foreign_ppm_read (Channel channel, ...)
-/*  [PURPOSE] This routine will read a colour image in PPM format from a
-    channel.
+/*  [SUMMARY] Read a colour image in PPM format from a channel.
     <channel> The channel to read from.
     [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be FA_PPM_READ_END.
-    The attributes are passed using varargs.
+    attribute-value pairs. This list must be terminated with FA_PPM_READ_END.
+    See [<FOREIGN_ATT_PPM_READ>] for a list of defined attributes.
     [RETURNS] A pointer to the multi_array data structure on success, else NULL
 */
 {
@@ -80,10 +84,10 @@ multi_array *foreign_ppm_read (Channel channel, ...)
     int value;
     char ch;
     unsigned int att_key;
-    unsigned int bytes_to_read, bytes_read;
+    unsigned int values_per_line, values_read;
     va_list argp;
     multi_array *multi_desc;
-    char *array, *p;
+    char *array, *ptr, *p;
     char txt[STRING_LENGTH];
     uaddr lengths[2];
     extern char *sys_errlist[];
@@ -114,70 +118,69 @@ multi_array *foreign_ppm_read (Channel channel, ...)
     if (ch_read (channel, txt, 3) < 3)
     {
 	(void) fprintf (stderr, "Error reading\t%s\n", sys_errlist[errno]);
-	return (FALSE);
+	return (NULL);
     }
     if (strncmp (txt, "P3", 2) == 0) binary = FALSE;
     else if (strncmp (txt, "P6", 2) == 0) binary = TRUE;
     else
     {
 	(void) fprintf (stderr, "Input not of PPM format\n");
-	return (FALSE);
+	return (NULL);
     }
     if ( !isspace (txt[2]) )
     {
 	(void) fprintf (stderr,
 			"Input not of PPM format (whitespace missing)\n");
-	return (FALSE);
+	return (NULL);
     }
     /*  Read width  */
     if (get_value (channel, txt, STRING_LENGTH, &newline) < 1)
     {
 	(void) fprintf (stderr, "Error reading width\t%s\n",
 			sys_errlist[errno]);
-	return (FALSE);
+	return (NULL);
     }
     if ( ( width = ex_int (txt, &p) ) < 1 )
     {
 	(void) fprintf (stderr, "Bad width: \"%s\"\n", txt);
-	return (FALSE);
+	return (NULL);
     }
     /*  Read height  */
     if (get_value (channel, txt, STRING_LENGTH, &newline) < 1)
     {
 	(void) fprintf (stderr, "Error reading height\t%s\n",
 			sys_errlist[errno]);
-	return (FALSE);
+	return (NULL);
     }
     if ( ( height = ex_int (txt, &p) ) < 1 )
     {
 	(void) fprintf (stderr, "Bad height: \"%s\"\n", txt);
-	return (FALSE);
+	return (NULL);
     }
     /*  Read max_value  */
     if (get_value (channel, txt, STRING_LENGTH, &newline) < 1)
     {
 	(void) fprintf (stderr, "Error reading max_value\t%s\n",
 			sys_errlist[errno]);
-	return (FALSE);
+	return (NULL);
     }
     if ( ( max_value = ex_int (txt, &p) ) < 1 )
     {
 	(void) fprintf (stderr, "Bad max_value: \"%s\"\n", txt);
-	return (FALSE);
+	return (NULL);
     }
     lengths[0] = height;
     lengths[1] = width;
-    if ( ( array = ds_easy_alloc_n_element_array (&multi_desc, 2, lengths,
-						  (double *) NULL,
-						  (double *) NULL,
-						  (char **) NULL,
-						  3, elem_types,
-						  elem_names) ) == NULL )
+    if ( ( array = ds_easy_alloc_n_element_array
+	   (&multi_desc, 2, lengths,
+	    (CONST double *) NULL, (CONST double *) NULL,
+	    (CONST char **) NULL, 3, elem_types,
+	    (CONST char **) elem_names) ) == NULL )
     {
 	return (NULL);
     }
     /*  Read the pixel data  */
-    bytes_to_read = width * 3;
+    values_per_line = width * 3;
     if (binary)
     {
 	if (!newline)
@@ -188,13 +191,15 @@ multi_array *foreign_ppm_read (Channel channel, ...)
 	}
 	for (y = height - 1; y >= 0; --y)
 	{
-	    p = array + y * bytes_to_read;
-	    if ( ( bytes_read = ch_read (channel, p, bytes_to_read) )
-		< bytes_to_read )
+	    /*  Read in one line  */
+	    ptr = array + y * values_per_line;
+	    if ( ( values_read = ch_read (channel, ptr, values_per_line) )
+		< values_per_line )
 	    {
 		(void) fprintf (stderr,
 				"Error reading: %u bytes, got: %u\t%s\n",
-				bytes_to_read, bytes_read, sys_errlist[errno]);
+				values_per_line, values_read,
+				sys_errlist[errno]);
 		ds_dealloc_multi (multi_desc);
 		return (NULL);
 	    }
@@ -204,8 +209,9 @@ multi_array *foreign_ppm_read (Channel channel, ...)
     /*  Read ASCII  */
     for (y = height - 1; y >= 0; --y)
     {
-	p = array + y * bytes_to_read;
-	for (bytes_read = 0; bytes_read < bytes_to_read; ++bytes_read)
+	/*  Read in one line  */
+	ptr = array + y * values_per_line;
+	for (values_read = 0; values_read < values_per_line; ++values_read)
 	{
 	    if (get_value (channel, txt, STRING_LENGTH, &newline) < 1)
 	    {
@@ -217,7 +223,8 @@ multi_array *foreign_ppm_read (Channel channel, ...)
 		ds_dealloc_multi (multi_desc);
 		return (NULL);
 	    }
-	    *(unsigned char *) (p + bytes_read) = value;
+	    if (max_value != 255) value = value * 255 / max_value;
+	    *(unsigned char *) (ptr + values_read) = value;
 	}
     }
     return (multi_desc);

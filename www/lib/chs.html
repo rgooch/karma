@@ -1,0 +1,53 @@
+<html><head><title>Package: chs</title></head> 
+<body>
+<center><h1>The "chs" Package</h1></center>    These routines are meant to provide a simple method of reading (scanning)
+    channel objects for ASCII representations of floating point and integer
+    values.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=chs></a></table><h4>Functions</h4><table><tr><td><a href=chs.html#chs_get_value>chs_get_value</a></td><td>Scan a channel object for a whitespace separated value.
+</td></tr>
+<tr><td><a href=chs.html#chs_get_float>chs_get_float</a></td><td>Scan a channel object for a float value.
+</td></tr>
+<tr><td><a href=chs.html#chs_get_int>chs_get_int</a></td><td>Scan a channel object for an integer value.
+</td></tr>
+<tr><td><a href=chs.html#chs_get_line>chs_get_line</a></td><td>Scan a channel object for a line.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=chs_get_value></a> unsigned int
+ <b>chs_get_value</b><i>    (Channel channel, char *string, unsigned int length)
+</i><br><p>    Scan a channel object for a whitespace separated value.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel to read from.
+<br><li><i>string :</i> 
+    The routine will write the value here.
+<br><li><i>length :</i> 
+    The size of the buffer (in bytes).
+<br></ul><b>Returns:</b>     The length of the string scanned on success, else 0.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=chs_get_float></a> double
+ <b>chs_get_float</b><i>    (Channel channel)
+</i><br><p>    This routine will scan a channel object for the ASCII
+    representation of a floating point number. Any leading whitespace will be
+    ignored.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel to read from.
+<br></ul><b>Returns:</b>     The value scanned. On error the process exits.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=chs_get_int></a> int
+ <b>chs_get_int</b><i>    (Channel channel)
+</i><br><p>    This routine will scan a channel object for the ASCII
+    representation of an integer number. Any leading whitespace will be
+    ignored.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to read from.
+<br></ul><b>Returns:</b>     The value scanned. On error the process exits.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=chs_get_line></a> flag
+ <b>chs_get_line</b><i>    (Channel channel, char *buffer, unsigned int length)
+</i><br><p>    This routine will read a line from a channel, stripping all
+    comments, leading and trailing whitespace. The comment character is '#'.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to read from.
+<br><li><i>buffer :</i> 
+    The buffer to write the line into.
+<br><li><i>length :</i> 
+    The size of the buffer.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE (indicating End-Of-File).
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

@@ -1,0 +1,39 @@
+<html><head><title>Package: va</title></head> 
+<body>
+<center><h1>The "va" Package</h1></center>    These routines are meant to provide a suite of arithmetic operations on
+    vectors (arrays) of data.
+    These routines are highly optimised, with many inner loops coded in
+    assembler to achieve sustained performance approaching (and in some cases
+    equalling) the rated peak performance of the hardware.
+    On some platforms, a speed improvment of over 30 times has been attained by
+    coding in assembler.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=va></a></table><h4>Functions</h4><table><tr><td><a href=va.html#va_scale_float>va_scale_float</a></td><td>Scale and offset an array of floats.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=va_scale_float></a> void
+ <b>va_scale_float</b><i>    (float *out, int out_stride, float *inp, int inp_stride,
+		     int length, float scale, float offset)
+</i><br><p>    This routine will perform a scale and offset operation on an
+    array of floating point numbers. The arithmetic form is as follows:
+    out[i] = inp[i] * scale + offset
+<p><b>Parameters:</b><ul><li><i>out :</i> 
+    The result array will be written here.
+<br><li><i>out_stride :</i> 
+    The stride (in floats) of consecutive elements in the output
+    array.
+<br><li><i>inp :</i> 
+    The input array.
+<br><li><i>inp_stride :</i> 
+    The stride (in floats) of consecutive elements in the input
+    array.
+<br><li><i>length :</i> 
+    The length of the input and output arrays.
+<br><li><i>scale :</i> 
+    The scale factor.
+<br><li><i>offset :</i> 
+    The offset value.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The elements of the input and output arrays must be aligned on a
+    float boundary.
+</ul><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

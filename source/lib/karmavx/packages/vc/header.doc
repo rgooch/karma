@@ -1,0 +1,4 @@
+$SUMMARY          Routines to manipulate a VX display and colourmaps
+$PURPOSE
+    These routines are meant to provide an abstracted interface to a VX display
+    and colourmaps, used in the <-kcmap-> routines.

@@ -1,0 +1,4 @@
+$SUMMARY          Routines to extract data from strings
+$PURPOSE
+    These routines are meant to provide a simple mechanism to extract numeric
+    values and strings from strings.

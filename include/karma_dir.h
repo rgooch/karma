@@ -2,7 +2,7 @@
 
     Header for  dir_  package.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   1-JUN-1993
 
-    Last updated by Richard Gooch   7-APR-1995
+    Last updated by Richard Gooch   24-JUN-1996
 
 */
 
@@ -87,6 +87,7 @@ typedef struct
     char *fs_type;          /*  Filesystem type (eg. "4.2", "nfs", "minix")  */
 #endif
     flag local_fs;          /*  TRUE if locally mounted filesystem           */
+    CONST char *dirname;    /*  Directory component of pathname              */
     void *private_ptr;
 } KFileInfo;
 

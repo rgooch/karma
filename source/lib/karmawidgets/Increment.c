@@ -3,7 +3,7 @@
 
     This code provides an increment widget for Xt.
 
-    Copyright (C) 1993  Catherine Rastello
+    Copyright (C) 1993-1996  Catherine Rastello
     Incorporated into Karma by permission.
 
     This library is free software; you can redistribute it and/or
@@ -35,8 +35,11 @@
 
     Updated by      Richard Gooch      12-OCT-1993
 
-    Last updated by Patrick Jordan     18-OCT-1993: Removed some print
+    Updated by      Patrick Jordan     18-OCT-1993: Removed some print
   statements.
+
+    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -248,12 +251,13 @@ static void Initialise(Widget Req,Widget New,ArgList args,Cardinal *num_args)
 static Boolean SetValues(IncrementWidget Current,IncrementWidget Request,
 			 IncrementWidget New,ArgList args,Cardinal *nargs)
 {
-  IncrementWidget current = (IncrementWidget) Current;
-  IncrementWidget new = (IncrementWidget) New;
+    IncrementWidget current = (IncrementWidget) Current;
+    IncrementWidget new = (IncrementWidget) New;
 
-  if (current->increment.label != new->increment.label)
-    XtVaSetValues(new->increment.valueWidget,
-		  XtNlabel,new->increment.label,
-		  NULL);      
+    if (current->increment.label != new->increment.label)
+	XtVaSetValues(new->increment.valueWidget,
+		      XtNlabel,new->increment.label,
+		      NULL);
+    return (FALSE);
 }
 

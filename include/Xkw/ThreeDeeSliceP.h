@@ -19,10 +19,8 @@ typedef struct _ThreeDeeSlicePart
     Visual         *canvasVisual;
     Bool           verbose;
     XtCallbackList cursorCallback;
+    Kcoord_3d      cursorPosition;
     /*  Private resources  */
-    double        x_pos;
-    double        y_pos;
-    double        z_pos;
     KPixCanvas    parent_pixcanvas;
     KPixCanvas    xy_pixcanvas;
     KPixCanvas    xz_pixcanvas;

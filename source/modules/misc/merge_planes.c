@@ -2,7 +2,7 @@
 
     Source file for  merge_planes  (image plane merge module).
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,7 +33,10 @@
     Updated by      Richard Gooch   5-OCT-1993: Changed over to  panel_
   package for command line user interface.
 
-    Last updated by Richard Gooch   6-OCT-1993: Moved  main  into this file.
+    Updated by      Richard Gooch   6-OCT-1993: Moved  main  into this file.
+
+    Last updated by Richard Gooch   30-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
 */
@@ -43,11 +46,14 @@
 #include <karma.h>
 #include <karma_module.h>
 #include <karma_iarray.h>
+#include <karma_dsxfr.h>
 #include <karma_panel.h>
 #include <karma_ds.h>
 #include <karma_ex.h>
 #include <karma_st.h>
 #include <karma_a.h>
+#include <karma_m.h>
+
 
 #define MAX_FILES 100
 
@@ -59,9 +65,7 @@ EXTERN_FUNCTION (flag merge_planes, (char *command, FILE *fp) );
 static void process_files ();
 
 
-main (argc, argv)
-int argc;       /*  Count of parameters on command line */
-char **argv;    /*  List of command line parameters     */
+int main (int argc, char **argv)
 {
     KControlPanel panel;
     static char function_name[] = "main";
@@ -141,7 +145,7 @@ static void process_files (num_files, filenames, elem_names, out_filename)
 */
 unsigned int num_files;
 char **filenames;
-char **elem_names;
+CONST char **elem_names;
 char *out_filename;
 {
     iarray out;
@@ -151,13 +155,12 @@ char *out_filename;
     iarray planes[MAX_FILES];
     unsigned int types[MAX_FILES];
     unsigned long lengths[2];
-    extern char module_name[STRING_LENGTH + 1];
     static char function_name[] = "process_files";
 
     for (count = 0; count < num_files; ++count)
     {
 	if ( ( planes[count] = iarray_read_nD (filenames[count], TRUE, NULL,
-					       2, (char **) NULL, NULL,
+					       2, NULL, NULL,
 					       K_CH_MAP_IF_AVAILABLE) )
 	    == NULL )
 	{
@@ -178,7 +181,7 @@ char *out_filename;
 	    if (iarray_dim_length (planes[count], 0) != lengths[0])
 	    {
 		(void) fprintf (stderr,
-				"File: \"%s\" ylen: %u differs from first: %u\n",
+				"File: \"%s\" ylen: %lu differs from first: %lu\n",
 				filenames[count],
 				iarray_dim_length (planes[count], 0),
 				lengths[0]);
@@ -193,7 +196,7 @@ char *out_filename;
 	    if (iarray_dim_length (planes[count], 1) != lengths[1])
 	    {
 		(void) fprintf (stderr,
-				"File: \"%s\" xlen: %u differs from first: %u\n",
+				"File: \"%s\" xlen: %lu differs from first: %lu\n",
 				filenames[count],
 				iarray_dim_length (planes[count], 1),
 				lengths[1]);
@@ -211,7 +214,7 @@ char *out_filename;
     if ( ( out_array = ds_easy_alloc_n_element_array (&multi_desc, 2, lengths,
 						      (double *) NULL,
 						      (double *) NULL,
-						      (char **) NULL,
+						      NULL,
 						      num_files, types,
 						      elem_names) )
 	== NULL )
@@ -227,7 +230,7 @@ char *out_filename;
     for (count = 0; count < num_files; ++count)
     {
 	if ( ( out = iarray_get_from_multi_array (multi_desc, NULL,
-						  2, (char **) NULL,
+						  2, NULL,
 						  elem_names[count]) )
 	    == NULL )
 	{
@@ -238,7 +241,7 @@ char *out_filename;
 	    }
 	    return;
 	}
-	if (iarray_copy_data (out, planes[count], FALSE) != TRUE)
+	if ( !iarray_copy_data (out, planes[count], FALSE) )
 	{
 	    (void) fprintf (stderr, "Error copying data\n");
 	    for (count = 0; count < num_files; ++count)

@@ -1,0 +1,42 @@
+/*PROTOTYPE_FUNCTION*/  /*
+int AA_PROTO_key_compare_func (void *key1, void *key2)
+    [SUMMARY] This routine will compare two keys.
+    <key1> The first key.
+    <key2> The second key.
+    [RETURNS] 0 if the keys match, a negative number if <<key1>> is less
+    than <<key2>>, a positive number if <<key1>> is greater than <<key2>>.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void *AA_PROTO_key_copy_func (void *key, uaddr length, flag *ok)
+    [SUMMARY] This routine will copy a key.
+    <key> The key to copy.
+    <length> The length of the key in bytes.
+    <ok> The value TRUE will be written here on success, else FALSE is
+    written here.
+    [RETURNS] A copy of the key on success.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void AA_PROTO_key_destroy_func (void *key)
+    [SUMMARY] This routine will destroy keys.
+    <key> The key to destroy.
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void *AA_PROTO_value_copy_func (void *value, uaddr length, flag *ok)
+    [SUMMARY] This routine will copy a value.
+    <value> The value to copy.
+    <length> The length of the value in bytes.
+    <ok> The value TRUE will be written here on success, else FALSE is
+    written here.
+    [RETURNS] A copy of the value on success.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void AA_PROTO_value_destroy_func (void *value)
+    [SUMMARY] This routine will destroy values.
+    <value> The value to destroy.
+    [RETURNS] Nothing.
+*/

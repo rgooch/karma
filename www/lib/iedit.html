@@ -1,0 +1,165 @@
+<html><head><title>Package: iedit</title></head> 
+<body>
+<center><h1>The "iedit" Package</h1></center>    These routines provide a simple interface to the recursive,
+    heirarchical data structure supported in Karma, to define 2-dimensional
+    (image) editing instructions.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=iedit></a></table><h4>Functions</h4><table><tr><td><a href=iedit.html#iedit_create_list>iedit_create_list</a></td><td>Create a managed image edit instruction list.
+</td></tr>
+<tr><td><a href=iedit.html#iedit_get_instruction_desc>iedit_get_instruction_desc</a></td><td>Get the list descriptor for image edit instructions.
+</td></tr>
+<tr><td><a href=iedit.html#iedit_alloc_edit_coords>iedit_alloc_edit_coords</a></td><td>Allocate an array of edit co-ordinates.
+</td></tr>
+<tr><td><a href=iedit.html#iedit_get_edit_coords>iedit_get_edit_coords</a></td><td>Get a number of editing co-ordinates from a co-ordinate list.
+</td></tr>
+<tr><td><a href=iedit.html#iedit_add_instruction>iedit_add_instruction</a></td><td>Add an image edit instruction to a list.
+</td></tr>
+<tr><td><a href=iedit.html#iedit_remove_instructions>iedit_remove_instructions</a></td><td>Remove instructions from an image edit list.
+</td></tr>
+<tr><td><a href=iedit.html#iedit_apply_instructions>iedit_apply_instructions</a></td><td>Apply image edit instructions.
+</td></tr>
+<tr><td><a href=iedit.html#iedit_get_list>iedit_get_list</a></td><td>Get list of edits in an image edit list.
+</td></tr>
+<tr><td><a href=iedit.html#iedit_make_list_default_master>iedit_make_list_default_master</a></td><td>Prepare image edit list for mastery.
+</td></tr>
+<tr><td><a href=iedit.html#iedit_make_list_default_slave>iedit_make_list_default_slave</a></td><td>Prepare image edit list for slavery.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=iedit.html#IEDIT_PROTO_add_func>IEDIT_PROTO_add_func</a></td><td>Image edit instruction add callback.
+</td></tr>
+<tr><td><a href=iedit.html#IEDIT_PROTO_loss_func>IEDIT_PROTO_loss_func</a></td><td>Image edit instruction loss callback.
+</td></tr>
+<tr><td><a href=iedit.html#IEDIT_PROTO_apply_func>IEDIT_PROTO_apply_func</a></td><td>Image edit instruction apply callback.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=iedit_create_list></a> KImageEditList
+ <b>iedit_create_list</b><i>    (void (*add_func) (), void (*loss_func) (),
+				  void (*apply_func) (), void *info)
+</i><br><p>    Create a managed image edit instruction list.
+<p><b>Parameters:</b><ul><li><i>add_func :</i> 
+    The function which will be called when a new instruction has
+    been added to the list. The prototype function is <a href=iedit.html#IEDIT_PROTO_add_func>IEDIT_PROTO_add_func</a>.
+    The interface to this routine is as follows:
+<br><li><i>loss_func :</i> 
+    The function which will be called when an instruction has been
+    removed from the list. The prototype function is <a href=iedit.html#IEDIT_PROTO_loss_func>IEDIT_PROTO_loss_func</a>.
+<br><li><i>apply_func :</i> 
+    The function which will be called when the edit instructions
+    are to be applied (prior to clearing of the list). The prototype function
+    is <a href=iedit.html#IEDIT_PROTO_apply_func>IEDIT_PROTO_apply_func</a>.
+<br><li><i>info :</i> 
+    The arbitrary information pointer for the edit list. This may be
+    NULL.
+<br></ul><b>Returns:</b>     A KImageEditList object on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iedit_get_instruction_desc></a> packet_desc *
+ <b>iedit_get_instruction_desc</b><i>    ()
+</i><br><p>    Get the list descriptor for image edit instructions.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     A pointer to the descriptor.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iedit_alloc_edit_coords></a> edit_coord *
+ <b>iedit_alloc_edit_coords</b><i>    (unsigned int num_coords)
+</i><br><p>    Allocate an array of edit co-ordinates.
+<p><b>Parameters:</b><ul><li><i>num_coords :</i> 
+    The number of co-ordinates to allocate.
+<br></ul><b>Returns:</b>     A pointer to a statically allocated array of co-ordinate
+    structures on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iedit_get_edit_coords></a> flag
+ <b>iedit_get_edit_coords</b><i>    (list_header *list_head, edit_coord **coords)
+</i><br><p>    The routine will get a number of editing co-ordinates from a
+    co-ordinate list. The routine will extract all co-ordinates in the list.
+<p><b>Parameters:</b><ul><li><i>list_head :</i> 
+    The list header.
+<br><li><i>coords :</i> 
+    The pointer to an internally allocated array of extracted
+    co-ordinates is written here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iedit_add_instruction></a> flag
+ <b>iedit_add_instruction</b><i>    (KImageEditList ilist,
+			    unsigned int instruction_code, edit_coord *coords,
+			    unsigned int num_coords, double intensity[2])
+</i><br><p>    This routine will add a single edit instruction to a managed
+    image edit instruction list. The <em>add_func</em> function registered for this
+    instruction list will be called at a future time with a copy of the
+    instruction to be added.
+<p><b>Parameters:</b><ul><li><i>ilist :</i> 
+    The instruction list.
+<br><li><i>instruction_code :</i> 
+    The instruction code.
+<br><li><i>coords :</i> 
+    The instruction co-ordinates.
+<br><li><i>num_coords :</i> 
+    The number of co-ordinates.
+<br><li><i>intensity :</i> 
+    The intensity value of the instruction.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iedit_remove_instructions></a> flag
+ <b>iedit_remove_instructions</b><i>    (KImageEditList ilist,
+				unsigned int num_to_remove)
+</i><br><p>    This routine will remove a number of edit instructions from a
+    managed image edit instruction list. The <em>loss_func</em> function registered
+    for this instruction list will be called at a future time.
+<p><b>Parameters:</b><ul><li><i>ilist :</i> 
+    The instruction list.
+<br><li><i>num_to_remove :</i> 
+    The number of instructions to remove. If this is 0, all
+    instructions are removed.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iedit_apply_instructions></a> flag
+ <b>iedit_apply_instructions</b><i>    (KImageEditList ilist)
+</i><br><p>    This routine will issue an apply (commit) request for a managed
+    image edit instruction list. The <em>apply_func</em> function registered for
+    this instruction list will be called at a future time. Some time after
+    this, the <em>loss_func</em> registered will also be called.
+<p><b>Parameters:</b><ul><li><i>ilist :</i> 
+    The instruction list.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iedit_get_list></a> list_header *
+ <b>iedit_get_list</b><i>    (KImageEditList ilist)
+</i><br><p>    This routine will get the list of edit instructions associated
+    with a managed image edit instruction list.
+<p><b>Parameters:</b><ul><li><i>ilist :</i> 
+    The managed list.
+<br></ul><b>Returns:</b>     The list of edit instructions.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iedit_make_list_default_master></a> void
+ <b>iedit_make_list_default_master</b><i>    (KImageEditList ilist)
+</i><br><p>    This routine will make a managed image edit instruction list the
+    default list for accepting slave list connections.
+<p><b>Parameters:</b><ul><li><i>ilist :</i> 
+    The managed list.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iedit_make_list_default_slave></a> void
+ <b>iedit_make_list_default_slave</b><i>    (KImageEditList ilist)
+</i><br><p>    This routine will make a managed image edit instruction list the
+    default list for making slave list connections.
+<p><b>Parameters:</b><ul><li><i>ilist :</i> 
+    The managed list.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=IEDIT_PROTO_add_func></a> void
+ <b>IEDIT_PROTO_add_func</b><i>    (KImageEditList ilist, list_entry *instruction,
+			   void **info)
+</i><br><p>    This routine will process a single edit instruction which has
+    been added to a managed image edit instruction list.
+<p><b>Parameters:</b><ul><li><i>ilist :</i> 
+    The managed image edit instruction list.
+<br><li><i>instruction :</i> 
+    The edit instruction.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary information pointer for the list.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=IEDIT_PROTO_loss_func></a> void
+ <b>IEDIT_PROTO_loss_func</b><i>    (KImageEditList ilist, void **info)
+</i><br><p>    This routine will process the loss of an edit instruction from a
+    managed image edit instruction list.
+<p><b>Parameters:</b><ul><li><i>ilist :</i> 
+    The managed image edit instruction list.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary information pointer for the list.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=IEDIT_PROTO_apply_func></a> void
+ <b>IEDIT_PROTO_apply_func</b><i>    (KImageEditList ilist, void **info)
+</i><br><p>    This routine will apply (commit) an edit list prior to the list
+    being cleared.
+<p><b>Parameters:</b><ul><li><i>ilist :</i> 
+    The managed image edit instruction list.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary information pointer for the list.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

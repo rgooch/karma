@@ -2,7 +2,7 @@
 
     Header for  cf_  package.
 
-    Copyright (C) 1993,1994,1995  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   23-FEB-1993
 
-    Last updated by Richard Gooch   7-APR-1995
+    Last updated by Richard Gooch   23-JUN-1995
 
 */
 
@@ -51,18 +51,21 @@ typedef struct
 
 
 /*  File:  cmap.c  */
-EXTERN_FUNCTION (void cf_greyscale1, (unsigned int num_cells,
-				      unsigned short *reds,
-				      unsigned short *greens,
-				      unsigned short *blues,
-				      unsigned int stride,
-				      double x, double y, void *var_param) );
-EXTERN_FUNCTION (void cf_greyscale2, (unsigned int num_cells,
-				      unsigned short *reds,
-				      unsigned short *greens,
-				      unsigned short *blues,
-				      unsigned int stride,
-				      double x, double y, void *var_param) );
+EXTERN_FUNCTION (void cf_greyscale1,
+		 (unsigned int num_cells,
+		  unsigned short *reds, unsigned short *greens,
+		  unsigned short *blues, unsigned int stride,
+		  double x, double y, void *var_param) );
+EXTERN_FUNCTION (void cf_greyscale2,
+		 (unsigned int num_cells,
+		  unsigned short *reds, unsigned short *greens,
+		  unsigned short *blues, unsigned int stride,
+		  double x, double y, void *var_param) );
+EXTERN_FUNCTION (void cf_greyscale3,
+		 (unsigned int num_cells,
+		  unsigned short *reds, unsigned short *greens,
+		  unsigned short *blues, unsigned int stride,
+		  double x, double y, void *var_param) );
 EXTERN_FUNCTION (void cf_rainbow1, (unsigned int num_cells,
 				    unsigned short *reds,
 				    unsigned short *greens,

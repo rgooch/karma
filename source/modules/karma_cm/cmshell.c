@@ -2,7 +2,7 @@
 
     Main file for  cmshell  (Connection Management Shell interpreter).
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -78,8 +78,11 @@
 
     Updated by      Richard Gooch   14-JUN-1995: Made use of <ex_uint>.
 
-    Last updated by Richard Gooch   16-JUN-1995: Made use of
+    Updated by      Richard Gooch   16-JUN-1995: Made use of
   <r_get_fq_hostname>.
+
+    Last updated by Richard Gooch   1-JUN-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
 
 
     Usage:   cm_shell path
@@ -88,19 +91,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include <errno.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#include "os.h"
 #include <karma.h>
 #include <karma_conn.h>
 #include <karma_chm.h>
 #include <karma_pio.h>
+#include <karma_chs.h>
 #include <karma_ch.h>
+#include <karma_im.h>
+#include <karma_cm.h>
 #include <karma_ex.h>
+#include <karma_st.h>
 #include <karma_a.h>
 #include <karma_r.h>
 #include <karma_m.h>
 #include <k_cm_codes.h>
+#include <os.h>
 
 #define PROTOCOL_VERSION (unsigned int) 1
 
@@ -147,6 +156,8 @@ EXTERN_FUNCTION (int fork_cm_client_module,
 
 
 /*  Private functions  */
+STATIC_FUNCTION (flag read_line, (Channel channel, char *buffer,
+				  unsigned int length, flag *end) );
 static void event_delay ();
 static void startup_hosts ();
 static void startup_modules ();
@@ -155,7 +166,6 @@ static void process_commands ();
 static void stop_func ();
 static void term_func ();
 static void exit_func ();
-static void wait_for_slaves_to_disconnect (/* timeout */);
 static void disconnect_from_slaves ();
 static void notify_quiescent ();
 STATIC_FUNCTION (void shutdown_modules, () );
@@ -197,9 +207,7 @@ char *argv[];
     Channel channel;
     int def_port_number;
     hosttype *new_host;
-    char *keyword;
     char buffer[STRING_LENGTH];
-    char display[STRING_LENGTH];
     extern flag keep_going;
     extern flag clean_child_exit;
     extern unsigned int my_port;
@@ -207,8 +215,6 @@ char *argv[];
     extern hosttype *hostlist;
     extern char my_hostname[STRING_LENGTH];
     extern char module_name[STRING_LENGTH + 1];
-    char txt[STRING_LENGTH];
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char usage_string[] = "Usage:\tcm_shell path";
     static char function_name[] = "main";
@@ -348,7 +354,8 @@ char *argv[];
     (void) ch_close (channel);
 }   /*  End Function main  */
 
-flag read_line (channel, buffer, length, end)
+static flag read_line (Channel channel, char *buffer, unsigned int length,
+		       flag *end)
 /*  This routine will read a line from a channel, stripping all comments,
     leading and trailing whitespace. The comment character is '#'.
     The channel must be given by  channel  .
@@ -358,14 +365,7 @@ flag read_line (channel, buffer, length, end)
     the line contains the string "END", else it will write the value FALSE.
     The routine returns TRUE on success, else it returns FALSE.
 */
-Channel channel;
-char *buffer;
-unsigned int length;
-flag *end;
 {
-    int len;
-    char *ch;
-
     *end = FALSE;
     buffer[0] = '\0';
     if ( !chs_get_line (channel, buffer, length) )
@@ -435,7 +435,6 @@ Channel channel;
     extern unsigned int my_port;
     extern unsigned int hostcount;
     extern char my_hostname[STRING_LENGTH];
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "startup_hosts";
 
@@ -646,13 +645,11 @@ Channel channel;
     char *module_name;
     char *args;
     char buffer[STRING_LENGTH];
-    char command[STRING_LENGTH];
     extern flag any_manual;
     extern unsigned int my_port;
     extern unsigned int child_count;
     extern moduletype *latest_module;
     extern char my_hostname[STRING_LENGTH];
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "startup_modules";
 
@@ -861,7 +858,6 @@ Channel channel;
     extern flag any_manual;
     extern unsigned int connectioncount;
     extern moduletype *modulelist;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "startup_connections";
 
@@ -881,12 +877,7 @@ Channel channel;
 	if (end) return;
 	/*  Start parsing line  */
 	p = buffer;
-	if ( ( module_num = ex_uint (p, &p) ) < 0 )
-	{
-	    (void) fprintf (stderr, "Illegal client module number: %u\n",
-			    module_num);
-	    exit (RV_BAD_DATA);
-	}
+	module_num = ex_uint (p, &p);
 	for (count = 0, client = modulelist;
 	     (client != NULL) && (count < module_num);
 	     ++count, client = client->next);
@@ -896,12 +887,7 @@ Channel channel;
 			    module_num);
 	    exit (RV_BAD_DATA);
 	}
-	if ( ( module_num = ex_uint (p, &p) ) < 0 )
-	{
-	    (void) fprintf (stderr, "Illegal server module number: %u\n",
-			    module_num);
-	    exit (RV_BAD_DATA);
-	}
+	module_num = ex_uint (p, &p);
 	for (count = 0, server = modulelist;
 	     (server != NULL) && (count < module_num);
 	     ++count, server = server->next);
@@ -1009,9 +995,8 @@ Channel channel;
     char buffer[STRING_LENGTH];
     extern unsigned int connectioncount;
     extern moduletype *modulelist;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
-    static char function_name[] = "process_commands";
+    /*static char function_name[] = "process_commands";*/
 
     while ( read_line (channel, buffer, STRING_LENGTH, &end) )
     {
@@ -1035,18 +1020,8 @@ Channel channel;
 	    continue;
 	}
 	p = buffer;
-	if ( ( module_num = ex_uint (p, &p) ) < 0 )
-	{
-	    (void) fprintf (stderr, "Illegal client module number: %u\n",
-			    module_num);
-	    exit (RV_BAD_DATA);
-	}
-	if ( ( delay = ex_uint (p, &p) ) < 0 )
-	{
-	    (void) fprintf (stderr, "Illegal delay value: %u\n",
-			    module_num);
-	    exit (RV_BAD_DATA);
-	}
+	module_num = ex_uint (p, &p);
+	delay = ex_uint (p, &p);
 	for (count = 0, client = modulelist;
 	     (client != NULL) && (count < module_num);
 	     ++count, client = client->next);
@@ -1089,14 +1064,12 @@ Connection connection;
 void **info;
 {
     Channel channel;
-    flag local;
     char *hostname;
     char *host_device;
     hosttype *new_host;
     hosttype *last_host;
     extern unsigned int hostcount;
     extern hosttype *hostlist;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "new_host_func";
 
@@ -1242,7 +1215,6 @@ void **info;
     moduletype *last_module;
     extern moduletype *latest_module;
     extern moduletype *modulelist;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "new_module_control";
 
@@ -1355,9 +1327,8 @@ void **info;
     char *protocol_name;
     moduletype *module;
     extern unsigned int connectioncount;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
-    static char function_name[] = "module_control_event";
+    /*static char function_name[] = "module_control_event";*/
 
     module = (moduletype *) *info;
     channel = conn_get_channel (connection);
@@ -1449,7 +1420,6 @@ void *info;
     moduletype *module;
     extern flag keep_going;
     extern moduletype *modulelist;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
 
     module = (moduletype *) info;
@@ -1496,9 +1466,8 @@ void **info;
     hosttype *host;
     moduletype *module;
     extern moduletype *modulelist;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
-    static char function_name[] = "new_module_stdio";
+    /*static char function_name[] = "new_module_stdio";*/
 
     channel = conn_get_channel (connection);
     if ( ( hostname = pio_read_string (channel, (unsigned int *) NULL) )
@@ -1565,7 +1534,6 @@ void **info;
     Channel channel;
     char *buffer;
     moduletype *module;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "module_stdio_output";
 
@@ -1606,7 +1574,6 @@ void *info;
 {
     moduletype *module;
     extern moduletype *modulelist;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
 
     module = (moduletype *) info;
@@ -1698,40 +1665,6 @@ struct rusage *rusage;
     --child_count;
 }   /*  End Function exit_func  */
 
-/*  The following code is redundant because the slave connections are all
-    closed elsewhere.
-*/
-#ifdef obsolete
-static void wait_for_slaves_to_disconnect (timeout)
-/*  This routine will wait for all slaves to disconnect.
-    The timeout in seconds must be given by  timeout  .
-    The routine returns nothing.
-*/
-unsigned int timeout;
-{
-    extern unsigned int hostcount;
-
-    (void) fprintf (stderr,
-		    "Waiting: %u seconds for all slaves to disconnect\n",
-		    timeout);
-    timeout *= 10;
-    while ( (timeout > 0) && (hostcount > 0) )
-    {
-	cm_poll (FALSE);
-	chm_poll (100);
-	(void) fprintf (stderr, ".");
-	--timeout;
-    }
-    (void) fprintf (stderr, "\n");
-    if (hostcount > 0)
-    {
-	(void) fprintf (stderr,
-			"Timed out waiting for slaves to die: %u left\n",
-			hostcount);
-    }
-}   /*  End Function wait_for_slaves_to_disconnect  */
-#endif
-
 static void disconnect_from_slaves ()
 /*  This routine will disconnect from all slaves.
     The routine returns nothing.
@@ -1766,9 +1699,8 @@ static void notify_quiescent ()
     Channel channel;
     moduletype *module;
     extern moduletype *modulelist;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
-    static char function_name[] = "notify_quiescent";
+    /*static char function_name[] = "notify_quiescent";*/
 
     for (module = modulelist; module != NULL; module = module->next)
     {

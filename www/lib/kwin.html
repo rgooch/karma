@@ -1,0 +1,887 @@
+<html><head><title>Package: kwin</title></head> 
+<body>
+<center><h1>The "kwin" Package</h1></center>    These routines are meant to provide a high level mechanism to create and
+    manipulate pixel canvases. After creating a pixel canvas from some graphics
+    system primitive object, the canvas may be manipulated without the need to
+    use the underlying graphics system interface. This renders code much more
+    portable.
+<p><b>Library:</b> karmagraphics
+<br><b>Link With:</b> -lkarmagraphics
+<br><p><a name=kwin></a></table><h4>Functions</h4><table><tr><td><a href=kwin.html#kwin_create_x>kwin_create_x</a></td><td>Create a pixel canvas from an X window.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_set_gc_x>kwin_set_gc_x</a></td><td>Set Graphics Context for an X-based pixel canavas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_get_gc_x>kwin_get_gc_x</a></td><td>Get Graphics Context for an X-based pixel canavas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_create_child>kwin_create_child</a></td><td>Create a child pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_register_refresh_func>kwin_register_refresh_func</a></td><td>Register a refresh callback.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_register_position_event_func>kwin_register_position_event_func</a></td><td>Register position event callback.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_resize>kwin_resize</a></td><td>Resize a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_process_position_event>kwin_process_position_event</a></td><td>Process position event on a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_write_ps>kwin_write_ps</a></td><td>Refresh a pixel canvas onto a PostScriptPage object.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_get_attributes>kwin_get_attributes</a></td><td>Get the attributes for a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_set_attributes>kwin_set_attributes</a></td><td>Set the attributes for a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_clear>kwin_clear</a></td><td>Clear a rectangular portion of a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_draw_pc_image>kwin_draw_pc_image</a></td><td>Draw PseudoColour image to a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_draw_rgb_image>kwin_draw_rgb_image</a></td><td>Draw TrueColour image to a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_draw_cached_image>kwin_draw_cached_image</a></td><td>Draw cached image to a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_draw_point>kwin_draw_point</a></td><td>Draw a single point onto a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_draw_points>kwin_draw_points</a></td><td>Draw multiple points onto a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_draw_line>kwin_draw_line</a></td><td>Draw a single line onto a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_draw_lines>kwin_draw_lines</a></td><td>Draw multiple connected lines onto a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_fill_ellipse>kwin_fill_ellipse</a></td><td>Draw a filled ellipse onto a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_fill_polygon>kwin_fill_polygon</a></td><td>Draw a filled polygon onto a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_draw_string>kwin_draw_string</a></td><td>Draw a string onto a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_draw_rectangle>kwin_draw_rectangle</a></td><td>Draw a single rectangle onto a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_fill_rectangle>kwin_fill_rectangle</a></td><td>Draw a single filled rectangle onto a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_draw_ellipse>kwin_draw_ellipse</a></td><td>Draw an ellipse onto a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_draw_ellipses>kwin_draw_ellipses</a></td><td>Draw multiple ellipses onto a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_fill_ellipses>kwin_fill_ellipses</a></td><td>Draw multiple filled ellipses onto a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_draw_segments>kwin_draw_segments</a></td><td>Draw multiple disjoint lines onto a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_get_size>kwin_get_size</a></td><td>Get the size of a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_free_cache_data>kwin_free_cache_data</a></td><td>Free some cache data allocated by [<kwin_draw_pc_image>].
+</td></tr>
+<tr><td><a href=kwin.html#kwin_convert_to_canvas_coord>kwin_convert_to_canvas_coord</a></td><td>Convert low-level co-ordinates to pixel co-ordinates.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_convert_from_canvas_coord>kwin_convert_from_canvas_coord</a></td><td>Convert pixel co-ordinates to low-level co-ordinates.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_get_colour>kwin_get_colour</a></td><td>Get (possibly allocate) a colourcell for a canvas.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_load_font>kwin_load_font</a></td><td>Load a font for later use.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_get_string_size>kwin_get_string_size</a></td><td>Determine the size of a string.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_xgl_test_stereo>kwin_xgl_test_stereo</a></td><td>Test if stereo supported using XGL.
+</td></tr>
+<tr><td><a href=kwin.html#kwin_xgl_create_stereo>kwin_xgl_create_stereo</a></td><td>Create a stereo pixel canvas using XGL.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=kwin.html#KWIN_PROTO_refresh_func>KWIN_PROTO_refresh_func</a></td><td>Process a refresh event for a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#KWIN_PROTO_position_func>KWIN_PROTO_position_func</a></td><td>Process a position event on a pixel canvas.
+</td></tr>
+<tr><td><a href=kwin.html#KWIN_PROTO_iscale_func>KWIN_PROTO_iscale_func</a></td><td>Intensity scale function.
+</td></tr>
+</table><h4>Tables</h4><table><tr><td><a href=kwin.html#KWIN_ATTRIBUTES>KWIN_ATTRIBUTES</a></td><td>List of attributes for KPixCanvas objects
+</td></tr>
+<tr><td><a href=kwin.html#KWIN_STRING_ATTRIBUTES>KWIN_STRING_ATTRIBUTES</a></td><td>List of attributes for KPixCanvasFont string
+</td></tr>
+<tr><td><a href=kwin.html#KWIN_XGL_STATUS>KWIN_XGL_STATUS</a></td><td>List of XGL stereo support types
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=kwin_create_x></a> KPixCanvas
+ <b>kwin_create_x</b><i>    (Display *display, Window window, GC gc,
+			  int xoff, int yoff, int width, int height)
+</i><br><p>    This routine will create a pixel canvas, ready for drawing, from
+    an X window. Note that the origin of a KPixCanvas is the upper-left corner.
+<p><b>Parameters:</b><ul><li><i>display :</i> 
+    The X display.
+<br><li><i>window :</i> 
+    The window ID in which the canvas lies.
+<br><li><i>gc :</i> 
+    The graphics context.
+<br><li><i>xoff :</i> 
+    The horizontal offset of the canvas origin (upper-left corner)
+    relative to the parent window.
+<br><li><i>yoff :</i> 
+    The vertical offset of the canvas origin (upper-left corner)
+    relative to the parent window.
+<br><li><i>width :</i> 
+    The width (vertical extent) of the canvas.
+<br><li><i>height :</i> 
+    The height (horizontal extent) of the canvas.
+<br></ul><b>Returns:</b>     A pixel canvas on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine is only available with the X window system.
+</ul><p><hr> <a name=kwin_set_gc_x></a> void
+ <b>kwin_set_gc_x</b><i>    (KPixCanvas canvas, GC gc)
+</i><br><p>    This routine will register a new Graphics Context to be used
+    when drawing into the pixel canvas. Subsequent drawing operations will use
+    the new Graphics Context.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>gc :</i> 
+    The Graphics Context.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine is only available with the X window system.
+</ul><p><hr> <a name=kwin_get_gc_x></a> GC
+ <b>kwin_get_gc_x</b><i>    (KPixCanvas canvas)
+</i><br><p>    This routine will get the Graphics Context used when drawing into
+    the pixel canvas. If the Graphics Context is modified, it should be
+    registered prior to drawing on the canvas by calling <em>kwin_set_gc_x</em>.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br></ul><b>Returns:</b>     The Graphics Context.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine is only available with the X window system.
+</ul><p><hr> <a name=kwin_create_child></a> KPixCanvas
+ <b>kwin_create_child</b><i>    (KPixCanvas parent, int xoff, int yoff,
+			      int width, int height, flag absorb_events)
+</i><br><p>    This routine will create a pixel canvas, ready for drawing,
+    within an existing pixel canvas. The new pixel canvas is a child of the
+    parent pixel canvas. The child *does not* receive refresh events from the
+    parent, it *does* receive position events from the parent, provided these
+    events lie within the child's boundaries. For X-based graphics, a copy of
+    the Graphics Context is made for the child.
+    Note that the origin of a KPixCanvas is the upper-left corner.
+<p><b>Parameters:</b><ul><li><i>parent :</i> 
+    The parent pixel canvas.
+<br><li><i>xoff :</i> 
+    The horizontal offset of the canvas origin (upper-left corner)
+    relative to the parent window.
+<br><li><i>yoff :</i> 
+    The vertical offset of the canvas origin (upper-left corner)
+    relative to the parent window.
+<br><li><i>width :</i> 
+    The width (vertical extent) of the canvas.
+<br><li><i>height :</i> 
+    The height (horizontal extent) of the canvas.
+<br><li><i>absorb_events :</i> 
+    If TRUE, any events passed from the parent canvas to the
+    child canvas and consumed by the registered event functions for the child
+    canvas are consumed from the parent canvas. If FALSE, the child canvas does
+    not consume events from the parent. Note that the parent events are still
+    *passed* to the child canvas.
+<br></ul><b>Returns:</b>     A pixel canvas on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_register_refresh_func></a> KCallbackFunc
+ <b>kwin_register_refresh_func</b><i>    (KPixCanvas canvas,
+					  void (*refresh_func) (), void *info)
+</i><br><p>    This routine will register a refresh function for a pixel canvas.
+    The refresh function will be called whenever the contents of the canvas
+    need to be redrawn. Many refresh functions may be registered per canvas.
+    The first function registered is the first function called upon refresh.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The pixel canvas.
+<br><li><i>func :</i> 
+    The function that is called when the canvas is to be refreshed. The
+    prototype function is <a href=kwin.html#KWIN_PROTO_refresh_func>KWIN_PROTO_refresh_func</a>.
+<br><li><i>info :</i> 
+    The initial arbitrary canvas information pointer.
+<br></ul><b>Returns:</b>     A KCallbackFunc object.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_register_position_event_func></a> KCallbackFunc
+ <b>kwin_register_position_event_func</b><i>    (KPixCanvas canvas,
+						 flag (*func) (), void *f_info)
+</i><br><p>    This routine will register a position event function for a pixel
+    canvas. The position event function will be called whenever a position
+    event on the canvas has not been consumed. Many position event functions
+    may be registered per canvas. The first function registered is the first
+    function called upon a position event.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The pixel canvas.
+<br><li><i>func :</i> 
+    The function that is called when a position event occurs. The
+    prototype function is <a href=kwin.html#KWIN_PROTO_position_func>KWIN_PROTO_position_func</a>.
+<br><li><i>f_info :</i> 
+    The initial arbitrary function information pointer.
+<br></ul><b>Returns:</b>     A KCallbackFunc object. On failure, the process aborts.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_resize></a> flag
+ <b>kwin_resize</b><i>    (KPixCanvas canvas, flag clear, int xoff, int yoff,
+		  int width, int height)
+</i><br><p>    This routine will register a resize in the pixel canvas size.
+    This will cause any refresh routines registered for the canvas to be
+    called. This routine is meant to be called by an X event handler for the
+    underlying window, however the routine is available for all graphics
+    systems.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>clear :</i> 
+    If TRUE, the canvas is first cleared.
+<br><li><i>xoff :</i> 
+    The horizontal offset of the canvas origin (upper-left corner)
+    relative to the parent window.
+<br><li><i>yoff :</i> 
+    The vertical offset of the canvas origin (upper-left corner)
+    relative to the parent window.
+<br><li><i>width :</i> 
+    The new width (horizontal extent) of the canvas. If this is less
+    than 1 canvas is not resized, it is only refreshed.
+<br><li><i>height :</i> 
+    The new height (vertical extent) of the canvas. If this is less
+    than 1 canvas is not resized, it is only refreshed.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_process_position_event></a> flag
+ <b>kwin_process_position_event</b><i>    (KPixCanvas canvas, int x, int y, flag clip,
+				  unsigned int event_code, void *event_info)
+</i><br><p>    This routine will process (inject) a position event on the lower
+    level object (parent: i.e. X window) for a pixel canvas. This event is
+    processed with all position event consumer routines until one successfully
+    consumes the event.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The pixel canvas.
+<br><li><i>x :</i> 
+    The horizontal position of the event, relative to the parent window.
+<br><li><i>y :</i> 
+    The vertical position of the event, relative to the parent window.
+<br><li><i>clip :</i> 
+    If the event is outside of the canvas boundary and this is TRUE,
+    the event co-ordinates are clipped to the nearest boundary and passed on to
+    the registered position event consumers. If the event is outside of the
+    canvas boundary and this is FALSE, the event is not consumed.
+<br><li><i>event_code :</i> 
+    The arbitrary event code.
+<br><li><i>event_info :</i> 
+    The arbitrary event information.
+<br></ul><b>Returns:</b>     TRUE if the event was consumed, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_write_ps></a> flag
+ <b>kwin_write_ps</b><i>    (KPixCanvas canvas, PostScriptPage pspage)
+</i><br><p>    This routine will refresh a pixel canvas, redirecting output to a
+    PostScriptPage object.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The pixel canvas.
+<br><li><i>pspage :</i> 
+    The PostScriptPage object.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_get_attributes></a> void
+ <b>kwin_get_attributes</b><i>    (KPixCanvas canvas, ...)
+</i><br><p>    Get the attributes for a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The pixel canvas.
+<br><li><i>... :</i> 
+    The optional list of parameter attribute-key attribute-value-ptr
+    pairs must follow. This list must be terminated with the value
+    KWIN_ATT_END. See <a href=kwin.html#KWIN_ATTRIBUTES>KWIN_ATTRIBUTES</a> for the list of attributes.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_set_attributes></a> void
+ <b>kwin_set_attributes</b><i>    (KPixCanvas canvas, ...)
+</i><br><p>    Set the attributes for a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The pixel canvas.
+<br><li><i>... :</i> 
+    The optional list of parameter attribute-key attribute-value
+    pairs must follow. This list must be terminated with the value
+    KWIN_ATT_END. See <a href=kwin.html#KWIN_ATTRIBUTES>KWIN_ATTRIBUTES</a> for the list of attributes.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_clear></a> flag
+ <b>kwin_clear</b><i>    (KPixCanvas canvas, int x, int y, int width, int height)
+</i><br><p>    Clear a rectangular portion of a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>x :</i> 
+    The horizontal offset of the rectangle.
+<br><li><i>y :</i> 
+    The vertical offset of the rectangle.
+<br><li><i>width :</i> 
+    The width of the rectangle. If this is less than 0 the pixel canvas
+    is cleared to its right edge.
+<br><li><i>height :</i> 
+    The height of the rectangle. If this is less than 0 the pixel
+    canvas is cleared to its bottom edge.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     To clear the entire canvas, the following should be used:
+    kwin_clear (canvas, 0, 0, -1, -1);
+</ul><p><hr> <a name=kwin_draw_pc_image></a> flag
+ <b>kwin_draw_pc_image</b><i>    (KPixCanvas canvas, int x_off, int y_off,
+			 int x_pixels, int y_pixels,
+			 CONST char *slice,
+			 CONST uaddr *hoffsets, CONST uaddr *voffsets,
+			 unsigned int width, unsigned int height,
+			 unsigned int type, unsigned int conv_type,
+			 unsigned int num_pixels, unsigned long *pixel_values,
+			 unsigned long blank_pixel,unsigned long min_sat_pixel,
+			 unsigned long max_sat_pixel,
+			 double i_min, double i_max,
+			 flag (*iscale_func) (), void *iscale_info,
+			 KPixCanvasImageCache *cache_ptr)
+</i><br><p>    This routine will draw a 2-dimensional slice of a Karma array
+    onto a pixel canvas. This slice may be tiled. The slice is a PseudoColour
+    image.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The pixel canvas.
+<br><li><i>x_off :</i> 
+    The horizontal offset, relative to the top-left corner of the
+    canvas.
+<br><li><i>y_off :</i> 
+    The vertical offset, relative to the top-left corner of the canvas.
+<br><li><i>x_pixels :</i> 
+    The number of horizontal pixels to draw.
+<br><li><i>y_pixels :</i> 
+    The number of vertical pixels to draw.
+<br><li><i>slice :</i> 
+    The start of the slice image data.
+<br><li><i>hoffsets :</i> 
+    The array of horizontal byte offsets.
+<br><li><i>voffsets :</i> 
+    The array of vertical byte offsets.
+<br><li><i>width :</i> 
+    The width of the input image (in values).
+<br><li><i>height :</i> 
+    The height of the input image (in values).
+<br><li><i>type :</i> 
+    The type of the slice image data.
+<br><li><i>conv_type :</i> 
+    The input conversion type (when the input is complex).
+<br><li><i>num_pixels :</i> 
+    The number of pixels in the pixel array.
+<br><li><i>pixel_values :</i> 
+    The array of pixel values.
+<br><li><i>blank_pixel :</i> 
+    The pixel value to be used when the intensity value is an
+    undefined value.
+<br><li><i>min_sat_pixel :</i> 
+    The pixel value to be used when the intensity value is
+    below the minimum value.
+<br><li><i>max_sat_pixel :</i> 
+    The pixel value to be used when the intensity value is
+    above the maximum value.
+<br><li><i>i_min :</i> 
+    The minimum intensity value.
+<br><li><i>i_max :</i> 
+    The maximum intensity value.
+<br><li><i>iscale_func :</i> 
+    The function to be called when non-linear intensity scaling
+    is required. If NULL, linear intensity scaling is used. The prototype
+    function is <a href=kwin.html#KWIN_PROTO_iscale_func>KWIN_PROTO_iscale_func</a>.
+<br><li><i>iscale_info :</i> 
+    A pointer to arbitrary information for <em>iscale_func</em>.
+<br><li><i>cache_ptr :</i> 
+    Cache data is written here. The routine may produce cache data
+    which will vastly increase the speed of subsequent operations on this data.
+    Prior to process exit, a call MUST be made to <a href=kwin.html#kwin_free_cache_data>kwin_free_cache_data</a>,
+    otherwise shared memory segments could remain after the process exits.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe.
+<br><p><hr> <a name=kwin_draw_rgb_image></a> flag
+ <b>kwin_draw_rgb_image</b><i>    (KPixCanvas canvas, int x_off, int y_off,
+			  int x_pixels, int y_pixels,
+			  CONST unsigned char *red_slice,
+			  CONST unsigned char *green_slice,
+			  CONST unsigned char *blue_slice,
+			  CONST uaddr *hoffsets, CONST uaddr *voffsets,
+			  unsigned int width, unsigned int height,
+			  KPixCanvasImageCache *cache_ptr)
+</i><br><p>    This routine will draw a 2-dimensional slice of a Karma array
+    onto a pixel canvas. This slice may be tiled. The slice is a RGB image.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The pixel canvas.
+<br><li><i>x_off :</i> 
+    The horizontal offset, relative to the top-left corner of the
+    canvas.
+<br><li><i>y_off :</i> 
+    The vertical offset, relative to the top-left corner of the canvas.
+<br><li><i>x_pixels :</i> 
+    The number of horizontal pixels to draw.
+<br><li><i>y_pixels :</i> 
+    The number of vertical pixels to draw.
+<br><li><i>red_slice :</i> 
+    The start of the red slice data.
+<br><li><i>green_slice :</i> 
+    The start of the green slice data.
+<br><li><i>blue_slice :</i> 
+    The start of the blue slice data.
+<br><li><i>hoffsets :</i> 
+    The array of horizontal byte offsets.
+<br><li><i>voffsets :</i> 
+    The array of vertical byte offsets.
+<br><li><i>width :</i> 
+    The width of the input image (in values).
+<br><li><i>height :</i> 
+    The height of the input image (in values).
+<br><li><i>cache_ptr :</i> 
+    Cache data is written here. The routine may produce cache data
+    which will vastly increase the speed of subsequent operations on this data.
+    Prior to process exit, a call MUST be made to <a href=kwin.html#kwin_free_cache_data>kwin_free_cache_data</a>,
+    otherwise shared memory segments could remain after the process exits.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe.
+<br><b>Note:</b><ul> <li>     The 3 colour components must be of type  K_UBYTE  .
+</ul><p><hr> <a name=kwin_draw_cached_image></a> flag
+ <b>kwin_draw_cached_image</b><i>    (KPixCanvasImageCache cache, int x_off, int y_off)
+</i><br><p>    This routine will draw a previously computed image cache data
+    (computed by <a href=kwin.html#kwin_draw_pc_image>kwin_draw_pc_image</a>) onto the canvas on which the original
+    image was drawn.
+<p><b>Parameters:</b><ul><li><i>cache :</i> 
+    The cache data.
+<br><li><i>x_off :</i> 
+    The horizontal offset, relative to the top-left corner of the
+    canvas.
+<br><li><i>y_off :</i> 
+    The vertical offset, relative to the top-left corner of the canvas.
+<br></ul><b>Returns:</b>     TRUE on success if there is valid cache data, else FALSE
+    indicating that the image must be recomputed and drawn using
+    <a href=kwin.html#kwin_draw_pc_image>kwin_draw_pc_image</a>.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_draw_point></a> flag
+ <b>kwin_draw_point</b><i>    (KPixCanvas canvas, double x, double y,
+		      unsigned long pixel_value)
+</i><br><p>    Draw a single point onto a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>x :</i> 
+    The horizontal offset of the point.
+<br><li><i>y :</i> 
+    The vertical offset of the point.
+<br><li><i>pixel_value :</i> 
+    The pixel value to use.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_draw_points></a> flag
+ <b>kwin_draw_points</b><i>    (KPixCanvas canvas, double *x_array, double *y_array,
+		       unsigned int num_points, unsigned long pixel_value)
+</i><br><p>    Draw multiple points onto a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>x_array :</i> 
+    The horizontal co-ordinates of the points.
+<br><li><i>y_array :</i> 
+    The vetical co-ordinates of the points.
+<br><li><i>num_points :</i> 
+    The number of points.
+<br><li><i>pixel_value :</i> 
+    The pixel value to use.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_draw_line></a> flag
+ <b>kwin_draw_line</b><i>    (KPixCanvas canvas, double x0, double y0,
+		     double x1, double y1, unsigned long pixel_value)
+</i><br><p>    Draw a single line onto a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>x0 :</i> 
+    The horizontal offset of the first point.
+<br><li><i>y0 :</i> 
+    The vertical offset of the first point.
+<br><li><i>x1 :</i> 
+    The horizontal offset of the second point.
+<br><li><i>y1 :</i> 
+    The vertical offset of the second point.
+<br><li><i>pixel_value :</i> 
+    The pixel value to use.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_draw_lines></a> flag
+ <b>kwin_draw_lines</b><i>    (KPixCanvas canvas, int *x_array, int *y_array,
+		      int num_points, unsigned long pixel_value)
+</i><br><p>    Draw multiple connected lines onto a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>x_array :</i> 
+    The horizontal co-ordinates of the points.
+<br><li><i>y_array :</i> 
+    The vetical co-ordinates of the points.
+<br><li><i>num_points :</i> 
+    The number of points. The number of lines drawn is 1 less than
+    this value.
+<br><li><i>pixel_value :</i> 
+    The pixel value to use.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_fill_ellipse></a> flag
+ <b>kwin_fill_ellipse</b><i>    (KPixCanvas canvas,
+			double cx, double cy, double rx, double ry,
+			unsigned long pixel_value)
+</i><br><p>    Draw a filled ellipse onto a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>cx :</i> 
+    The horizontal co-ordinate of the centre of the ellipse.
+<br><li><i>cy :</i> 
+    The vertical co-ordinate of the centre of the ellipse.
+<br><li><i>rx :</i> 
+    The horizontal radius.
+<br><li><i>ry :</i> 
+    The vertical radius.
+<br><li><i>pixel_value :</i> 
+    The pixel value to use.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_fill_polygon></a> flag
+ <b>kwin_fill_polygon</b><i>    (KPixCanvas canvas, int *point_x, int *point_y,
+			unsigned int num_vertices, unsigned long pixel_value,
+			flag convex)
+</i><br><p>    Draw a filled polygon onto a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>point_x :</i> 
+    The array of x co-ordinates of vertices of the polygon.
+<br><li><i>point_y :</i> 
+    The array of y co-ordinates of vertices of the polygon.
+<br><li><i>num_vertices :</i> 
+    The number of vertices in the polygon.
+<br><li><i>pixel_value :</i> 
+    The pixel value to use.
+<br><li><i>convex :</i> 
+    If TRUE, then the points must form a convex polygon.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_draw_string></a> flag
+ <b>kwin_draw_string</b><i>    (KPixCanvas canvas, double x, double y,
+		       CONST char *string, unsigned long pixel_value,
+		       flag clear_under)
+</i><br><p>    This routine will draw a NULL terminated string onto a pixel
+    canvas, using the default font for the canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>x :</i> 
+    The horizontal offset of the string origin.
+<br><li><i>y :</i> 
+    The vertical offset of the string origin.
+<br><li><i>string :</i> 
+    The string.
+<br><li><i>pixel_value :</i> 
+    The pixel value to use.
+<br><li><i>clear_under :</i> 
+    If TRUE, then the routine will draw both the foreground and
+    background of the characters.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_draw_rectangle></a> flag
+ <b>kwin_draw_rectangle</b><i>    (KPixCanvas canvas, double x, double y,
+			  double width, double height,
+			  unsigned long pixel_value)
+</i><br><p>    Draw a single rectangle onto a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>x :</i> 
+    The horizontal offset of the rectangle.
+<br><li><i>y :</i> 
+    The vertical offset of the rectangle.
+<br><li><i>width :</i> 
+    The width of the rectangle. The point <em>x + width</em> is a vertex.
+<br><li><i>height :</i> 
+    The height of the rectangle. The point <em>y + height</em> is a vertex.
+<br><li><i>pixel_value :</i> 
+    The pixel value to use.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_fill_rectangle></a> flag
+ <b>kwin_fill_rectangle</b><i>    (KPixCanvas canvas, double x, double y,
+			  double width, double height,
+			  unsigned long pixel_value)
+</i><br><p>    Draw a single filled rectangle onto a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>x :</i> 
+    The horizontal offset of the rectangle.
+<br><li><i>y :</i> 
+    The vertical offset of the rectangle.
+<br><li><i>width :</i> 
+    The width of the rectangle. The point <em>x + width</em> is a vertex.
+<br><li><i>height :</i> 
+    The height of the rectangle. The point <em>y + height</em> is a vertex.
+<br><li><i>pixel_value :</i> 
+    The pixel value to use.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_draw_ellipse></a> flag
+ <b>kwin_draw_ellipse</b><i>    (KPixCanvas canvas, double cx, double cy,
+			double rx, double ry, unsigned long pixel_value)
+</i><br><p>    Draw an ellipse onto a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>cx :</i> 
+    The horizontal co-ordinate of the centre of the ellipse.
+<br><li><i>cy :</i> 
+    The vertical co-ordinate of the centre of the ellipse.
+<br><li><i>rx :</i> 
+    The horizontal radius.
+<br><li><i>ry :</i> 
+    The vertical radius.
+<br><li><i>pixel_value :</i> 
+    The pixel value to use.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_draw_ellipses></a> flag
+ <b>kwin_draw_ellipses</b><i>    (KPixCanvas canvas, int *cx, int *cy, int *rx, int *ry,
+			 int num_ellipses, unsigned long pixel_value)
+</i><br><p>    Draw multiple ellipses onto a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>cx :</i> 
+    The array of horizontal co-ordinate of the centre of the ellipse.
+<br><li><i>cy :</i> 
+    The array of vertical co-ordinate of the centre of the ellipse.
+<br><li><i>rx :</i> 
+    The array of horizontal radii.
+<br><li><i>ry :</i> 
+    The array of vertical radii.
+<br><li><i>num_ellipses :</i> 
+    The number of ellipses.
+<br><li><i>pixel_value :</i> 
+    The pixel value to use.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_fill_ellipses></a> flag
+ <b>kwin_fill_ellipses</b><i>    (KPixCanvas canvas, int *cx, int *cy, int *rx, int *ry,
+			 int num_ellipses, unsigned long pixel_value)
+</i><br><p>    Draw multiple filled ellipses onto a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>cx :</i> 
+    The array of horizontal co-ordinate of the centre of the ellipse.
+<br><li><i>cy :</i> 
+    The array of vertical co-ordinate of the centre of the ellipse.
+<br><li><i>rx :</i> 
+    The array of horizontal radii.
+<br><li><i>ry :</i> 
+    The array of vertical radii.
+<br><li><i>num_ellipses :</i> 
+    The number of ellipses.
+<br><li><i>pixel_value :</i> 
+    The pixel value to use.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_draw_segments></a> flag
+ <b>kwin_draw_segments</b><i>    (KPixCanvas canvas, int *x0, int *y0, int *x1, int *y1,
+			 int num_segments, unsigned long pixel_value)
+</i><br><p>    Draw multiple disjoint lines onto a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>x0 :</i> 
+    The horizontal start co-ordinates of the segments.
+<br><li><i>y0 :</i> 
+    The vetical start co-ordinates of the segments.
+<br><li><i>x1 :</i> 
+    The horizontal end co-ordinates of the segments.
+<br><li><i>y1 :</i> 
+    The vetical end co-ordinates of the segments.
+<br><li><i>num_segments :</i> 
+    The number of segments.
+<br><li><i>pixel_value :</i> 
+    The pixel value to use.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_get_size></a> void
+ <b>kwin_get_size</b><i>    (KPixCanvas canvas, int *width, int *height)
+</i><br><p>    Get the size of a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>width :</i> 
+    The number of horizontal pixel will be written here.
+<br><li><i>height :</i> 
+    The number of vertical pixel will be written here.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_free_cache_data></a> void
+ <b>kwin_free_cache_data</b><i>    (KPixCanvasImageCache cache)
+</i><br><p>    Free some cache data allocated by [<kwin_draw_pc_image>].
+<p><b>Parameters:</b><ul><li><i>cache :</i> 
+    The cache data.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_convert_to_canvas_coord></a> flag
+ <b>kwin_convert_to_canvas_coord</b><i>    (KPixCanvas canvas, int xin, int yin,
+				   int *xout, int *yout)
+</i><br><p>    This routine will convert co-ordinates in a lower level object
+    (parent, ie. X window) to co-ordinates in a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>xin :</i> 
+    The lower level horizontal co-ordinate.
+<br><li><i>yin :</i> 
+    The lower level vertical co-ordinate.
+<br><li><i>xout :</i> 
+    The horizontal canvas co-ordinate will be written here.
+<br><li><i>yout :</i> 
+    The vertical canvas co-ordinate will be written here.
+<br></ul><b>Returns:</b>     TRUE if the co-ordinate lies within the canvas boundaries, else
+    FALSE (although a conversion is still performed).
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_convert_from_canvas_coord></a> flag
+ <b>kwin_convert_from_canvas_coord</b><i>    (KPixCanvas canvas, int xin, int yin,
+				     int *xout, int *yout)
+</i><br><p>    This routine will convert co-ordinates in a pixel canvas to
+    co-ordinates in a lower level object (parent, ie. X window).
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>xin :</i> 
+    The horizontal canvas co-ordinate.
+<br><li><i>yin :</i> 
+    The vertical canvas co-ordinate.
+<br><li><i>xout :</i> 
+    The lower level horizontal co-ordinate will be written here.
+<br><li><i>yout :</i> 
+    The lower level vertical co-ordinate will be written here.
+<br></ul><b>Returns:</b>     TRUE if the co-ordinate lies within the canvas boundaries, else
+    FALSE (although a conversion is still performed).
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_get_colour></a> flag
+ <b>kwin_get_colour</b><i>    (KPixCanvas canvas, CONST char *colourname,
+		      unsigned long *pixel_value, unsigned short *red,
+		      unsigned short *green, unsigned short *blue)
+</i><br><p>    Get (possibly allocate) a colourcell for a canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The canvas.
+<br><li><i>colourname :</i> 
+    The name of the colour to get.
+<br><li><i>pixel_value :</i> 
+    The pixel value will be written here.
+<br><li><i>red :</i> 
+    The red intensity in the hardware colourmap for the pixel will be
+    written here. If this is NULL, nothing is written here.
+<br><li><i>green :</i> 
+    The green intensity in the hardware colourmap for the pixel will be
+    written here. If this is NULL, nothing is written here.
+<br><li><i>blue :</i> 
+    The blue intensity in the hardware colourmap for the pixel will be
+    written here. If this is NULL, nothing is written here.
+<br></ul><b>Returns:</b>     TRUE if the colourcell was allocated, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The pixel value is valid ONLY for this canvas. ALSO: the pixel value
+    becomes invalid EVERY time the canvas is refreshed/ resized. If the canvas
+    is refreshed/ resized, this routine MUST be called again.
+</ul><p><hr> <a name=kwin_load_font></a> KPixCanvasFont
+ <b>kwin_load_font</b><i>    (KPixCanvas canvas, CONST char *fontname)
+</i><br><p>    This routine will load a font which may be then used to draw text
+    onto a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The pixel canvas for which the font is valid.
+<br><li><i>fontname :</i> 
+    The name of the font.
+<br></ul><b>Returns:</b>     A pixel font on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_get_string_size></a> flag
+ <b>kwin_get_string_size</b><i>    (KPixCanvasFont font, CONST char *string, ...)
+</i><br><p>    Determine the size of a string.
+<p><b>Parameters:</b><ul><li><i>font :</i> 
+    The font.
+<br><li><i>string :</i> 
+    The string.
+<br><li><i>... :</i> 
+    The optional list of parameter attribute-key attribute-value-ptr
+    pairs must follow. This list must be terminated with the value
+    KWIN_STRING_END. See <a href=kwin.html#KWIN_STRING_ATT>KWIN_STRING_ATT</a> for the list of attributes.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=kwin_xgl_test_stereo></a> unsigned int
+ <b>kwin_xgl_test_stereo</b><i>    (Display *display, Window window)
+</i><br><p>    This routine will determine if stereoscopic display is supported
+    using XGL on a particular display.
+<p><b>Parameters:</b><ul><li><i>display :</i> 
+    The X display.
+<br><li><i>window :</i> 
+    The window ID of a window of the same class as the desired stereo
+    window.
+<br></ul><b>Returns:</b>     A status code. See <a href=kwin.html#KWIN_XGL_STATUS>KWIN_XGL_STATUS</a> for a list of values.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine is only available with the X window system.
+</ul><p><hr> <a name=kwin_xgl_create_stereo></a> flag
+ <b>kwin_xgl_create_stereo</b><i>    (Display *display, Window window,
+			     int xoff, int yoff, int width, int height,
+			     KPixCanvas *mono,
+			     KPixCanvas *left, KPixCanvas *right)
+</i><br><p>    This routine will create a stereo pixel canvas, ready for
+    drawing, from an X window, using the XGL library. Note that the origin of
+    a KPixCanvas is the upper-left corner.
+<p><b>Parameters:</b><ul><li><i>display :</i> 
+    The X display.
+<br><li><i>window :</i> 
+    The window ID in which the canvas lies.
+<br><li><i>gc :</i> 
+    The graphics context.
+<br><li><i>xoff :</i> 
+    The horizontal offset of the canvas origin (upper-left corner)
+    relative to the parent window.
+<br><li><i>yoff :</i> 
+    The vertical offset of the canvas origin (upper-left corner)
+    relative to the parent window.
+<br><li><i>width :</i> 
+    The width (vertical extent) of the canvas.
+<br><li><i>height :</i> 
+    The height (horizontal extent) of the canvas.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine is only available with the X window system.
+</ul><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=KWIN_PROTO_refresh_func></a> void
+ <b>KWIN_PROTO_refresh_func</b><i>    (KPixCanvas canvas, int width, int height,
+			      void **info, PostScriptPage pspage,
+			      unsigned int num_areas,
+			      KPixCanvasRefreshArea *areas,
+			      flag *honoured_areas)
+</i><br><p>    Process a refresh event for a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The pixel canvas.
+<br><li><i>width :</i> 
+    The width of the canvas in pixels.
+<br><li><i>height :</i> 
+    The height of the canvas in pixels.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary canvas information pointer.
+<br><li><i>pspage :</i> 
+    If not NULL, the PostScriptPage object the refresh is
+    redirected to.
+<br><li><i>num_areas :</i> 
+    The number of areas that need to be refreshed. If this is
+    0 then the entire pixel canvas needs to be refreshed.
+<br><li><i>areas :</i> 
+    The list of areas that need to be refreshed.
+<br><li><i>honoured_areas :</i> 
+    If the value TRUE is written here it is assumed the
+    routine honoured the list of refresh areas and did not write outside
+    these areas and hence the list of areas will be passed to subsequent
+    registered refresh routines. If FALSE is written here (or nothing is
+    written here), implying the routine refreshed the entire pixel canvas,
+    subsequent refresh routines will be told to refresh the entire canvas.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=KWIN_PROTO_position_func></a> flag
+ <b>KWIN_PROTO_position_func</b><i>    (KPixCanvas canvas, int x, int y,
+			       unsigned int event_code, void *e_info,
+			       void **f_info)
+</i><br><p>    Process a position event on a pixel canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The pixel canvas on which the event occurred.
+<br><li><i>x :</i> 
+    The horizontal position of the event, relative to the canvas origin
+<br><li><i>y :</i> 
+    The vertical position of the event, relative to the canvas origin.
+<br><li><i>event_code :</i> 
+    The arbitrary event code.
+<br><li><i>e_info :</i> 
+    A pointer to arbitrary event information.
+<br><li><i>f_info :</i> 
+    A pointer to an arbitrary function information pointer.
+<br></ul><b>Returns:</b>     TRUE if the event was consumed, else FALSE indicating that
+    the event is still to be processed.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=KWIN_PROTO_iscale_func></a> flag
+ <b>KWIN_PROTO_iscale_func</b><i>    (double *out, unsigned int out_stride,
+			     double *inp, unsigned int inp_stride,
+			     unsigned int num_values,
+			     double i_min, double i_max, void *info)
+</i><br><p>    This routine will perform an arbitrary intensity scaling on
+    an array of values. This routine may be called many times to scale an
+    image.
+<p><b>Parameters:</b><ul><li><i>out :</i> 
+    The output array.
+<br><li><i>out_stride :</i> 
+    The stride (in doubles) of the output array.
+<br><li><i>inp :</i> 
+    The input array.
+<br><li><i>inp_stride :</i> 
+    The stride (in doubles) of the input array.
+<br><li><i>num_values :</i> 
+    The number of values to scale.
+<br><li><i>i_min :</i> 
+    The minimum intensity value.
+<br><li><i>i_max :</i> 
+    The maximum intensity value.
+<br><li><i>info :</i> 
+    A pointer to arbitrary information.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Tables</h2></center><hr> <a name=KWIN_ATTRIBUTES><b>KWIN_ATTRIBUTES</b></a><p> <table><tr><td>Name                      </td><td>Get Type          </td><td>Set Type       </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>KWIN_ATT_END              </td><td>                  </td><td>               </td><td>End of varargs list
+</td></tr><tr><td>KWIN_ATT_VISUAL           </td><td>unsigned int *    </td><td>               </td><td>Visual type
+</td></tr><tr><td>KWIN_ATT_DEPTH            </td><td>unsigned int *    </td><td>               </td><td>Depth of canvas
+</td></tr><tr><td>KWIN_ATT_VISIBLE          </td><td>flag *            </td><td>flag           </td><td>Canvas is visible
+</td></tr><tr><td>KWIN_ATT_FONT             </td><td>KPixCanvasFont *  </td><td>KPixCanvasFont </td><td>Current font
+</td></tr><tr><td>KWIN_ATT_PIX_RED_MASK     </td><td>unsigned long *   </td><td>               </td><td>Red pixel mask
+</td></tr><tr><td>KWIN_ATT_PIX_GREEN_MASK   </td><td>unsigned long *   </td><td>               </td><td>Green pixel mask
+</td></tr><tr><td>KWIN_ATT_PIX_BLUE_MASK    </td><td>unsigned long *   </td><td>               </td><td>Blue pixel mask
+</td></tr><tr><td>KWIN_ATT_IM_RED_MASK      </td><td>unsigned long *   </td><td>               </td><td>Red image mask
+</td></tr><tr><td>KWIN_ATT_IM_GREEN_MASK    </td><td>unsigned long *   </td><td>               </td><td>Green image mask
+</td></tr><tr><td>KWIN_ATT_IM_BLUE_MASK     </td><td>unsigned long *   </td><td>               </td><td>Blue image mask
+</td></tr><tr><td>KWIN_ATT_IM_RED_OFFSET    </td><td>uaddr *           </td><td>               </td><td>Red image offset
+</td></tr><tr><td>KWIN_ATT_IM_GREEN_OFFSET  </td><td>uaddr *           </td><td>               </td><td>Green image offset
+</td></tr><tr><td>KWIN_ATT_IM_BLUE_OFFSET   </td><td>uaddr *           </td><td>               </td><td>Blue image offset
+</td></tr><tr><td>KWIN_ATT_LOWER_HANDLE     </td><td>void **           </td><td>               </td><td>Lower handle
+</td></tr><tr><td>KWIN_ATT_USER_PTR         </td><td>void **           </td><td>void *         </td><td>User pointer
+</td></tr><tr><td>KWIN_ATT_LINEWIDTH        </td><td>double *          </td><td>double         </td><td>Line width in pixels (0.0 = thin)
+</table><p><hr> <a name=KWIN_STRING_ATTRIBUTES><b>KWIN_STRING_ATTRIBUTES</b></a><p> <table><tr><td>Name                      </td><td>Get Type          </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>KWIN_STRING_END           </td><td>                  </td><td>End of varargs list     
+</td></tr><tr><td>KWIN_STRING_WIDTH         </td><td>int *             </td><td>String width
+</td></tr><tr><td>KWIN_STRING_HEIGHT        </td><td>int *             </td><td>String height
+</td></tr><tr><td>KWIN_STRING_ASCENT        </td><td>int *             </td><td>String ascent
+</td></tr><tr><td>KWIN_STRING_DESCENT       </td><td>int *             </td><td>String descent
+</table><p><hr> <a name=KWIN_XGL_STATUS><b>KWIN_XGL_STATUS</b></a><p> <table><tr><td>Name                           </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>KWIN_XGL_NOT_AVAILABLE         </td><td>XGL is not supported
+</td></tr><tr><td>KWIN_XGL_STEREO_NOT_AVAILABLE  </td><td>No stereo display hardware
+</td></tr><tr><td>KWIN_XGL_STEREO_AVAILABLE      </td><td>Stereo available
+</table><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

@@ -1,0 +1,5 @@
+$SUMMARY          Low level Transform routines
+$PURPOSE
+    These routines are meant to provide a low level mechanism to perform
+    mathematical transformations on data. For example, low level Fast Fourier
+    Transforms are supplied in this package.

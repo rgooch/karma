@@ -1,0 +1,43 @@
+/*PROTOTYPE_FUNCTION*/  /*
+flag CHM_PROTO_input_func (Channel channel, void **info)
+    [SUMMARY] This routine is called when new input occurs on a channel.
+    <channel> The channel object.
+    <info> A pointer to the arbitrary information pointer. This may be modified
+    [RETURNS] TRUE if the channel is to remain managed and open, else FALSE
+    (indicating that the channel is to be unmanaged and closed).
+    [NOTE] This routine MUST NOT unmanage or close the channel.
+    [NOTE] The <<close_func>> will be called if this routine returns FALSE.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+void CHM_PROTO_close_func (Channel channel, void *info)
+    [SUMMARY] This routine is called when a channel closes.
+    <channel> The channel object. 
+    <info> The arbitrary pointer for the channel.
+    [NOTE] This routine MUST NOT unmanage the channel. The channel will be
+    automatically unmanaged and deleted upon closure (even if no <<close_func>>
+    is specified).
+    [RETURNS] Nothing.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+flag CHM_PROTO_output_func (Channel channel, void **info)
+    [SUMMARY] This routine is called when a channel becomes ready for writing.
+    <channel> The channel object.
+    <info> A pointer to the arbitrary information pointer. This may be modified
+    [RETURNS] TRUE if the channel is to remain managed and open, else FALSE
+    (indicating that the channel is to be unmanaged and closed).
+    [NOTE] This routine MUST NOT unmanage or close the channel.
+    [NOTE] The <<close_func>> will be called if this routine returns FALSE.
+*/
+
+/*PROTOTYPE_FUNCTION*/  /*
+flag CHM_PROTO_exception_func (Channel channel, void **info)
+    [SUMMARY] This routine is called when an exception occurs on channel.
+    <channel> The channel object.
+    <info> A pointer to the arbitrary information pointer. This may be modified
+    [RETURNS] TRUE if the channel is to remain managed and open, else FALSE
+    (indicating that the channel is to be unmanaged and closed).
+    [NOTE] This routine MUST NOT unmanage or close the channel.
+    [NOTE] The <<close_func>> will be called if this routine returns FALSE.
+*/

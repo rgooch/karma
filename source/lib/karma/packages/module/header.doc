@@ -1,0 +1,4 @@
+$SUMMARY          Routines to initialise and sequence modules
+$PURPOSE
+    These routines are meant to provide high level routines to perform
+    initialisation and execution of generic modules.

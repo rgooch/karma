@@ -1,0 +1,8 @@
+$SUMMARY          Routines to manipulate the general data structure
+$PURPOSE
+    These routines provide the base functionality for the recursive,
+    heirarchical data structure supported in Karma.
+    This package both defines the (transparent) data structure and the various
+    allocation, deallocation and manipulation routines.
+    Transfer of data structures to/ from disc/ connections is supplied by the
+    <-dsxfr-> routines.

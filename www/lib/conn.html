@@ -1,0 +1,305 @@
+<html><head><title>Package: conn</title></head> 
+<body>
+<center><h1>The "conn" Package</h1></center>    These routines are meant to provide a high level mechanism to create and
+    accept connections, complete with protocols, callback functions and
+    security mechanisms.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=conn></a></table><h4>Functions</h4><table><tr><td><a href=conn.html#conn_register_managers>conn_register_managers</a></td><td>Register the channel management functions.
+</td></tr>
+<tr><td><a href=conn.html#conn_register_server_protocol>conn_register_server_protocol</a></td><td>Register server protocol support.
+</td></tr>
+<tr><td><a href=conn.html#conn_register_client_protocol>conn_register_client_protocol</a></td><td>Register client protocol support.
+</td></tr>
+<tr><td><a href=conn.html#conn_get_channel>conn_get_channel</a></td><td>Extract the channel object associated with a connection.
+</td></tr>
+<tr><td><a href=conn.html#conn_attempt_connection>conn_attempt_connection</a></td><td>Attempt connection.
+</td></tr>
+<tr><td><a href=conn.html#conn_close>conn_close</a></td><td>Close connection.
+</td></tr>
+<tr><td><a href=conn.html#conn_become_server>conn_become_server</a></td><td>Become a Karma server.
+</td></tr>
+<tr><td><a href=conn.html#conn_get_num_serv_connections>conn_get_num_serv_connections</a></td><td>Get number of server connections.
+</td></tr>
+<tr><td><a href=conn.html#conn_get_num_client_connections>conn_get_num_client_connections</a></td><td>Get number of client connections.
+</td></tr>
+<tr><td><a href=conn.html#conn_get_serv_connection>conn_get_serv_connection</a></td><td>Get a numbered server connection.
+</td></tr>
+<tr><td><a href=conn.html#conn_get_client_connection>conn_get_client_connection</a></td><td>Get a numbered client connection.
+</td></tr>
+<tr><td><a href=conn.html#conn_get_connection_info>conn_get_connection_info</a></td><td>Get the arbitrary information for a connection.
+</td></tr>
+<tr><td><a href=conn.html#conn_controlled_by_cm_tool>conn_controlled_by_cm_tool</a></td><td>Check if controlled by CM tool.
+</td></tr>
+<tr><td><a href=conn.html#conn_get_connection_module_name>conn_get_connection_module_name</a></td><td>Get the name of the module at the other end of a connection.
+</td></tr>
+<tr><td><a href=conn.html#conn_register_cm_quiescent_func>conn_register_cm_quiescent_func</a></td><td>Register callback for quiescence.
+</td></tr>
+<tr><td><a href=conn.html#conn_extract_protocols>conn_extract_protocols</a></td><td>Get supported protocols.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=conn.html#exit_schedule_func>exit_schedule_func</a></td><td>Exit schedule function.
+</td></tr>
+<tr><td><a href=conn.html#CONN_PROTO_client_validate_func>CONN_PROTO_client_validate_func</a></td><td>Client connection validate event callback.
+</td></tr>
+<tr><td><a href=conn.html#CONN_PROTO_open_func>CONN_PROTO_open_func</a></td><td>Connection open event callback.
+</td></tr>
+<tr><td><a href=conn.html#CONN_PROTO_read_func>CONN_PROTO_read_func</a></td><td>Connection read event callback.
+</td></tr>
+<tr><td><a href=conn.html#CONN_PROTO_close_func>CONN_PROTO_close_func</a></td><td>Connection close event callback.
+</td></tr>
+<tr><td><a href=conn.html#CONN_PROTO_quiescent_func>CONN_PROTO_quiescent_func</a></td><td>Quiescence callback.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=conn_register_managers></a> void
+ <b>conn_register_managers</b><i>    ( flag (*manage_func) (), void (*unmanage_func) (),
+			      void (*exit_schedule_func) () )
+</i><br><p>    Register the channel management functions.
+<p><b>Parameters:</b><ul><li><i>manage_func :</i> 
+    The routine to manage channels. See the <a href=chm.html#chm_manage>chm_manage</a>
+    routine for the interface definition.
+<br><li><i>unmanage_func :</i> 
+    The routine to unmanage channels. See the <a href=chm.html#chm_unmanage>chm_unmanage</a>
+    routine for the interface definition.
+<br><li><i>exit_shedule_func :</i> 
+    The routine which should be called when a clean exit is
+    to be scheduled. The prototype function is
+    <a href=conn.html#CONN_PROTO_exit_schedule_func>CONN_PROTO_exit_schedule_func</a>.
+    If this is NULL, then exit(3) is called instead.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine MUST be called prior to the <a href=conn.html#conn_become_server>conn_become_server</a>
+    routine.
+    See the <a href=chm.html#chm>chm</a> package for information on channel management.
+</ul><p><hr> <a name=conn_register_server_protocol></a> void
+ <b>conn_register_server_protocol</b><i>    ( CONST char *protocol_name,
+				     unsigned int version,
+				     unsigned int max_connections,
+				     flag (*open_func) (),
+				     flag (*read_func) (),
+				     void (*close_func) () )
+</i><br><p>    This routine will register the support of a new Karma protocol
+    for the Karma ports which are being managed by the various routines in the
+    <a href=conn.html#conn>conn</a> package. This routine may be called at any time.
+<p><b>Parameters:</b><ul><li><i>protocol_name :</i> 
+    The name of the new protocol to support. Note that this is
+    only for incoming connections.
+<br><li><i>version :</i> 
+    The version number for the protocol. When any changes to the
+    protocol are made, this should be increased.
+<br><li><i>max_connections :</i> 
+    The maximum number of incoming connections to this server
+    If this is 0, an unlimited number of connections is permitted.
+<br><li><i>open_func :</i> 
+    The routine which is called when a new connection is opened.
+    The prototype function is <a href=conn.html#CONN_PROTO_open_func>CONN_PROTO_open_func</a>.
+<br><li><i>read_func :</i> 
+    The function which will be called when data is ready to be read
+    data from the connection. The prototype function is
+    <a href=conn.html#CONN_PROTO_read_func>CONN_PROTO_read_func</a>.
+<br><li><i>close_func :</i> 
+    The function which will be called prior to closure of a
+    connection. The prototype function is <a href=conn.html#CONN_PROTO_close_func>CONN_PROTO_close_func</a>.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=conn_register_client_protocol></a> void
+ <b>conn_register_client_protocol</b><i>    ( CONST char *protocol_name,
+				     unsigned int version,
+				     unsigned int max_connections,
+				     flag (*validate_func) (),
+				     flag (*open_func) (),
+				     flag (*read_func) (),
+				     void (*close_func) () )
+</i><br><p>    This routine will register the support of a new Karma protocol
+    for outgoing (client) connections. This routine may be called at any time.
+<p><b>Parameters:</b><ul><li><i>protocol_name :</i> 
+    The name of the new protocol to support. Note that this is
+    only for outgoing connections.
+<br><li><i>version :</i> 
+    The version number for the protocol. When any changes to the
+    protocol are made, this should be increased.
+<br><li><i>max_connections :</i> 
+    The maximum number of outgoing connections from this
+    client. If this is 0, an unlimited number of connections is permitted.
+<br><li><i>validate_func :</i> 
+    The function which will validate the opening of a new
+    connection (prior to any attempts to connect to the server). The prototype
+    function is <a href=conn.html#CONN_PROTO_client_validate_func>CONN_PROTO_client_validate_func</a>.
+<br><li><i>open_func :</i> 
+    The routine which is called when a new connection is opened.
+    The prototype function is <a href=conn.html#CONN_PROTO_open_func>CONN_PROTO_open_func</a>.
+<br><li><i>read_func :</i> 
+    The function which will be called when data is ready to be read
+    data from the connection. The prototype function is
+    <a href=conn.html#CONN_PROTO_read_func>CONN_PROTO_read_func</a>.
+<br><li><i>close_func :</i> 
+    The function which will be called prior to closure of a
+    connection. The prototype function is <a href=conn.html#CONN_PROTO_close_func>CONN_PROTO_close_func</a>.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=conn_get_channel></a> Channel
+ <b>conn_get_channel</b><i>    (Connection connection)
+</i><br><p>    Extract the channel object associated with a connection.
+<p><b>Parameters:</b><ul><li><i>connection :</i> 
+    The connection object.
+<br></ul><b>Returns:</b>     The channel object.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=conn_attempt_connection></a> flag
+ <b>conn_attempt_connection</b><i>    (CONST char *hostname, unsigned int port_number,
+			      CONST char *protocol_name)
+</i><br><p>    This routine will attempt to make a connection to a server. The
+    routine always makes a connection using the most efficient transport layer
+    available.
+<p><b>Parameters:</b><ul><li><i>hostname :</i> 
+    The hostname of the machine on which the server is running.
+<br><li><i>port_number :</i> 
+    The Karma port number to connect to.
+<br><li><i>protocol_name :</i> 
+    The protocol to connect with.
+<br></ul><b>Returns:</b>     TRUE if the connection was successful, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The appropriate callback functions registered with
+    <a href=conn.html#conn_register_client_protocol>conn_register_client_protocol</a> will be called.
+</ul><p><hr> <a name=conn_close></a> flag
+ <b>conn_close</b><i>    (Connection connection)
+</i><br><p>    This routine will close a connection. This will cause the closure
+    callback routine registered to be executed.
+<p><b>Parameters:</b><ul><li><i>connection :</i> 
+    The connection object.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=conn_become_server></a> flag
+ <b>conn_become_server</b><i>    (unsigned int *port_number, unsigned int retries)
+</i><br><p>    This routine will allocate a Karma port for the module so that it
+    can operate as a server (able to receive network connections).
+<p><b>Parameters:</b><ul><li><i>port_number :</i> 
+    The port number to allocate. The routine will write the
+    actual port number allocated to this address. This must point to an address
+    which lies on an <em>int</em> boundary.
+<br><li><i>retries :</i> 
+    The number of succsessive port numbers to attempt to allocate
+    before giving up. If this is 0, then the routine will give up immediately
+    if the specified port number is in use.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=conn_get_num_serv_connections></a> unsigned int
+ <b>conn_get_num_serv_connections</b><i>    (CONST char *protocol_name)
+</i><br><p>    This routine will get the number of connections to the server
+    with a specified protocol.
+<p><b>Parameters:</b><ul><li><i>protocol_name :</i> 
+    The protocol name.
+<br></ul><b>Returns:</b>     The number of current connections. A return value of 0 indicates
+    that the protocol is not supported or there are no current connections.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=conn_get_num_client_connections></a> unsigned int
+ <b>conn_get_num_client_connections</b><i>    (CONST char *protocol_name)
+</i><br><p>    This routine will get the number of connections from the client
+    with a specified protocol.
+<p><b>Parameters:</b><ul><li><i>protocol_name :</i> 
+    The protocol name.
+<br></ul><b>Returns:</b>     The number of current connections. A return value of 0 indicates
+    that the protocol is not supported or there are no current connections.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=conn_get_serv_connection></a> Connection
+ <b>conn_get_serv_connection</b><i>    (CONST char *protocol_name,
+				     unsigned int number)
+</i><br><p>    This routine will get Nth connection to the server with a
+    specified protocol. The first connection is numbered 0.
+<p><b>Parameters:</b><ul><li><i>protocol_name :</i> 
+    The protocol name.
+<br><li><i>number :</i> 
+    The number of the connection to get.
+<br></ul><b>Returns:</b>     The connection object on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=conn_get_client_connection></a> Connection
+ <b>conn_get_client_connection</b><i>    (CONST char *protocol_name,
+				       unsigned int number)
+</i><br><p>    This routine will get Nth connection from the client with a
+    specified protocol. The first connection is numbered 0.
+<p><b>Parameters:</b><ul><li><i>protocol_name :</i> 
+    The protocol name.
+<br><li><i>number :</i> 
+    The number of the connection to get.
+<br></ul><b>Returns:</b>     The connection object on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=conn_get_connection_info></a> void *
+ <b>conn_get_connection_info</b><i>    (Connection connection)
+</i><br><p>    Get the arbitrary information for a connection.
+<p><b>Parameters:</b><ul><li><i>connection :</i> 
+    The connection object. The routine aborts the process if the
+    connection is not valid.
+<br></ul><b>Returns:</b>     A pointer to the arbitrary information. This may be NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=conn_controlled_by_cm_tool></a> flag
+ <b>conn_controlled_by_cm_tool</b><i>    ()
+</i><br><p>    This routine will determine if the module is being controlled by
+    the Connection Management tool.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     TRUE if the module is controlled, else FALSE
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=conn_get_connection_module_name></a> char *
+ <b>conn_get_connection_module_name</b><i>    (Connection connection)
+</i><br><p>    Get the name of the module at the other end of a connection.
+<p><b>Parameters:</b><ul><li><i>connection :</i> 
+    The connection object. The routine aborts the process if the
+    connection is not valid.
+<br></ul><b>Returns:</b>     A pointer to the module name.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=conn_register_cm_quiescent_func></a> void
+ <b>conn_register_cm_quiescent_func</b><i>    ( void (*func) () )
+</i><br><p>    This routine will register a callback function to be called when
+    the Connection Management tool or shell is quiescent (ie. all modules have
+    started and all initial connections made). The function is ONLY called if
+    the module is running under the Connection Management tool or shell.
+<p><b>Parameters:</b><ul><li><i>quiescent_func :</i> 
+    The routine which will be called when the Connection
+    Management tool or shell is quiescent. The prototype function is
+    <a href=conn.html#CONN_PROTO_quiescent_func>CONN_PROTO_quiescent_func</a>.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     Only one callback may be registered.
+</ul><p><hr> <a name=conn_extract_protocols></a> char **
+ <b>conn_extract_protocols</b><i>    ()
+</i><br><p>    This routine will extract all the supported protocols and
+    produces a dynamically allocated array of strings which may be later
+    displayed.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     A pointer to a dynamically allocated array of dynamically
+    allocated strings on success, else NULL. The end of the array is marked
+    with a NULL string pointer.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=exit_schedule_func></a> void
+ <b>exit_schedule_func</b><i>    ()
+</i><br><p>    This routine is called when the <a href=conn.html#conn>conn</a> package wishes to
+    schedule a clean exit from the module.
+    This routine may return (ie. it need not exit).
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=CONN_PROTO_client_validate_func></a> flag
+ <b>CONN_PROTO_client_validate_func</b><i>    (void **info)
+</i><br><p>    This routine is called to validate whether it is appropriate to
+    open a connection.
+<p><b>Parameters:</b><ul><li><i>info :</i> 
+    A pointer to the arbitrary information pointer. This may be modified
+<br></ul><b>Returns:</b>     TRUE if the connection should be attempted, else FALSE
+    indicating the connection should be aborted.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     Even if this routine is called and returns TRUE, there is no
+    guarantee that the connection will be subsequently opened.
+</ul><p><hr> <a name=CONN_PROTO_open_func></a> flag
+ <b>CONN_PROTO_open_func</b><i>    (Connection connection, void **info)
+</i><br><p>    This routine is called when a connection opens.
+<p><b>Parameters:</b><ul><li><i>connection :</i> 
+    The connection object.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary information pointer. This may be modified
+<br></ul><b>Returns:</b>     TRUE on successful registration, else FALSE (indicating the
+    connection should be closed).
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The <em>close_func</em> will not be called if this routine returns
+    FALSE.
+</ul><p><hr> <a name=CONN_PROTO_read_func></a> flag
+ <b>CONN_PROTO_read_func</b><i>    (Connection connection, void **info)
+</i><br><p>    This routine is called when data is ready to be read from a
+    connection.
+<p><b>Parameters:</b><ul><li><i>connection :</i> 
+    The connection object.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary information pointer. This may be modified
+<br></ul><b>Returns:</b>     TRUE on successful reading, else FALSE (indicating the connection
+    should be closed).
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The <em>close_func</em> will not be called if this routine returns
+    FALSE.
+</ul><p><hr> <a name=CONN_PROTO_close_func></a> void
+ <b>CONN_PROTO_close_func</b><i>    (Connection connection, void *info)
+</i><br><p>    This routine is called when a connection closed.
+    When this routine is called, this is the last chance to read any
+    buffered data from the channel associated with the connection object.
+<p><b>Parameters:</b><ul><li><i>connection :</i> 
+    The connection object.
+<br><li><i>info :</i> 
+    The arbitrary connection information pointer.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=CONN_PROTO_quiescent_func></a> void
+ <b>CONN_PROTO_quiescent_func</b><i>    ()
+</i><br><p>    This routine is called when the Connection Management tool or
+    shell is quiescent.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

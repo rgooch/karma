@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   15-OCT-1995
 
-    Last updated by Richard Gooch   4-JAN-1996
+    Last updated by Richard Gooch   25-MAR-1996
 
 */
 
@@ -103,12 +103,14 @@ EXTERN_FUNCTION (flag vrender_to_buffer,
 		  char *right_buffer, double *min, double *max,
 		  void (*notify_func) (void *info), void *info) );
 EXTERN_FUNCTION (CONST signed char *vrender_collect_ray,
-		 (KVolumeRenderContext context, Kcoord_2d pos,
-		  Kcoord_3d *pos_3d, Kcoord_3d *direction,
+		 (KVolumeRenderContext context, unsigned int eye_view,
+		  Kcoord_2d pos_2d,
+		  Kcoord_3d *ray_start, Kcoord_3d *direction, float *t_enter,
 		  unsigned int *ray_length) );
 EXTERN_FUNCTION (flag vrender_project_3d,
 		 (KVolumeRenderContext context, unsigned int eye_view,
-		  Kcoord_3d point_3d, Kcoord_2d *point_2d) );
+		  Kcoord_3d point_3d, Kcoord_2d *point_2d,
+		  flag test_visible) );
 EXTERN_FUNCTION (void vrender_compute_caches,
 		 (KVolumeRenderContext context, unsigned int eyes,
 		  flag notify) );

@@ -3,7 +3,7 @@
 
     This code provides a Miriad read facility.
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -37,8 +37,32 @@
     Updated by      Richard Gooch   16-OCT-1995: Fixed bug in <make_desc> where
   axis count + 1 was improperly used.
 
-    Last updated by Richard Gooch   13-DEC-1995: Fixed bug in <make_desc> where
+    Updated by      Richard Gooch   13-DEC-1995: Fixed bug in <make_desc> where
   Miriad units were not translated into FITS units.
+
+    Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
+
+    Updated by      Richard Gooch   8-MAY-1996: Added support for reading mask
+  file in Miriad Image datasets.
+
+    Updated by      Richard Gooch   17-MAY-1996: Check for "MOSTABLE" keyword
+  and ignore.
+
+    Updated by      Richard Gooch   30-MAY-1996: Cleaned code to keep
+  gcc -Wall -pedantic-errors happy.
+
+    Updated by      Richard Gooch   3-JUN-1996: No longer fiddle reversed axes.
+
+    Updated by      Richard Gooch   17-JUN-1996: Subtracted 1.0 from CRPIXn
+  values.
+
+    Updated by      Richard Gooch   25-JUN-1996: Trap "ANGLE" axis name and
+  convert to "Axis n (deg)" otherwise name is multiply used. Improved
+  efficiency of data reader several times.
+
+    Last updated by Richard Gooch   28-JUN-1996: No longer use FITS reader to
+  read data.
 
 
 */
@@ -67,7 +91,14 @@
 
 
 #define MIN_ITEM_SIZE 16
+#define MAGIC_NUMBER 486734598
 
+#define VERIFY_CONTEXT(context) if (context == NULL) \
+{(void) fprintf (stderr, "NULL context passed\n"); \
+ a_prog_bug (function_name); } \
+if (context->magic_number != MAGIC_NUMBER) \
+{(void) fprintf (stderr, "Invalid context object\n"); \
+ a_prog_bug (function_name); }
 
 /*  Structure declarations  */
 
@@ -79,6 +110,15 @@ typedef struct _header_item
     struct _header_item *next;
     double d_data;               /*  Used for axis scaling  */
 } *HeaderItem;
+
+struct miriad_data_context_type
+{
+    unsigned int magic_number;
+    Channel image_channel;
+    Channel mask_channel;
+    int last_mask_bit_in_word;
+    unsigned long mask_word;
+};
 
 
 /*  Declarations of private functions follow  */
@@ -92,23 +132,67 @@ STATIC_FUNCTION (multi_array *make_desc,
 STATIC_FUNCTION (HeaderItem find_item,
 		 (HeaderItem first_item, CONST char *name) );
 STATIC_FUNCTION (void free_header, (HeaderItem first_item) );
+STATIC_FUNCTION (flag get_next_mask_value,
+		 (KMiriadDataContext context, flag *mask) );
 
 
 /*  Public functions follow  */
 
 /*PUBLIC_FUNCTION*/
+flag foreign_miriad_test (CONST char *dirname)
+/*  [SUMMARY] Test if a directory is a Miriad Image file.
+    <dirname> The directory name of the Miriad dataset name.
+    [RETURNS] TRUE if the directory is a Miriad Image file, else FALSE.
+*/
+{
+    struct stat statbuf;
+    char header_name[STRING_LENGTH];
+    char image_name[STRING_LENGTH];
+    extern char *sys_errlist[];
+
+    if (stat (dirname, &statbuf) != 0)
+    {
+	if (errno == ENOENT) return (FALSE);
+	(void) fprintf (stderr, "Error statting file: \"%s\"\t%s\n",
+			dirname, sys_errlist[errno]);
+	return (FALSE);
+    }
+    if ( !S_ISDIR (statbuf.st_mode) ) return (FALSE);
+    (void) sprintf (header_name, "%s/header", dirname);
+    (void) sprintf (image_name, "%s/image", dirname);
+    if (stat (header_name, &statbuf) != 0)
+    {
+	if (errno == ENOENT) return (FALSE);
+	(void) fprintf (stderr, "Error statting file: \"%s\"\t%s\n",
+			header_name, sys_errlist[errno]);
+	return (FALSE);
+    }
+    if ( !S_ISREG (statbuf.st_mode) ) return (FALSE);
+    if (stat (image_name, &statbuf) != 0)
+    {
+	if (errno == ENOENT) return (FALSE);
+	(void) fprintf (stderr, "Error statting file: \"%s\"\t%s\n",
+			image_name, sys_errlist[errno]);
+	return (FALSE);
+    }
+    if ( !S_ISREG (statbuf.st_mode) ) return (FALSE);
+    return (TRUE);
+}   /*  End Function foreign_miriad_test  */
+
+/*PUBLIC_FUNCTION*/
 multi_array *foreign_miriad_read_header (Channel channel, flag data_alloc,
 					 flag sanitise, ...)
-/*  [PURPOSE] This routine will read the header of a Miriad Image file from a
-    channel.
-    The data section is NOT read.
+/*  [SUMMARY] Read a Miriad Image file header.
+    [PURPOSE] This routine will read the header of a Miriad Image file from a
+    channel. The data section is NOT read.
     <channel> The channel to read from.
     <data_alloc> If TRUE, the data space is allocated.
     <sanitise> If TRUE, Miriad axes with length 1 are ignored. This is highly
     recommended.
     [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be FA_MIRIAD_READ_HEADER_END.
-    The attributes are passed using varargs.
+    attribute-value pairs. This list must be terminated with
+    FA_MIRIAD_READ_HEADER_END. See [<FOREIGN_ATT_MIRIAD_READ_HEADER>] for a
+    list of defined attributes.
     [RETURNS] A pointer to the multi_array data structure on success, else
     NULL.
 */
@@ -125,7 +209,9 @@ multi_array *foreign_miriad_read_header (Channel channel, flag data_alloc,
     char *ch_ptr;
     char item_buf[MIN_ITEM_SIZE];
     extern char host_type_sizes[NUMTYPES];
+#ifdef DEBUG
     extern char *data_type_names[NUMTYPES];
+#endif
     extern char *sys_errlist[];
     static char function_name[] = "foreign_miriad_read_header";
 
@@ -161,7 +247,7 @@ multi_array *foreign_miriad_read_header (Channel channel, flag data_alloc,
 	/*  First comes the item name  */
 	if (strlen (item_buf) > MIN_ITEM_SIZE + 2)
 	{
-	    (void) fprintf (stderr, "Item: \"%s\" name too big\n");
+	    (void) fprintf (stderr, "Item: \"%s\" name too big\n", item_buf);
 	    free_header (first_item);
 	    return (NULL);
 	}
@@ -172,6 +258,18 @@ multi_array *foreign_miriad_read_header (Channel channel, flag data_alloc,
 	/*  Make keywords FITS like (yuk)  */
 	(void) st_upr (item->name);
 	item_size = item_buf[MIN_ITEM_SIZE - 1];
+	/*  Ignore the "MOSTABLE" keyword which contains undescribed data (for
+	    the mosaicing beams)
+	    */
+	if (strcmp (item->name, "MOSTABLE") == 0)
+	{
+	    if (ch_drain (channel, item_size) < item_size)
+	    {
+		free_header (first_item);
+		return (NULL);
+	    }
+	    continue;
+	}
 	if (item_size < 4)
 	{
 	    (void) fprintf (stderr, "Item: \"%s\" size: %d too small\n",
@@ -182,6 +280,8 @@ multi_array *foreign_miriad_read_header (Channel channel, flag data_alloc,
 	/*  Determine the data type  */
 	if ( ( item->type = read_miriad_type (channel) ) == NONE )
 	{
+	    (void) fprintf (stderr, "Error reading type for item: \"%s\"\n",
+			    item->name);
 	    free_header (first_item);
 	    return (NULL);
 	}
@@ -229,6 +329,7 @@ multi_array *foreign_miriad_read_header (Channel channel, flag data_alloc,
 	    }
 	    if (ch_drain (channel, drain_size) < drain_size)
 	    {
+		free_header (first_item);
 		return (NULL);
 	    }
 	    if ( ( item->data = m_alloc (host_type_sizes[item->type]) )
@@ -292,23 +393,25 @@ multi_array *foreign_miriad_read_header (Channel channel, flag data_alloc,
 
 /*PUBLIC_FUNCTION*/
 multi_array *foreign_miriad_read (CONST char *dirname, flag sanitise, ...)
-/*  [PURPOSE] This routine will read a Miriad image file.
+/*  [SUMMARY] Read a Miriad image file.
     <dirname> The directory name of the Miriad dataset name.
     <sanitise> If TRUE, Miriad axes with length 1 are ignored. This is highly
     recommended.
     [VARARGS] The optional attributes are given as pairs of attribute-key
-    attribute-value pairs. The last argument must be FA_MIRIAD_READ_END.
-    The attributes are passed using varargs.
+    attribute-value pairs. This list must be terminated with
+    FA_MIRIAD_READ_END. See [<FOREIGN_ATT_MIRIAD_READ>] for a list of defined
+    attributes.
     [RETURNS] A multi_array descriptor on success, else NULL.
 */
 {
     va_list argp;
+    KMiriadDataContext context;
     Channel channel;
     unsigned int att_key;
-    unsigned long type;
+    unsigned long blank_count_local;
+    unsigned long *blank_count = NULL;
     multi_array *multi_desc;
     char header_name[STRING_LENGTH];
-    char image_name[STRING_LENGTH];
     extern char *sys_errlist[];
     static char function_name[] = "foreign_miriad_read";
 
@@ -318,6 +421,9 @@ multi_array *foreign_miriad_read (CONST char *dirname, flag sanitise, ...)
     {
 	switch (att_key)
 	{
+	  case FA_MIRIAD_READ_NUM_BLANKS:
+	    blank_count = va_arg (argp, unsigned long *);
+	    break;
 	  default:
 	    (void) fprintf (stderr, "Unknown attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
@@ -325,8 +431,8 @@ multi_array *foreign_miriad_read (CONST char *dirname, flag sanitise, ...)
 	}
     }
     va_end (argp);
+    if (blank_count == NULL) blank_count = &blank_count_local;
     (void) sprintf (header_name, "%s/header", dirname);
-    (void) sprintf (image_name, "%s/image", dirname);
     if ( ( channel = ch_open_file (header_name, "r") ) == NULL )
     {
 	(void) fprintf (stderr, "Error opening: \"%s\"\t%s\n",
@@ -337,76 +443,268 @@ multi_array *foreign_miriad_read (CONST char *dirname, flag sanitise, ...)
 					     FA_MIRIAD_READ_HEADER_END);
     (void) ch_close (channel);
     if (multi_desc == NULL) return (NULL);
-    if ( ( channel = ch_open_file (image_name, "r") ) == NULL )
+    if ( ( context = foreign_miriad_create_data_context (dirname) ) == NULL )
+    {
+	(void) fprintf (stderr, "Error creating KMiriadDataContext object\n");
+	ds_dealloc_multi (multi_desc);
+	return (NULL);
+    }
+    if ( !foreign_miriad_read_data (context, multi_desc, NULL, 0,
+				    FA_MIRIAD_READ_DATA_NUM_BLANKS,blank_count,
+				    FA_MIRIAD_READ_DATA_END) )
+    {
+	(void) fprintf (stderr, "Error reading KMiriadDataContext object\n");
+	ds_dealloc_multi (multi_desc);
+	return (NULL);
+    }
+    foreign_miriad_close_data_context (context);
+    return (multi_desc);
+}   /*  End Function foreign_miriad_read  */
+
+/*EXPERIMENTAL_FUNCTION*/
+KMiriadDataContext foreign_miriad_create_data_context (CONST char *dirname)
+/*  [SUMMARY] Create a context suitable for reading Miriad Image data.
+    [PURPOSE] This routine will create a context suitable for reading Miriad
+    Image data. The [<foreign_miriad_read_data>] routine may be used to read
+    data sequentially from the context.
+    <dirname> The directory name of the Miriad dataset name.
+    [RETURNS] A KMiriadDataContext object on success, else NULL (indicating the
+    image file could not be read).
+*/
+{
+    KMiriadDataContext context;
+    unsigned long type;
+    struct stat statbuf;
+    char image_name[STRING_LENGTH];
+    char mask_name[STRING_LENGTH];
+    extern char *sys_errlist[];
+    static char function_name[] = "foreign_miriad_create_data_context";
+
+    (void) sprintf (image_name, "%s/image", dirname);
+    (void) sprintf (mask_name, "%s/mask", dirname);
+    if ( ( context = (KMiriadDataContext) m_alloc (sizeof *context) ) == NULL )
+    {
+	m_abort (function_name, "data context");
+    }
+    /*  Open the image file  */
+    if ( ( context->image_channel = ch_open_file (image_name, "r") ) == NULL )
     {
 	(void) fprintf (stderr, "Error opening: \"%s\"\t%s\n",
 			image_name, sys_errlist[errno]);
+	m_free ( (char *) context );
 	return (NULL);
     }
-    if ( !pio_read32 (channel, &type) )
+    /*  The first 4 bytes of the file must contain an integer which defines the
+	type of data stored in the image. Miriad only supports one type: IEEE
+	single precision floating point. The value 4 is the magic value for
+	float data  */
+    if ( !pio_read32 (context->image_channel, &type) )
     {
 	(void) fprintf (stderr, "Error reading image data type\t%s\n",
 			sys_errlist[errno]);
-	ds_dealloc_multi (multi_desc);
+	(void) ch_close (context->image_channel);
 	return (NULL);
     }
     if (type != 4)
     {
 	(void) fprintf (stderr, "Image data type: %lu is not 4!\n", type);
-	ds_dealloc_multi (multi_desc);
+	(void) ch_close (context->image_channel);
 	return (NULL);
     }
-    if ( !foreign_fits_read_data (channel, multi_desc, NULL, 0,
-				  FA_FITS_READ_DATA_END) )
+    /*  After the first 4 bytes, the rest of the image file is the same as FITS
+	format. This saves me a bit of coding, but there is still the image
+	mask to check for  */
+    /*  Test if image mask present  */
+    if (stat (mask_name, &statbuf) != 0)
     {
-	(void) fprintf (stderr, "Error reading image data\t%s\n",
+	if (errno != ENOENT)
+	{
+	    /*  Strange error, but return data anyway  */
+	    (void) fprintf (stderr, "Error statting file: \"%s\"\t%s\n",
+			    mask_name, sys_errlist[errno]);
+	}
+	/*  Not present: good  */
+	context->mask_channel = NULL;
+	context->magic_number = MAGIC_NUMBER;
+	return (context);
+    }
+    if ( ( context->mask_channel = ch_open_file (mask_name, "r") ) == NULL )
+    {
+	/*  Strange error, but return data anyway  */
+	context->mask_channel = NULL;
+	context->magic_number = MAGIC_NUMBER;
+	return (context);
+    }
+    /*  Image mask is present  */
+    /*  The first 4 bytes of the file must contain an integer which defines the
+	type of data stored in the mask. Miriad only supports one type:
+	integer. The value 2 is the magic value for integer data  */
+    type = 2;
+    if ( !pio_read32 (context->mask_channel, &type) )
+    {
+	(void) fprintf (stderr, "Error reading mask data type\t%s\n",
 			sys_errlist[errno]);
-	ds_dealloc_multi (multi_desc);
+	(void) ch_close (context->image_channel);
+	(void) ch_close (context->mask_channel);
+	m_free ( (char *) context );
 	return (NULL);
     }
-    return (multi_desc);
-}   /*  End Function foreign_miriad_read  */
+    if (type != 2)
+    {
+	(void) fprintf (stderr, "Mask data type: %lu is not 2!\n", type);
+	(void) ch_close (context->image_channel);
+	(void) ch_close (context->mask_channel);
+	m_free ( (char *) context );
+	return (NULL);
+    }
+    /*  After the first 4 bytes, the rest of the mask file contains one bit per
+	data value. For some obscure reason, every 32nd bit (starting from bit
+	number 0) in the mask file is unused. Horrendous.
+	Bit 31 corresponds to the first data value. A bit '1' indicates the
+	corresponding data value is good, else it should be blanked.
+	Hence, every 31 masks are stored in a 32 bit word, where the bits are
+	stored on disc in MSB order  */
+    context->last_mask_bit_in_word = 31;
+    context->magic_number = MAGIC_NUMBER;
+    return (context);
+}   /*  End Function foreign_miriad_create_data_context  */
 
-/*PUBLIC_FUNCTION*/
-flag foreign_miriad_test (CONST char *dirname)
-/*  [PURPOSE] This routine will test if a directory is a Miriad Image file.
-    <dirname> The directory name of the Miriad dataset name.
-    [RETURNS] TRUE if the directory is a Miriad Image file, else FALSE.
+/*EXPERIMENTAL_FUNCTION*/
+flag foreign_miriad_read_data (KMiriadDataContext context,
+			       multi_array *multi_desc,
+			       char *data, uaddr num_values, ...)
+/*  [SUMMARY] Read data in a Miriad Image file.
+    [PURPOSE] This routine will read the data of a Miriad Image file from a
+    KMiradDataContext object. The header section is NOT read.
+    <context> The context to read from.
+    <multi_desc> The Karma data structure to write the data into.
+    <data> An alternate data array to write the data into. If this is NULL,
+    the routine will write the data into the Karma data structure.
+    <num_values> The number of values to write into the data array. This is
+    only used when data is not NULL.
+    [VARARGS] The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_MIRIAD_READ_DATA_END. See [<FOREIGN_ATT_MIRIAD_READ_DATA>] for a list
+    of defined attributes.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
-    struct stat statbuf;
-    char header_name[STRING_LENGTH];
-    char image_name[STRING_LENGTH];
+    va_list argp;
+    flag mask;
+    unsigned int att_key;
+    unsigned long blank_count_local;
+    unsigned long *blank_count = NULL;
+    float *f_ptr;
+    uaddr value_count;
+    packet_desc *pack_desc;
+    array_desc *arr_desc;
     extern char *sys_errlist[];
+    static char function_name[] = "foreign_miriad_read_data";
 
-    if (stat (dirname, &statbuf) != 0)
+    VERIFY_CONTEXT (context);
+    va_start (argp, num_values);
+    /*  Process attributes  */
+    while ( ( att_key = va_arg (argp,unsigned int) )
+	    != FA_MIRIAD_READ_DATA_END )
     {
-	if (errno == ENOENT) return (FALSE);
-	(void) fprintf (stderr, "Error statting file: \"%s\"\t%s\n",
-			dirname, sys_errlist[errno]);
-	return (FALSE);
+	switch (att_key)
+	{
+	  case FA_MIRIAD_READ_DATA_NUM_BLANKS:
+	    blank_count = va_arg (argp, unsigned long *);
+	    break;
+	  default:
+	    (void) fprintf (stderr, "Unknown attribute key: %u\n", att_key);
+	    a_prog_bug (function_name);
+	    break;
+	}
     }
-    if ( !S_ISDIR (statbuf.st_mode) ) return (FALSE);
-    (void) sprintf (header_name, "%s/header", dirname);
-    (void) sprintf (image_name, "%s/image", dirname);
-    if (stat (header_name, &statbuf) != 0)
+    va_end (argp);
+    if (blank_count == NULL) blank_count = &blank_count_local;
+    if (data == NULL)
     {
-	if (errno == ENOENT) return (FALSE);
-	(void) fprintf (stderr, "Error statting file: \"%s\"\t%s\n",
-			header_name, sys_errlist[errno]);
-	return (FALSE);
+	/*  Data is in multi_desc  */
+	pack_desc = multi_desc->headers[0];
+	arr_desc = (array_desc *) pack_desc->element_desc[0];
+	data = *(char **) multi_desc->data[0];
+	if (data == NULL)
+	{
+	    (void) fprintf (stderr, "No array to write data into!\n");
+	    a_prog_bug (function_name);
+	}
+	num_values = ds_get_array_size (arr_desc);
     }
-    if ( !S_ISREG (statbuf.st_mode) ) return (FALSE);
-    if (stat (image_name, &statbuf) != 0)
+    /*  Read section of data  */
+    if ( ds_can_transfer_element_as_block (K_FLOAT) )
     {
-	if (errno == ENOENT) return (FALSE);
-	(void) fprintf (stderr, "Error statting file: \"%s\"\t%s\n",
-			image_name, sys_errlist[errno]);
-	return (FALSE);
+	if (ch_read (context->image_channel, data, num_values * 4) <
+	    num_values * 4)
+	{
+	    (void) fprintf (stderr, "Error reading image data\t%s\n",
+			    sys_errlist[errno]);
+	    return (FALSE);
+	}
     }
-    if ( !S_ISREG (statbuf.st_mode) ) return (FALSE);
+    else if ( ds_can_swaptransfer_element (K_FLOAT) )
+    {
+	if (ch_read_and_swap_blocks (context->image_channel, data,
+				     num_values, 4) < num_values * 4)
+	{
+	    (void) fprintf (stderr, "Error reading image data\t%s\n",
+			    sys_errlist[errno]);
+	    return (FALSE);
+	}
+    }
+    else
+    {
+	/*  Read data one value at a time  */
+	f_ptr = (float *) data;
+	for (value_count = 0; value_count < num_values; value_count++, ++f_ptr)
+	{
+	    if ( !pio_read_float (context->image_channel, f_ptr) )
+	    {
+		(void) fprintf (stderr, "Error reading image data\t%s\n",
+				sys_errlist[errno]);
+		return (FALSE);
+	    }
+	}
+    }
+    if (context->mask_channel == NULL) return (TRUE);
+    /*  Read section of mask and apply to data  */
+    /*  Read mask one bit at a time  */
+    f_ptr = (float *) data;
+    for (value_count = 0; value_count < num_values; value_count++, ++f_ptr)
+    {
+	if ( !get_next_mask_value (context, &mask) )
+	{
+	    (void) fprintf (stderr, "Error reading mask data\t%s\n",
+			    sys_errlist[errno]);
+	    return (FALSE);
+	}
+	if (!mask)
+	{
+	    /*  Mask is clear: bad data, so blank the value  */
+	    *f_ptr = TOOBIG;
+	    ++*blank_count;
+	}
+    }
     return (TRUE);
-}   /*  End Function foreign_miriad_test  */
+}   /*  End Function foreign_miriad_read_data  */
+
+/*EXPERIMENTAL_FUNCTION*/
+void foreign_miriad_close_data_context (KMiriadDataContext context)
+/*  [SUMMARY] Close a KMiriadDataContext object.
+    <context> The context.
+    [RETURNS] Nothing.
+*/
+{
+    static char function_name[] = "foreign_miriad_close_data_context";
+
+    VERIFY_CONTEXT (context);
+    (void) ch_close (context->image_channel);
+    if (context->mask_channel != NULL) (void) ch_close (context->mask_channel);
+    context->magic_number = 0;
+    m_free ( (char *) context );
+}   /*  End Function foreign_miriad_close_data_context  */
 
 
 /*  Private functions follow  */
@@ -434,7 +732,6 @@ static flag align_read (Channel channel, uaddr size)
     [RETURNS] TRUE on success, else FALSE.
 */
 {
-    char ch;
     unsigned long read_pos, write_pos;
 
     if ( !ch_tell (channel, &read_pos, &write_pos) ) return (FALSE);
@@ -505,12 +802,11 @@ static multi_array *make_desc (HeaderItem first_item, unsigned int naxis,
     double scale;
     packet_desc *top_pack_desc;
     array_desc *arr_desc;
-    packet_desc *pack_desc;
-    char *top_packet, *array, *element;
+    char *top_packet, *element;
     char *elem_name, *name;
     uaddr *dim_lengths;
-    double *dim_minima;
-    double *dim_maxima;
+    double *first_arr;
+    double *last_arr;
     char **dim_names;
     multi_array *multi_desc;
     char txt[STRING_LENGTH];
@@ -518,27 +814,27 @@ static multi_array *make_desc (HeaderItem first_item, unsigned int naxis,
     static char def_elem_name[] = "Data Value";
     static char function_name[] = "__foreign_read_miriad_make_desc";
 
-    /*  Construct the lengths, minima, maxima and names arrays  */
+    /*  Construct the lengths, first co-ord, last co-ord and names arrays  */
     if ( ( dim_lengths = (uaddr *) m_alloc (sizeof *dim_lengths * naxis) )
 	== NULL )
     {
 	m_error_notify (function_name, "dimension lengths");
 	return (NULL);
     }
-    /*  Compute dimension minima and maxima  */
-    if ( ( dim_minima = (double *) m_alloc (sizeof *dim_minima * naxis) )
+    /*  Compute dimension first and last co-ordinates  */
+    if ( ( first_arr = (double *) m_alloc (sizeof *first_arr * naxis) )
 	== NULL )
     {
-	m_error_notify (function_name, "dimension minima");
+	m_error_notify (function_name, "dimension first_arr");
 	m_free ( (char *) dim_lengths );
 	return (NULL);
     }
-    if ( ( dim_maxima = (double *) m_alloc (sizeof *dim_maxima * naxis) )
+    if ( ( last_arr = (double *) m_alloc (sizeof *last_arr * naxis) )
 	== NULL )
     {
-	m_error_notify (function_name, "dimension maxima");
+	m_error_notify (function_name, "dimension last_arr");
 	m_free ( (char *) dim_lengths );
-	m_free ( (char *) dim_minima );
+	m_free ( (char *) first_arr );
 	return (NULL);
     }
     /*  Create array of dimension name pointers  */
@@ -547,8 +843,8 @@ static multi_array *make_desc (HeaderItem first_item, unsigned int naxis,
     {
 	m_error_notify (function_name, "dimension name pointers");
 	m_free ( (char *) dim_lengths );
-	m_free ( (char *) dim_minima );
-	m_free ( (char *) dim_maxima );
+	m_free ( (char *) first_arr );
+	m_free ( (char *) last_arr );
 	return (NULL);
     }
     /*  Grab dimension information from header  */
@@ -558,21 +854,21 @@ static multi_array *make_desc (HeaderItem first_item, unsigned int naxis,
 	(void) sprintf (txt, "NAXIS%d", axis_count);
 	if ( ( item = find_item (first_item, txt) ) == NULL )
 	{
-	    (void) fprintf (stderr, "%s: naxis: %d but no \"%s\" item found\n",
-			    function_name, txt);
+	    (void) fprintf (stderr, "%s: naxis: %u but no \"%s\" item found\n",
+			    function_name, axis_count, txt);
 	    m_free ( (char *) dim_lengths );
-	    m_free ( (char *) dim_minima );
-	    m_free ( (char *) dim_maxima );
+	    m_free ( (char *) first_arr );
+	    m_free ( (char *) last_arr );
 	    m_free ( (char *) dim_names );
 	    return (NULL);
 	}
 	if (item->type != K_INT)
 	{
 	    (void) fprintf (stderr, "%s: item: \"%s\" not integer type\n",
-			  function_name, txt);
+			    function_name, txt);
 	    m_free ( (char *) dim_lengths );
-	    m_free ( (char *) dim_minima );
-	    m_free ( (char *) dim_maxima );
+	    m_free ( (char *) first_arr );
+	    m_free ( (char *) last_arr );
 	    m_free ( (char *) dim_names );
 	    return (NULL);
 	}
@@ -600,6 +896,18 @@ static multi_array *make_desc (HeaderItem first_item, unsigned int naxis,
 	    else if (st_nicmp (name, "VELO", 4) == 0) scale = 1e3;
 	    else if (st_nicmp (name, "FELO", 4) == 0) scale = 1e3;
 	    else if (st_nicmp (name, "RESTFREQ", 8) == 0) scale = 1e3;
+	    else if (st_icmp (name, "ANGLE") == 0)
+	    {
+		scale = 180.0 / PI;
+		(void) sprintf (txt, "Axis %u (deg)", num_dim);
+		m_free (name);
+		if ( ( name = st_dup (txt) ) == NULL )
+		{
+		    m_abort (function_name, "axis name");
+		}
+		dim_names[num_dim] = name;
+		*(char **) item->data = name;
+	    }
 	    else scale = 1.0;
 	}
 	dim_lengths[num_dim] = axis_length;
@@ -667,16 +975,16 @@ static multi_array *make_desc (HeaderItem first_item, unsigned int naxis,
 	if ( (crpix_item == NULL) || (crval_item == NULL) ||
 	    (cdelt_item == NULL) )
 	{
-	    dim_minima[num_dim] = 0.0;
-	    dim_maxima[num_dim] = (double) (axis_length - 1);
+	    first_arr[num_dim] = 0.0;
+	    last_arr[num_dim] = (double) (axis_length - 1);
 	}
 	else
 	{
-	    dim_minima[num_dim] = (crval_item->d_data - crpix_item->d_data *
-				   cdelt_item->d_data);
-	    dim_maxima[num_dim] = ( dim_minima[num_dim] +
-				   fabs (cdelt_item->d_data) *
-				   (double) (axis_length - 1) );
+	    first_arr[num_dim] = (crval_item->d_data -
+				  (crpix_item->d_data - 1.0) *
+				  cdelt_item->d_data);
+	    last_arr[num_dim] = ( first_arr[num_dim] + cdelt_item->d_data *
+				  (double) (axis_length - 1) );
 	}
 	++num_dim;
     }
@@ -694,14 +1002,14 @@ static multi_array *make_desc (HeaderItem first_item, unsigned int naxis,
 	elem_name = def_elem_name;
     }
     /*  Create the array descriptor  */
-    arr_desc = ds_easy_alloc_array_desc (num_dim, dim_lengths, dim_minima,
-					 dim_maxima, (double **) NULL,
-					 all_dim_names_given ? dim_names :NULL,
-					 1, &elem_type, &elem_name);
+    arr_desc = ds_easy_alloc_array_desc
+	(num_dim, dim_lengths, first_arr, last_arr, (CONST double **) NULL,
+	 (CONST char **) (all_dim_names_given ? dim_names : NULL),
+	 1, &elem_type, (CONST char **) &elem_name);
     
     m_free ( (char *) dim_lengths );
-    m_free ( (char *) dim_minima );
-    m_free ( (char *) dim_maxima );
+    m_free ( (char *) first_arr );
+    m_free ( (char *) last_arr );
     m_free ( (char *) dim_names );
     if (arr_desc == NULL) return (NULL);
     if ( ( multi_desc = ds_alloc_multi (1) ) == NULL )
@@ -712,7 +1020,7 @@ static multi_array *make_desc (HeaderItem first_item, unsigned int naxis,
     {
 	++num_items;
     }
-    if ( ( top_pack_desc = ds_alloc_packet_desc (num_items + 2) )
+    if ( ( top_pack_desc = ds_alloc_packet_desc (num_items + 1) )
 	== NULL )
     {
 	m_abort (function_name, "top level packet descriptor");
@@ -731,8 +1039,6 @@ static multi_array *make_desc (HeaderItem first_item, unsigned int naxis,
 	    m_abort (function_name, "element name");
 	}
     }
-    top_pack_desc->element_types[num_items + 1] = K_INT;
-    top_pack_desc->element_desc[num_items + 1] = st_dup ("BITPIX");
     /*  Create and fill the packet  */
     if ( ( top_packet = ds_alloc_packet (top_pack_desc) ) == NULL )
     {
@@ -758,9 +1064,6 @@ static multi_array *make_desc (HeaderItem first_item, unsigned int naxis,
 						      num_items + 1);
 	m_copy (element, item->data, host_type_sizes[item->type]);
     }
-    element = top_packet + ds_get_element_offset (top_pack_desc,
-						  num_items + 1);
-    *(int *) element = -32;
     return (multi_desc);
 }   /*  End Function make_desc  */
 
@@ -797,3 +1100,26 @@ static void free_header (HeaderItem first_item)
 	first_item = next;
     }
 }   /*  End Function free_header  */
+
+static flag get_next_mask_value (KMiriadDataContext context, flag *mask)
+/*  [SUMMARY] Get next mask value.
+    <context> The context to get the mask from.
+    <mask> The mask value is written here. This will be TRUE if mask is set
+    (data is valid), else FALSE indicating the data is invalid.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    if (++context->last_mask_bit_in_word < 31)
+    {
+	/*  Have at least one more mask bit available  */
+	*mask = (context->mask_word & 0x01) ? TRUE : FALSE;
+	context->mask_word = context->mask_word >> 1;
+	return (TRUE);
+    }
+    if ( !pio_read32 (context->mask_channel, &context->mask_word) )
+	return (FALSE);
+    *mask = (context->mask_word & 0x01) ? TRUE : FALSE;
+    context->mask_word = context->mask_word >> 1;
+    context->last_mask_bit_in_word = 0;
+    return (TRUE);
+}   /*  End Function get_next_mask_value  */

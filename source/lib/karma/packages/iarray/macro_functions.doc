@@ -1,0 +1,56 @@
+$FUNCTION         iarray_num_dim
+$RETURN_TYPE      unsigned int
+$PARAMETER_LIST
+    (iarray array)
+$SUMMARY          Get number of dimensions in an Intelligent Array
+$PURPOSE
+    Get number of dimensions in an Intelligent Array
+$PARAMETER        array :
+    The Intelligent Array.
+$RETURNS
+    The number of dimensions.
+$END
+
+$FUNCTION         iarray_type
+$RETURN_TYPE      unsigned int
+$PARAMETER_LIST
+    (iarray array)
+$SUMMARY          Get type of data in an Intelligent Array
+$PURPOSE
+    Get type of data in an Intelligent Array
+$PARAMETER        array :
+    The Intelligent Array.
+$RETURNS
+    The type of the data in the array.
+$END
+
+$FUNCTION         iarray_value_name
+$RETURN_TYPE      CONST char *
+$PARAMETER_LIST
+    (iarray array)
+$SUMMARY          Get name of data in an Intelligent Array
+$PURPOSE
+    Get name of data in an Intelligent Array
+$PARAMETER        array :
+    The Intelligent Array.
+$RETURNS
+    The name of the data in the array.
+$END
+
+$FUNCTION         iarray_register_destroy_func
+$RETURN_TYPE      KCallbackFunc
+$PARAMETER_LIST
+    (iarray array, void (*destroy_func) (iarray array, void *info), void *info)
+$SUMMARY          Register destroy function for an Intelligent Array
+$PURPOSE
+    Register destroy function for an Intelligent Array.
+$PARAMETER        array :
+    The Intelligent Array.
+$PARAMETER        destroy_func :
+    The routine that is called when the array is destroyed. The prototype
+    function is <-IARRAY_PROTO_destroy_func->.
+$PARAMETER        info :
+    The arbitrary information pointer.
+$RETURNS
+    The name of the data in the array.
+$END

@@ -1,7 +1,7 @@
 KARMALIBS = -lkarmawidgets -lkarmagraphics -lkarmaXt -lkarmaX11 -lkarma
 XLIBS = -lXaw -lXmu -lXt -lXext -lX11
 
-include $(KARMAROOT)/source/modules/GNUmakefile.head
+include $(KARMAINCLUDEPATH)/gmakedefs/modules.head
 
 
 TARGETS =	$(KARMABINPATH)/kview
@@ -26,5 +26,5 @@ depend:
 	makedepend -DMAKEDEPEND -D__$(MACHINE)__ -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) -f$(machine_dir)/depend $(KVIEW)
 
 
-include $(KARMAROOT)/source/modules/GNUmakefile.tail
+include $(KARMAINCLUDEPATH)/gmakedefs/modules.tail
 include $(machine_dir)/depend

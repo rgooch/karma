@@ -1,0 +1,2187 @@
+<html><head><title>Package: ds</title></head> 
+<body>
+<center><h1>The "ds" Package</h1></center>    These routines provide the base functionality for the recursive,
+    heirarchical data structure supported in Karma.
+    This package both defines the (transparent) data structure and the various
+    allocation, deallocation and manipulation routines.
+    Transfer of data structures to/ from disc/ connections is supplied by the
+    <a href=dsxfr.html#dsxfr>dsxfr</a> routines.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=ds></a></table><h4>Functions</h4><table><tr><td><a href=ds.html#ds_alloc_multi>ds_alloc_multi</a></td><td>Allocate a multi_array descriptor.
+</td></tr>
+<tr><td><a href=ds.html#ds_alloc_packet_desc>ds_alloc_packet_desc</a></td><td>Allocate a packet descriptor.
+</td></tr>
+<tr><td><a href=ds.html#ds_alloc_data>ds_alloc_data</a></td><td>Allocate packet data recursively.
+</td></tr>
+<tr><td><a href=ds.html#ds_alloc_packet_subdata>ds_alloc_packet_subdata</a></td><td>Allocate packet sub-data.
+</td></tr>
+<tr><td><a href=ds.html#ds_alloc_packet>ds_alloc_packet</a></td><td>Allocate packet.
+</td></tr>
+<tr><td><a href=ds.html#ds_alloc_array_desc>ds_alloc_array_desc</a></td><td>Allocate array descriptor.
+</td></tr>
+<tr><td><a href=ds.html#ds_alloc_tiling_info>ds_alloc_tiling_info</a></td><td>Allocate array tiling information.
+</td></tr>
+<tr><td><a href=ds.html#ds_alloc_dim_desc>ds_alloc_dim_desc</a></td><td>Allocate a dimension descriptor.
+</td></tr>
+<tr><td><a href=ds.html#ds_alloc_list_head>ds_alloc_list_head</a></td><td>Allocate a linked list header.
+</td></tr>
+<tr><td><a href=ds.html#ds_alloc_list_entry>ds_alloc_list_entry</a></td><td>Allocate a linked list entry.
+</td></tr>
+<tr><td><a href=ds.html#ds_alloc_array>ds_alloc_array</a></td><td>Allocate an array.
+</td></tr>
+<tr><td><a href=ds.html#ds_easy_alloc_array>ds_easy_alloc_array</a></td><td>Allocate a data structure with a simple array.
+</td></tr>
+<tr><td><a href=ds.html#ds_easy_alloc_n_element_array>ds_easy_alloc_n_element_array</a></td><td>Allocate a data structure with a simple, multi element array.
+</td></tr>
+<tr><td><a href=ds.html#ds_wrap_preallocated_n_element_array>ds_wrap_preallocated_n_element_array</a></td><td>Wrap a data structure around an array.
+</td></tr>
+<tr><td><a href=ds.html#ds_easy_alloc_array_desc>ds_easy_alloc_array_desc</a></td><td>Allocate a simple array descriptor.
+</td></tr>
+<tr><td><a href=ds.html#ds_alloc_contiguous_list>ds_alloc_contiguous_list</a></td><td>Allocate a contiguous list of linked list entries.
+</td></tr>
+<tr><td><a href=ds.html#ds_find_1D_extremes>ds_find_1D_extremes</a></td><td>Find the minimum and maximum of a 1D array.
+</td></tr>
+<tr><td><a href=ds.html#ds_find_2D_extremes>ds_find_2D_extremes</a></td><td>Find the minimum and maximum of a 2D array.
+</td></tr>
+<tr><td><a href=ds.html#ds_find_contiguous_extremes>ds_find_contiguous_extremes</a></td><td>Find the minimum and maximum of a contiguous array.
+</td></tr>
+<tr><td><a href=ds.html#ds_find_single_histogram>ds_find_single_histogram</a></td><td>Find the histogram of a 1D array.
+</td></tr>
+<tr><td><a href=ds.html#ds_complex_to_real_1D>ds_complex_to_real_1D</a></td><td>Convert a 1 dimensional array of complex values to real values.
+</td></tr>
+<tr><td><a href=ds.html#ds_put_unique_named_value>ds_put_unique_named_value</a></td><td>Add a unique named value to a Karma general data structure.
+</td></tr>
+<tr><td><a href=ds.html#ds_put_unique_named_string>ds_put_unique_named_string</a></td><td>Add a unique named string to a Karma general data structure.
+</td></tr>
+<tr><td><a href=ds.html#ds_get_unique_named_value>ds_get_unique_named_value</a></td><td>Get a unique named value from a Karma general data structure.
+</td></tr>
+<tr><td><a href=ds.html#ds_get_unique_named_string>ds_get_unique_named_string</a></td><td>Get a unique named string from a Karma general data structure.
+</td></tr>
+<tr><td><a href=ds.html#ds_cmap_alloc_colourmap>ds_cmap_alloc_colourmap</a></td><td>Allocate a Karma data structure to hold a colourmap.
+</td></tr>
+<tr><td><a href=ds.html#ds_cmap_find_colourmap>ds_cmap_find_colourmap</a></td><td>Search a Karma data structure for an instance of a colourmap.
+</td></tr>
+<tr><td><a href=ds.html#ds_cmap_get_all_colourmaps>ds_cmap_get_all_colourmaps</a></td><td>Search an array of Karma data structures for colourmaps.
+</td></tr>
+<tr><td><a href=ds.html#ds_copy_packet>ds_copy_packet</a></td><td>Copy a packet.
+</td></tr>
+<tr><td><a href=ds.html#ds_copy_desc_until>ds_copy_desc_until</a></td><td>Recursively copy a packet descriptor.
+</td></tr>
+<tr><td><a href=ds.html#ds_copy_array_desc_until>ds_copy_array_desc_until</a></td><td>Recursively copy an array descriptor.
+</td></tr>
+<tr><td><a href=ds.html#ds_copy_dim_desc>ds_copy_dim_desc</a></td><td>Copy a dimension descriptor.
+</td></tr>
+<tr><td><a href=ds.html#ds_copy_data>ds_copy_data</a></td><td>Copy data between Karma data structures.
+</td></tr>
+<tr><td><a href=ds.html#ds_copy_array>ds_copy_array</a></td><td>Recursively copy array data.
+</td></tr>
+<tr><td><a href=ds.html#ds_copy_list>ds_copy_list</a></td><td>Recursively copy linked lists.
+</td></tr>
+<tr><td><a href=ds.html#ds_select_arrays>ds_select_arrays</a></td><td>Select data structures in a multi_array descriptor.
+</td></tr>
+<tr><td><a href=ds.html#ds_dealloc_multi>ds_dealloc_multi</a></td><td>Deallocate a multi_array data structure.
+</td></tr>
+<tr><td><a href=ds.html#ds_dealloc_packet>ds_dealloc_packet</a></td><td>Recursively deallocate a packet.
+</td></tr>
+<tr><td><a href=ds.html#ds_dealloc_data>ds_dealloc_data</a></td><td>Recursively deallocate packet data.
+</td></tr>
+<tr><td><a href=ds.html#ds_dealloc_packet_subdata>ds_dealloc_packet_subdata</a></td><td>Recursively deallocate packet data.
+</td></tr>
+<tr><td><a href=ds.html#ds_dealloc_array_desc>ds_dealloc_array_desc</a></td><td>Recursively deallocate an array.
+</td></tr>
+<tr><td><a href=ds.html#ds_dealloc_list>ds_dealloc_list</a></td><td>Recursively deallocate a linked list.
+</td></tr>
+<tr><td><a href=ds.html#ds_dealloc_list_entries>ds_dealloc_list_entries</a></td><td>Recursively deallocate list entries.
+</td></tr>
+<tr><td><a href=ds.html#ds_dealloc2_list>ds_dealloc2_list</a></td><td>Deallocate linked list entries.
+</td></tr>
+<tr><td><a href=ds.html#ds_dealloc_array>ds_dealloc_array</a></td><td>Recursively deallocate array.
+</td></tr>
+<tr><td><a href=ds.html#ds_draw_ellipse>ds_draw_ellipse</a></td><td>Draw an ellipse into a 2 dimensional Karma array.
+</td></tr>
+<tr><td><a href=ds.html#ds_draw_polygon>ds_draw_polygon</a></td><td>Draw a polygon into a 2 dimensional array.
+</td></tr>
+<tr><td><a href=ds.html#ds_convert_atomic>ds_convert_atomic</a></td><td>Convert an atomic datum to a double precision value.
+</td></tr>
+<tr><td><a href=ds.html#ds_get_coordinate>ds_get_coordinate</a></td><td>Get a co-ordinate along a dimension.
+</td></tr>
+<tr><td><a href=ds.html#ds_get_element_offset>ds_get_element_offset</a></td><td>Calculate the offset of the start of a data element in a packet.
+</td></tr>
+<tr><td><a href=ds.html#ds_get_packet_size>ds_get_packet_size</a></td><td>Calculate size in bytes of a packet.
+</td></tr>
+<tr><td><a href=ds.html#ds_get_array_size>ds_get_array_size</a></td><td>Calculate the number of co-ordinate points in an array.
+</td></tr>
+<tr><td><a href=ds.html#ds_packet_all_data>ds_packet_all_data</a></td><td>Test if packet contains only atomic data elements.
+</td></tr>
+<tr><td><a href=ds.html#ds_element_is_atomic>ds_element_is_atomic</a></td><td>Test if an element is atomic.
+</td></tr>
+<tr><td><a href=ds.html#ds_element_is_named>ds_element_is_named</a></td><td>Test if an element is a named data type.
+</td></tr>
+<tr><td><a href=ds.html#ds_element_is_legal>ds_element_is_legal</a></td><td>Test if an element is legal.
+</td></tr>
+<tr><td><a href=ds.html#ds_identify_name>ds_identify_name</a></td><td>Search a data structure for a name.
+</td></tr>
+<tr><td><a href=ds.html#ds_f_array_name>ds_f_array_name</a></td><td>Search a the top level of a data structure for a name.
+</td></tr>
+<tr><td><a href=ds.html#ds_f_name_in_packet>ds_f_name_in_packet</a></td><td>Recursively search for named item under a packet.
+</td></tr>
+<tr><td><a href=ds.html#ds_f_name_in_array>ds_f_name_in_array</a></td><td>Recursively search for named item under an array.
+</td></tr>
+<tr><td><a href=ds.html#ds_f_elem_in_packet>ds_f_elem_in_packet</a></td><td>Search for a named element in a packet, without recursion.
+</td></tr>
+<tr><td><a href=ds.html#ds_find_hole>ds_find_hole</a></td><td>Recursively search packet for a hole.
+</td></tr>
+<tr><td><a href=ds.html#ds_compare_packet_desc>ds_compare_packet_desc</a></td><td>Recursively compare two packet descriptors.
+</td></tr>
+<tr><td><a href=ds.html#ds_compare_array_desc>ds_compare_array_desc</a></td><td>Recursively compare two array descriptors.
+</td></tr>
+<tr><td><a href=ds.html#ds_compare_dim_desc>ds_compare_dim_desc</a></td><td>Compare two dimension descriptors.
+</td></tr>
+<tr><td><a href=ds.html#ds_f_dim_in_array>ds_f_dim_in_array</a></td><td>Find dimension in array.
+</td></tr>
+<tr><td><a href=ds.html#ds_get_array_offset>ds_get_array_offset</a></td><td>Compute offset of a co-ordinate in an array.
+</td></tr>
+<tr><td><a href=ds.html#ds_get_coord_num>ds_get_coord_num</a></td><td>Get index of a co-ordinate along a dimension.
+</td></tr>
+<tr><td><a href=ds.html#ds_get_element>ds_get_element</a></td><td>Convert an atomic datum to a double precision complex value.
+</td></tr>
+<tr><td><a href=ds.html#ds_get_elements>ds_get_elements</a></td><td>Convert atomic data values to double precision complex values.
+</td></tr>
+<tr><td><a href=ds.html#ds_get_coordinate_array>ds_get_coordinate_array</a></td><td>Get co-ordinate array for a dimension.
+</td></tr>
+<tr><td><a href=ds.html#ds_element_is_complex>ds_element_is_complex</a></td><td>Test if the type of an element is complex or not.
+</td></tr>
+<tr><td><a href=ds.html#ds_get_scattered_elements>ds_get_scattered_elements</a></td><td>Convert scattered atomic data to double precision complex values.
+</td></tr>
+<tr><td><a href=ds.html#ds_can_transfer_element_as_block>ds_can_transfer_element_as_block</a></td><td>Test if an element can be transferred in one block.
+</td></tr>
+<tr><td><a href=ds.html#ds_can_transfer_packet_as_block>ds_can_transfer_packet_as_block</a></td><td>Test if a packet can be transferred in one block.
+</td></tr>
+<tr><td><a href=ds.html#ds_can_swaptransfer_element>ds_can_swaptransfer_element</a></td><td>Test if an element can be swapped and transferred in one block.
+</td></tr>
+<tr><td><a href=ds.html#ds_get_handle_in_packet>ds_get_handle_in_packet</a></td><td>Find sub-structure in a general data structure.
+</td></tr>
+<tr><td><a href=ds.html#ds_get_handle_in_array>ds_get_handle_in_array</a></td><td>Find sub-structure in a multi-dimensional array.
+</td></tr>
+<tr><td><a href=ds.html#ds_get_handle_in_list>ds_get_handle_in_list</a></td><td>Find sub-structure in a linked list.
+</td></tr>
+<tr><td><a href=ds.html#ds_list_insert>ds_list_insert</a></td><td>Insert an entry into the fragmented section of a linked list.
+</td></tr>
+<tr><td><a href=ds.html#ds_list_append>ds_list_append</a></td><td>Append an entry to a linked list.
+</td></tr>
+<tr><td><a href=ds.html#ds_list_delete>ds_list_delete</a></td><td>Delete an entry from the fragmented section of a linked list.
+</td></tr>
+<tr><td><a href=ds.html#ds_list_unfragment>ds_list_unfragment</a></td><td>Unfragment a linked list.
+</td></tr>
+<tr><td><a href=ds.html#ds_list_fragment>ds_list_fragment</a></td><td>Fragment a linked list.
+</td></tr>
+<tr><td><a href=ds.html#ds_remove_dim_desc>ds_remove_dim_desc</a></td><td>Remove dimension from an array.
+</td></tr>
+<tr><td><a href=ds.html#ds_append_dim_desc>ds_append_dim_desc</a></td><td>Append a dimension to an array.
+</td></tr>
+<tr><td><a href=ds.html#ds_prepend_dim_desc>ds_prepend_dim_desc</a></td><td>Prepend a dimension to an array.
+</td></tr>
+<tr><td><a href=ds.html#ds_compute_array_offsets>ds_compute_array_offsets</a></td><td>Compute array address offsets for each dimension in an array.
+</td></tr>
+<tr><td><a href=ds.html#ds_remove_tiling_info>ds_remove_tiling_info</a></td><td>Remove any tiling information from an array descriptor.
+</td></tr>
+<tr><td><a href=ds.html#ds_append_gen_struct>ds_append_gen_struct</a></td><td>Append a general data structure to a multi_array structure.
+</td></tr>
+<tr><td><a href=ds.html#ds_put_element>ds_put_element</a></td><td>Write out an element of data.
+</td></tr>
+<tr><td><a href=ds.html#ds_put_elements>ds_put_elements</a></td><td>Convert array of double precision complex data to atomic data.
+</td></tr>
+<tr><td><a href=ds.html#ds_put_element_many_times>ds_put_element_many_times</a></td><td>Write a double precision complex value to atomic data many times.
+</td></tr>
+<tr><td><a href=ds.html#ds_put_named_element>ds_put_named_element</a></td><td>Update a named element in a specified packet.
+</td></tr>
+<tr><td><a href=ds.html#ds_reorder_array>ds_reorder_array</a></td><td>Re-order a multi-dimensional array.
+</td></tr>
+<tr><td><a href=ds.html#ds_foreach_occurrence>ds_foreach_occurrence</a></td><td>Recursively traverse a data structure, searching for an item.
+</td></tr>
+<tr><td><a href=ds.html#ds_foreach_in_array>ds_foreach_in_array</a></td><td>Recursively traverse an array, searching for an item.
+</td></tr>
+<tr><td><a href=ds.html#ds_foreach_in_list>ds_foreach_in_list</a></td><td>Recursively traverse a linked list, searching for an item.
+</td></tr>
+<tr><td><a href=ds.html#ds_traverse_and_process>ds_traverse_and_process</a></td><td>Recursively traverse a pair of data structures.
+</td></tr>
+<tr><td><a href=ds.html#ds_traverse_array>ds_traverse_array</a></td><td>Recursively traverse a pair of arrays.
+</td></tr>
+<tr><td><a href=ds.html#ds_traverse_list>ds_traverse_list</a></td><td>Recursively traverse a pair of linked lists.
+</td></tr>
+</table><h4>Prototype Functions</h4><table><tr><td><a href=ds.html#DS_PROTO_foreach_func>DS_PROTO_foreach_func</a></td><td>Process an occurrence of an item in a data structure.
+</td></tr>
+<tr><td><a href=ds.html#DS_PROTO_traverse_function>DS_PROTO_traverse_function</a></td><td>Process an occurrence of a divergence between two data structures
+</td></tr>
+</table><h4>Tables</h4><table><tr><td><a href=ds.html#DS_COMPLEX_CONVERSIONS>DS_COMPLEX_CONVERSIONS</a></td><td>List of complex conversion types
+</td></tr>
+<tr><td><a href=ds.html#DS_KARMA_DATA_TYPES>DS_KARMA_DATA_TYPES</a></td><td>List of Karma data types
+</td></tr>
+<tr><td><a href=ds.html#DS_IDENT_TABLE>DS_IDENT_TABLE</a></td><td>List of identification codes
+</td></tr>
+<tr><td><a href=ds.html#DS_SEARCH_BIASES>DS_SEARCH_BIASES</a></td><td>List of co-ordinate search biases
+</td></tr>
+<tr><td><a href=ds.html#DS_HANDLE_TYPES>DS_HANDLE_TYPES</a></td><td>List of handle types
+</td></tr>
+<tr><td><a href=ds.html#DS_PARENT_TYPES>DS_PARENT_TYPES</a></td><td>List of parent descriptor types
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=ds_alloc_multi></a> multi_array *
+ <b>ds_alloc_multi</b><i>    (unsigned int num_arrays)
+</i><br><p>    This routine will allocate a multi_array descriptor. The memory
+    for the array of pointers to the array names, headers and data arrays is
+    also allocated.
+<p><b>Parameters:</b><ul><li><i>num_arrays :</i> 
+    The number of independent general data structures arrays.
+<br></ul><b>Returns:</b>     A pointer to the header on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_alloc_packet_desc></a> packet_desc *
+ <b>ds_alloc_packet_desc</b><i>    (unsigned int num_elem)
+</i><br><p>    This routine will allocate a packet descriptor. The memory for
+    the array of element types and descriptors is also allocated.
+<p><b>Parameters:</b><ul><li><i>num_elem :</i> 
+    The number of elements to allocate.
+<br></ul><b>Returns:</b>     A pointer to the descriptor on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_alloc_data></a> char *
+ <b>ds_alloc_data</b><i>    (packet_desc *pack_desc, flag clear, flag array_alloc)
+</i><br><p>    This routine will allocate all memory required to store data in a
+    packet. The routine will recursively allocate space for packets, sub arrays
+    of packets and linked list headers.
+    The routine is quite robust, cleanly bypassing missing sections of the
+    descriptor hierarchy, and deallocating any memory allocated after an
+    error occurs.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The packet descriptor.
+<br><li><i>clear :</i> 
+    If TRUE, then the routine will initialise (set to zero) all the
+    data.
+<br><li><i>array_alloc :</i> 
+    If FALSE, and an array is an atomic array, then instances of
+    that array will NOT be allocated, and a NULL pointer will be written into
+    the parent element, else the array will be allocated.
+<br></ul><b>Returns:</b>     A pointer to the data memory if all memory could be allocated,
+    else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_alloc_packet_subdata></a> flag
+ <b>ds_alloc_packet_subdata</b><i>    (CONST packet_desc *pack_desc, char *packet,
+			      flag clear, flag array_alloc)
+</i><br><p>    This routine will recursively allocate space for sub arrays of
+    packets and linked list headers for a packet. The data space for the packet
+    is NOT allocated, it must be supplied.
+    The routine is quite robust, cleanly bypassing missing sections of the
+    descriptor hierarchy, and deallocating any memory allocated after an
+    error occurs.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The packet descriptor.
+<br><li><i>packet :</i> 
+    The packet data.
+<br><li><i>clear :</i> 
+    If TRUE, then the routine will initialise (set to zero) all the
+    sub-structure data.
+<br><li><i>array_alloc :</i> 
+    If FALSE, and an array is an atomic array, then instances of
+    that array will NOT be allocated, and a NULL pointer will be written into
+    the parent element, else the array will be allocated.
+<br></ul><b>Returns:</b>     TRUE if all memory could be allocated, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_alloc_packet></a> char *
+ <b>ds_alloc_packet</b><i>    (packet_desc *pack_desc)
+</i><br><p>    This routine will allocate memory for a packet. This routine is
+    NOT recursive (i.e. sub arrays and linked lists are not allocated).
+    The elements of the packet will be set to zero (for all types).
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The packet descriptor.
+<br></ul><b>Returns:</b>     A pointer to the packet on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_alloc_array_desc></a> array_desc *
+ <b>ds_alloc_array_desc</b><i>    (unsigned int num_dimensions,
+				 unsigned int num_levels)
+</i><br><p>    This function will allocate a header for a multi-dimensional
+    tiled array of data packets.
+<p><b>Parameters:</b><ul><li><i>num_dimensions :</i> 
+    The number of dimensions in the array.
+<br><li><i>num_levels :</i> 
+    The number of levels of tiling. If this is 0, the array is not
+    tiled.
+<br></ul><b>Returns:</b>     A pointer to the descriptor on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     Note that the dimension descriptors are not allocated, however, the
+    array of pointers for them is allocated.
+</ul><p><hr> <a name=ds_alloc_tiling_info></a> flag
+ <b>ds_alloc_tiling_info</b><i>    (array_desc *arr_desc, unsigned int num_levels)
+</i><br><p>    This routine will allocate tiling information for an array
+    descriptor which does not have any existing tiling information.
+<p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>num_levels :</i> 
+    The number of levels of tiling. If this is 0, the array is not
+    tiled.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_alloc_dim_desc></a> dim_desc *
+ <b>ds_alloc_dim_desc</b><i>    (CONST char *dim_name, uaddr length,
+			     double first, double last, flag regular)
+</i><br><p>    Allocate a dimension descriptor.
+<p><b>Parameters:</b><ul><li><i>dim_name :</i> 
+    The name of the dimension. The name is copied, thus the input
+    character string may be subsequently deallocated.
+<br><li><i>length :</i> 
+    The length (number of co-ordinates) of the dimension.
+<br><li><i>first :</i> 
+    The first dimension co-ordinate.
+<br><li><i>last :</i> 
+    The last dimension co-ordinate.
+<br><li><i>regular :</i> 
+    If TRUE the co-ordinates of the dimension are regularly spaced,
+    else the co-ordinates are not regularly spaced. If the co-ordinates are
+    regularly spaced the <em>coordinates</em> field of the array descriptor will be
+    set to NULL, else it will point to an array of doubles of length <em>length</em>
+    These co-ordinates will be set to 0.0.
+<br></ul><b>Returns:</b>     A pointer to the descriptor on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_alloc_list_head></a> list_header *
+ <b>ds_alloc_list_head</b><i>    ()
+</i><br><p>    This routine will allocate a linked list header.
+    The length of the linked list specified in the header will be 0, and the
+    <em>contiguous_until</em> entry will be set to 0.
+    The <em>sort_type</em> field in the header will be set to SORT_UNDEF. This MUST
+    be set to some other value (i.e. SORT_RANDOM) prior to use with other
+    library routines.
+    The <em>list_start</em> and <em>list_end</em> pointers will be set to NULL.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b>     A pointer to the header on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_alloc_list_entry></a> list_entry *
+ <b>ds_alloc_list_entry</b><i>    (packet_desc *list_desc, flag array_alloc)
+</i><br><p>    This routine will allocate an entry in a linked list (it will
+    NOT insert it in the list: see <a href=ds.html#ds_list_insert>ds_list_insert</a>).
+    The list pointers will be set to NULL.
+    The routine will initialise (set to zero) the data in the entry.
+    The routine will recursively allocate memory for sub arrays and linked
+    lists.
+<p><b>Parameters:</b><ul><li><i>list_desc :</i> 
+    The descriptor for the linked list.
+<br><li><i>array_alloc :</i> 
+    If FALSE, and an array is an atomic array, then instances of
+    that array will NOT be allocated, and a NULL pointer will be written into
+    the parent element, else the array will be allocated.
+<br></ul><b>Returns:</b>     A pointer to the entry on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_alloc_array></a> flag
+ <b>ds_alloc_array</b><i>    (CONST array_desc *arr_desc, char *element, flag clear,
+		     flag array_alloc)
+</i><br><p>    This routine will allocate memory for an array. The routine will
+    recursively allocate sub arrays and linked lists.
+    Any memory which is allocated will be deallocated if an error occurs.
+<p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>element :</i> 
+    The element to write the array pointer.
+<br><li><i>clear :</i> 
+    If TRUE, then the routine will initialise (set to zero) all the
+    data.
+<br><li><i>array_alloc :</i> 
+    If FALSE, and an array is an atomic array, then instances of
+    that array will NOT be allocated, and a NULL pointer will be written into
+    the parent element, else the array will be allocated.
+<br></ul><b>Returns:</b>     A pointer to the array on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_easy_alloc_array></a> char *
+ <b>ds_easy_alloc_array</b><i>    (multi_array **multi_desc, unsigned int num_dim,
+			   CONST uaddr *lengths, CONST double *first_arr,
+			   CONST double *last_arr,
+			   CONST char **names, unsigned int data_type,
+			   CONST char *data_name)
+</i><br><p>    This routine will allocate memory for a multi-dimensional,
+    regular array, and the required headers and the multi-array header. The
+    array is NOT tiled nor are any address offsets computed. The data packet
+    that may be stored in the array is a single, atomic datum.
+<p><b>Parameters:</b><ul><li><i>multi_desc :</i> 
+    The multi-array structure pointer to the created structure is
+    written here.
+<br><li><i>num_dim :</i> 
+    The number of dimensions of the array.
+<br><li><i>lengths :</i> 
+    The array of dimension lengths.
+<br><li><i>first_arr :</i> 
+    An array of first co-ordinate values for each dimension.
+<br><li><i>last_arr :</i> 
+    An array of last co-ordinate values for each dimension.
+<br><li><i>names :</i> 
+    The array of dimension names. If this is NULL, the names "Axis 0",
+    "Axis 1", ...etc will be used. The character arrays are copied, so the
+    arrays of characters and the array of pointers may be subsequently
+    deallocated.
+<br><li><i>data_type :</i> 
+    The type of the elements in the array. See
+    <a href=ds.html#DS_KARMA_DATA_TYPES>DS_KARMA_DATA_TYPES</a> for a list of legal values.
+<br><li><i>data_name :</i> 
+    The name of the data type. If this is NULL, then the name
+    "Data Value" will be used. The name string is copied, thus the memory used
+    for the input string may be subsequently deallocated.
+<br></ul><b>Returns:</b>     A pointer to the start of the array on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine does NOT create a Karma arrayfile. This must be done
+    with a call to <a href=dsxfr.html#dsxfr_put_multi>dsxfr_put_multi</a>.
+<li>     If either of <em>first_arr</em> or <em>last_arr</em> is NULL, the range of the
+    co-ordinates will be the lengths of the dimensions minus 1. If one of the
+    pointers is NULL, the other array is used to tie one end of the range for
+    each dimension. If both pointers are NULL,the minima are 0.0 and the maxima
+    are the lengths minus 1.
+</ul><p><hr> <a name=ds_easy_alloc_n_element_array></a> char *
+ <b>ds_easy_alloc_n_element_array</b><i>    (multi_array **multi_desc,
+				     unsigned int num_dim,
+				     CONST uaddr *lengths,
+				     CONST double *first_arr,
+				     CONST double *last_arr,
+				     CONST char **names,
+				     unsigned int num_elements,
+				     CONST unsigned int *data_types,
+				     CONST char **data_names)
+</i><br><p>    This routine will allocate memory for a multi-dimensional,
+    regular array, and the required headers and the multi-array header. The
+    array is NOT tiled nor are any address offsets computed. The data packet
+    that may be stored in the array contains many atomic data.
+<p><b>Parameters:</b><ul><li><i>multi_desc :</i> 
+    The multi-array structure pointer to the created structure is
+    written here.
+<br><li><i>num_dim :</i> 
+    The number of dimensions of the array.
+<br><li><i>lengths :</i> 
+    The array of dimension lengths.
+<br><li><i>first_arr :</i> 
+    An array of first co-ordinate values for each dimension.
+<br><li><i>last_arr :</i> 
+    An array of last co-ordinate values for each dimension.
+<br><li><i>names :</i> 
+    The array of dimension names. If this is NULL, the names "Axis 0",
+    "Axis 1", ...etc will be used. The character arrays are copied, so the
+    arrays of characters and the array of pointers may be subsequently
+    deallocated.
+<br><li><i>num_elements :</i> 
+    The number of elements in the array packets.
+<br><li><i>data_types :</i> 
+    The types of the elements in the array. See
+    <a href=ds.html#DS_KARMA_DATA_TYPES>DS_KARMA_DATA_TYPES</a> for a list of legal values.
+<br><li><i>data_names :</i> 
+    The names of the data type. The name strings are copied, thus
+    the memory used for the input string may be subsequently deallocated.
+<br></ul><b>Returns:</b>     A pointer to the start of the array on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine does NOT create a Karma arrayfile. This must be done
+    with a call to <a href=dsxfr.html#dsxfr_put_multi>dsxfr_put_multi</a>.
+<li>     If either of <em>first_arr</em> or <em>last_arr</em> is NULL, the range of the
+    co-ordinates will be the lengths of the dimensions minus 1. If one of the
+    pointers is NULL, the other array is used to tie one end of the range for
+    each dimension. If both pointers are NULL,the minima are 0.0 and the maxima
+    are the lengths minus 1.
+</ul><p><hr> <a name=ds_wrap_preallocated_n_element_array></a> multi_array *
+ <b>ds_wrap_preallocated_n_element_array</b><i>    (char *array, unsigned int num_dim, CONST uaddr *lengths,
+     CONST double *first_arr, CONST double *last_arr,
+     CONST double **coordinates, CONST char **names,
+     unsigned int num_elements, CONST unsigned int *data_types,
+     CONST char **data_names)
+</i><br><p>    This routine will "wrap" an externally allocated array by
+    allocating the required descriptors. The array is NOT tiled nor are any
+    address offsets computed. The data packet that may be stored in the array
+    contains many atomic data.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The externally allocated array. This data must be externally
+    deallocated when no longer needed. If this is NULL, then the array data is
+    internally allocated (and should not be externally deallocated).
+<br><li><i>num_dim :</i> 
+    The number of dimensions of the array.
+<br><li><i>lengths :</i> 
+    The array of dimension lengths.
+<br><li><i>first_arr :</i> 
+    An array of first co-ordinate values for each dimension.
+<br><li><i>last_arr :</i> 
+    An array of last co-ordinate values for each dimension.
+<br><li><i>coordinates :</i> 
+    The array of co-ordinate array pointers. If this is NULL,
+    all dimensions are assumed to be regularly spaced. If any co-ordinate array
+    pointer is NULL, the corresponding dimension is assumed to be regularly
+    spaced.
+<br><li><i>names :</i> 
+    The array of dimension names. If this is NULL, the names "Axis 0",
+    "Axis 1", ...etc will be used. The character arrays are copied, so the
+    arrays of characters and the array of pointers may be subsequently
+    deallocated.
+<br><li><i>num_elements :</i> 
+    The number of elements in the array packets.
+<br><li><i>data_types :</i> 
+    The types of the elements in the array. See
+    <a href=ds.html#DS_KARMA_DATA_TYPES>DS_KARMA_DATA_TYPES</a> for a list of legal values.
+<br><li><i>data_names :</i> 
+    The names of the data type. The name strings are copied, thus
+    the memory used for the input string may be subsequently deallocated.
+<br></ul><b>Returns:</b>     A pointer the multi_array descriptor on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine does NOT create a Karma arrayfile. This must be done
+    with a call to <a href=dsxfr.html#dsxfr_put_multi>dsxfr_put_multi</a>.
+<li>     If either of <em>first_arr</em> or <em>last_arr</em> is NULL, the range of the
+    co-ordinates will be the lengths of the dimensions minus 1. If one of the
+    pointers is NULL, the other array is used to tie one end of the range for
+    each dimension. If both pointers are NULL,the minima are 0.0 and the maxima
+    are the lengths minus 1.
+</ul><p><hr> <a name=ds_easy_alloc_array_desc></a> array_desc *
+ <b>ds_easy_alloc_array_desc</b><i>    (unsigned int num_dim,
+				      CONST uaddr *lengths,
+				      CONST double *first_arr,
+				      CONST double *last_arr,
+				      CONST double **coordinates,
+				      CONST char **names,
+				      unsigned int num_elements,
+				      CONST unsigned int *data_types,
+				      CONST char **data_names)
+</i><br><p>    This routine will allocate an array descriptor and its
+    associated packet descriptor.
+<p><b>Parameters:</b><ul><li><i>num_dim :</i> 
+    The number of dimensions in the array.
+<br><li><i>lengths :</i> 
+    An array of lengths for each dimension (axis).
+<br><li><i>first_arr :</i> 
+    An array of first co-ordinate values for each dimension.
+<br><li><i>last_arr :</i> 
+    An array of last co-ordinate values for each dimension.
+    If either of these pointers is NULL, the range of the co-ordinates will be
+    the lengths of the dimensions minus 1. If one of the pointers is NULL, the
+    other array is used to tie one end of the range for each dimension. If both
+    pointers are NULL,the minima are 0.0 and the maxima are the lengths minus 1
+<br><li><i>coordinates :</i> 
+    The array of co-ordinate array pointers. If this is NULL,
+    all dimensions are assumed to be regularly spaced. If any co-ordinate array
+    pointer is NULL, the corresponding dimension is assumed to be regularly
+    spaced.
+<br><li><i>names :</i> 
+    An array of string pointers to the names of each dimension. If this
+    is NULL, the names "Axis 0", "Axis 1", ...etc will be used. Note: the
+    character arrays are copied, so the arrays of characters and the array of
+    pointers may be subsequently deallocated.
+<br><li><i>num_elements :</i> 
+    The number of atomic elements in the array packet.
+<br><li><i>data_types :</i> 
+    The types of the elements in the array. See
+    <a href=ds.html#DS_KARMA_DATA_TYPES>DS_KARMA_DATA_TYPES</a> for a list of legal values.
+<br><li><i>data_names :</i> 
+    The array of element names. The name strings are copied, thus
+    the memory used for the input strings may be subsequently deallocated.
+<br></ul><b>Returns:</b>     An array descriptor pointer on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_alloc_contiguous_list></a> flag
+ <b>ds_alloc_contiguous_list</b><i>    (CONST packet_desc *list_desc,
+			       list_header *list_head, unsigned int length,
+			       flag clear, flag array_alloc)
+</i><br><p>    This routine will allocate a contiguous block of linked list
+    entry data  packets. No <em>list_entry</em> structures are allocated, they are
+    implied. The routine will recursively allocate memory for sub arrays and
+    linked lists. The list must be empty.
+    The <em>contiguous_length</em> value in the list header will be set to the list
+    length.
+<p><b>Parameters:</b><ul><li><i>list_desc :</i> 
+    The packet descriptor for the linked list.
+<br><li><i>list_head :</i> 
+    The list header.
+<br><li><i>length :</i> 
+    The number of list entries to allocate.
+<br><li><i>clear :</i> 
+    If TRUE, then the routine will initialise (set to zero) all the
+    data.
+<br><li><i>array_alloc :</i> 
+    If FALSE, and an array is an atomic array, then instances of
+    that array will NOT be allocated, and a NULL pointer will be written into
+    the parent element, else the array will be allocated.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     On failure, the list header is deallocated.
+</ul><p><hr> <a name=ds_find_1D_extremes></a> flag
+ <b>ds_find_1D_extremes</b><i>    (CONST char *data,
+			  unsigned int num_values, uaddr *offsets,
+			  unsigned int elem_type, unsigned int conv_type,
+			  double *min, double *max)
+</i><br><p>    This routine will find the extremes (minimum and maximum) of a
+    single trace (element versus a dimension).
+<p><b>Parameters:</b><ul><li><i>data :</i> 
+    A pointer to the data. Misaligned data will cause bus errors on some
+    platforms.
+<br><li><i>num_values :</i> 
+    The number of values to process.
+<br><li><i>offsets :</i> 
+    The address offsets for data along the dimension.
+<br><li><i>elem_type :</i> 
+    The type of the element.
+<br><li><i>conv_type :</i> 
+    The type of conversion to use for complex numbers.
+<br><li><i>min :</i> 
+    The minimum value will be written here.
+<br><li><i>max :</i> 
+    The maximum value will be written here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Safe.
+<br><b>Note:</b><ul> <li>     The minimum and maximum value must be initialised to a very large
+    positive number and a very large negative number, respectively, outside of
+    the routine. In other words, the routine does not initialise these values
+    prior to testing for the minimum and maximum.
+</ul><p><hr> <a name=ds_find_2D_extremes></a> flag
+ <b>ds_find_2D_extremes</b><i>    (CONST char *data,
+			  unsigned int length1, uaddr *offsets1,
+			  unsigned int length2, uaddr *offsets2,
+			  unsigned int elem_type, unsigned int conv_type,
+			  double *min, double *max)
+</i><br><p>    This routine will find the extremes (minimum and maximum) of a
+    single plane (element versus two dimensions).
+<p><b>Parameters:</b><ul><li><i>data :</i> 
+    A pointer to the data.
+<br><li><i>length1 :</i> 
+    The number of values to process along one of the dimensions. For
+    efficiency this should be the more significant dimension.
+<br><li><i>offsets1 :</i> 
+    The address offsets for data along the corresponding dimension.
+<br><li><i>length2 :</i> 
+    The number of values to process along the other of the dimensions
+<br><li><i>offsets2 :</i> 
+    The address offsets for data along the corresponding dimension.
+<br><li><i>elem_type :</i> 
+    The type of the element.
+<br><li><i>conv_type :</i> 
+    The type of conversion to use for complex numbers.
+<br><li><i>min :</i> 
+    The minimum value will be written here.
+<br><li><i>max :</i> 
+    The maximum value will be written here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Safe.
+<br><b>Note:</b><ul> <li>     The minimum and maximum value must be initialised to a very large
+    positive number and a very large negative number, respectively, outside of
+    the routine. In other words, the routine does not initialise these values
+    prior to testing for the minimum and maximum.
+</ul><p><hr> <a name=ds_find_contiguous_extremes></a> flag
+ <b>ds_find_contiguous_extremes</b><i>    (CONST char *data, unsigned int num_values,
+				  uaddr stride, unsigned int elem_type,
+				  unsigned int conv_type,
+				  double *min, double *max)
+</i><br><p>    This routine will find the extremes (minimum and maximum) of a
+    single trace (element versus a dimension).
+<p><b>Parameters:</b><ul><li><i>data :</i> 
+    A pointer to the data. Misaligned data will cause bus errors on some
+    platforms.
+<br><li><i>num_values :</i> 
+    The number of values to process.
+<br><li><i>stride :</i> 
+    The stride (in bytes) between consecutive data values.
+<br><li><i>elem_type :</i> 
+    The type of the element.
+<br><li><i>conv_type :</i> 
+    The type of conversion to use for complex numbers.
+<br><li><i>min :</i> 
+    The minimum value will be written here.
+<br><li><i>max :</i> 
+    The maximum value will be written here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Safe.
+<br><b>Note:</b><ul> <li>     The minimum and maximum value must be initialised to a very large
+    positive number and a very large negative number, respectively, outside of
+    the routine. In other words, the routine does not initialise these values
+    prior to testing for the minimum and maximum.
+</ul><p><hr> <a name=ds_find_single_histogram></a> flag
+ <b>ds_find_single_histogram</b><i>    (CONST char *data, unsigned int elem_type,
+			       unsigned int conv_type, unsigned int num_values,
+			       CONST uaddr *offsets, unsigned int stride,
+			       double min, double max, unsigned long num_bins,
+			       unsigned long *histogram_array,
+			       unsigned long *histogram_peak,
+			       unsigned long *histogram_mode)
+</i><br><p>    This routine will find the histogram of a single trace (element
+    versus a dimension). This routine may be called repeatedly with multiple
+    traces in order to build an aggregate histogram of all traces.
+<p><b>Parameters:</b><ul><li><i>data :</i> 
+    A pointer to the data. Misaligned data will cause bus errors on some
+    platforms.
+<br><li><i>elem_type :</i> 
+    The type of the element.
+<br><li><i>conv_type :</i> 
+    The type of conversion to use for complex numbers.
+    Legal value for this include:
+    CONV_CtoR_REAL        CONV_CtoR_IMAG
+    CONV_CtoR_ABS         CONV_CtoR_SQUARE_ABS
+    CONV_CtoR_PHASE       CONV_CtoR_CONT_PHASE
+<br><li><i>num_values :</i> 
+    The length of the dimension.
+<br><li><i>offsets :</i> 
+    The address offsets for data along the dimension.
+<br><li><i>stride :</i> 
+    If the value of  offsets  is NULL, this gives the stride (in
+    bytes) between consecutive values along the dimension.
+<br><li><i>min :</i> 
+    Data values below this will be ignored.
+<br><li><i>max :</i> 
+    Data values above this will be ignored.
+<br><li><i>num_bins :</i> 
+    The number of histogram bins.
+<br><li><i>histogram_array :</i> 
+    The histogram array. The values in this array are updated
+    and hence must be initialised externally.
+<br><li><i>histogram_peak :</i> 
+    The peak of the histogram is written here. This value is
+    updated, and hence must be externally initialised to 0.
+<br><li><i>histogram_mode :</i> 
+    The mode of the histogram (index value of the peak) will
+    be written here. This value is updated, and hence must be externally
+    initialised to 0.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Safe.
+<br><p><hr> <a name=ds_complex_to_real_1D></a> void
+ <b>ds_complex_to_real_1D</b><i>    (double *out, unsigned int out_stride,
+			    double *inp, unsigned int num_values,
+			    unsigned int conv_type)
+</i><br><p>    Convert a 1 dimensional array of complex values to real values.
+<p><b>Parameters:</b><ul><li><i>out :</i> 
+    A pointer to the output array.
+<br><li><i>out_stride :</i> 
+    The stride (in doubles) of the output array.
+<br><li><i>inp :</i> 
+    The array of input complex values.
+<br><li><i>num_values :</i> 
+    The number of values to convert.
+<br><li><i>conv_type :</i> 
+    The conversion type to apply.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Safe.
+<br><p><hr> <a name=ds_put_unique_named_value></a> flag
+ <b>ds_put_unique_named_value</b><i>    (packet_desc *pack_desc, char **packet,
+				CONST char *name, unsigned int type,
+				double value[2], flag update)
+</i><br><p>    Add a unique named value to a Karma general data structure.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The packet descriptor to add the name to. This descriptor will
+    be modified.
+<br><li><i>packet :</i> 
+    The pointer to the unique packet. Note that the existing packet
+    data is copied to a new packet, and a pointer to this packet is written
+    back here.
+<br><li><i>name :</i> 
+    The name of the element.
+<br><li><i>type :</i> 
+    The type of the data which is to be written.
+<br><li><i>value :</i> 
+    The value of the data.
+<br><li><i>update :</i> 
+    If TRUE, then the routine will allow an existing named value to be
+    updated, otherwise the routine will fail if an update (rather than a
+    create) is attempted. The <em>type</em> parameter is ignored for  updates (i.e.
+    you can't change the type).
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_put_unique_named_string></a> flag
+ <b>ds_put_unique_named_string</b><i>    (packet_desc *pack_desc, char **packet,
+				 CONST char *name, CONST char *string,
+				 flag update)
+</i><br><p>    Add a unique named string to a Karma general data structure.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The packet descriptor to add the name to. This descriptor will
+    be modified.
+<br><li><i>packet :</i> 
+    The pointer to the unique packet. Note that the existing packet
+    data is copied to a new packet, and a pointer to this packet is written
+    back here.
+<br><li><i>name :</i> 
+    The name of the element.
+<br><li><i>string :</i> 
+    The string value.
+<br><li><i>update :</i> 
+    If TRUE, then the routine will allow an existing named string to
+    be updated, otherwise the routine will fail if an update (rather than a
+    create) is attempted.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_unique_named_value></a> flag
+ <b>ds_get_unique_named_value</b><i>    (CONST packet_desc *pack_desc,
+				CONST char *packet,
+				CONST char *name, unsigned int *type,
+				double value[2])
+</i><br><p>    Get a unique named value from a Karma general data structure.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    A pointer to the packet descriptor.
+<br><li><i>packet :</i> 
+    A pointer to the packet containing the named value.
+<br><li><i>name :</i> 
+    The name of the value.
+<br><li><i>type :</i> 
+    The type of the element found will be written here. If this is NULL,
+    nothing is written here.
+<br><li><i>value :</i> 
+    The value of the element data will be written here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_unique_named_string></a> char *
+ <b>ds_get_unique_named_string</b><i>    (CONST packet_desc *pack_desc,
+				  CONST char *packet, CONST char *name)
+</i><br><p>    Get a unique named string from a Karma general data structure.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The packet descriptor.
+<br><li><i>packet :</i> 
+    The packet containing the named string.
+<br><li><i>name :</i> 
+    The element name.
+<br></ul><b>Returns:</b>     A pointer to a dynamically allocated copy of the string on
+    success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_cmap_alloc_colourmap></a> unsigned short *
+ <b>ds_cmap_alloc_colourmap</b><i>    (unsigned int size,
+					 multi_array **multi_desc,
+					 packet_desc **pack_desc,char **packet)
+</i><br><p>    This routine will allocate a colourmap which comforms to the
+    Karma general data structure format. Note that this does NOT allocate a
+    colourmap on an X Windows server. This routine is intended to enable an
+    application to write colourmap data to a file, maintaining a flexible
+    format.
+    The general data structure that is created will contain a 1 dimensional
+    array with dimension name "Colour Number" and length equal to  size  .
+    The array will contain packets with 3 elements, each of type  K_USHORT  and
+    with the names "Red Intensity", "Green Intensity" and "Blue Intensity", in
+    that order. For compatibility with the X Window system, it is recommended
+    that these values lie in the range 0 to 65535.
+<p><b>Parameters:</b><ul><li><i>size :</i> 
+    The size (number of colours) of the colourmap to allocate.
+<br><li><i>multi_desc :</i> 
+    The pointer to the multi array header which is allocated will
+    be written here. If this is NULL, then no multi array header is allocated
+    and nothing is written here.
+<br><li><i>pack_desc :</i> 
+    The pointer to the top level packet descriptor of the general
+    data structure which contains the colourmap will be written here. If this
+    is NULL, nothing is written here. Note, however, that the top level packet
+    descriptor is nevertheless allocated.
+<br><li><i>packet :</i> 
+    The pointer to the top level packet of the general data structure
+    which contains the colourmap will be written here. If this is NULL, nothing
+    is written here. Note, however, that the top level packet is nevertheless
+    allocated.
+<br></ul><b>Returns:</b>     A pointer to the allocated colourmap on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_cmap_find_colourmap></a> unsigned short *
+ <b>ds_cmap_find_colourmap</b><i>    (packet_desc *top_pack_desc,
+					char *top_packet, unsigned int *size,
+					flag *reordering_done,
+					CONST char *restr_names[],
+					double *restr_values,
+					unsigned int num_restr)
+</i><br><p>    Search a Karma data structure for an instance of a colourmap.
+<p><b>Parameters:</b><ul><li><i>top_pack_desc :</i> 
+    The top level packet descriptor.
+<br><li><i>top_packet :</i> 
+    The top level packet data.
+<br><li><i>size :</i> 
+    The size of the colourmap (number of colours) in the colourmap will
+    be here.
+<br><li><i>reordering_done :</i> 
+    The routine is tolerant of incorrect ordering of the
+    intensity elements. If they are ordered incorrectly, the data will be
+    re-ordered, and the value TRUE will be written here. If the data is not
+    re-ordered, the value FALSE is written here. If this is NULL, then nothing
+    is written here.
+<br><li><i>restr_names :</i> 
+    The array of pointers to restrictions names.
+<br><li><i>restr_values :</i> 
+    The array of restriction values.
+<br><li><i>num_restr :</i> 
+    The number of restriction values.
+<br></ul><b>Returns:</b>     A pointer to a colourmap on success, else NULL. The returned
+    colourmap will contain <em>*size</em> contiguous packets which each contain
+    first a red intensity, then a green and then a blue.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     NULL pointers may be passed for <em>restr_names</em> and <em>restr_values</em>
+    and <em>num_restr</em> set to zero. In this case, the routine will only return a
+    colourmap if there is only one instance of a colourmap in the entire data
+    structure.
+</ul><p><hr> <a name=ds_cmap_get_all_colourmaps></a> unsigned int *
+ <b>ds_cmap_get_all_colourmaps</b><i>    (multi_array *multi_desc,
+					  unsigned int *num_found,
+					  flag *reordering_done,
+					  CONST char *restr_names[],
+					  double *restr_values,
+					  unsigned int num_restr)
+</i><br><p>    This routine will search an array of Karma general data
+    structures for instances of a colourmap.
+<p><b>Parameters:</b><ul><li><i>multi_desc :</i> 
+    The multi_array descriptor.
+<br><li><i>num_found :</i> 
+    The number of general data structures which contain a
+    colourmap will be written here.
+<br><li><i>reordering_done :</i> 
+    The routine is tolerant of incorrect ordering of the
+    intensity elements. If they are ordered incorrectly, the data will be
+    re-ordered, and the value TRUE will be written here, else the value FALSE
+    will be written here. If this is NULL, nothing is written here.
+<br><li><i>restr_names :</i> 
+    The array of pointers to restrictions names.
+<br><li><i>restr_values :</i> 
+    The array of restriction values.
+<br><li><i>num_restr :</i> 
+    The number of restriction values.
+<br></ul><b>Returns:</b>     A pointer to an array of general data structure indices on
+    success, else NULL. This array is dynamically allocated, and should be
+    freed when no longer needed.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     NULL pointers may be passed for <em>restr_names</em> and <em>restr_values</em>
+    and <em>num_restr</em> set to zero. In this case, the routine will only return a
+    colourmap if there is only one instance of a colourmap in the entire data
+    structure.
+</ul><p><hr> <a name=ds_copy_packet></a> flag
+ <b>ds_copy_packet</b><i>    (packet_desc *pack_desc, char *dest_packet,
+		     char *source_packet)
+</i><br><p>    Copy a packet.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The packet descriptor.
+<br><li><i>dest_packet :</i> 
+    The destination packet data will be written here.
+<br><li><i>source_packet :</i> 
+    The source packet data.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The routine will copy only the data and pointers to arrays and
+    linked lists in the packet, not the arrays and linked lists which may be
+    pointed to.
+</ul><p><hr> <a name=ds_copy_desc_until></a> packet_desc *
+ <b>ds_copy_desc_until</b><i>    (packet_desc *inp_desc, CONST char *name)
+</i><br><p>    This routine will recursively copy a packet descriptor until
+    an element with a specified name is found, at which time the copying
+    process stops. The routine will trap such errors as multiple occurences of
+    the element name.
+    This routine is useful to duplicate a data structure above a certain
+    element or dimension. This simplifies the processing of data which is
+    sitting near the bottom of a complex data structure.
+    If an array or linked list pointer is one of the elements, and it is not
+    successfully copied, the routine will set the output element type to NONE
+    and the descriptor pointer for that element will be NULL.
+<p><b>Parameters:</b><ul><li><i>inp_desc :</i> 
+    The input packet descriptor.
+<br><li><i>name :</i> 
+    The name of the element at which the copying process should stop.
+    If this is NULL, then the entire data structure descriptor is copied.
+<br></ul><b>Returns:</b>     A pointer to the new packet descriptor on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_copy_array_desc_until></a> array_desc *
+ <b>ds_copy_array_desc_until</b><i>    (array_desc *inp_desc, CONST char *name)
+</i><br><p>    This routine will make a copy of an array descriptor and all
+    sub-descriptors until a specified name is encountered. All tiling
+    information is copied, but address offset arrays are NOT copied.
+<p><b>Parameters:</b><ul><li><i>inp_desc :</i> 
+    The input array descriptor.
+<br><li><i>name :</i> 
+    The name specifying where the copying should stop. If this is NULL,
+    the entire data structure descriptor is copied.
+<br></ul><b>Returns:</b>     A pointer to the array descriptor created on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_copy_dim_desc></a> dim_desc *
+ <b>ds_copy_dim_desc</b><i>    (dim_desc *inp_desc)
+</i><br><p>    Copy a dimension descriptor.
+<p><b>Parameters:</b><ul><li><i>inp_desc :</i> 
+    The input 
+<br></ul><b>Returns:</b>     A pointer to a freshly allocated dimension descriptor on success,
+    else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_copy_data></a> flag
+ <b>ds_copy_data</b><i>    (packet_desc *inp_desc, char *inp_data,
+		   packet_desc *out_desc, char *out_data)
+</i><br><p>    This routine will copy data from one data structure to another,
+    provided the two data structures have the same format. If there are any
+    variations in the two formats, the copying process is stopped at that level
+    If one or more elements are different, they are not copied, however, the
+    other elements are copied. This also applies to array and linked list
+    pointer elements. This condition only holds for packets with the same
+    number of elements, otherwise no elements are copied. The ordering of
+    elements must also be the same.
+    The names of elements and dimensions must be the same, as well as the
+    data types. For information on array and linked list copying, see
+    The routine recursively copies data in arrays and linked lists.
+    <a href=ds.html#ds_copy_array>ds_copy_array</a> and <a href=ds.html#ds_copy_list>ds_copy_list</a>.
+<p><b>Parameters:</b><ul><li><i>inp_desc :</i> 
+    The input data structure descriptor.
+<br><li><i>inp_data :</i> 
+    The input data.
+<br><li><i>out_desc :</i> 
+    The output data structure descriptor.
+<br><li><i>out_data :</i> 
+    The output data memory allocation.
+<br></ul><b>Returns:</b>     TRUE if the two packet descriptors are identical, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_copy_array></a> flag
+ <b>ds_copy_array</b><i>    (array_desc *inp_desc, char *inp_data,
+		    array_desc *out_desc, char *out_data)
+</i><br><p>    This routine will copy data from one array to another. The two
+    arrays must be the same, else the copying process will stop.
+    The routine recursively copies data in the array packets.
+    For information on the copying rules when the two list descriptors differ,
+    see the routine <a href=ds.html#ds_copy_data>ds_copy_data</a>.
+<p><b>Parameters:</b><ul><li><i>inp_desc :</i> 
+    The input array descriptor.
+<br><li><i>inp_data :</i> 
+    The input array data.
+<br><li><i>out_desc :</i> 
+    The output array descriptor.
+<br><li><i>out_data :</i> 
+    The output data memory allocation.
+<br></ul><b>Returns:</b>     TRUE if the two array descriptors are identical, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_copy_list></a> flag
+ <b>ds_copy_list</b><i>    (packet_desc *inp_desc, list_header *inp_head,
+		   packet_desc *out_desc, list_header *out_head)
+</i><br><p>    This routine will copy a linked list to another.
+    The routine will recursively copy sub arrays and linked lists.
+    The linked list entries and data fields will be allocated. The entries
+    will be contiguous in memory.
+    For information on the copying rules when the two list descriptors differ,
+    see the routine <a href=ds.html#ds_copy_data>ds_copy_data</a>.
+<p><b>Parameters:</b><ul><li><i>inp_desc :</i> 
+    The input data structure descriptor.
+<br><li><i>inp_head :</i> 
+    The input linked list header.
+<br><li><i>out_desc :</i> 
+    The output data structure descriptor.
+<br><li><i>out_head :</i> 
+    The output linked list header.
+<br></ul><b>Returns:</b>     TRUE if the two packet descriptors are identical, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_select_arrays></a> multi_array *
+ <b>ds_select_arrays</b><i>    (char **array_list, unsigned int num_in_list,
+			       multi_array *multi_desc, flag save_unproc,
+			       unsigned int **index_list)
+</i><br><p>    This routine will create a multi array descriptor which contains
+    a selected number of array names.
+<p><b>Parameters:</b><ul><li><i>array_list :</i> 
+    The array of array names that are to be copied.
+<br><li><i>num_in_list :</i> 
+    The number of array names in <em>array_list</em>. If this is 0,
+    all array names are copied.
+<br><li><i>multi_desc :</i> 
+    The input data structure.
+<br><li><i>save_unproc :</i> 
+    If TRUE, all array names are copied.
+<br><li><i>index_list :</i> 
+    An array of unsigned ints will be allocated by the routine and
+    the pointer written here. The length of this array is equal to the number
+    of arrays in the input multi_array descriptor. This array contains the
+    index of the array name in the input multi array descriptor for each array
+    name in the output multi_array descriptor. If there is no name match for an
+    array, the index value is equal to the number of arrays in the input
+    multi_array descriptor.
+<br></ul><b>Returns:</b>     A pointer to the created multi array descriptor on success,
+    else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_dealloc_multi></a> void
+ <b>ds_dealloc_multi</b><i>    (multi_array *multi_desc)
+</i><br><p>    This routine will deallocate all memory associated with a
+    multi_array header. This includes all the descriptors and data arrays and
+    lists in the hierarchy below. The routine will only deallocate the data
+    structure when it's attachment count is zero, else it decrements the
+    attachment count and returns. The routine is quite robust, deallocating in
+    the correct order and cleanly bypassing missing sections in the hierarchy.
+<p><b>Parameters:</b><ul><li><i>multi_desc :</i> 
+    The descriptor.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_dealloc_packet></a> void
+ <b>ds_dealloc_packet</b><i>    (packet_desc *pack_desc, char *data)
+</i><br><p>    This routine will deallocate all memory associated with a data
+    packet. This includes all the descriptors and data arrays and lists
+    associated with the packet.
+    The routine is quite robust, deallocating in the correct order and cleanly
+    bypassing missing sections in the hierarchy.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The descriptor for the packet.
+<br><li><i>data :</i> 
+    The data for the packet.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_dealloc_data></a> void
+ <b>ds_dealloc_data</b><i>    (packet_desc *pack_desc, char *packet)
+</i><br><p>    This routine will deallocate all memory associated with the
+    storage of data in a packet. Any sub-arrays or linked lists are recursively
+    deallocated.
+    The routine is quite robust, deallocating in the correct order and cleanly
+    bypassing missing sections in the hierarchy.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The descriptor for the packet.
+<br><li><i>data :</i> 
+    The data for the packet.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_dealloc_packet_subdata></a> void
+ <b>ds_dealloc_packet_subdata</b><i>    (CONST packet_desc *pack_desc, char *packet)
+</i><br><p>    This routine will recursively deallocate all memory associated
+    with the storage of sub-arrays or linked lists. The packet itself is not
+    deallocated.
+    The routine is quite robust, deallocating in the correct order and cleanly
+    bypassing missing sections in the hierarchy.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The descriptor for the packet.
+<br><li><i>data :</i> 
+    The data for the packet.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_dealloc_array_desc></a> void
+ <b>ds_dealloc_array_desc</b><i>    (array_desc *arr_desc)
+</i><br><p>    This routine will deallocate all descriptor information
+    associated with a tiled array. This includes all descriptors for sub-arrays
+    and linked lists.
+    The routine is quite robust, deallocating in the correct order and cleanly
+    bypassing missing sections in the hierarchy.
+<p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
+    The array descriptor.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_dealloc_list></a> void
+ <b>ds_dealloc_list</b><i>    (packet_desc *list_desc, list_header *list_head)
+</i><br><p>    This routine will deallocate all memory associated with the
+    storage of data in a linked list.
+    Any sub-arrays or linked lists are recursively deallocated.
+    The routine is quite robust, deallocating in the correct order and cleanly
+    bypassing missing sections in the hierarchy.
+    The list header is also deallocated.
+<p><b>Parameters:</b><ul><li><i>list_desc :</i> 
+    The descriptor for the list.
+<br><li><i>list_head :</i> 
+    The linked list header.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_dealloc_list_entries></a> void
+ <b>ds_dealloc_list_entries</b><i>    (CONST packet_desc *list_desc,
+			      list_header *list_head)
+</i><br><p>    This routine will deallocate all memory associated with the
+    storage of data in a linked list.
+    Any sub-arrays or linked lists are recursively deallocated.
+    The routine is quite robust, deallocating in the correct order and cleanly
+    bypassing missing sections in the hierarchy.
+    The list header is NOT deallocated.
+<p><b>Parameters:</b><ul><li><i>list_desc :</i> 
+    The descriptor for the list.
+<br><li><i>list_head :</i> 
+    The linked list header.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_dealloc2_list></a> void
+ <b>ds_dealloc2_list</b><i>    (list_header *list_head)
+</i><br><p>    This routine will deallocate the data and the list entries in a
+    linked list. This routine does not recursively deallocate sub-arrays or
+    linked lists: it will only remove the list. The list header is NOT
+    deallocated.
+<p><b>Parameters:</b><ul><li><i>list_head :</i> 
+    The list header.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_dealloc_array></a> void
+ <b>ds_dealloc_array</b><i>    (array_desc *arr_desc, char *arr_element)
+</i><br><p>    This routine will deallocate all memory associated with the
+    storage of data for an array.
+    Any sub-arrays or linked lists are recursively deallocated.
+    The routine is quite robust, deallocating in the correct order and cleanly
+    bypassing missing sections in the hierarchy.
+<p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>arr_element :</i> 
+    The element containing the array pointer.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_draw_ellipse></a> flag
+ <b>ds_draw_ellipse</b><i>    (char *array, unsigned int elem_type,
+		      dim_desc *abs_dim_desc, unsigned int abs_stride,
+		      dim_desc *ord_dim_desc, unsigned int ord_stride,
+		      double centre_abs, double centre_ord,
+		      double radius_abs, double radius_ord,
+		      double value[2])
+</i><br><p>    Draw an ellipse into a 2 dimensional Karma array.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The start of the array (plane) data.
+<br><li><i>elem_type :</i> 
+    The type of the element to draw.
+<br><li><i>abs_dim_desc :</i> 
+    The abscissa dimension descriptor.
+<br><li><i>abs_stride :</i> 
+    The stride of abscissa co-ordinates in memory (in bytes).
+<br><li><i>ord_dim_desc :</i> 
+    The ordinate dimension descriptor.
+<br><li><i>ord_stride :</i> 
+    The stride of ordinate co-ordinates in memory (in bytes).
+<br><li><i>centre_abs :</i> 
+    The centre of the ellipse in abscissa real-world co-ordinates.
+<br><li><i>centre_ord :</i> 
+    The centre of the ellipse in ordinate real-world co-ordinates.
+<br><li><i>radius_abs :</i> 
+    The abscissa radius. This must be greater than 0.0.
+<br><li><i>radius_ord :</i> 
+    The ordinate radius. This must be greater than 0.0.
+<br><li><i>value :</i> 
+    The value to write the ellipse into the array.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_draw_polygon></a> flag
+ <b>ds_draw_polygon</b><i>    (char *array, unsigned int elem_type,
+		      dim_desc *abs_dim_desc, unsigned int abs_stride,
+		      dim_desc *ord_dim_desc, unsigned int ord_stride,
+		      edit_coord *coords, unsigned int num_points,
+		      double value[2])
+</i><br><p>    This routine will draw a concave non-simple polygon into a 2
+    dimensional Karma array. The polygon can be clockwise or anti-clockwise.
+    Inside-outside test done by Jordan's rule: a point is considered inside if
+    an emanating ray intersects the polygon an odd number of times.
+    The algorithm is modified from the  Concave Polygon Scan Conversion
+    by Paul Heckbert from "Graphics Gems", Academic Press, 1990.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The start of the array (plane) data.
+<br><li><i>elem_type :</i> 
+    The type of the element to draw.
+<br><li><i>abs_dim_desc :</i> 
+    The abscissa dimension descriptor.
+<br><li><i>abs_stride :</i> 
+    The stride of abscissa co-ordinates in memory (in bytes).
+<br><li><i>ord_dim_desc :</i> 
+    The ordinate dimension descriptor.
+<br><li><i>ord_stride :</i> 
+    The stride of ordinate co-ordinates in memory (in bytes).
+<br><li><i>coords :</i> 
+    The co-ordinate array for the vertices. The co-ordinates must be
+    stored in clockwise rotation order (any point to start).
+<br><li><i>num_points :</i> 
+    The number of vertices.
+<br><li><i>value :</i> 
+    The value to write the polygon into the array.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_convert_atomic></a> double
+ <b>ds_convert_atomic</b><i>    (CONST char *datum, unsigned int datum_type,
+			  double *real_out, double *imag_out)
+</i><br><p>    Convert an atomic datum to a double precision value.
+<p><b>Parameters:</b><ul><li><i>datum :</i> 
+    The datum to be converted.
+<br><li><i>datum_type :</i> 
+    The type of the datum. See <a href=ds.html#DS_KARMA_DATA_TYPES>DS_KARMA_DATA_TYPES</a> for a list
+    of legal values. The following data types are not convertible, and the
+    routine will return the value TOOBIG:  NONE, K_ARRAY, LISTP, MULTI_ARRAY.
+<br><li><i>real_out :</i> 
+    The real component of the data is written here. If this is NULL,
+    nothing is written here. This must lie on a <em>double</em> boundary.
+<br><li><i>imag_out :</i> 
+    The imaginary component of the data is written here. If this is
+    NULL, nothing is written here. This must lie on a <em>double</em> boundary. For
+    a real value, 0.0 is written.
+<br></ul><b>Returns:</b>     The absolute magnitude of the converted value on success,
+    else TOOBIG.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_coordinate></a> double
+ <b>ds_get_coordinate</b><i>    (dim_desc *dimension, unsigned long coord_num)
+</i><br><p>    Get a co-ordinate along a dimension.
+<p><b>Parameters:</b><ul><li><i>dimension :</i> 
+    The dimension descriptor.
+<br><li><i>coord_num :</i> 
+    The co-ordinate index.
+<br></ul><b>Returns:</b>     The co-ordinate on success, else TOOBIG.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_element_offset></a> unsigned int
+ <b>ds_get_element_offset</b><i>    (CONST packet_desc *pack_desc,
+				    unsigned int elem_num)
+</i><br><p>    Calculate the offset of the start of a data element in a packet.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The descriptor for the data packet.
+<br><li><i>elem_num :</i> 
+    The number of the element.
+<br></ul><b>Returns:</b>     The byte offset of the element in the packet on success, else the
+    length of the packet is returned.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_packet_size></a> unsigned int
+ <b>ds_get_packet_size</b><i>    (CONST packet_desc *pack_desc)
+</i><br><p>    Calculate size in bytes of a packet.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The packet descriptor.
+<br></ul><b>Returns:</b>     The size in bytes.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_array_size></a> unsigned long
+ <b>ds_get_array_size</b><i>    (CONST array_desc *arr_desc)
+</i><br><p>    Calculate the number of co-ordinate points in an array.
+<p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
+    The array descriptor.
+<br></ul><b>Returns:</b>     The size of the array (in co-ordinate points).
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_packet_all_data></a> flag
+ <b>ds_packet_all_data</b><i>    (CONST packet_desc *pack_desc)
+</i><br><p>    This routine will determine if all the elements in a packet are
+    atomic (i.e. no sub-arrays, linked lists or strings). All element types in
+    the packet descriptor must be legal, else the routine will print an error
+    message and abort processing.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The packet descriptor.
+<br></ul><b>Returns:</b>     TRUE if the data elements are all atomic, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_element_is_atomic></a> flag
+ <b>ds_element_is_atomic</b><i>    (unsigned int element_type)
+</i><br><p>    This routine will determine if an element is atomic (i.e. not a
+    sub-array, linked list or string). The element type must be legal, else the
+    routine will print an error message and abort processing.
+<p><b>Parameters:</b><ul><li><i>element_type :</i> 
+    The type of the element.
+<br></ul><b>Returns:</b>     TRUE if the element is atomic, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_element_is_named></a> flag
+ <b>ds_element_is_named</b><i>    (unsigned int element_type)
+</i><br><p>    This routine will determine if an element is a named data type
+    (i.e. not a sub-array or linked list). The element type must be legal, else
+    the routine will print an error message and abort processing.
+<p><b>Parameters:</b><ul><li><i>element_type :</i> 
+    The type of the element.
+<br></ul><b>Returns:</b>     TRUE if the element is a named type, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_element_is_legal></a> flag
+ <b>ds_element_is_legal</b><i>    (unsigned int element_type)
+</i><br><p>    Test if an element is legal.
+<p><b>Parameters:</b><ul><li><i>element_type :</i> 
+    The type of the element.
+<br></ul><b>Returns:</b>     TRUE if the element type is legal, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_identify_name></a> unsigned int
+ <b>ds_identify_name</b><i>    (multi_array *multi_desc, CONST char *name,
+			       char **encls_desc, unsigned int *index)
+</i><br><p>    Search a data structure for a name.
+<p><b>Parameters:</b><ul><li><i>multi_desc :</i> 
+    The multi_array descriptor.
+<br><li><i>name :</i> 
+    The name of the item to search for.
+<br><li><i>encls_desc :</i> 
+    A pointer to the enclosing descriptor of the item is written
+    here. If this is NULL, nothing is written here.
+<br><li><i>index :</i> 
+    The index (general data structure number, dimension number or
+    element number) of the item in the enclosing structure will be written
+    here. If this is NULL, nothing is written here.
+<br></ul><b>Returns:</b>     A code based on the type of the item with the same name. See
+    <a href=ds.html#DS_IDENT_TABLE>DS_IDENT_TABLE</a> for a list of possible values.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_f_array_name></a> unsigned int
+ <b>ds_f_array_name</b><i>    (multi_array *multi_desc, CONST char *name,
+			      char **encls_desc, unsigned int *index)
+</i><br><p>    This routine will search a multi array general data structure
+    header for an occurrence of an array name.
+<p><b>Parameters:</b><ul><li><i>multi_desc :</i> 
+    The multi_array data structure.
+<br><li><i>name :</i> 
+    The array name.
+<br><li><i>encls_desc :</i> 
+    If the array name is found, the pointer to the multi array
+    header will be written here. If this is NULL, nothing is written here.
+<br><li><i>index :</i> 
+    The index number of the general data structure with will be written
+    here. If this is NULL, nothing is written here.
+<br></ul><b>Returns:</b>     A code based on the number of matches found. See
+    <a href=ds.html#DS_IDENT_TABLE>DS_IDENT_TABLE</a> for a list of possible values.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The routine will not search the packet descriptors for name matches.
+</ul><p><hr> <a name=ds_f_name_in_packet></a> unsigned int
+ <b>ds_f_name_in_packet</b><i>    (CONST packet_desc *pack_desc,
+				  CONST char *name,
+				  char **encls_desc, unsigned int *index)
+</i><br><p>    Recursively search for named item under a packet.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The packet descriptor.
+<br><li><i>name :</i> 
+    The name of the item to search form. If NULL, then the routine will
+    not find anything.
+<br><li><i>encls_desc :</i> 
+    The pointer to the enclosing structure of the named item will
+    be written here. If this is NULL, nothing is written here.
+<br><li><i>index :</i> 
+    The index (dimension number or element number) of the item will be
+    written here. If this is NULL, nothing is written here.
+<br></ul><b>Returns:</b>     A code based on the type of the item with the same name. See
+    <a href=ds.html#DS_IDENT_TABLE>DS_IDENT_TABLE</a> for a list of possible values.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_f_name_in_array></a> unsigned int
+ <b>ds_f_name_in_array</b><i>    (array_desc *arr_desc, CONST char *name,
+				 char **encls_desc, unsigned int *index)
+</i><br><p>    This routine will search an array descriptor for occurrences of a
+    named item. The routine searches both the dimension names and the packet
+    associated with the array. The routine recursively searches the array
+    packet descriptor.
+<p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>name :</i> 
+    The name of the item to search form. If NULL, then the routine will
+    not find anything.
+<br><li><i>encls_desc :</i> 
+    The pointer to the enclosing structure of the named item will
+    be written here. If this is NULL, nothing is written here.
+<br><li><i>index :</i> 
+    The index (dimension number or element number) of the item will be
+    written here. If this is NULL, nothing is written here.
+<br></ul><b>Returns:</b>     A code based on the type of the item with the same name. See
+    <a href=ds.html#DS_IDENT_TABLE>DS_IDENT_TABLE</a> for a list of possible values.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_f_elem_in_packet></a> unsigned int
+ <b>ds_f_elem_in_packet</b><i>    (CONST packet_desc *pack_desc,
+				  CONST char *name)
+</i><br><p>    Search for a named element in a packet, without recursion.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The packet descriptor.
+<br><li><i>name :</i> 
+    The element name to search for. If this is NULL, then the routine
+    will not find anything.
+<br></ul><b>Returns:</b>     The number of the element in the packet if it was found, else the
+    number of elements in the packet.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     If the specified name occurs twice, the program aborts.
+</ul><p><hr> <a name=ds_find_hole></a> unsigned int
+ <b>ds_find_hole</b><i>    (packet_desc *inp_desc, packet_desc **out_desc,
+			   unsigned int *elem_num)
+</i><br><p>    This routine will recursively search a packet descriptor for a
+    hole (element type NONE or element descriptor pointer NULL).
+<p><b>Parameters:</b><ul><li><i>inp_desc :</i> 
+    The packet descriptor to search.
+<br><li><i>out_desc :</i> 
+    A pointer to the packet descriptor which contains the hole is
+    written here. If this is NULL, nothing is written here.
+<br><li><i>elem_num :</i> 
+    The element number in that packet which corresponds to the hole
+    is written here. If this is NULL, nothing is written here.
+<br></ul><b>Returns:</b>     A code indicating the status of the search. See
+    <a href=ds.html#DS_IDENT_TABLE>DS_IDENT_TABLE</a> for a list of possible values.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_compare_packet_desc></a> flag
+ <b>ds_compare_packet_desc</b><i>    (packet_desc *desc1, packet_desc *desc2,
+			     flag recursive)
+</i><br><p>    Recursively compare two packet descriptors.
+<p><b>Parameters:</b><ul><li><i>desc1 :</i> 
+    One of the packet descriptors.
+<br><li><i>desc2 :</i> 
+    The other packet descriptor.
+<br><li><i>recursive :</i> 
+    If TRUE the routine will perform a recursive comparison of
+    sub-arrays and linked list descriptors.
+<br></ul><b>Returns:</b>     TRUE if the two packet descriptors are equal, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_compare_array_desc></a> flag
+ <b>ds_compare_array_desc</b><i>    (array_desc *desc1, array_desc *desc2,
+			    flag recursive)
+</i><br><p>    Recursively compare two array descriptors.
+<p><b>Parameters:</b><ul><li><i>desc1 :</i> 
+    One of the array descriptors.
+<br><li><i>desc2 :</i> 
+    The other array descriptor.
+<br><li><i>recursive :</i> 
+    If TRUE the routine will perform a recursive comparison of the
+    array packet descriptors.
+<br></ul><b>Returns:</b>     TRUE if the two array descriptors are equal, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_compare_dim_desc></a> flag
+ <b>ds_compare_dim_desc</b><i>    (dim_desc *desc1, dim_desc *desc2)
+</i><br><p>    Compare two dimension descriptors.
+<p><b>Parameters:</b><ul><li><i>desc1 :</i> 
+    One of the dimension descriptors.
+<br><li><i>desc2 :</i> 
+    The other dimension descriptor.
+<br></ul><b>Returns:</b>     TRUE if the two dimension descriptors are equal, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_f_dim_in_array></a> unsigned int
+ <b>ds_f_dim_in_array</b><i>    (array_desc *arr_desc, CONST char *name)
+</i><br><p>    Find dimension in array.
+<p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>name :</i> 
+    The name of the dimension to find. If this is NULL, then the routine
+    will not find anything.
+<br></ul><b>Returns:</b>     The number of the dimension in the array if it was found, else
+    the number of dimensions in the array.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     If the specified name occurs twice, the program aborts.
+</ul><p><hr> <a name=ds_get_array_offset></a> unsigned long
+ <b>ds_get_array_offset</b><i>    (array_desc *arr_desc,
+				   unsigned long *coordinates)
+</i><br><p>    Compute offset of a co-ordinate in an array.
+<p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>coordinates :</i> 
+    The array of dimension co-ordinates which specifies the
+    co-ordinate.
+<br></ul><b>Returns:</b>     The offset of the co-ordinate in packets.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_coord_num></a> unsigned long
+ <b>ds_get_coord_num</b><i>    (dim_desc *dimension, double coordinate,
+				unsigned int bias)
+</i><br><p>    Get index of a co-ordinate along a dimension.
+<p><b>Parameters:</b><ul><li><i>dimension :</i> 
+    The dimension descriptor.
+<br><li><i>coordinate :</i> 
+    The co-ordinate to find.
+<br><li><i>bias :</i> 
+    This specifies which co-ordinate index to pick when the co-ordinate
+    lies between two dimension co-ordinates. See <a href=ds.html#DS_SEARCH_BIASES>DS_SEARCH_BIASES</a> for legal
+    values.
+<br></ul><b>Returns:</b>     The index number of the co-ordinate found.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_element></a> flag
+ <b>ds_get_element</b><i>    (CONST char *datum, unsigned int datum_type,
+		     double value[2], flag *complex)
+</i><br><p>    Convert an atomic datum to a double precision complex value.
+<p><b>Parameters:</b><ul><li><i>datum :</i> 
+    A pointer to the datum to be converted.
+<br><li><i>datum_type :</i> 
+    The type of the datum.
+<br><li><i>value :</i> 
+    The data value will be written here.
+<br><li><i>complex :</i> 
+    If the datum is a complex type, then the value of TRUE is written
+    here, else the value FALSE is written here. If this is NULL, nothing is
+    written here.
+<br></ul><b>Returns:</b>     TRUE if the data was successfully converted, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_elements></a> flag
+ <b>ds_get_elements</b><i>    (CONST char *data, unsigned int data_type,
+		      unsigned int data_stride, double *values, flag *complex,
+		      unsigned int num_values)
+</i><br><p>    Convert atomic data values to double precision complex values.
+<p><b>Parameters:</b><ul><li><i>data :</i> 
+    The data to be converted.
+<br><li><i>data_type :</i> 
+    The type of the data.
+<br><li><i>data_stride :</i> 
+    The stride of data elements in memory (in bytes).
+<br><li><i>values :</i> 
+    The data values will be written here. This MUST lie on a
+    <em>double</em> boundary.
+<br><li><i>complex :</i> 
+    TRUE is written here if the data are a complex type, else FALSE
+    is written here. If this is NULL, nothing is written here.
+<br><li><i>num_values :</i> 
+    The number of data values to convert.
+<br></ul><b>Returns:</b>     TRUE if the data was successfully converted, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_coordinate_array></a> double *
+ <b>ds_get_coordinate_array</b><i>    (dim_desc *dimension)
+</i><br><p>    This routine will get a co-ordinate array for a dimension. If the
+    dimension is regularly spaced, then the co-ordinate array is computed, else
+    if it is irregularly spaced, it is copied from the dimension descriptor.
+<p><b>Parameters:</b><ul><li><i>dimension :</i> 
+    The dimension descriptor.
+<br></ul><b>Returns:</b>     A pointer to a co-ordinate array on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_element_is_complex></a> flag
+ <b>ds_element_is_complex</b><i>    (unsigned int element_type)
+</i><br><p>    Test if the type of an element is complex or not.
+<p><b>Parameters:</b><ul><li><i>element_type :</i> 
+    The element type. If this is not atomic the routine will
+    print an error message and abort processing.
+<br></ul><b>Returns:</b>     TRUE if the element type is complex, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_scattered_elements></a> flag
+ <b>ds_get_scattered_elements</b><i>    (CONST char *data, unsigned int data_type,
+				CONST uaddr *offsets, double *values,
+				flag *complex, unsigned int num_values)
+</i><br><p>    This routine will convert many atomic data to an array of double
+    precision complex values. The data values may be scattered randomly (an
+    offset array is used to index to the actual data).
+<p><b>Parameters:</b><ul><li><i>data :</i> 
+    The data to be converted. Misaligned data will cause bus errors on
+    some platforms.
+<br><li><i>data_type :</i> 
+    The type of the data.
+<br><li><i>offsets :</i> 
+    The offset array (in bytes).
+<br><li><i>values :</i> 
+    The data values will be written here. Must be a  double  boundary.
+<br><li><i>complex :</i> 
+    If the data are a complex type, then the value of TRUE is
+    written here, else the value FALSE is written here. If this is NULL,
+    nothing is written here.
+<br><li><i>num_values :</i> 
+    The number of data values to convert.
+<br></ul><b>Returns:</b>     TRUE if the data was successfully converted, else FALSE.
+<br><b>Multithreading Level:</b> Safe.
+<br><p><hr> <a name=ds_can_transfer_element_as_block></a> flag
+ <b>ds_can_transfer_element_as_block</b><i>    (unsigned int type)
+</i><br><p>    This routine will determine if an element can be transferred as a
+    single block of data (i.e. no conversion between host and network format is
+    needed).
+<p><b>Parameters:</b><ul><li><i>type :</i> 
+    The type of the element.
+<br></ul><b>Returns:</b>     TRUE if the element may be transferred as a single block, else
+    FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_can_transfer_packet_as_block></a> flag
+ <b>ds_can_transfer_packet_as_block</b><i>    (CONST packet_desc *pack_desc)
+</i><br><p>    This routine will determine if a packet can be transferred as a
+    single block of data (i.e. no conversion between host and network format is
+    needed).
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    A pointer to the packet descriptor.
+<br></ul><b>Returns:</b>     TRUE if the packet may be transferred as a single block, else
+    FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_can_swaptransfer_element></a> flag
+ <b>ds_can_swaptransfer_element</b><i>    (unsigned int type)
+</i><br><p>    This routine will determine if an element can be transferred as a
+    single block of data with swapping (i.e. no extra conversion other than
+    byte-swapping between host and network format is needed).
+<p><b>Parameters:</b><ul><li><i>type :</i> 
+    The type of the element.
+<br></ul><b>Returns:</b>     TRUE if the element may be byteswapped and transferred in a
+    single block, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_handle_in_packet></a> unsigned int
+ <b>ds_get_handle_in_packet</b><i>    (packet_desc *pack_desc, char *packet,
+				      CONST char *item_name,
+				      CONST char *restr_names[],
+				      double *restr_values,
+				      unsigned int num_restr,
+				      char **parent_desc, char **parent,
+				      unsigned int *parent_type,
+				      unsigned int *index)
+</i><br><p>    This routine will find a unique occurrence of an object
+    (sub-structure) within a specified general data structure.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The general data structure packet descriptor.
+<br><li><i>packet :</i> 
+    The general data structure packet.
+<br><li><i>item_name :</i> 
+    The name of the object that the handle is desired for.
+<br><li><i>restr_names :</i> 
+    The array of pointers to restrictions names.
+<br><li><i>restr_values :</i> 
+    The array of restriction values.
+<br><li><i>num_restr :</i> 
+    The number of restriction values.
+<br><li><i>parent_desc :</i> 
+    A pointer to the item's parent descriptor is written here.
+<br><li><i>parent :</i> 
+    A pointer to the item's parent is written here.
+<br><li><i>parent_type :</i> 
+    The type of the parent is written here. See
+    <a href=ds.html#DS_HANDLE_TYPES>DS_HANDLE_TYPES</a> for a list of possible values.
+<br><li><i>index :</i> 
+    The index number of the item in its parent descriptor is written
+    here.
+<br></ul><b>Returns:</b>     A code based on the type of the sub-structure found. See
+    <a href=ds.html#DS_IDENT_TABLE>DS_IDENT_TABLE</a> for a list of possible values.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The following rules apply to items:
+    If the item is an atomic element, the parent is a packet.
+    If the item is a dimension, the parent is an array.
+    If the item is an atomic element in a linked list, the parent is a
+    list header.
+</ul><p><hr> <a name=ds_get_handle_in_array></a> unsigned int
+ <b>ds_get_handle_in_array</b><i>    (array_desc *arr_desc, char *array,
+				     CONST char *item_name,
+				     CONST char *restr_names[],
+				     double *restr_values,
+				     unsigned int num_restr,
+				     char **parent_desc, char **parent,
+				     unsigned int *parent_type,
+				     unsigned int *index)
+</i><br><p>    This routine will find a unique occurrence of an object
+    (sub-structure) within a specified multi-dimensional array.
+<p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>array :</i> 
+    The array.
+<br><li><i>item_name :</i> 
+    The name of the object that the handle is desired for.
+<br><li><i>restr_names :</i> 
+    The array of pointers to restrictions names.
+<br><li><i>restr_values :</i> 
+    The array of restriction values.
+<br><li><i>num_restr :</i> 
+    The number of restriction values.
+<br><li><i>parent_desc :</i> 
+    A pointer to the item's parent descriptor is written here.
+<br><li><i>parent :</i> 
+    A pointer to the item's parent is written here.
+<br><li><i>parent_type :</i> 
+    The type of the parent is written here. See
+    <a href=ds.html#DS_HANDLE_TYPES>DS_HANDLE_TYPES</a> for a list of possible values.
+<br><li><i>index :</i> 
+    The index number of the item in its parent descriptor is written
+    here.
+<br></ul><b>Returns:</b>     A code based on the type of the sub-structure found. See
+    <a href=ds.html#DS_IDENT_TABLE>DS_IDENT_TABLE</a> for a list of possible values.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The following rules apply to items:
+    If the item is an atomic element, the parent is a packet.
+    If the item is a dimension, the parent is an array.
+    If the item is an atomic element in a linked list, the parent is a
+    list header.
+</ul><p><hr> <a name=ds_get_handle_in_list></a> unsigned int
+ <b>ds_get_handle_in_list</b><i>    (packet_desc *list_desc,
+				    list_header *list_head,
+				    CONST char *item_name,
+				    CONST char *restr_names[],
+				    double *restr_values,
+				    unsigned int num_restr, char **parent_desc,
+				    char **parent, unsigned int *parent_type,
+				    unsigned int *index)
+</i><br><p>    This routine will find a unique occurrence of an object
+    (sub-structure) within a specified linked list.
+<p><b>Parameters:</b><ul><li><i>list_desc :</i> 
+    The linked list descriptor.
+<br><li><i>list_head :</i> 
+    The list header.
+<br><li><i>item_name :</i> 
+    The name of the object that the handle is desired for.
+<br><li><i>restr_names :</i> 
+    The array of pointers to restrictions names.
+<br><li><i>restr_values :</i> 
+    The array of restriction values.
+<br><li><i>num_restr :</i> 
+    The number of restriction values.
+<br><li><i>parent_desc :</i> 
+    A pointer to the item's parent descriptor is written here.
+<br><li><i>parent :</i> 
+    A pointer to the item's parent is written here.
+<br><li><i>parent_type :</i> 
+    The type of the parent is written here. See
+    <a href=ds.html#DS_HANDLE_TYPES>DS_HANDLE_TYPES</a> for a list of possible values.
+<br><li><i>index :</i> 
+    The index number of the item in its parent descriptor is written
+    here.
+<br></ul><b>Returns:</b>     A code based on the type of the sub-structure found. See
+    <a href=ds.html#DS_IDENT_TABLE>DS_IDENT_TABLE</a> for a list of possible values.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The following rules apply to items:
+    If the item is an atomic element, the parent is a packet.
+    If the item is a dimension, the parent is an array.
+    If the item is an atomic element in a linked list, the parent is a
+    list header.
+</ul><p><hr> <a name=ds_list_insert></a> void
+ <b>ds_list_insert</b><i>    (list_header *list_head, list_entry *new_entry,
+		     list_entry *entry)
+</i><br><p>    Insert an entry into the fragmented section of a linked list.
+<p><b>Parameters:</b><ul><li><i>list_head :</i> 
+    The list header.
+<br><li><i>new_entry :</i> 
+    The entry to be inserted.
+<br><li><i>entry :</i> 
+    The list entry which is to be moved beyond the new entry. If this
+    is NULL, the new entry is inserted at the start of the fragmented section
+    of the list.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     Inserting an entry into a list with no entries in the fragmented
+    section is safe (however, in this case <em>entry</em> must be NULL).
+</ul><p><hr> <a name=ds_list_append></a> void
+ <b>ds_list_append</b><i>    (list_header *list_head, list_entry *entry)
+</i><br><p>    Append an entry to a linked list.
+<p><b>Parameters:</b><ul><li><i>list_head :</i> 
+    The list header.
+<br><li><i>entry :</i> 
+    The new list entry.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_list_delete></a> void
+ <b>ds_list_delete</b><i>    (packet_desc *list_desc, list_header *list_head,
+		     list_entry *entry)
+</i><br><p>    Delete an entry from the fragmented section of a linked list.
+<p><b>Parameters:</b><ul><li><i>list_desc :</i> 
+    The packet descriptor for the list entry data. If this is not
+    NULL, the routine will recursively deallocate the packet data.
+<br><li><i>list_head :</i> 
+    The list header.
+<br><li><i>entry :</i> 
+    The entry to be deleted. The entry and it's data packet are
+    deallocated.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_list_unfragment></a> flag
+ <b>ds_list_unfragment</b><i>    (packet_desc *list_desc, list_header *list_head)
+</i><br><p>    This routine will unfragment a linked list (i.e. all the entries
+    and data packets in the linked list will be made contiguous in memory).
+    This increases the storage efficiency (no  list_entry  structures are
+    needed to link the data packets) as well as arbitrary indexing.
+    This routine, used with a sorting routine (in either order of execution),
+    can be used to speed up searching algorithms, such as <a href=ds.html#ds_list_search>ds_list_search</a>.
+    If the routine is not successful in allocating the required memory, then
+    no change is effected (and the  contiguous_length  value in the list header
+    is not changed). I.e. data is not lost.
+<p><b>Parameters:</b><ul><li><i>list_desc :</i> 
+    The packet descriptor for the list.
+<br><li><i>list_head :</i> 
+    The linked list header.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The <em>contiguous_length</em> value in the linked list header will be
+    set to the length of the list.
+</ul><p><hr> <a name=ds_list_fragment></a> flag
+ <b>ds_list_fragment</b><i>    (packet_desc *list_desc, list_header *list_head)
+</i><br><p>    This routine will fragment a linked list (i.e. all the contiguous
+    data packets in the linked list will be separately allocated and linked
+    together by new <em>list_entry</em> structures. This decreases the storage
+    efficiency (now <em>list_entry</em> structures are needed to link the data
+    packets) rather than arbitrary indexing. However, it does provide for easy
+    insertion of new entries into any part of the list.
+    If the routine is not successful in allocating the required memory, then
+    no change is effected (and the <em>contiguous_length</em> value in the list
+    header is not changed). I.e. data is not lost.
+<p><b>Parameters:</b><ul><li><i>list_desc :</i> 
+    The packet descriptor for the list.
+<br><li><i>list_head :</i> 
+    The list header.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The <em>contiguous_length</em> value in the linked list header will be
+    set to 0.
+</ul><p><hr> <a name=ds_remove_dim_desc></a> flag
+ <b>ds_remove_dim_desc</b><i>    (array_desc *arr_desc, CONST char *dim_name)
+</i><br><p>    This routine will remove a dimension descriptor from an array
+    descriptor. Tiling information is preserved, however, any address offset
+    information is removed. With the exception of the dimension to be removed,
+    the order of the dimensions is unaffected.
+<p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>name :</i> 
+    The name of the dimension to be removed.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_append_dim_desc></a> flag
+ <b>ds_append_dim_desc</b><i>    (array_desc *arr_desc, dim_desc *dimension)
+</i><br><p>    This routine will append a dimension descriptor to the list of
+    dimensions attached to an array descriptor. The appended dimension will be
+    the LEAST significant dimension (co-ordinates have lowest stride). Tiling
+    information is preserved, however, any address offset information is
+    removed. If the array is NOT tiled, the dimension length will be copied
+    into the array of bottom tile lengths.
+<p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>dimension :</i> 
+    The dimension descriptor.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_prepend_dim_desc></a> flag
+ <b>ds_prepend_dim_desc</b><i>    (array_desc *arr_desc, dim_desc *dimension)
+</i><br><p>    This routine will prepend a dimension descriptor to the list of
+    dimensions attached to an array descriptor. The prepended dimension will be
+    the MOST significant dimension (co-ordinates have greatest stride).
+    Tiling information is preserved, however, any address offset information is
+    removed. If the array is NOT tiled, the dimension length will be copied
+    into the array of bottom tile lengths.
+<p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>dimension :</i> 
+    The dimension descriptor to prepend.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_compute_array_offsets></a> flag
+ <b>ds_compute_array_offsets</b><i>    (array_desc *arr_desc)
+</i><br><p>    Compute array address offsets for each dimension in an array.
+<p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
+    The array descriptor. This descriptor is modified.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_remove_tiling_info></a> void
+ <b>ds_remove_tiling_info</b><i>    (array_desc *arr_desc)
+</i><br><p>    This routine will remove any tiling information from an array
+    descriptor. The routine will NOT remove (or change) any offset information.
+<p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
+    The array descriptor.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_append_gen_struct></a> flag
+ <b>ds_append_gen_struct</b><i>    (multi_array *multi_desc, packet_desc *pack_desc,
+			   char *packet, char *existing_arrayname,
+			   char *append_arrayname)
+</i><br><p>    This routine will append a general data structure to a
+    multi_array general data structure.
+<p><b>Parameters:</b><ul><li><i>multi_desc :</i> 
+    The multi-array general data structure to append to.
+<br><li><i>pack_desc :</i> 
+    The top level packet descriptor of the general data structure
+    to append.
+<br><li><i>packet :</i> 
+    The corresponding data for the general data structure.
+<br><li><i>existing_arrayname :</i> 
+    If the multi-array data structure previously had only
+    one general data structure, then this name will become the arrayname for
+    that data structure.
+<br><li><i>append_arrayname :</i> 
+    The name of the appended data structure.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_put_element></a> char *
+ <b>ds_put_element</b><i>    (char *output, unsigned int type, double input[2])
+</i><br><p>    Write out an element of data.
+<p><b>Parameters:</b><ul><li><i>output :</i> 
+    A pointer to the output storage.
+<br><li><i>type :</i> 
+    The type of the element to be written.
+<br><li><i>input :</i> 
+    The input data.
+<br></ul><b>Returns:</b>     The address of the next element on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_put_elements></a> flag
+ <b>ds_put_elements</b><i>    (char *data, unsigned int data_type,
+		      unsigned int data_stride, double *values,
+		      unsigned int num_values)
+</i><br><p>    This routine will convert an array of double precision complex
+    values to an array of atomic data.
+<p><b>Parameters:</b><ul><li><i>data :</i> 
+    The array of output data.
+<br><li><i>data_type :</i> 
+    The type of the data.
+<br><li><i>data_stride :</i> 
+    The stride of data elements in memory (in bytes).
+<br><li><i>values :</i> 
+    The data values will be read from here.
+<br><li><i>num_values :</i> 
+    The number of data values to convert.
+<br></ul><b>Returns:</b>     TRUE if the data was successfully converted, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_put_element_many_times></a> flag
+ <b>ds_put_element_many_times</b><i>    (char *data, unsigned int data_type,
+				unsigned int data_stride, double value[2],
+				unsigned int num_elem)
+</i><br><p>    This routine will convert and write a double precision complex
+    value to an array of atomic data elements.
+<p><b>Parameters:</b><ul><li><i>data :</i> 
+    The array of output data.
+<br><li><i>data_type :</i> 
+    The type of the data.
+<br><li><i>data_stride :</i> 
+    The stride of data elements in memory (in bytes).
+<br><li><i>value :</i> 
+    The data value will be read from here.
+<br><li><i>num_elem :</i> 
+    The number of data elements to write.
+<br></ul><b>Returns:</b>     TRUE if the data was successfully converted, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_put_named_element></a> flag
+ <b>ds_put_named_element</b><i>    (packet_desc *pack_desc, char *packet,
+			   CONST char *name, double value[2])
+</i><br><p>    Update a named element in a specified packet.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The packet descriptor.
+<br><li><i>packet :</i> 
+    The packet.
+<br><li><i>name :</i> 
+    The name of the element to update.
+<br><li><i>value :</i> 
+    The value of the data.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_reorder_array></a> flag
+ <b>ds_reorder_array</b><i>    (array_desc *arr_desc, unsigned int order_list[],
+		       char *array, flag mod_desc)
+</i><br><p>    Re-order a multi-dimensional array.
+<p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>order_list :</i> 
+    This specifies the ordering of the dimensions. The first entry
+    in the order list contains the number of the dimension, in the old order,
+    which is to become the most significant dimension in the new ordering.
+<br><li><i>array :</i> 
+    The array. If this is NULL, only the array descriptor can be
+    re-ordered (no data can be re-ordered).
+<br><li><i>mod_desc :</i> 
+    If TRUE the array descriptor will have its dimension descriptors
+    re-ordered, else they will not be. This is useful to traverse a data
+    structure, re-ordering the data, and then finally re-ordering the array
+    descriptor to match.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_foreach_occurrence></a> flag
+ <b>ds_foreach_occurrence</b><i>    ( packet_desc *pack_desc, char *packet,
+			     CONST char *item, flag as_whole,
+			     flag (*func) () )
+</i><br><p>    Recursively traverse a data structure, searching for an item.
+<p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
+    The packet descriptor of the structure.
+<br><li><i>packet :</i> 
+    The packet for the structure.
+<br><li><i>item :</i> 
+    The name of the item to search for.
+<br><li><i>as_whole :</i> 
+    If FALSE:
+    If the item pointed to is the name of a dimension, then <em>function</em>
+    will be called for each occurrence of that dimension (ie. the other
+    dimensions will be iterated through).
+    If the item pointed to is the name of an element, then <em>function</em>
+    will be called for each occurrence of the element in the array or
+    linked list which it is in.
+    If TRUE:
+    If the item pointed to is the name of a dimension or an element within
+    a packet within an array, <em>function</em> is called once for each
+    occurrence of the entire array.
+    If the item pointed to is the name of an element in a linked list, then
+    <em>function</em> will be called once for each occurrence of the linked list
+<br><li><i>func :</i> 
+    The function to call for each occurrence. The prototype function is
+    <a href=ds.html#DS_PROTO_foreach_func>DS_PROTO_foreach_func</a>. If this returns FALSE, iterations are stopped.
+<br></ul><b>Returns:</b>     TRUE if all iterations completed successfully, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_foreach_in_array></a> flag
+ <b>ds_foreach_in_array</b><i>    ( array_desc *arr_desc, char *array, CONST char *item,
+			   flag as_whole, flag (*func) () )
+</i><br><p>    Recursively traverse an array, searching for an item.
+<p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>array :</i> 
+    The array data.
+<br><li><i>item :</i> 
+    The name of the item to search for.
+<br><li><i>as_whole :</i> 
+    If FALSE:
+    If the item pointed to is the name of a dimension, then <em>func</em>
+    will be called for each occurrence of that dimension (ie. the other
+    dimensions will be iterated through).
+    If the item pointed to is the name of an element, then <em>func</em>
+    will be called for each occurrence of the element in the array or
+    linked list which it is in.
+    If TRUE:
+    If the item pointed to is the name of a dimension or an element within
+    a packet within an array, <em>func</em> is called once for each
+    occurrence of the entire array.
+    If the item pointed to is the name of an element in a linked list, then
+    <em>func</em> will be called once for each occurrence of the linked list
+<br><li><i>func :</i> 
+    The function to call for each occurrence. The prototype function is
+    <a href=ds.html#DS_PROTO_foreach_func>DS_PROTO_foreach_func</a>. If this returns FALSE, iterations are stopped.
+<br></ul><b>Returns:</b>     TRUE if all iterations completed successfully, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_foreach_in_list></a> flag
+ <b>ds_foreach_in_list</b><i>    ( packet_desc *list_desc, list_header *list_head,
+			  CONST char *item, flag as_whole, flag (*func) () )
+</i><br><p>    Recursively traverse a linked list, searching for an item.
+<p><b>Parameters:</b><ul><li><i>list_desc :</i> 
+    The packet descriptor for the linked list.
+<br><li><i>list_head :</i> 
+    The linked list header.
+<br><li><i>item :</i> 
+    The name of the item to search for.
+<br><li><i>as_whole :</i> 
+    If FALSE:
+    If the item pointed to is the name of a dimension, then <em>func</em>
+    will be called for each occurrence of that dimension (ie. the other
+    dimensions will be iterated through).
+    If the item pointed to is the name of an element, then <em>func</em>
+    will be called for each occurrence of the element in the array or
+    linked list which it is in.
+    If TRUE:
+    If the item pointed to is the name of a dimension or an element within
+    a packet within an array, <em>func</em> is called once for each
+    occurrence of the entire array.
+    If the item pointed to is the name of an element in a linked list, then
+    <em>func</em> will be called once for each occurrence of the linked list
+<br><li><i>func :</i> 
+    The function to call for each occurrence. The prototype function is
+    <a href=ds.html#DS_PROTO_foreach_func>DS_PROTO_foreach_func</a>. If this returns FALSE, iterations are stopped.
+<br></ul><b>Returns:</b>     TRUE if all iterations completed successfully, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_traverse_and_process></a> flag
+ <b>ds_traverse_and_process</b><i>    ( packet_desc *desc1, char *data1,
+			       packet_desc *desc2, char *data2,
+			       flag as_whole, flag (*func) () )
+</i><br><p>    This routine will traverse a pair of general data structures and
+    will process a sub structure for every occurence wherever there is a
+    difference in the two data structures' descriptors.
+<p><b>Parameters:</b><ul><li><i>desc1 :</i> 
+    One of the structures packet descriptor.
+<br><li><i>data1 :</i> 
+    One of the structures data.
+<br><li><i>desc2 :</i> 
+    The other structures packet descriptor.
+<br><li><i>data2 :</i> 
+    The other structures data.
+<br><li><i>as_whole :</i> 
+    If FALSE:
+    If the type or name of any element in the two packet descriptors are
+    different, the packets are deemed divergent and they are passed to
+    <em>func</em>.
+    If any aspect of the two array's dimension descriptors are different,
+    then the arrays are deemed divergent and their descriptors are passed
+    to <em>func</em>.
+    If TRUE:
+    If the type or name of any element in the two packet descriptors are
+    different, the packets are deemed divergent and they are passed to
+    <em>func</em>.
+    If any aspect of the two array's dimension descriptors are different,
+    or their packet descriptors are divergent, then the arrays are deemed
+    divergent and the array descriptors are passed to <em>func</em>.
+    If the packet descriptors for linked lists are divergent, then the two
+    lists are deemed divergent and their descriptors and headers are passed
+    to <em>func</em>.
+<br><li><i>func :</i> 
+    The function to call for each divergence. The prototype function is
+    <a href=ds.html#DS_PROTO_traverse_func>DS_PROTO_traverse_func</a>. If this returns FALSE, iterations are stopped.
+<br></ul><b>Returns:</b>     TRUE if all iterations completed successfully, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_traverse_array></a> flag
+ <b>ds_traverse_array</b><i>    ( array_desc *desc1, char *data1,
+			 array_desc *desc2, char *data2, flag as_whole,
+			 flag (*func) () )
+</i><br><p>    This routine will traverse a pair of multi-dimensional arrays
+    will process a sub structure for every occurence wherever there is a
+    difference in the two data structures' descriptors.
+<p><b>Parameters:</b><ul><li><i>desc1 :</i> 
+    One of the array descriptors.
+<br><li><i>data1 :</i> 
+    One of the arrays.
+<br><li><i>desc2 :</i> 
+    The other array descriptor.
+<br><li><i>data2 :</i> 
+    The other array.
+<br><li><i>as_whole :</i> 
+    If FALSE:
+    If the type or name of any element in the two packet descriptors are
+    different, the packets are deemed divergent and they are passed to
+    <em>func</em>.
+    If any aspect of the two array's dimension descriptors are different,
+    then the arrays are deemed divergent and their descriptors are passed
+    to <em>func</em>.
+    If TRUE:
+    If the type or name of any element in the two packet descriptors are
+    different, the packets are deemed divergent and they are passed to
+    <em>func</em>.
+    If any aspect of the two array's dimension descriptors are different,
+    or their packet descriptors are divergent, then the arrays are deemed
+    divergent and the array descriptors are passed to <em>func</em>.
+    If the packet descriptors for linked lists are divergent, then the two
+    lists are deemed divergent and their descriptors and headers are passed
+    to <em>func</em>.
+<br><li><i>func :</i> 
+    The function to call for each divergence. The prototype function is
+    <a href=ds.html#DS_PROTO_traverse_func>DS_PROTO_traverse_func</a>. If this returns FALSE, iterations are stopped.
+<br></ul><b>Returns:</b>     TRUE if all iterations completed successfully, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_traverse_list></a> flag
+ <b>ds_traverse_list</b><i>    ( packet_desc *desc1, list_header *head1,
+			packet_desc *desc2, list_header *head2,
+			flag as_whole, flag (*func) () )
+</i><br><p>    This routine will traverse a pair of linked lists and will
+    process a sub structure for every occurence wherever there is a difference
+    in the two data structures' descriptors.
+<p><b>Parameters:</b><ul><li><i>desc1 :</i> 
+    One of lists descriptor.
+<br><li><i>data1 :</i> 
+    One of the lists header.
+<br><li><i>desc2 :</i> 
+    The other lists descriptor.
+<br><li><i>data2 :</i> 
+    The other lists header.
+<br><li><i>as_whole :</i> 
+    If FALSE:
+    If the type or name of any element in the two packet descriptors are
+    different, the packets are deemed divergent and they are passed to
+    <em>func</em>.
+    If any aspect of the two array's dimension descriptors are different,
+    then the arrays are deemed divergent and their descriptors are passed
+    to <em>func</em>.
+    If TRUE:
+    If the type or name of any element in the two packet descriptors are
+    different, the packets are deemed divergent and they are passed to
+    <em>func</em>.
+    If any aspect of the two array's dimension descriptors are different,
+    or their packet descriptors are divergent, then the arrays are deemed
+    divergent and the array descriptors are passed to <em>func</em>.
+    If the packet descriptors for linked lists are divergent, then the two
+    lists are deemed divergent and their descriptors and headers are passed
+    to <em>func</em>.
+<br><li><i>func :</i> 
+    The function to call for each divergence. The prototype function is
+    <a href=ds.html#DS_PROTO_traverse_func>DS_PROTO_traverse_func</a>. If this returns FALSE, iterations are stopped.
+<br></ul><b>Returns:</b>     TRUE if all iterations completed successfully, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=DS_PROTO_foreach_func></a> flag
+ <b>DS_PROTO_foreach_func</b><i>    (char *encls_desc, unsigned int type, char *data,
+			    unsigned int index)
+</i><br><p>    Process an occurrence of an item in a data structure.
+<p><b>Parameters:</b><ul><li><i>encls_desc :</i> 
+    The enclosing descriptor.
+<br><li><i>type :</i> 
+    The type of the enclosing descriptor. See <a href=ds.html#DS_PARENT_TYPES>DS_PARENT_TYPES</a> for a
+    list of possible values.
+<br><li><i>data :</i> 
+    A pointer to the item data. This is:
+    A pointer to the first element (for a packet descriptor)
+    A pointer to a portion of the array (for an array or dimension
+    descriptor)
+    A pointer to the linked list header (for a linked list descriptor)
+<br><li><i>index :</i> 
+    The index number of the item in the enclosing descriptor, for the
+    cases where the enclosing descriptor is a packet, array or linked list
+    descriptor. For the case where the enclosing descriptor is a dimension
+    descriptor, this  carries the stride (in bytes) between consecutive
+    co-ordinates in the dimension.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=DS_PROTO_traverse_function></a> flag
+ <b>DS_PROTO_traverse_function</b><i>    (char *desc1, unsigned int type1,
+				 char *data1, char *desc2,
+				 unsigned int type2, char *data2)
+</i><br><p>    Process an occurrence of a divergence between two data structures
+<p><b>Parameters:</b><ul><li><i>desc1 :</i> 
+    One of the descriptors where the divergence occurred.
+<br><li><i>type1 :</i> 
+    The type of the first descriptor. See <a href=ds.html#DS_PARENT_TYPES>DS_PARENT_TYPES</a> for a
+    list of possible values. The value IDENT_DIMENSION is not possible.
+<br><li><i>data :</i> 
+    The data for the first descriptor.
+<br><li><i>desc2 :</i> 
+    The other descriptor where the divergence occurred.
+<br><li><i>type2 :</i> 
+    The type of the other descriptor. See <a href=ds.html#DS_PARENT_TYPES>DS_PARENT_TYPES</a> for a
+    list of possible values. The value IDENT_DIMENSION is not possible.
+<br><li><i>data2 :</i> 
+    The data for the other descriptor.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Tables</h2></center><hr> <a name=DS_COMPLEX_CONVERSIONS><b>DS_COMPLEX_CONVERSIONS</b></a><p> <table><tr><td>Name                         </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>CONV_CtoR_REAL               </td><td>Take the real component
+</td></tr><tr><td>CONV_CtoR_IMAG               </td><td>Take the imaginary component
+</td></tr><tr><td>CONV_CtoR_ABS                </td><td>Take the absolute value
+</td></tr><tr><td>CONV_CtoR_SQUARE_ABS         </td><td>Take the square of the absolute value
+</td></tr><tr><td>CONV_CtoR_PHASE              </td><td>Take the phase
+</td></tr><tr><td>CONV_CtoR_CONT_PHASE         </td><td>Take the continuous phase
+</td></tr><tr><td>CONV_CtoR_ENVELOPE           </td><td>Use the positive and negative of the
+                                   absolute value
+</table><p><hr> <a name=DS_KARMA_DATA_TYPES><b>DS_KARMA_DATA_TYPES</b></a><p> <table><tr><td>Name         </td><td>Meaning                              </td><td>C data type
+</td></tr><tr><td>
+</td></tr><tr><td>K_FLOAT      </td><td>Single precision floating point      </td><td>float
+</td></tr><tr><td>K_DOUBLE     </td><td>Double precision floating point      </td><td>double
+</td></tr><tr><td>K_BYTE       </td><td>Signed byte (character)              </td><td>signed char
+</td></tr><tr><td>K_INT        </td><td>Signed integer                       </td><td>signed int
+</td></tr><tr><td>K_SHORT      </td><td>Signed short integer                 </td><td>signed short
+</td></tr><tr><td>K_COMPLEX    </td><td>Complex float                        </td><td>float[2]
+</td></tr><tr><td>K_DCOMPLEX   </td><td>Complex double                       </td><td>double[2]
+</td></tr><tr><td>K_BCOMPLEX   </td><td>Complex signed byte                  </td><td>signed char[2]
+</td></tr><tr><td>K_ICOMPLEX   </td><td>Complex signed integer               </td><td>signed int[2]
+</td></tr><tr><td>K_SCOMPLEX   </td><td>Complex signed short integer         </td><td>signed short[2]
+</td></tr><tr><td>K_LONG       </td><td>Signed long integer                  </td><td>signed long
+</td></tr><tr><td>K_LCOMPLEX   </td><td>Complex signed long integer          </td><td>signed long[2]
+</td></tr><tr><td>K_UBYTE      </td><td>Unsigned byte                        </td><td>unsigned char
+</td></tr><tr><td>K_UINT       </td><td>Unsigned integer                     </td><td>unsigned int
+</td></tr><tr><td>K_USHORT     </td><td>Unsigned short integer               </td><td>unsigned short
+</td></tr><tr><td>K_ULONG      </td><td>Unsigned long integer                </td><td>unsigned long
+</td></tr><tr><td>K_UBCOMPLEX  </td><td>Complex unsigned byte                </td><td>unsigned char[2]
+</td></tr><tr><td>K_UICOMPLEX  </td><td>Complex unsigned integer             </td><td>unsigned int[2]
+</td></tr><tr><td>K_USCOMPLEX  </td><td>Complex unsigned short integer       </td><td>unsigned short[2]
+</td></tr><tr><td>K_ULCOMPLEX  </td><td>Complex unsigned long integer        </td><td>unsigned long[2]
+</table><p><hr> <a name=DS_IDENT_TABLE><b>DS_IDENT_TABLE</b></a><p> <table><tr><td>Name              </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>IDENT_NOT_FOUND   </td><td>Name not found
+</td></tr><tr><td>IDENT_GEN_STRUCT  </td><td>Name of general data structure
+</td></tr><tr><td>IDENT_DIMENSION   </td><td>Name of dimension
+</td></tr><tr><td>IDENT_ELEMENT     </td><td>Name of atomic data element
+</td></tr><tr><td>IDENT_MULTIPLE    </td><td>Name has multiple occurrences
+</table><p><hr> <a name=DS_SEARCH_BIASES><b>DS_SEARCH_BIASES</b></a><p> <table><tr><td>Name                   </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>SEARCH_BIAS_LOWER      </td><td>Pick lower co-ordinate
+</td></tr><tr><td>SEARCH_BIAS_CLOSEST    </td><td>Pick closest co-ordinate
+</td></tr><tr><td>SEARCH_BIAS_UPPER      </td><td>Pick upper co-ordinate
+</table><p><hr> <a name=DS_HANDLE_TYPES><b>DS_HANDLE_TYPES</b></a><p> <table><tr><td>Name                   </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>NONE                   </td><td>if the item's parent is a packet.
+</td></tr><tr><td>K_ARRAY                </td><td>if the item's parent is an array.
+</td></tr><tr><td>LISTP                  </td><td>if the item's parent is a linked list header.
+</table><p><hr> <a name=DS_PARENT_TYPES><b>DS_PARENT_TYPES</b></a><p> <table><tr><td>Name              </td><td>Meaning
+</td></tr><tr><td>
+</td></tr><tr><td>NONE              </td><td>parent is a packet descriptor
+</td></tr><tr><td>IDENT_DIMENSION   </td><td>parent is a dimension descriptor
+</td></tr><tr><td>K_ARRAY           </td><td>parent is an array descriptor
+</td></tr><tr><td>LISTP             </td><td>parent is a linked list descriptor
+</table><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

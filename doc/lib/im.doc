@@ -1,34 +1,46 @@
-/*  Link with:    -lkarma  */
-/*  This file describes the im_ package of routines in the Karma library.
-
+$PACKAGE          im
+$SUMMARY          Routines to do low level initialisation of modules
+$PURPOSE
     These routines are meant to provide low level initialisation for a module.
+$LIBRARY          karma
+$LINKWITH         -lkarma
+$END
 
+$FUNCTION         im_register_module_name
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (char *name_string)
+$SUMMARY          Register a new name for the module.
+$PURPOSE
+    Register a new name for the module.
+$PARAMETER        name_string :
+    The name string.
+$RETURNS
+    Nothing.
+$END
 
-    Written by		Richard Gooch	5-Jun-1995
+$FUNCTION         im_register_module_version_date
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (char *date_string)
+$SUMMARY          Register a new version date for the module.
+$PURPOSE
+    Register a new version date for the module.
+$PARAMETER        date_string :
+    The date string.
+$RETURNS
+    Nothing.
+$END
 
-    Last updated by	Richard Gooch	5-Jun-1995
-
-
-*/
-
-void im_register_module_name (char *name_string)
-/*  [PURPOSE] This routine will register a new name for the module.
-    <name_string> The name string.
-    [RETURNS] Nothing.
-*/
-/*---------------------------------------------------------------------------*/
-
-void im_register_module_version_date (char *date_string)
-/*  [PURPOSE] This routine will register a new version date for the module.
-    <date_string> The date string.
-    [RETURNS] Nothing.
-*/
-/*---------------------------------------------------------------------------*/
-
-void im_register_lib_version (char *version_string)
-/*  [PURPOSE] This routine will register the library version a module was
-    compiled with.
-    <version_string> The version string of the library.
-    [RETURNS] Nothing.
-*/
-/*---------------------------------------------------------------------------*/
+$FUNCTION         im_register_lib_version
+$RETURN_TYPE      void
+$PARAMETER_LIST
+    (char *version_string)
+$SUMMARY          Register the library version a module was compiled with.
+$PURPOSE
+    Register the library version a module was compiled with.
+$PARAMETER        version_string :
+    The version string of the library.
+$RETURNS
+    Nothing.
+$END

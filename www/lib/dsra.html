@@ -1,0 +1,192 @@
+<html><head><title>Package: dsra</title></head> 
+<body>
+<center><h1>The "dsra" Package</h1></center>    These routines are meant to provide a mechanism to read the recursive,
+    heirarchical data structure supported in Karma from open channels, in
+    ASCII format.
+    The use of these routines is NOT recommended. The <a href=dsxfr.html#dsxfr>dsxfr</a> routines are
+    the preferred means of transferring data structures.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=dsra></a></table><h4>Functions</h4><table><tr><td><a href=dsra.html#dsra_multi_desc>dsra_multi_desc</a></td><td>Read ASCII representation of a multi_array data structure.
+</td></tr>
+<tr><td><a href=dsra.html#dsra_packet_desc>dsra_packet_desc</a></td><td>Read ASCII representation of a packet descriptor.
+</td></tr>
+<tr><td><a href=dsra.html#dsra_element_desc>dsra_element_desc</a></td><td>Read ASCII representation of an element descriptor.
+</td></tr>
+<tr><td><a href=dsra.html#dsra_array_desc>dsra_array_desc</a></td><td>Read ASCII representation of an array descriptor.
+</td></tr>
+<tr><td><a href=dsra.html#dsra_dim_desc>dsra_dim_desc</a></td><td>Read ASCII representation of a dimension descriptor.
+</td></tr>
+<tr><td><a href=dsra.html#dsra_multi_data>dsra_multi_data</a></td><td>READ ASCII representation of data in a multi_array descriptor.
+</td></tr>
+<tr><td><a href=dsra.html#dsra_packet>dsra_packet</a></td><td>Read ASCII representation of a data packet.
+</td></tr>
+<tr><td><a href=dsra.html#dsra_element>dsra_element</a></td><td>Read ASCII representation of an element.
+</td></tr>
+<tr><td><a href=dsra.html#dsra_array>dsra_array</a></td><td>Read ASCII representation of an array of data packets.
+</td></tr>
+<tr><td><a href=dsra.html#dsra_list>dsra_list</a></td><td>Read ASCII represention of a linked list.
+</td></tr>
+<tr><td><a href=dsra.html#dsra_flag>dsra_flag</a></td><td>Read ASCII representation of a boolean value.
+</td></tr>
+<tr><td><a href=dsra.html#dsra_type>dsra_type</a></td><td>Read ASCII representation of a data type.
+</td></tr>
+<tr><td><a href=dsra.html#dsra_uint>dsra_uint</a></td><td>Read the ASCII representation of an unsigned integer.
+</td></tr>
+<tr><td><a href=dsra.html#dsra_int>dsra_int</a></td><td>Read the ASCII representation of a signed integer.
+</td></tr>
+<tr><td><a href=dsra.html#dsra_float>dsra_float</a></td><td>Read the ASCII representation of a floating point value.
+</td></tr>
+<tr><td><a href=dsra.html#dsra_double>dsra_double</a></td><td>Read ASCII representation of a double floating point value.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=dsra_multi_desc></a> multi_array *
+ <b>dsra_multi_desc</b><i>    (Channel channel)
+</i><br><p>    This routine will read the ASCII representation of a multi_array
+    data structure descriptor from a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to read from.
+<br></ul><b>Returns:</b>     A pointer to the multi array header on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The routine will NOT allocate space for data, nor will it read any
+    data.
+</ul><p><hr> <a name=dsra_packet_desc></a> packet_desc *
+ <b>dsra_packet_desc</b><i>    (Channel channel)
+</i><br><p>    This routine will read the ASCII representation of a packet
+    descriptor from a channel object. The routine will recursively read in
+    array and linked list descriptors if required.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to read from.
+<br></ul><b>Returns:</b>     A pointer to the packet descriptor on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsra_element_desc></a> flag
+ <b>dsra_element_desc</b><i>    (Channel channel, unsigned int *type, char name[])
+</i><br><p>    Read ASCII representation of an element descriptor.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to read from.
+<br><li><i>type :</i> 
+    The type of the element is written here.
+<br><li><i>name :</i> 
+    The name of the element is written here. The length of the buffer
+    must be <em>STRING_LENGTH</em> bytes.
+<br></ul><b>Returns:</b>     TRUE if a valid element descriptor was read, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsra_array_desc></a> array_desc *
+ <b>dsra_array_desc</b><i>    (Channel channel, unsigned int type)
+</i><br><p>    Read ASCII representation of an array descriptor.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to read from.
+<br><li><i>type :</i> 
+    The type of the array. Legal values for this are:
+    ARRAYP    K_ARRAY
+<br></ul><b>Returns:</b>     A pointer to the array descriptor on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsra_dim_desc></a> dim_desc *
+ <b>dsra_dim_desc</b><i>    (Channel channel)
+</i><br><p>    Read ASCII representation of a dimension descriptor.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to read from.
+<br></ul><b>Returns:</b>     A pointer to the dimension descriptor on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsra_multi_data></a> flag
+ <b>dsra_multi_data</b><i>    (Channel channel, multi_array *multi_desc)
+</i><br><p>    READ ASCII representation of data in a multi_array descriptor.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to read from.
+<br><li><i>multi_desc :</i> 
+    The multi_array descriptor to store the data in. This is
+    modified.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The routine will only allocate space for linked list as it reads
+    them.
+</ul><p><hr> <a name=dsra_packet></a> flag
+ <b>dsra_packet</b><i>    (Channel channel, packet_desc *descriptor, char *packet)
+</i><br><p>    This routine will read the ASCII representation of a data packet.
+    The routine will recursively read in sub arrays and linked lists.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to read from.
+<br><li><i>descriptor :</i> 
+    The packet descriptor.
+<br><li><i>packet :</i> 
+    The packet data will be written here. The packet storage must
+    already have been allocated.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsra_element></a> flag
+ <b>dsra_element</b><i>    (Channel channel, unsigned int type, char *desc,
+		   char *element)
+</i><br><p>    Read ASCII representation of an element.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to read from.
+<br><li><i>type :</i> 
+    The type of the element.
+<br><li><i>desc :</i> 
+    The descriptor for the element.
+<br><li><i>element :</i> 
+    The element data will be written here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsra_array></a> flag
+ <b>dsra_array</b><i>    (Channel channel, array_desc *descriptor, char *array)
+</i><br><p>    Read ASCII representation of an array of data packets.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to read from.
+<br><li><i>descriptor :</i> 
+    The array descriptor.
+<br><li><i>array :</i> 
+    The array data will be written here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsra_list></a> flag
+ <b>dsra_list</b><i>    (Channel channel, packet_desc *descriptor, list_header *header)
+</i><br><p>    This routine will read in the ASCII representation of a linked
+    list of data from a channel object. The routine will recursively read in
+    sub arrays and linked lists.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to read from.
+<br><li><i>descriptor :</i> 
+    The descriptor for the list packets.
+<br><li><i>header :</i> 
+    The linked list header. This is modified. The linked list entries
+    will be contiguous in memory.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsra_flag></a> flag
+ <b>dsra_flag</b><i>    (Channel channel, flag *logical)
+</i><br><p>    Read ASCII representation of a boolean value.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to read from.
+<br><li><i>logical :</i> 
+    The boolean value will be written here.
+<br></ul><b>Returns:</b>     TRUE if the flag was read in without error, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsra_type></a> flag
+ <b>dsra_type</b><i>    (Channel channel, unsigned int *type)
+</i><br><p>    Read ASCII representation of a data type.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to read from.
+<br><li><i>type :</i> 
+    The type value will be written here.
+<br></ul><b>Returns:</b>     TRUE if the type was read without error, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsra_uint></a> flag
+ <b>dsra_uint</b><i>    (Channel channel, unsigned int *value)
+</i><br><p>    Read the ASCII representation of an unsigned integer.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to read from.
+<br><li><i>value :</i> 
+    The result is written here.
+<br></ul><b>Returns:</b>     TRUE if successful, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsra_int></a> flag
+ <b>dsra_int</b><i>    (Channel channel, int *value)
+</i><br><p>    Read the ASCII representation of a signed integer.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to read from.
+<br><li><i>value :</i> 
+    The result is written here.
+<br></ul><b>Returns:</b>     TRUE if successful, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsra_float></a> flag
+ <b>dsra_float</b><i>    (Channel channel, float *value)
+</i><br><p>    Read the ASCII representation of a floating point value.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to read from.
+<br><li><i>value :</i> 
+    The result is written here.
+<br></ul><b>Returns:</b>     TRUE if successful, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=dsra_double></a> flag
+ <b>dsra_double</b><i>    (Channel channel, double *value)
+</i><br><p>    Read ASCII representation of a double floating point value.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to read from.
+<br><li><i>value :</i> 
+    The result is written here.
+<br></ul><b>Returns:</b>     TRUE if successful, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

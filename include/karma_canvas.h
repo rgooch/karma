@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   17-APR-1993
 
-    Last updated by Richard Gooch   4-JAN-1996
+    Last updated by Richard Gooch   27-JUN-1996
 
 */
 
@@ -45,6 +45,10 @@
 
 #if !defined(KARMA_KWIN_H) || defined(MAKEDEPEND)
 #  include <karma_kwin.h>
+#endif
+
+#if !defined(KARMA_WCS_DEF_H) || defined(MAKEDEPEND)
+#  include <karma_wcs_def.h>
 #endif
 
 #if !defined(KARMA_C_DEF_H) || defined(MAKEDEPEND)
@@ -66,10 +70,10 @@ typedef struct worldcanvas_type * KWorldCanvas;
 #define CANVAS_ATT_BLANK_PIXEL      5   /*  (unsigned long)                  */
 #define CANVAS_ATT_MIN_SAT_PIXEL    6   /*  (unsigned long)                  */
 #define CANVAS_ATT_MAX_SAT_PIXEL    7   /*  (unsigned long)                  */
-#define CANVAS_ATT_X_MIN            8   /*  (double)                         */
-#define CANVAS_ATT_X_MAX            9   /*  (double)                         */
-#define CANVAS_ATT_Y_MIN            10  /*  (double)                         */
-#define CANVAS_ATT_Y_MAX            11  /*  (double)                         */
+#define CANVAS_ATT_LEFT_X           8   /*  (double)                         */
+#define CANVAS_ATT_RIGHT_X          9   /*  (double)                         */
+#define CANVAS_ATT_BOTTOM_Y         10  /*  (double)                         */
+#define CANVAS_ATT_TOP_Y            11  /*  (double)                         */
 #define CANVAS_ATT_VALUE_MIN        12  /*  (double)                         */
 #define CANVAS_ATT_VALUE_MAX        13  /*  (double)                         */
 #define CANVAS_ATT_ISCALE_FUNC      14  /*  ( flag (*) () )                  */
@@ -77,6 +81,13 @@ typedef struct worldcanvas_type * KWorldCanvas;
 #define CANVAS_ATT_ISCALE_INFO      16  /*  (void *)                         */
 #define CANVAS_ATT_AUTO_MIN_SAT     17  /*  (flag)                           */
 #define CANVAS_ATT_AUTO_MAX_SAT     18  /*  (flag)                           */
+
+#ifndef NEW_WIN_SCALE
+#define CANVAS_ATT_X_MIN            CANVAS_ATT_LEFT_X
+#define CANVAS_ATT_X_MAX            CANVAS_ATT_RIGHT_X
+#define CANVAS_ATT_Y_MIN            CANVAS_ATT_BOTTOM_Y
+#define CANVAS_ATT_Y_MAX            CANVAS_ATT_TOP_Y
+#endif
 
 /*  Dressing parameters  */
 #define KCD_END (unsigned int) 0
@@ -127,6 +138,11 @@ EXTERN_FUNCTION (void canvas_get_specification,
 		 (KWorldCanvas canvas, char **xlabel, char **ylabel,
 		  unsigned int *num_restr, char ***restr_names,
 		  double **restr_values) );
+EXTERN_FUNCTION (void canvas_convert_to_canvas_coords,
+		 (KWorldCanvas canvas, flag clip, unsigned int num_coords,
+		  CONST double *xin, CONST double *yin,
+		  double *xout_lin, double *yout_lin,
+		  double *xout, double *yout) );
 EXTERN_FUNCTION (flag canvas_convert_to_canvas_coord,
 		 (KWorldCanvas canvas, double xin, double yin,
 		  double *xout, double *yout) );
@@ -141,6 +157,9 @@ EXTERN_FUNCTION (void canvas_register_convert_func,
 		  void *info) );
 EXTERN_FUNCTION (flag canvas_coord_transform,
 		 (KWorldCanvas canvas, double *x, double *y, flag to_linear) );
+EXTERN_FUNCTION (void canvas_register_transforms_func,
+		 (KWorldCanvas canvas, void (*coord_transform_func) (),
+		  void *info) );
 EXTERN_FUNCTION (void canvas_register_transform_func,
 		 (KWorldCanvas canvas, void (*coord_transform_func) (),
 		  void *info) );
@@ -180,6 +199,14 @@ EXTERN_FUNCTION (void canvas_draw_line_p, (KWorldCanvas canvas,
 					   double x0, double y0,
 					   double x1, double y1,
 					   unsigned long pixel_value) );
+EXTERN_FUNCTION (void canvas_draw_ellipse, (KWorldCanvas canvas,
+					    double centre_x, double centre_y,
+					    double radius_x, double radius_y,
+					    double value[2]) );
+EXTERN_FUNCTION (void canvas_draw_ellipse_p, (KWorldCanvas canvas,
+					      double centre_x, double centre_y,
+					      double radius_x, double radius_y,
+					      unsigned long pixel_value) );
 EXTERN_FUNCTION (void canvas_fill_ellipse, (KWorldCanvas canvas,
 					    double centre_x, double centre_y,
 					    double radius_x, double radius_y,
@@ -236,6 +263,8 @@ EXTERN_FUNCTION (void canvas_init_win_scale,
 		  unsigned int magic_number) );
 EXTERN_FUNCTION (void canvas_use_log_scale,
 		 (KWorldCanvas canvas, flag x_log, flag y_log) );
+EXTERN_FUNCTION (void canvas_use_astro_transform,
+		 (KWorldCanvas canvas, KwcsAstro *ap) );
 
 
 #endif /*  KARMA_CANVAS_H  */

@@ -1,0 +1,246 @@
+<html><head><title>Package: pio</title></head> 
+<body>
+<center><h1>The "pio" Package</h1></center>    These routines are meant to provide a high level means of converting C data
+    types to the "network" data format (ie. big endian, IEEE 754).
+    These routines transfer data between host memory and files/ connections.
+    These routines are NOT recommended as a means to transfer the recursive,
+    heirarchical data structure supported in Karma, use the <a href=dsxfr.html#dsxfr>dsxfr</a> routines
+    instead.
+<p><b>Library:</b> karma
+<br><b>Link With:</b> -lkarma
+<br><p><a name=pio></a></table><h4>Functions</h4><table><tr><td><a href=pio.html#pio_write64>pio_write64</a></td><td>Write 64 bits of data to a channel object.
+</td></tr>
+<tr><td><a href=pio.html#pio_read64>pio_read64</a></td><td>Read 64 bits of data from a channel object.
+</td></tr>
+<tr><td><a href=pio.html#pio_write32>pio_write32</a></td><td>Write 32 bits of data to a channel object.
+</td></tr>
+<tr><td><a href=pio.html#pio_read32>pio_read32</a></td><td>Read 32 bits of data from a channel object.
+</td></tr>
+<tr><td><a href=pio.html#pio_write16>pio_write16</a></td><td>Write 16 bits of data to a channel object.
+</td></tr>
+<tr><td><a href=pio.html#pio_read16>pio_read16</a></td><td>Read 16 bits of data from a channel object.
+</td></tr>
+<tr><td><a href=pio.html#pio_write_float>pio_write_float</a></td><td>Write a floating point number to a channel object.
+</td></tr>
+<tr><td><a href=pio.html#pio_read_float>pio_read_float</a></td><td>Read a floating point number from a channel object.
+</td></tr>
+<tr><td><a href=pio.html#pio_read_float_nantrap>pio_read_float_nantrap</a></td><td>Read floating point data from a channel object, trapping NaNs.
+</td></tr>
+<tr><td><a href=pio.html#pio_write_double>pio_write_double</a></td><td>Write double precision floating point data to a channel object.
+</td></tr>
+<tr><td><a href=pio.html#pio_read_double>pio_read_double</a></td><td>Read double precision floating point data from a channel object.
+</td></tr>
+<tr><td><a href=pio.html#pio_read_double_nantrap>pio_read_double_nantrap</a></td><td>Read floating point data from a channel object, trapping NaNs.
+</td></tr>
+<tr><td><a href=pio.html#pio_write32s>pio_write32s</a></td><td>Write 32 bits of signed data to a channel object.
+</td></tr>
+<tr><td><a href=pio.html#pio_read32s>pio_read32s</a></td><td>Read 32 bits of signed data from a channel object.
+</td></tr>
+<tr><td><a href=pio.html#pio_write16s>pio_write16s</a></td><td>Write 16 bits of signed data to a channel object.
+</td></tr>
+<tr><td><a href=pio.html#pio_read16s>pio_read16s</a></td><td>Read 16 bits of signed data from a channel object.
+</td></tr>
+<tr><td><a href=pio.html#pio_write_swap>pio_write_swap</a></td><td>Swap and write bytes to a channel object.
+</td></tr>
+<tr><td><a href=pio.html#pio_read_swap>pio_read_swap</a></td><td>Read from a channel object and swap bytes.
+</td></tr>
+<tr><td><a href=pio.html#pio_write_string>pio_write_string</a></td><td>Write a string to a channel object.
+</td></tr>
+<tr><td><a href=pio.html#pio_read_string>pio_read_string</a></td><td>Read a string from a channel object.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=pio_write64></a> flag
+ <b>pio_write64</b><i>    (Channel channel, unsigned long data)
+</i><br><p>    Write 64 bits of data to a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>data :</i> 
+    The data. This must be in host natural byte order. The data will be
+    converted to network byte order prior to writing.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_read64></a> flag
+ <b>pio_read64</b><i>    (Channel channel, unsigned long *data)
+</i><br><p>    Read 64 bits of data from a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>data :</i> 
+    The data will be written here. This will be in host natural byte
+    order. The data will be converted from network byte order after reading.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_write32></a> flag
+ <b>pio_write32</b><i>    (Channel channel, unsigned long data)
+</i><br><p>    Write 32 bits of data to a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>data :</i> 
+    The data. This must be in host natural byte order. The data will be
+    converted to network byte order prior to writing.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_read32></a> flag
+ <b>pio_read32</b><i>    (Channel channel, unsigned long *data)
+</i><br><p>    Read 32 bits of data from a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>data :</i> 
+    The data will be written here. This will be in host natural byte
+    order. The data will be converted from network byte order after reading.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_write16></a> flag
+ <b>pio_write16</b><i>    (Channel channel, unsigned long data)
+</i><br><p>    Write 16 bits of data to a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>data :</i> 
+    The data. This must be in host natural byte order. The data will be
+    converted to network byte order prior to writing.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_read16></a> flag
+ <b>pio_read16</b><i>    (Channel channel, unsigned long *data)
+</i><br><p>    Read 16 bits of data from a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>data :</i> 
+    The data will be written here. This will be in host natural byte
+    order. The data will be converted from network byte order after reading.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_write_float></a> flag
+ <b>pio_write_float</b><i>    (Channel channel, float data)
+</i><br><p>    Write a floating point number to a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>data :</i> 
+    The data. This must be in host natural format. The data will be
+    converted to IEEE network format prior to writing.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_read_float></a> flag
+ <b>pio_read_float</b><i>    (Channel channel, float *data)
+</i><br><p>    Read a floating point number from a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>data :</i> 
+    The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_read_float_nantrap></a> flag
+ <b>pio_read_float_nantrap</b><i>    (Channel channel, float *data, flag *was_nan)
+</i><br><p>    This routine will read a floating point number from a channel
+    object and will trap IEEE Not-A-Number (NaN) values.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>data :</i> 
+    The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+<br><li><i>was_nan :</i> 
+    The value TRUE will be written here if the value was NaN, else
+    FALSE is written here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_write_double></a> flag
+ <b>pio_write_double</b><i>    (Channel channel, double data)
+</i><br><p>    Write double precision floating point data to a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>data :</i> 
+    The data. This must be in host natural format. The data will be
+    converted to IEEE network format prior to writing.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_read_double></a> flag
+ <b>pio_read_double</b><i>    (Channel channel, double *data)
+</i><br><p>    Read double precision floating point data from a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>data :</i> 
+    The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_read_double_nantrap></a> flag
+ <b>pio_read_double_nantrap</b><i>    (Channel channel, double *data, flag *was_nan)
+</i><br><p>    This routine will read a double precision floating point number
+    from a channel object and will trap IEEE Not-A-Number (NaN) values.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>data :</i> 
+    The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+<br><li><i>was_nan :</i> 
+    The value TRUE will be written here if the value was NaN, else
+    FALSE is written here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_write32s></a> flag
+ <b>pio_write32s</b><i>    (Channel channel, long data)
+</i><br><p>    Write 32 bits of signed data to a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>data :</i> 
+    The data. This must be in host natural byte order. The data will be
+    converted to network byte order prior to writing.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_read32s></a> flag
+ <b>pio_read32s</b><i>    (Channel channel, long *data)
+</i><br><p>    Read 32 bits of signed data from a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>data :</i> 
+    The data will be written here. This will be in host natural byte
+    order. The data will be converted from network byte order after reading.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_write16s></a> flag
+ <b>pio_write16s</b><i>    (Channel channel, long data)
+</i><br><p>    Write 16 bits of signed data to a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>data :</i> 
+    The data. This must be in host natural byte order. The data will be
+    converted to network byte order prior to writing.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_read16s></a> flag
+ <b>pio_read16s</b><i>    (Channel channel, long *data)
+</i><br><p>    Read 16 bits of signed data from a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>data :</i> 
+    The data will be written here. This will be in host natural byte
+    order. The data will be converted from network byte order after reading.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_write_swap></a> flag
+ <b>pio_write_swap</b><i>    (Channel channel, CONST char *data, unsigned int length)
+</i><br><p>    Swap and write bytes to a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>data :</i> 
+    A pointer to the data bytes.
+<br><li><i>length :</i> 
+    The number of bytes to swap and then write.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_read_swap></a> flag
+ <b>pio_read_swap</b><i>    (Channel channel, char *data, unsigned int length)
+</i><br><p>    Read from a channel object and swap bytes.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>data :</i> 
+    The data bytes will be written here.
+<br><li><i>length :</i> 
+    The number of bytes to read and then swap.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_write_string></a> flag
+ <b>pio_write_string</b><i>    (Channel channel, CONST char *string)
+</i><br><p>    Write a string to a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>string :</i> 
+    The string. If this is NULL, a zero length string is written.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_read_string></a> char *
+ <b>pio_read_string</b><i>    (Channel channel, unsigned int *length)
+</i><br><p>    Read a string from a channel object.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>length :</i> 
+    The length of the string will be written here. If this is NULL,
+    nothing is written here.
+<br></ul><b>Returns:</b>     A pointer to a dynamically allocated string on success,
+    else NULL. If a zero length string was read, the returned buffer is one
+    character long and contains the '\0' character.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>

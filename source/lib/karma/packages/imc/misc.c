@@ -3,7 +3,7 @@
 
     This code provides image conversion routines.
 
-    Copyright (C) 1993,1994,1995  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -36,7 +36,10 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/imc/main.c
 
-    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Last updated by Richard Gooch   12-APR-1996: Changed to new documentation
+  format.
 
 
 */
@@ -49,7 +52,7 @@
 #include <karma_m.h>
 #include <karma_a.h>
 
-#define MIN_COLOUR_DIFFERENCE 64
+#define MIN_COLOUR_DIFFERENCE /*64*/ 16
 #define MAX_INTENSITY 255
 #define MAX_NORM 196608 /* (256*256)*3 */
 #define MAX_COLOURS 256
@@ -89,34 +92,28 @@ flag imc_24to8 (unsigned int image_size, unsigned char *image_reds,
 		int stride24, unsigned char *out_image, int stride8,
 		unsigned int max_colours, unsigned int speed,
 		packet_desc **pack_desc, char **packet)
-/*  This routine will convert a 24 bit truecolour image to an 8 bit
-    pseudocolour image.
-    The size of the image (in pixels) must be given by  image_size  .
-    The red component data of the truecolour image must be pointed to by
-    image_reds  .
-    The green component data of the truecolour image must be pointed to by
-    image_greens  .
-    The blue component data of the truecolour image must be pointed to by
-    image_blues  .
-    The stride (in bytes) between adjacent pixels in the truecolour image must
-    be given by  stride24  .
-    The output (8 bit pseudocolour) image date must be pointed to by  out_image
-    The stride (in bytes) between adjacent pixels in the pseudocolour image
-    must be given by  stride8  .
-    The maximum number of unique colours permitted (ie. the maximum colour
-    palette size that can be supported) must be given by  max_colours  .
-    The desired speed of the routine must be given by  speed  .This value may
-    range from 0 to 9. A value of 0 will result in the slowest but highest
-    quality conversion (ie. the routine tries very hard to choose the best
-    colour palette). A value of 9 will result in the fastest conversion, at the
-    expense of image quality.
-    The pointer to the top level packet descriptor of the general data
-    structure which contains the colourmap will be written to the storage
-    pointed to by  pack_desc  .
-    The pointer to the top level packet of the general data structure which
-    contains the colourmap will be written to the storage pointed to by  
-    packet  .
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [SUMMARY] Convert a 24 bit truecolour image to an 8 bit pseudocolour image.
+    <image_size> The size of the image (in pixels).
+    <image_reds> The red component data of the truecolour image.
+    <image_greens> The green component data of the truecolour image.
+    <image_blues> The blue component data of the truecolour image.
+    <stride24> The stride (in bytes) between adjacent pixels in the truecolour
+    image.
+    <out_image> The output (8 bit pseudocolour) image data.
+    <stride8> The stride (in bytes) between adjacent pixels in the pseudocolour
+    image.
+    <max_colours> The maximum number of unique colours permitted (i.e. the
+    maximum colour palette size that can be supported).
+    <speed> The desired speed of the routine. This value may range from 0 to 9.
+    A value of 0 will result in the slowest but highest quality conversion
+    (i.e. the routine tries very hard to choose the best colour palette). A
+    value of 9 will result in the fastest conversion, at the expense of image
+    quality.
+    <pack_desc> The pointer to the top level packet descriptor of the general
+    data structure which contains the colourmap will be written here.
+    <packet> The pointer to the top level packet of the general data structure
+    which contains the colourmap will be written here.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
     unsigned int count;

@@ -4,7 +4,9 @@
 
  Name		         Class            RepType         Default Value
  ----		         -----            -------         -------------
+ colourbarVisual         Visual           Pointer         CopyFromParent
  karmaColourmap          KarmaColourmap   Pointer         NULL
+ simpleColourbar         SimpleColourbar  Bool            False
 
 ------------------------------------------------------------------------*/
 
@@ -19,8 +21,11 @@ typedef struct _CmapwinpopupRec *CmapwinpopupWidget;
 
 #define XtIsCmapwinpopup(w) XtIsSubclass((w), cmapwinpopupWidgetClass)
 
+#define XkwNcolourbarVisual "colourbarVisual"
 #define XkwNkarmaColourmap "karmaColourmap"
+#define XkwNsimpleColourbar "simpleColourbar"
 
 #define XkwCKarmaColourmap "KarmaColourmap"
+#define XkwCSimpleColourbar "SimpleColourbar"
 
 #endif

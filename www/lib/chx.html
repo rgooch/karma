@@ -1,0 +1,41 @@
+<html><head><title>Package: chx</title></head> 
+<body>
+<center><h1>The "chx" Package</h1></center>    These routines are meant to provide a generic and simple to use channel
+    management facility (ie. event processing on pipes, connections and
+    terminals). These routines rely on the Xt toolkit event handler.
+    A similar set of routines: <a href=chm.html#chm>chm</a> provide identical functionality
+    (with the addition of the polling routine), except that they rely directly
+    on Unix.
+<p><b>Library:</b> karmaXt
+<br><b>Link With:</b> -lkarmaXt
+<br><p><a name=chx></a></table><h4>Functions</h4><table><tr><td><a href=chx.html#chx_register_app_context>chx_register_app_context</a></td><td>Register Xt application context for event management.
+</td></tr>
+<tr><td><a href=chx.html#chx_manage>chx_manage</a></td><td>Manage a channel for activity by registering callback routines.
+</td></tr>
+<tr><td><a href=chx.html#chx_unmanage>chx_unmanage</a></td><td>Terminate the management of a channel for activity.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=chx_register_app_context></a> void
+ <b>chx_register_app_context</b><i>    (XtAppContext context)
+</i><br><p>    This routine will register the application context to use for
+    channel management with the Xt toolkit. This must be called before ANY
+    reference is made to any other <em>chx</em> routines (i.e. before passing to
+    <a href=conn.html#conn_register_managers>conn_register_managers</a>).
+<p><b>Parameters:</b><ul><li><i>context :</i> 
+    The application context.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=chx_manage></a> flag
+ <b>chx_manage</b><i>    ( Channel channel, void *info, flag (*input_func) (),
+		  void (*close_func) (), flag (*output_func) (),
+		  flag (*exception_func) () )
+</i><br><p>    This routine will manage a channel for activity by registering
+    callback routines. The Xt Intrinsics event management scheme is used for
+    the underlying management. See <a href=chm.html#chm_manage>chm_manage</a> for the interface definition.
+<p><b>Parameters:</b><ul>This function takes no parameters<br></ul><b>Returns:</b> <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=chx_unmanage></a> void
+ <b>chx_unmanage</b><i>    (Channel channel)
+</i><br><p>    Terminate the management of a channel for activity.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to unmanage.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     This routine will NOT close the channel (nor does it assume the
+    channel is open).
+</ul><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>
