@@ -7,35 +7,35 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         hi_read
-$RETURN_TYPE      void
+$FUNCTION           hi_read
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (CONST char *module_name,
 	      flag (*command_decode) (CONST char *command, FILE *fp) )
-$SUMMARY          Read history information for a module.
+$SUMMARY            Read history information for a module.
 $PURPOSE
     This routine will read any available history information for a
     module and process accordingly.
-$PARAMETER        module_name :
+$PARAMETER          module_name :
     The name of the module.
-$PARAMETER        command_decode :
+$PARAMETER          command_decode :
     The function used to decode history lines.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         hi_write
-$RETURN_TYPE      void
+$FUNCTION           hi_write
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (CONST char *module_name,
 	       flag (*command_decode) (CONST char *command, FILE *fp) )
-$SUMMARY          Write history information for a module.
+$SUMMARY            Write history information for a module.
 $PURPOSE
     This routine will write history information for the module in the
     current working directory.
-$PARAMETER        module_name :
+$PARAMETER          module_name :
     The name of the module.
-$PARAMETER        command_decode :
+$PARAMETER          command_decode :
     The function used to decode history lines.
 $RETURNS
     Nothing.

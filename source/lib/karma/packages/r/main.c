@@ -131,8 +131,10 @@
     Updated by      Richard Gooch   13-APR-1996: Changed to new documentation
   format.
 
-    Last updated by Richard Gooch   3-JUN-1996: Cleaned code to keep
+    Updated by      Richard Gooch   3-JUN-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   23-AUG-1996: Support "local-slow" hostname.
 
 
 */
@@ -312,30 +314,28 @@ int *r_alloc_port (unsigned int *port_number, unsigned int retries,
 
     if (num_docks_open > 0)
     {
-	(void) fprintf (stderr, "Port has already been allocated\n");
+	fprintf (stderr, "Port has already been allocated\n");
 	prog_bug (function_name);
     }
     /*  Check alignment of  port_number  */
     if ( !IS_ALIGNED (port_number, sizeof *port_number) )
     {
-	(void) fputs ("Pointer to port number storage does not lie on an",
-		      stderr);
-	(void) fputs ("  int  boundary\n", stderr);
+	fputs ("Pointer to port number storage does not lie on an", stderr);
+	fputs ("  int  boundary\n", stderr);
 	prog_bug (function_name);
     }
     /*  Check alignment of  num_docks  */
     if ( !IS_ALIGNED (num_docks, sizeof *num_docks) )
     {
-	(void) fputs ("Pointer to number of docks storage does not lie on",
-		      stderr);
-	(void) fputs (" an  int  boundary\n", stderr);
+	fputs ("Pointer to number of docks storage does not lie on", stderr);
+	fputs (" an  int  boundary\n", stderr);
 	prog_bug (function_name);
     }
 #ifdef COMMUNICATIONS_AVAILABLE
     return ( alloc_port (port_number, retries, num_docks) );
 
 #else
-    (void) fprintf (stderr, "No communications support\n");
+    fprintf (stderr, "No communications support\n");
     return (NULL);
 #endif
 }   /*  End Function r_alloc_port  */
@@ -353,12 +353,11 @@ void r_close_dock (int dock)
     unsigned int dock_count;
     extern int docks[NUM_DOCKS];
     extern unsigned int num_docks_open;
-    extern char *sys_errlist[];
     static char function_name[] = "r_close_dock";
 
     if (num_docks_open < 1)
     {
-	(void) fprintf (stderr, "No docks are open\n");
+	fprintf (stderr, "No docks are open\n");
 	prog_bug (function_name);
     }
 #ifdef COMMUNICATIONS_AVAILABLE
@@ -373,11 +372,11 @@ void r_close_dock (int dock)
 	    return;
 	}
     }
-    (void) fprintf (stderr, "Dock: %d does not exist\n", dock);
+    fprintf (stderr, "Dock: %d does not exist\n", dock);
     prog_bug (function_name);
 
 #else
-    (void) fprintf (stderr, "No communications support\n");
+    fprintf (stderr, "No communications support\n");
     return;
 #endif
 }  /*  End Function r_close_dock  */
@@ -411,7 +410,7 @@ int r_connect_to_port (unsigned long addr, unsigned int port_number,
 	if ( (port_number == allocated_port_number) &&
 	    (num_docks_open > 0) )
 	{
-	    (void) fprintf (stderr, "Attempt to connect to oneself!\n");
+	    fprintf (stderr, "Attempt to connect to oneself!\n");
 	    prog_bug (function_name);
 	}
 	local_flag = TRUE;
@@ -426,7 +425,7 @@ int r_connect_to_port (unsigned long addr, unsigned int port_number,
 	    if ( (port_number == allocated_port_number) &&
 		(num_docks_open > 0) )
 	    {
-		(void) fprintf (stderr, "Attempt to connect to oneself!\n");
+		fprintf (stderr, "Attempt to connect to oneself!\n");
 		prog_bug (function_name);
 	    }
 	}
@@ -443,7 +442,7 @@ int r_connect_to_port (unsigned long addr, unsigned int port_number,
     return (fd);
 
 #else
-    (void) fprintf (stderr, "No communications support\n");
+    fprintf (stderr, "No communications support\n");
     return (-1);
 #endif
 }   /*  End Function r_connect_to_port  */
@@ -465,7 +464,7 @@ int r_accept_connection_on_dock (int dock, unsigned long *addr, flag *local)
 
     if (num_docks_open < 1)
     {
-	(void) fprintf (stderr, "No docks are open\n");
+	fprintf (stderr, "No docks are open\n");
 	prog_bug (function_name);
     }
     dock_count = 0;
@@ -475,13 +474,13 @@ int r_accept_connection_on_dock (int dock, unsigned long *addr, flag *local)
     }
     if (dock_count >= NUM_DOCKS)
     {
-	(void) fprintf (stderr, "Dock: %d does not exist\n", dock);
+	fprintf (stderr, "Dock: %d does not exist\n", dock);
 	prog_bug (function_name);
     }
     return ( accept_connection_on_dock (dock_count, addr, local) );
 
 #else
-    (void) fprintf (stderr, "No communications support\n");
+    fprintf (stderr, "No communications support\n");
     return (-1);
 #endif
 }  /*  End Function r_accept_connection_on_dock  */
@@ -494,15 +493,12 @@ flag r_close_connection (int connection)
 */
 {
 #ifdef COMMUNICATIONS_AVAILABLE
-    extern char *sys_errlist[];
-/*
-    static char function_name[] = "r_close_connection";
-*/
+    /*static char function_name[] = "r_close_connection";*/
 
     return ( close_connection (connection) );
 
 #else
-    (void) fprintf (stderr, "No communications support\n");
+    fprintf (stderr, "No communications support\n");
     return (FALSE);
 #endif
 }  /*  End Function r_close_connection  */
@@ -520,7 +516,7 @@ int r_get_bytes_readable (int connection)
     return ( get_bytes_readable (connection) );
 
 #else
-    (void) fprintf (stderr, "No communications support\n");
+    fprintf (stderr, "No communications support\n");
     return (-1);
 #endif
 }   /*  End Function r_get_bytes_readable  */
@@ -539,7 +535,7 @@ unsigned long r_get_inet_addr_from_host (CONST char *host, flag *local)
     return ( get_inet_addr_from_host (host, local) );
 
 #else
-    (void) fprintf (stderr, "No communications support\n");
+    fprintf (stderr, "No communications support\n");
     return (0);
 #endif
 }   /*  End Function r_get_inet_addr_from_host  */
@@ -596,7 +592,7 @@ int r_read (int fd, char *buf, int nbytes)
     return (total_bytes_read);
 
 #else
-    (void) fprintf (stderr, "No communications support\n");
+    fprintf (stderr, "No communications support\n");
     return (-1);
 #endif
 }   /*  End Function r_read  */
@@ -628,7 +624,7 @@ int r_write (int fd, CONST char *buf, int nbytes)
 #  ifdef SIGPIPE
     if (must_ignore_sigpipe)
     {
-	(void) signal (SIGPIPE, SIG_IGN);
+	signal (SIGPIPE, SIG_IGN);
 	must_ignore_sigpipe = FALSE;
     }
 #  endif
@@ -659,7 +655,7 @@ int r_write (int fd, CONST char *buf, int nbytes)
     return (total_bytes_written);
 
 #else
-    (void) fprintf (stderr, "No communications support\n");
+    fprintf (stderr, "No communications support\n");
     return (-1);
 #endif
 }   /*  End Function r_write  */
@@ -684,13 +680,13 @@ flag r_test_input_event (int connection)
     connection -= DESCRIPTOR_OFFSET;
     if ( (connection < 0) || (connection >= MAX_DESCRIPTORS) )
     {
-	(void) fprintf (stderr, "Bad descriptor: %d\n",
+	fprintf (stderr, "Bad descriptor: %d\n",
 			connection + DESCRIPTOR_OFFSET);
 	prog_bug (function_name);
     }
     if (!descriptors[connection].open)
     {
-	(void) fprintf (stderr, "Descriptor: %d not open\n",
+	fprintf (stderr, "Descriptor: %d not open\n",
 			connection + DESCRIPTOR_OFFSET);
 	prog_bug (function_name);
     }
@@ -713,7 +709,7 @@ flag r_test_input_event (int connection)
     return (TRUE);
 
 #else  /*  OS_VXMVX  */
-    (void) fprintf (stderr, "No communications emulation\n");
+    fprintf (stderr, "No communications emulation\n");
     prog_bug (function_name);
     return (FALSE);
 #endif  /*  OS_VXMVX  */
@@ -731,7 +727,7 @@ int r_open_stdin (flag *disc)
     return ( open_stdin (disc) );
 
 #else
-    (void) fprintf (stderr, "No communications support\n");
+    fprintf (stderr, "No communications support\n");
     return (-1);
 #endif
 }   /*  End Function r_open_stdin  */
@@ -757,7 +753,7 @@ char *r_getenv (CONST char *name)
     {
 	return (NULL);
     }
-    (void) strcpy (cmp, name);
+    strcpy (cmp, name);
     length = strlen (cmp);
     if (cmp[length] != '=')
     {
@@ -797,18 +793,18 @@ int r_setenv (CONST char *env_name, CONST char *env_value)
     len = strlen (env_name) + 1 + strlen (env_value);
     if ( ( env_string = malloc (len + 1) ) == NULL )
     {
-	(void) fprintf (stderr, "Error allocating string\n");
+	fprintf (stderr, "Error allocating string\n");
 	return (-1);
     }
-    (void) strcpy (env_string, env_name);
-    (void) strcat (env_string, "=");
-    (void) strcat (env_string, env_value);
+    strcpy (env_string, env_name);
+    strcat (env_string, "=");
+    strcat (env_string, env_value);
     for (num_strings = 0; environ[num_strings] != NULL; ++num_strings);
     if ( ( env = (char **) malloc ( sizeof *env * (num_strings + 2) ) )
 	== NULL )
     {
 	free (env_string);
-	(void) fprintf (stderr, "Error allocating environment\n");
+	fprintf (stderr, "Error allocating environment\n");
 	return (-1);
     }
     mcopy ( (char *) env, (char *) environ, num_strings * sizeof *env );
@@ -834,14 +830,14 @@ void r_gethostname (char *name, unsigned int namelen)
 
     if (GETHOSTNAME (name, namelen - 1) != 0)
     {
-	(void) fprintf (stderr, "Error getting hostname\t%s\n",
+	fprintf (stderr, "Error getting hostname\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_SYS_ERROR);
     }
     name[namelen - 1] = '\0';
 
 #else
-    (void) fprintf (stderr, "No communications support\n");
+    fprintf (stderr, "No communications support\n");
     exit (RV_UNDEF_ERROR);
 #endif
 }   /*  End Function r_gethostname  */
@@ -862,10 +858,10 @@ flag r_get_fq_hostname (char *name, unsigned int namelen)
     /*  Get host info  */
     if ( ( host_ptr = gethostbyname (host) ) == NULL )
     {
-	(void) fprintf (stderr, "Host: \"%s\" not in database\n", host);
+	fprintf (stderr, "Host: \"%s\" not in database\n", host);
 	return (FALSE);
     }
-    (void) strncpy (name, host_ptr->h_name, namelen);
+    strncpy (name, host_ptr->h_name, namelen);
     name[namelen - 1] = '\0';
     return (TRUE);
 }   /*  End Function r_get_fq_hostname  */
@@ -882,14 +878,14 @@ int r_getppid ()
 
     if ( ( ppid = GETPPID () ) < 0 )
     {
-	(void) fprintf (stderr, "Error getting parent process ID\t%s\n",
+	fprintf (stderr, "Error getting parent process ID\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_SYS_ERROR);
     }
     return (ppid);
 
 #else
-    (void) fprintf (stderr, "No communications support\n");
+    fprintf (stderr, "No communications support\n");
     exit (RV_UNDEF_ERROR);
 #endif
 }   /*  End Function r_getppid  */
@@ -938,7 +934,7 @@ int r_open_file (CONST char *filename, int flags, int mode,
 	hostname_ptr = filename + 8;
 	if (flags != O_RDWR)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Bad access flags: %d for TCP/IP connection\n",
 			    flags);
 	    return (-1);
@@ -946,15 +942,15 @@ int r_open_file (CONST char *filename, int flags, int mode,
 	if ( ( colon_ptr = (CONST char *) strchr (hostname_ptr, ':') )
 	    == NULL )
 	{
-	    (void) fprintf (stderr, "Bad IP syntax filename: \"%s\"\n",
+	    fprintf (stderr, "Bad IP syntax filename: \"%s\"\n",
 			    filename);
 	    return (-1);
 	}
-	(void) strncpy (hostname, hostname_ptr, colon_ptr - hostname_ptr);
+	strncpy (hostname, hostname_ptr, colon_ptr - hostname_ptr);
 	hostname[colon_ptr - hostname_ptr] = '\0';
 	if ( ( port = atol (colon_ptr + 1) ) < 0 )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Bad port number for IP syntax filename: \"%s\"\n",
 			    filename);
 	    return (-1);
@@ -974,7 +970,7 @@ int r_open_file (CONST char *filename, int flags, int mode,
     {
 	if ( (errno != ENOENT) || ( (flags & O_CREAT) == 0 ) )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Error getting file stats for file: \"%s\"\t%s\n",
 			    filename, sys_errlist[errno]);
 	    return (-1);
@@ -986,7 +982,7 @@ int r_open_file (CONST char *filename, int flags, int mode,
     {
 	if ( S_ISDIR (statbuf.st_mode) )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "File: \"%s\" is a directory: cannot open\n",
 			    filename);
 	    return (-1);
@@ -1014,7 +1010,7 @@ int r_open_file (CONST char *filename, int flags, int mode,
 	{
 	    if (flags != O_RDWR)
 	    {
-		(void) fprintf (stderr,
+		fprintf (stderr,
 				"Bad access flags: %d for Unix socket\n",
 				flags);
 		return (-1);
@@ -1024,8 +1020,8 @@ int r_open_file (CONST char *filename, int flags, int mode,
 	}
 	else
 	{
-	    (void) fprintf (stderr, "Illegal file mode: %d\n",
-			    statbuf.st_mode);
+	    fprintf (stderr, "Illegal file mode: %u\n",
+			    (unsigned int) statbuf.st_mode);
 	    return (-1);
 	}
 #ifdef HAS_SOCKETS
@@ -1055,8 +1051,8 @@ int r_open_file (CONST char *filename, int flags, int mode,
     {
 	if (fstat (fd, &statbuf) != 0)
 	{
-	    (void) fprintf (stderr, "Error stat'ing descriptor\n");
-	    (void) close (fd);
+	    fprintf (stderr, "Error stat'ing descriptor\n");
+	    close (fd);
 	    return (-1);
 	}
 	if ( S_ISREG (statbuf.st_mode) )
@@ -1070,10 +1066,10 @@ int r_open_file (CONST char *filename, int flags, int mode,
 	}
 	else
 	{
-	    (void) fprintf (stderr,
-			    "Illegal file mode: %d (should be regular file)\n",
-			    statbuf.st_mode);
-	    (void) close (fd);
+	    fprintf (stderr,
+			    "Illegal file mode: %u (should be regular file)\n",
+			    (unsigned int) statbuf.st_mode);
+	    close (fd);
 	    return (-1);
 	}
     }
@@ -1106,7 +1102,7 @@ int r_create_pipe (int *read_fd, int *write_fd)
     *write_fd = fds[1];
     return (retval);
 #else
-    (void) fprintf (stderr, "No pipe support\n");
+    fprintf (stderr, "No pipe support\n");
     return (-1);
 #endif
 }   /*  End Function r_create_pipe  */
@@ -1135,19 +1131,20 @@ static unsigned long get_inet_addr_from_host (CONST char *host, flag *local)
 	/*  Get my hostname  */
 	if (gethostname (local_hostname, MAXHOSTNAMELEN + 1) != 0)
 	{
-	    (void) fprintf (stderr, "Error getting local hostname\t%s",
+	    fprintf (stderr, "Error getting local hostname\t%s",
 			    sys_errlist[errno]);
 	    return (0);
 	}
 	/*  Get my host address  */
 	if ( ( local_addr = conv_hostname_to_addr (local_hostname) ) == 0 )
 	{
-	    (void) fprintf (stderr, "Error getting local host address\n");
+	    fprintf (stderr, "Error getting local host address\n");
 	    return (0);
 	}
     }
     if ( (host == NULL) || (strcmp (host, "unix") == 0) ||
-	(strcmp (host, "localhost") == 0) )
+	 (strcmp (host, "localhost") == 0) ||
+	 (strcmp (host, "local-slow") == 0) )
     {
 	/*  Local machine  */
 	if (local != NULL) *local = TRUE;
@@ -1168,7 +1165,6 @@ char *host;
 {
     unsigned long addr = 0;  /*  Initialised to keep compiler happy  */
     struct hostent *host_ptr;
-    extern char *sys_errlist[];
     static char function_name[] = "__r_conv_hostname_to_addr";
 
     if ( isascii (host[0]) && isdigit (host[0]) )
@@ -1179,7 +1175,7 @@ char *host;
     /*  Get host info  */
     if ( ( host_ptr = gethostbyname (host) ) == NULL )
     {
-	(void) fprintf (stderr, "Host: \"%s\" not in database\n", host);
+	fprintf (stderr, "Host: \"%s\" not in database\n", host);
 	return (0);
     }
     switch (host_ptr->h_length)
@@ -1195,7 +1191,7 @@ char *host;
 	break;
 #endif
       default:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Host: \"%s\" address length: %d not supported\n",
 			host, host_ptr->h_length);
 	prog_bug (function_name);
@@ -1251,13 +1247,11 @@ static int *alloc_port (unsigned int *port_number, unsigned int retries,
 	    tcp_port_offset = ntohs (service_entry->s_port);
 	    if (TCP_PORT_OFFSET != tcp_port_offset)
 	    {
-		(void) fprintf (stderr,
-				"WARNING: NIS sevices database lists Karma");
-		(void) fprintf (stderr, " as having port number: %d\n",
-				tcp_port_offset);
-		(void) fprintf (stderr,
-				"whereas the hardcoded default is: %d\n",
-				TCP_PORT_OFFSET);
+		fprintf (stderr, "WARNING: NIS sevices database lists Karma");
+		fprintf (stderr, " as having port number: %d\n",
+			 tcp_port_offset);
+		fprintf (stderr, "whereas the hardcoded default is: %d\n",
+			 TCP_PORT_OFFSET);
 	    }
 	}
     }
@@ -1267,9 +1261,9 @@ static int *alloc_port (unsigned int *port_number, unsigned int retries,
     /*  Create Unix domain socket  */
     if ( ( docks[INDEX_UNIX_DOCK] = socket (AF_UNIX, SOCK_STREAM, 0) ) < 0 )
     {
-	(void) fprintf (stderr, "Error creating Unix socket\t%s\n",
-			sys_errlist[errno]);
-	(void) exit (RV_SYS_ERROR);
+	fprintf (stderr, "Error creating Unix socket\t%s\n",
+		 sys_errlist[errno]);
+	exit (RV_SYS_ERROR);
     }
     /*  Create Internet domain socket  */
     if ( ( docks[INDEX_INTERNET_DOCK] = socket (AF_INET, SOCK_STREAM, 0) )
@@ -1278,22 +1272,22 @@ static int *alloc_port (unsigned int *port_number, unsigned int retries,
 #ifdef OS_Linux
 	if (errno == EINVAL)
 	{
-	    (void) fprintf (stderr, "No kernel support for TCP/IP\t%s\n",
-			    sys_errlist[errno]);
-	    (void) fprintf (stderr, "Internet dock not created\n");
+	    fprintf (stderr, "No kernel support for TCP/IP\t%s\n",
+		     sys_errlist[errno]);
+	    fprintf (stderr, "Internet dock not created\n");
 	    docks[INDEX_INTERNET_DOCK] = -1;
 	}
 	else
 #endif
 	{
-	    (void) fprintf (stderr, "Error creating Internet socket\t%s\n",
-			    sys_errlist[errno]);
+	    fprintf (stderr, "Error creating Internet socket\t%s\n",
+		     sys_errlist[errno]);
 	    if (close (docks[INDEX_UNIX_DOCK]) != 0)
 	    {
-		(void) fprintf (stderr, "Error closing Unix socket\t%s\n",
-				sys_errlist[errno]);
+		fprintf (stderr, "Error closing Unix socket\t%s\n",
+			 sys_errlist[errno]);
 	    }
-	    (void) exit (RV_SYS_ERROR);
+	    exit (RV_SYS_ERROR);
 	}    
     }
     /*  Try to bind to port  */
@@ -1320,25 +1314,24 @@ static int *alloc_port (unsigned int *port_number, unsigned int retries,
 	/*  All slots occupied  */
 	if (close (docks[INDEX_UNIX_DOCK]) != 0)
 	{
-	    (void) fprintf (stderr, "Error closing Internet socket\t%s\n",
-			    sys_errlist[errno]);
-	    (void) exit (RV_SYS_ERROR);
+	    fprintf (stderr, "Error closing Internet socket\t%s\n",
+		     sys_errlist[errno]);
+	    exit (RV_SYS_ERROR);
 	}
 	if (close (docks[INDEX_INTERNET_DOCK]) != 0)
 	{
-	    (void) fprintf (stderr, "Error closing Internet socket\t%s\n",
-			    sys_errlist[errno]);
-	    (void) exit (RV_SYS_ERROR);
+	    fprintf (stderr, "Error closing Internet socket\t%s\n",
+		     sys_errlist[errno]);
+	    exit (RV_SYS_ERROR);
 	}
 	return (NULL);
     }
     if (docks[INDEX_INTERNET_DOCK] > -1)
     {
 	/*  Have bound Internet dock: now bind Unix dock  */
-	if (bind_unix (docks[INDEX_UNIX_DOCK], allocated_port_number) != TRUE)
+	if ( !bind_unix (docks[INDEX_UNIX_DOCK], allocated_port_number) )
 	{
-	    (void) fprintf (stderr,
-			    "TCP dock bound but could not bind Unix dock\n");
+	    fprintf (stderr, "TCP dock bound but could not bind Unix dock\n");
 	    exit (RV_SYS_ERROR);
 	}
     }
@@ -1367,25 +1360,25 @@ static flag bind_unix (int sock, unsigned int port_number)
     extern char *sys_errlist[];
 
     un_addr.sun_family = AF_UNIX;
-    (void) sprintf (un_addr.sun_path, "%s/%s%d", UNIX_SOCKET_DIR,
+    sprintf (un_addr.sun_path, "%s/%s%d", UNIX_SOCKET_DIR,
 		    UNIX_SOCKET_FILE, port_number);
-    (void) mkdir (UNIX_SOCKET_DIR, (mode_t) 0777);
-    (void) chmod (UNIX_SOCKET_DIR, (mode_t) 0777);
-    (void) unlink (un_addr.sun_path);
+    mkdir (UNIX_SOCKET_DIR, (mode_t) 0777);
+    chmod (UNIX_SOCKET_DIR, (mode_t) 0777);
+    unlink (un_addr.sun_path);
     /*  Try to bind to Unix port  */
     if (bind (sock, (struct sockaddr *) &un_addr, (int) sizeof un_addr) != 0)
     {
 	/*  Could not bind to port number  */
 	if (errno != EADDRINUSE)
 	{
-	    (void) fprintf (stderr, "Error binding Unix socket\t%s\n",
+	    fprintf (stderr, "Error binding Unix socket\t%s\n",
 			    sys_errlist[errno]);
 	    if (close (sock) != 0)
 	    {
-		(void) fprintf (stderr, "Error closing Unix socket\t%s\n",
+		fprintf (stderr, "Error closing Unix socket\t%s\n",
 				sys_errlist[errno]);
 	    }
-	    (void) exit (RV_SYS_ERROR);
+	    exit (RV_SYS_ERROR);
 	}
 	/*  Port already in use: say so  */
 	return (FALSE);
@@ -1394,26 +1387,26 @@ static flag bind_unix (int sock, unsigned int port_number)
     /*  Set close-on-exec flag  */
     if (fcntl (sock, F_SETFD, 1) == -1)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Error setting close-on-exec flag for Unix socket\t%s\n",
 			sys_errlist[errno]);
 	if (close (sock) != 0)
 	{
-	    (void) fprintf (stderr, "Error closing Unix socket\t%s\n",
+	    fprintf (stderr, "Error closing Unix socket\t%s\n",
 			    sys_errlist[errno]);
 	}
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     if (listen (sock, 2) != 0)
     {
-	(void) fprintf (stderr, "Error listening to Unix dock\t%s\n",
+	fprintf (stderr, "Error listening to Unix dock\t%s\n",
 			sys_errlist[errno]);
 	if (close (sock) != 0)
 	{
-	    (void) fprintf (stderr, "Error closing Unix socket\t%s\n",
+	    fprintf (stderr, "Error closing Unix socket\t%s\n",
 			    sys_errlist[errno]);
 	}
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     return (TRUE);
 }   /*  End Function bind_unix  */
@@ -1441,14 +1434,14 @@ static flag bind_inet (int sock, unsigned int port_number)
 	/*  Could not bind to port number  */
 	if (errno != EADDRINUSE)
 	{
-	    (void) fprintf (stderr, "Error binding Internet socket\t%s\n",
+	    fprintf (stderr, "Error binding Internet socket\t%s\n",
 			    sys_errlist[errno]);
 	    if (close (sock) != 0)
 	    {
-		(void) fprintf (stderr, "Error closing Internet socket\t%s\n",
+		fprintf (stderr, "Error closing Internet socket\t%s\n",
 				sys_errlist[errno]);
 	    }
-	    (void) exit (RV_SYS_ERROR);
+	    exit (RV_SYS_ERROR);
 	}
 	/*  Port already in use: say so  */
 	return (FALSE);
@@ -1458,7 +1451,7 @@ static flag bind_inet (int sock, unsigned int port_number)
 /*
 #  ifdef TCP_NODELAY
     sock_opt |= TCP_NODELAY;
-    (void) fprintf (stderr, "TCP_NODELAY\n");
+    fprintf (stderr, "TCP_NODELAY\n");
 #  endif
 */
     /*  The following code exercises a bug in the Convex OS kernel.
@@ -1466,36 +1459,36 @@ static flag bind_inet (int sock, unsigned int port_number)
     if (setsockopt (sock, SOL_SOCKET, sock_opt, (caddr_t) 0, 0)
 	!= 0)
     {
-        (void) fprintf (stderr,
+        fprintf (stderr,
 	                "Error setting Internet socket options\t%s\n",
 			sys_errlist[errno]);
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
 */
     /*  Set close-on-exec flag  */
     if (fcntl (sock, F_SETFD, 1) == -1)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Error setting close-on-exec flag for Internet socket\t%s\n",
 			sys_errlist[errno]);
 	if (close (sock) != 0)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Error closing Internet socket\t%s\n",
 			    sys_errlist[errno]);
 	}
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     if (listen (sock, 2) != 0)
     {
-	(void) fprintf (stderr, "Error listening to Internet dock\t%s\n",
+	fprintf (stderr, "Error listening to Internet dock\t%s\n",
 			sys_errlist[errno]);
 	if (close (sock) != 0)
 	{
-	    (void) fprintf (stderr, "Error closing Internet socket\t%s\n",
+	    fprintf (stderr, "Error closing Internet socket\t%s\n",
 			    sys_errlist[errno]);
 	}
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     return (TRUE);
 }   /*  End Function bind_inet  */
@@ -1516,41 +1509,41 @@ static int connect_unix (CONST char *filename)
     /*  Create socket  */
     if ( ( fd = socket (AF_UNIX, SOCK_STREAM, 0) ) < 0 )
     {
-	(void) fprintf (stderr, "Error creating socket\t%s\n",
+	fprintf (stderr, "Error creating socket\t%s\n",
 			sys_errlist[errno]);
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     /*  Set close-on-exec flag  */
     if (fcntl (fd, F_SETFD, 1) == -1)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Error setting close-on-exec flag for Unix socket\t%s\n",
 			sys_errlist[errno]);
 	if (close (fd) != 0)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Error closing Unix socket\t%s\n",
 			    sys_errlist[errno]);
 	}
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     /*  Set up addressing info  */
     un_addr.sun_family = AF_UNIX;
-    (void) strcpy (un_addr.sun_path, filename);
+    strcpy (un_addr.sun_path, filename);
     /*  Connect to other end (server module)  */
     if (connect (fd, (struct sockaddr *) &un_addr, (int) sizeof un_addr) != 0)
     {
 	/*  No connection made  */
 	if ( (errno != ECONNREFUSED) && (errno != ENOENT) && (errno != ENXIO) )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Error connecting to Unix socket\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_SYS_ERROR);
 	}
 	if (close (fd) != 0)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Error closing unix socket: %d\t%s\n",
 			    fd, sys_errlist[errno]);
 	}
@@ -1577,23 +1570,23 @@ static int connect_inet (unsigned long addr, unsigned int port_number)
     /*  Create socket  */
     if ( ( sock = socket (AF_INET, SOCK_STREAM, 0) ) < 0 )
     {
-	(void) fprintf (stderr, "Error creating socket\t%s\n",
+	fprintf (stderr, "Error creating socket\t%s\n",
 			sys_errlist[errno]);
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     /*  Set close-on-exec flag  */
     if (fcntl (sock, F_SETFD, 1) == -1)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Error setting close-on-exec flag for Internet socket\t%s\n",
 			sys_errlist[errno]);
 	if (close (sock) != 0)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Error closing Internet socket\t%s\n",
 			    sys_errlist[errno]);
 	}
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     /*  Set up addressing info  */
     in_addr.sin_family = AF_INET;
@@ -1606,14 +1599,14 @@ static int connect_inet (unsigned long addr, unsigned int port_number)
 	/*  No connection made  */
 	if (errno != ECONNREFUSED)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Error connecting to Internet socket\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_SYS_ERROR);
 	}
 	if (close (sock) != 0)
 	{
-	    (void) fprintf (stderr, "Error closing Internet socket\t%s\n",
+	    fprintf (stderr, "Error closing Internet socket\t%s\n",
 			    sys_errlist[errno]);
 	}
 	return (-1);
@@ -1635,16 +1628,16 @@ static void close_dock (int dock_index)
 
     if (close (docks[dock_index]) != 0)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Error closing dock: %d\t%s\n",
 			docks[dock_index], sys_errlist[errno]);
 	exit (RV_SYS_ERROR);
     }
     if (dock_index == INDEX_UNIX_DOCK)
     {
-	(void) sprintf (un_addr.sun_path, "%s/%s%d", UNIX_SOCKET_DIR,
+	sprintf (un_addr.sun_path, "%s/%s%d", UNIX_SOCKET_DIR,
 			UNIX_SOCKET_FILE, allocated_port_number);
-	(void) unlink (un_addr.sun_path);
+	unlink (un_addr.sun_path);
     }
 }  /*  End Function close_dock  */
 
@@ -1665,7 +1658,6 @@ static int connect_to_port (unsigned long addr, unsigned int port_number)
 #endif
     char filename[STRING_LENGTH];
     extern int tcp_port_offset;
-    extern char *sys_errlist[];
 
     /*  Get port number for tcp/ ip  */
 #ifdef DISABLED
@@ -1681,11 +1673,11 @@ static int connect_to_port (unsigned long addr, unsigned int port_number)
 	    tcp_port_offset = ntohs (service_entry->s_port);
 	    if (TCP_PORT_OFFSET != tcp_port_offset)
 	    {
-		(void) fprintf (stderr,
+		fprintf (stderr,
 				"WARNING: NIS sevices database lists Karma");
-		(void) fprintf (stderr, " as having port number: %d\n",
+		fprintf (stderr, " as having port number: %d\n",
 				tcp_port_offset);
-		(void) fprintf (stderr,
+		fprintf (stderr,
 				"whereas the hardcoded default is: %d\n",
 				TCP_PORT_OFFSET);
 	    }
@@ -1698,7 +1690,7 @@ static int connect_to_port (unsigned long addr, unsigned int port_number)
     if (addr == 0)
     {
 	/*  Unix domain socket/ connection  */
-	(void) sprintf (filename, "%s/%s%d", UNIX_SOCKET_DIR,
+	sprintf (filename, "%s/%s%d", UNIX_SOCKET_DIR,
 			UNIX_SOCKET_FILE, port_number);
 	/*  Connect to other end (server module)  */
 	return ( connect_unix (filename) );
@@ -1735,34 +1727,34 @@ static int accept_connection_on_dock (int dock_index, unsigned long *addr,
     {
       case INDEX_UNIX_DOCK:
 	un_addr_len = sizeof un_addr;
-	(void) mclear ( (char *) &un_addr, un_addr_len );
+	mclear ( (char *) &un_addr, un_addr_len );
 	/*  Listen for connections  */
 	if ( ( fd = accept (docks[dock_index], (struct sockaddr *) &un_addr,
 			    &un_addr_len) )
 	    < 0 )
 	{
-	    (void) fprintf (stderr, "Error accepting unix connection\t%s\n",
+	    fprintf (stderr, "Error accepting unix connection\t%s\n",
 			    sys_errlist[errno]);
-	    (void) exit (RV_SYS_ERROR);
+	    exit (RV_SYS_ERROR);
 	}
 	*addr = r_get_inet_addr_from_host ( (char *) NULL, (flag *) NULL );
 	break;
       case INDEX_INTERNET_DOCK:
 	in_addr_len = sizeof in_addr;
-	(void) mclear ( (char *) &in_addr, in_addr_len );
+	mclear ( (char *) &in_addr, in_addr_len );
 	/*  Listen for connections  */
 	if ( ( fd = accept (docks[dock_index], (struct sockaddr *) &in_addr,
 			    &in_addr_len) )
 	    < 0 )
 	{
-	    (void) fprintf (stderr, "Error accepting connection\t%s\t\n",
+	    fprintf (stderr, "Error accepting connection\t%s\t\n",
 			    sys_errlist[errno]);
-	    (void) exit (RV_SYS_ERROR);
+	    exit (RV_SYS_ERROR);
 	}
 	*addr = in_addr.sin_addr.s_addr;
 	break;
       default:
-	(void) fprintf (stderr, "Unknown dock type\n");
+	fprintf (stderr, "Unknown dock type\n");
 	prog_bug (function_name);
 	break;
     }
@@ -1777,10 +1769,10 @@ static int accept_connection_on_dock (int dock_index, unsigned long *addr,
     /*  Set close-on-exec flag  */
     if (fcntl (fd, F_SETFD, 1) == -1)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Error setting close-on-exec flag for descriptor: %d\t%s\n",
 			fd, sys_errlist[errno]);
-	(void) close (fd);
+	close (fd);
 	return (-1);
     }
     return (fd);
@@ -1796,7 +1788,7 @@ static flag close_connection (int connection)
 
     if (close (connection) != 0)
     {
-	(void) fprintf (stderr, "Error closing descriptor: %d\t%s\n",
+	fprintf (stderr, "Error closing descriptor: %d\t%s\n",
 			connection, sys_errlist[errno]);
 	return (FALSE);
     }
@@ -1816,11 +1808,16 @@ static int get_bytes_readable (int connection)
 
     if (ioctl (connection, (int) FIONREAD, (char *) &bytes_available) != 0)
     {
-	/*  The following test/return is needed for Slowaris.
+#ifdef OS_Solaris
+	/*  The following test/return for EPIPE is needed for Slowaris.
+	    I've also noticed in Slowass 2.5 that consecutive calls can return
+	    some non-zero value followed by a lesser (typically zero) value!
+	    That is clearly a kernel bug!!
 	    Seeing all the changes I've had to make for Slowaris, doesn't it
 	    give the feeling there's something wrong with it???  */
 	if (errno == EPIPE) return (0);
-	(void) fprintf (stderr,
+#endif
+	fprintf (stderr,
 			"Error getting number of bytes readable on descriptor: %d\t%s\n",
 			connection, sys_errlist[errno]);
 	return (-1);
@@ -1841,7 +1838,7 @@ flag *disc;
 
     if (fstat (0, &statbuf) != 0)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Error getting stats on input descriptor\t%s\n",
 			sys_errlist[errno]);
 	return (-1);
@@ -1863,7 +1860,7 @@ flag *disc;
     else
     {
 	/*  Illegal object  */
-	(void) fprintf (stderr, "Illegal input descriptor\n");
+	fprintf (stderr, "Illegal input descriptor\n");
 	return (-1);
     }
     return (0);
@@ -1897,7 +1894,7 @@ static void init_control_connection ()
     initialised = TRUE;
     if ( ( msg = task_recv_msg (0, 0, 1) ) == NULL )
     {
-	(void) fprintf (stderr, "Error receiving first message\n");
+	fprintf (stderr, "Error receiving first message\n");
 	exit (RV_UNDEF_ERROR);
     }
     parent_pid = *(int *) msg;
@@ -1908,7 +1905,7 @@ static void init_control_connection ()
     if ( ( environ = (char **) malloc ( sizeof *environ * (num_env + 1) ) )
 	== NULL )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Error allocating space for: %d environment strings\n",
 			num_env);
 	exit (RV_MEM_ERROR);
@@ -1917,7 +1914,7 @@ static void init_control_connection ()
     {
 	if ( ( environ[count] = strdup (ptr) ) == NULL )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Error allocating space for environment string: \"%s\"\n",
 			    ptr);
 	    exit (RV_MEM_ERROR);
@@ -1928,13 +1925,13 @@ static void init_control_connection ()
     task_free_msg (msg);
     if ( ( incoming_control_message_queue = task_create_msg_q () ) < 0 )
     {
-	(void) fprintf (stderr, "Error creating control message queue\n");
+	fprintf (stderr, "Error creating control message queue\n");
 	exit (RV_UNDEF_ERROR);
     }
     if ( ( msg = task_alloc_msg (sizeof incoming_control_message_queue, 1) )
 	== NULL )
     {
-	(void) fprintf (stderr, "Error allocating message buffer\n");
+	fprintf (stderr, "Error allocating message buffer\n");
 	exit (RV_MEM_ERROR);
     }
     *(int *) msg = incoming_control_message_queue;
@@ -1984,7 +1981,7 @@ unsigned int *num_docks;
     init_control_connection ();
     if ( ( msg = task_alloc_msg (3 * sizeof (unsigned int), 1) ) == NULL )
     {
-	(void) fprintf (stderr, "Error allocating message queue\n");
+	fprintf (stderr, "Error allocating message queue\n");
 	exit (RV_UNDEF_ERROR);
     }
     *(unsigned int *) msg = HR_ALLOC_PORT;
@@ -1994,7 +1991,7 @@ unsigned int *num_docks;
     if ( ( msg = task_recv_msg (incoming_control_message_queue, 0, 1) )
 	== NULL )
     {
-	(void) fprintf (stderr, "Error receiving control message\n");
+	fprintf (stderr, "Error receiving control message\n");
 	exit (RV_UNDEF_ERROR);
     }
     if ( (num_docks_open = *(unsigned int *) msg) < 1 )
@@ -2006,7 +2003,7 @@ unsigned int *num_docks;
     {
 	if ( ( fd = find_spare_descriptor () ) < 0 )
 	{
-	    (void) fprintf (stderr, "Descriptor limit reached\n");
+	    fprintf (stderr, "Descriptor limit reached\n");
 	    exit (RV_UNDEF_ERROR);
 	}
 	docks[dock_count] = fd + DESCRIPTOR_OFFSET;
@@ -2015,7 +2012,7 @@ unsigned int *num_docks;
 	if ( ( descriptors[fd].incoming_message_queue =
 	      task_create_msg_q () ) < 0 )
 	{
-	    (void) fprintf (stderr, "Error creating message queue\n");
+	    fprintf (stderr, "Error creating message queue\n");
 	    exit (RV_UNDEF_ERROR);
 	}
 	descriptors[fd].outgoing_message_queue = *( (int *) msg + dock_count
@@ -2027,7 +2024,7 @@ unsigned int *num_docks;
     task_free_msg (msg);
     if ( ( msg = task_alloc_msg (num_docks_open * sizeof (int), 1) ) == NULL )
     {
-	(void) fprintf (stderr, "Error allocating message queue\n");
+	fprintf (stderr, "Error allocating message queue\n");
 	exit (RV_UNDEF_ERROR);
     }
     for (dock_count = 0; dock_count < num_docks_open; ++dock_count)
@@ -2059,19 +2056,19 @@ int dock;
     dock -= DESCRIPTOR_OFFSET;
     if ( (dock < 0) || (dock >= MAX_DESCRIPTORS) )
     {
-	(void) fprintf (stderr, "Bad descriptor: %d\n",
+	fprintf (stderr, "Bad descriptor: %d\n",
 			dock + DESCRIPTOR_OFFSET);
 	prog_bug (function_name);
     }
     if (descriptors[dock].open != TRUE)
     {
-	(void) fprintf (stderr, "Descriptor: %d not open\n",
+	fprintf (stderr, "Descriptor: %d not open\n",
 			dock + DESCRIPTOR_OFFSET);
 	prog_bug (function_name);
     }
     if ( ( msg = task_alloc_msg (0, 1) ) == NULL )
     {
-	(void) fprintf (stderr, "Error allocating message queue\n");
+	fprintf (stderr, "Error allocating message queue\n");
 	exit (RV_UNDEF_ERROR);
     }
     task_send_msg (descriptors[dock].outgoing_message_queue, msg);
@@ -2100,18 +2097,18 @@ static int connect_to_port (unsigned long addr, unsigned int port_number)
     init_control_connection ();
     if ( ( fd = find_spare_descriptor () ) < 0 )
     {
-	(void) fprintf (stderr, "Descriptor limit reached\n");
+	fprintf (stderr, "Descriptor limit reached\n");
 	return (-1);
     }
     if ( ( descriptors[fd].incoming_message_queue = task_create_msg_q () )
 	< 0 )
     {
-	(void) fprintf (stderr, "Error creating message queue\n");
+	fprintf (stderr, "Error creating message queue\n");
 	exit (RV_UNDEF_ERROR);
     }
     if ( ( msg = task_alloc_msg (4 * sizeof (unsigned int), 1) ) == NULL )
     {
-	(void) fprintf (stderr, "Error allocating message\n");
+	fprintf (stderr, "Error allocating message\n");
 	exit (RV_UNDEF_ERROR);
     }
     *(unsigned int *) msg = HR_CONNECT_TO_PORT;
@@ -2122,7 +2119,7 @@ static int connect_to_port (unsigned long addr, unsigned int port_number)
     if ( ( msg = task_recv_msg (incoming_control_message_queue, 0, 1) )
 	== NULL )
     {
-	(void) fprintf (stderr, "Error receiving control message\n");
+	fprintf (stderr, "Error receiving control message\n");
 	exit (RV_UNDEF_ERROR);
     }
     if ( (errnum = *(int *) msg) != 0 )
@@ -2131,7 +2128,7 @@ static int connect_to_port (unsigned long addr, unsigned int port_number)
 	if (errnum != ECONNREFUSED)
 	{
 	    /*  Error  */
-	    (void) fprintf (stderr, "Error connecting\t%s\n",
+	    fprintf (stderr, "Error connecting\t%s\n",
 			    sys_errlist[errnum]);
 	}
 	task_free_msg (msg);
@@ -2178,19 +2175,19 @@ static int accept_connection_on_dock (int dock_index, unsigned long *addr,
     dock -= DESCRIPTOR_OFFSET;
     if ( (dock < 0) || (dock >= MAX_DESCRIPTORS) )
     {
-	(void) fprintf (stderr, "Bad descriptor: %d\n",
+	fprintf (stderr, "Bad descriptor: %d\n",
 			dock + DESCRIPTOR_OFFSET);
 	prog_bug (function_name);
     }
     if (descriptors[dock].open != TRUE)
     {
-	(void) fprintf (stderr, "Descriptor: %d not open\n",
+	fprintf (stderr, "Descriptor: %d not open\n",
 			dock + DESCRIPTOR_OFFSET);
 	prog_bug (function_name);
     }
     if ( (in_msg = descriptors[dock].incoming_msg) == NULL )
     {
-	(void) fprintf (stderr, "No request on dock\n");
+	fprintf (stderr, "No request on dock\n");
 	prog_bug (function_name);
     }
     accept_message_queue = *(int *) in_msg;
@@ -2199,12 +2196,12 @@ static int accept_connection_on_dock (int dock_index, unsigned long *addr,
     descriptors[dock].msg_len = 0;
     if ( ( msg = task_alloc_msg (sizeof (int), 1) ) == NULL )
     {
-	(void) fprintf (stderr, "Error allocating message\n");
+	fprintf (stderr, "Error allocating message\n");
 	exit (RV_UNDEF_ERROR);
     }
     if ( ( fd = find_spare_descriptor () ) < 0 )
     {
-	(void) fprintf (stderr, "Descriptor limit reached\n");
+	fprintf (stderr, "Descriptor limit reached\n");
 	*(int *) msg = -1;
 	task_send_msg (accept_message_queue, msg);
 	task_free_msg (in_msg);
@@ -2213,7 +2210,7 @@ static int accept_connection_on_dock (int dock_index, unsigned long *addr,
     if ( ( descriptors[fd].incoming_message_queue = task_create_msg_q () )
 	< 0 )
     {
-	(void) fprintf (stderr, "Error creating message queue\n");
+	fprintf (stderr, "Error creating message queue\n");
 	exit (RV_UNDEF_ERROR);
     }
     *(int *) msg = descriptors[fd].incoming_message_queue;
@@ -2244,13 +2241,13 @@ static flag close_connection (int connection)
     connection -= DESCRIPTOR_OFFSET;
     if ( (connection < 0) || (connection >= MAX_DESCRIPTORS) )
     {
-	(void) fprintf (stderr, "Bad descriptor: %d\n",
+	fprintf (stderr, "Bad descriptor: %d\n",
 			connection + DESCRIPTOR_OFFSET);
 	prog_bug (function_name);
     }
     if (descriptors[connection].open != TRUE)
     {
-	(void) fprintf (stderr, "Descriptor: %d not open\n",
+	fprintf (stderr, "Descriptor: %d not open\n",
 			connection + DESCRIPTOR_OFFSET);
 	prog_bug (function_name);
     }
@@ -2265,15 +2262,15 @@ static flag close_connection (int connection)
     if (descriptors[connection].received_closure)
     {
 	/*  Closure message was received: go no further  */
-	(void) fprintf (stderr, "%s: Close remote\n", function_name);
+	fprintf (stderr, "%s: Close remote\n", function_name);
 	return (TRUE);
     }
-    (void) fprintf (stderr, "%s: Close local: send 0 bytes\n", function_name);
+    fprintf (stderr, "%s: Close local: send 0 bytes\n", function_name);
     if (descriptors[connection].outgoing_message_queue > -1)
     {
 	if ( ( msg = task_alloc_msg (0, 1) ) == NULL )
 	{
-	    (void) fprintf (stderr, "Error allocating message\n");
+	    fprintf (stderr, "Error allocating message\n");
 	    exit (RV_UNDEF_ERROR);
 	}
 	task_send_msg (descriptors[connection].outgoing_message_queue, msg);
@@ -2327,13 +2324,13 @@ int nbytes;
     fd -= DESCRIPTOR_OFFSET;
     if ( (fd < 0) || (fd >= MAX_DESCRIPTORS) )
     {
-	(void) fprintf (stderr, "Bad descriptor: %d\n",
+	fprintf (stderr, "Bad descriptor: %d\n",
 			fd + DESCRIPTOR_OFFSET);
 	prog_bug (function_name);
     }
     if (descriptors[fd].open != TRUE)
     {
-	(void) fprintf (stderr, "Descriptor: %d not open\n",
+	fprintf (stderr, "Descriptor: %d not open\n",
 			fd + DESCRIPTOR_OFFSET);
 	prog_bug (function_name);
     }
@@ -2343,7 +2340,7 @@ int nbytes;
 	      task_recv_msg (descriptors[fd].incoming_message_queue, 0,
 			     1) ) == NULL )
 	{
-	    (void) fprintf (stderr, "Error reading message\n");
+	    fprintf (stderr, "Error reading message\n");
 	    exit (RV_UNDEF_ERROR);
 	}
 	descriptors[fd].incoming_msg = msg;
@@ -2410,19 +2407,19 @@ int nbytes;
     fd -= DESCRIPTOR_OFFSET;
     if ( (fd < 0) || (fd >= MAX_DESCRIPTORS) )
     {
-	(void) fprintf (stderr, "Bad descriptor: %d\n",
+	fprintf (stderr, "Bad descriptor: %d\n",
 			fd + DESCRIPTOR_OFFSET);
 	prog_bug (function_name);
     }
     if (descriptors[fd].open != TRUE)
     {
-	(void) fprintf (stderr, "Descriptor: %d not open\n",
+	fprintf (stderr, "Descriptor: %d not open\n",
 			fd + DESCRIPTOR_OFFSET);
 	prog_bug (function_name);
     }
     if ( ( msg = task_alloc_msg (nbytes, 1) ) == NULL )
     {
-	(void) fprintf (stderr, "Error allocating message\n");
+	fprintf (stderr, "Error allocating message\n");
 	exit (RV_UNDEF_ERROR);
     }
     ptr = (char *) msg;
@@ -2451,13 +2448,13 @@ static int get_bytes_readable (int connection)
     connection -= DESCRIPTOR_OFFSET;
     if ( (connection < 0) || (connection >= MAX_DESCRIPTORS) )
     {
-	(void) fprintf (stderr, "Bad descriptor: %d\n",
+	fprintf (stderr, "Bad descriptor: %d\n",
 			connection + DESCRIPTOR_OFFSET);
 	prog_bug (function_name);
     }
     if (descriptors[connection].open != TRUE)
     {
-	(void) fprintf (stderr, "Descriptor: %d not open\n",
+	fprintf (stderr, "Descriptor: %d not open\n",
 			connection + DESCRIPTOR_OFFSET);
 	prog_bug (function_name);
     }
@@ -2509,7 +2506,7 @@ static unsigned long get_inet_addr_from_host (CONST char *host, flag *local)
 	/*  Get my host address  */
 	if ( ( local_addr = conv_hostname_to_addr ("localhost") ) == 0 )
 	{
-	    (void) fprintf (stderr, "Error getting local host address\n");
+	    fprintf (stderr, "Error getting local host address\n");
 	    return (0);
 	}
     }
@@ -2543,16 +2540,16 @@ char *host;
     length = sizeof (unsigned int) + strlen (host) + 1;
     if ( ( msg = task_alloc_msg (length, 1) ) == NULL )
     {
-	(void) fprintf (stderr, "Error allocating message\n");
+	fprintf (stderr, "Error allocating message\n");
 	exit (RV_UNDEF_ERROR);
     }
     *(unsigned int *) msg = HR_GET_INET_ADDR;
-    (void) strcpy ( (char *) msg + sizeof (unsigned int), host );
+    strcpy ( (char *) msg + sizeof (unsigned int), host );
     task_send_msg (outgoing_control_message_queue, msg);
     if ( ( msg = task_recv_msg (incoming_control_message_queue, 0, 1) )
 	== NULL )
     {
-	(void) fprintf (stderr, "Error receiving control message\n");
+	fprintf (stderr, "Error receiving control message\n");
 	exit (RV_UNDEF_ERROR);
     }
     addr = *(unsigned long *) msg;
@@ -2580,17 +2577,17 @@ flag *disc;
     init_control_connection ();
     if ( ( fd = find_spare_descriptor () ) < 0 )
     {
-	(void) fprintf (stderr, "Descriptor limit reached\n");
+	fprintf (stderr, "Descriptor limit reached\n");
 	return (-1);
     }
     if ( ( conn_message_queue = task_create_msg_q () ) < 0 )
     {
-	(void) fprintf (stderr, "Error creating message queue\n");
+	fprintf (stderr, "Error creating message queue\n");
 	exit (RV_UNDEF_ERROR);
     }
     if ( ( msg = task_alloc_msg (2 * sizeof (unsigned int), 1) ) == NULL )
     {
-	(void) fprintf (stderr, "Error allocating message\n");
+	fprintf (stderr, "Error allocating message\n");
 	exit (RV_UNDEF_ERROR);
     }
     *(unsigned int *) msg = HR_OPEN_STDIN;
@@ -2599,7 +2596,7 @@ flag *disc;
     if ( ( msg = task_recv_msg (incoming_control_message_queue, 0, 1) )
 	== NULL )
     {
-	(void) fprintf (stderr, "Error receiving control message\n");
+	fprintf (stderr, "Error receiving control message\n");
 	exit (RV_UNDEF_ERROR);
     }
     if ( (errnum = *(int *) msg) == -1 )
@@ -2611,7 +2608,7 @@ flag *disc;
     }
     if (errnum != 0)
     {
-	(void) fprintf (stderr, "Error connecting\t%s\n", sys_errlist[errnum]);
+	fprintf (stderr, "Error connecting\t%s\n", sys_errlist[errnum]);
 	task_free_msg (msg);
 	return (-1);
     }
@@ -2644,7 +2641,7 @@ unsigned int namelen;
     init_control_connection ();
     if ( ( msg = task_alloc_msg (sizeof (unsigned int), 1) ) == NULL )
     {
-	(void) fprintf (stderr, "Error allocating message\n");
+	fprintf (stderr, "Error allocating message\n");
 	exit (RV_UNDEF_ERROR);
     }
     *(unsigned int *) msg = HR_GET_HOSTNAME;
@@ -2652,10 +2649,10 @@ unsigned int namelen;
     if ( ( msg = task_recv_msg (incoming_control_message_queue, 0, 1) )
 	== NULL )
     {
-	(void) fprintf (stderr, "Error receiving control message\n");
+	fprintf (stderr, "Error receiving control message\n");
 	exit (RV_UNDEF_ERROR);
     }
-    (void) strncpy (name, msg, namelen);
+    strncpy (name, msg, namelen);
     task_free_msg (msg);
     return (0);
 }   /*  End Function get_hostname  */
@@ -2676,9 +2673,9 @@ static int get_ppid ()
 
 static void prog_bug (char *function_name)
 {
-    (void) fprintf (stderr, "Program bug noted in function: %s\n",
+    fprintf (stderr, "Program bug noted in function: %s\n",
 		    function_name);
-    (void) fprintf (stderr, "Aborting.%c\n", BEL);
+    fprintf (stderr, "Aborting.%c\n", BEL);
     exit (RV_PROGRAM_BUG);
 }   /*  End Function prog_bug   */
 

@@ -62,10 +62,16 @@
   <XkwFilewinStandardFileTester_nD> and <XkwFilewinStandardFileTester_3D>
   routines.
 
-    Last updated by Richard Gooch   24-JUN-1996: Fixed
+    Updated by      Richard Gooch   24-JUN-1996: Fixed
   <XkwFilewinStandardFileTester_nD> and <XkwFilewinStandardFileTester_3D>
   routines to catenate directory name with filename. Required for properly
   testing GIPSY files.
+
+    Updated by      Richard Gooch   25-OCT-1996: Limit height so that it fits
+  on the screen.
+
+    Last updated by Richard Gooch   27-OCT-1996: Strip unneccessary components
+  from directory names.
 
 
 */
@@ -95,6 +101,7 @@
 
 #define MINIMUM_LIST_ROWS 20
 
+
 /*----------------------------------------------------------------------*/
 /* Function prototypes*/
 /*----------------------------------------------------------------------*/
@@ -105,6 +112,7 @@ static void Initialize(Widget request,Widget new);
 static void Destroy(Widget w);
 static Boolean SetValues(Widget current,Widget request,Widget new);
 static void ConstraintInitialize(Widget request,Widget new);
+STATIC_FUNCTION (flag clean_dirname, (char dirname[STRING_LENGTH]) );
 
 /*----------------------------------------------------------------------*/
 /* Default Resources*/
@@ -226,20 +234,20 @@ static void create_list (FilewinWidget w)
     thedir = dir_open (W.curdir);
     while ( (finfo = dir_read (thedir, KDIR_DOTDOT) ) != NULL )
     {
-	if ( W.accept_file==NULL || W.accept_file(*finfo) )
+	if ( (W.accept_file == NULL) || W.accept_file (*finfo) )
 	{
-	    ptr = (char *) m_alloc (strlen (finfo->filename) + 4);
+	    ptr = m_alloc (strlen (finfo->filename) + 4);
 	    W.list[W.listcount] = ptr;
 	    /*  The following reference must be done through  ptr  because the
-		AIX/rs6000 compiler is fucked.  */
-	    (void) strcpy (ptr + 3, finfo->filename);
+		AIX/rs6000 compiler is fucked  */
+	    strcpy (ptr + 3, finfo->filename);
 	    if (finfo->type == KFILETYPE_DIRECTORY)
 	    {
-		(void) strncpy (ptr, "D  ", 3);
+		strncpy (ptr, "D  ", 3);
 	    }
 	    else
 	    {
-		(void) strncpy (ptr, "F  ", 3);
+		strncpy (ptr, "F  ", 3);
 	    }
 	    W.listcount++;
 	    if (W.listcount == W.listmax) increase_list_size (w);
@@ -277,19 +285,76 @@ static void filesel_cbk (Widget w, XtPointer client_data, XtPointer call_data)
     }
     if ( (fw->filewin.list[lr->list_index])[0] == 'D' )
     {
-	(void) sprintf (dirname, "%s/%s", fw->filewin.curdir,
-			fw->filewin.list[lr->list_index] + 3);
+	/*  Yep, it's a directory: construct name  */
+	sprintf (dirname, "%s/%s", fw->filewin.curdir,
+		 fw->filewin.list[lr->list_index] + 3);
+	clean_dirname (dirname);
 	if ( c_call_callbacks (fw->filewin.dir_callbacks, dirname) ) return;
-	(void) strcpy (fw->filewin.curdir, dirname);
-	create_list(fw);
-	XawListChange(w,fw->filewin.list,fw->filewin.listcount,0,True);
+	strcpy (fw->filewin.curdir, dirname);
+	create_list (fw);
+	XawListChange(w, fw->filewin.list, fw->filewin.listcount, 0, True);
     }
     else
     {
-	sprintf(fname,"%s/%s",fw->filewin.curdir,fw->filewin.list[lr->list_index]+3);
-	XtCallCallbacks((Widget)fw,XkwNfileSelectCallback,fname);
+	sprintf (fname, "%s/%s",fw->filewin.curdir,
+		 fw->filewin.list[lr->list_index] + 3);
+	XtCallCallbacks ( (Widget) fw, XkwNfileSelectCallback, fname );
     }
 }
+
+static flag clean_dirname (char dirname[STRING_LENGTH])
+/*  [SUMMARY] Remove unneccessary components from a directory name.
+    <dirname> The name of the directory to clean.
+    [RETURNS] TRUE if string was modified, else FALSE.
+*/
+{
+    flag copy;
+    flag modified = FALSE;
+    char *curr, *ptr, *p;
+    char new[STRING_LENGTH];
+
+    new[0] = '\0';
+    curr = dirname;
+    while ( ( ptr = strstr (curr, "/.." ) ) != NULL )
+    {
+	/*  Check if directory name exists to the left  */
+	if (*(ptr - 1) == '.')
+	{
+	    /*  Nope, it's a special  */
+	    copy = TRUE;
+	}
+	else if ( (ptr[3] != '/') && (ptr[3] != '\0') )
+	{
+	    /*  Silly name like "..a"  */
+	    copy = TRUE;
+	}
+	else copy = FALSE;
+	if (copy)
+	{
+	    ptr += 3;
+	    strncat (new, curr, ptr - curr);
+	    /*new[ptr - curr] = '\0';*/
+	    curr = ptr;
+	}
+	else
+	{
+	    /*  Search backwards for '/'  */
+	    for (p = ptr - 1; *p != '/'; --p);
+	    ptr += 3;
+	    if (p - curr > 0)
+	    {
+		strncat (new, curr, p - curr);
+		/*new[p - curr] = '\0';*/
+	    }
+	    curr = ptr;
+	    modified = TRUE;
+	}
+    }
+    /*  Copy remainder  */
+    strcat (new, curr);
+    strcpy (dirname, new);
+    return (modified);
+}   /*  End Function clean_dirname  */
 
 /*----------------------------------------------------------------------*/
 /* Public function to rescan directory. */
@@ -320,8 +385,9 @@ static void ConstraintInitialize(Widget request,Widget new)
 /* Initialisation method*/
 /*----------------------------------------------------------------------*/
 
-static void Initialize(Widget Request,Widget New)
+static void Initialize(Widget Request, Widget New)
 {
+    unsigned int height;
     /*FilewinWidget request = (FilewinWidget) Request;*/
     FilewinWidget new = (FilewinWidget) New;
     Widget view;
@@ -332,30 +398,34 @@ static void Initialize(Widget Request,Widget New)
     new->filewin.listcount = 0;
     new->filewin.dir_callbacks = NULL;
 
-    sprintf (new->filewin.curdir,".");
+    sprintf (new->filewin.curdir, ".");
     create_list (new);
-  
-    view=XtVaCreateManagedWidget
-    ("view",viewportWidgetClass,New,
-     XtNforceBars,True,
-     XtNwidth, 300,
-     /*
-	XtNheight,250,
-	*/
-     XtNuseRight,True,
-     XtNallowVert,True,
-     NULL);
+    height = HeightOfScreen ( XtScreen (New) );
+    if (new->filewin.listcount * 15 > height)
+    {
+	/*  Files will probably not fit on screen: limit height to a little
+	    less than screen height  */
+	height -= 100;
+    }
+    else height = 0;
+    view = XtVaCreateManagedWidget ("view", viewportWidgetClass, New,
+				    XtNforceBars, True,
+				    XtNwidth, 300,
+				    XtNheight, height,
+				    XtNuseRight, True,
+				    XtNallowVert, True,
+				    NULL);
 
-    new->filewin.listwidget=XtVaCreateManagedWidget
-    ("listwidget",listWidgetClass,view,
-     XtNlist,new->filewin.list,
-     XtNnumberStrings,new->filewin.listcount,
-     XtNbackground,new->core.background_pixel,
-     XtNforeground,new->filewin.foreground,
-     XtNdefaultColumns,1,
-     XtNforceColumns,True,
-     NULL);
-    XtAddCallback(new->filewin.listwidget,XtNcallback,filesel_cbk,new);
+    new->filewin.listwidget = XtVaCreateManagedWidget
+	("listwidget", listWidgetClass, view,
+	 XtNlist, new->filewin.list,
+	 XtNnumberStrings, new->filewin.listcount,
+	 XtNbackground, new->core.background_pixel,
+	 XtNforeground, new->filewin.foreground,
+	 XtNdefaultColumns, 1,
+	 XtNforceColumns, True,
+	 NULL);
+    XtAddCallback (new->filewin.listwidget, XtNcallback, filesel_cbk, new);
 }
 
 /*----------------------------------------------------------------------*/
@@ -451,9 +521,9 @@ flag XkwFilewinStandardFileTester_nD (KFileInfo finfo)
 
     /*  Accept all directories  */
     if (finfo.type == KFILETYPE_DIRECTORY) return (TRUE);
-    (void) strcpy (pathname, finfo.dirname);
-    (void) strcat (pathname, "/");
-    (void) strcat (pathname, finfo.filename);
+    strcpy (pathname, finfo.dirname);
+    strcat (pathname, "/");
+    strcat (pathname, finfo.filename);
     filetype = foreign_guess_format_from_filename (pathname);
     if (filetype == FOREIGN_FILE_FORMAT_UNKNOWN) return (FALSE);
     /*  Filetype understood: accept it  */
@@ -462,7 +532,7 @@ flag XkwFilewinStandardFileTester_nD (KFileInfo finfo)
     if ( ( ptr = strrchr (finfo.filename, '.') ) == NULL ) return (FALSE);
     if (strcmp (ptr, ".descr") == 0)
     {
-	(void) strcpy (ptr, ".gipsy");
+	strcpy (ptr, ".gipsy");
 	return (TRUE);
     }
     /*  Ignore anything else (i.e. the ".image" file)  */
@@ -485,9 +555,9 @@ flag XkwFilewinStandardFileTester_3D (KFileInfo finfo)
 
     /*  Accept all directories  */
     if (finfo.type == KFILETYPE_DIRECTORY) return (TRUE);
-    (void) strcpy (pathname, finfo.dirname);
-    (void) strcat (pathname, "/");
-    (void) strcat (pathname, finfo.filename);
+    strcpy (pathname, finfo.dirname);
+    strcat (pathname, "/");
+    strcat (pathname, finfo.filename);
     filetype = foreign_guess_format_from_filename (pathname);
     switch (filetype)
     {
@@ -507,7 +577,7 @@ flag XkwFilewinStandardFileTester_3D (KFileInfo finfo)
     if ( ( ptr = strrchr (finfo.filename, '.') ) == NULL ) return (FALSE);
     if (strcmp (ptr, ".descr") == 0)
     {
-	(void) strcpy (ptr, ".gipsy");
+	strcpy (ptr, ".gipsy");
 	return (TRUE);
     }
     /*  Ignore anything else (i.e. the ".image" file)  */

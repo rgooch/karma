@@ -137,8 +137,10 @@
     Updated by      Richard Gooch   7-APR-1996: Changed to new documentation
   format.
 
-    Last updated by Richard Gooch   3-JUN-1996: Cleaned code to keep
+    Updated by      Richard Gooch   3-JUN-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   23-AUG-1996: Support "local-slow" hostname.
 
 
 */
@@ -178,10 +180,10 @@
 
 #define OBJECT_MAGIC_NUMBER (unsigned int) 1794359023
 #define VERIFY_CONNECTION(conn) {if (conn == NULL) \
-{(void) fprintf (stderr, "NULL connection object\n"); \
+{fprintf (stderr, "NULL connection object\n"); \
  a_prog_bug (function_name); } \
 if (conn->magic_number != OBJECT_MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid connection object\n"); \
+{fprintf (stderr, "Invalid connection object\n"); \
  a_prog_bug (function_name); }}
 
 
@@ -418,14 +420,14 @@ void conn_register_managers ( flag (*manage_func) (), void (*unmanage_func) (),
 
     if ( (manage_channel != NULL) || (unmanage_channel != NULL) )
     {
-	(void) fprintf (stderr, "Channel managers already registered\n");
+	fprintf (stderr, "Channel managers already registered\n");
 	a_prog_bug (function_name);
     }
     manage_channel = manage_func;
     unmanage_channel = unmanage_func;
     exit_schedule_function = exit_schedule_func;
     attempt_connection_to_cm ();
-    (void) get_password_list ();
+    get_password_list ();
 }   /*  End Function conn_register_managers  */
 
 /*PUBLIC_FUNCTION*/
@@ -462,7 +464,7 @@ void conn_register_server_protocol ( CONST char *protocol_name,
 
     if ( (int) strlen (protocol_name) >= PROTOCOL_NAME_LENGTH )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Protocol name: \"%s\" too long. Max: %u characters\n",
 			protocol_name, PROTOCOL_NAME_LENGTH);
 	a_prog_bug (function_name);
@@ -471,7 +473,7 @@ void conn_register_server_protocol ( CONST char *protocol_name,
     if (get_serv_protocol_info (protocol_name) != NULL)
     {
 	/*  Already supported: error  */
-	(void) fprintf (stderr, "Protocol: \"%s\" already supported\n",
+	fprintf (stderr, "Protocol: \"%s\" already supported\n",
 			protocol_name);
 	a_prog_bug (function_name);
     }
@@ -545,14 +547,14 @@ void conn_register_client_protocol ( CONST char *protocol_name,
 
     if ( (int) strlen (protocol_name) >= PROTOCOL_NAME_LENGTH )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Protocol name: \"%s\" too long. Max: %u characters\n",
 			protocol_name, PROTOCOL_NAME_LENGTH);
 	a_prog_bug (function_name);
     }
     if (strcmp (protocol_name, "conn_mngr_control") == 0)
     {
-	(void) fprintf (stderr, "Client protocol: \"%s\" reserved\n",
+	fprintf (stderr, "Client protocol: \"%s\" reserved\n",
 			protocol_name);
 	a_prog_bug (function_name);
     }
@@ -560,7 +562,7 @@ void conn_register_client_protocol ( CONST char *protocol_name,
     if (get_client_protocol_info (protocol_name) != NULL)
     {
 	/*  Already supported: error  */
-	(void) fprintf (stderr, "Protocol: \"%s\" already supported\n",
+	fprintf (stderr, "Protocol: \"%s\" already supported\n",
 			protocol_name);
 	a_prog_bug (function_name);
     }
@@ -644,48 +646,48 @@ flag conn_attempt_connection (CONST char *hostname, unsigned int port_number,
 
     if ( (int) strlen (protocol_name) >= PROTOCOL_NAME_LENGTH )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Protocol name: \"%s\" too long. Max: %u characters\n",
 			protocol_name, PROTOCOL_NAME_LENGTH);
 	a_prog_bug (function_name);
     }
     if (manage_channel == NULL)
     {
-	(void) fprintf (stderr, "Channel managers not registered\n");
+	fprintf (stderr, "Channel managers not registered\n");
 	a_prog_bug (function_name);
     }
     if (strcmp (protocol_name, "conn_mngr_control") == 0)
     {
-	(void) fprintf (stderr, "Client protocol: \"%s\" reserved\n",
+	fprintf (stderr, "Client protocol: \"%s\" reserved\n",
 			protocol_name);
 	a_prog_bug (function_name);
     }
     if (strcmp (protocol_name, "conn_mngr_stdio") == 0)
     {
-	(void) fprintf (stderr, "Client protocol: \"%s\" reserved\n",
+	fprintf (stderr, "Client protocol: \"%s\" reserved\n",
 			protocol_name);
 	a_prog_bug (function_name);
     }
     if ( ( host_addr = r_get_inet_addr_from_host (hostname, &local) ) == 0 )
     {
-	(void) fprintf (stderr, "Error getting host address for: \"%s\"\n",
+	fprintf (stderr, "Error getting host address for: \"%s\"\n",
 			hostname);
 	return (FALSE);
     }
-    if (local)
+    if ( local && (strcmp (hostname, "local-slow") != 0) )
     {
 	host_addr = 0;
     }
     if ( ( protocol_info = get_client_protocol_info (protocol_name) ) == NULL )
     {
-	(void) fprintf (stderr, "Protocol: \"%s\" not supported\n",
+	fprintf (stderr, "Protocol: \"%s\" not supported\n",
 			protocol_name);
 	return (FALSE);
     }
     if ( (protocol_info->max_connections > 0) &&
 	(protocol_info->connection_count >= protocol_info->max_connections) )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Maximum number of client connections reached for protocol: \"%s\"\n",
 			protocol_name);
 	return (FALSE);
@@ -725,8 +727,8 @@ flag conn_attempt_connection (CONST char *hostname, unsigned int port_number,
 	  write_protocol (channel, protocol_name,
 			  protocol_info->version) ) == NULL )
     {
-	(void) fprintf (stderr, "Error writing authentication information\n");
-	(void) ch_close (channel);
+	fprintf (stderr, "Error writing authentication information\n");
+	ch_close (channel);
 	m_free ( (char *) new_connection );
 	return (FALSE);
     }
@@ -736,7 +738,7 @@ flag conn_attempt_connection (CONST char *hostname, unsigned int port_number,
 			     ( flag (*) () ) NULL,
 			     ( flag (*) () ) NULL ) )
     {
-	(void) ch_close (channel);
+	ch_close (channel);
 	m_free ( (char *) new_connection );
 	a_func_abort (function_name, "Could not manage channel");
 	return (FALSE);
@@ -749,7 +751,7 @@ flag conn_attempt_connection (CONST char *hostname, unsigned int port_number,
 					   &new_connection->info) )
 	{
 	    (*unmanage_channel) (channel);
-	    (void) ch_close (channel);
+	    ch_close (channel);
 	    --*new_connection->connection_count;
 	    new_connection->magic_number = 0;
 	    m_free ( (char *) new_connection );
@@ -774,13 +776,13 @@ flag conn_attempt_connection (CONST char *hostname, unsigned int port_number,
     /*  Drain any input on new connection  */
     if ( ( bytes = ch_get_bytes_readable (channel) ) < 0 )
     {
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     if (bytes > 0)
     {
 	if (new_connection->read_func == NULL)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Input on new connection not being read\n");
 	    a_prog_bug (function_name);
 	}
@@ -789,7 +791,7 @@ flag conn_attempt_connection (CONST char *hostname, unsigned int port_number,
 	{
 	    dealloc_connection (new_connection);
 	    (*unmanage_channel) (channel);
-	    (void) ch_close (channel);
+	    ch_close (channel);
 	    return (FALSE);
 	}
     }
@@ -798,39 +800,39 @@ flag conn_attempt_connection (CONST char *hostname, unsigned int port_number,
 	/*  Connected to Connection Management tool  */
 	if ( !pio_write32 (cm_channel, CM_LIB_NEW_CONNECTION) )
 	{
-	    (void) fprintf (stderr, "Error writing command value\t%s\n",
+	    fprintf (stderr, "Error writing command value\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_WRITE_ERROR);
 	}
 	if ( !pio_write_string (cm_channel, protocol_name) )
 	{
-	    (void) fprintf (stderr, "Error writing protocol name\t%s\n",
+	    fprintf (stderr, "Error writing protocol name\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_WRITE_ERROR);
 	}
 	if ( !pio_write32 (cm_channel, host_addr) )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Error writing host Internet address\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_WRITE_ERROR);
 	}
 	if ( !pio_write32 (cm_channel, (unsigned long) port_number) )
 	{
-	    (void) fprintf (stderr, "Error writing port number\t%s\n",
+	    fprintf (stderr, "Error writing port number\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_WRITE_ERROR);
 	}
 	if ( !pio_write32 (cm_channel,
 			   (unsigned long) new_connection & 0xffffffff) )
 	{
-	    (void) fprintf (stderr, "Error writing Connection ID\t%s\n",
+	    fprintf (stderr, "Error writing Connection ID\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_WRITE_ERROR);
 	}
 	if ( !ch_flush (cm_channel) )
 	{
-	    (void) fprintf (stderr, "Error flushing channel\t%s\n",
+	    fprintf (stderr, "Error flushing channel\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_WRITE_ERROR);
 	}
@@ -854,7 +856,7 @@ flag conn_close (Connection connection)
     VERIFY_CONNECTION (connection);
     if (unmanage_channel == NULL)
     {
-	(void) fprintf (stderr, "Channel managers not registered\n");
+	fprintf (stderr, "Channel managers not registered\n");
 	a_prog_bug (function_name);
     }
     channel = connection->channel;
@@ -889,7 +891,7 @@ flag conn_become_server (unsigned int *port_number, unsigned int retries)
 
     if (manage_channel == NULL)
     {
-	(void) fprintf (stderr, "Channel managers not registered\n");
+	fprintf (stderr, "Channel managers not registered\n");
 	a_prog_bug (function_name);
     }
     if (!ran_become_server)
@@ -918,8 +920,8 @@ flag conn_become_server (unsigned int *port_number, unsigned int retries)
 				 ( flag (*) () ) NULL,
 				 ( flag (*) () ) NULL) )
 	{
-	    (void) fprintf (stderr, "Error managing dock: %u\n", dock_count);
-	    (void) ch_close (port[dock_count]);
+	    fprintf (stderr, "Error managing dock: %u\n", dock_count);
+	    ch_close (port[dock_count]);
 	}
 	else
 	{
@@ -933,19 +935,19 @@ flag conn_become_server (unsigned int *port_number, unsigned int retries)
 	/*  Have a dock and are connected to Connection Management tool  */
 	if ( !pio_write32 (cm_channel, CM_LIB_PORT_NUMBER) )
 	{
-	    (void) fprintf (stderr, "Error writing command value\t%s\n",
+	    fprintf (stderr, "Error writing command value\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_WRITE_ERROR);
 	}
 	if ( !pio_write32 (cm_channel, (unsigned long) *port_number) )
 	{
-	    (void) fprintf (stderr, "Error writing port number\t%s\n",
+	    fprintf (stderr, "Error writing port number\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_WRITE_ERROR);
 	}
 	if ( !ch_flush (cm_channel) )
 	{
-	    (void) fprintf (stderr, "Error flushing channel\t%s\n",
+	    fprintf (stderr, "Error flushing channel\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_WRITE_ERROR);
 	}
@@ -1075,7 +1077,7 @@ char *conn_get_connection_module_name (Connection connection)
     VERIFY_CONNECTION (connection);
     if (connection->module_name == NULL)
     {
-	(void) fprintf (stderr, "Invalid connection module_name\n");
+	fprintf (stderr, "Invalid connection module_name\n");
 	a_prog_bug (function_name);
     }
     return (connection->module_name);
@@ -1100,12 +1102,12 @@ void conn_register_cm_quiescent_func ( void (*func) () )
 
     if ( !conn_controlled_by_cm_tool () )
     {
-	(void) fprintf (stderr, "Not controlled by CM tool or shell\n");
+	fprintf (stderr, "Not controlled by CM tool or shell\n");
 	a_prog_bug (function_name);
     }
     if (quiescent_function != NULL)
     {
-	(void) fprintf (stderr, "Quiescent callback already registered\n");
+	fprintf (stderr, "Quiescent callback already registered\n");
 	a_prog_bug (function_name);
     }
     quiescent_function = func;
@@ -1172,16 +1174,16 @@ char **conn_extract_protocols ()
     {
 	if (serv_entry->max_connections == 0)
 	{
-	    (void) strcpy (tmp1, "unlimited");
+	    strcpy (tmp1, "unlimited");
 	}
 	else
 	{
-	    (void) sprintf (tmp1, "%u", serv_entry->max_connections);
+	    sprintf (tmp1, "%u", serv_entry->max_connections);
 	}
 	client_entry = get_client_protocol_info ( serv_entry->protocol_name);
 	if (client_entry == NULL)
 	{
-	    (void) sprintf (txt, "%-27s%-10s%-10u-          -",
+	    sprintf (txt, "%-27s%-10s%-10u-          -",
 			    serv_entry->protocol_name,
 			    tmp1,
 			    serv_entry->connection_count);
@@ -1190,13 +1192,13 @@ char **conn_extract_protocols ()
 	{
 	    if (client_entry->max_connections == 0)
 	    {
-		(void) strcpy (tmp2, "unlimited");
+		strcpy (tmp2, "unlimited");
 	    }
 	    else
 	    {
-		(void) sprintf (tmp2, "%u", client_entry->max_connections);
+		sprintf (tmp2, "%u", client_entry->max_connections);
 	    }
-	    (void) sprintf (txt, "%-27s%-10s%-10u%-11s%u",
+	    sprintf (txt, "%-27s%-10s%-10u%-11s%u",
 			    serv_entry->protocol_name,
 			    tmp1,
 			    serv_entry->connection_count,
@@ -1224,13 +1226,13 @@ char **conn_extract_protocols ()
 	}
 	if (client_entry->max_connections == 0)
 	{
-	    (void) strcpy (tmp2, "unlimited");
+	    strcpy (tmp2, "unlimited");
 	}
 	else
 	{
-	    (void) sprintf (tmp2, "%u", client_entry->max_connections);
+	    sprintf (tmp2, "%u", client_entry->max_connections);
 	}
-	(void) sprintf (txt, "%-27s-         -         %-11s%u",
+	sprintf (txt, "%-27s-         -         %-11s%u",
 			client_entry->protocol_name,
 			tmp2,
 			client_entry->connection_count);
@@ -1306,7 +1308,7 @@ static flag dock_input_func (Channel dock, void **info)
 			     connection_close_func,
 			     ( flag (*) () ) NULL, ( flag (*) () ) NULL) )
     {
-	(void) ch_close (new_conn->channel);
+	ch_close (new_conn->channel);
 	m_free ( (char *) new_conn );
 	a_func_abort (function_name, "could not manage channel");
 	return (FALSE);
@@ -1366,7 +1368,7 @@ static flag serv_connection_input_func (Channel channel, void **info)
 	if ( !verify_connection (connection) )
 	{
 	    /*  Connection was not authorised  */
-	    (void) ch_flush (channel);
+	    ch_flush (channel);
 	    return (FALSE);
 	}
 	return (TRUE);
@@ -1382,7 +1384,7 @@ static flag serv_connection_input_func (Channel channel, void **info)
 	if ( ( connection->module_name =
 	      pio_read_string (channel, (unsigned int *) NULL) ) == NULL )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Error reading module name from connection\n");
 	    return (FALSE);
 	}
@@ -1402,18 +1404,18 @@ static flag serv_connection_input_func (Channel channel, void **info)
     }
     if ( ( bytes = ch_get_bytes_readable (channel) ) < 0 )
     {
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     if ( (bytes > 0) && (connection->read_func == NULL) )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Input on \"%s\" connection not being read (no callback)\n",
 			connection->protocol_name);
 	a_prog_bug (function_name);
     }
     if ( !ch_tell (connection->channel, &old_read_pos, &dummy) )
     {
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     while (bytes > 0)
     {
@@ -1423,19 +1425,20 @@ static flag serv_connection_input_func (Channel channel, void **info)
 	}
 	if ( !ch_tell ( connection->channel, &new_read_pos, &dummy ) )
 	{
-	    (void) exit (RV_SYS_ERROR);
+	    exit (RV_SYS_ERROR);
 	}
 	if (new_read_pos <= old_read_pos)
 	{
-	    (void) fprintf (stderr,
-			    "Connection read callback for protocol: \"%s\" not draining\n",
-			    connection->protocol_name);
+	    fprintf (stderr,
+		     "Connection read callback for protocol: \"%s\" not draining\n",
+		     connection->protocol_name);
+	    fprintf (stderr, "with %d bytes to read\n", bytes);
 	    a_prog_bug (function_name);
 	}
 	old_read_pos = new_read_pos;
 	if ( ( bytes = ch_get_bytes_readable (channel) ) < 0 )
 	{
-	    (void) exit (RV_SYS_ERROR);
+	    exit (RV_SYS_ERROR);
 	}
     }
     return (TRUE);
@@ -1453,24 +1456,23 @@ static flag verify_raw (Connection connection)
     unsigned long magic_number;
     unsigned long revision_number;
     struct auth_password_list_type *authinfo;
-    extern char *sys_errlist[];
     static char function_name[] = "verify_raw";
 
     VERIFY_CONNECTION (connection);
     /*  Check if enough data on connection  */
     if ( ( bytes = ch_get_bytes_readable (connection->channel) ) < 0 )
     {
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     if (bytes < SETUP_MESSAGE_LENGTH)
     {
 	/*  Not enough info was sent  */
-	(void) pio_write_string (connection->channel,
+	pio_write_string (connection->channel,
 				 "Bad setup message length");
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Only: %d bytes of connection setup information ",
 			bytes);
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"sent\n%d bytes are required: connection closed\n",
 			SETUP_MESSAGE_LENGTH);
 	return (FALSE);
@@ -1486,11 +1488,11 @@ static flag verify_raw (Connection connection)
     if (magic_number != CONN_MAGIC_NUMBER)
     {
 	/*  Bad magic number  */
-	(void) pio_write_string (connection->channel, "Bad magic number");
-	(void) fprintf (stderr,
+	pio_write_string (connection->channel, "Bad magic number");
+	fprintf (stderr,
 			"WARNING: Connection attempted with bad magic number: %lu\n",
 			magic_number);
-	(void) fprintf (stderr, "Someone may be trying to stuff around\n");
+	fprintf (stderr, "Someone may be trying to stuff around\n");
 	return (FALSE);
     }
     /*  Get revision number  */
@@ -1504,7 +1506,7 @@ static flag verify_raw (Connection connection)
     if (revision_number != REVISION_NUMBER)
     {
 	/*  Bad magic number  */
-	(void) pio_write_string (connection->channel, "Bad revision number");
+	pio_write_string (connection->channel, "Bad revision number");
 	return (FALSE);
     }
     connection->verified_raw = TRUE;
@@ -1550,17 +1552,17 @@ static flag verify_security (Connection connection)
     /*  Check if enough data on connection  */
     if ( ( bytes = ch_get_bytes_readable (connection->channel) ) < 0 )
     {
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     if (bytes < EN_IDEA_BLOCK_SIZE * 2)
     {
 	/*  Not enough info was sent  */
-	(void) pio_write_string (connection->channel,
+	pio_write_string (connection->channel,
 				 "Bad IDEA block message length");
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Only: %d bytes of connection IDEA block data ",
 			bytes);
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"sent\n%d bytes are required: connection closed\n",
 			EN_IDEA_BLOCK_SIZE * 2);
 	return (FALSE);
@@ -1616,23 +1618,22 @@ static flag verify_connection (Connection connection)
     struct auth_password_list_type *authinfo;
     char protocol_buffer[PROTOCOL_NAME_LENGTH + 1];
     extern char module_name[STRING_LENGTH + 1];
-    extern char *sys_errlist[];
     static char function_name[] = "verify_connection";
 
     VERIFY_CONNECTION (connection);
     if ( ( bytes = ch_get_bytes_readable (connection->channel) ) < 0 )
     {
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     if (bytes < PROTOCOL_DEFINITION_MESSAGE_LENGTH)
     {
 	/*  Not enough info was sent  */
-	(void) pio_write_string (connection->channel,
+	pio_write_string (connection->channel,
 				 "Bad protocol definition message length");
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Only: %d bytes of connection setup information ",
 			bytes);
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"sent\n%d bytes are required: connection closed\n",
 			PROTOCOL_DEFINITION_MESSAGE_LENGTH);
 	return (FALSE);
@@ -1641,7 +1642,7 @@ static flag verify_connection (Connection connection)
     if (ch_read (connection->channel, protocol_buffer, PROTOCOL_NAME_LENGTH)
 	< PROTOCOL_NAME_LENGTH)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Error reading protocol name from connection\n");
 	return (FALSE);
     }
@@ -1649,7 +1650,7 @@ static flag verify_connection (Connection connection)
     /*  Get protocol version number  */
     if ( !pio_read32 (connection->channel, &protocol_version) )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Error reading protocol version number from connection\n");
 	return (FALSE);
     }
@@ -1658,13 +1659,13 @@ static flag verify_connection (Connection connection)
     {
 	/*  Protocol is not supported  */
 	/*  Write failure message back to client  */
-	(void) pio_write_string (connection->channel,
+	pio_write_string (connection->channel,
 				 "Protocol is not supported by server");
 	return (FALSE);
     }
     if (protocol_version != protocol_info->version)
     {
-	(void) pio_write_string (connection->channel,
+	pio_write_string (connection->channel,
 				 "Protocol version mismatch");
 	return (FALSE);
     }
@@ -1673,7 +1674,7 @@ static flag verify_connection (Connection connection)
 	( protocol_info->connection_count
 	 >= protocol_info->max_connections ) )
     {
-	(void) pio_write_string (connection->channel,
+	pio_write_string (connection->channel,
 				 "Connection limit reached for protocol");
 	return (FALSE);
     }
@@ -1696,9 +1697,9 @@ static flag verify_connection (Connection connection)
     {
 	connection->verified_protocol_security = TRUE;
 	/*  Write verification message back to client  */
-	(void) pio_write_string (connection->channel, (char *) NULL);
+	pio_write_string (connection->channel, (char *) NULL);
 	/*  Send module name back to client  */
-	(void) pio_write_string (connection->channel, module_name);
+	pio_write_string (connection->channel, module_name);
 	if ( !ch_flush (connection->channel) ) return (FALSE);
 	return (TRUE);
     }
@@ -1728,17 +1729,17 @@ static flag verify_protocol_security (Connection connection)
     /*  Check if enough data on connection  */
     if ( ( bytes = ch_get_bytes_readable (connection->channel) ) < 0 )
     {
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     if (bytes < EN_IDEA_BLOCK_SIZE * 2)
     {
 	/*  Not enough info was sent  */
-	(void) pio_write_string (connection->channel,
+	pio_write_string (connection->channel,
 				 "Bad IDEA block message length");
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Only: %d bytes of connection IDEA block data ",
 			bytes);
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"sent\n%d bytes are required: connection closed\n",
 			EN_IDEA_BLOCK_SIZE * 2);
 	return (FALSE);
@@ -1749,10 +1750,10 @@ static flag verify_protocol_security (Connection connection)
 		 EN_IDEA_BLOCK_SIZE) )
     {
 	/*  Client is not allowed  */
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"WARNING: connection attempt failed for protocol: %s\n",
 			connection->protocol_name);
-	(void) pio_write_string (connection->channel,
+	pio_write_string (connection->channel,
 				 "Connection not authorised");
 	if ( !ch_flush (connection->channel) ) return (FALSE);
 	return (FALSE);
@@ -1783,9 +1784,9 @@ static flag verify_protocol_security (Connection connection)
     }
     connection->verified_protocol_security = TRUE;
     /*  Write verification message back to client  */
-    (void) pio_write_string (connection->channel, (char *) NULL);
+    pio_write_string (connection->channel, (char *) NULL);
     /*  Send module name back to client  */
-    (void) pio_write_string (connection->channel, module_name);
+    pio_write_string (connection->channel, module_name);
     if ( !ch_flush (connection->channel) ) return (FALSE);
     return (TRUE);
 }   /*  End Function verify_protocol_security  */
@@ -1908,20 +1909,20 @@ static void dealloc_connection (Connection connection)
 	    Connection Management tool  */
 	if ( !pio_write32 (cm_channel, CM_LIB_CONNECTION_CLOSED) )
 	{
-	    (void) fprintf (stderr, "Error writing command value\t%s\n",
+	    fprintf (stderr, "Error writing command value\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_WRITE_ERROR);
 	}
 	if ( !pio_write32 (cm_channel,
 			   (unsigned long) connection & 0xffffffff) )
 	{
-	    (void) fprintf (stderr, "Error writing Connection ID\t%s\n",
+	    fprintf (stderr, "Error writing Connection ID\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_WRITE_ERROR);
 	}
 	if ( !ch_flush (cm_channel) )
 	{
-	    (void) fprintf (stderr, "Error flushing channel\t%s\n",
+	    fprintf (stderr, "Error flushing channel\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_WRITE_ERROR);
 	}
@@ -1961,9 +1962,9 @@ static struct auth_password_list_type *get_authinfo (CONST char *protocol)
     return (NULL);
 
 #else  /*  COMMUNICATIONS_AVAILABLE  */
-    (void) fprintf (stderr,
+    fprintf (stderr,
 		    "Operating system does not support communications\n");
-    (void) exit (RV_UNDEF_ERROR);
+    exit (RV_UNDEF_ERROR);
 #endif  /*  COMMUNICATIONS_AVAILABLE  */
 }   /*  End Function get_authinfo  */
 
@@ -1981,7 +1982,6 @@ static struct auth_password_list_type *get_password_list (void)
     struct auth_password_list_type *entry;
     char auth_file[STRING_LENGTH];
     char txt[STRING_LENGTH + 1];
-    extern char *sys_errlist[];
     static flag read_list = FALSE;
     static struct auth_password_list_type *password_list = NULL;
     static char function_name[] = "get_password_list";
@@ -1991,13 +1991,13 @@ static struct auth_password_list_type *get_password_list (void)
     /*  Read in password list  */
     if ( ( home = r_getenv ("HOME") ) == NULL )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Error getting environment variable: HOME\n");
 	/*  Return saying no passwords needed  */
 	password_list = NULL;
 	return (NULL);
     }
-    (void) sprintf (auth_file, "%s/.KARMAauthority", home);
+    sprintf (auth_file, "%s/.KARMAauthority", home);
     if (access (auth_file, R_OK) != 0)
     {
 	/*  File not there  */
@@ -2008,8 +2008,8 @@ static struct auth_password_list_type *get_password_list (void)
     /*  Read file  */
     if ( ( channel = ch_open_file (auth_file, "r") ) == NULL )
     {
-	(void) fprintf (stderr, "Error opening file: %s\n", auth_file);
-	(void) exit (RV_CANNOT_OPEN);
+	fprintf (stderr, "Error opening file: %s\n", auth_file);
+	exit (RV_CANNOT_OPEN);
     }
     while ( chs_get_line (channel, txt, STRING_LENGTH) )
     {
@@ -2024,16 +2024,16 @@ static struct auth_password_list_type *get_password_list (void)
 	if ( ( entry->protocol_name = ex_word (txt, &p) ) == NULL )
 	{
 	    /*  Error converting line  */
-	    (void) ch_close (channel);
-	    (void) fprintf (stderr, "Error in file: %s\n", auth_file);
-	    (void) exit (RV_BAD_DATA);
+	    ch_close (channel);
+	    fprintf (stderr, "Error in file: %s\n", auth_file);
+	    exit (RV_BAD_DATA);
 	}
 	if ( ( security_name = ex_word (p, &p) ) == NULL )
 	{
-	    (void) fprintf (stderr, "Missing security type\n");
-	    (void) ch_close (channel);
-	    (void) fprintf (stderr, "Error in file: %s\n", auth_file);
-	    (void) exit (RV_BAD_DATA);
+	    fprintf (stderr, "Missing security type\n");
+	    ch_close (channel);
+	    fprintf (stderr, "Error in file: %s\n", auth_file);
+	    exit (RV_BAD_DATA);
 	}
 	if (strcmp (security_name, SECURITY_STRING_KEY) == 0)
 	{
@@ -2053,11 +2053,11 @@ static struct auth_password_list_type *get_password_list (void)
 	}
 	else
 	{
-	    (void) fprintf (stderr, "Illegal security type: \"%s\"\n",
+	    fprintf (stderr, "Illegal security type: \"%s\"\n",
 			    security_name);
-	    (void) ch_close (channel);
-	    (void) fprintf (stderr, "Error in file: %s\n", auth_file);
-	    (void) exit (RV_BAD_DATA);
+	    ch_close (channel);
+	    fprintf (stderr, "Error in file: %s\n", auth_file);
+	    exit (RV_BAD_DATA);
 	}
 	switch (entry->security_type)
 	{
@@ -2072,11 +2072,11 @@ static struct auth_password_list_type *get_password_list (void)
 	    if ( (int) strlen (password) / 2 <
 		EN_IDEA_KEY_SIZE + EN_IDEA_BLOCK_SIZE )
 	    {
-		(void) fprintf (stderr, "IDEA password too short\n");
-		(void) ch_close (channel);
-		(void) fprintf (stderr, "Error in file: %s\n",
+		fprintf (stderr, "IDEA password too short\n");
+		ch_close (channel);
+		fprintf (stderr, "Error in file: %s\n",
 				auth_file);
-		(void) exit (RV_BAD_DATA);
+		exit (RV_BAD_DATA);
 	    }
 	    break;
 	  case SECURITY_TYPE_PGPuserID_IDEA:
@@ -2090,7 +2090,7 @@ static struct auth_password_list_type *get_password_list (void)
 	    password = NULL;
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Illegal security type: %u\n",
+	    fprintf (stderr, "Illegal security type: %u\n",
 			    entry->security_type);
 	    a_prog_bug (function_name);
 	    break;
@@ -2117,14 +2117,14 @@ static struct auth_password_list_type *get_password_list (void)
 	password_list = entry;
     }
     /*  End of file  */
-    (void) ch_close (channel);
+    ch_close (channel);
     m_clear (txt, STRING_LENGTH);
     return (password_list);
 
 #else  /*  COMMUNICATIONS_AVAILABLE  */
-    (void) fprintf (stderr,
+    fprintf (stderr,
 		    "Operating system does not support communications\n");
-    (void) exit (RV_UNDEF_ERROR);
+    exit (RV_UNDEF_ERROR);
 #endif  /*  COMMUNICATIONS_AVAILABLE  */
 }   /*  End Function get_password_list  */
 
@@ -2147,11 +2147,11 @@ static void convert_password_to_bin (unsigned char *binpassword,
 	if ( (byte[0] == '\0') || (byte[1] == '\0') ) return;
 	if ( !isxdigit (byte[0]) || !isxdigit (byte[1]) )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Password: \"%s\" contains non-hex character\n",
 			    asciipassword);
-	    (void) fprintf (stderr, "Error in authorisation file\n");
-	    (void) exit (RV_BAD_DATA);
+	    fprintf (stderr, "Error in authorisation file\n");
+	    exit (RV_BAD_DATA);
 	}
 	if (byte[0] > '9') byte[0] = byte[0] - 'a' + 0x0a;
 	else byte[0] -= '0';
@@ -2182,14 +2182,14 @@ char *protocol;
     if (serv_protocol_list == NULL)
     {
 	/*  Protocol not supprted  */
-	(void) fprintf (stderr, "No protocols supported by server\n");
+	fprintf (stderr, "No protocols supported by server\n");
 	a_prog_bug (function_name);
     }
     /*  Search for protocol  */
     if ( ( protocol_info = get_serv_protocol_info (protocol) ) == NULL )
     {
 	/*  Protocol not supported  */
-	(void) fprintf (stderr, "Protocol: %u not supported by server\n",
+	fprintf (stderr, "Protocol: %u not supported by server\n",
 			protocol);
 	a_prog_bug (function_name);
     }
@@ -2230,7 +2230,7 @@ static flag client_connection_input_func (Channel channel, void **info)
     VERIFY_CONNECTION (connection);
     if (connection->read_func == NULL)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Input on \"%s\" connection not being read (no callback)\n",
 			connection->protocol_name);
 	a_prog_bug (function_name);
@@ -2238,7 +2238,7 @@ static flag client_connection_input_func (Channel channel, void **info)
     bytes = 1;
     if ( !ch_tell (channel, &old_read_pos, &dummy) )
     {
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     while (bytes > 0)
     {
@@ -2248,11 +2248,11 @@ static flag client_connection_input_func (Channel channel, void **info)
 	}
 	if ( !ch_tell (channel, &new_read_pos, &dummy) )
 	{
-	    (void) exit (RV_SYS_ERROR);
+	    exit (RV_SYS_ERROR);
 	}
 	if (new_read_pos <= old_read_pos)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Connection read callback for protocol: \"%s\" not draining\n",
 			    connection->protocol_name);
 	    a_prog_bug (function_name);
@@ -2260,7 +2260,7 @@ static flag client_connection_input_func (Channel channel, void **info)
 	old_read_pos = new_read_pos;
 	if ( ( bytes = ch_get_bytes_readable (channel) ) < 0 )
 	{
-	    (void) exit (RV_SYS_ERROR);
+	    exit (RV_SYS_ERROR);
 	}
     }
     return (TRUE);
@@ -2304,7 +2304,7 @@ static char *write_protocol (Channel channel, CONST char *protocol_name,
     }
     if ( !ch_flush (channel) )
     {
-	(void) fprintf (stderr, "Error flushing channel\t%s\n",
+	fprintf (stderr, "Error flushing channel\t%s\n",
 			sys_errlist[errno]);
 	return (NULL);
     }
@@ -2328,7 +2328,7 @@ static char *write_protocol (Channel channel, CONST char *protocol_name,
 	    EN_IDEA_BLOCK_SIZE) return (NULL);
 	if ( !ch_flush (channel) )
 	{
-	    (void) fprintf (stderr, "Error flushing channel\t%s\n",
+	    fprintf (stderr, "Error flushing channel\t%s\n",
 			    sys_errlist[errno]);
 	    return (NULL);
 	}
@@ -2353,11 +2353,11 @@ static char *write_protocol (Channel channel, CONST char *protocol_name,
 	}
     }
     /*  Write protocol name  */
-    (void) strncpy (protocol_buffer, protocol_name, PROTOCOL_NAME_LENGTH);
+    strncpy (protocol_buffer, protocol_name, PROTOCOL_NAME_LENGTH);
     if (ch_write (channel, protocol_buffer, PROTOCOL_NAME_LENGTH)
 	< PROTOCOL_NAME_LENGTH)
     {
-	(void) fprintf (stderr, "Error writing protocol name\t%s\n",
+	fprintf (stderr, "Error writing protocol name\t%s\n",
 			sys_errlist[errno]);
 	return (NULL);
     }
@@ -2370,7 +2370,7 @@ static char *write_protocol (Channel channel, CONST char *protocol_name,
     }
     if ( !ch_flush (channel) )
     {
-	(void) fprintf (stderr, "Error flushing channel\t%s\n",
+	fprintf (stderr, "Error flushing channel\t%s\n",
 			sys_errlist[errno]);
 	return (NULL);
     }
@@ -2394,7 +2394,7 @@ static char *write_protocol (Channel channel, CONST char *protocol_name,
 	    EN_IDEA_BLOCK_SIZE) return (NULL);
 	if ( !ch_flush (channel) )
 	{
-	    (void) fprintf (stderr, "Error flushing channel\t%s\n",
+	    fprintf (stderr, "Error flushing channel\t%s\n",
 			    sys_errlist[errno]);
 	    return (NULL);
 	}
@@ -2422,23 +2422,23 @@ static char *write_protocol (Channel channel, CONST char *protocol_name,
     /*  Get returned message  */
     if ( ( message = pio_read_string (channel, &length) ) == NULL )
     {
-	(void) fprintf (stderr, "Error reading return message\t%s\n",
+	fprintf (stderr, "Error reading return message\t%s\n",
 			sys_errlist[errno]);
 	return (NULL);
     }
     if (length > 0)
     {
-	(void) fprintf (stderr, "\"%s\" connection refused. Reason: %s\n",
+	fprintf (stderr, "\"%s\" connection refused. Reason: %s\n",
 			protocol_name, message);
 	m_free (message);
 	return (NULL);
     }
     m_free (message);
     /*  Send module name to server  */
-    (void) pio_write_string (channel, module_name);
+    pio_write_string (channel, module_name);
     if ( !ch_flush (channel) )
     {
-	(void) fprintf (stderr, "Error flushing channel\t%s\n",
+	fprintf (stderr, "Error flushing channel\t%s\n",
 			sys_errlist[errno]);
 	return (NULL);
     }
@@ -2446,9 +2446,9 @@ static char *write_protocol (Channel channel, CONST char *protocol_name,
     if ( ( message = pio_read_string (channel, (unsigned int *) NULL) )
 	== NULL )
     {
-	(void) fprintf (stderr, "Error reading server module name\t%s\n",
+	fprintf (stderr, "Error reading server module name\t%s\n",
 			sys_errlist[errno]);
-	(void) ch_close (cm_channel);
+	ch_close (cm_channel);
 	exit (RV_UNDEF_ERROR);
     }
     return (message);
@@ -2476,11 +2476,11 @@ static flag respond_to_ping_server_from_client (Connection connection,
     channel = connection->channel;
     if ( ( bytes_readable = ch_get_bytes_readable (channel) ) < 0 )
     {
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     if (bytes_readable < 1)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Connection has: %d bytes readable: should be at least 1\n",
 			bytes_readable);
 	a_prog_bug (function_name);
@@ -2505,7 +2505,7 @@ static flag respond_to_ping_server_from_client (Connection connection,
     if (ch_read (channel, buffer, (unsigned int) bytes_readable)
 	< (unsigned int) bytes_readable)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Error reading: %u bytes from descriptor\t%s\n",
 			(unsigned int) bytes_readable, sys_errlist[errno]);
 	return (FALSE);
@@ -2514,7 +2514,7 @@ static flag respond_to_ping_server_from_client (Connection connection,
     if (ch_write (channel, buffer, (unsigned int) bytes_readable) 
 	< (unsigned int) bytes_readable)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Error writing: %u bytes to channel\t%s\n",
 			(unsigned int) bytes_readable, sys_errlist[errno]);
 	return (FALSE);
@@ -2522,7 +2522,7 @@ static flag respond_to_ping_server_from_client (Connection connection,
     return (TRUE);
 
 #else  /*  COMMUNICATIONS_AVAILABLE  */
-    (void) fprintf (stderr,
+    fprintf (stderr,
 		    "Operating system does not support communications\n");
     return (FALSE);
 #endif
@@ -2607,7 +2607,7 @@ static void attempt_connection_to_cm (void)
 
     if (cm_channel != NULL)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Connection to Connection Management tool already open\n");
 	a_prog_bug (function_name);
     }
@@ -2617,12 +2617,12 @@ static void attempt_connection_to_cm (void)
 	return;
     }
 #ifdef HAS_SOCKETS
-    (void) sprintf ( txt, "/tmp/%s.log.%d.%d",
-		    module_name, getuid (), getpid () );
+    sprintf ( txt, "/tmp/%s.log.%d.%d",
+		     module_name, (int) getuid (), (int) getpid () );
     if ( ( out_fd = open (txt, O_CREAT | O_TRUNC | O_WRONLY,
 			  S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH) ) < 0 )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Error opening: \"%s\" for output\t%s\n",
 			txt, sys_errlist[errno]);
 	exit (RV_SYS_ERROR);
@@ -2630,7 +2630,7 @@ static void attempt_connection_to_cm (void)
     /*  Attatch log file to standard output  */
     if (dup2 (out_fd, 1) < 0)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Error redirecting standard output\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_SYS_ERROR);
@@ -2638,7 +2638,7 @@ static void attempt_connection_to_cm (void)
     /*  Attatch log file to standard error  */
     if (dup2 (out_fd, 2) < 0)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Error redirecting standard error\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_SYS_ERROR);
@@ -2646,7 +2646,7 @@ static void attempt_connection_to_cm (void)
     /*  Close temporary descriptor for log file  */
     if (close (out_fd) != 0)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Error closing temporary descriptor for log file\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_SYS_ERROR);
@@ -2668,18 +2668,18 @@ static void attempt_connection_to_cm (void)
     port_number = ex_uint (char_ptr, &char_ptr);
     x = ex_int (char_ptr, &char_ptr);
     y = ex_int (char_ptr, &char_ptr);
-    if (host_addr == 0) (void) strcpy (my_hostname, "localhost");
+    if (host_addr == 0) strcpy (my_hostname, "localhost");
 #ifdef OS_VXMVX
     /*  Append ":vx" to hostname  */
-    (void) strcat (my_hostname, ":vx");
+    strcat (my_hostname, ":vx");
 #endif
     /*  Connect to Connection Management tool with control protocol  */
     /*  Open connection  */
     if ( ( cm_channel = ch_open_connection (host_addr, port_number) ) == NULL )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Could not open control connection to Connection Management tool\n");
-	(void) fprintf (stderr, "on host addr: %lu  port: %u\n",
+	fprintf (stderr, "on host addr: %lu  port: %u\n",
 			host_addr, port_number);
 	exit (RV_UNDEF_ERROR);
     }
@@ -2688,8 +2688,8 @@ static void attempt_connection_to_cm (void)
 				     CM_PROTOCOL_VERSION) )
 	== NULL )
     {
-	(void) fprintf (stderr, "Error writing authentication information\n");
-	(void) ch_close (cm_channel);
+	fprintf (stderr, "Error writing authentication information\n");
+	ch_close (cm_channel);
 	exit (RV_SYS_ERROR);
     }
     m_free (message);
@@ -2699,44 +2699,44 @@ static void attempt_connection_to_cm (void)
 			     ( flag (*) () ) NULL,
 			     ( flag (*) () ) NULL ) )
     {
-	(void) ch_close (cm_channel);
-	(void) fprintf (stderr, "Could not manage channel");
+	ch_close (cm_channel);
+	fprintf (stderr, "Could not manage channel");
 	exit (RV_UNDEF_ERROR);
     }
     /*  Send information back to Connection Management tool  */
     if ( !pio_write_string (cm_channel, module_name) )
     {
-	(void) fprintf (stderr, "Error writing module name\t%s\n",
+	fprintf (stderr, "Error writing module name\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_WRITE_ERROR);
     }
     if ( !pio_write_string (cm_channel, my_hostname) )
     {
-	(void) fprintf (stderr, "Error writing hostname\t%s\n",
+	fprintf (stderr, "Error writing hostname\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_WRITE_ERROR);
     }
     if ( !pio_write32s (cm_channel, x) )
     {
-	(void) fprintf (stderr, "Error writing x position\t%s\n",
+	fprintf (stderr, "Error writing x position\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_WRITE_ERROR);
     }
     if ( !pio_write32s (cm_channel, y) )
     {
-	(void) fprintf (stderr, "Error writing y position\t%s\n",
+	fprintf (stderr, "Error writing y position\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_WRITE_ERROR);
     }
     if ( !pio_write32s ( cm_channel, getpid () ) )
     {
-	(void) fprintf (stderr, "Error writing PID\t%s\n",
+	fprintf (stderr, "Error writing PID\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_WRITE_ERROR);
     }
     if ( !ch_flush (cm_channel) )
     {
-	(void) fprintf (stderr, "Error flushing channel\t%s\n",
+	fprintf (stderr, "Error flushing channel\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_WRITE_ERROR);
     }
@@ -2744,7 +2744,7 @@ static void attempt_connection_to_cm (void)
     /*  Open connection  */
     if ( ( stdio = ch_open_connection (host_addr, port_number) ) == NULL )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Could not open stdio connection to Connection Management tool");
 	exit (RV_UNDEF_ERROR);
     }
@@ -2752,26 +2752,26 @@ static void attempt_connection_to_cm (void)
     if ( ( message = write_protocol (stdio, "conn_mngr_stdio",
 				     CM_PROTOCOL_VERSION) ) == NULL )
     {
-	(void) fprintf (stderr, "Error writing authentication information\n");
-	(void) ch_close (stdio);
+	fprintf (stderr, "Error writing authentication information\n");
+	ch_close (stdio);
 	exit (RV_SYS_ERROR);
     }
     m_free (message);
     if ( !pio_write_string (stdio, my_hostname) )
     {
-	(void) fprintf (stderr, "Error writing hostname\t%s\n",
+	fprintf (stderr, "Error writing hostname\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_WRITE_ERROR);
     }
     if ( !pio_write32s ( stdio, getpid () ) )
     {
-	(void) fprintf (stderr, "Error writing PID\t%s\n",
+	fprintf (stderr, "Error writing PID\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_WRITE_ERROR);
     }
     if ( !ch_flush (stdio) )
     {
-	(void) fprintf (stderr, "Error flushing channel\t%s\n",
+	fprintf (stderr, "Error flushing channel\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_WRITE_ERROR);
     }
@@ -2806,12 +2806,12 @@ static flag cm_command_func (Channel channel, void **info)
 
     if (channel != cm_channel)
     {
-	(void) fprintf (stderr, "Bad channel\n");
+	fprintf (stderr, "Bad channel\n");
 	a_prog_bug (function_name);
     }
     if ( !pio_read32 (channel, &command) )
     {
-	(void) fprintf (stderr, "Error reading command\t%s\n",
+	fprintf (stderr, "Error reading command\t%s\n",
 			sys_errlist[errno]);
 	return (FALSE);
     }
@@ -2821,13 +2821,13 @@ static flag cm_command_func (Channel channel, void **info)
 	if ( ( hostname = pio_read_string (channel, (unsigned int *) NULL) )
 	    == NULL )
 	{
-	    (void) fprintf (stderr, "Error reading hostname\t%s\n",
+	    fprintf (stderr, "Error reading hostname\t%s\n",
 			    sys_errlist[errno]);
 	    return (FALSE);
 	}
 	if ( !pio_read32 (channel, &port_number) )
 	{
-	    (void) fprintf (stderr, "Error reading port_number\t%s\n",
+	    fprintf (stderr, "Error reading port_number\t%s\n",
 			    sys_errlist[errno]);
 	    return (FALSE);
 	}
@@ -2835,26 +2835,26 @@ static flag cm_command_func (Channel channel, void **info)
 						(unsigned int *) NULL) )
 	    == NULL )
 	{
-	    (void) fprintf (stderr, "Error reading protocol name\t%s\n",
+	    fprintf (stderr, "Error reading protocol name\t%s\n",
 			    sys_errlist[errno]);
 	    return (FALSE);
 	}
 	if ( !conn_attempt_connection (hostname, (unsigned int) port_number,
 				       protocol_name) )
 	{
-	    (void) fprintf (stderr, "Error attempting connection\n");
+	    fprintf (stderr, "Error attempting connection\n");
 	}
 	break;
       case CM_TOOL_CLOSE_CONNECTION:
 	if ( !pio_read32 (channel, &conn_id) )
 	{
-	    (void) fprintf (stderr, "Error reading command\t%s\n",
+	    fprintf (stderr, "Error reading command\t%s\n",
 			    sys_errlist[errno]);
 	    return (FALSE);
 	}
 	if ( !conn_close ( (Connection) conn_id ) )
 	{
-	    (void) fprintf (stderr, "Error closing connection\t%s\n",
+	    fprintf (stderr, "Error closing connection\t%s\n",
 			    sys_errlist[errno]);
 	}
 	break;
@@ -2875,7 +2875,7 @@ static flag cm_command_func (Channel channel, void **info)
 	}
 	break;
       default:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"%s: illegal command value from CM tool: %lu\n",
 			function_name, command);
 	return (FALSE);
@@ -2897,10 +2897,10 @@ static void cm_close_func (Channel channel, void *info)
 
     if (channel != cm_channel)
     {
-	(void) fprintf (stderr, "Bad channel\n");
+	fprintf (stderr, "Bad channel\n");
 	a_prog_bug (function_name);
     }
-    (void) fprintf (stderr,
+    fprintf (stderr,
 		    "PANIC: lost connection to Connection Management tool\n");
     /*  Used to call _exit() but because this leaves sproc() processes lying
 	around under IRIX, changed to exit(). Hope this doesn't cause a nasty
@@ -2968,7 +2968,7 @@ static ChConverter get_encryption (Channel channel,
 
     if ( (authinfo == NULL) || (rand_block == NULL) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     switch ( authinfo->security_type )
@@ -2987,7 +2987,7 @@ static ChConverter get_encryption (Channel channel,
 	    rp_get_bytes (main_randpool, (unsigned char *) idea_session,
 			  EN_IDEA_KEY_SIZE + EN_IDEA_BLOCK_SIZE);
 	    recipient = authinfo->password;
-	    (void) fprintf (stderr, "recipient: \"%s\"\n",
+	    fprintf (stderr, "recipient: \"%s\"\n",
 			    recipient);
 	    if ( ( ciphertext =
 		  pgp_encrypt (idea_session,
@@ -2999,7 +2999,7 @@ static ChConverter get_encryption (Channel channel,
 	    }
 	    if ( !pio_write32 (channel, ciphertext_length) )
 	    {
-		(void) fprintf (stderr, "Error writing length\t%s\n",
+		fprintf (stderr, "Error writing length\t%s\n",
 				sys_errlist[errno]);
 		m_clear (idea_session, EN_IDEA_KEY_SIZE + EN_IDEA_BLOCK_SIZE);
 		m_clear (ciphertext, ciphertext_length);
@@ -3019,7 +3019,7 @@ static ChConverter get_encryption (Channel channel,
 	    }
 	    m_clear (ciphertext, ciphertext_length);
 	    m_free (ciphertext);
-	    (void) fprintf (stderr, "Wrote encrypted IDEA session: %x\n",
+	    fprintf (stderr, "Wrote encrypted IDEA session: %x\n",
 			    *(unsigned int *) idea_session);
 	}
 	else
@@ -3027,7 +3027,7 @@ static ChConverter get_encryption (Channel channel,
 	    /*  Client  */
 	    if ( !pio_read32 (channel, &data) )
 	    {
-		(void) fprintf (stderr, "Error reading length\t%s\n",
+		fprintf (stderr, "Error reading length\t%s\n",
 				sys_errlist[errno]);
 		return (NULL);
 	    }
@@ -3039,7 +3039,7 @@ static ChConverter get_encryption (Channel channel,
 	    if (ch_read (channel, ciphertext, ciphertext_length) <
 		ciphertext_length)
 	    {
-		(void) fprintf (stderr, "Error reading length\t%s\n",
+		fprintf (stderr, "Error reading length\t%s\n",
 				sys_errlist[errno]);
 		m_free (ciphertext);
 		return (NULL);
@@ -3047,13 +3047,13 @@ static ChConverter get_encryption (Channel channel,
 	    if ( ( plaintext = pgp_decrypt (ciphertext, ciphertext_length,
 					    &plaintext_length) ) == NULL )
 	    {
-		(void) fprintf (stderr, "Error decrypting IDEA session key\n");
+		fprintf (stderr, "Error decrypting IDEA session key\n");
 		m_free (ciphertext);
 		return (NULL);
 	    }
 	    if (plaintext_length != EN_IDEA_KEY_SIZE + EN_IDEA_BLOCK_SIZE)
 	    {
-		(void) fprintf(stderr,
+		fprintf(stderr,
 			       "Decrypted session key length: %u is not: %u\n",
 				plaintext_length,
 			       EN_IDEA_KEY_SIZE + EN_IDEA_BLOCK_SIZE);
@@ -3064,14 +3064,14 @@ static ChConverter get_encryption (Channel channel,
 	    m_copy (idea_session, plaintext, plaintext_length);
 	    m_clear (plaintext, plaintext_length);
 	    m_free (plaintext);
-	    (void) fprintf (stderr, "Read encrypted IDEA session: %x\n",
+	    fprintf (stderr, "Read encrypted IDEA session: %x\n",
 			    *(unsigned int *) idea_session);
 	}
 	session_key = idea_session;
 	session_iv = idea_session + EN_IDEA_KEY_SIZE;
 	break;
       default:
-	(void) fprintf (stderr, "Illegal security type: %u\n",
+	fprintf (stderr, "Illegal security type: %u\n",
 			authinfo->security_type);
 	a_prog_bug (function_name);
 	break;
@@ -3090,7 +3090,7 @@ static ChConverter get_encryption (Channel channel,
 	if (ch_write (channel, rand_block, EN_IDEA_BLOCK_SIZE) <
 	    EN_IDEA_BLOCK_SIZE)
 	{
-	    (void) fprintf (stderr, "Error writing random block\t%s\n",
+	    fprintf (stderr, "Error writing random block\t%s\n",
 			    sys_errlist[errno]);
 	    m_clear (rand_block, EN_IDEA_BLOCK_SIZE);
 	    return (NULL);

@@ -52,6 +52,7 @@
 
 */
 #include <stdio.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdlib.h>
@@ -96,7 +97,6 @@ void (*close_func) ();
     char *path;
     char *display_host;
     char txt[STRING_LENGTH];
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char usage_string[] = "Usage:\tkarma_cm_slave host port display";
     static char function_name[] = "slave_setup";
@@ -134,7 +134,7 @@ void (*close_func) ();
 			sys_errlist[errno]);
 	exit (RV_SYS_ERROR);
     }
-    (void) sprintf ( txt, "/tmp/karma_cm_slave.log.%d", getuid () );
+    (void) sprintf ( txt, "/tmp/karma_cm_slave.log.%d", (int) getuid () );
     if ( ( out_fd = open (txt, O_CREAT | O_TRUNC | O_WRONLY,
 			  S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH) ) < 0 )
     {

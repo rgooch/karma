@@ -11,86 +11,86 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         rp_create
-$RETURN_TYPE      RandPool
+$FUNCTION           rp_create
+$RETURN_TYPE        RandPool
 $PARAMETER_LIST
     ( unsigned int size, unsigned int hash_digest_size,
 		    unsigned int hash_block_size, void (*hash_func) () )
-$SUMMARY          Create a pool of random bytes.
+$SUMMARY            Create a pool of random bytes.
 $PURPOSE
     This routine will create a random pool of bytes to which random
     data may be subsequently added or extracted. The pool is initialised with
     pseudo-random data (which is *not* cryptographically secure). When data is
     added to the pool, the pool is stirred using a supplied hash function.
     Bytes extracted from the pool should be cryptographically secure.
-$PARAMETER        size :
+$PARAMETER          size :
     The size of the pool.
-$PARAMETER        hash_digest_size :
+$PARAMETER          hash_digest_size :
     The size of the hash buffer.
-$PARAMETER        hash_block_size :
+$PARAMETER          hash_block_size :
     The size of the hash block.
-$PARAMETER        hash_func :
+$PARAMETER          hash_func :
     The hash function. The prototype function is
     <-RP_PROTO_hash_func->.
 $RETURNS
     A RandPool object on success, else NULL.
 $END
 
-$FUNCTION         rp_add_bytes
-$RETURN_TYPE      void
+$FUNCTION           rp_add_bytes
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (RandPool rp, CONST unsigned char *buf, unsigned int length)
-$SUMMARY          Add bytes (entropy) to a random pool.
+$SUMMARY            Add bytes (entropy) to a random pool.
 $PURPOSE
     This routine will add bytes of data (entropy) into a pool. The
     pool is then stirred using it's registered hash function in order to
     distribute the bits.
-$PARAMETER        rp :
+$PARAMETER          rp :
     The random pool.
-$PARAMETER        buf :
+$PARAMETER          buf :
     The bytes to add to the pool.
-$PARAMETER        length :
+$PARAMETER          length :
     The number of bytes to add to the pool.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         rp_get_bytes
-$RETURN_TYPE      void
+$FUNCTION           rp_get_bytes
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (RandPool rp, unsigned char *buf, unsigned int length)
-$SUMMARY          Get bytes of data from a random pool.
+$SUMMARY            Get bytes of data from a random pool.
 $PURPOSE
     Get bytes of data from a random pool.
-$PARAMETER        rp :
+$PARAMETER          rp :
     The random pool.
-$PARAMETER        buf :
+$PARAMETER          buf :
     The bytes to get from the pool will be written here. These bytes
     should be random an cryptographically secure.
-$PARAMETER        length :
+$PARAMETER          length :
     The number of bytes to get from the pool.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         rp_destroy
-$RETURN_TYPE      void
+$FUNCTION           rp_destroy
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (RandPool rp)
-$SUMMARY          Destroy a random pool of bytes, erasing all information.
+$SUMMARY            Destroy a random pool of bytes, erasing all information.
 $PURPOSE
     Destroy a random pool of bytes, erasing all information.
-$PARAMETER        rp :
+$PARAMETER          rp :
     The random pool.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         rp_destroy_all
-$RETURN_TYPE      void
+$FUNCTION           rp_destroy_all
+$RETURN_TYPE        void
 $PARAMETER_LIST
     ()
-$SUMMARY          Destroy all randpools.
+$SUMMARY            Destroy all randpools.
 $PURPOSE
     This routine will destroy all randpools. The routine is meant to
     be called from the <<exit(3)>> function. It should also be called by the
@@ -99,70 +99,70 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         rp_add_time_noise
-$RETURN_TYPE      void
+$FUNCTION           rp_add_time_noise
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (RandPool rp)
-$SUMMARY          Add time-based entropy to a randpool.
+$SUMMARY            Add time-based entropy to a randpool.
 $PURPOSE
     This routine will add bytes of data (entropy) into a pool,
     derived from the system time. It is suggested that this routine be called
     by various callback routines to assist in the addition of entropy.
-$PARAMETER        rp :
+$PARAMETER          rp :
     The random pool.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         rp_register_destroy_func
-$RETURN_TYPE      void
+$FUNCTION           rp_register_destroy_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (RandPool rp, void (*destroy_func) (),void *info)
-$SUMMARY          Register randpool destroy callback.
+$SUMMARY            Register randpool destroy callback.
 $PURPOSE
     This routine will register a routine which should be called when
     a random pool is destroyed.
-$PARAMETER        rp :
+$PARAMETER          rp :
     The random pool.
-$PARAMETER        destroy_func :
+$PARAMETER          destroy_func :
     The function which is called when the random pool is
     destroyed. The prototype function is <-RP_PROTO_destroy_func->.
     Multiple destroy functions may be registered, with the first one registered
     being the first one called upon destroy.
-$PARAMETER        info :
+$PARAMETER          info :
     A pointer to the arbitrary information passed to the destroy
     function. This may be NULL.
 $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       RP_PROTO_hash_func
-$RETURN_TYPE      void
+$PROTO_FUNC         RP_PROTO_hash_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned char buffer[hash_digest_size],
 			 CONST unsigned char block[hash_block_size];)
-$SUMMARY          Hash callback.
+$SUMMARY            Hash callback.
 $PURPOSE
     This routine is called when a hash buffer must be scrambled with
     a block of data.
-$PARAMETER        buffer :
+$PARAMETER          buffer :
     The hash buffer.
-$PARAMETER        block :
+$PARAMETER          block :
     The block to add to the hash buffer data.
 $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       RP_PROTO_destroy_func
-$RETURN_TYPE      void
+$PROTO_FUNC         RP_PROTO_destroy_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (RandPool rp, void *info)
-$SUMMARY          Destroy callback.
+$SUMMARY            Destroy callback.
 $PURPOSE
     This routine is called when a random pool is destroyed.
-$PARAMETER        rp :
+$PARAMETER          rp :
     The random pool.
-$PARAMETER        info :
+$PARAMETER          info :
     The arbitrary information pointer.
 $RETURNS
     Nothing.

@@ -2,7 +2,7 @@
 
     Header for  p_  package.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   12-SEP-1992
 
-    Last updated by Richard Gooch   31-JUL-1995
+    Last updated by Richard Gooch   7-SEP-1996
 
 */
 
@@ -66,9 +66,15 @@ EXTERN_FUNCTION (flag p_read_buf64, (char *buffer, unsigned long *data) );
 
 /*  For the file: float.c  */
 EXTERN_FUNCTION (flag p_write_buf_float, (char *buffer, float data) );
-EXTERN_FUNCTION (flag p_read_buf_float, (char *buffer, float *data) );
+EXTERN_FUNCTION (flag p_read_buf_float, (CONST char *buffer, float *data) );
+EXTERN_FUNCTION (flag p_read_buf_floats,
+		 (CONST char *buffer, uaddr num_values, float *data,
+		  uaddr *num_nan) );
 EXTERN_FUNCTION (flag p_write_buf_double, (char *buffer, double data) );
-EXTERN_FUNCTION (flag p_read_buf_double, (char *buffer, double *data) );
+EXTERN_FUNCTION (flag p_read_buf_double, (CONST char *buffer, double *data) );
+EXTERN_FUNCTION (flag p_read_buf_doubles,
+		 (CONST char *buffer, uaddr num_values, double *data,
+		  uaddr *num_nan) );
 
 
 #endif /*  KARMA_P_H  */

@@ -73,18 +73,17 @@ void im_register_module_name (char *name_string)
     }
     if (strcmp (module_name, "<<Unknown>>") != 0)
     {
-	(void) fprintf (stderr,
-			"Attempt to overwrite existing module name: \"%s\" with: \"%s\"\n",
-			module_name, name_string);
+	fprintf (stderr,
+		 "Attempt to overwrite existing module name: \"%s\" with: \"%s\"\n",
+		 module_name, name_string);
 	a_prog_bug (function_name);
     }
     if (strlen (name_string) > STRING_LENGTH)
     {
-	(void) fprintf (stderr, "Name string: \"%s\" is too long\n",
-			name_string);
+	fprintf (stderr, "Name string: \"%s\" is too long\n", name_string);
 	a_prog_bug (function_name);
     }
-    (void) strcpy (module_name, name_string);
+    strcpy (module_name, name_string);
 }   /*  End Function im_register_module_name  */
 
 /*PUBLIC_FUNCTION*/
@@ -99,11 +98,10 @@ void im_register_module_version_date (char *date_string)
 
     if (strlen (date_string) > STRING_LENGTH)
     {
-	(void) fprintf (stderr, "Date string: \"%s\" is too long\n",
-			date_string);
+	fprintf (stderr, "Date string: \"%s\" is too long\n", date_string);
 	a_prog_bug (function_name);
     }
-    (void) strcpy (module_version_date, date_string);
+    strcpy (module_version_date, date_string);
 }   /*  End Function im_register_module_version_date  */
 
 /*PUBLIC_FUNCTION*/
@@ -118,9 +116,9 @@ void im_register_lib_version (char *version_string)
 
     if (strlen (version_string) > STRING_LENGTH)
     {
-	(void) fprintf (stderr, "Version string: \"%s\" is too long\n",
-			version_string);
+	fprintf (stderr, "Version string: \"%s\" is too long\n",
+		 version_string);
 	a_prog_bug (function_name);
     }
-    (void) strcpy (module_lib_version, version_string);
+    strcpy (module_lib_version, version_string);
 }   /*  End Function im_register_lib_version  */

@@ -267,7 +267,6 @@ DataStore storage_create (CONST char *pathname, packet_desc *top_pack_desc)
     char filename[SM_MAX_PATHNAME_LENGTH];
     char structname[SM_MAX_PATHNAME_LENGTH];
     char hostname[SM_MAX_PATHNAME_LENGTH];
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "storage_create";
 

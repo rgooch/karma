@@ -36,8 +36,36 @@
     Updated by      Richard Gooch   16-JUN-1996: Created
   <iarray_get_data_scaling> routine.
 
-    Last updated by Richard Gooch   19-JUN-1996: Created <iarray_format_value>
+    Updated by      Richard Gooch   19-JUN-1996: Created <iarray_format_value>
   routine.
+
+    Updated by      Richard Gooch   31-JUL-1996: Created
+  <iarray_create_from_template> routine.
+
+    Updated by      Richard Gooch   2-AUG-1996: Created <iarray_get_coordinate>
+  routine.
+
+    Updated by      Richard Gooch   5-AUG-1996: Created <iarray_set_dim_name>
+  routine.
+
+    Updated by      Richard Gooch   5-AUG-1996: Created
+  <iarray_append_history_string> routine.
+
+    Updated by      Richard Gooch   8-AUG-1996: Created
+  <iarray_copy_named_element> routine.
+
+    Updated by      Richard Gooch   9-AUG-1996: Added <fail_if_not_found>
+  parameter to <iarray_copy_named_element> routine.
+
+    Updated by      Richard Gooch   15-AUG-1996: Created <iarray_get_fits_axis>
+  routine.
+
+    Updated by      Richard Gooch   29-SEP-1996: Made use of <ds_get_fits_axis>
+  routine.
+
+    Last updated by Richard Gooch   17-OCT-1996: "Cosmetic" name change of
+  <<template>> parameter in <iarray_create_from_template> because of stupid C++
+  theft from namespace.
 
 
 */
@@ -46,7 +74,10 @@
 #include <string.h>
 #include <karma.h>
 #include <karma_iarray.h>
+#include <karma_ds.h>
+#include <karma_st.h>
 #include <karma_a.h>
+#include <karma_m.h>
 
 
 #define VERIFY_IARRAY(array) if (array == NULL) \
@@ -241,6 +272,10 @@ void iarray_format_value (iarray array, char string[STRING_LENGTH],
     {
 	(void) sprintf (value_str, "%.3f MHz", scaled_value * 1e-6);
     }
+    else if (strcmp (value_name, "HZ") == 0)
+    {
+	(void) sprintf (value_str, "%.3f MHz", scaled_value * 1e-6);
+    }
     else if (strncmp (value_name, "FELO", 4) == 0)
     {
 	(void) sprintf (value_str, "%.2f km/s", scaled_value * 1e-3);
@@ -256,3 +291,208 @@ void iarray_format_value (iarray array, char string[STRING_LENGTH],
     }
     else (void) sprintf (string, "raw: %e  sc: %s", value, value_str);
 }   /*  End Function iarray_format_value  */
+
+/*PUBLIC_FUNCTION*/
+iarray iarray_create_from_template (iarray template_arr,unsigned int elem_type,
+				    flag copy_world_coords, flag copy_names,
+				    flag copy_aux_info)
+/*  [SUMMARY] Create an Intelligent Array from a template array.
+    [PURPOSE] This routine will create an Intelligent Array of a specified type
+    using an existing Intelligent Array as the template for the size,
+    dimensionality and other attributes.
+    <template_arr> The template Intelligent Array.
+    <elem_type> The element type for the new Intelligent Array.
+    <copy_world_coords> If TRUE, the world co-ordinates for each dimension in
+    the template array are copied, otherwise the defaults are used.
+    <copy_names> If TRUE, the dimension names and the value name of the
+    template array are copied, else the defaults are used.
+    <copy_aux_info> If TRUE, auxilary information (attachments) in the template
+    array is copied to the new array.
+    [RETURNS] An Intelligent Array on success, else FALSE.
+*/
+{
+    iarray new;
+    unsigned int count, num_dim;
+    double first_coord, last_coord;
+    char *elem_name;
+    char **dim_names;
+    unsigned long *dim_lengths;
+    static char function_name[] = "iarray_create_from_template";
+
+    VERIFY_IARRAY (template_arr);
+    num_dim = iarray_num_dim (template_arr);
+    if ( ( dim_lengths = (unsigned long *)
+	   m_alloc (num_dim * sizeof *dim_lengths) ) == NULL )
+    {
+	m_abort (function_name, "dimension lengths");
+    }
+    for (count = 0; count < num_dim; ++count)
+    {
+	dim_lengths[count] = iarray_dim_length (template_arr, count);
+    }
+    if (copy_names)
+    {
+	elem_name = iarray_value_name (template_arr);
+	if ( ( dim_names = (char **) m_alloc (num_dim * sizeof *dim_names) )
+	     == NULL )
+	{
+	    m_abort (function_name, "dimension names array");
+	}
+	for (count = 0; count < num_dim; ++count)
+	{
+	    dim_names[count] = (char *) iarray_dim_name (template_arr, count);
+	}
+    }
+    else
+    {
+	elem_name = NULL;
+	dim_names = NULL;
+    }
+    new = iarray_create (elem_type, num_dim, (CONST char **) dim_names,
+			 dim_lengths, elem_name,
+			 copy_aux_info ? template_arr : NULL);
+    m_free ( (char *) dim_lengths );
+    if (dim_names != NULL) m_free ( (char *) dim_names );
+    if (new == NULL) return (NULL);
+    if (copy_world_coords)
+    {
+	for (count = 0; count < num_dim; ++count)
+	{
+	    iarray_get_world_coords (template_arr, count,
+				     &first_coord, &last_coord);
+	    iarray_set_world_coords (new, count, first_coord, last_coord);
+	}
+    }
+    return (new);
+}   /*  End Function iarray_create_from_template  */
+
+/*PUBLIC_FUNCTION*/
+double iarray_get_coordinate (iarray array, unsigned int dim_index,
+			      double coord_index)
+/*  [SUMMARY] Get a co-ordinate along a dimension.
+    <array> The Intelligent Array.
+    <dim_index> The dimension index.
+    <coord_index> The co-ordinate index.
+    [RETURNS] The co-ordinate on success, else TOOBIG.
+*/
+{
+    flag found;
+    uaddr count;
+    unsigned int orig_dim_index;
+    dim_desc *dim;
+    static char function_name[] = "iarray_get_coordinate";
+
+    VERIFY_IARRAY (array);
+    dim = iarray_get_dim_desc (array, dim_index);
+    if (array->offsets == array->arr_desc->offsets)
+    {
+	/*  Not an alias array  */
+	return ( ds_get_coordinate (dim, coord_index) );
+    }
+    /*  It is an alias array: bugger. Search for offset along dimension
+	descriptor which equals first offset along iarray dimension  */
+    orig_dim_index = array->orig_dim_indices[dim_index];
+    count = 0;
+    found = FALSE;
+    while ( (count < dim->length) && !found )
+    {
+	if (array->offsets[dim_index][0] ==
+	    array->arr_desc->offsets[orig_dim_index][count]) found = TRUE;
+	else ++count;
+    }
+    if (!found)
+    {
+	(void) fprintf (stderr, "Could not find offset index!\n");
+	a_prog_bug (function_name);
+    }
+    return ( ds_get_coordinate (dim, coord_index + count) );
+}   /*  End Function iarray_get_coordinate  */
+
+/*PUBLIC_FUNCTION*/
+void iarray_set_dim_name (iarray array, unsigned int index, CONST char *name,
+			  flag new_alloc)
+/*  [SUMMARY] Change the name of a dimension of an Intelligent Array.
+    <array> The Intelligent Array.
+    <index> The index of the dimension.
+    <name> The new dimension name.
+    <new_alloc> If TRUE, the routine will allocate a new copy of the dimension
+    name, else it will copy the pointer (in which case the name must never be
+    externally deallocated or changed).
+    [RETURNS] Nothing.
+*/
+{
+    char *ptr;
+    dim_desc *dim;
+    static char function_name[] = "iarray_set_dim_name";
+
+    VERIFY_IARRAY (array);
+    dim = iarray_get_dim_desc (array, index);
+    if (!new_alloc)
+    {
+	m_free (dim->name);
+	dim->name = (char *) name;
+	return;
+    }
+    if ( ( ptr = st_dup (name) ) == NULL )
+    {
+	m_abort (function_name, "dimension name");
+    }
+    m_free (dim->name);
+    dim->name = ptr;
+}   /*  End Function iarray_set_dim_name  */
+
+/*PUBLIC_FUNCTION*/
+flag iarray_append_history_string (iarray array, CONST char *string,
+				   flag new_alloc)
+/*  [SUMMARY] Add a history string to an Intelligent Array.
+    <array> The Intelligent Array.
+    <string> The history string to add.
+    <new_alloc> If TRUE, the routine will allocate a new copy of the history
+    string, else it will copy the pointer (in which case the string must never
+    be externally deallocated or changed).
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    static char function_name[] = "iarray_append_history_string";
+
+    VERIFY_IARRAY (array);
+    return ( ds_history_append_string (array->multi_desc, string, new_alloc) );
+}   /*  End Function iarray_append_history_string  */
+
+/*PUBLIC_FUNCTION*/
+flag iarray_copy_named_element (iarray out, iarray in, CONST char *name,
+				flag fail_if_not_found,
+				flag fail_on_duplicate, flag replace)
+/*  [SUMMARY] Copy a named element from one Intelligent Array to another.
+    <out> The output Intelligent Array.
+    <in> The input Intelligent Array.
+    <name> The name of the element to copy.
+    <fail_if_not_found> If TRUE, the routine will fail if the element does not
+    exist in the input packet.
+    <fail_on_duplicate> If TRUE, the routine will fail if the element already
+    exists in the output packet.
+    <replace> If TRUE and the element already exists in the output packet, it
+    is replaced.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    return ( ds_copy_unique_named_element (out->top_pack_desc, out->top_packet,
+					   in->top_pack_desc, *in->top_packet,
+					   name, fail_if_not_found,
+					   fail_on_duplicate, replace) );
+}   /*  End Function iarray_copy_named_element  */
+
+/*PUBLIC_FUNCTION*/
+unsigned int iarray_get_fits_axis (iarray array, unsigned int index)
+/*  [SUMMARY] Get the FITS axis number of a dimension.
+    <array> The Intelligent Array.
+    <index> The index of the dimension.
+    [RETURNS] The FITS axis number on success, else 0.
+*/
+{
+    static char function_name[] = "iarray_get_fits_axis";
+
+    VERIFY_IARRAY (array);
+    return ds_get_fits_axis ( array->top_pack_desc, *array->top_packet,
+			      iarray_dim_name (array, index) );
+}   /*  End Function iarray_get_fits_axis  */

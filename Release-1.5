@@ -1,0 +1,354 @@
+Subject: BUG FIX in <kwin> package
+Date: 18-JUL-1996
+
+SUMMARY:
+  Various drawing routines did not produce PostScript.
+
+DESCRIPTION:
+  Several drawing routines would continue to draw to the pixel canvas
+rather than the PostScriptPage object when a PostScript refresh was in
+progress. Hence some graphics objects would not appear in the
+PostScript output.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <viewimg> package
+Date: Thu, 18 Jul 1996 23:40:16 +1000
+
+SUMMARY:
+  An offset of half a data pixel has been added when drawing geometric
+primitives.
+
+DESCRIPTION:
+  An offset of half a data value is now added when converting from
+world to pixel co-ordinates. This means that a point drawn at the
+co-ordinate for a data value will be drawn in the centre of the box
+of pixels representing that data value, rather than the bottom-left
+corner.
+
+REASON:
+  Generally, when drawing a point over a data pixel, it should be
+placed in the centre of the pixel. Drawing a contour plot over an
+image demonstrates this clearly.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION <iarray_contour>
+Date: Fri, 19 Jul 1996 12:37:43 +1000
+
+SUMMARY:
+  The <iarray_countour> routine extracts contours from an Intelligent Array.
+
+HEADER CHANGED:
+  <karma_iarray.h>
+
+DESCRIPTION:
+  The <iarray_contour> routine will compute line segments that
+approximate a set of specified countours. The co-ordinates of the
+line segments are in linear world co-ordinates.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <canvas> package
+Date: Sat, 20 Jul 1996 14:12:19 +1000
+
+SUMMARY:
+  The <canvas_convert_from_canvas_coords> routine has been created. The
+<canvas_convert_from_canvas_coord> has been deprecated.
+
+HEADER CHANGED:
+  <karma_canvas.h>
+
+DESCRIPTION:
+  The <canvas_convert_from_canvas_coords> routine can convert many
+co-ordinates in one call. The <canvas_convert_from_canvas_coord> can
+only convert a single co-ordinate per call and hence is less
+efficient. The <canvas_convert_from_canvas_coord> routine will be
+removed in Karma v2.0.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <canvas> package
+Date: Sat, 20 Jul 1996 16:43:45 +1000
+
+SUMMARY:
+  The <canvas_register_coords_convert_func> has been created to
+replace the <canvas_register_d_convert_func>
+
+HEADER CHANGED:
+  <karma_canvas.h>
+
+DESCRIPTION:
+  The <canvas_register_coords_convert_func> registers a routine which
+can perform many co-ordinate conversions in one call, whereas a
+routine registered with the <canvas_register_d_convert_func> routine
+can only perform one conversion per call. Note that applications do
+not normally register co-ordinate conversion routines since the
+<viewimg> package does this.
+
+REASON:
+  Performing many co-ordinate conversions in one function call is much
+more efficient.
+-------------------------------------------------------------------------------
+Subject: NEW PACKAGE <contour> for contour display
+Date: Sat, 20 Jul 1996 22:56:25 +1000
+
+SUMMARY:
+  The <contour> package adds support for displaying contour maps in a
+similar fashion to the <viewimg> package.
+
+HEADER CREATED:
+  <karma_contour.h>
+
+DESCRIPTION:
+  The <contour> package allows the application to create a number of
+KContourImage objects which may be displayed onto a KWorldCanvas. The
+application can control which KContourImage is displayed, as well as
+other attributes such as the colour the contours are drawn in, the
+contour levels and so on.
+As with the <viewimg> package, the application may create a single
+KContourImage or a sequence of KContourImage objects from an
+Intelligent Array with a single function call.
+
+REASON:
+  Contours maps are a useful alternative to greyscale images for the
+display of 2-dimensional array data. By providing a package for
+contour display with a similar interface to the <viewimg> package,
+support for contour display modes can be easily added to existing
+image display tools.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION <viewimg_create_sequence_from_iarray>
+Date: Mon, 22 Jul 1996 23:03:26 +1000
+
+SUMMARY:
+  The <viewimg_create_sequence_from_iarray> routine has been created.
+
+HEADER CHANGED:
+  <karma_viewimg.h>
+
+DESCRIPTION:
+  The <viewimg_create_sequence_from_iarray> routine creates a sequence
+of ViewableImage objects from a 3-dimensional Intelligent Array.
+
+REASON:
+  Existing applications which create sequences of ViewableImage
+objects use the <viewimg_create_sequence> routine, and must directly
+access members in the private <iarray> structure. Since the contents
+of this structure are subject to change, such accesses are not
+guaranteed to work in the future.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION <contour_create_sequence_from_iarray>
+Date: Mon, 22 Jul 1996 23:05:16 +1000
+
+SUMMARY:
+  The <contour_create_sequence_from_iarray> routine has been created.
+
+HEADER CHANGED:
+  <karma_contour.h>
+
+DESCRIPTION:
+  The <contour_create_sequence_from_iarray> routine creates a sequence
+of KContourImage objects from a 3-dimensional Intelligent Array.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION <iarray_create_from_template>
+Date: Thu, 1 Aug 1996 00:18:34 +1000
+
+SUMMARY:
+  The <iarray_create_from_template> routine has been created.
+
+HEADER CHANGED:
+  <karma_iarray.h>
+
+DESCRIPTION:
+  The <iarray_create_from_template> routine will create an Intelligent
+  Array of a specified type using an existing Intelligent Array as the
+  template for the size, dimensionality and other attributes such as
+  dimension names and world co-ordinates.
+
+PURPOSE:
+  This routine is intended to provide an easy way of creating an
+  Intelligent Array which has exactly the same attributes as another,
+  except for the type.
+-------------------------------------------------------------------------------
+Subject: CHANGES TO <ds> package
+Date: Fri, 2 Aug 1996 11:21:24 +1000
+
+SUMMARY:
+  The <ds_get_coordinate> routine has changed
+
+CODE AFFECTED:
+  All code which uses the <ds_get_coordinate> routine must be recompiled.
+
+HEADER CHANGED:
+  <karma_ds.h>
+
+DESCRIPTION:
+  The type of the <<coord_num>> parameter to the <ds_get_coordinate>
+  routine has changed from an integer to a floating point type.
+
+REASON:
+  Previously, it was not possible to use this routine to obtain world
+  co-ordinates within the sub-pixel domain: co-ordinates were clipped
+  to data pixel boundaries.
+  This change allows the programmer to obtain world co-ordinates
+  within the sub-pixel limit.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION <iarray_get_coordinate>
+Date: Fri, 2 Aug 1996 11:29:29 +1000
+
+SUMMARY:
+  The <iarray_get_coordinate> routine has been created.
+
+HEADER CHANGED:
+  <karma_iarray.h>
+
+DESCRIPTION:
+  The <iarray_get_coordinate> routine will convert an index along a
+  dimension of an Intelligent Array to a world co-ordinate.
+
+REASON:
+  Previously, many applications called <iarray_get_dim_desc> followed
+  by <ds_get_coordinate>. This two-stage process is both inconvenient,
+  and, for aliased sub-arrays (such as those obtained from
+  <iarray_get_sub_array_2D>), this is incorrect, since the index along
+  an Intelligent Array dimension is not the same as the index along a
+  dimension descriptor.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION <iarray_set_dim_name>
+Date: Mon, 5 Aug 1996 18:29:45 +1000
+
+SUMMARY:
+  The <iarray_set_dim_name> routine has been created.
+
+HEADER CHANGED:
+  <karma_iarray.h>
+
+DESCRIPTION:
+  The <iarray_set_dim_name> routine will change the name of a
+  specified dimension in an Intelligent Array.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION <foreign_fits_write>
+Date: Tue, 6 Aug 1996 17:09:51 +1000
+
+SUMMARY:
+  The <foreign_fits_write> routine has been created.
+
+HEADER CHANGED:
+  <karma_foreign.h>
+
+DESCRIPTION:
+  The <foreign_fits_write> routine will write a Karma data structure
+  to a Channel object using the FITS format. The routine will
+  automatically generate essential keywords such as: "NAXIS",
+  "NAXISn", "CTYPEn", "CRVALn", "CRPIXn", "CDELTn", "BITPIX", "BUNIT",
+  "BSCALE" and "BZERO". Also, existing keywords in the data structure
+  which do not conflict with the generated keywords are copied.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION <ds_history_append_string>
+Date: Tue, 6 Aug 1996 18:42:51 +1000
+
+SUMMARY:
+  The <ds_history_append_string> routine has been created.
+
+HEADER CHANGED:
+  <karma_ds.h>
+
+DESCRIPTION:
+  The <ds_history_append_string> routine will append a history string
+  to a multi_array data structure.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION <iarray_append_history_string>
+Date: Tue, 6 Aug 1996 18:43:54 +1000
+
+SUMMARY:
+  The <iarray_append_history_string> routine has been created.
+
+HEADER CHANGED:
+  <karma_iarray.h>
+
+DESCRIPTION:
+  The <iarray_append_history_string> routine will append a history string
+  to an Intelligent Array.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION <foreign_fits_write_iarray>
+Date: Tue, 6 Aug 1996 21:31:26 +1000
+
+SUMMARY:
+  The <foreign_fits_write_iarray> routine has been created.
+
+HEADER CHANGED:
+  <karma_foreign.h>
+
+DESCRIPTION:
+  The <foreign_fits_write_iarray> routine is similar to the
+  <foreign_fits_write> routine, except that an Intelligent Array is
+  expected, rather than the raw Karma data structure.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTIONS <foreign_miriad_write_iarray> and <foreign_miriad_write>
+Date: Wed, 7 Aug 1996 17:54:06 +1000
+
+SUMMARY:
+  The <foreign_miriad_write> and <foreign_miriad_write_iarray>
+  routines have been created.
+
+HEADER CHANGED:
+  <karma_foreign.h>
+
+DESCRIPTION:
+  The <foreign_miriad_write> routine will write a Karma data structure
+  in Miriad Image file format. The routine will automatically generate
+  essential keywords such as: "NAXIS", "NAXISn", "CTYPEn", "CRVALn",
+  "CRPIXn", "CDELTn" and "BUNIT". Also, existing keywords in the data
+  structure which do not conflict with the generated keywords are
+  copied.
+  Keywords in the Karma data structure must be in FITS-compatible
+  units. Any necessary conversions to Miriad units are performed
+  automatically.
+  The <foreign_miriad_write_iarray> routine is similar to the
+  <foreign_miriad_write> routine, except that an Intelligent Array is
+  expected, rather than the raw Karma data structure.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTIONS <foreign_gipsy_write_iarray> and <foreign_gipsy_write>
+Date: Thu, 8 Aug 1996 00:19:57 +1000
+
+SUMMARY:
+  The <foreign_gipsy_write> and <foreign_gipsy_write_iarray>
+  routines have been created.
+
+HEADER CHANGED:
+  <karma_foreign.h>
+
+DESCRIPTION:
+  The <foreign_gipsy_write> routine will write a Karma data structure
+  in GIPSY file format. The routine will automatically generate
+  essential keywords such as: "NAXIS", "NAXISn", "CTYPEn", "CRVALn",
+  "CRPIXn", "CDELTn" and "BUNIT". Also, existing keywords in the data
+  structure which do not conflict with the generated keywords are
+  copied.
+  Keywords in the Karma data structure must be in FITS-compatible
+  units.
+  The <foreign_gipsy_write_iarray> routine is similar to the
+  <foreign_gipsy_write> routine, except that an Intelligent Array is
+  expected, rather than the raw Karma data structure.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION <iarray_copy_named_element>
+Date: Thu, 8 Aug 1996 18:02:24 +1000
+
+SUMMARY:
+  The <iarray_copy_named_element> routine has been created.
+
+HEADER CHANGED:
+  <karma_iarray.h>
+
+DESCRIPTION:
+  The <iarray_copy_named_element> routine will copy a named (attached)
+  element (numeric value or string) from one Intelligent Array to
+  another.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION <iarray_get_fits_axis>
+Date: Thu, 15 Aug 1996 17:20:28 +1000
+
+SUMMARY:
+  The <iarray_get_fits_axis> routine has been created.
+
+HEADER CHANGED:
+  <karma_iarray.h>
+
+DESCRIPTION:
+  The <iarray_get_fits_axis> routine will attempt to find the original
+  FITS axis number of a dimension in an Intelligent Array. This makes
+  the process of finding extra information associated with a dimension
+  (such as reference co-ordinates) simple.
+-------------------------------------------------------------------------------

@@ -75,6 +75,7 @@
 */
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
 #include <sys/types.h>
 #include <errno.h>
 #include <os.h>
@@ -160,7 +161,7 @@ flag chm_manage ( Channel channel, void *info, flag (*input_func) (),
     struct managed_channel_type *new_entry;
     struct managed_channel_type *last_entry = NULL; /*  Init. for gcc -Wall  */
     extern struct managed_channel_type *managed_channel_list;
-    extern char *sys_errlist[];
+    /*extern char *sys_errlist[];*/
     static char function_name[] = "chm_manage";
 
     /*  Check if channel is a connection  */
@@ -275,7 +276,6 @@ void chm_unmanage (Channel channel)
 {
     struct managed_channel_type *entry;
     extern struct managed_channel_type *managed_channel_list;
-    extern char *sys_errlist[];
     static char function_name[] = "chm_unmanage";
 
     for (entry = managed_channel_list; entry != NULL; entry = entry->next)
@@ -561,10 +561,7 @@ static void close_channel (entry)
 */
 struct managed_channel_type *entry;
 {
-    extern char *sys_errlist[];
-/*
-    static char function_name[] = "close_channel";
-*/
+    /*static char function_name[] = "close_channel";*/
 
     if (entry->close_func != NULL)
     {

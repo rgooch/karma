@@ -54,8 +54,11 @@
     Updated by      Richard Gooch   9-MAY-1996: Took account of changes to
   OpenGL interface and revamped canvas creation.
 
-    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+    Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   15-SEP-1996: Made use of new <kwin_xutil_*>
+  package.
 
 
 */
@@ -69,6 +72,7 @@
 #include <X11/Xaw/Form.h>
 #include <X11/extensions/multibuf.h>
 #include <karma.h>
+#include <karma_kwin.h>
 #include <karma_a.h>
 #include <Xkw/MultiCanvasP.h>
 
@@ -88,11 +92,6 @@ static XtResource resources[] =
 STATIC_FUNCTION (void MultiCanvas__Initialise, (Widget request, Widget new) );
 STATIC_FUNCTION (Boolean MultiCanvas__SetValues,
 		 (Widget current, Widget request, Widget new) );
-STATIC_FUNCTION (void get_visuals,
-		 (Screen *screen, XVisualInfo **pseudocolour,
-		  XVisualInfo **truecolour, XVisualInfo **directcolour) );
-STATIC_FUNCTION (XVisualInfo *get_visinfo_for_visual,
-		 (Display *dpy, Visual *visual) );
 STATIC_FUNCTION (flag stereo_supported_for_vinfo,
 		 (XVisualInfo *vinfo, int num_info, XmbufBufferInfo *info) );
 STATIC_FUNCTION (void create_canvases_for_visual,
@@ -193,8 +192,8 @@ static void MultiCanvas__Initialise (Widget Request, Widget New)
     w = XtParent (New);
     /*  Get visual information  */
     root_visual = XDefaultVisualOfScreen (screen);
-    root_vinfo = get_visinfo_for_visual (dpy, root_visual);
-    get_visuals (screen, &pc_vinfo, &tc_vinfo, &dc_vinfo);
+    root_vinfo = kwin_xutil_get_visinfo_for_visual (dpy, root_visual);
+    kwin_xutil_get_vinfos (screen, &pc_vinfo, &tc_vinfo, &dc_vinfo);
     if ( (root_vinfo->depth == 8) && (root_vinfo->class == PseudoColor) &&
 	(root_vinfo->colormap_size == 256) )
     {
@@ -295,91 +294,6 @@ static Boolean MultiCanvas__SetValues (Widget Current, Widget Request,
 
     return True;
 }   /*  End Function SetValues  */
-
-static void get_visuals (Screen *screen, XVisualInfo **pseudocolour,
-			 XVisualInfo **truecolour, XVisualInfo **directcolour)
-/*  This routine will attempt to get supported visuals available on a screen.
-    The X Window screen must be given by  screen  .
-    A PseudoColour visual will be written to the storage pointed to by
-    pseudocolour  .If this is NULL, nothing is written here. If no
-    PseudoColour visual is supported, NULL is written here.
-    A TrueColour visual will be written to the storage pointed to by
-    truecolour  .If this is NULL, nothing is written here. If no TrueColour
-    visual is supported, NULL is written here.
-    A DirectColour visual will be written to the storage pointed to by
-    directcolour  .If this is NULL, nothing is written here. If no DirectColour
-    visual is supported, NULL is written here.
-    The routine returns nothing.
-*/
-{
-    int num_vinfos;
-    XVisualInfo vinfo_template;
-
-    vinfo_template.screen = XScreenNumberOfScreen (screen);
-    vinfo_template.colormap_size = 256;
-    if (pseudocolour != NULL)
-    {
-	/*  Get PseudoColour visual  */
-	vinfo_template.depth = 8;
-	vinfo_template.class = PseudoColor;
-	*pseudocolour = XGetVisualInfo (XDisplayOfScreen (screen),
-					VisualScreenMask | VisualDepthMask |
-					VisualClassMask |
-					VisualColormapSizeMask,
-					&vinfo_template, &num_vinfos);
-    }
-    if (truecolour != NULL)
-    {
-	/*  Get TrueColour visual  */
-	vinfo_template.depth = 24;
-	vinfo_template.class = TrueColor;
-	*truecolour = XGetVisualInfo (XDisplayOfScreen (screen),
-				      VisualScreenMask | VisualDepthMask |
-				      VisualClassMask | VisualColormapSizeMask,
-				      &vinfo_template, &num_vinfos);
-    }
-    if (directcolour != NULL)
-    {
-	/*  Get DirectColour visual  */
-	vinfo_template.depth = 24;
-	vinfo_template.class = DirectColor;
-	*directcolour = XGetVisualInfo (XDisplayOfScreen (screen),
-					VisualScreenMask | VisualDepthMask |
-					VisualClassMask |
-					VisualColormapSizeMask,
-					&vinfo_template, &num_vinfos);
-    }
-}   /*  End Function get_visuals  */
-
-static XVisualInfo *get_visinfo_for_visual (Display *dpy, Visual *visual)
-/*  This routine will get the visual information structure for a visual.
-    The X display must be given by  dpy  .
-    The visual must be given by  visual  .
-    The routine returns a pointer to an XVisualInfo structure on succes, else
-    it returns NULL. The XVisualInfo structure must be freed by XFree()
-*/
-{
-    int num_vinfos;
-    XVisualInfo vinfo_template;
-    XVisualInfo *vinfos;
-    static char function_name[] = "get_visinfo_for_visual";
-
-    vinfo_template.visualid = XVisualIDFromVisual (visual);
-    vinfos = XGetVisualInfo (dpy, VisualIDMask, &vinfo_template, &num_vinfos);
-    if (num_vinfos < 1)
-    {
-	(void) fprintf (stderr, "Error getting visual info for visual: %p\n",
-			visual);
-	a_prog_bug (function_name);
-    }
-    if (num_vinfos > 1)
-    {
-	(void) fprintf (stderr,
-			"WARNING: number of visuals for visual: %p is: %d\n",
-			visual, num_vinfos);
-    }
-    return (vinfos);
-}   /*  End Function get_visinfo_for_visual  */
 
 static flag stereo_supported_for_vinfo (XVisualInfo *vinfo, int num_info,
 					XmbufBufferInfo *info)

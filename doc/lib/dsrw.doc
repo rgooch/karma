@@ -10,257 +10,290 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         dsrw_write_multi
-$RETURN_TYPE      void
+$FUNCTION           dsrw_write_multi
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (Channel channel, multi_array *multi_desc)
-$SUMMARY          Write a multi_array data structure.
+    (Channel channel, CONST multi_array *multi_desc)
+$SUMMARY            Write a multi_array data structure.
 $PURPOSE
     This routine will write a binary multi_array descriptor to a
     channel object. All descriptors and data, as well as history strings are
     written.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The data structure.
 $RETURNS
-    Nothing.
+    TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsrw_write_packet_desc
-$RETURN_TYPE      void
+$FUNCTION           dsrw_write_multi_header
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (Channel channel, packet_desc *pack_desc)
-$SUMMARY          Write a packet descriptor in binary format.
+    (Channel channel, CONST multi_array *multi_desc)
+$SUMMARY            Write a multi_array data structure header.
+$PURPOSE
+    This routine will write a binary multi_array descriptor header to
+    a channel object. The various top-level packet descriptors, data and
+    history are not written.
+$PARAMETER          channel :
+    The channel object.
+$PARAMETER          multi_desc :
+    The data structure.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION           dsrw_write_packet_desc
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (Channel channel, CONST packet_desc *pack_desc)
+$SUMMARY            Write a packet descriptor in binary format.
 $PURPOSE
     This routine will write the binary format of a packet descriptor
     to a channel object. The routine will also write all lower levels of array
     or linked list descriptors.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The packet descriptor.
 $RETURNS
-    Nothing.
+    TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsrw_write_element_desc
-$RETURN_TYPE      void
+$FUNCTION           dsrw_write_element_desc
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (Channel channel, unsigned int type, char *desc)
-$SUMMARY          Write an element descriptor in binary format.
+    (Channel channel, unsigned int type,
+			      CONST char *desc)
+$SUMMARY            Write an element descriptor in binary format.
 $PURPOSE
     This routine will write the binary format of an element
     descriptor to a channel object. If the element is an array pointer or a
     linked list pointer, that descriptor will also be written.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the element.
-$PARAMETER        desc :
+$PARAMETER          desc :
     The element descriptor.
 $RETURNS
-    Nothing.
+    TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsrw_write_array_desc
-$RETURN_TYPE      void
+$FUNCTION           dsrw_write_array_desc
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (Channel channel, array_desc *arr_desc)
-$SUMMARY          Write an array descriptor in binary format.
+    (Channel channel, CONST array_desc *arr_desc)
+$SUMMARY            Write an array descriptor in binary format.
 $PURPOSE
     This routine will write the binary representation of an array
     descriptor to a channel object. The packet descriptor for the array will
     also be written (this is a recursive process).
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
 $RETURNS
-    Nothing.
+    TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsrw_write_dim_desc
-$RETURN_TYPE      void
+$FUNCTION           dsrw_write_dim_desc
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (Channel channel, dim_desc *dimension)
-$SUMMARY          Write a dimension descriptor in binary format.
+    (Channel channel, CONST dim_desc *dimension)
+$SUMMARY            Write a dimension descriptor in binary format.
 $PURPOSE
     This routine will write the binary representation of a dimension
     descriptor to a channel object.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        dimension :
+$PARAMETER          dimension :
     The dimension descriptor.
 $RETURNS
-    Nothing.
+    TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsrw_write_packet
-$RETURN_TYPE      void
+$FUNCTION           dsrw_write_packet
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, CONST packet_desc *pack_desc,
 			CONST char *packet)
-$SUMMARY          Write packet data in binary format.
+$SUMMARY            Write packet data in binary format.
 $PURPOSE
     This routine will write the binary representation of a data
     packet to a channel object. The routine will recursively write sub arrays
     and linked lists of packets.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The packet descriptor.
-$PARAMETER        packet :
+$PARAMETER          packet :
     The packet data.
 $RETURNS
-    Nothing.
+    TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsrw_write_element
-$RETURN_TYPE      void
+$FUNCTION           dsrw_write_element
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (Channel channel, unsigned int type, char *desc,
+    (Channel channel, unsigned int type, CONST char *desc,
 			 CONST char *element)
-$SUMMARY          Write an element in binary format.
+$SUMMARY            Write an element in binary format.
 $PURPOSE
     This routine will write the binary representation of an element
     to a channel object.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the element.
-$PARAMETER        desc :
+$PARAMETER          desc :
     The descriptor for the element.
-$PARAMETER        element :
+$PARAMETER          element :
     A pointer to the element data.
 $RETURNS
-    Nothing.
+    TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsrw_write_array
-$RETURN_TYPE      void
+$FUNCTION           dsrw_write_array
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (Channel channel, array_desc *arr_desc,
+    (Channel channel, CONST array_desc *arr_desc,
 		       CONST char *element, flag pad)
-$SUMMARY          Write an array in binary format.
+$SUMMARY            Write an array in binary format.
 $PURPOSE
     This routine will write the binary representation of an array to
     a channel object. The routine will recursively write any sub arrays or
     linked lists of packets.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
-$PARAMETER        element :
+$PARAMETER          element :
     The element to write the array pointer to.
-$PARAMETER        pad :
+$PARAMETER          pad :
     If TRUE the array will be padded on a selected boundary (this is the
     case when writing .kf files).
 $RETURNS
-    Nothing.
+    TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsrw_write_list
-$RETURN_TYPE      void
+$FUNCTION           dsrw_write_list
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (Channel channel, packet_desc *pack_desc,
-		      list_header *list_head)
-$SUMMARY          Write a linked list in binary format.
+    (Channel channel, CONST packet_desc *pack_desc,
+		      CONST list_header *list_head)
+$SUMMARY            Write a linked list in binary format.
 $PURPOSE
     This routine will write the binary representation of the data in
     a linked list to a channel object. The routine will recursively write any
     sub arrays or linked lists of packets.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The packet descriptor for the list entries.
-$PARAMETER        list_head :
+$PARAMETER          list_head :
     The linked list header.
 $RETURNS
-    Nothing.
+    TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsrw_write_packets
-$RETURN_TYPE      flag
+$FUNCTION           dsrw_write_packets
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, CONST packet_desc *descriptor,
 			 CONST char *source, unsigned long num_packets)
-$SUMMARY          Write the binary representation of many data packets.
+$SUMMARY            Write the binary representation of many data packets.
 $PURPOSE
     This routine will write the binary representation many data
     packets to a channel object. The routine will recursively write out sub
     arrays and linked lists.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        descriptor :
+$PARAMETER          descriptor :
     The descriptor for the packets.
-$PARAMETER        source :
+$PARAMETER          source :
     The packet data.
-$PARAMETER        num_packets :
+$PARAMETER          num_packets :
     The number of packets to write.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsrw_write_flag
-$RETURN_TYPE      void
+$FUNCTION           dsrw_write_flag
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, flag logical)
-$SUMMARY          Write a boolean value in binary format to a channel object.
+$SUMMARY            Write a boolean value in binary format to a channel object.
 $PURPOSE
     Write a boolean value in binary format to a channel object.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        logical :
+$PARAMETER          logical :
     The boolean value.
 $RETURNS
-    Nothing.
+    TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsrw_read_multi
-$RETURN_TYPE      multi_array *
+$FUNCTION           dsrw_read_multi
+$RETURN_TYPE        multi_array *
 $PARAMETER_LIST
     (Channel channel)
-$SUMMARY          Read the binary representation of a multi_array structure.
+$SUMMARY            Read the binary representation of a multi_array structure.
 $PURPOSE
     This routine will read the binary representation of a
     multi_array general data structure header from a channel object and will
     allocate the required descriptors. The routine will then read in the data
     from the channel object and will write it into the data structure(s)
     created.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
 $RETURNS
     A pointer to the multi array header on success, else NULL.
 $END
 
-$FUNCTION         dsrw_read_packet_desc
-$RETURN_TYPE      packet_desc *
+$FUNCTION           dsrw_read_multi_header
+$RETURN_TYPE        multi_array *
 $PARAMETER_LIST
     (Channel channel)
-$SUMMARY          Read the binary representation of a packet descriptor.
+$SUMMARY            Read the binary representation of a multi_array header.
+$PURPOSE
+    This routine will read the binary representation of a
+    multi_array general data structure header from a channel object. The
+    various top-level packet descriptors, data and history are not read.
+$PARAMETER          channel :
+    The channel object.
+$RETURNS
+    A pointer to the multi array header on success, else NULL.
+$END
+
+$FUNCTION           dsrw_read_packet_desc
+$RETURN_TYPE        packet_desc *
+$PARAMETER_LIST
+    (Channel channel)
+$SUMMARY            Read the binary representation of a packet descriptor.
 $PURPOSE
     This routine will read the binary representation of a packet
     descriptor from a channel object. The routine will recursively read in
     array and linked list descriptors if required.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
 $RETURNS
     A pointer to the packet descriptor on success, else NULL.
 $END
 
-$FUNCTION         dsrw_read_array_desc
-$RETURN_TYPE      array_desc *
+$FUNCTION           dsrw_read_array_desc
+$RETURN_TYPE        array_desc *
 $PARAMETER_LIST
     (Channel channel, unsigned int type)
-$SUMMARY          Read the binary representation of an array descriptor.
+$SUMMARY            Read the binary representation of an array descriptor.
 $PURPOSE
     This routine will read the binary representation of an array
     descriptor from a channel object. The routine will recursively read the
     packet descriptor for the array.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the array. Legal values are:
     ARRAYP   (old format)
     K_ARRAY  (new format)
@@ -268,155 +301,155 @@ $RETURNS
     A pointer to the array descriptor on success, else NULL.
 $END
 
-$FUNCTION         dsrw_read_dim_desc
-$RETURN_TYPE      dim_desc *
+$FUNCTION           dsrw_read_dim_desc
+$RETURN_TYPE        dim_desc *
 $PARAMETER_LIST
     (Channel channel)
-$SUMMARY          Read the binary representation of a dimension descriptor.
+$SUMMARY            Read the binary representation of a dimension descriptor.
 $PURPOSE
     This routine will read the binary representation of a dimension
     descriptor from a channel object.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
 $RETURNS
     A pointer to the dimension descriptor on success, else NULL.
 $END
 
-$FUNCTION         dsrw_read_packet
-$RETURN_TYPE      flag
+$FUNCTION           dsrw_read_packet
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, CONST packet_desc *descriptor,
 		       char *packet)
-$SUMMARY          Read the binary representation of a data packet.
+$SUMMARY            Read the binary representation of a data packet.
 $PURPOSE
     This routine will read the binary representation of a data packet
     from a channel object. The routine will recursively read in sub arrays and
     linked lists.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        descriptor :
+$PARAMETER          descriptor :
     The descriptor for the packet.
-$PARAMETER        packet :
+$PARAMETER          packet :
     The packet data will be written here.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsrw_read_element
-$RETURN_TYPE      flag
+$FUNCTION           dsrw_read_element
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, unsigned int type, char *desc,
 			char *element)
-$SUMMARY          Read the binary representation of an element.
+$SUMMARY            Read the binary representation of an element.
 $PURPOSE
     This routine will read the binary representation of an element
     from a channel object. If the element type is a pointer to an array or
     linked lists, the routine will recursively read in the array or linked
     list of packets.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the element.
-$PARAMETER        desc :
+$PARAMETER          desc :
     The element descriptor.
-$PARAMETER        element :
+$PARAMETER          element :
     A pointer to the element storage. This will be written to.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsrw_read_array
-$RETURN_TYPE      flag
+$FUNCTION           dsrw_read_array
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, CONST array_desc *descriptor,
 		      char *element, flag pad)
-$SUMMARY          Read the binary representation of an array.
+$SUMMARY            Read the binary representation of an array.
 $PURPOSE
     This routine will read the binary representation of an array
     from a channel object. The routine will recursively read in array packets.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        descriptor :
+$PARAMETER          descriptor :
     The array descriptor.
-$PARAMETER        element :
+$PARAMETER          element :
     The array pointer will be written here.
-$PARAMETER        pad :
+$PARAMETER          pad :
     If TRUE the array will be padded on a selected boundary (this is the
     case when reading .kf files).
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsrw_read_list
-$RETURN_TYPE      flag
+$FUNCTION           dsrw_read_list
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, CONST packet_desc *descriptor,
 		     list_header *header)
-$SUMMARY          Read the binary representation of a linked list.
+$SUMMARY            Read the binary representation of a linked list.
 $PURPOSE
     This routine will read in the binary representation of a linked
     list of data from a channel object. The routine will recursively read in
     sub arrays and linked lists.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        descriptor :
+$PARAMETER          descriptor :
     The packet descriptor for the list entries.
-$PARAMETER        header :
+$PARAMETER          header :
     The linked list header. The linked list entries and data will be
     contiguous in memory.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsrw_read_packets
-$RETURN_TYPE      flag
+$FUNCTION           dsrw_read_packets
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, CONST packet_desc *descriptor,
 			char *dest, unsigned long num_packets)
-$SUMMARY          Read the binary representation of many data packets.
+$SUMMARY            Read the binary representation of many data packets.
 $PURPOSE
     This routine will read the binary representation many data
     packets from a channel object. The routine will recursively read in sub
     arrays and linked lists.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        descriptor :
+$PARAMETER          descriptor :
     The descriptor for the packets.
-$PARAMETER        dest :
+$PARAMETER          dest :
     The packet data will be written here.
-$PARAMETER        num_packets :
+$PARAMETER          num_packets :
     The number of packets to read.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsrw_read_flag
-$RETURN_TYPE      flag
+$FUNCTION           dsrw_read_flag
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, flag *logical)
-$SUMMARY          Read the binary representation of a boolean.
+$SUMMARY            Read the binary representation of a boolean.
 $PURPOSE
     This routine will read in the binary representation of a boolean
     flag from a channel object.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        logical :
+$PARAMETER          logical :
     The boolean value is written here.
 $RETURNS
     TRUE if the flag was read in without error, else FALSE.
 $END
 
-$FUNCTION         dsrw_read_type
-$RETURN_TYPE      flag
+$FUNCTION           dsrw_read_type
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, unsigned int *type)
-$SUMMARY          Read the binary representation of a data type.
+$SUMMARY            Read the binary representation of a data type.
 $PURPOSE
     This routine will read in the binary representation of a data
     type from a channel object.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        type :
+$PARAMETER          type :
     The type value is written here.
 $RETURNS
     TRUE if the type was read without error, else FALSE.

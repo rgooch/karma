@@ -51,6 +51,7 @@
 */
 #include <stdio.h>
 #include <math.h>
+#include <errno.h>
 #include <sys/time.h>
 #include <signal.h>
 #include <sys/resource.h>
@@ -109,7 +110,6 @@ int main (int argc, char **argv)
     unsigned int server_port_number;
     char line[COMMAND_LINE_LENGTH];
     char prompt[STRING_LENGTH + 3];
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     extern char module_name[STRING_LENGTH + 1];
     static char function_name[] = "main";
@@ -210,9 +210,8 @@ flag (*decode_func) ();
     struct rusage start_usage;
     struct rusage stop_usage;
     static struct timezone tz = {0, 0};
-#endif  /*  HAS_GETRUSAGE  */
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
+#endif  /*  HAS_GETRUSAGE  */
 
 #ifdef dummy
     log_input_line (line);
@@ -392,7 +391,6 @@ Connection connection;
 void **info;
 {
     static char buffer[STRING_LENGTH];
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     /*static char function_name[] = "command_read_func";*/
 

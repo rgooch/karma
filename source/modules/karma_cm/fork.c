@@ -41,6 +41,7 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <karma.h>
@@ -85,7 +86,6 @@ char *args;
     char env_name[STRING_LENGTH];
     char env_value[STRING_LENGTH];
     extern char *argv[MAX_ARGS];
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
 
     (void) strcpy (env_name, "KARMA_CM_CONTROL_COMMAND");
@@ -142,7 +142,6 @@ int y;
 char *args;
 {
     int child_pid;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
 
     switch ( child_pid = fork () )

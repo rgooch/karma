@@ -98,14 +98,14 @@ STATIC_FUNCTION (void item_cbk, (Widget w, XtPointer client_data,
 
 static XtResource ChoiceMenuResources[] = 
 {
-  {XkwNmenuTitle, XkwCMenuTitle, XtRString, sizeof (String),
-    TheOffset(menuTitle), XtRString, NULL},
-  {XkwNitemStrings, XkwCItemStrings, XtRPointer, sizeof (XtPointer),
-    TheOffset(itemStrings), XtRImmediate, NULL},
-  {XkwNnumItems, XkwCNumItems, XtRInt, sizeof (int),
-    TheOffset(numItems), XtRImmediate, 0},
-  {XkwNselectCallback, XtCCallback, XtRCallback, sizeof (caddr_t),
-    TheOffset(selectCallback), XtRCallback, (caddr_t) NULL},
+    {XkwNmenuTitle, XkwCMenuTitle, XtRString, sizeof (String),
+     TheOffset(menuTitle), XtRString, NULL},
+    {XkwNitemStrings, XkwCItemStrings, XtRPointer, sizeof (XtPointer),
+     TheOffset(itemStrings), XtRImmediate, NULL},
+    {XkwNnumItems, XkwCNumItems, XtRInt, sizeof (int),
+     TheOffset(numItems), XtRImmediate, 0},
+    {XkwNselectCallback, XtCCallback, XtRCallback, sizeof (caddr_t),
+     TheOffset(selectCallback), XtRCallback, (caddr_t) NULL},
 };
 
 #undef TheOffset
@@ -229,7 +229,7 @@ static void Initialise (Widget Request, Widget New)
 	XtAddCallback ( menu_entry, XtNcallback, item_cbk,
 		       (XtPointer) (item_data + count) );
     }
-}
+}   /*  End Function Initialise  */
 
 /*----------------------------------------------------------------------*/
 /* Destroy method*/

@@ -1420,7 +1420,6 @@ void *info;
     moduletype *module;
     extern flag keep_going;
     extern moduletype *modulelist;
-    extern char *sys_errlist[];
 
     module = (moduletype *) info;
     if (!module->shut_down)
@@ -1574,7 +1573,6 @@ void *info;
 {
     moduletype *module;
     extern moduletype *modulelist;
-    extern char *sys_errlist[];
 
     module = (moduletype *) info;
     if (!module->shut_down)

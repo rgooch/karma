@@ -9,21 +9,21 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         st_find
-$RETURN_TYPE      unsigned int
+$FUNCTION           st_find
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     ( CONST char **string_list, unsigned int list_length,
 		      CONST char *string, int (*function) () )
-$SUMMARY          Search a list of strings for a string.
+$SUMMARY            Search a list of strings for a string.
 $PURPOSE
     Search a list of strings for a string.
-$PARAMETER        string_list :
+$PARAMETER          string_list :
     The list of strings to search.
-$PARAMETER        list_length :
+$PARAMETER          list_length :
     The length of the string list.
-$PARAMETER        string :
+$PARAMETER          string :
     The string to search for.
-$PARAMETER        function :
+$PARAMETER          function :
     The function to use for string comparisons. This has the same
     interface as the <<strcmp>> function.
 $RETURNS
@@ -32,249 +32,249 @@ $RETURNS
     match.
 $END
 
-$FUNCTION         st_chr
-$RETURN_TYPE      CONST char *
+$FUNCTION           st_chr
+$RETURN_TYPE        CONST char *
 $PARAMETER_LIST
     (CONST char *string, char c)
-$SUMMARY          Search a string for the first occurrence of a character.
+$SUMMARY            Search a string for the first occurrence of a character.
 $PURPOSE
     Search a string for the first occurrence of a character.
-$PARAMETER        string :
+$PARAMETER          string :
     The string to search.
-$PARAMETER        c :
+$PARAMETER          c :
     The character to search for.
 $RETURNS
     A pointer to the found character in the string. If no match is
     found, NULL is returned.
 $END
 
-$FUNCTION         st_cmp_wild
-$RETURN_TYPE      int
+$FUNCTION           st_cmp_wild
+$RETURN_TYPE        int
 $PARAMETER_LIST
     (CONST char *a, CONST char *b)
-$SUMMARY          Compare strings with wildcard support.
+$SUMMARY            Compare strings with wildcard support.
 $PURPOSE
     Compare strings with wildcard support.
-$PARAMETER        a :
+$PARAMETER          a :
     One of the strings. Wildcards are permitted.
-$PARAMETER        b :
+$PARAMETER          b :
     The other string. Wildcards are not permitted.
 $RETURNS
     The difference between the strings.
 $END
 
-$FUNCTION         st_cspn
-$RETURN_TYPE      int
+$FUNCTION           st_cspn
+$RETURN_TYPE        int
 $PARAMETER_LIST
     (CONST char *string, CONST char *charset)
-$SUMMARY          Find maximum leading segment in string with exclusion.
+$SUMMARY            Find maximum leading segment in string with exclusion.
 $PURPOSE
     Find maximum leading segment in string with exclusion.
-$PARAMETER        string :
+$PARAMETER          string :
     The string.
-$PARAMETER        charset :
+$PARAMETER          charset :
     The set of exclusion characters.
 $RETURNS
     The number of characters in the leading segment.
 $END
 
-$FUNCTION         st_icmp
-$RETURN_TYPE      int
+$FUNCTION           st_icmp
+$RETURN_TYPE        int
 $PARAMETER_LIST
     (CONST char *string1, CONST char *string2)
-$SUMMARY          Compare strings, ignoring case.
+$SUMMARY            Compare strings, ignoring case.
 $PURPOSE
     Compare strings, ignoring case.
-$PARAMETER        string1 :
+$PARAMETER          string1 :
     One of the strings.
-$PARAMETER        string2 :
+$PARAMETER          string2 :
     The other string.
 $RETURNS
     The comparison value. 0 indicates equality.
 $END
 
-$FUNCTION         st_lwr
-$RETURN_TYPE      char *
+$FUNCTION           st_lwr
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (char *string)
-$SUMMARY          Convert a string to lowercase.
+$SUMMARY            Convert a string to lowercase.
 $PURPOSE
     Convert a string to lowercase.
-$PARAMETER        string :
+$PARAMETER          string :
     The string.
 $RETURNS
     The address of the string.
 $END
 
-$FUNCTION         st_nicmp
-$RETURN_TYPE      int
+$FUNCTION           st_nicmp
+$RETURN_TYPE        int
 $PARAMETER_LIST
     (CONST char *string1, CONST char *string2, int str_len)
-$SUMMARY          Compare strings, ignoring case, up to a specified length.
+$SUMMARY            Compare strings, ignoring case, up to a specified length.
 $PURPOSE
     Compare strings, ignoring case, up to a specified length.
-$PARAMETER        string1 :
+$PARAMETER          string1 :
     One of the strings.
-$PARAMETER        string2 :
+$PARAMETER          string2 :
     The other string.
-$PARAMETER        str_len :
+$PARAMETER          str_len :
     The maximum number of characters to compare.
 $RETURNS
     The comparison value. 0 indicates equality.
 $END
 
-$FUNCTION         st_nupr
-$RETURN_TYPE      char *
+$FUNCTION           st_nupr
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (char *string, int str_len)
-$SUMMARY          Convert a string to uppercase, up to a specified length.
+$SUMMARY            Convert a string to uppercase, up to a specified length.
 $PURPOSE
     Convert a string to uppercase, up to a specified length.
-$PARAMETER        string :
+$PARAMETER          string :
     The string.
-$PARAMETER        str_len :
+$PARAMETER          str_len :
     The maximum number of characters to convert.
 $RETURNS
     The address of the string.
 $END
 
-$FUNCTION         st_nlwr
-$RETURN_TYPE      char *
+$FUNCTION           st_nlwr
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (char *string, int str_len)
-$SUMMARY          Convert a string to lowercase, up to a specified length.
+$SUMMARY            Convert a string to lowercase, up to a specified length.
 $PURPOSE
     Convert a string to lowercase, up to a specified length.
-$PARAMETER        string :
+$PARAMETER          string :
     The string.
-$PARAMETER        str_len :
+$PARAMETER          str_len :
     The maximum number of characters to convert.
 $RETURNS
     The address of the string.
 $END
 
-$FUNCTION         st_pbrk
-$RETURN_TYPE      char *
+$FUNCTION           st_pbrk
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (CONST char *string, CONST char *brkset)
-$SUMMARY          Search a string for a character from a set.
+$SUMMARY            Search a string for a character from a set.
 $PURPOSE
     Search a string for a character from a set.
-$PARAMETER        string :
+$PARAMETER          string :
     The string to search.
-$PARAMETER        brkset :
+$PARAMETER          brkset :
     The set of characters to search for.
 $RETURNS
     A pointer to the found character in the string. If no match is
     found, NULL is returned.
 $END
 
-$FUNCTION         st_rchr
-$RETURN_TYPE      CONST char *
+$FUNCTION           st_rchr
+$RETURN_TYPE        CONST char *
 $PARAMETER_LIST
     (CONST char *string, char c)
-$SUMMARY          Search a string for the last occurrence of a character.
+$SUMMARY            Search a string for the last occurrence of a character.
 $PURPOSE
     Search a string for the last occurrence of a character.
-$PARAMETER        string :
+$PARAMETER          string :
     The string to search.
-$PARAMETER        c :
+$PARAMETER          c :
     The character to search for.
 $RETURNS
     A pointer to the found character in the string. If no match is
     found, NULL is returned.
 $END
 
-$FUNCTION         st_spn
-$RETURN_TYPE      int
+$FUNCTION           st_spn
+$RETURN_TYPE        int
 $PARAMETER_LIST
     (CONST char *string, CONST char *charset)
-$SUMMARY          Find maximum leading segment in string with inclusion.
+$SUMMARY            Find maximum leading segment in string with inclusion.
 $PURPOSE
     Find maximum leading segment in string with inclusion.
-$PARAMETER        string :
+$PARAMETER          string :
     The string.
-$PARAMETER        charset :
+$PARAMETER          charset :
     The set of inclusion characters.
 $RETURNS
     The number of characters in the leading segment.
 $END
 
-$FUNCTION         st_tok
-$RETURN_TYPE      char *
+$FUNCTION           st_tok
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (char *string, CONST char *sepset)
-$SUMMARY          Extract token from string.
+$SUMMARY            Extract token from string.
 $PURPOSE
     This routine will break a string into a series of tokens. This
     routine should be called until no more tokens are found.
-$PARAMETER        string :
+$PARAMETER          string :
     The string. On subsequent calls (for a series of tokens), NULL
     should be passed.
-$PARAMETER        sepset :
+$PARAMETER          sepset :
     The set of delimiters (separators between tokens).
 $RETURNS
     A pointer to the next token. NULL is returned if no tokens are
     found.
 $END
 
-$FUNCTION         st_tol
-$RETURN_TYPE      long
+$FUNCTION           st_tol
+$RETURN_TYPE        long
 $PARAMETER_LIST
     (CONST char *str, char **ptr, int base)
-$SUMMARY          Convert a string to a long integer.
+$SUMMARY            Convert a string to a long integer.
 $PURPOSE
     Convert a string to a long integer.
-$PARAMETER        str :
+$PARAMETER          str :
     The string.
-$PARAMETER        ptr :
+$PARAMETER          ptr :
     A pointer to the first invalid character is written here. If this is
     NULL, nothing is written here.
-$PARAMETER        base :
+$PARAMETER          base :
     The base of the number system.
 $RETURNS
     The integer value.
 $END
 
-$FUNCTION         st_upr
-$RETURN_TYPE      char *
+$FUNCTION           st_upr
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (char *string)
-$SUMMARY          Convert a string to uppercase.
+$SUMMARY            Convert a string to uppercase.
 $PURPOSE
     Convert a string to uppercase.
-$PARAMETER        string :
+$PARAMETER          string :
     The string.
 $RETURNS
     The address of the string.
 $END
 
-$FUNCTION         st_dup
-$RETURN_TYPE      char *
+$FUNCTION           st_dup
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (CONST char *input)
-$SUMMARY          Make a duplicate copy of a string.
+$SUMMARY            Make a duplicate copy of a string.
 $PURPOSE
     Make a duplicate copy of a string.
-$PARAMETER        string :
+$PARAMETER          string :
     The input string.
 $RETURNS
     A pointer to a copy of the string (allocated using <-m_alloc->)
     on success, else NULL.
 $END
 
-$FUNCTION         st_qsort
-$RETURN_TYPE      void
+$FUNCTION           st_qsort
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (char **v, int left, int right)
-$SUMMARY          Perform a quicksort on an array of strings.
+$SUMMARY            Perform a quicksort on an array of strings.
 $PURPOSE
     Perform a quicksort on an array of strings.
-$PARAMETER        v :
+$PARAMETER          v :
     The array of strings.
-$PARAMETER        left :
+$PARAMETER          left :
     The left string index.
-$PARAMETER        right :
+$PARAMETER          right :
     The right string index.
 $RETURNS
     Nothing.

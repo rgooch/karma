@@ -11,8 +11,8 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         aa_create
-$RETURN_TYPE      KAssociativeArray
+$FUNCTION           aa_create
+$RETURN_TYPE        KAssociativeArray
 $PARAMETER_LIST
     (void *info,
 			     int (*key_compare_func) (void *key1, void *key2),
@@ -22,74 +22,74 @@ $PARAMETER_LIST
 			     void *(*value_copy_func) (void *value,
 						       uaddr length, flag *ok),
 			     void (*value_destroy_func) (void *value))
-$SUMMARY          Create a general purpose associative array of key-value pairs.
+$SUMMARY            Create a general purpose associative array of key-value pairs.
 $PURPOSE
     Create a general purpose associative array of key-value pairs.
-$PARAMETER        info :
+$PARAMETER          info :
     Arbitrary information to be stored with the associative array.
-$PARAMETER        key_compare_func :
+$PARAMETER          key_compare_func :
     The function used to compare two keys. The prototype
     function is <-AA_PROTO_key_compare_func->.
-$PARAMETER        key_copy_func :
+$PARAMETER          key_copy_func :
     The function used to copy keys. The prototype function is
     <-AA_PROTO_key_copy_func->.
-$PARAMETER        key_destroy_func :
+$PARAMETER          key_destroy_func :
     The function used to destroy keys. The prototype
     function is <-AA_PROTO_key_destroy_func->.
-$PARAMETER        value_copy_func :
+$PARAMETER          value_copy_func :
     The function used to copy values. The prototype function
     is <-AA_PROTO_value_copy_func->.
-$PARAMETER        value_destroy_func :
+$PARAMETER          value_destroy_func :
     The function used to destroy values. The prototype
     function is <-AA_PROTO_value_destroy_func->.
 $RETURNS
     An associative array on success, else NULL.
 $END
 
-$FUNCTION         aa_get_info
-$RETURN_TYPE      void *
+$FUNCTION           aa_get_info
+$RETURN_TYPE        void *
 $PARAMETER_LIST
     (KAssociativeArray aa)
-$SUMMARY          Get information attached to associative array.
+$SUMMARY            Get information attached to associative array.
 $PURPOSE
     This routine will get the arbitrary information pointer stored
     with an associative array.
-$PARAMETER        aa :
+$PARAMETER          aa :
     The associative array.
 $RETURNS
     The arbitrary information pointer.
 $END
 
-$FUNCTION         aa_put_pair
-$RETURN_TYPE      KAssociativeArrayPair
+$FUNCTION           aa_put_pair
+$RETURN_TYPE        KAssociativeArrayPair
 $PARAMETER_LIST
     (KAssociativeArray aa,
 				   void *key, uaddr key_length,
 				   void *value, uaddr value_length,
 				   unsigned int replacement_policy, flag front)
-$SUMMARY          Add a key-value pair to an associative array.
+$SUMMARY            Add a key-value pair to an associative array.
 $PURPOSE
     Add a key-value pair to an associative array.
-$PARAMETER        aa :
+$PARAMETER          aa :
     The associative array.
-$PARAMETER        key :
+$PARAMETER          key :
     The key.
-$PARAMETER        key_length :
+$PARAMETER          key_length :
     The length of the key, in bytes. If this is 0 and the
     <<key_copy_func>> is NULL, the key pointer is copied directly. If this is
     greater than zero and the <<key_copy_func>> is NULL, the specified number
     of bytes are copied.
-$PARAMETER        value :
+$PARAMETER          value :
     The value.
-$PARAMETER        value_length :
+$PARAMETER          value_length :
     The length of the value, in bytes. If this is 0 and the
     <<value_copy_func>> is NULL, the value pointer is copied directly. If this
     is greater than zero and the <<value_copy_func>> is NULL, the specified
     number of bytes are copied.
-$PARAMETER        replacement_policy :
+$PARAMETER          replacement_policy :
     The policy to use when adding the pair. See
     <-AA_REPLACEMENT_POLICIES-> for a list of legal values.
-$PARAMETER        front :
+$PARAMETER          front :
     If TRUE and the key is new, place the pair at the front of the
     array. If FALSE and the key is new, place the pair at the end of the
     array.
@@ -97,49 +97,49 @@ $RETURNS
     A KAssociativeArrayPair object on success, else NULL.
 $END
 
-$FUNCTION         aa_get_pair
-$RETURN_TYPE      KAssociativeArrayPair
+$FUNCTION           aa_get_pair
+$RETURN_TYPE        KAssociativeArrayPair
 $PARAMETER_LIST
     (KAssociativeArray aa, void *key,
 				   void **value)
-$SUMMARY          Find a key-value pair in an associative array.
+$SUMMARY            Find a key-value pair in an associative array.
 $PURPOSE
     Find a key-value pair in an associative array.
-$PARAMETER        aa :
+$PARAMETER          aa :
     The associative array.
-$PARAMETER        key :
+$PARAMETER          key :
     The key.
-$PARAMETER        value :
+$PARAMETER          value :
     The value found will be written here on success.
 $RETURNS
     A KAssociativeArrayPair object if the key was found, else NULL.
 $END
 
-$FUNCTION         aa_destroy_pair
-$RETURN_TYPE      void
+$FUNCTION           aa_destroy_pair
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KAssociativeArrayPair pair)
-$SUMMARY          Remove a key-value pair from an associative array.
+$SUMMARY            Remove a key-value pair from an associative array.
 $PURPOSE
     This routine will remove a key-value pair from an associative
     array and will destroy all storage allocated for the pair.
-$PARAMETER        pair :
+$PARAMETER          pair :
     The key-value pair.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         aa_get_all_pairs
-$RETURN_TYPE      KAssociativeArrayPair *
+$FUNCTION           aa_get_all_pairs
+$RETURN_TYPE        KAssociativeArrayPair *
 $PARAMETER_LIST
     (KAssociativeArray aa,
 					 unsigned int *num_pairs)
-$SUMMARY          Get all the key-value pairs on an associative array.
+$SUMMARY            Get all the key-value pairs on an associative array.
 $PURPOSE
     Get all the key-value pairs on an associative array.
-$PARAMETER        aa :
+$PARAMETER          aa :
     The associative array.
-$PARAMETER        num_pairs :
+$PARAMETER          num_pairs :
     The number of pairs found is written here. If no pairs are
     found NULL is written here.
 $RETURNS
@@ -147,103 +147,103 @@ $RETURNS
     <<num_pairs>> is non-zero, an error occurred.
 $END
 
-$FUNCTION         aa_get_pair_info
-$RETURN_TYPE      void
+$FUNCTION           aa_get_pair_info
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KAssociativeArrayPair pair,
 		       void **key, uaddr *key_length,
 		       void **value, uaddr *value_length)
-$SUMMARY          Get key and value information for a key-value pair.
+$SUMMARY            Get key and value information for a key-value pair.
 $PURPOSE
     This routine will get the key and value information for a
     key-value pair in an associative array.
-$PARAMETER        pair :
+$PARAMETER          pair :
     The key-value pair.
-$PARAMETER        key :
+$PARAMETER          key :
     The key will be written here.
-$PARAMETER        key_length :
+$PARAMETER          key_length :
     The length of the key will be written here.
-$PARAMETER        value :
+$PARAMETER          value :
     The value will be written here.
-$PARAMETER        value_length :
+$PARAMETER          value_length :
     The length of the value will be written here.
 $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       AA_PROTO_key_compare_func
-$RETURN_TYPE      int
+$PROTO_FUNC         AA_PROTO_key_compare_func
+$RETURN_TYPE        int
 $PARAMETER_LIST
     (void *key1, void *key2)
-$SUMMARY          This routine will compare two keys.
+$SUMMARY            This routine will compare two keys.
 $PURPOSE
     This routine will compare two keys.
-$PARAMETER        key1 :
+$PARAMETER          key1 :
     The first key.
-$PARAMETER        key2 :
+$PARAMETER          key2 :
     The second key.
 $RETURNS
     0 if the keys match, a negative number if <<key1>> is less
     than <<key2>>, a positive number if <<key1>> is greater than <<key2>>.
 $END
 
-$PROTO_FUNC       AA_PROTO_key_copy_func
-$RETURN_TYPE      void *
+$PROTO_FUNC         AA_PROTO_key_copy_func
+$RETURN_TYPE        void *
 $PARAMETER_LIST
     (void *key, uaddr length, flag *ok)
-$SUMMARY          This routine will copy a key.
+$SUMMARY            This routine will copy a key.
 $PURPOSE
     This routine will copy a key.
-$PARAMETER        key :
+$PARAMETER          key :
     The key to copy.
-$PARAMETER        length :
+$PARAMETER          length :
     The length of the key in bytes.
-$PARAMETER        ok :
+$PARAMETER          ok :
     The value TRUE will be written here on success, else FALSE is
     written here.
 $RETURNS
     A copy of the key on success.
 $END
 
-$PROTO_FUNC       AA_PROTO_key_destroy_func
-$RETURN_TYPE      void
+$PROTO_FUNC         AA_PROTO_key_destroy_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (void *key)
-$SUMMARY          This routine will destroy keys.
+$SUMMARY            This routine will destroy keys.
 $PURPOSE
     This routine will destroy keys.
-$PARAMETER        key :
+$PARAMETER          key :
     The key to destroy.
 $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       AA_PROTO_value_copy_func
-$RETURN_TYPE      void *
+$PROTO_FUNC         AA_PROTO_value_copy_func
+$RETURN_TYPE        void *
 $PARAMETER_LIST
     (void *value, uaddr length, flag *ok)
-$SUMMARY          This routine will copy a value.
+$SUMMARY            This routine will copy a value.
 $PURPOSE
     This routine will copy a value.
-$PARAMETER        value :
+$PARAMETER          value :
     The value to copy.
-$PARAMETER        length :
+$PARAMETER          length :
     The length of the value in bytes.
-$PARAMETER        ok :
+$PARAMETER          ok :
     The value TRUE will be written here on success, else FALSE is
     written here.
 $RETURNS
     A copy of the value on success.
 $END
 
-$PROTO_FUNC       AA_PROTO_value_destroy_func
-$RETURN_TYPE      void
+$PROTO_FUNC         AA_PROTO_value_destroy_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (void *value)
-$SUMMARY          This routine will destroy values.
+$SUMMARY            This routine will destroy values.
 $PURPOSE
     This routine will destroy values.
-$PARAMETER        value :
+$PARAMETER          value :
     The value to destroy.
 $RETURNS
     Nothing.

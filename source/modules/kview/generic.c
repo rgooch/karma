@@ -44,7 +44,16 @@
   when displaying TrueColour images with only PseudoColour canvas available for
   magnifier.
 
-    Last updated by Richard Gooch   27-JUN-1996: Removed <coord_transform_func>
+    Updated by      Richard Gooch   27-JUN-1996: Removed <coord_transform_func>
+
+    Updated by      Richard Gooch   22-JUL-1996: Made use of
+  <viewimg_create_sequence_from_iarray> routine.
+
+    Updated by      Richard Gooch   17-SEP-1996: Modified <display_file> to
+  return PseudoColour array minimum and maximum.
+
+    Last updated by Richard Gooch   27-OCT-1996: Added hostname and port number
+  to title.
 
 
 */
@@ -74,7 +83,7 @@ EXTERN_FUNCTION (flag display_file,
 		  ViewableImage *image, ViewableImage **movie,
 		  ViewableImage *magnified_image,
 		  ViewableImage **magnified_movie,
-		  unsigned int *num_frames) );
+		  unsigned int *num_frames, double *min, double *max) );
 
 
 /*  External functions  */
@@ -93,10 +102,6 @@ STATIC_FUNCTION (void connection_closed, (flag data_deallocated) );
 */
 
 
-/*  Global data  */
-KwcsAstro astro_projection = NULL;
-
-
 /*  Private data  */
 
 
@@ -111,29 +116,36 @@ void setup_comms (Display *display)
 {
     int def_port_number;
     unsigned int server_port_number;
+    char hostname[STRING_LENGTH];
     extern char module_name[STRING_LENGTH + 1];
+    extern char module_version_date[STRING_LENGTH + 1];
+    extern char title_name[STRING_LENGTH];
 
     /*  Get default port number  */
     if ( ( def_port_number = r_get_def_port ( module_name,
-					     DisplayString (display) ) ) < 0 )
+					      DisplayString (display) ) ) < 0 )
     {
-	(void) fprintf (stderr, "Could not get default port number\n");
+	fprintf (stderr, "Could not get default port number\n");
 	return;
     }
+    r_gethostname (hostname, STRING_LENGTH);
     server_port_number = def_port_number;
     if ( !conn_become_server (&server_port_number, CONN_MAX_INSTANCES) )
     {
-	(void) fprintf (stderr, "Module not operating as Karma server\n");
+	fprintf (stderr, "Module not operating as Karma server\n");
+	sprintf (title_name, "%s v%s @%s", module_name, module_version_date,
+		 hostname);
     }
     else
     {
-	(void) fprintf (stderr, "Port allocated: %d\n", server_port_number);
+	fprintf (stderr, "Port allocated: %d\n", server_port_number);
 	/*  Register the protocols  */
 	dsxfr_register_connection_limits (1, -1);
 	dsxfr_register_read_func ( ( void (*) () ) new_data_on_connection );
-/*
-	dsxfr_register_close_func (connection_closed);
-*/
+	/*dsxfr_register_close_func (connection_closed);*/
+	sprintf (title_name, "%s v%s @%s:%u",
+		 module_name, module_version_date, hostname,
+		 server_port_number);
     }
     if ( !conn_controlled_by_cm_tool () )
     {
@@ -152,7 +164,8 @@ flag display_file (CONST char *inp_filename,
 		   ViewableImage *image, ViewableImage **movie,
 		   ViewableImage *magnified_image,
 		   ViewableImage **magnified_movie,
-		   unsigned int *num_frames)
+		   unsigned int *num_frames,
+		   double *min, double *max)
 /*  [PURPOSE] This routine will load a file and display it.
     <inp_filename> The name of the file to load.
     <pseudo_canvas> The PseudoColour canvas.
@@ -175,6 +188,8 @@ flag display_file (CONST char *inp_filename,
     <num_frames> If a movie is loaded the number of frames is written here. If
     no movie is loaded, 0 is written here. The value written here must be
     preserved between calls.
+    <min> The minimum value will be written here.
+    <max> The maximum value will be written here.
     [RETURNS] TRUE on success, else FALSE.
 */
 {
@@ -183,31 +198,28 @@ flag display_file (CONST char *inp_filename,
     iarray image_pseudo, image_red, image_green, image_blue;
     iarray movie_pseudo, movie_red, movie_green, movie_blue;
     unsigned int cmap_index, ftype;
-    double i_min, i_max;
     multi_array *multi_desc;
     extern KwcsAstro astro_projection;
-    extern char *sys_errlist[];
     static flag first_time = TRUE;
     /*static char function_name[] = "display_file";*/
 
     if (first_time)
     {
 	first_time = FALSE;
-	(void) conn_attempt_connection ("unix",
-					r_get_def_port ("khogd", ":0.0"),
-					"hog_request");
+	conn_attempt_connection ("unix", r_get_def_port ("khogd", ":0.0"),
+				 "hog_request");
     }
     if ( ( multi_desc = foreign_guess_and_read (inp_filename, K_CH_MAP_LOCAL,
 						FALSE, &ftype,
 						FA_GUESS_READ_END) ) == NULL )
     {
-	(void) fprintf (stderr, "Error reading file: \"%s\"\n", inp_filename);
+	fprintf (stderr, "Error reading file: \"%s\"\n", inp_filename);
 	return (FALSE);
     }
     if (astro_projection != NULL) wcs_astro_destroy (astro_projection);
     astro_projection = wcs_astro_setup (multi_desc->headers[0],
 					multi_desc->data[0]);
-    (void) fprintf (stderr, "astro_projection: %p\n", astro_projection);
+    fprintf (stderr, "astro_projection: %p\n", astro_projection);
     if (*pseudo_arr != NULL) iarray_dealloc (*pseudo_arr);
     *pseudo_arr = NULL;
     destroy_all_vimages (image, movie, magnified_image, magnified_movie,
@@ -234,7 +246,7 @@ flag display_file (CONST char *inp_filename,
 						(double *) NULL) )
 		== NULL )
 	    {
-		(void) fprintf (stderr,
+		fprintf (stderr,
 				"Error getting ViewableImage from Iarray\n");
 		ds_dealloc_multi (multi_desc);
 		iarray_dealloc (image_red);
@@ -253,7 +265,7 @@ flag display_file (CONST char *inp_filename,
 				       (double *) NULL) )
 		 == NULL )
 	    {
-		(void) fprintf (stderr,
+		fprintf (stderr,
 				"Error getting ViewableImage from Iarray\n");
 		ds_dealloc_multi (multi_desc);
 		iarray_dealloc (image_red);
@@ -269,7 +281,7 @@ flag display_file (CONST char *inp_filename,
 	    iarray_dealloc (image_blue);
 	    if ( !viewimg_make_active (*image) )
 	    {
-		(void) fprintf (stderr, "Error making ViewableImage active\n");
+		fprintf (stderr, "Error making ViewableImage active\n");
 		ds_dealloc_multi (multi_desc);
 		destroy_all_vimages (image, movie,
 				     magnified_image, magnified_movie,
@@ -278,7 +290,7 @@ flag display_file (CONST char *inp_filename,
 	    }
 	    if ( !viewimg_make_active (*magnified_image) )
 	    {
-		(void) fprintf (stderr, "Error making ViewableImage active\n");
+		fprintf (stderr, "Error making ViewableImage active\n");
 		ds_dealloc_multi (multi_desc);
 		destroy_all_vimages (image, movie,
 				     magnified_image, magnified_movie,
@@ -291,7 +303,7 @@ flag display_file (CONST char *inp_filename,
 	    /*  Image is PseudoColour: must use PseudoColour canvas  */
 	    if (pseudo_canvas == NULL)
 	    {
-		(void) fprintf (stderr, "No PseudoColour canvas available\n");
+		fprintf (stderr, "No PseudoColour canvas available\n");
 		iarray_dealloc (image_pseudo);
 		ds_dealloc_multi (multi_desc);
 		return (FALSE);
@@ -302,7 +314,7 @@ flag display_file (CONST char *inp_filename,
 							image_pseudo,
 							FALSE) ) == NULL )
 	    {
-		(void) fprintf (stderr,
+		fprintf (stderr,
 				"Error getting ViewableImage from Iarray\n");
 		ds_dealloc_multi (multi_desc);
 		iarray_dealloc (image_pseudo);
@@ -312,7 +324,7 @@ flag display_file (CONST char *inp_filename,
 		   viewimg_create_from_iarray (mag_canvas, image_pseudo,
 					       FALSE) ) == NULL )
 	    {
-		(void) fprintf (stderr,
+		fprintf (stderr,
 				"Error getting ViewableImage from Iarray\n");
 		ds_dealloc_multi (multi_desc);
 		iarray_dealloc (image_pseudo);
@@ -328,32 +340,31 @@ flag display_file (CONST char *inp_filename,
 					      multi_desc->headers[cmap_index],
 					      multi_desc->data[cmap_index]) )
 		{
-		    (void) fprintf (stderr, "Error changing colourmap\n");
+		    fprintf (stderr, "Error changing colourmap\n");
 		}
 	    }
-	    if ( !iarray_min_max (image_pseudo, CONV1_REAL, &i_min, &i_max) )
+	    if ( !iarray_min_max (image_pseudo, CONV1_REAL, min, max) )
 	    {
-		(void) fprintf (stderr, "Error computing min-max\n");
+		fprintf (stderr, "Error computing min-max\n");
 	    }
-	    if (i_min == i_max)
+	    if (*min == *max)
 	    {
-		(void) fprintf (stderr, "min: %e is same as max: modifying\n",
-				i_min);
-		--i_min;
-		++i_max;
+		fprintf (stderr, "min: %e is same as max: modifying\n", *min);
+		--*min;
+		++*max;
 	    }
 	    *pseudo_arr = image_pseudo;
 	    canvas_set_attributes (main_canvas,
-				   CANVAS_ATT_VALUE_MIN, i_min,
-				   CANVAS_ATT_VALUE_MAX, i_max,
+				   CANVAS_ATT_VALUE_MIN, *min,
+				   CANVAS_ATT_VALUE_MAX, *max,
 				   CANVAS_ATT_END);
 	    canvas_set_attributes (mag_canvas,
-				   CANVAS_ATT_VALUE_MIN, i_min,
-				   CANVAS_ATT_VALUE_MAX, i_max,
+				   CANVAS_ATT_VALUE_MIN, *min,
+				   CANVAS_ATT_VALUE_MAX, *max,
 				   CANVAS_ATT_END);
 	    if ( !viewimg_make_active (*image) )
 	    {
-		(void) fprintf (stderr, "Error making ViewableImage active\n");
+		fprintf (stderr, "Error making ViewableImage active\n");
 		ds_dealloc_multi (multi_desc);
 		destroy_all_vimages (image, movie,
 				     magnified_image, magnified_movie,
@@ -362,7 +373,7 @@ flag display_file (CONST char *inp_filename,
 	    }
 	    if ( !viewimg_make_active (*magnified_image) )
 	    {
-		(void) fprintf (stderr, "Error making ViewableImage active\n");
+		fprintf (stderr, "Error making ViewableImage active\n");
 		ds_dealloc_multi (multi_desc);
 		destroy_all_vimages (image, movie,
 				     magnified_image, magnified_movie,
@@ -378,7 +389,7 @@ flag display_file (CONST char *inp_filename,
 				       &movie_red, &movie_green, &movie_blue,
 				       &cmap_index) )
     {
-	(void) fprintf (stderr, "Error getting movie\n");
+	fprintf (stderr, "Error getting movie\n");
 	ds_dealloc_multi (multi_desc);
 	return (FALSE);
     }
@@ -401,7 +412,7 @@ flag display_file (CONST char *inp_filename,
 					   (double *) NULL) )
 	    == NULL )
 	{
-	    (void) fprintf (stderr, "Error creating ViewableImage sequence\n");
+	    fprintf (stderr, "Error creating ViewableImage sequence\n");
 	    ds_dealloc_multi (multi_desc);
 	    iarray_dealloc (movie_red);
 	    iarray_dealloc (movie_green);
@@ -420,7 +431,7 @@ flag display_file (CONST char *inp_filename,
 					   (double *) NULL) )
 	    == NULL )
 	{
-	    (void) fprintf (stderr, "Error creating ViewableImage sequence\n");
+	    fprintf (stderr, "Error creating ViewableImage sequence\n");
 	    ds_dealloc_multi (multi_desc);
 	    iarray_dealloc (movie_red);
 	    iarray_dealloc (movie_green);
@@ -440,7 +451,7 @@ flag display_file (CONST char *inp_filename,
 	/*  Movie is PseudoColour: must use PseudoColour canvas  */
 	if (pseudo_canvas == NULL)
 	{
-	    (void) fprintf (stderr, "No PseudoColour canvas available\n");
+	    fprintf (stderr, "No PseudoColour canvas available\n");
 	    iarray_dealloc (movie_pseudo);
 	    ds_dealloc_multi (multi_desc);
 	    return (FALSE);
@@ -448,25 +459,21 @@ flag display_file (CONST char *inp_filename,
 	main_canvas = pseudo_canvas;
 	mag_canvas = mag_pseudo_canvas;
 	if ( ( *movie =
-	      viewimg_create_sequence (main_canvas, multi_desc,
-				       movie_pseudo->arr_desc,
-				       movie_pseudo->data,
-				       2, 1, 0, movie_pseudo->elem_index) )
+	      viewimg_create_sequence_from_iarray (main_canvas, movie_pseudo,
+						   2, 1, 0) )
 	    == NULL )
 	{
-	    (void) fprintf (stderr, "Error creating ViewableImage sequence\n");
+	    fprintf (stderr, "Error creating ViewableImage sequence\n");
 	    ds_dealloc_multi (multi_desc);
 	    iarray_dealloc (movie_pseudo);
 	    return (FALSE);
 	}
 	if ( ( *magnified_movie =
-	      viewimg_create_sequence (mag_canvas, multi_desc,
-				       movie_pseudo->arr_desc,
-				       movie_pseudo->data,
-				       2, 1, 0, movie_pseudo->elem_index) )
+	      viewimg_create_sequence_from_iarray (mag_canvas, movie_pseudo,
+						   2, 1, 0) )
 	    == NULL )
 	{
-	    (void) fprintf (stderr, "Error creating ViewableImage sequence\n");
+	    fprintf (stderr, "Error creating ViewableImage sequence\n");
 	    ds_dealloc_multi (multi_desc);
 	    iarray_dealloc (movie_pseudo);
 	    destroy_all_vimages (image, movie,
@@ -482,47 +489,46 @@ flag display_file (CONST char *inp_filename,
 					  multi_desc->headers[cmap_index],
 					  multi_desc->data[cmap_index]) )
 	    {
-		(void) fprintf (stderr, "Error changing colourmap\n");
+		fprintf (stderr, "Error changing colourmap\n");
 	    }
-	    i_min = 0;
-	    i_max = kcmap_get_pixels (cmap, (unsigned long **) NULL) - 1;
+	    *min = 0;
+	    *max = kcmap_get_pixels (cmap, (unsigned long **) NULL) - 1;
 	}
 	else
 	{
 	    (void)fprintf(stderr,"Computing minimum and maximum of cube...\n");
-	    if ( !iarray_min_max (movie_pseudo, CONV1_REAL, &i_min, &i_max) )
+	    if ( !iarray_min_max (movie_pseudo, CONV1_REAL, min, max) )
 	    {
-		(void) fprintf (stderr, "Error computing min-max\n");
+		fprintf (stderr, "Error computing min-max\n");
 	    }
-	    if (i_min == i_max)
+	    if (*min == *max)
 	    {
-		(void) fprintf (stderr, "min: %e is same as max: modifying\n",
-				i_min);
-		--i_min;
-		++i_max;
+		fprintf (stderr, "min: %e is same as max: modifying\n", *min);
+		--*min;
+		++*max;
 	    }
-	    else fprintf (stderr, "Minimum: %e  maximum: %e\n",i_min, i_max);
+	    else fprintf (stderr, "Minimum: %e  maximum: %e\n", *min, *max);
 	}
 	*pseudo_arr = movie_pseudo;
 	/*  Set intensity scale (since autoscaling is not on)  */
 	canvas_set_attributes (main_canvas,
-			       CANVAS_ATT_VALUE_MIN, i_min,
-			       CANVAS_ATT_VALUE_MAX, i_max,
+			       CANVAS_ATT_VALUE_MIN, *min,
+			       CANVAS_ATT_VALUE_MAX, *max,
 			       CANVAS_ATT_END);
 	canvas_set_attributes (mag_canvas,
-			       CANVAS_ATT_VALUE_MIN, i_min,
-			       CANVAS_ATT_VALUE_MAX, i_max,
+			       CANVAS_ATT_VALUE_MIN, *min,
+			       CANVAS_ATT_VALUE_MAX, *max,
 			       CANVAS_ATT_END);
     }
     ds_dealloc_multi (multi_desc);
     if ( !viewimg_make_active (movie[0][0]) )
     {
-        (void) fprintf (stderr, "Error making ViewableImage active\n");
+        fprintf (stderr, "Error making ViewableImage active\n");
         return (FALSE);
     }
     if ( !viewimg_make_active (magnified_movie[0][0]) )
     {
-        (void) fprintf (stderr, "Error making ViewableImage active\n");
+        fprintf (stderr, "Error making ViewableImage active\n");
         return (FALSE);
     }
     return (TRUE);

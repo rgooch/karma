@@ -8,223 +8,223 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         iedit_create_list
-$RETURN_TYPE      KImageEditList
+$FUNCTION           iedit_create_list
+$RETURN_TYPE        KImageEditList
 $PARAMETER_LIST
     (void (*add_func) (), void (*loss_func) (),
 				  void (*apply_func) (), void *info)
-$SUMMARY          Create a managed image edit instruction list.
+$SUMMARY            Create a managed image edit instruction list.
 $PURPOSE
     Create a managed image edit instruction list.
-$PARAMETER        add_func :
+$PARAMETER          add_func :
     The function which will be called when a new instruction has
     been added to the list. The prototype function is <-IEDIT_PROTO_add_func->.
     The interface to this routine is as follows:
-$PARAMETER        loss_func :
+$PARAMETER          loss_func :
     The function which will be called when an instruction has been
     removed from the list. The prototype function is <-IEDIT_PROTO_loss_func->.
-$PARAMETER        apply_func :
+$PARAMETER          apply_func :
     The function which will be called when the edit instructions
     are to be applied (prior to clearing of the list). The prototype function
     is <-IEDIT_PROTO_apply_func->.
-$PARAMETER        info :
+$PARAMETER          info :
     The arbitrary information pointer for the edit list. This may be
     NULL.
 $RETURNS
     A KImageEditList object on success, else NULL.
 $END
 
-$FUNCTION         iedit_get_instruction_desc
-$RETURN_TYPE      packet_desc *
+$FUNCTION           iedit_get_instruction_desc
+$RETURN_TYPE        packet_desc *
 $PARAMETER_LIST
     ()
-$SUMMARY          Get the list descriptor for image edit instructions.
+$SUMMARY            Get the list descriptor for image edit instructions.
 $PURPOSE
     Get the list descriptor for image edit instructions.
 $RETURNS
     A pointer to the descriptor.
 $END
 
-$FUNCTION         iedit_alloc_edit_coords
-$RETURN_TYPE      edit_coord *
+$FUNCTION           iedit_alloc_edit_coords
+$RETURN_TYPE        edit_coord *
 $PARAMETER_LIST
     (unsigned int num_coords)
-$SUMMARY          Allocate an array of edit co-ordinates.
+$SUMMARY            Allocate an array of edit co-ordinates.
 $PURPOSE
     Allocate an array of edit co-ordinates.
-$PARAMETER        num_coords :
+$PARAMETER          num_coords :
     The number of co-ordinates to allocate.
 $RETURNS
     A pointer to a statically allocated array of co-ordinate
     structures on success, else NULL.
 $END
 
-$FUNCTION         iedit_get_edit_coords
-$RETURN_TYPE      flag
+$FUNCTION           iedit_get_edit_coords
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (list_header *list_head, edit_coord **coords)
-$SUMMARY          Get a number of editing co-ordinates from a co-ordinate list.
+$SUMMARY            Get a number of editing co-ordinates from a co-ordinate list.
 $PURPOSE
     The routine will get a number of editing co-ordinates from a
     co-ordinate list. The routine will extract all co-ordinates in the list.
-$PARAMETER        list_head :
+$PARAMETER          list_head :
     The list header.
-$PARAMETER        coords :
+$PARAMETER          coords :
     The pointer to an internally allocated array of extracted
     co-ordinates is written here.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iedit_add_instruction
-$RETURN_TYPE      flag
+$FUNCTION           iedit_add_instruction
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KImageEditList ilist,
 			    unsigned int instruction_code, edit_coord *coords,
 			    unsigned int num_coords, double intensity[2])
-$SUMMARY          Add an image edit instruction to a list.
+$SUMMARY            Add an image edit instruction to a list.
 $PURPOSE
     This routine will add a single edit instruction to a managed
     image edit instruction list. The <<add_func>> function registered for this
     instruction list will be called at a future time with a copy of the
     instruction to be added.
-$PARAMETER        ilist :
+$PARAMETER          ilist :
     The instruction list.
-$PARAMETER        instruction_code :
+$PARAMETER          instruction_code :
     The instruction code.
-$PARAMETER        coords :
+$PARAMETER          coords :
     The instruction co-ordinates.
-$PARAMETER        num_coords :
+$PARAMETER          num_coords :
     The number of co-ordinates.
-$PARAMETER        intensity :
+$PARAMETER          intensity :
     The intensity value of the instruction.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iedit_remove_instructions
-$RETURN_TYPE      flag
+$FUNCTION           iedit_remove_instructions
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KImageEditList ilist,
 				unsigned int num_to_remove)
-$SUMMARY          Remove instructions from an image edit list.
+$SUMMARY            Remove instructions from an image edit list.
 $PURPOSE
     This routine will remove a number of edit instructions from a
     managed image edit instruction list. The <<loss_func>> function registered
     for this instruction list will be called at a future time.
-$PARAMETER        ilist :
+$PARAMETER          ilist :
     The instruction list.
-$PARAMETER        num_to_remove :
+$PARAMETER          num_to_remove :
     The number of instructions to remove. If this is 0, all
     instructions are removed.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iedit_apply_instructions
-$RETURN_TYPE      flag
+$FUNCTION           iedit_apply_instructions
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KImageEditList ilist)
-$SUMMARY          Apply image edit instructions.
+$SUMMARY            Apply image edit instructions.
 $PURPOSE
     This routine will issue an apply (commit) request for a managed
     image edit instruction list. The <<apply_func>> function registered for
     this instruction list will be called at a future time. Some time after
     this, the <<loss_func>> registered will also be called.
-$PARAMETER        ilist :
+$PARAMETER          ilist :
     The instruction list.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iedit_get_list
-$RETURN_TYPE      list_header *
+$FUNCTION           iedit_get_list
+$RETURN_TYPE        list_header *
 $PARAMETER_LIST
     (KImageEditList ilist)
-$SUMMARY          Get list of edits in an image edit list.
+$SUMMARY            Get list of edits in an image edit list.
 $PURPOSE
     This routine will get the list of edit instructions associated
     with a managed image edit instruction list.
-$PARAMETER        ilist :
+$PARAMETER          ilist :
     The managed list.
 $RETURNS
     The list of edit instructions.
 $END
 
-$FUNCTION         iedit_make_list_default_master
-$RETURN_TYPE      void
+$FUNCTION           iedit_make_list_default_master
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KImageEditList ilist)
-$SUMMARY          Prepare image edit list for mastery.
+$SUMMARY            Prepare image edit list for mastery.
 $PURPOSE
     This routine will make a managed image edit instruction list the
     default list for accepting slave list connections.
-$PARAMETER        ilist :
+$PARAMETER          ilist :
     The managed list.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         iedit_make_list_default_slave
-$RETURN_TYPE      void
+$FUNCTION           iedit_make_list_default_slave
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KImageEditList ilist)
-$SUMMARY          Prepare image edit list for slavery.
+$SUMMARY            Prepare image edit list for slavery.
 $PURPOSE
     This routine will make a managed image edit instruction list the
     default list for making slave list connections.
-$PARAMETER        ilist :
+$PARAMETER          ilist :
     The managed list.
 $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       IEDIT_PROTO_add_func
-$RETURN_TYPE      void
+$PROTO_FUNC         IEDIT_PROTO_add_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KImageEditList ilist, list_entry *instruction,
 			   void **info)
-$SUMMARY          Image edit instruction add callback.
+$SUMMARY            Image edit instruction add callback.
 $PURPOSE
     This routine will process a single edit instruction which has
     been added to a managed image edit instruction list.
-$PARAMETER        ilist :
+$PARAMETER          ilist :
     The managed image edit instruction list.
-$PARAMETER        instruction :
+$PARAMETER          instruction :
     The edit instruction.
-$PARAMETER        info :
+$PARAMETER          info :
     A pointer to the arbitrary information pointer for the list.
 $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       IEDIT_PROTO_loss_func
-$RETURN_TYPE      void
+$PROTO_FUNC         IEDIT_PROTO_loss_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KImageEditList ilist, void **info)
-$SUMMARY          Image edit instruction loss callback.
+$SUMMARY            Image edit instruction loss callback.
 $PURPOSE
     This routine will process the loss of an edit instruction from a
     managed image edit instruction list.
-$PARAMETER        ilist :
+$PARAMETER          ilist :
     The managed image edit instruction list.
-$PARAMETER        info :
+$PARAMETER          info :
     A pointer to the arbitrary information pointer for the list.
 $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       IEDIT_PROTO_apply_func
-$RETURN_TYPE      void
+$PROTO_FUNC         IEDIT_PROTO_apply_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KImageEditList ilist, void **info)
-$SUMMARY          Image edit instruction apply callback.
+$SUMMARY            Image edit instruction apply callback.
 $PURPOSE
     This routine will apply (commit) an edit list prior to the list
     being cleared.
-$PARAMETER        ilist :
+$PARAMETER          ilist :
     The managed image edit instruction list.
-$PARAMETER        info :
+$PARAMETER          info :
     A pointer to the arbitrary information pointer for the list.
 $RETURNS
     Nothing.

@@ -7,29 +7,29 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         dir_open
-$RETURN_TYPE      KDir
+$FUNCTION           dir_open
+$RETURN_TYPE        KDir
 $PARAMETER_LIST
     (CONST char *dirname)
-$SUMMARY          Open a directory for reading (scanning).
+$SUMMARY            Open a directory for reading (scanning).
 $PURPOSE
     Open a directory for reading (scanning).
-$PARAMETER        dirname :
+$PARAMETER          dirname :
     The directory name.
 $RETURNS
     A KDir object on success, else NULL.
 $END
 
-$FUNCTION         dir_read
-$RETURN_TYPE      KFileInfo *
+$FUNCTION           dir_read
+$RETURN_TYPE        KFileInfo *
 $PARAMETER_LIST
     (KDir dir, unsigned int skip_control)
-$SUMMARY          Read (scan) a directory for files.
+$SUMMARY            Read (scan) a directory for files.
 $PURPOSE
     Read (scan) a directory for files.
-$PARAMETER        dir :
+$PARAMETER          dir :
     The directory object.
-$PARAMETER        skip_control :
+$PARAMETER          skip_control :
     Determines whether or not to skip the special files: "."
     and "..". See <-DIR_SKIP_VALUES-> for a list of legal values.
 $RETURNS
@@ -38,14 +38,14 @@ $RETURNS
     <-dir_close-> with this directory object.
 $END
 
-$FUNCTION         dir_close
-$RETURN_TYPE      void
+$FUNCTION           dir_close
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KDir dir)
-$SUMMARY          Close a directory.
+$SUMMARY            Close a directory.
 $PURPOSE
     Close a directory.
-$PARAMETER        dir :
+$PARAMETER          dir :
     The directory object.
 $RETURNS
     Nothing.

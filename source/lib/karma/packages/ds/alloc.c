@@ -119,8 +119,23 @@
     Updated by      Richard Gooch   14-JUN-1996: Changed more pointers to
   CONST.
 
-    Last updated by Richard Gooch   28-JUN-1996: Changed more pointers to
+    Updated by      Richard Gooch   28-JUN-1996: Changed more pointers to
   CONST.
+
+    Updated by      Richard Gooch   5-AUG-1996: Initialised new reference field
+  for dimension descriptor.
+
+    Updated by      Richard Gooch   15-AUG-1996: No longer initialise
+  <<reference>> field of dimension descriptor.
+
+    Updated by      Richard Gooch   29-AUG-1996: Allowed
+  <ds_easy_alloc_array_desc> to accept mixture of dimension names and NULLs.
+
+    Updated by      Richard Gooch   14-SEP-1996: Removed tiling warning message
+  in <ds_alloc_array_desc>.
+
+    Last updated by Richard Gooch   1-OCT-1996: Made <ds_easy_alloc_array_desc>
+  a little more flexible by not requiring packet information.
 
 
 */
@@ -373,7 +388,7 @@ flag ds_alloc_packet_subdata (CONST packet_desc *pack_desc, char *packet,
 		break;
 	      default:
 		/*  Bad data type  */
-		(void) fprintf (stderr, "Bad data type: %u\n",
+		fprintf (stderr, "Bad data type: %u\n",
 				pack_desc->element_types[elem_count]);
 		a_prog_bug (function_name);
 		break;
@@ -539,12 +554,8 @@ array_desc *ds_alloc_array_desc (unsigned int num_dimensions,
 
     if (num_dimensions < 1)
     {
-	(void) fprintf (stderr, "Cannot allocate zero-dimensioned array\n");
+	fprintf (stderr, "Cannot allocate zero-dimensioned array\n");
 	a_prog_bug (function_name);
-    }
-    if (num_levels > 0)
-    {
-	(void) fprintf (stderr, "WARNING: tiling being used\n");
     }
     /*  Allocate descriptor  */
     if ( ( return_value =
@@ -609,7 +620,7 @@ flag ds_alloc_tiling_info (array_desc *arr_desc, unsigned int num_levels)
 
     if (arr_desc->num_levels > 0)
     {
-	(void) fprintf (stderr, "Existing tiling information\n");
+	fprintf (stderr, "Existing tiling information\n");
 	a_prog_bug (function_name);
     }
     
@@ -666,12 +677,12 @@ dim_desc *ds_alloc_dim_desc (CONST char *dim_name, uaddr length,
 
     if (dim_name == NULL)
     {
-	(void) fprintf (stderr, "NULL pointer passed\n");
+	fprintf (stderr, "NULL pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (length < 1)
     {
-	(void) fprintf (stderr, "Illegal dimension length: %lu passed\n",
+	fprintf (stderr, "Illegal dimension length: %lu passed\n",
 			length);
 	a_prog_bug (function_name);
     }
@@ -944,7 +955,7 @@ char *ds_easy_alloc_array (multi_array **multi_desc, unsigned int num_dim,
 
     if ( (multi_desc == NULL) || (lengths == NULL) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     if (data_name == NULL)
@@ -1003,7 +1014,7 @@ char *ds_easy_alloc_n_element_array (multi_array **multi_desc,
     if ( (multi_desc == NULL) || (lengths == NULL) || (data_types == NULL) ||
 	(data_names == NULL) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     if ( ( *multi_desc =
@@ -1130,11 +1141,14 @@ array_desc *ds_easy_alloc_array_desc (unsigned int num_dim,
     is NULL, the names "Axis 0", "Axis 1", ...etc will be used. Note: the
     character arrays are copied, so the arrays of characters and the array of
     pointers may be subsequently deallocated.
-    <num_elements> The number of atomic elements in the array packet.
+    <num_elements> The number of atomic elements in the array packet. If this
+    is 0, no packet descriptor is allocated.
     <data_types> The types of the elements in the array. See
-    [<DS_KARMA_DATA_TYPES>] for a list of legal values.
+    [<DS_KARMA_DATA_TYPES>] for a list of legal values. This may be NULL if
+    <<num_elements>> is 0.
     <data_names> The array of element names. The name strings are copied, thus
-    the memory used for the input strings may be subsequently deallocated.
+    the memory used for the input strings may be subsequently deallocated. This
+    may be NULL if <<num_elements>> is 0.
     [RETURNS] An array descriptor pointer on success, else NULL.
 */
 {
@@ -1149,20 +1163,18 @@ array_desc *ds_easy_alloc_array_desc (unsigned int num_dim,
     char tmp_name[129];
     static char function_name[] = "ds_easy_alloc_array_desc";
 
-    if ( (lengths == NULL) || (data_types == NULL) || (data_names == NULL) )
+    if (lengths == NULL)
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL lengths pointer passed\n");
 	a_prog_bug (function_name);
     }
-    if (names == NULL)
+    if (num_elements > 0)
     {
-	/*  No names supplied  */
-        if ( (int) log10 ( (double) num_dim ) + 1 > 122 )
-        {
-	    /*  Too many dimensions for sprintf to print  */
-	    a_func_abort (function_name, "Too many dimensions");
-            return (NULL);
-        }
+	if ( (data_types == NULL) || (data_names == NULL) )
+	{
+	    fprintf (stderr, "NULL data info pointer(s) passed\n");
+	    a_prog_bug (function_name);
+	}
     }
     if ( ( arr_desc = ds_alloc_array_desc (num_dim, 0) ) == NULL )
     {
@@ -1180,13 +1192,13 @@ array_desc *ds_easy_alloc_array_desc (unsigned int num_dim,
 	    this_dim_has_coords = FALSE;
 	}
 	/*  Allocate and add adimension descriptor  */
-        if (names == NULL)
+        if ( (names == NULL) || (names[dim_count] == NULL) )
         {
 	    /*  Create temporary dimension name  */
 #ifdef OS_VXMVX
-            (void) sprintf (tmp_name, "Axis %d", (int) dim_count);
+            sprintf (tmp_name, "Axis %d", (int) dim_count);
 #else
-            (void) sprintf (tmp_name, "Axis %u", dim_count);
+            sprintf (tmp_name, "Axis %u", dim_count);
 #endif
             tmp_pointer = tmp_name;
         }
@@ -1253,6 +1265,7 @@ array_desc *ds_easy_alloc_array_desc (unsigned int num_dim,
 		    sizeof **coordinates * lengths[dim_count]);
 	}
     }
+    if (num_elements < 1) return (arr_desc);
     if ( ( pack_desc = ds_alloc_packet_desc (num_elements) ) == NULL )
     {
 	ds_dealloc_array_desc (arr_desc);
@@ -1265,14 +1278,14 @@ array_desc *ds_easy_alloc_array_desc (unsigned int num_dim,
 	if (ds_element_is_atomic (data_types[elem_count]) != TRUE)
 	{
 	    /*  Bad data type  */
-	    (void) fprintf (stderr, "Bad data type: %u\n",
+	    fprintf (stderr, "Bad data type: %u\n",
 			    data_types[elem_count]);
 	    a_prog_bug (function_name);
 	}
 	pack_desc->element_types[elem_count] = data_types[elem_count];
 	if (data_names[elem_count] == NULL)
 	{
-	    (void) fprintf (stderr, "NULL data name pointer in array\n");
+	    fprintf (stderr, "NULL data name pointer in array\n");
 	    a_prog_bug (function_name);
 	}
 	if ( ( pack_desc->element_desc[elem_count] = 
@@ -1283,8 +1296,7 @@ array_desc *ds_easy_alloc_array_desc (unsigned int num_dim,
 	    m_error_notify (function_name, "element name");
 	    return (NULL);
 	}
-	(void) strcpy (pack_desc->element_desc[elem_count],
-		       data_names[elem_count]);
+	strcpy (pack_desc->element_desc[elem_count], data_names[elem_count]);
     }
     return (arr_desc);
 }   /*  End Function ds_easy_alloc_array_desc  */
@@ -1325,13 +1337,13 @@ flag ds_alloc_contiguous_list (CONST packet_desc *list_desc,
     }
     if (list_head->magic != MAGIC_LIST_HEADER)
     {
-	(void) fprintf (stderr, "List header has bad magic number\n");
+	fprintf (stderr, "List header has bad magic number\n");
 	a_prog_bug (function_name);
     }
     if (list_head->length > 0)
     {
-	(void) fprintf (stderr, "List has: %lu entries: must be empty!\n",
-			list_head->length);
+	fprintf (stderr, "List has: %lu entries: must be empty!\n",
+		 list_head->length);
 	a_prog_bug (function_name);
     }
     if (length < 1) return (TRUE);

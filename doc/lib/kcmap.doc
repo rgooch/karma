@@ -8,44 +8,44 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         kcmap_va_create
-$RETURN_TYPE      Kcolourmap
+$FUNCTION           kcmap_va_create
+$RETURN_TYPE        Kcolourmap
 $PARAMETER_LIST
     (CONST char *name, unsigned int num_cells,
 			    flag tolerant,
 			    Kdisplay dpy_handle, unsigned int (*alloc_func) (),
 			    void (*free_func) (), void (*store_func) (),
 			    void (*location_func) (), ...)
-$SUMMARY          Create a high level colourmap.
+$SUMMARY            Create a high level colourmap.
 $PURPOSE
     This routine will create a high level colourmap. The colourmap
     may be associated with a hardware colourmap, or it may be a software-only
     colourmap. In either case, storage for an array of pixel values and arrays
     of colour components is maintained within the colourmap object.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the function used to initialise the colour values. If
     this is NULL, the default "Greyscale1" function is used.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The initial number of colourcells to allocate. This must not be
     less than 2.
-$PARAMETER        tolerant :
+$PARAMETER          tolerant :
     If TRUE the routine will try to allocate as many colourcells as
     possible (up to <<num_cells>>), else it will fail if it could not
     allocate all required colourcells.
-$PARAMETER        dpy_handle :
+$PARAMETER          dpy_handle :
     The low level display handle. The meaning of this value
     depends on the lower level graphics library used.
-$PARAMETER        alloc_func :
+$PARAMETER          alloc_func :
     The function which must be called in order to allocate
     colourcells. See the <-xc-> routines for examples. The prototype function
     is <-KCMAP_PROTO_alloc_func->.
-$PARAMETER        free_func :
+$PARAMETER          free_func :
     The function which must be called to free colourcells. The
     The prototype function is <-KCMAP_PROTO_free_func->.
-$PARAMETER        store_func :
+$PARAMETER          store_func :
     The function which is used to store colours into a low level
     colourmap. The prototype function is <-KCMAP_PROTO_store_func->.
-$PARAMETER        location_func :
+$PARAMETER          location_func :
     The function which is used to determine the location of a
     display. The prototype function is <-KCMAP_PROTO_location_func->.
 $NOTE
@@ -63,37 +63,62 @@ $RETURNS
     A colourmap on success, else NULL.
 $END
 
-$FUNCTION         kcmap_add_RGB_func
-$RETURN_TYPE      void
+$FUNCTION           kcmap_add_RGB_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (CONST char *name, void (*func) (),
 			 unsigned int min_cells, unsigned int max_cells)
-$SUMMARY          Register a new colourmap function.
+$SUMMARY            Register a new colourmap function.
 $PURPOSE
     This routine will register a named function which will compute
     RGB intensity values for a colourmap. This function is typically called in
     response to a call to <-kcmap_modify->.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the colourmap function.
-$PARAMETER        func :
+$PARAMETER          func :
     The function which is used to compute the RGB values. The prototype
     function is <-KCMAP_PROTO_colour_func->.
-$PARAMETER        min_cells :
+$PARAMETER          min_cells :
     The minimum number of colourcells that must be allocated for
     this function to work. If this is less than 2, no minimum is defined.
-$PARAMETER        max_cells :
+$PARAMETER          max_cells :
     The maximum number of colourcells that may be allocated for
     this function to work. If this is less than 2, no maximum is defined.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         kcmap_register_resize_func
-$RETURN_TYPE      KCallbackFunc
+$EXPERIMENTAL_FUNC  kcmap_add_grey_func
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (CONST char *name, void (*func) (),
+			  unsigned int min_cells, unsigned int max_cells)
+$SUMMARY            Register a new colourmap function.
+$PURPOSE
+    This routine will register a named function which will compute
+    RGB intensity values for a colourmap. This function is typically called in
+    response to a call to <-kcmap_modify->.
+$PARAMETER          name :
+    The name of the colourmap function.
+$PARAMETER          func :
+    The function which is used to compute the RGB values. The prototype
+    function is <-KCMAP_PROTO_grey_func->.
+$PARAMETER          min_cells :
+    The minimum number of colourcells that must be allocated for
+    this function to work. If this is less than 2, no minimum is defined.
+$PARAMETER          max_cells :
+    The maximum number of colourcells that may be allocated for
+    this function to work. If this is less than 2, no maximum is defined.
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           kcmap_register_resize_func
+$RETURN_TYPE        KCallbackFunc
 $PARAMETER_LIST
     (Kcolourmap cmap,
 					  void (*resize_func) (), void *info)
-$SUMMARY          Register a colourmap resize function.
+$SUMMARY            Register a colourmap resize function.
 $PURPOSE
     This routine will register a resize function for a high level
     colourmap. The resize function will be called whenever the colourmap is
@@ -101,35 +126,35 @@ $PURPOSE
     called whenever the colour values change.
     Many resize functions may be registered per colourmap. The first
     function registered is the first function called upon resize.
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap.
-$PARAMETER        resize_func :
+$PARAMETER          resize_func :
     The function which is called when the colourmap is resized.
     The prototype function is <-KCMAP_PROTO_resize_func->.
-$PARAMETER        info :
+$PARAMETER          info :
     The initial arbitrary colourmap information pointer.
 $RETURNS
     A KCallbackFunc object.
 $END
 
-$FUNCTION         kcmap_change
-$RETURN_TYPE      flag
+$FUNCTION           kcmap_change
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Kcolourmap cmap, CONST char *new_name,
 		   unsigned int num_cells, flag tolerant)
-$SUMMARY          Change active colourmap function.
+$SUMMARY            Change active colourmap function.
 $PURPOSE
     This routine will change the active function (algorithm) used to
     calculate the colours in a colourmap and the size of the colourmap.
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap object.
-$PARAMETER        new_name :
+$PARAMETER          new_name :
     The new function name. If this is NULL then the active function
     is not changed.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colourcells required for the colourmap. If this
     is less then 2 the number of cells is not changed.
-$PARAMETER        tolerant :
+$PARAMETER          tolerant :
     If TRUE, then the routine will try to allocate as many
     colourcells as possible (up to  num_cells  ), else it will fail if it could
     not allocatate all required colourcells.
@@ -137,21 +162,21 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kcmap_modify
-$RETURN_TYPE      void
+$FUNCTION           kcmap_modify
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Kcolourmap cmap, double x, double y, void *var_param)
-$SUMMARY          Change colours in a colourmap.
+$SUMMARY            Change colours in a colourmap.
 $PURPOSE
     This routine will call the active colour compute function to
     change the colourmap colours in a colourmap.
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap object.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values.
 $NOTE
     If the REVERSE attribute for the colourmap is set, the colourmap is
@@ -160,8 +185,8 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         kcmap_modify_direct_type
-$RETURN_TYPE      void
+$FUNCTION           kcmap_modify_direct_type
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Kcolourmap cmap,
 			       double red_x, double red_y, void *red_var_param,
@@ -169,31 +194,31 @@ $PARAMETER_LIST
 			       void *green_var_param,
 			       double blue_x, double blue_y,
 			       void *blue_var_param)
-$SUMMARY          Change colours in a colourmap.
+$SUMMARY            Change colours in a colourmap.
 $PURPOSE
     This routine will call the active colour compute function to
     change the colourmap colours in a colourmap.
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap object.
-$PARAMETER        red_x :
+$PARAMETER          red_x :
     A parameter used to compute the red component colour values.
-$PARAMETER        red_y :
+$PARAMETER          red_y :
     A parameter used to compute the red component colour values.
-$PARAMETER        red_var_param :
+$PARAMETER          red_var_param :
     A parameter used to compute the red component colour
     values.
-$PARAMETER        green_x :
+$PARAMETER          green_x :
     A parameter used to compute the green component colour values.
-$PARAMETER        green_y :
+$PARAMETER          green_y :
     A parameter used to compute the green component colour values.
-$PARAMETER        green_var_param :
+$PARAMETER          green_var_param :
     A parameter used to compute the green component colour
     values.
-$PARAMETER        blue_x :
+$PARAMETER          blue_x :
     A parameter used to compute the blue component colour values.
-$PARAMETER        blue_y :
+$PARAMETER          blue_y :
     A parameter used to compute the blue component colour values.
-$PARAMETER        blue_var_param :
+$PARAMETER          blue_var_param :
     A parameter used to compute the blue component colour
     values.
 $NOTE
@@ -203,11 +228,11 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         kcmap_list_funcs
-$RETURN_TYPE      CONST char **
+$FUNCTION           kcmap_list_funcs
+$RETURN_TYPE        CONST char **
 $PARAMETER_LIST
     ()
-$SUMMARY          Get list of colourmap functions.
+$SUMMARY            Get list of colourmap functions.
 $PURPOSE
     This routine will get the array of supported colour function
     names. This array is dynamically allocated, and should be freed using
@@ -218,17 +243,17 @@ $RETURNS
     A pointer to the array.
 $END
 
-$FUNCTION         kcmap_get_funcs_for_cmap
-$RETURN_TYPE      CONST char **
+$FUNCTION           kcmap_get_funcs_for_cmap
+$RETURN_TYPE        CONST char **
 $PARAMETER_LIST
     (Kcolourmap cmap)
-$SUMMARY          Get list of colourmap functions compatible with a colourmap.
+$SUMMARY            Get list of colourmap functions compatible with a colourmap.
 $PURPOSE
     This routine will get the array of supported colour function
     names. This array is dynamically allocated, and should be freed using
     <-m_free->. The array is terminated with a NULL pointer. Only functions
     which are compatible with the colourmap are returned.
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap object.
 $NOTE
     The names in the array are statically allocated.
@@ -236,32 +261,32 @@ $RETURNS
     A pointer to the array.
 $END
 
-$FUNCTION         kcmap_get_active_func
-$RETURN_TYPE      CONST char *
+$FUNCTION           kcmap_get_active_func
+$RETURN_TYPE        CONST char *
 $PARAMETER_LIST
     (Kcolourmap cmap)
-$SUMMARY          Get active colourmap function.
+$SUMMARY            Get active colourmap function.
 $PURPOSE
     This routine will get the name of the active colour function for
     a colourmap.
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap object.
 $RETURNS
     A pointer to the name of the colour function. This name must not
     be freed.
 $END
 
-$FUNCTION         kcmap_get_pixels
-$RETURN_TYPE      unsigned int
+$FUNCTION           kcmap_get_pixels
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (Kcolourmap cmap, unsigned long **pixel_values)
-$SUMMARY          Get pixel values in a colourmap.
+$SUMMARY            Get pixel values in a colourmap.
 $PURPOSE
     This routine will determine the number of colourcells in a
     colourmap and the pixel values allocated.
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap object.
-$PARAMETER        pixel_values :
+$PARAMETER          pixel_values :
     A pointer to the array of pixel values will be written here.
     If this is NULL, nothing is written here. The pixel values may be modified
     if the colourmap is a software colourmap. If the pixel values are changed,
@@ -270,119 +295,119 @@ $RETURNS
     The number of colourcells allocated.
 $END
 
-$FUNCTION         kcmap_notify_pixels_changed
-$RETURN_TYPE      void
+$FUNCTION           kcmap_notify_pixels_changed
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Kcolourmap cmap)
-$SUMMARY          Notify that pixel values have been changed.
+$SUMMARY            Notify that pixel values have been changed.
 $PURPOSE
     This routine posts a notification that the pixel values in a
     software colourmap have changed. The resize functions registered with
     <-kcmap_register_resize_func-> are usually called.
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap object. This must be a software colourmap.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         kcmap_get_pixel
-$RETURN_TYPE      unsigned long
+$FUNCTION           kcmap_get_pixel
+$RETURN_TYPE        unsigned long
 $PARAMETER_LIST
     (Kcolourmap cmap, unsigned int index)
-$SUMMARY          This routine will get a numbered pixel value from a colourmap.
+$SUMMARY            This routine will get a numbered pixel value from a colourmap.
 $PURPOSE
     This routine will get a numbered pixel value from a colourmap.
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap object.
-$PARAMETER        index :
+$PARAMETER          index :
     The index of the pixel.
 $RETURNS
     The pixel value.
 $END
 
-$FUNCTION         kcmap_prepare_for_slavery
-$RETURN_TYPE      void
+$FUNCTION           kcmap_prepare_for_slavery
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Kcolourmap cmap)
-$SUMMARY          Allow colourmap to be slaved.
+$SUMMARY            Allow colourmap to be slaved.
 $PURPOSE
     This routine will register a colourmap to be the choosen
     colourmap for subsequent attempts to open a slave colourmap connection. In
     order to make the colourmap a slave, a subsequent call to
     <-conn_attempt_connection-> must be made.
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap object.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         kcmap_copy_to_struct
-$RETURN_TYPE      flag
+$FUNCTION           kcmap_copy_to_struct
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Kcolourmap cmap, packet_desc **top_pack_desc,
 			   char **top_packet)
-$SUMMARY          Copy colour data from a colourmap.
+$SUMMARY            Copy colour data from a colourmap.
 $PURPOSE
     This routine will copy the colour data in a colourmap into a
     newly allocated Karma data structure. This data structure may be
     subsequently deallocated.
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap object.
-$PARAMETER        top_pack_desc :
+$PARAMETER          top_pack_desc :
     The pointer to the top level packet descriptor that is
     allocated will be written here.
-$PARAMETER        top_packet :
+$PARAMETER          top_packet :
     The pointer to the top level packet that is allocated will be
     written here.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kcmap_copy_from_struct
-$RETURN_TYPE      flag
+$FUNCTION           kcmap_copy_from_struct
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Kcolourmap cmap, packet_desc *top_pack_desc,
 			     char *top_packet)
-$SUMMARY          Copy colour data into a colourmap.
+$SUMMARY            Copy colour data into a colourmap.
 $PURPOSE
     This routine will copy the colour data in a Karma data structure
     into a colourmap. If the colourmap changes size, then the <<resize_func>>
     registered is called.
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap object.
-$PARAMETER        top_pack_desc :
+$PARAMETER          top_pack_desc :
     The top level packet descriptor.
-$PARAMETER        top_packet :
+$PARAMETER          top_packet :
     The top level packet.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kcmap_get_rgb_values
-$RETURN_TYPE      unsigned short *
+$FUNCTION           kcmap_get_rgb_values
+$RETURN_TYPE        unsigned short *
 $PARAMETER_LIST
     (Kcolourmap cmap, unsigned int *size)
-$SUMMARY          Get colour data from a colourmap.
+$SUMMARY            Get colour data from a colourmap.
 $PURPOSE
     This routine will return the RGB values in a colourmap. The
     colour values are arranged in packets of Red, Green and Blue values.
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap object.
-$PARAMETER        size :
+$PARAMETER          size :
     The routine will write the size of the colourmap here.
 $RETURNS
     A pointer to a dynamically allocated array. This must be freed
     with <-m_free->. On failure it returns NULL.
 $END
 
-$FUNCTION         kcmap_get_attributes
-$RETURN_TYPE      void
+$FUNCTION           kcmap_get_attributes
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Kcolourmap cmap, ...)
-$SUMMARY          This routine will get the attributes for a colourmap.
+$SUMMARY            This routine will get the attributes for a colourmap.
 $PURPOSE
     This routine will get the attributes for a colourmap.
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap.
 $PARAMETER        ... :
     The optional list of parameter attribute-key attribute-value
@@ -392,14 +417,14 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         kcmap_set_attributes
-$RETURN_TYPE      void
+$FUNCTION           kcmap_set_attributes
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Kcolourmap cmap, ...)
-$SUMMARY          This routine will set the attributes for a colourmap.
+$SUMMARY            This routine will set the attributes for a colourmap.
 $PURPOSE
     This routine will set the attributes for a colourmap.
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap.
 $PARAMETER        ... :
     The optional list of parameter attribute-key attribute-value
@@ -411,180 +436,180 @@ $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       KCMAP_PROTO_alloc_func
-$RETURN_TYPE      unsigned int
+$PROTO_FUNC         KCMAP_PROTO_alloc_func
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (unsigned int num_cells,
 				     unsigned long *pixel_values,
 				     unsigned int min_cells,
 				     Kdisplay dpy_handle)
-$SUMMARY          Allocate colourcells.
+$SUMMARY            Allocate colourcells.
 $PURPOSE
     This routine will allocate a number of colourcells in a low
     level colourmap (e.g. using the Xlib routine XAllocColorCells).
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colourcells to allocate.
-$PARAMETER        pixel_values :
+$PARAMETER          pixel_values :
     The array ofpixel values allocated will be written here.
-$PARAMETER        min_cells :
+$PARAMETER          min_cells :
     The minimum number of colourcells to allocate. The routine
     will try to allocate at least this number of colourcells.
-$PARAMETER        dpy_handle :
+$PARAMETER          dpy_handle :
     The low level display handle. The meaning of this value
     depends on the lower level graphics library used.
 $RETURNS
     The number of colourcells allocated.
 $END
 
-$PROTO_FUNC       KCMAP_PROTO_free_func
-$RETURN_TYPE      void
+$PROTO_FUNC         KCMAP_PROTO_free_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells,
 			    unsigned long *pixel_values, Kdisplay dpy_handle)
-$SUMMARY          Free colourcells.
+$SUMMARY            Free colourcells.
 $PURPOSE
     This routine will free a number of colourcells in a low
     level colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colourcells to free.
-$PARAMETER        pixel_values :
+$PARAMETER          pixel_values :
     The array of pixel values (colourcells) to free.
-$PARAMETER        dpy_handle :
+$PARAMETER          dpy_handle :
     The low level display handle. The meaning of this value
     depends on the lower level graphics library used.
 $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       KCMAP_PROTO_store_func
-$RETURN_TYPE      void
+$PROTO_FUNC         KCMAP_PROTO_store_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells,
 			     unsigned long *pixel_values,
 			     unsigned short *reds, unsigned short *greens,
 			     unsigned short *blues, unsigned int stride,
 			     Kdisplay dpy_handle)
-$SUMMARY          This routine will store colours into a low level colourmap.
+$SUMMARY            This routine will store colours into a low level colourmap.
 $PURPOSE
     This routine will store colours into a low level colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colourcells to store.
-$PARAMETER        pixel_values :
+$PARAMETER          pixel_values :
     The array of pixel values.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The array of red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The array of green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The array of blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values in
     each array.
-$PARAMETER        dpy_handle :
+$PARAMETER          dpy_handle :
     The low level display handle. The meaning of this value
     depends on the lower level graphics library used.
 $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       KCMAP_PROTO_location_func
-$RETURN_TYPE      void
+$PROTO_FUNC         KCMAP_PROTO_location_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Kdisplay dpy_handle,
 				unsigned long *serv_hostaddr,
 				unsigned long *serv_display_num)
-$SUMMARY          Get location of display.
+$SUMMARY            Get location of display.
 $PURPOSE
     This routine will determine the location of the graphics
     display being used.
-$PARAMETER        dpy_handle :
+$PARAMETER          dpy_handle :
     The low level display handle. The meaning of this value
     depends on the lower level graphics library used.
-$PARAMETER        serv_hostaddr :
+$PARAMETER          serv_hostaddr :
     The Internet address of the host to which the display
     is connected will be written here.
-$PARAMETER        serv_display_num :
+$PARAMETER          serv_display_num :
     The number of the display will be written here.
 $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       KCMAP_PROTO_colour_func
-$RETURN_TYPE      void
+$PROTO_FUNC         KCMAP_PROTO_colour_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 			      unsigned short *greens, unsigned short *blues,
 			      unsigned int stride, double x, double y,
 			      void *var_param)
-$SUMMARY          Modify colour values.
+$SUMMARY            Modify colour values.
 $PURPOSE
     This routine will write RGB colour intensity values to a
     number of colourcells. This routine is called in response to a call to
     <-kcmap_modify->.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The array of red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The array of green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The array of blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values in
     each array.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values.
-$PARAMETER        max_cells :
+$PARAMETER          max_cells :
     A parameter used to compute the colour values.
 $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       KCMAP_PROTO_grey_func
-$RETURN_TYPE      void
+$PROTO_FUNC         KCMAP_PROTO_grey_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 			      unsigned short *greens, unsigned short *blues,
 			      unsigned int stride, double x, double y,
 			      void *var_param)
-$SUMMARY          Modify greyscale colour values.
+$SUMMARY            Modify greyscale colour values.
 $PURPOSE
     This routine will write greyscale intensity values to a
     number of colourcells. This routine is called in response to a call to
     <-kcmap_modify->.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The array of red intensity values. This may be NULL.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The array of green intensity values. This may be NULL.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The array of blue intensity values. This may be NULL.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values in the
     array.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values.
-$PARAMETER        max_cells :
+$PARAMETER          max_cells :
     A parameter used to compute the colour values.
 $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       KCMAP_PROTO_resize_func
-$RETURN_TYPE      void
+$PROTO_FUNC         KCMAP_PROTO_resize_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Kcolourmap cmap, void **info)
-$SUMMARY          This routine registers a change in the size of a colourmap.
+$SUMMARY            This routine registers a change in the size of a colourmap.
 $PURPOSE
     This routine registers a change in the size of a colourmap.
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap.
-$PARAMETER        info :
+$PARAMETER          info :
     A pointer to the arbitrary colourmap information pointer.
 $RETURNS
     Nothing.

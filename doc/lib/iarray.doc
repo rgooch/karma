@@ -65,34 +65,73 @@ $RETURNS
     The name of the data in the array.
 $END
 
-$FUNCTION         iarray_get_image_from_multi
-$RETURN_TYPE      flag
+$EXPERIMENTAL_FUNC  iarray_contour
+$RETURN_TYPE        unsigned int
+$PARAMETER_LIST
+    (iarray array, unsigned int num_contours,
+			     CONST double *contour_levels,
+			     uaddr *buf_size,
+			     double **x0_arr, double **y0_arr,
+			     double **x1_arr, double **y1_arr)
+$SUMMARY            Extract contours from a 2-dimensional Intelligent Array.
+$PURPOSE
+    This routine will extract contours from a 2-dimensional
+    Intelligent Array, producing a list of line segments that approximate the
+    countours. The co-ordinates of the line segments are in linear world
+    co-ordinates.
+$PARAMETER          array :
+    The array.
+$PARAMETER          num_contours :
+    The number of contour levels.
+$PARAMETER          contour_levels :
+    The array of contour levels.
+$PARAMETER          buf_size :
+    A pointer to the size of the co-ordinate arrays. This is
+    modified.
+$PARAMETER          x0_arr :
+    A pointer to a co-ordinate array pointer. The co-ordinate array
+    may be internally reallocated, hence the array pointer may be modified.
+$PARAMETER          y0_arr :
+    A pointer to a co-ordinate array pointer. The co-ordinate array
+    may be internally reallocated, hence the array pointer may be modified.
+$PARAMETER          x1_arr :
+    A pointer to a co-ordinate array pointer. The co-ordinate array
+    may be internally reallocated, hence the array pointer may be modified.
+$PARAMETER          y1_arr :
+    A pointer to a co-ordinate array pointer. The co-ordinate array
+    may be internally reallocated, hence the array pointer may be modified.
+$RETURNS
+    The number of line segments extracted.
+$END
+
+$FUNCTION           iarray_get_image_from_multi
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (multi_array *multi_desc, iarray *pseudo,
 				  iarray *red, iarray *green, iarray *blue,
 				  unsigned int *cmap_index)
-$SUMMARY          Get an image from a Karma data structure.
+$SUMMARY            Get an image from a Karma data structure.
 $PURPOSE
     This routine will find an image embedded in a Karma data
     structure. The image may be single-channel (PseudoColour) or it may be a
     TrueColour image (red, green and blue components).
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The Karma data structure.
-$PARAMETER        pseudo :
+$PARAMETER          pseudo :
     If a single-channel image is found, the corresponding Intelligent
     Array is written here. If no single-channel image is found, NULL is written
     here.
-$PARAMETER        red :
+$PARAMETER          red :
     If a TrueColour image is found, the red component Intelligent Array
     is written here. If no TrueColour image is found, NULL is written here.
-$PARAMETER        green :
+$PARAMETER          green :
     If a TrueColour image is found, the green component Intelligent
     Array is written here. If no TrueColour image is found, NULL is written
     here.
-$PARAMETER        blue :
+$PARAMETER          blue :
     If a TrueColour image is found, the blue component Intelligent Array
     is written here. If no TrueColour image is found, NULL is written here.
-$PARAMETER        cmap_index :
+$PARAMETER          cmap_index :
     If the image found is a single-channel image and the data
     structure has an associated RGBcolourmap, the index to the colourmap
     structure is written here. If no colourmap is found, the value written here
@@ -101,34 +140,34 @@ $RETURNS
     TRUE on succes, else FALSE.
 $END
 
-$FUNCTION         iarray_get_movie_from_multi
-$RETURN_TYPE      flag
+$FUNCTION           iarray_get_movie_from_multi
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (multi_array *multi_desc, iarray *pseudo,
 				  iarray *red, iarray *green, iarray *blue,
 				  unsigned int *cmap_index)
-$SUMMARY          Get a movie from a Karma data structure.
+$SUMMARY            Get a movie from a Karma data structure.
 $PURPOSE
     This routine will find a movie embedded in a Karma data
     structure. The movie may be single-channel (PseudoColour) or it may be a
     TrueColour movie (red, green and blue components).
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The Karma data structure.
-$PARAMETER        pseudo :
+$PARAMETER          pseudo :
     If a single-channel movie is found, the corresponding Intelligent
     Array is written here. If no single-channel movie is found, NULL is written
     here.
-$PARAMETER        red :
+$PARAMETER          red :
     If a TrueColour movie is found, the red component Intelligent Array
     is written here. If no TrueColour movie is found, NULL is written here.
-$PARAMETER        green :
+$PARAMETER          green :
     If a TrueColour movie is found, the green component Intelligent
     Array is written here. If no TrueColour movie is found, NULL is written
     here.
-$PARAMETER        blue :
+$PARAMETER          blue :
     If a TrueColour movie is found, the blue component Intelligent Array
     is written here. If no TrueColour movie is found, NULL is written here.
-$PARAMETER        cmap_index :
+$PARAMETER          cmap_index :
     If the movie found is a single-channel movie and the data
     structure has an associated RGBcolourmap, the index to the colourmap
     structure is written here. If no colourmap is found, the value written here
@@ -137,36 +176,36 @@ $RETURNS
     TRUE on succes, else FALSE.
 $END
 
-$FUNCTION         iarray_read_nD
-$RETURN_TYPE      iarray
+$FUNCTION           iarray_read_nD
+$RETURN_TYPE        iarray
 $PARAMETER_LIST
     (CONST char *object, flag cache, CONST char *arrayname,
 		       unsigned int num_dim, CONST char **dim_names,
 		       CONST char *elem_name,
 		       unsigned int mmap_option)
-$SUMMARY          Read in a Karma arrayfile and yield an "Intelligent Array".
+$SUMMARY            Read in a Karma arrayfile and yield an "Intelligent Array".
 $PURPOSE
     Read in a Karma arrayfile and yield an "Intelligent Array".
-$PARAMETER        object :
+$PARAMETER          object :
     The name of the arrayfile to read. This parameter is passed
     directly to the <-dsxfr_get_multi-> routine. In order to understand the
     operation of this routine, the operation of the <-dsxfr_get_multi-> routine
     must be understood.
-$PARAMETER        cache :
+$PARAMETER          cache :
     This is passed directly to the <-dsxfr_get_multi-> routine.
     This controls whether disc arrayfiles are cached in memory for later use.
-$PARAMETER        arrayname :
+$PARAMETER          arrayname :
     The name of the general data structure in the arrayfile to
     search for. If this is NULL, the routine searches for the default name
     "Intelligent Array". If the arrayfile has only one general data structure,
     then this parameter is ignored.
-$PARAMETER        num_dim :
+$PARAMETER          num_dim :
     The routine searches for an n-dimensional array with a single
     atomic element at each point in multi-dimensional space. If this parameter
     is greater than 0, the routine will only return an array with the specified
     number of dimensions. If the value is 0, then the routine will return an
     n-dimensional array.
-$PARAMETER        dim_names :
+$PARAMETER          dim_names :
     If <<num_dim>> is not 0, then if this parameter is NULL, the
     routine will search for and return an array with the default dimension
     names (see <-iarray_create-> for a list of these) if more than one
@@ -177,11 +216,11 @@ $PARAMETER        dim_names :
     then the routine will only return an array which matches the specified
     dimension names. The first name in the array of strings must be the highest
     order dimension.
-$PARAMETER        elem_name :
+$PARAMETER          elem_name :
     If this is NULL, the routine will ignore the element name of
     the array which is located, else it will insist on the array element name
     matching the specified name.
-$PARAMETER        mmap_option :
+$PARAMETER          mmap_option :
     This is passed directly to the <-dsxfr_get_multi-> routine.
     This parameter controls the memory mapping of disc arrayfiles.
     If the data structure is likely to be subsequently modified, the value must
@@ -192,16 +231,16 @@ $RETURNS
     error message is printed to the standard output and NULL is returned.
 $END
 
-$FUNCTION         iarray_write
-$RETURN_TYPE      flag
+$FUNCTION           iarray_write
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray array, CONST char *arrayfile)
-$SUMMARY          Write an "Intelligent Array" in the Karma data format.
+$SUMMARY            Write an "Intelligent Array" in the Karma data format.
 $PURPOSE
     Write an "Intelligent Array" in the Karma data format.
-$PARAMETER        array :
+$PARAMETER          array :
     The "Intelligent Array".
-$PARAMETER        arrayfile :
+$PARAMETER          arrayfile :
     The name of the arrayfile to write. See <-dsxfr_put_multi-> for
     details on the interpretation of this.
 $RETURNS
@@ -209,34 +248,34 @@ $RETURNS
     output and FALSE is returned.
 $END
 
-$FUNCTION         iarray_create
-$RETURN_TYPE      iarray
+$FUNCTION           iarray_create
+$RETURN_TYPE        iarray
 $PARAMETER_LIST
     (unsigned int type, unsigned int num_dim,
 		      CONST char **dim_names, CONST unsigned long *dim_lengths,
 		      CONST char *elem_name, iarray old_array)
-$SUMMARY          Create an Intelligent Array.
+$SUMMARY            Create an Intelligent Array.
 $PURPOSE
     This routine will create an "Intelligent Array", using the Karma
     general data structure format as the underlying data format.
     If the environment variable "IARRAY_ALLOC_DEBUG" is set to "TRUE" then the
     routine will print allocation debugging information.
-$PARAMETER        type :
+$PARAMETER          type :
     The desired type of the data elements. See <-DS_KARMA_DATA_TYPES->
     for a list of defined data types.
-$PARAMETER        num_dim :
+$PARAMETER          num_dim :
     The number of dimensions the array must have.
-$PARAMETER        dim_names :
+$PARAMETER          dim_names :
     The names of the dimensions. If this is NULL, the default names
     "Axis 0", "Axis 1", etc. are used.
-$PARAMETER        dim_lengths :
+$PARAMETER          dim_lengths :
     The lengths of the dimensions. The first entry in this array
     and the <<dim_lengths>> array refers to the most significant dimension
     (i.e. the dimension with the greatest stride in memory).
-$PARAMETER        elem_name :
+$PARAMETER          elem_name :
     The name of the element. If this is NULL, the default name
     "Data Value" is choosen.
-$PARAMETER        old_array :
+$PARAMETER          old_array :
     Any auxilary information not representable with "Intelligent
     Arrays" which is to be included in the Karma data format is copied from
     here. If this is NULL, no auxilary information is copied.
@@ -245,32 +284,32 @@ $RETURNS
     error message is printed to the standard output and NULL is returned.
 $END
 
-$FUNCTION         iarray_get_from_multi_array
-$RETURN_TYPE      iarray
+$FUNCTION           iarray_get_from_multi_array
+$RETURN_TYPE        iarray
 $PARAMETER_LIST
     (multi_array *multi_desc,
 				    CONST char *arrayname,
 				    unsigned int num_dim,
 				    CONST char **dim_names,
 				    CONST char *elem_name)
-$SUMMARY          Create an Intelligent Array from a Karma data structure.
+$SUMMARY            Create an Intelligent Array from a Karma data structure.
 $PURPOSE
     This routine will yield an "Intelligent Array" from a multi array
     Karma general data structure. The routine searches for a n-dimensional
     array with a single atomic element at each point in multi-dimensional space
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The multi array header pointer. The attachment count is
     incremented on successful completion of this routine.
-$PARAMETER        arrayname :
+$PARAMETER          arrayname :
     The name of the general data structure in the arrayfile to
     search for. If this is NULL, the routine searches for the default name
     "Intelligent Array". If the arrayfile has only one general data structure,
     then this parameter is ignored.
-$PARAMETER        num_dim :
+$PARAMETER          num_dim :
     If greater than 0, the routine will only return an array with
     this many dimensions. If 0, then the routine will return an n-dimensional
     array.
-$PARAMETER        dim_names :
+$PARAMETER          dim_names :
     If <<num_dim>> is not 0, then if this NULL, the routine will
     search for and return an array with the default dimension names (see
     <<iarray_create>> for a list of these) if more than one n-dimensional,
@@ -280,7 +319,7 @@ $PARAMETER        dim_names :
     is not 0, and this points to an array of strings, then the routine will
     only return an array which matches the specified dimension names. The first
     name in the array of strings must be the highest order dimension.
-$PARAMETER        elem_name :
+$PARAMETER          elem_name :
     If NULL, the routine will ignore the element name of the array
     which is located, else it will insist on the array element name matching
     this name.
@@ -289,113 +328,294 @@ $RETURNS
     error message is printed to the standard output and NULL is returned.
 $END
 
-$FUNCTION         iarray_dealloc
-$RETURN_TYPE      void
+$FUNCTION           iarray_dealloc
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (iarray array)
-$SUMMARY          Deallocate an Intelligent Array.
+$SUMMARY            Deallocate an Intelligent Array.
 $PURPOSE
     This routine will deallocate an "Intelligent Array". If the
     environment variable "IARRAY_ALLOC_DEBUG" is set to "TRUE" then the routine
     will print deallocation debugging information.
-$PARAMETER        array :
+$PARAMETER          array :
     The Intelligent Array.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         iarray_put_named_value
-$RETURN_TYPE      flag
+$FUNCTION           iarray_put_named_value
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray array, CONST char *name, unsigned int type,
 			     double value[2])
-$SUMMARY          Attach a data value to an Intelligent Array.
+$SUMMARY            Attach a data value to an Intelligent Array.
 $PURPOSE
     This routine will add a unique named value to the underlying
     Karma general data structure of an "Intelligent Array".
-$PARAMETER        array :
+$PARAMETER          array :
     The Intelligent Array.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the element to add.
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the data which is to be written.
-$PARAMETER        value :
+$PARAMETER          value :
     The value of the data.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_put_named_string
-$RETURN_TYPE      flag
+$FUNCTION           iarray_put_named_string
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (iarray array, CONST char *name, char *string)
-$SUMMARY          Attach a string to an Intelligent Array.
+    (iarray array, CONST char *name,
+			      CONST char *string)
+$SUMMARY            Attach a string to an Intelligent Array.
 $PURPOSE
     This routine will add a unique named string to the underlying
     Karma general data structure of an "Intelligent Array".
-$PARAMETER        array :
+$PARAMETER          array :
     The Intelligent Array.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the element to add.
-$PARAMETER        string :
+$PARAMETER          string :
     The string data.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_get_named_value
-$RETURN_TYPE      flag
+$FUNCTION           iarray_get_named_value
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray array, CONST char *name,
 			     unsigned int *type, double value[2])
-$SUMMARY          Get attached data from an Intelligent Array.
+$SUMMARY            Get attached data from an Intelligent Array.
 $PURPOSE
     This routine will get a unique named value from the underlying
     Karma general data structure of an "Intelligent Array".
-$PARAMETER        array :
+$PARAMETER          array :
     The Intelligent Array.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the element.
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the input data found will be written here. If this is
     NULL, nothing is written here.
-$PARAMETER        value :
+$PARAMETER          value :
     The value of the converted data will be written here.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_get_named_string
-$RETURN_TYPE      char *
+$FUNCTION           iarray_get_named_string
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (iarray array, CONST char *name)
-$SUMMARY          Get attached string from an Intelligent Array.
+$SUMMARY            Get attached string from an Intelligent Array.
 $PURPOSE
     This routine will get a unique named string from the underlying
     Karma general data structure of an "Intelligent Array".
-$PARAMETER        array :
+$PARAMETER          array :
     The Intelligent Array.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the element.
 $RETURNS
     A pointer to a dynamically allocated copy of the string on
     success, else NULL.
 $END
 
-$FUNCTION         iarray_copy_data
-$RETURN_TYPE      flag
+$FUNCTION           iarray_get_sub_array_2D
+$RETURN_TYPE        iarray
+$PARAMETER_LIST
+    (iarray array, int starty, int startx,
+				unsigned int ylen, unsigned int xlen)
+$SUMMARY            Create a 2-dimensional alias Intelligent Array.
+$PURPOSE
+    This routine will create an "Intelligent Array" which is an alias
+    or a sub-array of another "Intelligent Array". Subsequent modification of
+    the alias array will modify the data of the original array. Sub-arrays may
+    be created from other sub-arrays. The attachment count of the underlying
+    <<multi_array>> data structure is incremented on successful completion.
+$PARAMETER          array :
+    The original array.
+$PARAMETER          starty :
+    The starting y (row) index in the original array corresponding to
+    the first row of the alias array.
+$PARAMETER          startx :
+    The starting x (column) index in the original array corresponding
+    to the first column of the alias array.
+$PARAMETER          ylen :
+    The number of y co-ordinates (rows) in the alias array.
+$PARAMETER          xlen :
+    The number of x co-ordinates (columns) in the alias array.
+$RETURNS
+    A dynamically allocated intelligent array on success, else NULL.
+$NOTE
+    Sub-arrays cannot be saved to disc.
+$END
+
+$FUNCTION           iarray_get_2D_slice_from_3D
+$RETURN_TYPE        iarray
+$PARAMETER_LIST
+    (iarray cube, unsigned int ydim,
+				    unsigned int xdim, unsigned int slice_pos)
+$SUMMARY            Create a 2-dimensional Intelligent Array alias from a slice.
+$PURPOSE
+    This routine will create a 2-D "Intelligent Array" which is an
+    alias of an arbitrary slice of a 3-D array.
+$PARAMETER          cube :
+    The input 3-D array.
+$PARAMETER          ydim :
+    The dimension in the 3-D array which will become the y dimension
+    (most significant) of the output array.
+$PARAMETER          xdim :
+    The dimension in the 3-D array which will become the x dimension
+    (least significant) of the output array.
+$PARAMETER          slice_pos :
+    The position of the slice along the unspecified (remaining)
+    dimension in the 3-D array.
+$RETURNS
+    A dynamically allocated intelligent array on success, else NULL.
+$NOTE
+    Alias arrays cannot be saved to disc.
+$END
+
+$FUNCTION           iarray_remap_torus
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (iarray array, unsigned int boundary_width)
+$SUMMARY            Remap Intelligent Array into a torus.
+$PURPOSE
+    This routine will remap an N-dimensional "Intelligent Array" to a
+    pseudo-toroidal array.
+$PARAMETER          array :
+    The Intelligent Array.
+$PARAMETER          boundary_width :
+    The width of the array boundary within which the array
+    appears to be toroidal.
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           iarray_dim_length
+$RETURN_TYPE        unsigned long
+$PARAMETER_LIST
+    (iarray array, unsigned int index)
+$SUMMARY            Get length of a dimension in an Intelligent Array.
+$PURPOSE
+    Get length of a dimension in an Intelligent Array.
+$PARAMETER          array :
+    The Intelligent Array.
+$PARAMETER          index :
+    The index of the dimension.
+$RETURNS
+    The length of the specified dimension.
+$END
+
+$FUNCTION           iarray_dim_name
+$RETURN_TYPE        CONST char *
+$PARAMETER_LIST
+    (iarray array, unsigned int index)
+$SUMMARY            Get dimension name in an Intelligent Array.
+$PURPOSE
+    This routine will get the name of a specified dimension in a
+    simple, n-dimensional array.
+$PARAMETER          array :
+    The Intelligent Array.
+$PARAMETER          index :
+    The index of the dimension.
+$RETURNS
+    A pointer to the name of the specified dimension.
+$END
+
+$FUNCTION           iarray_set_world_coords
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (iarray array, unsigned int index, double first,
+			      double last)
+$SUMMARY            Set the world co-ordinates of an Intelligent Array dimension.
+$PURPOSE
+    Set the world co-ordinates of an Intelligent Array dimension.
+$PARAMETER          array :
+    The Intelligent Array.
+$PARAMETER          index :
+    The index of the dimension.
+$PARAMETER          first :
+    The first real world co-ordinate.
+$PARAMETER          last :
+    The last real world co-ordinate.
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           iarray_get_world_coords
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (iarray array, unsigned int index,
+			      double *first, double *last)
+$SUMMARY            Get the world co-ordinates of an Intelligent Array dimension.
+$PURPOSE
+    Get the world co-ordinates of an Intelligent Array dimension.
+$PARAMETER          array :
+    The Intelligent Array.
+$PARAMETER          index :
+    The index of the dimension.
+$PARAMETER          first :
+    The first real world co-ordinate is written here.
+$PARAMETER          last :
+    The last real world co-ordinate is written here.
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           iarray_get_dim_desc
+$RETURN_TYPE        dim_desc *
+$PARAMETER_LIST
+    (iarray array, unsigned int index)
+$SUMMARY            Get a dimension descriptor from an Intelligent Array.
+$PURPOSE
+    Get a dimension descriptor from an Intelligent Array.
+$PARAMETER          array :
+    The Intelligent Array.
+$PARAMETER          index :
+    The index of the dimension.
+$RETURNS
+    A pointer to the dimension descriptor.
+$END
+
+$FUNCTION           iarray_get_restrictions
+$RETURN_TYPE        unsigned int
+$PARAMETER_LIST
+    (iarray array, char ***restr_names,
+				      double **restr_values)
+$SUMMARY            Get restriction information.
+$PURPOSE
+    This routine will get any associated restrictions for an
+    Intelligent Array. The routine will dynamically allocate space for the
+    restriction data, which must be externally freed.
+$PARAMETER          array :
+    The Intelligent Array.
+$PARAMETER          restr_names :
+    The array of pointers to restrictions names will be written
+    here.
+$PARAMETER          restr_values :
+    The array of restriction values will be written here.
+$RETURNS
+    The number of restrictions. This may be 0.
+$END
+
+$FUNCTION           iarray_copy_data
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray output, iarray input, flag magnitude)
-$SUMMARY          Copy data between Intelligent Arrays.
+$SUMMARY            Copy data between Intelligent Arrays.
 $PURPOSE
     This routine will copy data from one "Intelligent Array" to
     another. The sizes of the two arrays must be identical.
     The routine can deal with the types of the two arrays being different
-$PARAMETER        output :
+$PARAMETER          output :
     The output Intelligent Array.
-$PARAMETER        input :
+$PARAMETER          input :
     The input Intelligent Array.
-$PARAMETER        magnitude :
+$PARAMETER          magnitude :
     If TRUE then when converting from a complex array to a real
     array, the magnitude of the complex data is taken, else the real component
     is copied.
@@ -406,157 +626,65 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_get_sub_array_2D
-$RETURN_TYPE      iarray
-$PARAMETER_LIST
-    (iarray array, int starty, int startx,
-				unsigned int ylen, unsigned int xlen)
-$SUMMARY          Create a 2-dimensional alias Intelligent Array.
-$PURPOSE
-    This routine will create an "Intelligent Array" which is an alias
-    or a sub-array of another "Intelligent Array". Subsequent modification of
-    the alias array will modify the data of the original array. Sub-arrays may
-    be created from other sub-arrays. The attachment count of the underlying
-    <<multi_array>> data structure is incremented on successful completion.
-$PARAMETER        array :
-    The original array.
-$PARAMETER        starty :
-    The starting y (row) index in the original array corresponding to
-    the first row of the alias array.
-$PARAMETER        startx :
-    The starting x (column) index in the original array corresponding
-    to the first column of the alias array.
-$PARAMETER        ylen :
-    The number of y co-ordinates (rows) in the alias array.
-$PARAMETER        xlen :
-    The number of x co-ordinates (columns) in the alias array.
-$RETURNS
-    A dynamically allocated intelligent array on success, else NULL.
-$NOTE
-    Sub-arrays cannot be saved to disc.
-$END
-
-$FUNCTION         iarray_get_2D_slice_from_3D
-$RETURN_TYPE      iarray
-$PARAMETER_LIST
-    (iarray cube, unsigned int ydim,
-				    unsigned int xdim, unsigned int slice_pos)
-$SUMMARY          Create a 2-dimensional Intelligent Array alias from a slice.
-$PURPOSE
-    This routine will create a 2-D "Intelligent Array" which is an
-    alias of an arbitrary slice of a 3-D array.
-$PARAMETER        cube :
-    The input 3-D array.
-$PARAMETER        ydim :
-    The dimension in the 3-D array which will become the y dimension
-    (most significant) of the output array.
-$PARAMETER        xdim :
-    The dimension in the 3-D array which will become the x dimension
-    (least significant) of the output array.
-$PARAMETER        slice_pos :
-    The position of the slice along the unspecified (remaining)
-    dimension in the 3-D array.
-$RETURNS
-    A dynamically allocated intelligent array on success, else NULL.
-$NOTE
-    Alias arrays cannot be saved to disc.
-$END
-
-$FUNCTION         iarray_dim_length
-$RETURN_TYPE      unsigned long
-$PARAMETER_LIST
-    (iarray array, unsigned int index)
-$SUMMARY          Get length of a dimension in an Intelligent Array.
-$PURPOSE
-    Get length of a dimension in an Intelligent Array.
-$PARAMETER        array :
-    The Intelligent Array.
-$PARAMETER        index :
-    The index of the dimension.
-$RETURNS
-    The length of the specified dimension.
-$END
-
-$FUNCTION         iarray_get_restrictions
-$RETURN_TYPE      unsigned int
-$PARAMETER_LIST
-    (iarray array, char ***restr_names,
-				      double **restr_values)
-$SUMMARY          Get restriction information.
-$PURPOSE
-    This routine will get any associated restrictions for an
-    Intelligent Array. The routine will dynamically allocate space for the
-    restriction data, which must be externally freed.
-$PARAMETER        array :
-    The Intelligent Array.
-$PARAMETER        restr_names :
-    The array of pointers to restrictions names will be written
-    here.
-$PARAMETER        restr_values :
-    The array of restriction values will be written here.
-$RETURNS
-    The number of restrictions. This may be 0.
-$END
-
-$FUNCTION         iarray_fill
-$RETURN_TYPE      flag
+$FUNCTION           iarray_fill
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray array, double value[2])
-$SUMMARY          Fill an Intelligent Array with a single value.
+$SUMMARY            Fill an Intelligent Array with a single value.
 $PURPOSE
     Fill an Intelligent Array with a single value.
-$PARAMETER        array :
+$PARAMETER          array :
     The Intelligent Array.
-$PARAMETER        value :
+$PARAMETER          value :
     The fill value.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_min_max
-$RETURN_TYPE      flag
+$FUNCTION           iarray_min_max
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray array, unsigned int conv_type, double *min,
 		     double *max)
-$SUMMARY          Determine the minimum and maximum value of an Intelligent Array.
+$SUMMARY            Determine the minimum and maximum value of an Intelligent Array.
 $PURPOSE
     Determine the minimum and maximum value of an Intelligent Array.
-$PARAMETER        array :
+$PARAMETER          array :
     The Intelligent Array.
-$PARAMETER        conv_type :
+$PARAMETER          conv_type :
     The conversion type to use for complex numbers. This is ignored
     if the array is not complex. See <-DS_COMPLEX_CONVERSIONS-> for legal
     values.
-$PARAMETER        min :
+$PARAMETER          min :
     The routine will write the minimum value here.
-$PARAMETER        max :
+$PARAMETER          max :
     The routine will write the maximum value here.
 $MT-LEVEL         Unsafe.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_scale_and_offset
-$RETURN_TYPE      flag
+$FUNCTION           iarray_scale_and_offset
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray out, iarray inp, double scale[2],
 			      double offset[2], flag magnitude)
-$SUMMARY          Scale and offset an Intelligent Array.
+$SUMMARY            Scale and offset an Intelligent Array.
 $PURPOSE
     This routine will perform a scale and offset on every element in
     an "Intelligent Array" (output = input * scale + offset).
-$PARAMETER        out :
+$PARAMETER          out :
     The output Intelligent Array.
-$PARAMETER        inp :
+$PARAMETER          inp :
     The input Intelligent Array.
 $NOTE
     The input and output arrays MUST be the same size (though not
     necessarily the same type).
-$PARAMETER        scale :
+$PARAMETER          scale :
     The complex scale value.
-$PARAMETER        offset :
+$PARAMETER          offset :
     The complex offset value.
-$PARAMETER        magnitude :
+$PARAMETER          magnitude :
     If TRUE and converting from a complex to a real array, the
     magnitude of the complex data (after scale and offset have been applied) is
     used, else the real component of the complex scaled data is used.
@@ -567,12 +695,45 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_add_and_scale
-$RETURN_TYPE      flag
+$EXPERIMENTAL_FUNC  iarray_clip_scale_and_offset
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (iarray out, iarray inp, double scale,
+				   double offset,
+				   double lower_clip, double upper_clip,
+				   flag blank)
+$SUMMARY            Clip, scale and offset an Intelligent Array.
+$PURPOSE
+    This routine will perform a clipping operation followed by a
+    scale and offset on every element in  an "Intelligent Array". The operation
+    following the clipping is: (output = input * scale + offset).
+$PARAMETER          out :
+    The output Intelligent Array.
+$PARAMETER          inp :
+    The input Intelligent Array.
+$NOTE
+    The input and output arrays MUST be the same size (though not
+    necessarily the same type). Both arrays must be real.
+$PARAMETER          scale :
+    The scale value.
+$PARAMETER          offset :
+    The offset value.
+$PARAMETER          lower_clip :
+    The input data is clipped so that no value is below this.
+$PARAMETER          upper_clip :
+    The input data is clipped so that no value is above this.
+$PARAMETER          blank :
+    If TRUE, clipped values are blanked.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION           iarray_add_and_scale
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray out, iarray inp1, iarray inp2,
 			   double scale[2], flag magnitude)
-$SUMMARY          Add Intelligent Arrays and scale.
+$SUMMARY            Add Intelligent Arrays and scale.
 $PURPOSE
     This routine will add two "Intelligent Array" to each other and
     scales the result. The sizes of the two input arrays and the output must be
@@ -580,15 +741,15 @@ $PURPOSE
     The routine performs the following computation:
     OUT = INP1 + INP2 * scale
     The routine will automatically perform type conversions if necessary.
-$PARAMETER        out :
+$PARAMETER          out :
     The output Intelligent Array.
-$PARAMETER        inp1 :
+$PARAMETER          inp1 :
     The first input Intelligent Array.
-$PARAMETER        inp2 :
+$PARAMETER          inp2 :
     The second input Intelligent Array.
-$PARAMETER        scale :
+$PARAMETER          scale :
     The complex scale value.
-$PARAMETER        magnitude :
+$PARAMETER          magnitude :
     If TRUE then when converting from a complex to a real data
     type, the magnitude is taken, else the real component is copied.
 $NOTE
@@ -598,12 +759,12 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_sub_and_scale
-$RETURN_TYPE      flag
+$FUNCTION           iarray_sub_and_scale
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray out, iarray inp1, iarray inp2,
 			   double scale[2], flag magnitude)
-$SUMMARY          Subtract Intelligent Arrays and scale.
+$SUMMARY            Subtract Intelligent Arrays and scale.
 $PURPOSE
     This routine will subtract two "Intelligent Array" from each
     other and scales the result. The sizes of the two input arrays and the
@@ -611,15 +772,15 @@ $PURPOSE
     The routine performs the following computation:
     OUT = INP1 - INP2 * scale
     The routine will automatically perform type conversions if necessary.
-$PARAMETER        out :
+$PARAMETER          out :
     The output Intelligent Array.
-$PARAMETER        inp1 :
+$PARAMETER          inp1 :
     The first input Intelligent Array.
-$PARAMETER        inp2 :
+$PARAMETER          inp2 :
     The second input Intelligent Array.
-$PARAMETER        scale :
+$PARAMETER          scale :
     The complex scale value.
-$PARAMETER        magnitude :
+$PARAMETER          magnitude :
     If TRUE then when converting from a complex to a real data
     type, the magnitude is taken, else the real component is copied.
 $NOTE
@@ -629,124 +790,36 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_dim_name
-$RETURN_TYPE      CONST char *
-$PARAMETER_LIST
-    (iarray array, unsigned int index)
-$SUMMARY          Get dimension name in an Intelligent Array.
-$PURPOSE
-    This routine will get the name of a specified dimension in a
-    simple, n-dimensional array.
-$PARAMETER        array :
-    The Intelligent Array.
-$PARAMETER        index :
-    The index of the dimension.
-$RETURNS
-    A pointer to the name of the specified dimension.
-$END
-
-$FUNCTION         iarray_remap_torus
-$RETURN_TYPE      void
-$PARAMETER_LIST
-    (iarray array, unsigned int boundary_width)
-$SUMMARY          Remap Intelligent Array into a torus.
-$PURPOSE
-    This routine will remap an N-dimensional "Intelligent Array" to a
-    pseudo-toroidal array.
-$PARAMETER        array :
-    The Intelligent Array.
-$PARAMETER        boundary_width :
-    The width of the array boundary within which the array
-    appears to be toroidal.
-$RETURNS
-    Nothing.
-$END
-
-$FUNCTION         iarray_set_world_coords
-$RETURN_TYPE      void
-$PARAMETER_LIST
-    (iarray array, unsigned int index, double first,
-			      double last)
-$SUMMARY          Set the world co-ordinates of an Intelligent Array dimension.
-$PURPOSE
-    Set the world co-ordinates of an Intelligent Array dimension.
-$PARAMETER        array :
-    The Intelligent Array.
-$PARAMETER        index :
-    The index of the dimension.
-$PARAMETER        first :
-    The first real world co-ordinate.
-$PARAMETER        last :
-    The last real world co-ordinate.
-$RETURNS
-    Nothing.
-$END
-
-$FUNCTION         iarray_get_world_coords
-$RETURN_TYPE      void
-$PARAMETER_LIST
-    (iarray array, unsigned int index,
-			      double *first, double *last)
-$SUMMARY          Get the world co-ordinates of an Intelligent Array dimension.
-$PURPOSE
-    Get the world co-ordinates of an Intelligent Array dimension.
-$PARAMETER        array :
-    The Intelligent Array.
-$PARAMETER        index :
-    The index of the dimension.
-$PARAMETER        first :
-    The first real world co-ordinate is written here.
-$PARAMETER        last :
-    The last real world co-ordinate is written here.
-$RETURNS
-    Nothing.
-$END
-
-$FUNCTION         iarray_get_dim_desc
-$RETURN_TYPE      dim_desc *
-$PARAMETER_LIST
-    (iarray array, unsigned int index)
-$SUMMARY          Get a dimension descriptor from an Intelligent Array.
-$PURPOSE
-    Get a dimension descriptor from an Intelligent Array.
-$PARAMETER        array :
-    The Intelligent Array.
-$PARAMETER        index :
-    The index of the dimension.
-$RETURNS
-    A pointer to the dimension descriptor.
-$END
-
-$FUNCTION         iarray_compute_histogram
-$RETURN_TYPE      flag
+$FUNCTION           iarray_compute_histogram
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray array, unsigned int conv_type,
 			       double min, double max, unsigned long num_bins,
 			       unsigned long *histogram_array,
 			       unsigned long *histogram_peak,
 			       unsigned long *histogram_mode)
-$SUMMARY          Compute a histogram of an "Intelligent Array".
+$SUMMARY            Compute a histogram of an "Intelligent Array".
 $PURPOSE
     Compute a histogram of an "Intelligent Array".
-$PARAMETER        array :
+$PARAMETER          array :
     The array.
-$PARAMETER        conv_type :
+$PARAMETER          conv_type :
     The conversion type to use for complex numbers. See
     <-DS_COMPLEX_CONVERSIONS-> for legal values. CONV_CtoR_ENVELOPE is not
     legal.
-$PARAMETER        min :
+$PARAMETER          min :
     Data values below this will be ignored.
-$PARAMETER        max :
+$PARAMETER          max :
     Data values above this will be ignored.
-$PARAMETER        num_bins :
+$PARAMETER          num_bins :
     The number of histogram bins.
-$PARAMETER        histogram_array :
+$PARAMETER          histogram_array :
     A pointer to the histogram array. The values in this
     array are updated, and hence must be initialised externally.
-$PARAMETER        histogram_peak :
+$PARAMETER          histogram_peak :
     The peak of the histogram is written here. This value is
     updated, and hence must be externally initialised to 0.
-$PARAMETER        histogram_mode :
+$PARAMETER          histogram_mode :
     The mode of the histogram (index value of the peak) will
     be written here. This value is updated, and hence must be externally
     initialised to 0.
@@ -755,27 +828,43 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_dim_index
-$RETURN_TYPE      unsigned int
+$FUNCTION           iarray_sum
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (iarray array, double sum[2])
+$SUMMARY            Determine the sum of an Intelligent Array.
+$PURPOSE
+    Determine the sum of an Intelligent Array.
+$PARAMETER          array :
+    The Intelligent Array.
+$PARAMETER          sum :
+    The routine will write the sum here.
+$MT-LEVEL         Unsafe.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION           iarray_dim_index
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (iarray array, CONST char *name)
-$SUMMARY          This routine will find the index of a named dimension.
+$SUMMARY            This routine will find the index of a named dimension.
 $PURPOSE
     This routine will find the index of a named dimension.
-$PARAMETER        array :
+$PARAMETER          array :
     The array.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the dimension.
 $RETURNS
     The dimension index if found, else the number of dimension in the
     array is returned.
 $END
 
-$FUNCTION         iarray_get_data_scaling
-$RETURN_TYPE      flag
+$FUNCTION           iarray_get_data_scaling
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray array, double *scale, double *offset)
-$SUMMARY          Get the scale and offset for data in an Intelligent Array.
+$SUMMARY            Get the scale and offset for data in an Intelligent Array.
 $PURPOSE
     This routine will determine the scale and offset for data in an
     Intelligent Array. This may be important when a floating-point array has
@@ -786,14 +875,14 @@ $PURPOSE
     (output = input * scale + offset). The scaling and offset values should
     previously have been attached to the Intelligent Array using the
     <-iarray_set_data_scaling-> routine.
-$PARAMETER        array :
+$PARAMETER          array :
     The array.
-$PARAMETER        scale :
+$PARAMETER          scale :
     The scaling value will be written here. The name of the scaling
     value is constructed by appending "__SCALE" to the array value name (see
     <-iarray_get_value_name->). If no scaling value is found, 1.0 is written
     here.
-$PARAMETER        offset :
+$PARAMETER          offset :
     The offset value will be written here. The name of the offset
     value is constructed by appending "__OFFSET" to the array value name (see
     <-iarray_get_value_name->). If no offset value is found, 0.0 is written
@@ -802,11 +891,11 @@ $RETURNS
     TRUE if either the scaling or offset value were found, else FALSE
 $END
 
-$FUNCTION         iarray_set_data_scaling
-$RETURN_TYPE      flag
+$FUNCTION           iarray_set_data_scaling
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray array, double scale, double offset)
-$SUMMARY          Set the scale and offset for data in an Intelligent Array.
+$SUMMARY            Set the scale and offset for data in an Intelligent Array.
 $PURPOSE
     This routine will set the scale and offset for data in an
     Intelligent Array. This may be important when a floating-point array has
@@ -815,12 +904,12 @@ $PURPOSE
     reconstructed (aside from quantisation effects). The following expression
     may be used to convert scaled values to real values:
     (output = input * scale + offset).
-$PARAMETER        array :
+$PARAMETER          array :
     The array.
-$PARAMETER        scale :
+$PARAMETER          scale :
     The scaling value. The name of the scaling value is constructed by
     appending "__SCALE" to the array value name (see <-iarray_get_value_name->)
-$PARAMETER        offset :
+$PARAMETER          offset :
     The offset value. The name of the offset value is constructed by
     appending "__OFFSET" to the array value name(see <-iarray_get_value_name->)
 $RETURNS
@@ -828,30 +917,185 @@ $RETURNS
     already attached to the array, else FALSE.
 $END
 
-$FUNCTION         iarray_write_mono_ps
-$RETURN_TYPE      flag
+$EXPERIMENTAL_FUNC  iarray_format_value
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (iarray array, char string[STRING_LENGTH],
+			  double value, double scale, double offset)
+$SUMMARY            Format a data value into a string.
+$PURPOSE
+    Format a data value into a string.
+$PARAMETER          array :
+    The Intelligent Array the value is associated with.
+$PARAMETER          string :
+    The string to write to.
+$PARAMETER          value :
+    The value to format.
+$PARAMETER          scale :
+    The scale value to apply to the data. If this is TOOBIG the routine
+    uses the scale and offset attached to the array. See
+    <-iarray_set_data_scaling-> for details.
+$PARAMETER          offset :
+    The offset to apply after scaling the data.
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           iarray_create_from_template
+$RETURN_TYPE        iarray
+$PARAMETER_LIST
+    (iarray template_arr,unsigned int elem_type,
+				    flag copy_world_coords, flag copy_names,
+				    flag copy_aux_info)
+$SUMMARY            Create an Intelligent Array from a template array.
+$PURPOSE
+    This routine will create an Intelligent Array of a specified type
+    using an existing Intelligent Array as the template for the size,
+    dimensionality and other attributes.
+$PARAMETER          template_arr :
+    The template Intelligent Array.
+$PARAMETER          elem_type :
+    The element type for the new Intelligent Array.
+$PARAMETER          copy_world_coords :
+    If TRUE, the world co-ordinates for each dimension in
+    the template array are copied, otherwise the defaults are used.
+$PARAMETER          copy_names :
+    If TRUE, the dimension names and the value name of the
+    template array are copied, else the defaults are used.
+$PARAMETER          copy_aux_info :
+    If TRUE, auxilary information (attachments) in the template
+    array is copied to the new array.
+$RETURNS
+    An Intelligent Array on success, else FALSE.
+$END
+
+$FUNCTION           iarray_get_coordinate
+$RETURN_TYPE        double
+$PARAMETER_LIST
+    (iarray array, unsigned int dim_index,
+			      double coord_index)
+$SUMMARY            Get a co-ordinate along a dimension.
+$PURPOSE
+    Get a co-ordinate along a dimension.
+$PARAMETER          array :
+    The Intelligent Array.
+$PARAMETER          dim_index :
+    The dimension index.
+$PARAMETER          coord_index :
+    The co-ordinate index.
+$RETURNS
+    The co-ordinate on success, else TOOBIG.
+$END
+
+$FUNCTION           iarray_set_dim_name
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (iarray array, unsigned int index, CONST char *name,
+			  flag new_alloc)
+$SUMMARY            Change the name of a dimension of an Intelligent Array.
+$PURPOSE
+    Change the name of a dimension of an Intelligent Array.
+$PARAMETER          array :
+    The Intelligent Array.
+$PARAMETER          index :
+    The index of the dimension.
+$PARAMETER          name :
+    The new dimension name.
+$PARAMETER          new_alloc :
+    If TRUE, the routine will allocate a new copy of the dimension
+    name, else it will copy the pointer (in which case the name must never be
+    externally deallocated or changed).
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           iarray_append_history_string
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (iarray array, CONST char *string,
+				   flag new_alloc)
+$SUMMARY            Add a history string to an Intelligent Array.
+$PURPOSE
+    Add a history string to an Intelligent Array.
+$PARAMETER          array :
+    The Intelligent Array.
+$PARAMETER          string :
+    The history string to add.
+$PARAMETER          new_alloc :
+    If TRUE, the routine will allocate a new copy of the history
+    string, else it will copy the pointer (in which case the string must never
+    be externally deallocated or changed).
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION           iarray_copy_named_element
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (iarray out, iarray in, CONST char *name,
+				flag fail_if_not_found,
+				flag fail_on_duplicate, flag replace)
+$SUMMARY            Copy a named element from one Intelligent Array to another.
+$PURPOSE
+    Copy a named element from one Intelligent Array to another.
+$PARAMETER          out :
+    The output Intelligent Array.
+$PARAMETER          in :
+    The input Intelligent Array.
+$PARAMETER          name :
+    The name of the element to copy.
+$PARAMETER          fail_if_not_found :
+    If TRUE, the routine will fail if the element does not
+    exist in the input packet.
+$PARAMETER          fail_on_duplicate :
+    If TRUE, the routine will fail if the element already
+    exists in the output packet.
+$PARAMETER          replace :
+    If TRUE and the element already exists in the output packet, it
+    is replaced.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION           iarray_get_fits_axis
+$RETURN_TYPE        unsigned int
+$PARAMETER_LIST
+    (iarray array, unsigned int index)
+$SUMMARY            Get the FITS axis number of a dimension.
+$PURPOSE
+    Get the FITS axis number of a dimension.
+$PARAMETER          array :
+    The Intelligent Array.
+$PARAMETER          index :
+    The index of the dimension.
+$RETURNS
+    The FITS axis number on success, else 0.
+$END
+
+$FUNCTION           iarray_write_mono_ps
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray image, PostScriptPage pspage,
 			   double xstart, double ystart,
 			   double xend, double yend, flag iscale)
-$SUMMARY          Write an Intelligent Array as monochrome PostScript.
+$SUMMARY            Write an Intelligent Array as monochrome PostScript.
 $PURPOSE
     This routine will convert a 2-dimensional Intelligent Array to
     monochrome PostScript. The routine does NOT write PostScript headers or
     tails.
-$PARAMETER        image :
+$PARAMETER          image :
     The Intelligent Array.
-$PARAMETER        pspage :
+$PARAMETER          pspage :
     The PostScriptPage object.
-$PARAMETER        xstart :
+$PARAMETER          xstart :
     The x starting point (scaled from 0.0 to 1.0).
-$PARAMETER        ystart :
+$PARAMETER          ystart :
     The y starting point (scaled from 0.0 to 1.0).
-$PARAMETER        xend :
+$PARAMETER          xend :
     The x ending point (scaled from 0.0 to 1.0).
-$PARAMETER        yend :
+$PARAMETER          yend :
     The y ending point (scaled from 0.0 to 1.0).
-$PARAMETER        iscale :
+$PARAMETER          iscale :
     If FALSE and the input Intelligent Array is of type K_UBYTE the
     images values will be unscaled prior to PostScript conversion (0 = black,
     255 = white), otherwise (min = black, max = white).
@@ -859,89 +1103,89 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_write_pseudocolour_ps
-$RETURN_TYPE      flag
+$FUNCTION           iarray_write_pseudocolour_ps
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray image, PostScriptPage pspage,
 				   double xstart, double ystart,
 				   double xend, double yend,
 				   unsigned short *cmap,unsigned int cmap_size)
-$SUMMARY          Write an Intelligent Array as PseudoColour PostScript.
+$SUMMARY            Write an Intelligent Array as PseudoColour PostScript.
 $PURPOSE
     This routine will convert a 2-dimensional Intelligent Array to
     colour PostScript. The routine does NOT write PostScript headers or tails.
-$PARAMETER        image :
+$PARAMETER          image :
     The Intelligent Array.
-$PARAMETER        pspage :
+$PARAMETER          pspage :
     The PostScriptPage object.
-$PARAMETER        xstart :
+$PARAMETER          xstart :
     The x starting point (scaled from 0.0 to 1.0).
-$PARAMETER        ystart :
+$PARAMETER          ystart :
     The y starting point (scaled from 0.0 to 1.0).
-$PARAMETER        xend :
+$PARAMETER          xend :
     The x ending point (scaled from 0.0 to 1.0).
-$PARAMETER        yend :
+$PARAMETER          yend :
     The y ending point (scaled from 0.0 to 1.0).
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap. This must be the same format as returned by
     <-ds_cmap_find_colourmap->.
-$PARAMETER        cmap_size :
+$PARAMETER          cmap_size :
     The size of the colourmap. The maximum size is 256.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_write_rgb_ps
-$RETURN_TYPE      flag
+$FUNCTION           iarray_write_rgb_ps
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray image_red, iarray image_green,
 			  iarray image_blue, PostScriptPage pspage,
 			  double xstart, double ystart,
 			  double xend, double yend)
-$SUMMARY          Write an Intelligent Array as TrueColour PostScript.
+$SUMMARY            Write an Intelligent Array as TrueColour PostScript.
 $PURPOSE
     This routine will convert three 2-dimensional Intelligent Arrays
     to colour PostScript. The routine does NOT write PostScript headers or
     tails.
-$PARAMETER        image_red :
+$PARAMETER          image_red :
     The Intelligent Array containing the red image component.
-$PARAMETER        image_green :
+$PARAMETER          image_green :
     The Intelligent Array containing the green image component.
-$PARAMETER        image_blue :
+$PARAMETER          image_blue :
     The Intelligent Array containing the blue image component.
 $NOTE
     Each of these Intelligent Arrays must be of type K_UBYTE.
-$PARAMETER        pspage :
+$PARAMETER          pspage :
     The PostScriptPage object.
-$PARAMETER        xstart :
+$PARAMETER          xstart :
     The x starting point (scaled from 0.0 to 1.0).
-$PARAMETER        ystart :
+$PARAMETER          ystart :
     The y starting point (scaled from 0.0 to 1.0).
-$PARAMETER        xend :
+$PARAMETER          xend :
     The x ending point (scaled from 0.0 to 1.0).
-$PARAMETER        yend :
+$PARAMETER          yend :
     The y ending point (scaled from 0.0 to 1.0).
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap. This must be the same format as returned by
     <-ds_cmap_find_colourmap->.
-$PARAMETER        cmap_size :
+$PARAMETER          cmap_size :
     The size of the colourmap. The maximum size is 256.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_create_1D
-$RETURN_TYPE      iarray
+$FUNCTION           iarray_create_1D
+$RETURN_TYPE        iarray
 $PARAMETER_LIST
     (unsigned long xlen, unsigned int type)
-$SUMMARY          Create a 1-dimensional Intelligent Array.
+$SUMMARY            Create a 1-dimensional Intelligent Array.
 $PURPOSE
     This routine will create a 1-dimensional "Intelligent Array",
     using the Karma general data structure format as the underlying data format
-$PARAMETER        xlen :
+$PARAMETER          xlen :
     The length of the dimension. The name of the dimension will be the
     default: "Axis 0".
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the data. See <-DS_KARMA_DATA_TYPES-> for a list of
     defined data types.
 $NOTE
@@ -950,24 +1194,24 @@ $RETURNS
     A dynamically allocated intelligent array on success, else NULL.
 $END
 
-$FUNCTION         iarray_create_2D
-$RETURN_TYPE      iarray
+$FUNCTION           iarray_create_2D
+$RETURN_TYPE        iarray
 $PARAMETER_LIST
     (unsigned long ylen, unsigned long xlen,
 			 unsigned int type)
-$SUMMARY          Create a 2-dimensional Intelligent Array.
+$SUMMARY            Create a 2-dimensional Intelligent Array.
 $PURPOSE
     This routine will create a 2-dimensional "Intelligent Array",
     using the Karma general data structure format as the underlying data format
-$PARAMETER        ylen :
+$PARAMETER          ylen :
     The length of the most significant dimension (ie. the dimension with
     the greatest stride in memory.
-$PARAMETER        xlen :
+$PARAMETER          xlen :
     The length of the least significant dimension.
 $NOTE
     The names of the dimensions will be the defaults: "Axis 0" and
     "Axis 1", respectively.
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the data. See <-DS_KARMA_DATA_TYPES-> for a list of
     defined data types.
 $NOTE
@@ -976,26 +1220,26 @@ $RETURNS
     A dynamically allocated intelligent array on success, else NULL.
 $END
 
-$FUNCTION         iarray_create_3D
-$RETURN_TYPE      iarray
+$FUNCTION           iarray_create_3D
+$RETURN_TYPE        iarray
 $PARAMETER_LIST
     (unsigned long zlen, unsigned long ylen,
 			 unsigned long xlen, unsigned int type)
-$SUMMARY          Create a 3-dimensional Intelligent Array.
+$SUMMARY            Create a 3-dimensional Intelligent Array.
 $PURPOSE
     This routine will create a 3-dimensional "Intelligent Array",
     using the Karma general data structure format as the underlying data format
-$PARAMETER        zlen :
+$PARAMETER          zlen :
     The length of the most significant dimension (ie. the dimension with
     the greatest stride in memory).
-$PARAMETER        ylen :
+$PARAMETER          ylen :
     The length of the middle dimension.
-$PARAMETER        xlen :
+$PARAMETER          xlen :
     The length of the least significant dimension.
 $NOTE
     The names of the dimensions will be the defaults: "Axis 0",
     "Axis 1" and "Axis 2", respectively.
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the data. See <-DS_KARMA_DATA_TYPES-> for a list of
     defined data types.
 $NOTE
@@ -1004,29 +1248,29 @@ $RETURNS
     A dynamically allocated intelligent array on success, else NULL.
 $END
 
-$FUNCTION         iarray_create_4D
-$RETURN_TYPE      iarray
+$FUNCTION           iarray_create_4D
+$RETURN_TYPE        iarray
 $PARAMETER_LIST
     (unsigned long zlen, unsigned long ylen,
 			 unsigned long xlen, unsigned int wlen,
 			 unsigned int type)
-$SUMMARY          Create a 4-dimensional Intelligent Array.
+$SUMMARY            Create a 4-dimensional Intelligent Array.
 $PURPOSE
     This routine will create a 4-dimensional "Intelligent Array",
     using the Karma general data structure format as the underlying data format
-$PARAMETER        zlen :
+$PARAMETER          zlen :
     The length of the most significant dimension (ie. the dimension with
     the greatest stride in memory).
-$PARAMETER        ylen :
+$PARAMETER          ylen :
     The length of the second most significant dimension.
-$PARAMETER        xlen :
+$PARAMETER          xlen :
     The length of the second least significant dimension.
-$PARAMETER        wlen :
+$PARAMETER          wlen :
     The length of the least significant dimension.
 $NOTE
     The names of the dimensions will be the defaults: "Axis 0",
     "Axis 1", "Axis 2" and "Axis 3", respectively.
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the data. See <-DS_KARMA_DATA_TYPES-> for a list of
     defined data types.
 $NOTE
@@ -1035,84 +1279,84 @@ $RETURNS
     A dynamically allocated intelligent array on success, else NULL.
 $END
 
-$FUNCTION         iarray_put_float
-$RETURN_TYPE      flag
+$FUNCTION           iarray_put_float
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray array, CONST char *name, float value)
-$SUMMARY          Attach a float data value to an Intelligent Array.
+$SUMMARY            Attach a float data value to an Intelligent Array.
 $PURPOSE
     This routine will put a unique named float value into the
     underlying Karma general data structure of an "Intelligent Array".
-$PARAMETER        array :
+$PARAMETER          array :
     The Intelligent Array.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the element.
-$PARAMETER        value :
+$PARAMETER          value :
     The value of the data.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_put_int
-$RETURN_TYPE      flag
+$FUNCTION           iarray_put_int
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray array, CONST char *name, int value)
-$SUMMARY          Attach an integer data value to an Intelligent Array.
+$SUMMARY            Attach an integer data value to an Intelligent Array.
 $PURPOSE
     This routine will put a unique named integer value into the
     underlying Karma general data structure of an "Intelligent Array".
-$PARAMETER        array :
+$PARAMETER          array :
     The Intelligent Array.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the element.
-$PARAMETER        value :
+$PARAMETER          value :
     The value of the data.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_get_float
-$RETURN_TYPE      float
+$FUNCTION           iarray_get_float
+$RETURN_TYPE        float
 $PARAMETER_LIST
     (iarray array, CONST char *name)
-$SUMMARY          Get attached float from an Intelligent Array.
+$SUMMARY            Get attached float from an Intelligent Array.
 $PURPOSE
     This routine will get a unique named float value from the
     underlying Karma general data structure of an "Intelligent Array".
-$PARAMETER        array :
+$PARAMETER          array :
     The Intelligent Array.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the element.
 $RETURNS
     The value on success, else the process is aborted on error.
 $END
 
-$FUNCTION         iarray_get_int
-$RETURN_TYPE      int
+$FUNCTION           iarray_get_int
+$RETURN_TYPE        int
 $PARAMETER_LIST
     (iarray array, CONST char *name)
-$SUMMARY          Get attached integer from an Intelligent Array.
+$SUMMARY            Get attached integer from an Intelligent Array.
 $PURPOSE
     This routine will get a unique named integer value from the
     underlying Karma general data structure of an "Intelligent Array".
-$PARAMETER        array :
+$PARAMETER          array :
     The Intelligent Array.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the element.
 $RETURNS
     The value on success, else the process is aborted on error.
 $END
 
-$FUNCTION         iarray_fill_float
-$RETURN_TYPE      flag
+$FUNCTION           iarray_fill_float
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray array, float value)
-$SUMMARY          Fill an Intelligent Array with a single float value.
+$SUMMARY            Fill an Intelligent Array with a single float value.
 $PURPOSE
     Fill an Intelligent Array with a single float value.
-$PARAMETER        array :
+$PARAMETER          array :
     The Intelligent Array.
-$PARAMETER        value :
+$PARAMETER          value :
     The fill value.
 $NOTE
     If filling a complex array, both the real and imaginary components
@@ -1121,16 +1365,16 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_fill_int
-$RETURN_TYPE      flag
+$FUNCTION           iarray_fill_int
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray array, int value)
-$SUMMARY          Fill an Intelligent Array with a single integer value.
+$SUMMARY            Fill an Intelligent Array with a single integer value.
 $PURPOSE
     Fill an Intelligent Array with a single integer value.
-$PARAMETER        array :
+$PARAMETER          array :
     The Intelligent Array.
-$PARAMETER        value :
+$PARAMETER          value :
     The fill value.
 $NOTE
     If filling a complex array, both the real and imaginary components
@@ -1139,18 +1383,18 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_min_max_float
-$RETURN_TYPE      flag
+$FUNCTION           iarray_min_max_float
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray array, float *min, float *max)
-$SUMMARY          Determine the minimum and maximum value of an Intelligent Array.
+$SUMMARY            Determine the minimum and maximum value of an Intelligent Array.
 $PURPOSE
     Determine the minimum and maximum value of an Intelligent Array.
-$PARAMETER        array :
+$PARAMETER          array :
     The Intelligent Array.
-$PARAMETER        min :
+$PARAMETER          min :
     The routine will write the minimum value here.
-$PARAMETER        max :
+$PARAMETER          max :
     The routine will write the maximum value here.
 $NOTE
     If the array is a complex array, then the routine computes the
@@ -1160,18 +1404,18 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_min_max_int
-$RETURN_TYPE      flag
+$FUNCTION           iarray_min_max_int
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray array, int *min, int *max)
-$SUMMARY          Determine the minimum and maximum value of an Intelligent Array.
+$SUMMARY            Determine the minimum and maximum value of an Intelligent Array.
 $PURPOSE
     Determine the minimum and maximum value of an Intelligent Array.
-$PARAMETER        array :
+$PARAMETER          array :
     The Intelligent Array.
-$PARAMETER        min :
+$PARAMETER          min :
     The routine will write the minimum value here.
-$PARAMETER        max :
+$PARAMETER          max :
     The routine will write the maximum value here.
 $NOTE
     If the array is a complex array, then the routine computes the
@@ -1181,25 +1425,25 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_scale_and_offset_float
-$RETURN_TYPE      flag
+$FUNCTION           iarray_scale_and_offset_float
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray out, iarray inp, float scale, 
 				    float offset)
-$SUMMARY          Scale and offset an Intelligent Array.
+$SUMMARY            Scale and offset an Intelligent Array.
 $PURPOSE
     This routine will perform a scale and offset on every element in
     an "Intelligent Array" (output = input * scale + offset).
-$PARAMETER        out :
+$PARAMETER          out :
     The output Intelligent Array.
-$PARAMETER        inp :
+$PARAMETER          inp :
     The input Intelligent Array.
 $NOTE
     The input and output arrays MUST be the same size (though not
     necessarily the same type).
-$PARAMETER        scale :
+$PARAMETER          scale :
     The complex scale value.
-$PARAMETER        offset :
+$PARAMETER          offset :
     The complex offset value.
 $NOTE
     When converting from a complex to a real array, the magnitude is
@@ -1211,24 +1455,24 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         iarray_scale_and_offset_int
-$RETURN_TYPE      flag
+$FUNCTION           iarray_scale_and_offset_int
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (iarray out, iarray inp, int scale,int offset)
-$SUMMARY          Scale and offset an Intelligent Array.
+$SUMMARY            Scale and offset an Intelligent Array.
 $PURPOSE
     This routine will perform a scale and offset on every element in
     an "Intelligent Array" (output = input * scale + offset).
-$PARAMETER        out :
+$PARAMETER          out :
     The output Intelligent Array.
-$PARAMETER        inp :
+$PARAMETER          inp :
     The input Intelligent Array.
 $NOTE
     The input and output arrays MUST be the same size (though not
     necessarily the same type).
-$PARAMETER        scale :
+$PARAMETER          scale :
     The complex scale value.
-$PARAMETER        offset :
+$PARAMETER          offset :
     The complex offset value.
 $NOTE
     When converting from a complex to a real array, the magnitude is
@@ -1240,16 +1484,16 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$PROTO_FUNC       IARRAY_PROTO_destroy_func
-$RETURN_TYPE      void
+$PROTO_FUNC         IARRAY_PROTO_destroy_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (iarray array, void *info)
-$SUMMARY          Register destruction of an Intelligent Array.
+$SUMMARY            Register destruction of an Intelligent Array.
 $PURPOSE
     Register destruction of an Intelligent Array.
-$PARAMETER        array
+$PARAMETER          array :
     The Intelligent Array.
-$PARAMETER        info
+$PARAMETER          info :
     A pointer to the arbitrary information.
 $RETURNS
     Nothing.

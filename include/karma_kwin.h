@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   16-APR-1993
 
-    Last updated by Richard Gooch   9-MAY-1996
+    Last updated by Richard Gooch   21-OCT-1996
 
 */
 
@@ -140,6 +140,16 @@ EXTERN_FUNCTION (flag kwin_open_gl_create_stereo,
 		  int xoff, int yoff, int width, int height,
 		  KPixCanvas *left, KPixCanvas *right) );
 
+/*  For the file: visuals.c  */
+EXTERN_FUNCTION (void kwin_xutil_get_vinfos,
+		 (Screen *screen, XVisualInfo **pseudocolour,
+		  XVisualInfo **truecolour, XVisualInfo **directcolour) );
+EXTERN_FUNCTION (void kwin_xutil_get_visuals,
+		 (Screen *screen, Visual **pseudocolour,
+		  Visual **truecolour, Visual **directcolour) );
+EXTERN_FUNCTION (XVisualInfo *kwin_xutil_get_visinfo_for_visual,
+		 (Display *dpy, Visual *visual) );
+
 #  endif  /*  X11  */
 
 /*  VX specific routines  */
@@ -223,10 +233,13 @@ EXTERN_FUNCTION (flag kwin_draw_line,
 		 (KPixCanvas canvas,
 		  double x0, double y0, double x1, double y1,
 		  unsigned long pixel_value) );
-EXTERN_FUNCTION (flag kwin_draw_lines, (KPixCanvas canvas,
-					int *x_array, int *y_array,
-					int num_points,
-					unsigned long pixel_value) );
+EXTERN_FUNCTION (flag kwin_draw_lines,
+		 (KPixCanvas canvas, int *x_array, int *y_array,
+		  int num_points, unsigned long pixel_value) );
+EXTERN_FUNCTION (flag kwin_draw_lines_TRANSITION,
+		 (KPixCanvas canvas,
+		  CONST double *x_array, CONST double *y_array,
+		  int num_points, unsigned long pixel_value) );
 EXTERN_FUNCTION (flag kwin_fill_ellipse,
 		 (KPixCanvas canvas,double cx, double cy, double rx, double ry,
 		  unsigned long pixel_value) );
@@ -260,6 +273,10 @@ EXTERN_FUNCTION (flag kwin_draw_segments, (KPixCanvas canvas,
 					   int *x0, int *y0, int *x1, int *y1,
 					   int num_segments,
 					   unsigned long pixel_value) );
+EXTERN_FUNCTION (flag kwin_draw_segments_TRANSITION,
+		 (KPixCanvas canvas, double *x0, double *y0,
+		  double *x1, double *y1,
+		  int num_segments, unsigned long pixel_value) );
 
 
 /*  Other routines  */
@@ -276,17 +293,20 @@ EXTERN_FUNCTION (flag kwin_get_colour,
 		 (KPixCanvas canvas, CONST char *colourname,
 		  unsigned long *pixel_value, unsigned short *red,
 		  unsigned short *green, unsigned short *blue) );
+EXTERN_FUNCTION (flag kwin_get_pixel_RGB_values,
+		 (KPixCanvas canvas, unsigned long *pixels,
+		  unsigned short *reds, unsigned short *greens,
+		  unsigned short *blues, unsigned int num_colours) );
 EXTERN_FUNCTION (KPixCanvasFont kwin_load_font,
 		 (KPixCanvas canvas, CONST char *fontname) );
 EXTERN_FUNCTION (flag kwin_get_string_size,
 		 (KPixCanvasFont font, CONST char *string, ...) );
 
-/*  File: generic.c  */
-EXTERN_FUNCTION (KPixCanvas kwin_create_generic,
-		 (void *info, int xoff, int yoff, int width, int height,
-		  unsigned int depth, unsigned int visual, flag visible,
-		  flag (*draw_point) (), void *(*create_child) (),
-		  flag (*clear_area) (), ...) );
+/*  File: hershey.c  */
+EXTERN_FUNCTION (flag kwin_hersey_draw_string,
+		 (KPixCanvas canvas, CONST char *string,
+		  double x, double y, double angle, unsigned long pixel_value,
+		  double *width, double *height) );
 
 
 #endif /*  KARMA_KWIN_H  */

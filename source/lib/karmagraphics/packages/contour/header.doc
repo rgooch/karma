@@ -1,0 +1,8 @@
+$SUMMARY          Routines to manipulate contour images
+$PURPOSE
+    These routines are meant to provide a high level mechanism to create and
+    manipulate contour images (2-dimensional slices of Karma data structures).
+    These contour images utilise the world canvases available in the
+    <-canvas-> package, hence the resulting code is device independent.
+    NOTE: THIS PACKAGE IS WORK IN PROGRESS. THE INTERFACE MAY CHANGE IN THE
+    NEXT RELEASE, POSSIBLY WITHOUT NOTICE.

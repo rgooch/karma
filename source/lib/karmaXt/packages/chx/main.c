@@ -112,7 +112,6 @@ XtInputId *id;
 {
     struct managed_channel_type *entry;
     extern struct managed_channel_type *managed_channel_list;
-    extern char *sys_errlist[];
     static char function_name[] = "xt_input_handler";
 
     entry = (struct managed_channel_type *) client_data;
@@ -142,7 +141,6 @@ XtInputId *id;
 {
     struct managed_channel_type *entry;
     extern struct managed_channel_type *managed_channel_list;
-    extern char *sys_errlist[];
     static char function_name[] = "xt_output_handler";
 
     entry = (struct managed_channel_type *) client_data;
@@ -173,7 +171,6 @@ XtInputId *id;
 {
     struct managed_channel_type *entry;
     extern struct managed_channel_type *managed_channel_list;
-    extern char *sys_errlist[];
     static char function_name[] = "xt_exception_handler";
 
     entry = (struct managed_channel_type *) client_data;
@@ -294,7 +291,6 @@ static void close_channel (entry)
 */
 struct managed_channel_type *entry;
 {
-    extern char *sys_errlist[];
     /*static char function_name[] = "close_channel";*/
 
     if ( (*entry).close_func != NULL )
@@ -341,7 +337,6 @@ flag chx_manage ( Channel channel, void *info, flag (*input_func) (),
     struct managed_channel_type *last_entry = NULL;
     extern struct managed_channel_type *managed_channel_list;
     extern XtAppContext app_context;
-    extern char *sys_errlist[];
     static char function_name[] = "chx_manage";
 
     if (app_context == NULL)
@@ -451,7 +446,6 @@ void chx_unmanage (Channel channel)
 {
     struct managed_channel_type *entry;
     extern struct managed_channel_type *managed_channel_list;
-    extern char *sys_errlist[];
     static char function_name[] = "chx_unmanage";
 
     for (entry = managed_channel_list; entry != NULL; entry = (*entry).next)

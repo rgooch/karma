@@ -1,12 +1,13 @@
 /*PROTOTYPE_FUNCTION*/  /*
-flag DSPROC_PROTO_pre_process (multi_array *multi_desc)
+flag DSPROC_PROTO_pre_process (CONST multi_array *multi_desc)
     [SUMMARY] Perform pre-processing on a multi_array data structure.
     <multi_desc> The data structure.
     [RETURNS] TRUE if processing is to continue, else FALSE.
 */
 
 /*PROTOTYPE_FUNCTION*/  /*
-flag DSPROC_PROTO_process_array (packet_desc *inp_desc, char *inp_data,
+flag DSPROC_PROTO_process_array (CONST packet_desc *inp_desc,
+				 CONST char *inp_data,
 				 packet_desc **out_desc, char **out_data)
     [SUMMARY] Process a general data structure into an output structure.
     <inp_desc> The input descriptor.
@@ -17,7 +18,8 @@ flag DSPROC_PROTO_process_array (packet_desc *inp_desc, char *inp_data,
 */
 
 /*PROTOTYPE_FUNCTION*/  /*
-flag DSPROC_PROTO_post_process (multi_array *inp_desc, multi_array *out_desc)
+flag DSPROC_PROTO_post_process (CONST multi_array *inp_desc,
+				multi_array *out_desc)
     [SUMMARY] Perform post-processing on a multi_array data structure.
     <inp_desc> The input multi_array descriptor.
     <out_desc> The output multi_array_descriptor.

@@ -65,8 +65,13 @@
     Updated by      Richard Gooch   22-FEB-1995: Trap and warn when i_min is
   not less than i_max for integer images.
 
-    Last updated by Richard Gooch   12-APR-1996: Changed to new documentation
+    Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
   format.
+
+    Updated by      Richard Gooch   23-AUG-1996: Created <imw_test_verbose>.
+
+    Last updated by Richard Gooch   28-SEP-1996: Fixed intensity scaling when
+  <<iscale_func>> provided.
 
 
 */
@@ -79,6 +84,7 @@
 #include <karma_ds.h>
 #include <karma_m.h>
 #include <karma_a.h>
+#include <karma_r.h>
 
 #define UBYTE_TABLE_LENGTH 256
 #define BYTE_TABLE_LENGTH 256
@@ -184,6 +190,7 @@ flag imw_to8_oi (unsigned char *out_image,
     double d_toobig = TOOBIG;
     double d_mul;
     double d_data;
+    double scaled_min, scaled_max;
     CONST char *inp_line, *inp_ptr;
     unsigned char *out_line;
     CONST unsigned char *b_table;
@@ -194,22 +201,22 @@ flag imw_to8_oi (unsigned char *out_image,
 
     if ( (inp_hoffsets == NULL) || (inp_voffsets == NULL) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     if (i_min >= i_max)
     {
-	(void) fprintf (stderr, "i_max: %e  is not greater than i_min: %e\n",
-			i_max, i_min);
+	fprintf (stderr, "i_max: %e  is not greater than i_min: %e\n",
+		 i_max, i_min);
 	a_prog_bug (function_name);
     }
     if ( !ds_element_is_atomic (inp_type) )
     {
-	(void) fprintf (stderr, "Input image must be atomic\n");
+	fprintf (stderr, "Input image must be atomic\n");
 	a_prog_bug (function_name);
     }
-    if (getuid () == 465) (void) fprintf (stderr, "%s started...\n",
-					  function_name);
+    if ( imw_test_verbose () ) fprintf (stderr, "%s started...\n",
+					     function_name);
     switch (inp_type)
     {
       case K_FLOAT:
@@ -225,9 +232,8 @@ flag imw_to8_oi (unsigned char *out_image,
 	l_max = i_max;
 	if (l_min >= l_max)
 	{
-	    (void) fprintf (stderr,
-			    "%s: l_max: %ld  is not greater than l_min: %ld\n",
-			    function_name, l_max, l_min);
+	    fprintf (stderr,"%s: l_max: %ld  is not greater than l_min: %ld\n",
+		     function_name, l_max, l_min);
 	    return (FALSE);
 	}
 	/*  Unsigned bytes: can speed things up  */
@@ -240,9 +246,8 @@ flag imw_to8_oi (unsigned char *out_image,
 	l_max = i_max;
 	if (l_min >= l_max)
 	{
-	    (void) fprintf (stderr,
-			    "%s: l_max: %ld  is not greater than l_min: %ld\n",
-			    function_name, l_max, l_min);
+	    fprintf (stderr,"%s: l_max: %ld  is not greater than l_min: %ld\n",
+		     function_name, l_max, l_min);
 	    return (FALSE);
 	}
 	/*  Signed bytes: can speed things up  */
@@ -255,9 +260,8 @@ flag imw_to8_oi (unsigned char *out_image,
 	l_max = i_max;
 	if (l_min >= l_max)
 	{
-	    (void) fprintf (stderr,
-			    "%s: l_max: %ld  is not greater than l_min: %ld\n",
-			    function_name, l_max, l_min);
+	    fprintf (stderr,"%s: l_max: %ld  is not greater than l_min: %ld\n",
+		     function_name, l_max, l_min);
 	    return (FALSE);
 	}
 	l_blank = -32768;
@@ -267,7 +271,27 @@ flag imw_to8_oi (unsigned char *out_image,
 	fast_conversion = FALSE;
 	break;
     }
-    if (iscale_func != NULL) fast_conversion = FALSE;
+    if (iscale_func == NULL)
+    {
+	scaled_min = i_min;
+	scaled_max = i_max;
+    }
+    else
+    {
+	fast_conversion = FALSE;
+	if ( !(*iscale_func) (&scaled_min, 0, &i_min, 0, 1, i_min, i_max,
+			      iscale_info) )
+	{
+	    fprintf (stderr, "%s: error scaling raw intensity minimum\n",
+		     function_name);
+	}
+	if ( !(*iscale_func) (&scaled_max, 0, &i_max, 0, 1, i_min, i_max,
+			      iscale_info) )
+	{
+	    fprintf (stderr, "%s: error scaling raw intensity minimum\n",
+		     function_name);
+	}
+    }
     /*  Allocate values buffer  */
     if ( ( values = alloc_values_buffer ( (unsigned int) width ) ) == NULL )
     {
@@ -387,8 +411,7 @@ flag imw_to8_oi (unsigned char *out_image,
 		/*  End  K_UBYTE  */
 		break;
 	      default:
-		(void) fprintf (stderr, "Data type: %u not supported\n",
-				inp_type);
+		fprintf (stderr, "Data type: %u not supported\n", inp_type);
 		a_prog_bug (function_name);
 		break;
 	    }
@@ -404,7 +427,7 @@ flag imw_to8_oi (unsigned char *out_image,
 					     values, &complex,
 					     (unsigned int) width) )
 	    {
-		(void) fprintf (stderr, "Error converting data\n");
+		fprintf (stderr, "Error converting data\n");
 		return (FALSE);
 	    }
 	    if (complex) ds_complex_to_real_1D (values, 2, values,
@@ -416,26 +439,44 @@ flag imw_to8_oi (unsigned char *out_image,
 				      (unsigned int) width, i_min, i_max,
 				      iscale_info) )
 		{
-		    (void) fprintf (stderr,
-				    "Error applying intensity scale\n");
+		    fprintf (stderr, "Error applying intensity scale\n");
 		    return (FALSE);
 		}
 	    }
-	    d_mul = (num_pixels - 1) / (i_max - i_min);
+	    d_mul = (num_pixels - 1) / (scaled_max - scaled_min);
 	    /*  Loop for each value  */
 	    for (hcount = 0, val_ptr = values; hcount < width;
 		 ++hcount, out_line += out_hstride, val_ptr += 2)
 	    {
-		if ( (d_data  = *val_ptr) < i_min ) *out_line = min_sat_pixel;
+		if ( (d_data  = *val_ptr) < scaled_min )
+		    *out_line = min_sat_pixel;
 		else if (d_data >= d_toobig) *out_line = blank_pixel;
-		else if (d_data > i_max) *out_line = max_sat_pixel;
-		else *out_line = pixel_values[(int) ( (d_data - i_min)
-						     * d_mul + 0.5 )];
+		else if (d_data > scaled_max) *out_line = max_sat_pixel;
+		else *out_line = pixel_values[(int) ( (d_data - scaled_min)
+						      * d_mul + 0.5 )];
 	    }
 	}
     }
     return (TRUE);
 }   /*  End Function imw_to8_oi  */
+
+/*UNPUBLISHED_FUNCTION*/
+flag imw_test_verbose (void)
+/*  [SUMMARY] Test if verbose messages should be displayed.
+    [PURPOSE] This routine will test if verbose messages should be displayed.
+    If the "IMW_VERBOSE" environment variable is defined, verbose messages are
+    enabled.
+    [RETURNS] TRUE if verbose messages should be displayed, else FALSE.
+*/
+{
+    static flag tested = FALSE;
+    static flag verbose = FALSE;
+
+    if (tested) return (verbose);
+    tested = TRUE;
+    if (r_getenv ("IMW_VERBOSE") != NULL) verbose = TRUE;
+    return (verbose);
+}   /*  End Function imw_test_verbose  */
 
 
 /*  Private functions follow  */

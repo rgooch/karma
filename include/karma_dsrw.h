@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   14-SEP-1992
 
-    Last updated by Richard Gooch   29-JUN-1996
+    Last updated by Richard Gooch   16-AUG-1996
 
 */
 
@@ -52,33 +52,36 @@
 
 
 /*  File:   dsrw.c   */
-EXTERN_FUNCTION (void dsrw_write_multi,
-		 (Channel channel, multi_array *multi_desc) );
-EXTERN_FUNCTION (void dsrw_write_packet_desc,
-		 (Channel channel, packet_desc *pack_desc) );
-EXTERN_FUNCTION (void dsrw_write_element_desc, (Channel channel,
-						unsigned int type,
-						char *desc) );
-EXTERN_FUNCTION (void dsrw_write_array_desc, (Channel channel,
-					      array_desc *arr_desc) );
-EXTERN_FUNCTION (void dsrw_write_dim_desc, (Channel channel,
-					    dim_desc *dimension) );
-EXTERN_FUNCTION (void dsrw_write_packet,
+EXTERN_FUNCTION (flag dsrw_write_multi,
+		 (Channel channel, CONST multi_array *multi_desc) );
+EXTERN_FUNCTION (flag dsrw_write_multi_header,
+		 (Channel channel, CONST multi_array *multi_desc) );
+EXTERN_FUNCTION (flag dsrw_write_packet_desc,
+		 (Channel channel, CONST packet_desc *pack_desc) );
+EXTERN_FUNCTION (flag dsrw_write_element_desc,
+		 (Channel channel, unsigned int type, CONST char *desc) );
+EXTERN_FUNCTION (flag dsrw_write_array_desc,
+		 (Channel channel, CONST array_desc *arr_desc) );
+EXTERN_FUNCTION (flag dsrw_write_dim_desc,
+		 (Channel channel, CONST dim_desc *dimension) );
+EXTERN_FUNCTION (flag dsrw_write_packet,
 		 (Channel channel, CONST packet_desc *pack_desc,
 		  CONST char *packet) );
-EXTERN_FUNCTION (void dsrw_write_element, (Channel channel, unsigned int type,
-					   char *desc, CONST char *element) );
-EXTERN_FUNCTION (void dsrw_write_array,
-		 (Channel channel, array_desc *arr_desc,
+EXTERN_FUNCTION (flag dsrw_write_element,
+		 (Channel channel, unsigned int type, CONST char *desc,
+		  CONST char *element) );
+EXTERN_FUNCTION (flag dsrw_write_array,
+		 (Channel channel, CONST array_desc *arr_desc,
 		  CONST char *element, flag pad) );
-EXTERN_FUNCTION (void dsrw_write_list,
-		 (Channel channel, packet_desc *pack_desc,
-		  list_header *list_head) );
+EXTERN_FUNCTION (flag dsrw_write_list,
+		 (Channel channel, CONST packet_desc *pack_desc,
+		  CONST list_header *list_head) );
 EXTERN_FUNCTION (flag dsrw_write_packets,
 		 (Channel channel, CONST packet_desc *descriptor,
 		  CONST char *source, unsigned long num_packets) );
-EXTERN_FUNCTION (void dsrw_write_flag, (Channel channel, flag logical) );
+EXTERN_FUNCTION (flag dsrw_write_flag, (Channel channel, flag logical) );
 EXTERN_FUNCTION (multi_array *dsrw_read_multi, (Channel channel) );
+EXTERN_FUNCTION (multi_array *dsrw_read_multi_header, (Channel channel) );
 EXTERN_FUNCTION (packet_desc *dsrw_read_packet_desc, (Channel channel) );
 EXTERN_FUNCTION (array_desc *dsrw_read_array_desc, (Channel channel,
 						    unsigned int type) );

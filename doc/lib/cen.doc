@@ -8,27 +8,27 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         cen_idea
-$RETURN_TYPE      ChConverter
+$FUNCTION           cen_idea
+$RETURN_TYPE        ChConverter
 $PARAMETER_LIST
     (Channel channel, char read_key[EN_IDEA_KEY_SIZE],
 		      char read_init_vector[EN_IDEA_BLOCK_SIZE],
 		      char write_key[EN_IDEA_KEY_SIZE],
 		      char write_init_vector[EN_IDEA_BLOCK_SIZE], flag clear)
-$SUMMARY          Add IDEA encryption to a channel object.
+$SUMMARY            Add IDEA encryption to a channel object.
 $PURPOSE
     This routine will register converter functions for a channel so
     that all IO will be encrypted using the IDEA cipher in Cipher Feed Back
     mode.
-$PARAMETER        read_key :
+$PARAMETER          read_key :
     The 16 byte IDEA key used when reading.
-$PARAMETER        read_init_vector :
+$PARAMETER          read_init_vector :
     The 8 byte initialisation vector used when reading.
-$PARAMETER        write_key :
+$PARAMETER          write_key :
     The 16 byte IDEA key used when writing.
-$PARAMETER        write_init_vector :
+$PARAMETER          write_init_vector :
     The 8 byte initialisation vector used when writing.
-$PARAMETER        clear :
+$PARAMETER          clear :
     If TRUE the keys and initialisation vectors will be cleared after
     use (highly recommended if they will not be needed again), irrespective of
     whether the routine fails.

@@ -7,186 +7,188 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         ex_int
-$RETURN_TYPE      int
+$FUNCTION           ex_int
+$RETURN_TYPE        int
 $PARAMETER_LIST
     (char *str, char **rest)
-$SUMMARY          Extract integer value from string.
+$SUMMARY            Extract integer value from string.
 $PURPOSE
     Extract integer value from string.
-$PARAMETER        str :
+$PARAMETER          str :
     The string to extract from.
-$PARAMETER        rest :
+$PARAMETER          rest :
     A pointer beyond the value will be written here.
 $RETURNS
     The value.
 $END
 
-$FUNCTION         ex_uint
-$RETURN_TYPE      unsigned int
+$FUNCTION           ex_uint
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (char *str, char **rest)
-$SUMMARY          Extract unsigned integer value from string.
+$SUMMARY            Extract unsigned integer value from string.
 $PURPOSE
     Extract unsigned integer value from string.
-$PARAMETER        str :
+$PARAMETER          str :
     The string to extract from.
-$PARAMETER        rest :
+$PARAMETER          rest :
     A pointer beyond the value will be written here.
 $RETURNS
     The value.
 $END
 
-$FUNCTION         ex_word
-$RETURN_TYPE      char *
+$FUNCTION           ex_word
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (char *str, char **rest)
-$SUMMARY          Extract word from string.
+$SUMMARY            Extract word from string.
 $PURPOSE
     Extract word from string.
-$PARAMETER        str :
+$PARAMETER          str :
     The string to extract from.
-$PARAMETER        rest :
+$PARAMETER          rest :
     A pointer beyond the word will be written here.
 $RETURNS
     The word.
 $END
 
-$FUNCTION         ex_command
-$RETURN_TYPE      char *
+$FUNCTION           ex_command
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (char *str, char **rest)
-$SUMMARY          Extract command from string.
+$SUMMARY            Extract command from string.
 $PURPOSE
     This routine will extract a command from a string. The operation
     is similar to <-ex_word-> except that any of " \t/=?!" terminate a command.
-$PARAMETER        str :
+$PARAMETER          str :
     The string to extract from.
-$PARAMETER        rest :
+$PARAMETER          rest :
     A pointer beyond the command will be written here.
 $RETURNS
     The command.
 $END
 
-$FUNCTION         ex_word_skip
-$RETURN_TYPE      char *
+$FUNCTION           ex_word_skip
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (char *str)
-$SUMMARY          Skip a word in a string.
+$SUMMARY            Skip a word in a string.
 $PURPOSE
     Skip a word in a string.
-$PARAMETER        str :
+$PARAMETER          str :
     The string.
 $RETURNS
     The next part of the string.
 $END
 
-$FUNCTION         ex_float
-$RETURN_TYPE      double
+$FUNCTION           ex_float
+$RETURN_TYPE        double
 $PARAMETER_LIST
     (char *str, char **rest)
-$SUMMARY          Extract float value from string.
+$SUMMARY            Extract float value from string.
 $PURPOSE
     Extract float value from string.
-$PARAMETER        str :
+$PARAMETER          str :
     The string to extract from.
-$PARAMETER        rest :
+$PARAMETER          rest :
     A pointer beyond the value will be written here.
 $RETURNS
     The value.
 $END
 
-$FUNCTION         ex_hour
-$RETURN_TYPE      double
+$FUNCTION           ex_hour
+$RETURN_TYPE        double
 $PARAMETER_LIST
     (char *p, char **nxt)
-$SUMMARY          Extract hour value from string.
+$SUMMARY            Extract hour value from string.
 $PURPOSE
     Extract hour value from string.
-$PARAMETER        p :
+$PARAMETER          p :
     The string to extract from.
-$PARAMETER        nxt :
+$PARAMETER          nxt :
     A pointer beyond the value will be written here.
 $RETURNS
     The value.
 $END
 
-$FUNCTION         ex_command_skip
-$RETURN_TYPE      char *
+$FUNCTION           ex_command_skip
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (char *str)
-$SUMMARY          Skip a command in a string.
+$SUMMARY            Skip a command in a string.
 $PURPOSE
     This routine skip a command in a string. The operation
     is similar to <-ex_word_skip-> except that any of " \t/=?!" terminate a
     command.
-$PARAMETER        str :
+$PARAMETER          str :
     The string.
 $RETURNS
     The next part of the string.
 $END
 
-$FUNCTION         ex_on
-$RETURN_TYPE      int
+$FUNCTION           ex_on
+$RETURN_TYPE        int
 $PARAMETER_LIST
     (char **ptr)
-$SUMMARY          Extract boolean value from string.
+$SUMMARY            Extract boolean value from string.
 $PURPOSE
     This routine will extract a boolean value from string. The first
     command is skipped.
-$PARAMETER        ptr :
+$PARAMETER          ptr :
     A pointer to the string to extract from. This is advanced to the next
     word in the string if the current word matches "on" or "off".
 $RETURNS
     TRUE unless the word is "off".
 $END
 
-$FUNCTION         ex_on_or_off
-$RETURN_TYPE      int
+$FUNCTION           ex_on_or_off
+$RETURN_TYPE        int
 $PARAMETER_LIST
     (char **ptr)
-$SUMMARY          Extract boolean value from string.
+$SUMMARY            Extract boolean value from string.
 $PURPOSE
     This routine will extract a boolean value from string.
-$PARAMETER        ptr :
+$PARAMETER          ptr :
     A pointer to the string to extract from. This is advanced to the next
     word in the string if the current word matches "on" or "off".
 $RETURNS
     TRUE unless the word is "off".
 $END
 
-$FUNCTION         ex_yes
-$RETURN_TYPE      int
+$FUNCTION           ex_yes
+$RETURN_TYPE        int
 $PARAMETER_LIST
     (char **ptr, int default_v)
-$SUMMARY          Extract boolean value from string.
+$SUMMARY            Extract boolean value from string.
 $PURPOSE
     This routine will extract a boolean value from string.
-$PARAMETER        ptr :
+$PARAMETER          ptr :
     A pointer to the string to extract from. This is advanced to the next
     word in the string if the current word matches "yes" or "no".
-$PARAMETER        default_v :
+$PARAMETER          default_v :
     The default value.
 $RETURNS
     TRUE if the word is "yes", FALSE if the word is "no", else the
     default value.
 $END
 
-$FUNCTION         ex_str
-$RETURN_TYPE      char *
+$FUNCTION           ex_str
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (char *str, char **rest)
-$SUMMARY          Extract sub-string from string.
+$SUMMARY            Extract sub-string from string.
 $PURPOSE
     This routine will extract a sub-string from a string. The
     sub-string may be delimited by any number of whitespace characters. The
     double quote character may appear anywhere in the sub-string, and will
     force all whitespace characters except '\n' into the output string. A
     second double quote character unquotes the previous quote. These double
-    quote characters are not copied, unless they are consecutive.
-$PARAMETER        str :
+    quote characters are not copied, unless they are consecutive. If the string
+    contains only two double quote characters, an empty string (i.e. only a
+    '\0' character is present) is returned.
+$PARAMETER          str :
     The string to extract from.
-$PARAMETER        rest :
+$PARAMETER          rest :
     A pointer beyond the value will be written here. If this is NULL,
     nothing is written here.
 $RETURNS

@@ -187,8 +187,32 @@
     Updated by      Richard Gooch   16-JUN-1996: Fixed handling of negative
   co-ordinate systems in <worldcanvas_position_func>.
 
-    Last updated by Richard Gooch   21-JUN-1996: Created
+    Updated by      Richard Gooch   21-JUN-1996: Created
   <viewimg_get_worldcanvas>.
+
+    Updated by      Richard Gooch   18-JUL-1996: Added offset of half a data
+  value when converting from world to pixel co-ordinates. This means that a
+  point drawn at the co-ordinate for a data value will be drawn in the centre
+  of the box of pixels representing that data value, rather than the
+  bottom-left corner.
+
+    Updated by      Richard Gooch   20-JUL-1996: Switched to
+  <canvas_register_coords_convert_func>.
+
+    Updated by      Richard Gooch   22-JUL-1996: Created
+  <viewimg_create_sequence_from_iarray>.
+
+    Updated by      Richard Gooch   6-AUG-1996: Added VIEWIMG_VATT_MULTI_ARRAY
+  attribute.
+
+    Updated by      Richard Gooch   31-AUG-1996: Made <viewimg_partial_refresh>
+  more efficient when clearing small areas outside the image.
+
+    Updated by      Richard Gooch   5-OCT-1996: Detect changes to intensity
+  scaling function.
+
+    Last updated by Richard Gooch   11-OCT-1996: Fixed bug in previous change
+  when image minimum and maximum not available (i.e. no auto intensity scaling)
 
 
 */
@@ -216,11 +240,16 @@
 #define DEFAULT_NUMBER_OF_COLOURS 200
 
 #define VERIFY_VIMAGE(vimage) if (vimage == NULL) \
-{(void) fprintf (stderr, "NULL viewable image passed\n"); \
+{fprintf (stderr, "NULL viewable image passed\n"); \
  a_prog_bug (function_name); } \
 if (vimage->magic_number != VIMAGE_MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid viewable image object\n"); \
+{fprintf (stderr, "Invalid viewable image object\n"); \
  a_prog_bug (function_name); }
+
+#define NUM_ISCALE_VALUES 10
+static double iscale_factors[NUM_ISCALE_VALUES] =
+{0.01, 0.1, 0.2, 0.5, 0.51, 0.55, 0.8, 0.9, 0.99, 1.0};
+
 
 typedef struct canvas_holder_type * CanvasHolder;
 typedef struct sequence_holder_type * SequenceHolder;
@@ -292,6 +321,7 @@ struct viewableimage_type
     unsigned int num_restrictions;
     char **restriction_names;
     double *restriction_values;
+    double iscale_test[NUM_ISCALE_VALUES];
     ViewableImage next;
     ViewableImage prev;
     struct win_scale_type win_scale;
@@ -308,6 +338,11 @@ struct position_struct
     double y_lin;
     unsigned int type;
 };
+
+typedef flag (*IscaleFunc) (double *out, unsigned int out_stride,
+			    CONST double *inp, unsigned int inp_stride,
+			    unsigned int num_values,
+			    double i_min, double i_max, void *info);
 
 
 /*  Private data  */
@@ -355,8 +390,9 @@ STATIC_FUNCTION (flag position_event_func,
 		 (void *object, void *client1_data,
 		  void *call_data, void *client2_data) );
 STATIC_FUNCTION (flag coord_convert_func,
-		 (KWorldCanvas canvas, struct win_scale_type *win_scale,
-		  double *x, double *y, flag to_world, void **info) );
+		 (KWorldCanvas canvas, unsigned int num_coords,
+		  CONST double *xin, CONST double *yin,
+		  double *xout, double *yout, flag to_world, void **info) );
 
 
 /* Public functions follow */
@@ -380,12 +416,12 @@ void viewimg_init (KWorldCanvas canvas)
 
     if (canvas == NULL)
     {
-	(void) fprintf (stderr, "NULL world canvas passed\n");
+	fprintf (stderr, "NULL world canvas passed\n");
 	a_prog_bug (function_name);
     }
     if (get_canvas_holder (canvas, FALSE, function_name) != NULL)
     {
-	(void) fprintf (stderr, "Canvas already initialised\n");
+	fprintf (stderr, "Canvas already initialised\n");
 	a_prog_bug (function_name);
     }
     if (alloc_canvas_holder (canvas) == NULL)
@@ -437,56 +473,53 @@ ViewableImage viewimg_create_restr (KWorldCanvas canvas,
 
     if (canvas == NULL)
     {
-	(void) fprintf (stderr, "NULL world canvas passed\n");
+	fprintf (stderr, "NULL world canvas passed\n");
 	a_prog_bug (function_name);
     }
     if (arr_desc == NULL)
     {
-	(void) fprintf (stderr, "NULL array descriptor pointer passed\n");
+	fprintf (stderr, "NULL array descriptor pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (slice == NULL)
     {
-	(void) fprintf (stderr, "NULL slice pointer passed\n");
+	fprintf (stderr, "NULL slice pointer passed\n");
 	a_prog_bug (function_name);
     }
     /*  Sanity checks  */
     if (hdim >= arr_desc->num_dimensions)
     {
-	(void) fprintf (stderr,
-			"hdim: %u greater than number of dimensions: %u\n",
-			hdim, arr_desc->num_dimensions);
+	fprintf (stderr, "hdim: %u greater than number of dimensions: %u\n",
+		 hdim, arr_desc->num_dimensions);
 	a_prog_bug (function_name);
     }
     if (arr_desc->dimensions[hdim]->coordinates != NULL)
     {
-	(void) fprintf (stderr, "hdim: %u not regularly spaced\n", hdim);
+	fprintf (stderr, "hdim: %u not regularly spaced\n", hdim);
 	a_prog_bug (function_name);
     }
     if (vdim >= arr_desc->num_dimensions)
     {
-	(void) fprintf (stderr,
-			"vdim: %u greater than number of dimensions: %u\n",
-			vdim, arr_desc->num_dimensions);
+	fprintf (stderr, "vdim: %u greater than number of dimensions: %u\n",
+		 vdim, arr_desc->num_dimensions);
 	a_prog_bug (function_name);
     }
     if (arr_desc->dimensions[vdim]->coordinates != NULL)
     {
-	(void) fprintf (stderr, "vdim: %u not regularly spaced\n", vdim);
+	fprintf (stderr, "vdim: %u not regularly spaced\n", vdim);
 	a_prog_bug (function_name);
     }
     if (elem_index >= arr_desc->packet->num_elements)
     {
-	(void) fprintf (stderr,
-			"elem_index: %u greater than number of elements: %u\n",
-			elem_index, arr_desc->packet->num_elements);
+	fprintf (stderr,"elem_index: %u greater than number of elements: %u\n",
+		 elem_index, arr_desc->packet->num_elements);
 	a_prog_bug (function_name);
     }
     if (arr_desc->offsets == NULL)
     {
 	if ( !ds_compute_array_offsets (arr_desc) )
 	{
-	    (void) fprintf (stderr, "Error computing address offsets\n");
+	    fprintf (stderr, "Error computing address offsets\n");
 	    a_prog_bug (function_name);
 	}
     }
@@ -535,6 +568,7 @@ ViewableImage viewimg_create_restr (KWorldCanvas canvas,
     vimage->num_restrictions = num_restr;
     vimage->restriction_names = restr_names;
     vimage->restriction_values = restr_values;
+    vimage->iscale_test[0] = TOOBIG;
     canvas_init_win_scale (&vimage->win_scale, K_WIN_SCALE_MAGIC_NUMBER);
     vimage->prev = NULL;
     /*  Do not make the first viewable image for this canvas viewable, else
@@ -593,7 +627,7 @@ ViewableImage viewimg_create_from_iarray (KWorldCanvas canvas, iarray array,
 					  flag swap)
 /*  [SUMMARY] Create a viewable image from an Intelligent Array.
     [PURPOSE] This routine will create a viewable image object from a
-    2-dimensional Intelligant Array. At a later time, this viewable image may
+    2-dimensional Intelligent Array. At a later time, this viewable image may
     be made visible. This routine will not cause the canvas to be refreshed.
     Many viewable images may be associated with a single canvas.
     <canvas> The world canvas object.
@@ -615,25 +649,25 @@ ViewableImage viewimg_create_from_iarray (KWorldCanvas canvas, iarray array,
 
     if (canvas == NULL)
     {
-	(void) fprintf (stderr, "NULL world canvas passed\n");
+	fprintf (stderr, "NULL world canvas passed\n");
 	a_prog_bug (function_name);
     }
     if (array == NULL)
     {
-	(void) fprintf (stderr, "NULL Intelligent Array passed\n");
+	fprintf (stderr, "NULL Intelligent Array passed\n");
 	a_prog_bug (function_name);
     }
     FLAG_VERIFY (swap);
     if (iarray_num_dim (array) != 2)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Intelligent Array must have exactly 2 dimensions\n");
 	return (NULL);
     }
     if ( (array->offsets[0] != array->arr_desc->offsets[0]) ||
 	(array->offsets[1] != array->arr_desc->offsets[1]) )
     {
-	(void) fprintf (stderr, "Intelligent Array must not be a sub-array\n");
+	fprintf (stderr, "Intelligent Array must not be a sub-array\n");
 	return (NULL);
     }
     num_restr = iarray_get_restrictions (array, &restr_names, &restr_values);
@@ -700,18 +734,18 @@ ViewableImage *viewimg_create_sequence (KWorldCanvas canvas,
 
     if (arr_desc == NULL)
     {
-	(void) fprintf (stderr, "NULL array descriptor pointer passed\n");
+	fprintf (stderr, "NULL array descriptor pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (cube == NULL)
     {
-	(void) fprintf (stderr, "NULL slice pointer passed\n");
+	fprintf (stderr, "NULL slice pointer passed\n");
 	a_prog_bug (function_name);
     }
     /*  Sanity checks  */
     if (fdim >= arr_desc->num_dimensions)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"fdim: %u greater than number of dimensions: %u\n",
 			fdim, arr_desc->num_dimensions);
 	a_prog_bug (function_name);
@@ -720,7 +754,7 @@ ViewableImage *viewimg_create_sequence (KWorldCanvas canvas,
     {
 	if ( !ds_compute_array_offsets (arr_desc) )
 	{
-	    (void) fprintf (stderr, "Error computing address offsets\n");
+	    fprintf (stderr, "Error computing address offsets\n");
 	    a_prog_bug (function_name);
 	}
     }
@@ -771,6 +805,82 @@ ViewableImage *viewimg_create_sequence (KWorldCanvas canvas,
 }   /*  End Function viewimg_create_sequence  */
 
 /*PUBLIC_FUNCTION*/
+ViewableImage *viewimg_create_sequence_from_iarray (KWorldCanvas canvas,
+						    iarray array,
+						    unsigned int hdim,
+						    unsigned int vdim,
+						    unsigned int fdim)
+/*  [SUMMARY] Create a sequence of viewable images from an Intelligent Array.
+    [PURPOSE] This routine will create a sequence of viewable image objects
+    from a 3-dimensional Intelligent Array. At a later time, this sequence of
+    viewable images may be made visible in any order.
+    This routine will not cause the canvas to be refreshed.
+    <canvas> The world canvas object.
+    <array> The Intelligent Array. The underlying <<multi_array>> data
+    structure will have its attachment count incremented upon successful
+    completion.
+    <hdim> The dimension index of the horizontal dimension.
+    <vdim> The dimension index of the vertical dimension.
+    <fdim> The dimension index of the frame dimension (dimension containing the
+    sequence). The number of frames is the same as the length of this
+    dimension.
+    [NOTE] The routine may produce cache data which will vastly increase the
+    speed of subsequent operations on this data. Prior to process exit, a call
+    MUST be made to [<viewimg_destroy>], otherwise shared memory segments could
+    remain after the process exits.
+    [RETURNS] A pointer to a dynamically allocated array of viewable image
+    objects on success, else NULL.
+*/
+{
+    static char function_name[] = "viewimg_create_sequence_from_iarray";
+
+    if (canvas == NULL)
+    {
+	fprintf (stderr, "NULL world canvas passed\n");
+	a_prog_bug (function_name);
+    }
+    if (array == NULL)
+    {
+	fprintf (stderr, "NULL Intelligent Array passed\n");
+	a_prog_bug (function_name);
+    }
+    if (iarray_num_dim (array) != 3)
+    {
+	fprintf (stderr,
+			"Intelligent Array must have exactly 3 dimensions\n");
+	return (NULL);
+    }
+    if ( hdim >= iarray_num_dim (array) )
+    {
+	fprintf (stderr, "hdim: %u too large\n", hdim);
+	a_prog_bug (function_name);
+    }
+    if ( vdim >= iarray_num_dim (array) )
+    {
+	fprintf (stderr, "vdim: %u too large\n", vdim);
+	a_prog_bug (function_name);
+    }
+    if ( fdim >= iarray_num_dim (array) )
+    {
+	fprintf (stderr, "fdim: %u too large\n", fdim);
+	a_prog_bug (function_name);
+    }
+    if ( (array->offsets[fdim] != array->arr_desc->offsets[fdim]) ||
+	(array->offsets[hdim] != array->arr_desc->offsets[hdim]) ||
+	(array->offsets[hdim] != array->arr_desc->offsets[hdim]) )
+    {
+	fprintf (stderr, "Intelligent Array must not be a sub-array\n");
+	return (NULL);
+    }
+    return ( viewimg_create_sequence (canvas, array->multi_desc,
+				      array->arr_desc, array->data,
+				      array->orig_dim_indices[hdim],
+				      array->orig_dim_indices[vdim],
+				      array->orig_dim_indices[fdim],
+				      array->elem_index) );
+}   /*  End Function viewimg_create_sequence_from_iarray  */
+
+/*PUBLIC_FUNCTION*/
 ViewableImage viewimg_create_rgb (KWorldCanvas canvas, multi_array *multi_desc,
 				  array_desc *arr_desc, char *slice,
 				  unsigned int hdim, unsigned int vdim,
@@ -817,87 +927,87 @@ ViewableImage viewimg_create_rgb (KWorldCanvas canvas, multi_array *multi_desc,
 
     if (canvas == NULL)
     {
-	(void) fprintf (stderr, "NULL world canvas passed\n");
+	fprintf (stderr, "NULL world canvas passed\n");
 	a_prog_bug (function_name);
     }
     if (arr_desc == NULL)
     {
-	(void) fprintf (stderr, "NULL array descriptor pointer passed\n");
+	fprintf (stderr, "NULL array descriptor pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (slice == NULL)
     {
-	(void) fprintf (stderr, "NULL slice pointer passed\n");
+	fprintf (stderr, "NULL slice pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (arr_desc->num_levels > 0)
     {
-	(void) fprintf (stderr, "%s: Tiled array. May cause problems.\n",
+	fprintf (stderr, "%s: Tiled array. May cause problems.\n",
 			function_name);
     }
     /*  Sanity checks  */
     if (hdim >= arr_desc->num_dimensions)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"hdim: %u greater than number of dimensions: %u\n",
 			hdim, arr_desc->num_dimensions);
 	a_prog_bug (function_name);
     }
     if (arr_desc->dimensions[hdim]->coordinates != NULL)
     {
-	(void) fprintf (stderr, "hdim: %u not regularly spaced\n", hdim);
+	fprintf (stderr, "hdim: %u not regularly spaced\n", hdim);
 	a_prog_bug (function_name);
     }
     if (vdim >= arr_desc->num_dimensions)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"vdim: %u greater than number of dimensions: %u\n",
 			vdim, arr_desc->num_dimensions);
 	a_prog_bug (function_name);
     }
     if (arr_desc->dimensions[vdim]->coordinates != NULL)
     {
-	(void) fprintf (stderr, "vdim: %u not regularly spaced\n", vdim);
+	fprintf (stderr, "vdim: %u not regularly spaced\n", vdim);
 	a_prog_bug (function_name);
     }
     if (red_index >= arr_desc->packet->num_elements)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"red_index: %u greater than number of elements: %u\n",
 			red_index, arr_desc->packet->num_elements);
 	a_prog_bug (function_name);
     }
     if (arr_desc->packet->element_types[red_index] != K_UBYTE)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Red component type: %u is not K_UBYTE\n",
 			arr_desc->packet->element_types[red_index]);
 	return (NULL);
     }
     if (green_index >= arr_desc->packet->num_elements)
     {
-	(void) fprintf(stderr,
+	fprintf(stderr,
 		       "green_index: %u greater than number of elements: %u\n",
 		       green_index, arr_desc->packet->num_elements);
 	a_prog_bug (function_name);
     }
     if (arr_desc->packet->element_types[green_index] != K_UBYTE)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Green component type: %u is not K_UBYTE\n",
 			arr_desc->packet->element_types[green_index]);
 	return (NULL);
     }
     if (blue_index >= arr_desc->packet->num_elements)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"blue_index: %u greater than number of elements: %u\n",
 			blue_index, arr_desc->packet->num_elements);
 	a_prog_bug (function_name);
     }
     if (arr_desc->packet->element_types[blue_index] != K_UBYTE)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Blue component type: %u is not K_UBYTE\n",
 			arr_desc->packet->element_types[blue_index]);
 	return (NULL);
@@ -907,7 +1017,7 @@ ViewableImage viewimg_create_rgb (KWorldCanvas canvas, multi_array *multi_desc,
 			 KWIN_ATT_END);
     if ( (arr_desc->num_levels > 0) && (depth != 24) )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"%s: Tiling not supported for non 24 bit canvases.\n",
 			function_name);
 	return (NULL);
@@ -916,7 +1026,7 @@ ViewableImage viewimg_create_rgb (KWorldCanvas canvas, multi_array *multi_desc,
     {
 	if ( !ds_compute_array_offsets (arr_desc) )
 	{
-	    (void) fprintf (stderr, "Error computing address offsets\n");
+	    fprintf (stderr, "Error computing address offsets\n");
 	    a_prog_bug (function_name);
 	}
     }
@@ -1045,94 +1155,94 @@ ViewableImage *viewimg_create_rgb_sequence (KWorldCanvas canvas,
 
     if (canvas == NULL)
     {
-	(void) fprintf (stderr, "NULL world canvas passed\n");
+	fprintf (stderr, "NULL world canvas passed\n");
 	a_prog_bug (function_name);
     }
     if (arr_desc == NULL)
     {
-	(void) fprintf (stderr, "NULL array descriptor pointer passed\n");
+	fprintf (stderr, "NULL array descriptor pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (cube == NULL)
     {
-	(void) fprintf (stderr, "NULL slice pointer passed\n");
+	fprintf (stderr, "NULL slice pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (arr_desc->num_levels > 0)
     {
-	(void) fprintf (stderr, "%s: Tiled array. May cause problems.\n",
+	fprintf (stderr, "%s: Tiled array. May cause problems.\n",
 			function_name);
     }
     /*  Sanity checks  */
     if (fdim >= arr_desc->num_dimensions)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"fdim: %u greater than number of dimensions: %u\n",
 			fdim, arr_desc->num_dimensions);
 	a_prog_bug (function_name);
     }
     if (hdim >= arr_desc->num_dimensions)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"hdim: %u greater than number of dimensions: %u\n",
 			hdim, arr_desc->num_dimensions);
 	a_prog_bug (function_name);
     }
     if (arr_desc->dimensions[hdim]->coordinates != NULL)
     {
-	(void) fprintf (stderr, "hdim: %u not regularly spaced\n", hdim);
+	fprintf (stderr, "hdim: %u not regularly spaced\n", hdim);
 	a_prog_bug (function_name);
     }
     if (vdim >= arr_desc->num_dimensions)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"vdim: %u greater than number of dimensions: %u\n",
 			vdim, arr_desc->num_dimensions);
 	a_prog_bug (function_name);
     }
     if (arr_desc->dimensions[vdim]->coordinates != NULL)
     {
-	(void) fprintf (stderr, "vdim: %u not regularly spaced\n", vdim);
+	fprintf (stderr, "vdim: %u not regularly spaced\n", vdim);
 	a_prog_bug (function_name);
     }
     if (red_index >= arr_desc->packet->num_elements)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"red_index: %u greater than number of elements: %u\n",
 			red_index, arr_desc->packet->num_elements);
 	a_prog_bug (function_name);
     }
     if (arr_desc->packet->element_types[red_index] != K_UBYTE)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Red component type: %u is not K_UBYTE\n",
 			arr_desc->packet->element_types[red_index]);
 	return (NULL);
     }
     if (green_index >= arr_desc->packet->num_elements)
     {
-	(void) fprintf(stderr,
+	fprintf(stderr,
 		       "green_index: %u greater than number of elements: %u\n",
 		       green_index, arr_desc->packet->num_elements);
 	a_prog_bug (function_name);
     }
     if (arr_desc->packet->element_types[green_index] != K_UBYTE)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Green component type: %u is not K_UBYTE\n",
 			arr_desc->packet->element_types[green_index]);
 	return (NULL);
     }
     if (blue_index >= arr_desc->packet->num_elements)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"blue_index: %u greater than number of elements: %u\n",
 			blue_index, arr_desc->packet->num_elements);
 	a_prog_bug (function_name);
     }
     if (arr_desc->packet->element_types[blue_index] != K_UBYTE)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Blue component type: %u is not K_UBYTE\n",
 			arr_desc->packet->element_types[blue_index]);
 	return (NULL);
@@ -1142,7 +1252,7 @@ ViewableImage *viewimg_create_rgb_sequence (KWorldCanvas canvas,
 			 KWIN_ATT_END);
     if ( (arr_desc->num_levels > 0) && (depth != 24) )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"%s: Tiling not supported for non 24 bit canvases.\n",
 			function_name);
 	return (NULL);
@@ -1151,7 +1261,7 @@ ViewableImage *viewimg_create_rgb_sequence (KWorldCanvas canvas,
     {
 	if ( !ds_compute_array_offsets (arr_desc) )
 	{
-	    (void) fprintf (stderr, "Error computing address offsets\n");
+	    fprintf (stderr, "Error computing address offsets\n");
 	    a_prog_bug (function_name);
 	}
     }
@@ -1335,10 +1445,10 @@ void viewimg_control_autoscaling (KWorldCanvas canvas,
 {
     static char function_name[] = "viewimg_control_autoscaling";
 
-    (void) fprintf (stderr,
+    fprintf (stderr,
 		    "Function: %s will be removed in Karma version 2.0\n",
 		    function_name);
-    (void) fprintf (stderr, "Use:  viewimg_set_canvas_attributes  instead.\n");
+    fprintf (stderr, "Use:  viewimg_set_canvas_attributes  instead.\n");
 /*  This will be activated in Karma version 2.0
     a_prog_bug (func_name);
 */
@@ -1464,7 +1574,7 @@ ViewableImage viewimg_get_active (KWorldCanvas canvas)
 
     if (canvas == NULL)
     {
-	(void) fprintf (stderr, "NULL canvas passed\n");
+	fprintf (stderr, "NULL canvas passed\n");
 	a_prog_bug (function_name);
     }
     /*  Dummy operation to ensure canvas is OK  */
@@ -1517,7 +1627,7 @@ KCallbackFunc viewimg_register_position_event_func (KWorldCanvas canvas,
 
     if (canvas == NULL)
     {
-	(void) fprintf (stderr, "NULL canvas passed\n");
+	fprintf (stderr, "NULL canvas passed\n");
 	a_prog_bug (function_name);
     }
     if ( ( holder = get_canvas_holder (canvas, TRUE, function_name) ) == NULL )
@@ -1558,14 +1668,14 @@ flag viewimg_fill_ellipse (ViewableImage vimage,
     if ( !IS_ALIGNED ( value, sizeof (double) ) )
 #endif
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"value  address: %p not on a double boundary\n",
 			value);
 	a_prog_bug (function_name);
     }
     if (vimage->tc_arr_desc != NULL)
     {
-	(void) fprintf (stderr, "%s: TrueColour images not supported yet\n",
+	fprintf (stderr, "%s: TrueColour images not supported yet\n",
 			function_name);
 	return (FALSE);
     }
@@ -1604,14 +1714,14 @@ flag viewimg_fill_polygon (ViewableImage vimage, edit_coord *coords,
     if ( !IS_ALIGNED ( value, sizeof (double) ) )
 #endif
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"value  address: %p not on a double boundary\n",
 			value);
 	a_prog_bug (function_name);
     }
     if (vimage->tc_arr_desc != NULL)
     {
-	(void) fprintf (stderr, "%s: TrueColour images not supported yet\n",
+	fprintf (stderr, "%s: TrueColour images not supported yet\n",
 			function_name);
 	return (FALSE);
     }
@@ -1642,7 +1752,7 @@ void viewimg_get_canvas_attributes (KWorldCanvas canvas, ...)
 
     if (canvas == NULL)
     {
-	(void) fprintf (stderr, "NULL canvas passed\n");
+	fprintf (stderr, "NULL canvas passed\n");
 	a_prog_bug (function_name);
     }
     /*  Dummy operation to ensure canvas is OK  */
@@ -1680,7 +1790,7 @@ void viewimg_get_canvas_attributes (KWorldCanvas canvas, ...)
 	    holder->allow_truncation;
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Illegal attribute key: %u\n", att_key);
+	    fprintf (stderr, "Illegal attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	}
     }
@@ -1708,7 +1818,7 @@ void viewimg_set_canvas_attributes (KWorldCanvas canvas, ...)
 
     if (canvas == NULL)
     {
-	(void) fprintf (stderr, "NULL canvas passed\n");
+	fprintf (stderr, "NULL canvas passed\n");
 	a_prog_bug (function_name);
     }
     /*  Dummy operation to ensure canvas is OK  */
@@ -1772,7 +1882,7 @@ void viewimg_set_canvas_attributes (KWorldCanvas canvas, ...)
 	    holder->pan_magnification = va_arg (argp, unsigned int);
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Illegal attribute key: %u\n", att_key);
+	    fprintf (stderr, "Illegal attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	}
     }
@@ -1795,6 +1905,7 @@ void viewimg_get_attributes (ViewableImage vimage, ...)
     unsigned int hdim, vdim;
     char *slice;
     array_desc *arr_desc;
+    multi_array *multi_desc;
     static char function_name[] = "viewimg_get_attributes";
 
     VERIFY_VIMAGE (vimage);
@@ -1804,6 +1915,7 @@ void viewimg_get_attributes (ViewableImage vimage, ...)
     slice = truecolour ? vimage->tc_slice : vimage->pc_slice;
     hdim = truecolour ? vimage->tc_hdim : vimage->pc_hdim;
     vdim = truecolour ? vimage->tc_vdim : vimage->pc_vdim;
+    multi_desc = truecolour ? vimage->tc_multi_desc : vimage->pc_multi_desc;
     while ( ( att_key = va_arg (argp, unsigned int) ) != VIEWIMG_VATT_END )
     {
 	switch (att_key)
@@ -1826,7 +1938,7 @@ void viewimg_get_attributes (ViewableImage vimage, ...)
 	  case VIEWIMG_VATT_PSEUDO_INDEX:
 	    if (truecolour)
 	    {
-		(void) fprintf (stderr, "TrueColour image!\n");
+		fprintf (stderr, "TrueColour image!\n");
 		a_prog_bug (function_name);
 	    }
 	    *( va_arg (argp, unsigned int *) ) = vimage->pc_elem_index;
@@ -1834,7 +1946,7 @@ void viewimg_get_attributes (ViewableImage vimage, ...)
 	  case VIEWIMG_VATT_RED_INDEX:
 	    if (!truecolour)
 	    {
-		(void) fprintf (stderr, "PseudoColour image!\n");
+		fprintf (stderr, "PseudoColour image!\n");
 		a_prog_bug (function_name);
 	    }
 	    *( va_arg (argp, unsigned int *) ) = vimage->tc_red_index;
@@ -1842,7 +1954,7 @@ void viewimg_get_attributes (ViewableImage vimage, ...)
 	  case VIEWIMG_VATT_GREEN_INDEX:
 	    if (!truecolour)
 	    {
-		(void) fprintf (stderr, "PseudoColour image!\n");
+		fprintf (stderr, "PseudoColour image!\n");
 		a_prog_bug (function_name);
 	    }
 	    *( va_arg (argp, unsigned int *) ) = vimage->tc_green_index;
@@ -1850,13 +1962,16 @@ void viewimg_get_attributes (ViewableImage vimage, ...)
 	  case VIEWIMG_VATT_BLUE_INDEX:
 	    if (!truecolour)
 	    {
-		(void) fprintf (stderr, "PseudoColour image!\n");
+		fprintf (stderr, "PseudoColour image!\n");
 		a_prog_bug (function_name);
 	    }
 	    *( va_arg (argp, unsigned int *) ) = vimage->tc_blue_index;
 	    break;
+	  case VIEWIMG_VATT_MULTI_ARRAY:
+	    *( va_arg (argp, multi_array **) ) = multi_desc;
+	    break;
 	  default:
-	    (void) fprintf (stderr, "Illegal attribute key: %u\n", att_key);
+	    fprintf (stderr, "Illegal attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	}
     }
@@ -1866,7 +1981,8 @@ void viewimg_get_attributes (ViewableImage vimage, ...)
 /*EXPERIMENTAL_FUNCTION*/
 flag viewimg_partial_refresh (KWorldCanvas canvas, unsigned int num_areas,
 			      KPixCanvasRefreshArea *areas)
-/*  [PURPOSE] This routine will perform a partial refresh of a canvas. This
+/*  [SUMMARY] Perform a partial refresh of a canvas.
+    [PURPOSE] This routine will perform a partial refresh of a canvas. This
     call is similar to <<kwin_partial_refresh>> except that areas are not
     cleared prior to drawing if they lie within the image boundary.
     <canvas> The world canvas.
@@ -1877,13 +1993,16 @@ flag viewimg_partial_refresh (KWorldCanvas canvas, unsigned int num_areas,
 */
 {
     CanvasHolder holder;
+    KPixCanvas pixcanvas;
     int x_offset, y_offset, x_pixels, y_pixels;
+    int min_x_clear, min_y_clear, max_x_clear, max_y_clear;
+    long clear_area, boundary_area;
     unsigned int count;
     static char function_name[] = "viewimg_partial_refresh";
 
     if (canvas == NULL)
     {
-	(void) fprintf (stderr, "NULL canvas passed\n");
+	fprintf (stderr, "NULL canvas passed\n");
 	a_prog_bug (function_name);
     }
     canvas_get_attributes (canvas,
@@ -1896,23 +2015,102 @@ flag viewimg_partial_refresh (KWorldCanvas canvas, unsigned int num_areas,
     {
 	m_abort (function_name, "canvas holder");
     }
+    pixcanvas = canvas_get_pixcanvas (canvas);
     if (holder->active_image == NULL)
     {
-	return ( kwin_partial_refresh (canvas_get_pixcanvas (canvas),
-				       num_areas, areas, FALSE) );
+	return ( kwin_partial_refresh (pixcanvas, num_areas, areas, FALSE) );
     }
+    clear_area = 0;
+    min_x_clear = x_offset + x_pixels;
+    max_x_clear = -1;
+    min_y_clear = y_offset + y_pixels;
+    max_y_clear = -1;
     for (count = 0; count < num_areas; ++count)
     {
 	if (!areas[count].clear) continue;
-	if (areas[count].startx < x_offset) continue;
-	if (areas[count].endx >= x_offset + x_pixels) continue;
-	if (areas[count].starty < y_offset) continue;
-	if (areas[count].endy >= y_offset + y_pixels) continue;
-	/*  This area is entirely within image: no need to clear  */
-	areas[count].clear = FALSE;
+	/*  Area should be cleared  */
+	if ( (areas[count].startx >= x_offset) &&
+	     (areas[count].endx < x_offset + x_pixels) &&
+	     (areas[count].starty >= y_offset) &&
+	     (areas[count].endy < y_offset + y_pixels) )
+	{
+	    /*  This area is entirely within image: no need to clear  */
+	    areas[count].clear = FALSE;
+	    continue;
+	}
+	/*  This area is at least partly outside the image and must be cleared:
+	    accumulate clear area and update clear boundary  */
+	clear_area += (areas[count].endx - areas[count].startx + 1) *
+	    (areas[count].endy - areas[count].starty + 1);
+	if (areas[count].startx < min_x_clear) min_x_clear=areas[count].startx;
+	if (areas[count].endx > max_x_clear) max_x_clear = areas[count].endx;
+	if (areas[count].starty < min_y_clear) min_y_clear=areas[count].starty;
+	if (areas[count].endy > max_y_clear) max_y_clear = areas[count].endy;
     }
-    return ( kwin_partial_refresh (canvas_get_pixcanvas (canvas),
-				   num_areas, areas, FALSE) );
+    if (clear_area < 1)
+    {
+	/*  No areas require clearing: simple  */
+	return ( kwin_partial_refresh (pixcanvas, num_areas, areas, FALSE) );
+    }
+    /*  Some areas require clearing: check if it would be faster to simply
+	clear the requisite area around the image  */
+    boundary_area = 0;
+    if (min_x_clear < x_offset)
+    {
+	/*  Left of image requires a clear  */
+	boundary_area += (x_offset - min_x_clear) * (max_y_clear - min_y_clear
+						     + 1);
+    }
+    if (max_x_clear >= x_offset + x_pixels)
+    {
+	/*  Right of image requires a clear  */
+	boundary_area += (max_x_clear - x_offset - x_pixels + 1) *
+	    (max_y_clear - min_y_clear + 1);
+    }
+    if (min_y_clear < y_offset)
+    {
+	/*  Top of image requires a clear  */
+	boundary_area += (y_offset - min_y_clear) * x_pixels;
+    }
+    if (max_y_clear >= y_offset + y_pixels)
+    {
+	/*  Bottom of image requires a clear  */
+	boundary_area += (max_y_clear - y_offset - y_pixels + 1) * x_pixels;
+    }
+    if (boundary_area > clear_area)
+    {
+	/*  Faster to clear areas  */
+	return ( kwin_partial_refresh (pixcanvas, num_areas, areas, FALSE) );
+    }
+    /*  Faster to clear boundary: do not clear areas  */
+    for (count = 0; count < num_areas; ++count) areas[count].clear = FALSE;
+    /*  Clear boundary  */
+    if (min_x_clear < x_offset)
+    {
+	/*  Left of image requires a clear  */
+	kwin_clear (pixcanvas, min_x_clear, min_y_clear,
+		    x_offset - min_x_clear, max_y_clear - min_y_clear + 1);
+    }
+    if (max_x_clear >= x_offset + x_pixels)
+    {
+	/*  Right of image requires a clear  */
+	kwin_clear (pixcanvas, x_offset + x_pixels, min_y_clear,
+		    max_x_clear - x_offset - x_pixels + 1,
+		    max_y_clear - min_y_clear + 1);
+    }
+    if (min_y_clear < y_offset)
+    {
+	/*  Top of image requires a clear  */
+	kwin_clear (pixcanvas, x_offset, min_y_clear,
+		    x_pixels, y_offset - min_y_clear);
+    }
+    if (max_y_clear >= y_offset + y_pixels)
+    {
+	/*  Bottom of image requires a clear  */
+	kwin_clear (pixcanvas, x_offset, y_offset + y_pixels,
+		    x_pixels, max_y_clear - y_offset - y_pixels + 1);
+    }
+    return ( kwin_partial_refresh (pixcanvas, num_areas, areas, FALSE) );
 }   /*  End Function viewimg_partial_refresh  */
 
 /*PUBLIC_FUNCTION*/
@@ -1952,9 +2150,9 @@ static CanvasHolder get_canvas_holder (KWorldCanvas canvas, flag alloc,
 	if (canvas == canvas_holder->canvas) return (canvas_holder);
     }
     if (!alloc) return (NULL);
-    (void) fprintf (stderr, "**WARNING**:  %s  called before:  viewimg_init\n",
+    fprintf (stderr, "**WARNING**:  %s  called before:  viewimg_init\n",
 		    func_name);
-    (void) fprintf (stderr,
+    fprintf (stderr,
 		    "for this canvas. This will break in Karma version 2.0\n");
 /*  This will be activated in Karma version 2.0
     a_prog_bug (func_name);
@@ -2004,10 +2202,11 @@ static CanvasHolder alloc_canvas_holder (KWorldCanvas canvas)
 				  (void *) canvas_holder);
     canvas_register_size_control_func (canvas, worldcanvas_size_control_func,
 				       (void *) canvas_holder);
-    (void) canvas_register_position_event_func (canvas,
+    canvas_register_position_event_func (canvas,
 						worldcanvas_position_func,
 						(void *) canvas_holder);
-    canvas_register_d_convert_func (canvas, coord_convert_func, canvas_holder);
+    canvas_register_coords_convert_func (canvas, coord_convert_func,
+					 canvas_holder);
     return (canvas_holder);
 }   /*  End Function alloc_canvas_holder  */
 
@@ -2044,22 +2243,24 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas,
 {
     CanvasHolder holder;
     ViewableImage vimage;
-    unsigned int visual;
+    unsigned int visual, count;
+    double iscale_values[NUM_ISCALE_VALUES];
+    IscaleFunc iscale_func;
     static char function_name[] = "__viewimg_worldcanvas_refresh_func";
 
     if ( (holder = (CanvasHolder) *info) == NULL )
     {
-	(void) fprintf (stderr, "NULL canvas holder\n");
+	fprintf (stderr, "NULL canvas holder\n");
 	a_prog_bug (function_name);
     }
     if (holder->magic_number != HOLDER_MAGIC_NUMBER)
     {
-	(void) fprintf (stderr, "Invalid canvas holder object\n");
+	fprintf (stderr, "Invalid canvas holder object\n");
 	a_prog_bug (function_name);
     }
     if (canvas != holder->canvas)
     {
-	(void) fprintf (stderr, "Different canvas in canvas holder object\n");
+	fprintf (stderr, "Different canvas in canvas holder object\n");
 	a_prog_bug (function_name);
     }
     if (holder->active_image == NULL) return;
@@ -2072,7 +2273,7 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas,
 			     KWIN_ATT_END);
 	if (visual == KWIN_VISUAL_PSEUDOCOLOUR)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "%s: drawing TrueColour image directly to PostScriptPage\n",
 			    function_name);
 	}
@@ -2085,7 +2286,7 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas,
 				     vimage->tc_blue_index,
 				     (KPixCanvasImageCache *) NULL) )
 	{
-	    (void) fprintf (stderr, "Error drawing image onto world canvas\n");
+	    fprintf (stderr, "Error drawing image onto world canvas\n");
 	}
 	return;
     }
@@ -2099,11 +2300,45 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas,
     if (vimage->changed)
     {
 	/*  Data has changed  */
-	(void) fprintf (stderr, "%s: spurious data change\n", function_name);
+	fprintf (stderr, "%s: spurious data change\n", function_name);
 	vimage->changed = FALSE;
 	vimage->recompute = TRUE;
 	recompute_image (holder, width, height, win_scale, cmap, vimage);
 	return;
+    }
+    if ( (vimage->tc_arr_desc == NULL) && (win_scale->iscale_func != NULL) &&
+	 !vimage->recompute )
+    {
+	/*  PseudoColour image and intensity scaling function used: check that
+	    the mapping function has not changed. Do this by comparing a set
+	    of scaled values with a set previously computed. If there is a
+	    difference, the intensity scaling has changed. This is only an
+	    approximate algorithm  */
+	iscale_func = (IscaleFunc) win_scale->iscale_func;
+	/*  Compute test values  */
+	for (count = 0; count < NUM_ISCALE_VALUES; ++count)
+	{
+	    iscale_values[count] = win_scale->z_min +
+		(win_scale->z_max - win_scale->z_min) * iscale_factors[count];
+	}
+	if ( !(*iscale_func) (iscale_values, 1, iscale_values, 1,
+			      NUM_ISCALE_VALUES,
+			      win_scale->z_min, win_scale->z_max,
+			      win_scale->iscale_info) )
+	{
+	    fprintf (stderr, "%s: error scaling test values\n", function_name);
+	    return;
+	}
+	/*  Now compare  */
+	if ( (vimage->iscale_test[0] >= TOOBIG) ||
+	     !m_cmp ( (char *) vimage->iscale_test, (char *) iscale_values,
+		      sizeof *iscale_values * NUM_ISCALE_VALUES ) )
+	{
+	    /*  Old values not consistent: copy and force recompute  */
+	    m_copy ( (char *) vimage->iscale_test, (char *) iscale_values,
+		     sizeof *iscale_values * NUM_ISCALE_VALUES );
+	    vimage->recompute = TRUE;
+	}
     }
     if (vimage->recompute)
     {
@@ -2118,11 +2353,11 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas,
 	return;
     }
 #ifdef DEBUG
-    (void) fprintf (stderr, "%s win_scale: %e %e  %e %e\n",
+    fprintf (stderr, "%s win_scale: %e %e  %e %e\n",
 		    function_name,
 		    win_scale->left_x, win_scale->right_x,
 		    win_scale->bottom_y, win_scale->top_y);
-    (void) fprintf (stderr, "%s vimage.win_scale: %e %e  %e %e\n",
+    fprintf (stderr, "%s vimage.win_scale: %e %e  %e %e\n",
 		    function_name,
 		    vimage->win_scale.left_x, vimage->win_scale.right_x,
 		    vimage->win_scale.bottom_y, vimage->win_scale.top_y);
@@ -2135,7 +2370,7 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas,
     {
 	/*  Window scaling information has changed  */
 #ifdef DEBUG
-	(void) fprintf (stderr, "%s: SPURIOUS SCALE CHANGE\n", function_name);
+	fprintf (stderr, "%s: SPURIOUS SCALE CHANGE\n", function_name);
 #endif
 	recompute_image (holder, width, height, win_scale, cmap, vimage);
 	return;
@@ -2192,14 +2427,14 @@ static void recompute_image (CanvasHolder holder, int width, int height,
     /*static char function_name[] = "__viewimg_recompute_image";*/
 
 #ifdef DEBUG
-    (void) fprintf (stderr, "%s win_scale: %e %e  %e %e\n",
-		    function_name,
-		    win_scale->left_x, win_scale->right_x,
-		    win_scale->bottom_y, win_scale->top_y);
-    (void) fprintf (stderr, "%s old vimage.win_scale: %e %e  %e %e\n",
-		    function_name,
-		    vimage->win_scale.left_x, vimage->win_scale.right_x,
-		    vimage->win_scale.bottom_y, vimage->win_scale.top_y);
+    fprintf (stderr, "%s win_scale: %e %e  %e %e\n",
+	     function_name,
+	     win_scale->left_x, win_scale->right_x,
+	     win_scale->bottom_y, win_scale->top_y);
+    fprintf (stderr, "%s old vimage.win_scale: %e %e  %e %e\n",
+	     function_name,
+	     vimage->win_scale.left_x, vimage->win_scale.right_x,
+	     vimage->win_scale.bottom_y, vimage->win_scale.top_y);
 #endif
     m_copy ( (char *) &vimage->win_scale, (char *) win_scale,
 	    sizeof *win_scale );
@@ -2242,8 +2477,7 @@ static void recompute_image (CanvasHolder holder, int width, int height,
 				      win_scale->iscale_info,
 				      &vimage->cache) )
 	    {
-		(void) fprintf (stderr,
-				"Error drawing image onto world canvas\n");
+		fprintf (stderr, "Error drawing image onto world canvas\n");
 		return;
 	    }
 	}
@@ -2271,8 +2505,7 @@ static void recompute_image (CanvasHolder holder, int width, int height,
 				      hdim->length, vdim->length,
 				      &vimage->cache) )
 	    {
-		(void) fprintf (stderr,
-				"Error drawing image onto world canvas\n");
+		fprintf (stderr, "Error drawing image onto world canvas\n");
 		return;
 	    }
 	}
@@ -2292,8 +2525,7 @@ static void recompute_image (CanvasHolder holder, int width, int height,
 				     vimage->pc_elem_index,
 				     &vimage->cache) )
 	    {
-		(void) fprintf (stderr,
-				"Error drawing image onto world canvas\n");
+		fprintf (stderr, "Error drawing image onto world canvas\n");
 		return;
 	    }
 	}
@@ -2307,8 +2539,7 @@ static void recompute_image (CanvasHolder holder, int width, int height,
 					 vimage->tc_blue_index,
 					 &vimage->cache) )
 	    {
-		(void) fprintf (stderr,
-				"Error drawing image onto world canvas\n");
+		fprintf (stderr, "Error drawing image onto world canvas\n");
 		return;
 	    }
 	}
@@ -2358,17 +2589,17 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
 
     if ( (holder = (CanvasHolder) *info) == NULL )
     {
-	(void) fprintf (stderr, "NULL canvas holder\n");
+	fprintf (stderr, "NULL canvas holder\n");
 	a_prog_bug (function_name);
     }
     if (holder->magic_number != HOLDER_MAGIC_NUMBER)
     {
-	(void) fprintf (stderr, "Invalid canvas holder object\n");
+	fprintf (stderr, "Invalid canvas holder object\n");
 	a_prog_bug (function_name);
     }
     if (canvas != holder->canvas)
     {
-	(void) fprintf (stderr, "Different canvas in canvas holder object\n");
+	fprintf (stderr, "Different canvas in canvas holder object\n");
 	a_prog_bug (function_name);
     }
     win_scale->x_pixels = width;
@@ -2401,7 +2632,7 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
     }
     pack_desc = arr_desc->packet;
 #ifdef DEBUG
-    (void) fprintf (stderr, "%s: BEFORE: %e %e  %e %e\n",
+    fprintf (stderr, "%s: BEFORE: %e %e  %e %e\n",
 		    function_name,
 		    win_scale->left_x, win_scale->right_x,
 		    win_scale->bottom_y, win_scale->top_y);
@@ -2432,7 +2663,7 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
 	hend = ds_get_coord_num (hdim, win_scale->right_x,SEARCH_BIAS_CLOSEST);
 	if (hstart > hend)
 	{
-	    (void) fprintf (stderr, "hstart: %ld is larger than hend: %ld\n",
+	    fprintf (stderr, "hstart: %ld is larger than hend: %ld\n",
 			    hstart, hend);
 	    a_prog_bug (function_name);
 	}
@@ -2469,7 +2700,7 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
 	vend = ds_get_coord_num (vdim, win_scale->top_y, SEARCH_BIAS_CLOSEST);
 	if (vstart > vend)
 	{
-	    (void) fprintf (stderr, "vstart: %ld is larger than vend: %ld\n",
+	    fprintf (stderr, "vstart: %ld is larger than vend: %ld\n",
 			    vstart, vend);
 	    a_prog_bug (function_name);
 	}
@@ -2496,7 +2727,7 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
 	gcc 2.7.2. Problem exists for both i486 and i586, so it looks like a
 	compiler bug. The following dummy call fixes things!
 	*/
-    (void) ds_element_is_atomic (K_FLOAT);
+    ds_element_is_atomic (K_FLOAT);
 #endif
     /*  Now know the number of horizontal and vertical pixels required  */
     /*  Check if window scaling changed  */
@@ -2519,7 +2750,7 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
     {
 	if ( !vimage->recompute && (getuid () == 465) )
 	{
-	    (void) fprintf (stderr, "%s: scale changed\n", function_name);
+	    fprintf (stderr, "%s: scale changed\n", function_name);
 	}
 	/*  Precomputed intensity range no longer valid  */
 	vimage->value_min = TOOBIG;
@@ -2532,9 +2763,9 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
 	     win_scale->left_x, win_scale->right_x,
 	     win_scale->bottom_y, win_scale->top_y);
 #endif
-    /*  Automatic intensity scaling with PseudoColour image  */
     if ( holder->auto_v && (vimage->tc_arr_desc == NULL) )
     {
+	/*  Automatic intensity scaling with PseudoColour image  */
 	if ( (vimage->value_min >= TOOBIG) ||
 	    (vimage->value_max >= TOOBIG) )
 	{
@@ -2548,7 +2779,7 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
 				       win_scale->conv_type,
 				       &vimage->value_min,&vimage->value_max) )
 	    {
-		(void) fprintf (stderr, "Error getting data range\n");
+		fprintf (stderr, "Error getting data range\n");
 		a_prog_bug (function_name);
 	    }
 	    vimage->changed = FALSE;
@@ -2584,13 +2815,12 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
 	vimage->changed = FALSE;
 	vimage->recompute = TRUE;
     }
-    /*  Data changed and TrueColour image  */
     if ( vimage->changed && (vimage->tc_arr_desc != NULL) )
     {
+	/*  Data changed and TrueColour image  */
 	if (vimage->tc_arr_desc->num_levels > 0)
 	{
-	    (void) fprintf (stderr, "%s: Tiling not supported.\n",
-			    function_name);
+	    fprintf (stderr, "%s: Tiling not supported.\n", function_name);
 	    return;
 	}
 	kwin_get_attributes (canvas_get_pixcanvas (canvas),
@@ -2598,11 +2828,10 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
 			     KWIN_ATT_DEPTH, &canvas_depth,
 			     KWIN_ATT_END);
 	if ( (canvas_visual == KWIN_VISUAL_PSEUDOCOLOUR) &&
-	    (vimage->sequence != NULL) )
+	     (vimage->sequence != NULL) )
 	{
-	    (void) fprintf (stderr,
-			    "WARNING: RGB movies on PseudoColour canvas");
-	    (void) fprintf (stderr, " might fail and is slow!\n");
+	    fprintf (stderr, "WARNING: RGB movies on PseudoColour canvas");
+	    fprintf (stderr, " might fail and is slow!\n");
 	}
 	if (canvas_visual != KWIN_VISUAL_PSEUDOCOLOUR)
 	{
@@ -2648,7 +2877,7 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
 			 DEFAULT_NUMBER_OF_COLOURS,
 			 0, &cmap_pack_desc, &cmap_packet) )
 	{
-	    (void) fprintf (stderr, "Error compressing image\n");
+	    fprintf (stderr, "Error compressing image\n");
 	    return;
 	}
 	cmap = canvas_get_cmap (canvas);
@@ -2781,10 +3010,12 @@ static void aspect_zoom (long hlength, int *hpixels, flag int_x,
     float tiny_offset = 1e-3;
     /*static char function_name[] = "aspect_zoom";*/
 
+#ifdef DUMMY
     if (getuid () == 465)
 	fprintf (stderr,
 		 "h_values: %ld  h_pixels: %d  v_values: %ld v_pixels: %d\n",
 		 hlength, *hpixels, vlength, *vpixels);
+#endif
     /*  NOTE:  a 1:1 zoom ratio is termed a zoom in of factor 1  */
     /*  Zoom in: replicate image data.    Zoom out: shrink image data  */
     if ( (*hpixels >= hlength) && (*vpixels >= vlength) )
@@ -2839,7 +3070,7 @@ static void aspect_zoom (long hlength, int *hpixels, flag int_x,
 	if (++factor > hlength)
 	{
 	    /*  Too much: fail  */
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Cannot maintain aspect ratio without a bigger window\n");
 	    return;
 	}
@@ -3060,17 +3291,17 @@ static flag worldcanvas_position_func (KWorldCanvas canvas, double x, double y,
 
     if ( (holder = (CanvasHolder) *f_info) == NULL )
     {
-	(void) fprintf (stderr, "NULL canvas holder\n");
+	fprintf (stderr, "NULL canvas holder\n");
 	a_prog_bug (function_name);
     }
     if (holder->magic_number != HOLDER_MAGIC_NUMBER)
     {
-	(void) fprintf (stderr, "Invalid canvas holder object\n");
+	fprintf (stderr, "Invalid canvas holder object\n");
 	a_prog_bug (function_name);
     }
     if (canvas != holder->canvas)
     {
-	(void) fprintf (stderr, "Different canvas in canvas holder object\n");
+	fprintf (stderr, "Different canvas in canvas holder object\n");
 	a_prog_bug (function_name);
     }
     if (holder->position_list == NULL) return (FALSE);
@@ -3117,7 +3348,7 @@ static flag worldcanvas_position_func (KWorldCanvas canvas, double x, double y,
 			      pack_desc->element_types[vimage->pc_elem_index],
 			      value, (flag *) NULL) )
 	{
-	    (void) fprintf (stderr, "Error converting data\n");
+	    fprintf (stderr, "Error converting data\n");
 	    return (FALSE);
 	}
     }
@@ -3131,7 +3362,7 @@ static flag worldcanvas_position_func (KWorldCanvas canvas, double x, double y,
 			      pack_desc->element_types[vimage->tc_red_index],
 			      value, (flag *) NULL) )
 	{
-	    (void) fprintf (stderr, "Error converting data\n");
+	    fprintf (stderr, "Error converting data\n");
 	    return (FALSE);
 	}
 	rgb_value[0] = 0xff & (int) value[0];
@@ -3143,7 +3374,7 @@ static flag worldcanvas_position_func (KWorldCanvas canvas, double x, double y,
 			      pack_desc->element_types[vimage->tc_green_index],
 			      value, (flag *) NULL) )
 	{
-	    (void) fprintf (stderr, "Error converting data\n");
+	    fprintf (stderr, "Error converting data\n");
 	    return (FALSE);
 	}
 	rgb_value[1] = 0xff & (int) value[0];
@@ -3155,14 +3386,14 @@ static flag worldcanvas_position_func (KWorldCanvas canvas, double x, double y,
 			      pack_desc->element_types[vimage->tc_blue_index],
 			      value, (flag *) NULL) )
 	{
-	    (void) fprintf (stderr, "Error converting data\n");
+	    fprintf (stderr, "Error converting data\n");
 	    return (FALSE);
 	}
 	rgb_value[2] = 0xff & (int) value[0];
     }
     x = dx;
     y = dy;
-    (void) canvas_coord_transform (canvas, &x, &y, FALSE);
+    canvas_coords_transform (canvas, 1, &x, FALSE, &y, FALSE);
     /*  Call event consumer functions  */
     data.x = x;
     data.y = y;
@@ -3200,30 +3431,34 @@ static flag position_event_func (void *object, void *client1_data,
 }   /*  End Function position_event_func  */
 
 static flag coord_convert_func (KWorldCanvas canvas,
-				struct win_scale_type *win_scale,
-				double *x, double *y,
+				unsigned int num_coords,
+				CONST double *xin, CONST double *yin,
+				double *xout, double *yout,
 				flag to_world, void **info)
-/*  This routine will modify the window scaling information for a world
-    canvas.
-    The canvas is given by  canvas  .
-    The window scaling information is pointed to by  win_scale  .The data
-    herein may be modified.
-    The horizontal co-ordinate storage must be pointed to by  x  .
-    The vertical co-ordinate storage must be pointed to by  y  .
-    If the value of  to_world  is TRUE, then a pixel to world co-ordinate
-    transform is required, else a world to pixel co-ordinate transform is
-    required.
-    The arbitrary canvas information pointer is pointed to by  info  .
-    The routine should return TRUE if the conversion was completed,
-    else it returns FALSE indicating that the default conversions should be
-    used.
+/*  [SUMMARY] Co-ordinate conversion callback.
+    [PURPOSE] This routine will convert between world co-ordinates and pixel
+    co-ordinates for a world canvas.
+    <canvas> The canvas.
+    <num_coords> The number of co-ordinates to transform.
+    <xin> The array of input horizontal co-ordinates.
+    <yin> The array of input vertical co-ordinates.
+    <xout> The array of output horizontal co-ordinates are written here.
+    <yout> The array of output vertical co-ordinates are written here.
+    <to_world> If TRUE, then a pixel to world co-ordinate transform is
+    required, else a world to pixel co-ordinate transform is required.
+    <info> A pointer to the arbitrary canvas information pointer.
+    [RETURNS] TRUE if the conversion was completed, else FALSE indicating
+    that the default conversions should be used.
 */
 {
     CanvasHolder holder;
     ViewableImage vimage;
+    int count;
     int coord_num0, coord_num1;
     double coord0, coord1;
-    double x_pix, y_pix;
+    double x_offset, y_offset, x_pixels, y_pixels;
+    double x_pix, y_pix, xdelt, ydelt;
+    struct win_scale_type win_scale;
     array_desc *arr_desc;
     packet_desc *pack_desc;
     dim_desc *hdim;
@@ -3232,17 +3467,17 @@ static flag coord_convert_func (KWorldCanvas canvas,
 
     if ( (holder = (CanvasHolder) *info) == NULL )
     {
-	(void) fprintf (stderr, "NULL canvas holder\n");
+	fprintf (stderr, "NULL canvas holder\n");
 	a_prog_bug (function_name);
     }
     if (holder->magic_number != HOLDER_MAGIC_NUMBER)
     {
-	(void) fprintf (stderr, "Invalid canvas holder object\n");
+	fprintf (stderr, "Invalid canvas holder object\n");
 	a_prog_bug (function_name);
     }
     if (canvas != holder->canvas)
     {
-	(void) fprintf (stderr, "Different canvas in canvas holder object\n");
+	fprintf (stderr, "Different canvas in canvas holder object\n");
 	a_prog_bug (function_name);
     }
     if ( (vimage = holder->active_image) == NULL) return (FALSE);
@@ -3259,7 +3494,7 @@ static flag coord_convert_func (KWorldCanvas canvas,
 	vdim = arr_desc->dimensions[vimage->tc_vdim];
     }
     pack_desc = arr_desc->packet;
-    /*  These are the correspondences we have to ensure:
+    /*  These are the correspondences we have to insure:
 	wx = left_x             <-->    px = x_offset
 	wx = right_x + x_delta  <-->    px = x_offset + x_pixels
 	wy = bottom_y           <-->    py = y_offset + y_pixels - 1
@@ -3267,18 +3502,28 @@ static flag coord_convert_func (KWorldCanvas canvas,
 
 	where x_delta and y_delta are the world co-ordinate increments.
 	*/
+    canvas_get_attributes (canvas,
+			   CANVAS_ATT_X_OFFSET, &win_scale.x_offset,
+			   CANVAS_ATT_X_PIXELS, &win_scale.x_pixels,
+			   CANVAS_ATT_Y_OFFSET, &win_scale.y_offset,
+			   CANVAS_ATT_Y_PIXELS, &win_scale.y_pixels,
+			   CANVAS_ATT_LEFT_X, &win_scale.left_x,
+			   CANVAS_ATT_RIGHT_X, &win_scale.right_x,
+			   CANVAS_ATT_BOTTOM_Y, &win_scale.bottom_y,
+			   CANVAS_ATT_TOP_Y, &win_scale.top_y,
+			   CANVAS_ATT_END);
+    x_offset = win_scale.x_offset;
+    x_pixels = win_scale.x_pixels;
+    y_offset = win_scale.y_offset;
+    y_pixels = win_scale.y_pixels;
     if (to_world)
     {
 	/*  Convert from pixel to world co-ordinates  */
-	x_pix = *x - (double) win_scale->x_offset;
-	y_pix = *y - (double) win_scale->y_offset;
-	y_pix = (double) (win_scale->y_pixels - 1) - y_pix;
-	/*  Removed offsets and flipped vertical  */
-	/*  Compute x co-ordinate  */
-	coord_num0 = ds_get_coord_num (hdim, win_scale->left_x,
+	/*  Compute x co-ordinates  */
+	coord_num0 = ds_get_coord_num (hdim, win_scale.left_x,
 				       SEARCH_BIAS_CLOSEST);
 	coord0 = ds_get_coordinate (hdim, coord_num0);
-	coord_num1 = ds_get_coord_num (hdim, win_scale->right_x,
+	coord_num1 = ds_get_coord_num (hdim, win_scale.right_x,
 				       SEARCH_BIAS_CLOSEST);
 	if (coord_num1 + 1 < hdim->length)
 	{
@@ -3289,14 +3534,19 @@ static flag coord_convert_func (KWorldCanvas canvas,
 	    coord1 = ds_get_coordinate (hdim, coord_num1);
 	    coord1 += (coord1 - coord0) / (coord_num1 - coord_num0);
 	}
-	*x = (coord1 - coord0) * x_pix / (double) win_scale->x_pixels;
-	*x += coord0;
-	*x += (coord1 - coord0) / (double) (coord_num1 - coord_num0) / 1000.0;
-	/*  Compute y co-ordinate  */
-	coord_num0 = ds_get_coord_num (vdim, win_scale->bottom_y,
+	for (count = 0; count < num_coords; ++count)
+	{
+	    x_pix = xin[count] - x_offset;
+	    x_pix = (coord1 - coord0) * x_pix / x_pixels;
+	    x_pix += (coord1 - coord0) / (double) (coord_num1 -
+						   coord_num0) / 1000.0;
+	    xout[count] = x_pix + coord0;
+	}
+	/*  Compute y co-ordinates  */
+	coord_num0 = ds_get_coord_num (vdim, win_scale.bottom_y,
 				       SEARCH_BIAS_CLOSEST);
 	coord0 = ds_get_coordinate (vdim, coord_num0);
-	coord_num1 = ds_get_coord_num (vdim, win_scale->top_y,
+	coord_num1 = ds_get_coord_num (vdim, win_scale.top_y,
 				       SEARCH_BIAS_CLOSEST);
 	if (coord_num1 + 1 < vdim->length)
 	{
@@ -3307,17 +3557,25 @@ static flag coord_convert_func (KWorldCanvas canvas,
 	    coord1 = ds_get_coordinate (vdim, coord_num1);
 	    coord1 += (coord1 - coord0) / (coord_num1 - coord_num0);
 	}
-	*y = (coord1 - coord0) * y_pix / (double) win_scale->y_pixels;
-	*y += (coord1 - coord0) / (double) (coord_num1 - coord_num0) / 1000.0;
-	*y += coord0;
+	for (count = 0; count < num_coords; ++count)
+	{
+	    y_pix = yin[count] - y_offset;
+	    y_pix = (y_pixels - 1.0) - y_pix;
+	    /*  Removed offsets and flipped vertical  */
+	    y_pix = (coord1 - coord0) * y_pix / y_pixels;
+	    y_pix += (coord1 - coord0) / (double) (coord_num1 -
+						   coord_num0) / 1000.0;
+	    yout[count] = y_pix + coord0;
+	}
 	return (TRUE);
     }
     /*  Convert from world to pixel co-ordinates  */
-    /*  Compute x co-ordinate  */
-    coord_num0 = ds_get_coord_num (hdim, win_scale->left_x,
+    /*  Compute x co-ordinates  */
+    coord_num0 = ds_get_coord_num (hdim, win_scale.left_x,
 				   SEARCH_BIAS_CLOSEST);
     coord0 = ds_get_coordinate (hdim, coord_num0);
-    coord_num1 = ds_get_coord_num (hdim, win_scale->right_x,
+    /*  Find co-ordinate one data value beyond canvas maximum  */
+    coord_num1 = ds_get_coord_num (hdim, win_scale.right_x,
 				   SEARCH_BIAS_CLOSEST);
     if (coord_num1 + 1 < hdim->length)
     {
@@ -3328,14 +3586,22 @@ static flag coord_convert_func (KWorldCanvas canvas,
 	coord1 = ds_get_coordinate (hdim, coord_num1);
 	coord1 += (coord1 - coord0) / (coord_num1 - coord_num0);
     }
-    x_pix = (*x - coord0) * (double) win_scale->x_pixels / (coord1 - coord0);
-    *x = x_pix + (double) win_scale->x_offset;
-    /*  Compute y co-ordinate  */
-    coord_num0 = ds_get_coord_num (vdim, win_scale->bottom_y,
+    /*  Compute increment between dimension indices. This increment is used to
+	place a point that lies exactly on a data value's co-ordinate at the
+	centre of the box of pixels for the data value  */
+    xdelt = ds_get_coordinate (hdim, 1) - ds_get_coordinate (hdim, 0);
+    for (count = 0; count < num_coords; ++count)
+    {
+	x_pix = (xin[count] - coord0 + xdelt * 0.5) / (coord1 - coord0);
+	x_pix *= x_pixels;
+	xout[count] = x_pix + x_offset;
+    }
+    /*  Compute y co-ordinates  */
+    coord_num0 = ds_get_coord_num (vdim, win_scale.bottom_y,
 				   SEARCH_BIAS_CLOSEST);
     coord0 = ds_get_coordinate (vdim, coord_num0);
     /*  Find co-ordinate one data value beyond canvas maximum  */
-    coord_num1 = ds_get_coord_num (vdim, win_scale->top_y,
+    coord_num1 = ds_get_coord_num (vdim, win_scale.top_y,
 				   SEARCH_BIAS_CLOSEST);
     coord1 = ds_get_coordinate (vdim, coord_num1);
     if (coord_num1 + 1 < vdim->length)
@@ -3347,8 +3613,16 @@ static flag coord_convert_func (KWorldCanvas canvas,
 	coord1 = ds_get_coordinate (vdim, coord_num1);
 	coord1 += (coord1 - coord0) / (coord_num1 - coord_num0);
     }
-    y_pix = (*y - coord0) * (double) win_scale->y_pixels / (coord1 - coord0);
-    /*  Flip vertical  */
-    *y = (double) (win_scale->y_offset + win_scale->y_pixels - 1) - y_pix;
+    /*  Compute increment between dimension indices. This increment is used to
+	place a point that lies exactly on a data value's co-ordinate at the
+	centre of the box of pixels for the data value  */
+    ydelt = ds_get_coordinate (vdim, 1) - ds_get_coordinate (vdim, 0);
+    for (count = 0; count < num_coords; ++count)
+    {
+	y_pix = (yin[count] - coord0 + ydelt * 0.5) / (coord1 - coord0);
+	y_pix *= y_pixels;
+	/*  Flip vertical  */
+	yout[count] = (y_offset + y_pixels - 1.0) - y_pix;
+    }
     return (TRUE);
 }   /*  End Function coord_convert_func  */

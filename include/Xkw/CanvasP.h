@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   17-JUL-1994
 
-    Last updated by Richard Gooch   4-MAY-1996
+    Last updated by Richard Gooch   23-OCT-1996
 
 */
 
@@ -77,6 +77,7 @@ typedef struct {
     flag        cmap_installed_internally;
     flag        mapped;
     flag        partly_unobscured;
+    flag        disable_pointer_moves;
     Multibuffer left_window;
     Multibuffer right_window;
 } CanvasPart;

@@ -203,9 +203,24 @@
   DirectColour visuals in <kwin_draw_rgb_image>. Pixels not properly
   constructed.
 
-    Last updated by Richard Gooch   5-JUN-1996: Fixed bug introduced 1-JUN-1996
+    Updated by      Richard Gooch   5-JUN-1996: Fixed bug introduced 1-JUN-1996
   in <kwin_draw_rgb_image> when original visual is TrueColour: no PostScript
   generated.
+
+    Updated by      Richard Gooch   18-JUL-1996: Fixed bugs introduced
+  18-SEP-1995 when code was split into seperable drivers: many drawing routines
+  failed to produce PostScript and drew to the canvas instead.
+
+    Updated by      Richard Gooch   19-JUL-1996: Created
+  <kwin_draw_segments_TRANSITION> which will become <kwin_draw_segments> in
+  Karma v2.0.
+
+    Updated by      Richard Gooch   25-AUG-1996: Moved PostScript code to
+  separate file. Fixed bug in <kwin_draw_lines_TRANSITION> when specialised
+  hook function not available.
+
+    Last updated by Richard Gooch   14-SEP-1996: Set canvas offsets to 0 in
+  <kwin_new_driver_refresh>.
 
 
 */
@@ -228,21 +243,22 @@
 #include <sys/resource.h>
 
 
+#define COORD_BUF_SIZE 2048
 #define CANVAS_MAGIC_NUMBER (unsigned int) 145624539
 #define FONT_MAGIC_NUMBER (unsigned int) 298732498
 
 #define VERIFY_CANVAS(canvas) if (canvas == NULL) \
-{(void) fprintf (stderr, "NULL canvas passed\n"); \
+{fprintf (stderr, "NULL canvas passed\n"); \
  a_prog_bug (function_name); } \
 if (canvas->magic_number != CANVAS_MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid canvas object\n"); \
+{fprintf (stderr, "Invalid canvas object\n"); \
  a_prog_bug (function_name); }
 
 #define VERIFY_FONT(font) if (font == NULL) \
-{(void) fprintf (stderr, "NULL font passed\n"); \
+{fprintf (stderr, "NULL font passed\n"); \
  a_prog_bug (function_name); } \
 if (font->magic_number != FONT_MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid font object\n"); \
+{fprintf (stderr, "Invalid font object\n"); \
  a_prog_bug (function_name); }
 
 #define MAX_INTENSITY 65535.0
@@ -279,75 +295,18 @@ struct pixcanvas_type
     uaddr blue_offset;
     /*  Mandatory graphics system specific hooks  */
     void *info;
-    flag (*draw_point) (void *info, double x, double y,
-			unsigned long pixel_value);
-    void *(*create_child) (void *parent, KPixCanvas child);
-    flag (*clear_area) (void *info, int x, int y, int width, int height);
+    KPixFuncCreateChild      create_child;
+    KPixFuncClearArea        clear_area;
     /*  Optional graphics system specific hooks  */
-    flag (*draw_points) (void *info, double *x_arr, double *y_arr,
-			 unsigned int num_points, unsigned long pixel_value);
-    flag (*draw_pc_image) (void *info, int x_off, int y_off,
-			   int x_pixels, int y_pixels,
-			   CONST char *slice,
-			   CONST uaddr *hoffsets, CONST uaddr *voffsets,
-			   unsigned int width, unsigned int height,
-			   unsigned int type, unsigned int conv_type,
-			   unsigned int num_pixels,unsigned long *pixel_values,
-			   unsigned long blank_pixel,
-			   unsigned long min_sat_pixel,
-			   unsigned long max_sat_pixel,
-			   double i_min, double i_max,
-			   flag (*iscale_func) (), void *iscale_info,
-			   KPixCanvasImageCache *cache_ptr);
-    flag (*draw_rgb_image) (void *info, int x_off, int y_off,
-			    int x_pixels, int y_pixels,
-			    CONST unsigned char *red_slice,
-			    CONST unsigned char *green_slice,
-			    CONST unsigned char *blue_slice,
-			    CONST uaddr *hoffsets, CONST uaddr *voffsets,
-			    unsigned int width, unsigned int height,
-			    KPixCanvasImageCache *cache_ptr);
-    flag (*draw_cached_image) (KPixCanvasImageCache cache, flag wait,
-			       int parent_x_off, int parent_y_off,
-			       int image_width, int image_height,
-			       int image_x_off, int image_y_off,
-			       int canvas_x_off, int canvas_y_off,
-			       int canvas_width, int canvas_height);
-    void (*free_cache_data) (KPixCanvasImageCache cache);
-    flag (*draw_line) (void *info, double x0, double y0, double x1, double y1,
-		       unsigned long pixel_value);
-    flag (*draw_lines) (void *info, double *x_arr, double *y_arr,
-			unsigned int num_points, unsigned long pixel_value);
-    flag (*draw_arc) (void *info, double x, double y,
-		      double width, double height, int angle1, int angle2,
-		      unsigned long pixel_value, flag fill);
-    flag (*draw_polygon) (void *info, double *x_arr, double *y_arr,
-			  unsigned int num_vertices, unsigned long pixel_value,
-			  flag convex, flag fill);
-    flag (*draw_string) (void *info, double x, double y, CONST char *string,
-			 unsigned long pixel_value, flag clear_under);
-    flag (*draw_rectangle) (void *info,
-			    double x, double y, double width, double height,
-			    unsigned long pixel_value, flag fill);
-    flag (*draw_arcs) (void *info,
-		       double *x, double *y, double *width, double *height,
-		       int *angle1, int *angle2, unsigned int num_ellipses,
-		       unsigned long pixel_value, flag fill);
-    flag (*draw_segments) (void *info,
-			   double *x0, double *y0, double *x1, double *y1,
-			   unsigned int num_segments,
-			   unsigned long pixel_value);
-    flag (*get_colour) (void *info, CONST char *colourname,
-			unsigned long *pixel_value, unsigned short *red,
-			unsigned short *green, unsigned short *blue);
-    void *(*load_font) (void *info, CONST char *fontname);
-    flag (*get_string_size) (void *info, CONST char *string, va_list argp);
-    void (*set_font) (void *canvas_info, void *font_info);
-    flag (*query_colourmap) (void *info, unsigned long *pixels,
-			     unsigned short *reds, unsigned short *greens,
-			     unsigned short *blues, unsigned int num_colours);
-    flag (*resize) (void *info, int xoff, int yoff, int width, int height);
-    flag (*set_linewidth) (void *info, double linewidth);
+    KPixFuncFreeCacheData    free_cache_data;
+    KPixFuncGetColour        get_colour;
+    KPixFuncLoadFont         load_font;
+    KPixFuncGetStringSize    get_string_size;
+    KPixFuncSetFont          set_font;
+    KPixFuncQueryColourmap   query_colourmap;
+    KPixFuncResize           resize;
+    /*  All the drawing routines  */
+    KPixDrawFuncs draw_funcs;
 };
 
 struct cache_data_type
@@ -397,10 +356,6 @@ STATIC_FUNCTION (flag refresh_event_func,
 STATIC_FUNCTION (flag position_event_func,
 		 (void *object, void *client1_data,
 		  void *call_data, void *client2_data) );
-STATIC_FUNCTION (flag get_colours_from_pixels,
-		 (KPixCanvas canvas, unsigned long *pixels,
-		  unsigned short *reds, unsigned short *greens,
-		  unsigned short *blues, unsigned int num_colours) );
 
 
 /*  Public functions follow  */
@@ -409,10 +364,11 @@ STATIC_FUNCTION (flag get_colours_from_pixels,
 KPixCanvas kwin_create_generic (void *info, int xoff, int yoff,
 				int width, int height, unsigned int depth,
 				unsigned int visual, flag visible,
-				flag (*draw_point) (),
-				void *(*create_child) (),
-				flag (*clear_area) (), ...)
-/*  [PURPOSE] This routine will create a pixel canvas. The interface to this
+				KPixFuncDrawPoint draw_point,
+				KPixFuncCreateChild create_child,
+				KPixFuncClearArea clear_area, ...)
+/*  [SUMMARY] Create generic pixel canvas.
+    [PURPOSE] This routine will create a pixel canvas. The interface to this
     routine is generic. Note that the origin of a KPixCanvas is the upper-left
     corner.
     <info> A pointer to canvas specific data.
@@ -482,6 +438,7 @@ KPixCanvas kwin_create_generic (void *info, int xoff, int yoff,
 	return (NULL);
     }
     canvas->info = info;
+    canvas->draw_funcs.info = info;
     canvas->xoff = xoff;
     canvas->yoff = yoff;
     canvas->width = width;
@@ -494,7 +451,7 @@ KPixCanvas kwin_create_generic (void *info, int xoff, int yoff,
     canvas->pspage = NULL;
     canvas->font = NULL;
     canvas->parent = NULL;
-    canvas->draw_point = draw_point;
+    canvas->draw_funcs.point = draw_point;
     canvas->create_child = create_child;
     canvas->clear_area = clear_area;
     while ( ( att_key = va_arg (argp, unsigned int) ) != KWIN_ATT_END )
@@ -505,8 +462,8 @@ KPixCanvas kwin_create_generic (void *info, int xoff, int yoff,
 	    if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 		(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
 	    {
-		(void) fprintf (stderr, "Cannot set red mask for visual: %u\n",
-				canvas->visual);
+		fprintf (stderr, "Cannot set red mask for visual: %u\n",
+			 canvas->visual);
 		a_prog_bug (function_name);
 	    }
 	    canvas->pix_red_mask = va_arg (argp, unsigned long);
@@ -515,8 +472,8 @@ KPixCanvas kwin_create_generic (void *info, int xoff, int yoff,
 	    if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 		(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
 	    {
-		(void) fprintf(stderr,"Cannot set green mask for visual: %u\n",
-				canvas->visual);
+		fprintf(stderr,"Cannot set green mask for visual: %u\n",
+			canvas->visual);
 		a_prog_bug (function_name);
 	    }
 	    canvas->pix_green_mask = va_arg (argp, unsigned long);
@@ -525,8 +482,8 @@ KPixCanvas kwin_create_generic (void *info, int xoff, int yoff,
 	    if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 		(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
 	    {
-		(void) fprintf (stderr,"Cannot set blue mask for visual: %u\n",
-				canvas->visual);
+		fprintf (stderr,"Cannot set blue mask for visual: %u\n",
+			 canvas->visual);
 		a_prog_bug (function_name);
 	    }
 	    canvas->pix_blue_mask = va_arg (argp, unsigned long);
@@ -535,8 +492,8 @@ KPixCanvas kwin_create_generic (void *info, int xoff, int yoff,
 	    if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 		(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
 	    {
-		(void) fprintf (stderr, "Cannot set red mask for visual: %u\n",
-				canvas->visual);
+		fprintf (stderr, "Cannot set red mask for visual: %u\n",
+			 canvas->visual);
 		a_prog_bug (function_name);
 	    }
 	    canvas->im_red_mask = va_arg (argp, unsigned long);
@@ -545,8 +502,8 @@ KPixCanvas kwin_create_generic (void *info, int xoff, int yoff,
 	    if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 		(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
 	    {
-		(void) fprintf(stderr,"Cannot set green mask for visual: %u\n",
-				canvas->visual);
+		fprintf(stderr,"Cannot set green mask for visual: %u\n",
+			canvas->visual);
 		a_prog_bug (function_name);
 	    }
 	    canvas->im_green_mask = va_arg (argp, unsigned long);
@@ -555,8 +512,8 @@ KPixCanvas kwin_create_generic (void *info, int xoff, int yoff,
 	    if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 		(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
 	    {
-		(void) fprintf (stderr,"Cannot set blue mask for visual: %u\n",
-				canvas->visual);
+		fprintf (stderr,"Cannot set blue mask for visual: %u\n",
+			 canvas->visual);
 		a_prog_bug (function_name);
 	    }
 	    canvas->im_blue_mask = va_arg (argp, unsigned long);
@@ -565,9 +522,8 @@ KPixCanvas kwin_create_generic (void *info, int xoff, int yoff,
 	    if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 		(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
 	    {
-		(void) fprintf (stderr,
-				"Cannot set red offset for visual: %u\n",
-				canvas->visual);
+		fprintf (stderr, "Cannot set red offset for visual: %u\n",
+			 canvas->visual);
 		a_prog_bug (function_name);
 	    }
 	    canvas->red_offset = va_arg (argp, uaddr);
@@ -576,9 +532,8 @@ KPixCanvas kwin_create_generic (void *info, int xoff, int yoff,
 	    if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 		(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
 	    {
-		(void) fprintf (stderr,
-				"Cannot set green offset for visual: %u\n",
-				canvas->visual);
+		fprintf (stderr, "Cannot set green offset for visual: %u\n",
+			 canvas->visual);
 		a_prog_bug (function_name);
 	    }
 	    canvas->green_offset = va_arg (argp, uaddr);
@@ -587,23 +542,22 @@ KPixCanvas kwin_create_generic (void *info, int xoff, int yoff,
 	    if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 		(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
 	    {
-		(void) fprintf (stderr,
-				"Cannot set blue offset for visual: %u\n",
-				canvas->visual);
+		fprintf (stderr, "Cannot set blue offset for visual: %u\n",
+			 canvas->visual);
 		a_prog_bug (function_name);
 	    }
 	    canvas->blue_offset = va_arg (argp, uaddr);
 	    break;
 	  case KWIN_FUNC_DRAW_PC_IMAGE:
-	    ptr = (void **) &canvas->draw_pc_image;
+	    ptr = (void **) &canvas->draw_funcs.pc_image;
 	    *ptr = va_arg (argp, void *);
 	    break;
 	  case KWIN_FUNC_DRAW_RGB_IMAGE:
-	    ptr = (void **) &canvas->draw_rgb_image;
+	    ptr = (void **) &canvas->draw_funcs.rgb_image;
 	    *ptr = va_arg (argp, void *);
 	    break;
 	  case KWIN_FUNC_DRAW_CACHED_IMAGE:
-	    ptr = (void **) &canvas->draw_cached_image;
+	    ptr = (void **) &canvas->draw_funcs.cached_image;
 	    *ptr = va_arg (argp, void *);
 	    break;
 	  case KWIN_FUNC_FREE_CACHE_DATA:
@@ -611,35 +565,35 @@ KPixCanvas kwin_create_generic (void *info, int xoff, int yoff,
 	    *ptr = va_arg (argp, void *);
 	    break;
 	  case KWIN_FUNC_DRAW_LINE:
-	    ptr = (void **) &canvas->draw_line;
+	    ptr = (void **) &canvas->draw_funcs.line;
 	    *ptr = va_arg (argp, void *);
 	    break;
 	  case KWIN_FUNC_DRAW_ARC:
-	    ptr = (void **) &canvas->draw_arc;
+	    ptr = (void **) &canvas->draw_funcs.arc;
 	    *ptr = va_arg (argp, void *);
 	    break;
 	  case KWIN_FUNC_DRAW_POLYGON:
-	    ptr = (void **) &canvas->draw_polygon;
+	    ptr = (void **) &canvas->draw_funcs.polygon;
 	    *ptr = va_arg (argp, void *);
 	    break;
 	  case KWIN_FUNC_DRAW_STRING:
-	    ptr = (void **) &canvas->draw_string;
+	    ptr = (void **) &canvas->draw_funcs.string;
 	    *ptr = va_arg (argp, void *);
 	    break;
 	  case KWIN_FUNC_DRAW_RECTANGLE:
-	    ptr = (void **) &canvas->draw_rectangle;
+	    ptr = (void **) &canvas->draw_funcs.rectangle;
 	    *ptr = va_arg (argp, void *);
 	    break;
 	  case KWIN_FUNC_DRAW_LINES:
-	    ptr = (void **) &canvas->draw_lines;
+	    ptr = (void **) &canvas->draw_funcs.lines;
 	    *ptr = va_arg (argp, void *);
 	    break;
 	  case KWIN_FUNC_DRAW_ARCS:
-	    ptr = (void **) &canvas->draw_arcs;
+	    ptr = (void **) &canvas->draw_funcs.arcs;
 	    *ptr = va_arg (argp, void *);
 	    break;
 	  case KWIN_FUNC_DRAW_SEGMENTS:
-	    ptr = (void **) &canvas->draw_segments;
+	    ptr = (void **) &canvas->draw_funcs.segments;
 	    *ptr = va_arg (argp, void *);
 	    break;
 	  case KWIN_FUNC_GET_COLOUR:
@@ -667,11 +621,11 @@ KPixCanvas kwin_create_generic (void *info, int xoff, int yoff,
 	    *ptr = va_arg (argp, void *);
 	    break;
 	  case KWIN_FUNC_SET_LINEWIDTH:
-	    ptr = (void **) &canvas->set_linewidth;
+	    ptr = (void **) &canvas->draw_funcs.set_linewidth;
 	    *ptr = va_arg (argp, void *);
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Illegal attribute key: %u\n", att_key);
+	    fprintf (stderr, "Illegal attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	}
     }
@@ -732,6 +686,7 @@ KPixCanvas kwin_create_child (KPixCanvas parent, int xoff, int yoff,
 	m_free ( (char *) child );
 	return (NULL);
     }
+    child->draw_funcs.info = child->info;
     child->xoff = parent->xoff + xoff;
     child->yoff = parent->yoff + yoff;
     child->width = width;
@@ -828,12 +783,12 @@ flag kwin_resize (KPixCanvas canvas, flag clear, int xoff, int yoff,
     /*  Resize canvas  */
     if (xoff < 0)
     {
-	(void) fprintf (stderr, "xoff: %d  less than 0\n", xoff);
+	fprintf (stderr, "xoff: %d  less than 0\n", xoff);
 	return (FALSE);
     }
     if (yoff < 0)
     {
-	(void) fprintf (stderr, "yoff: %d  less than 0\n", yoff);
+	fprintf (stderr, "yoff: %d  less than 0\n", yoff);
 	return (FALSE);
     }
     if ( (width > 0) && (height > 0) && (xoff >= 0) && (yoff >= 0) )
@@ -853,21 +808,21 @@ flag kwin_resize (KPixCanvas canvas, flag clear, int xoff, int yoff,
 	if ( !(*canvas->resize) (canvas->info, canvas->xoff, canvas->yoff,
 				 canvas->width, canvas->height) )
 	{
-	    (void) fprintf (stderr, "%s: error resizing lower level canvas\n",
-			    function_name);
+	    fprintf (stderr, "%s: error resizing lower level canvas\n",
+		     function_name);
 	    return (FALSE);
 	}
     }
     if (clear) kwin_clear (canvas, 0, 0, -1, -1);
     /*  Call refresh functions  */
-    (void) c_call_callbacks (canvas->refresh_list, NULL);
+    c_call_callbacks (canvas->refresh_list, NULL);
     return (TRUE);
 }   /*  End Function kwin_resize  */
 
 /*EXPERIMENTAL_FUNCTION*/
 flag kwin_partial_refresh (KPixCanvas canvas, unsigned int num_areas,
 			   KPixCanvasRefreshArea *areas, flag clear_all)
-/*  [PURPOSE] This routine will perform a partial refresh of a pixel canvas.
+/*  [SUMMARY] Perform a partial refresh of a pixel canvas.
     <canvas> The pixel canvas.
     <num_areas> The number of areas in the pixel canvas to refresh.
     <areas> The list of areas to refresh. The values here are updated to ensure
@@ -884,13 +839,13 @@ flag kwin_partial_refresh (KPixCanvas canvas, unsigned int num_areas,
     VERIFY_CANVAS (canvas);
     if (canvas->pspage != NULL)
     {
-	(void) fprintf (stderr, "Previous PostScriptPage still active\n");
+	fprintf (stderr, "Previous PostScriptPage still active\n");
 	a_prog_bug (function_name);
     }
     if (num_areas < 1) return (TRUE);
     if (areas == NULL)
     {
-	(void) fprintf (stderr, "NULL areas pointer passed\n");
+	fprintf (stderr, "NULL areas pointer passed\n");
 	a_prog_bug (function_name);
     }
     /*  Sanitise co-ordinates and optionally clear  */
@@ -933,14 +888,14 @@ flag kwin_partial_refresh (KPixCanvas canvas, unsigned int num_areas,
 			      areas[count].endx - areas[count].startx + 1,
 			      areas[count].endy - areas[count].starty + 1) )
 	    {
-		(void) fprintf (stderr, "Error clearing area: %u\n", count);
+		fprintf (stderr, "Error clearing area: %u\n", count);
 		return (FALSE);
 	    }
 	}
     }
     refresh_list.num_areas = num_areas;
     refresh_list.areas = areas;
-    (void) c_call_callbacks (canvas->refresh_list, &refresh_list);
+    c_call_callbacks (canvas->refresh_list, &refresh_list);
     return (TRUE);
 }   /*  End Function kwin_partial_refresh  */
 
@@ -970,7 +925,7 @@ flag kwin_process_position_event (KPixCanvas canvas, int x, int y, flag clip,
     VERIFY_CANVAS (canvas);
     if (canvas->pspage != NULL)
     {
-	(void) fprintf (stderr, "Previous PostScriptPage still active\n");
+	fprintf (stderr, "Previous PostScriptPage still active\n");
 	a_prog_bug (function_name);
     }
     if (clip)
@@ -1021,46 +976,49 @@ flag kwin_process_position_event (KPixCanvas canvas, int x, int y, flag clip,
     return ( c_call_callbacks (canvas->position_list, &data) );
 }   /*  End Function kwin_process_position_event  */
 
-/*PUBLIC_FUNCTION*/
-flag kwin_write_ps (KPixCanvas canvas, PostScriptPage pspage)
-/*  [SUMMARY] Refresh a pixel canvas onto a PostScriptPage object.
+/*UNPUBLISHED_FUNCTION*/
+flag kwin_new_driver_refresh (KPixCanvas canvas, KPixDrawFuncs draw_funcs,
+			      PostScriptPage pspage)
+/*  [SUMMARY] Refresh a pixel canvas with driver substitution.
     [PURPOSE] This routine will refresh a pixel canvas, redirecting output to a
-    PostScriptPage object.
+    different graphics system driver.
     <canvas> The pixel canvas.
-    <pspage> The PostScriptPage object.
+    <draw_funcs> The replacement driver.
+    <pspage> The PostScriptPage object. This may be NULL
     [RETURNS] TRUE on success, else FALSE.
 */
 {
-    double d_tmp;
-    static char function_name[] = "kwin_write_ps";
+    KPixDrawFuncs old_funcs;
+    int xoff, yoff;
+    static char function_name[] = "kwin_new_driver_refresh";
 
     VERIFY_CANVAS (canvas);
-    if (pspage == NULL)
-    {
-	(void) fprintf (stderr, "NULL PostScriptPage object passed\n");
-	a_prog_bug (function_name);
-    }
     if (canvas->pspage != NULL)
     {
-	(void) fprintf (stderr, "Previous PostScriptPage still active\n");
+	fprintf (stderr, "Previous PostScriptPage still active\n");
 	a_prog_bug (function_name);
     }
     canvas->pspage = pspage;
-    if (canvas->line_width > 0.0)
+    old_funcs = canvas->draw_funcs;
+    canvas->draw_funcs = draw_funcs;
+    xoff = canvas->xoff;
+    yoff = canvas->yoff;
+    /*  This is good for PostScript: perhaps bad in general?  */
+    canvas->xoff = 0;
+    canvas->yoff = 0;
+    if (canvas->draw_funcs.set_linewidth != NULL)
     {
-	d_tmp = (canvas->width * canvas->width) +
-	    (canvas->height * canvas->height);
-	d_tmp = sqrt (d_tmp) / 1.414213562;
-	psw_set_attributes (canvas->pspage,
-			    PSW_ATT_LINEWIDTH_RELATIVE,
-			    canvas->line_width / d_tmp,
-			    PSW_ATT_END);
+	(*canvas->draw_funcs.set_linewidth) (canvas->draw_funcs.info,
+					     canvas->line_width);
     }
     /*  Call refresh functions  */
-    (void) c_call_callbacks (canvas->refresh_list, NULL);
+    c_call_callbacks (canvas->refresh_list, NULL);
     canvas->pspage = NULL;
+    canvas->draw_funcs = old_funcs;
+    canvas->xoff = xoff;
+    canvas->yoff = yoff;
     return (TRUE);
-}   /*  End Function kwin_write_ps  */
+}   /*  End Function kwin_new_driver_refresh  */
 
 /*PUBLIC_FUNCTION*/
 void kwin_get_attributes (KPixCanvas canvas, ...)
@@ -1098,8 +1056,8 @@ void kwin_get_attributes (KPixCanvas canvas, ...)
 	    if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 		(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
 	    {
-		(void) fprintf (stderr, "Cannot get red mask for visual: %u\n",
-				canvas->visual);
+		fprintf (stderr, "Cannot get red mask for visual: %u\n",
+			 canvas->visual);
 		a_prog_bug (function_name);
 	    }
 	    *( va_arg (argp, unsigned long *) ) = canvas->pix_red_mask;
@@ -1108,9 +1066,8 @@ void kwin_get_attributes (KPixCanvas canvas, ...)
 	    if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 		(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
 	    {
-		(void) fprintf (stderr,
-				"Cannot get green mask for visual: %u\n",
-				canvas->visual);
+		fprintf (stderr, "Cannot get green mask for visual: %u\n",
+			 canvas->visual);
 		a_prog_bug (function_name);
 	    }
 	    *( va_arg (argp, unsigned long *) ) = canvas->pix_green_mask;
@@ -1119,8 +1076,8 @@ void kwin_get_attributes (KPixCanvas canvas, ...)
 	    if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 		(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
 	    {
-		(void) fprintf (stderr, "Cannot get blue mask for visual: %u\n",
-				canvas->visual);
+		fprintf (stderr, "Cannot get blue mask for visual: %u\n",
+			 canvas->visual);
 		a_prog_bug (function_name);
 	    }
 	    *( va_arg (argp, unsigned long *) ) = canvas->pix_blue_mask;
@@ -1129,8 +1086,8 @@ void kwin_get_attributes (KPixCanvas canvas, ...)
 	    if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 		(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
 	    {
-		(void) fprintf (stderr, "Cannot get red mask for visual: %u\n",
-				canvas->visual);
+		fprintf (stderr, "Cannot get red mask for visual: %u\n",
+			 canvas->visual);
 		a_prog_bug (function_name);
 	    }
 	    *( va_arg (argp, unsigned long *) ) = canvas->im_red_mask;
@@ -1139,9 +1096,8 @@ void kwin_get_attributes (KPixCanvas canvas, ...)
 	    if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 		(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
 	    {
-		(void) fprintf (stderr,
-				"Cannot get green mask for visual: %u\n",
-				canvas->visual);
+		fprintf (stderr, "Cannot get green mask for visual: %u\n",
+			 canvas->visual);
 		a_prog_bug (function_name);
 	    }
 	    *( va_arg (argp, unsigned long *) ) = canvas->im_green_mask;
@@ -1150,8 +1106,8 @@ void kwin_get_attributes (KPixCanvas canvas, ...)
 	    if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 		(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
 	    {
-		(void) fprintf (stderr, "Cannot get blue mask for visual: %u\n",
-				canvas->visual);
+		fprintf (stderr, "Cannot get blue mask for visual: %u\n",
+			 canvas->visual);
 		a_prog_bug (function_name);
 	    }
 	    *( va_arg (argp, unsigned long *) ) = canvas->im_blue_mask;
@@ -1160,9 +1116,8 @@ void kwin_get_attributes (KPixCanvas canvas, ...)
 	    if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 		(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
 	    {
-		(void) fprintf (stderr,
-				"Cannot get red offset for visual: %u\n",
-				canvas->visual);
+		fprintf (stderr, "Cannot get red offset for visual: %u\n",
+			 canvas->visual);
 		a_prog_bug (function_name);
 	    }
 	    *( va_arg (argp, uaddr *) ) = canvas->red_offset;
@@ -1171,9 +1126,8 @@ void kwin_get_attributes (KPixCanvas canvas, ...)
 	    if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 		(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
 	    {
-		(void) fprintf (stderr,
-				"Cannot get green offset for visual: %u\n",
-				canvas->visual);
+		fprintf (stderr, "Cannot get green offset for visual: %u\n",
+			 canvas->visual);
 		a_prog_bug (function_name);
 	    }
 	    *( va_arg (argp, uaddr *) ) = canvas->green_offset;
@@ -1182,9 +1136,8 @@ void kwin_get_attributes (KPixCanvas canvas, ...)
 	    if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 		(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
 	    {
-		(void) fprintf (stderr,
-				"Cannot get blue offset for visual: %u\n",
-				canvas->visual);
+		fprintf (stderr, "Cannot get blue offset for visual: %u\n",
+			 canvas->visual);
 		a_prog_bug (function_name);
 	    }
 	    *( va_arg (argp, uaddr *) ) = canvas->blue_offset;
@@ -1199,7 +1152,7 @@ void kwin_get_attributes (KPixCanvas canvas, ...)
 	    *( va_arg (argp, double *) ) = canvas->line_width;
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Illegal attribute key: %u\n", att_key);
+	    fprintf (stderr, "Illegal attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	    break;
 	}
@@ -1221,7 +1174,6 @@ void kwin_set_attributes (KPixCanvas canvas, ...)
     KPixCanvasFont font;
     flag bool;
     unsigned int att_key;
-    double d_tmp;
     static char function_name[] = "kwin_set_attributes";
 
     va_start (argp, canvas);
@@ -1231,11 +1183,11 @@ void kwin_set_attributes (KPixCanvas canvas, ...)
 	switch (att_key)
 	{
 	  case KWIN_ATT_VISUAL:
-	    (void) fprintf (stderr, "Cannot set the visual after creation\n");
+	    fprintf (stderr, "Cannot set the visual after creation\n");
 	    a_prog_bug (function_name);
 	    break;
 	  case KWIN_ATT_DEPTH:
-	    (void) fprintf (stderr, "Cannot set the depth after creation\n");
+	    fprintf (stderr, "Cannot set the depth after creation\n");
 	    a_prog_bug (function_name);
 	    break;
 	  case KWIN_ATT_VISIBLE:
@@ -1248,7 +1200,7 @@ void kwin_set_attributes (KPixCanvas canvas, ...)
 	    VERIFY_FONT (font);
 	    if (canvas->set_font == NULL)
 	    {
-		(void) fprintf (stderr, "Font setting not supported\n");
+		fprintf (stderr, "Font setting not supported\n");
 		continue;
 	    }
 	    if (canvas->font == font) break;
@@ -1260,25 +1212,16 @@ void kwin_set_attributes (KPixCanvas canvas, ...)
 	    break;
 	  case KWIN_ATT_LINEWIDTH:
 	    canvas->line_width = va_arg (argp, double);
-	    if (canvas->set_linewidth == NULL)
+	    if (canvas->draw_funcs.set_linewidth == NULL)
 	    {
-		(void) fprintf (stderr, "Linewidth setting not supported\n");
+		fprintf (stderr, "Linewidth setting not supported\n");
 		continue;
 	    }
-	    (*canvas->set_linewidth) (canvas->info, canvas->line_width);
-	    if (canvas->pspage != NULL)
-	    {
-		d_tmp = (canvas->width * canvas->width) +
-		    (canvas->height * canvas->height);
-		d_tmp = sqrt (d_tmp) / 1.414213562;
-		psw_set_attributes (canvas->pspage,
-				    PSW_ATT_LINEWIDTH_RELATIVE,
-				    canvas->line_width / d_tmp,
-				    PSW_ATT_END);
-	    }
+	    (*canvas->draw_funcs.set_linewidth) (canvas->draw_funcs.info,
+						 canvas->line_width);
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Illegal attribute key: %u\n", att_key);
+	    fprintf (stderr, "Illegal attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	}
     }
@@ -1308,7 +1251,7 @@ flag kwin_clear (KPixCanvas canvas, int x, int y, int width, int height)
     VERIFY_CANVAS (canvas);
     if (canvas->pspage != NULL)
     {
-	(void) fprintf (stderr, "Cannot clear a PostScriptPage object\n");
+	fprintf (stderr, "Cannot clear a PostScriptPage object\n");
 	return (FALSE);
     }
     if (x < 0)
@@ -1367,10 +1310,9 @@ flag kwin_draw_image (KPixCanvas canvas, array_desc *arr_desc, char *slice,
     dim_desc *hdim_desc, *vdim_desc;
     static char function_name[] = "kwin_draw_image";
 
-    (void) fprintf (stderr,
-		    "Function: <%s> will be removed in Karma version 2.0\n",
-		    function_name);
-    (void) fprintf (stderr, "Use: <kwin_draw_pc_image> instead.\n");
+    fprintf (stderr, "Function: <%s> will be removed in Karma version 2.0\n",
+	     function_name);
+    fprintf (stderr, "Use: <kwin_draw_pc_image> instead.\n");
     VERIFY_CANVAS (canvas);
     if (arr_desc->offsets == NULL)
     {
@@ -1388,7 +1330,7 @@ flag kwin_draw_image (KPixCanvas canvas, array_desc *arr_desc, char *slice,
     type = arr_desc->packet->element_types[elem_index];
     if ( !ds_element_is_atomic (type) )
     {
-	(void) fprintf (stderr, "Element must be atomic\n");
+	fprintf (stderr, "Element must be atomic\n");
 	a_prog_bug (function_name);
     }
     /*  Determine start and stop co-ordinates along each dimension  */
@@ -1469,202 +1411,31 @@ flag kwin_draw_pc_image (KPixCanvas canvas, int x_off, int y_off,
     [RETURNS] TRUE on success, else FALSE.
 */
 {
-    flag complex, greyscale, retval;
-    int min_sat_index = -1;
-    int max_sat_index = -1;
-    int blank_index = -1;
-    unsigned char pixel_val, red, green, blue;
-    unsigned int x, y;
-    unsigned int count, num_colours;
-    unsigned char *ubimage;
-    double y0, y1;
-    double val, factor;
-    double toobig = TOOBIG;
-    double *values, *val_ptr;
-    unsigned char imap_red[256], imap_green[256], imap_blue[256];
-    unsigned short cmap_reds[256], cmap_greens[256], cmap_blues[256];
-    unsigned long cmap_pixels[256];
     static char function_name[] = "kwin_draw_pc_image";
 
     VERIFY_CANVAS (canvas);
 #ifdef DEBUG
-    if (getuid () == 465) (void) fprintf (stderr, "%s: x_off: %d  y_off: %d\n",
-					  function_name, x_off, y_off);
+    if (getuid () == 465) fprintf (stderr, "%s: x_off: %d  y_off: %d\n",
+				   function_name, x_off, y_off);
 #endif
     if ( !ds_element_is_atomic (type) )
     {
-	(void) fprintf (stderr, "Element must be atomic\n");
+	fprintf (stderr, "Element must be atomic\n");
 	a_prog_bug (function_name);
     }
-    if (canvas->pspage != NULL)
-    {
-	if (num_pixels > 256)
-	{
-	    (void) fprintf (stderr, "Too many pixels: %u\n", num_pixels);
-	    a_prog_bug (function_name);
-	}
-	for (count = 0; count < num_pixels; ++count)
-	{
-	    cmap_pixels[count] = pixel_values[count];
-	}
-	if (num_pixels > 253)
-	{
-	    /*  Have to make sure special pixels are already in pixel array  */
-	    for (count = 0; count < num_pixels; ++count)
-	    {
-		if ( (min_sat_index < 0) &&
-		    (min_sat_pixel == pixel_values[count]) )
-		{
-		    min_sat_index = count;
-		}
-		if ( (max_sat_index < 0) &&
-		    (max_sat_pixel == pixel_values[count]) )
-		{
-		    max_sat_index = count;
-		}
-		if ( (blank_index < 0) &&
-		    (blank_pixel == pixel_values[count]) )
-		{
-		    blank_index = count;
-		}
-	    }
-	    if ( (min_sat_index < 0) || (max_sat_index < 0) ||
-		(blank_index < 0) )
-	    {
-		(void) fprintf (stderr,
-				"Number of pixels is greater than 253\n");
-		a_prog_bug (function_name);
-	    }
-	    num_colours = num_pixels;
-	}
-	else
-	{
-	    /*  Special pixels can be shoved at the end  */
-	    min_sat_index = num_pixels;
-	    max_sat_index = num_pixels + 1;
-	    blank_index = num_pixels + 2;
-	    cmap_pixels[min_sat_index] = min_sat_pixel;
-	    cmap_pixels[max_sat_index] = max_sat_pixel;
-	    cmap_pixels[blank_index] = blank_pixel;
-	    num_colours = num_pixels + 3;
-	}
-	if ( !get_colours_from_pixels (canvas, cmap_pixels,
-				       cmap_reds, cmap_greens, cmap_blues,
-				       num_colours) )
-	{
-	    (void) fprintf (stderr, "%s: cannot find RGB values\n",
-			    function_name);
-	    return (FALSE);
-	}
-	/*  Convert 16bit RGB values to 8bit and check if GreyScale (i.e.
-	    R=G=B  */
-	for (count = 0, greyscale = TRUE; count < num_colours; ++count)
-	{
-	    red = (int) cmap_reds[count] >> 8;
-	    green = (int) cmap_greens[count] >> 8;
-	    blue = (int) cmap_blues[count] >> 8;
-	    imap_red[count] = red;
-	    imap_green[count] = green;
-	    imap_blue[count] = blue;
-	    if ( (red != green) || (red != blue) ) greyscale = FALSE;
-	}
-	/*  Allocate temporary image  */
-	if ( ( ubimage = (unsigned char *)
-	      m_alloc (sizeof *ubimage * width * height) )
-	    == NULL )
-	{
-	    m_error_notify (function_name, "ubarray");
-	    return (FALSE);
-	}
-	/*  Convert image  */
-	factor = (double) (num_pixels - 1) / (i_max - i_min);
-	if ( ( values = (double *) m_alloc (sizeof *values * 2 * width) )
-	    == NULL )
-	{
-	    m_error_notify (function_name, "values array");
-	    m_free ( (char *) ubimage );
-	    return (FALSE);
-	}
-	for (y = 0; y < height; ++y)
-	{
-	    /*  Convert values to generic data type  */
-	    if ( !ds_get_scattered_elements (slice + voffsets[y], type,
-					     hoffsets, values, &complex,
-					     width) )
-	    {
-		(void) fprintf (stderr, "Error converting data\n");
-		return (FALSE);
-	    }
-	    if (complex) ds_complex_to_real_1D (values, 2, values, width,
-						conv_type);
-	    if (iscale_func != NULL)
-	    {
-		if ( !(*iscale_func) (values, 2, values, 2, width,
-				      i_min, i_max, iscale_info) )
-		{
-		    (void) fprintf (stderr, "Error scaling data\n");
-		    return (FALSE);
-		}
-	    }
-	    /*  Convert to unsigned bytes  */
-	    for (x = 0, val_ptr = values; x < width; ++x, val_ptr += 2)
-	    {
-		val = *val_ptr;
-		if (val < i_min) pixel_val = min_sat_index;
-		else if (val >= toobig) pixel_val = blank_index;
-		else if (val > i_max) pixel_val = max_sat_index;
-		else
-		{
-		    val = (val - i_min) * factor;
-		    pixel_val = (int) val;
-		}
-		ubimage[y * width + x] = pixel_val;
-	    }
-	}
-	m_free ( (char *) values );
-	/*  Flip  */
-	y0 = (double) (canvas->height - 1 - y_off);
-	y1 = (double) ( canvas->height - 1 - (y_off + y_pixels - 1) );
-	if (greyscale)
-	{
-	    retval = psw_mono_image
-	    ( canvas->pspage, ubimage, width, height,
-	     (uaddr *) NULL, (uaddr *) NULL,
-	     imap_red,
-	     (double) x_off / (double) (canvas->width - 1),
-	     (double) y1 / (double) (canvas->height - 1),
-	     (double) (x_off + x_pixels - 1) / (double) (canvas->width - 1),
-	     (double) y0 / (double) (canvas->height - 1) );
-	}
-	else
-	{
-	    retval = psw_pseudocolour_image
-	    ( canvas->pspage, ubimage, width, height,
-	     (uaddr *) NULL, (uaddr *) NULL,
-	     imap_red, imap_green, imap_blue,
-	     (double) x_off / (double) (canvas->width - 1),
-	     (double) y1 / (double) (canvas->height - 1),
-	     (double) (x_off + x_pixels - 1) / (double) (canvas->width - 1),
-	     (double) y0 / (double) (canvas->height - 1) );
-	}
-	m_free ( (char *) ubimage );
-	return (retval);
-    }
     if (!canvas->visible) return (TRUE);
-    if (canvas->draw_pc_image == NULL)
+    if (canvas->draw_funcs.pc_image == NULL)
     {
-	(void) fprintf (stderr, "Cannot draw PseudoColour images\n");
+	fprintf (stderr, "Cannot draw PseudoColour images\n");
 	return (FALSE);
     }
-    return ( (*canvas->draw_pc_image) (canvas->info, canvas->xoff + x_off,
-				       canvas->yoff + y_off,
-				       x_pixels, y_pixels,
-				       slice, hoffsets, voffsets,
-				       width, height, type, conv_type,
-				       num_pixels, pixel_values,
-				       blank_pixel,min_sat_pixel,max_sat_pixel,
-				       i_min, i_max,
-				       iscale_func, iscale_info, cache_ptr) );
+    return ( (*canvas->draw_funcs.pc_image)
+	     (canvas->draw_funcs.info,
+	      canvas->xoff + x_off, canvas->yoff + y_off,
+	      x_pixels, y_pixels, slice, hoffsets, voffsets,
+	      width, height, type, conv_type, num_pixels, pixel_values,
+	      blank_pixel, min_sat_pixel, max_sat_pixel, i_min, i_max,
+	      iscale_func, iscale_info, cache_ptr) );
 }   /*  End Function kwin_draw_pc_image  */
 
 /*PUBLIC_FUNCTION*/
@@ -1701,111 +1472,36 @@ flag kwin_draw_rgb_image (KPixCanvas canvas, int x_off, int y_off,
     [RETURNS] TRUE on success, else FALSE.
 */
 {
-    flag ok;
-    unsigned char red, green, blue;
-    unsigned int count;
-    float red_max, green_max, blue_max, col_scale;
-    double y0, y1;
-    unsigned char imap_red[256], imap_green[256], imap_blue[256];
-    unsigned short cmap_reds[256], cmap_greens[256], cmap_blues[256];
-    unsigned long cmap_pixels[256];
     static char function_name[] = "kwin_draw_rgb_image";
 
     VERIFY_CANVAS (canvas);
-    if (canvas->pspage != NULL)
-    {
-	/*  Flip  */
-	y0 = (double) (canvas->height - 1 - y_off);
-	y1 = (double) ( canvas->height - 1 - (y_off + y_pixels - 1) );
-	if (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR)
-	{
-	    /*  DirectColour visual: no need to worry about the state of the
-		colourmap. Note that even if the visual is PseudoColour, there
-		is no need to worry about the colourmap, since in this case the
-		RGB image is not really destined for a PseudoColour visual, but
-		the <viewimg> package is drawing the RGB image instead of the
-		PseudoColour image because PostScript is being generated  */
-	    ok = psw_rgb_image
-		( canvas->pspage, red_slice, green_slice, blue_slice,
-		  width, height,
-		  hoffsets, voffsets, hoffsets, voffsets, hoffsets, voffsets,0,
-		  (double) x_off / (double) (canvas->width - 1),
-		  (double) y1 / (double) (canvas->height - 1),
-		  (double) (x_off + x_pixels -1) / (double) (canvas->width -1),
-		  (double) y0 / (double) (canvas->height - 1) );
-	    return (ok);
-	}
-	/*  DirectColour visual: have to get colourmap values  */
-	red_max = canvas->pix_red_mask;
-	green_max = canvas->pix_green_mask;
-	blue_max = canvas->pix_blue_mask;
-	for (count = 0; count < 256; ++count)
-	{
-	    /*  Have to construct pixel value from each mask  */
-	    col_scale = (float) count / 256.0;
-	    cmap_pixels[count] = ( (unsigned long) (red_max * col_scale) &
-				   canvas->pix_red_mask ) |
-		( (unsigned long) (green_max * col_scale) &
-		  canvas->pix_green_mask ) |
-		( (unsigned long) (blue_max * col_scale) &
-		  canvas->pix_blue_mask );
-	}
-	if ( !get_colours_from_pixels (canvas, cmap_pixels,
-				       cmap_reds, cmap_greens, cmap_blues,
-				       256) )
-	{
-	    (void) fprintf (stderr, "%s: cannot find RGB values\n",
-			    function_name);
-	    return (FALSE);
-	}
-	/*  Convert 16bit RGB values to 8bit  */
-	for (count = 0; count < 256; ++count)
-	{
-	    red = (int) cmap_reds[count] >> 8;
-	    green = (int) cmap_greens[count] >> 8;
-	    blue = (int) cmap_blues[count] >> 8;
-	    imap_red[count] = red;
-	    imap_green[count] = green;
-	    imap_blue[count] = blue;
-	}
-	ok = psw_directcolour_image
-	    ( canvas->pspage, red_slice, green_slice, blue_slice,
-	      width, height,
-	      hoffsets, voffsets, hoffsets, voffsets, hoffsets, voffsets, 0,
-	      imap_red, imap_green, imap_blue,
-	      (double) x_off / (double) (canvas->width - 1),
-	      (double) y1 / (double) (canvas->height - 1),
-	      (double) (x_off + x_pixels - 1) / (double) (canvas->width - 1),
-	      (double) y0 / (double) (canvas->height - 1) );
-	return (ok);
-    }
     if ( (canvas->visual != KWIN_VISUAL_DIRECTCOLOUR) &&
 	(canvas->visual != KWIN_VISUAL_TRUECOLOUR) )
     {
-	(void) fprintf (stderr,
-			"Canvas visual type: %u illegal for RGB images\n",
-			canvas->visual);
+	fprintf (stderr, "Canvas visual type: %u illegal for RGB images\n",
+		 canvas->visual);
 	a_prog_bug (function_name);
     }
     if (canvas->depth != 24)
     {
-	(void) fprintf(stderr,
-		       "Canvas depth: %u illegal for RGB images. Must be 24\n",
-		       canvas->depth);
+	fprintf(stderr,"Canvas depth: %u illegal for RGB images. Must be 24\n",
+		canvas->depth);
 	a_prog_bug (function_name);
     }
     if (!canvas->visible) return (TRUE);
-    if (canvas->draw_rgb_image == NULL)
+    if (canvas->draw_funcs.rgb_image == NULL)
     {
-	(void) fprintf (stderr, "Cannot draw RGB images\n");
+	fprintf (stderr, "Cannot draw RGB images\n");
 	return (FALSE);
     }
-    return ( (*canvas->draw_rgb_image) (canvas->info, canvas->xoff + x_off,
-					canvas->yoff + y_off,
-					x_pixels, y_pixels,
-					red_slice, green_slice, blue_slice,
-					hoffsets, voffsets, width, height,
-					cache_ptr) );
+    return ( (*canvas->draw_funcs.rgb_image) (canvas->draw_funcs.info,
+					      canvas->xoff + x_off,
+					      canvas->yoff + y_off,
+					      x_pixels, y_pixels,
+					      red_slice, green_slice,
+					      blue_slice,
+					      hoffsets, voffsets,
+					      width, height, cache_ptr) );
 }   /*  End Function kwin_draw_rgb_image  */
 
 /*PUBLIC_FUNCTION*/
@@ -1831,16 +1527,19 @@ flag kwin_draw_cached_image (KPixCanvasImageCache cache, int x_off, int y_off)
     VERIFY_CANVAS (canvas);
     /*  It's a shame to have to throw away the cache validity  */
     if (canvas->pspage != NULL) return (FALSE);
-    if (canvas->draw_cached_image == NULL)
+    if (canvas->draw_funcs.cached_image == NULL)
     {
-	(void) fprintf (stderr, "Cache created but no support for drawing!\n");
+	fprintf (stderr, "Cache created but no support for drawing!\n");
 	return (FALSE);
     }
     if (!canvas->visible) return (TRUE);
-    return ( (*canvas->draw_cached_image) (cache, TRUE, canvas->xoff + x_off,
-					   canvas->yoff + y_off, 0, 0, 0, 0,
-					   canvas->xoff, canvas->yoff,
-					   canvas->width, canvas->height) );
+    return ( (*canvas->draw_funcs.cached_image) (cache, TRUE,
+						 canvas->xoff + x_off,
+						 canvas->yoff + y_off,
+						 0, 0, 0, 0,
+						 canvas->xoff, canvas->yoff,
+						 canvas->width,
+						 canvas->height) );
 }   /*  End Function kwin_draw_cached_image  */
 
 /*EXPERIMENTAL_FUNCTION*/
@@ -1848,7 +1547,8 @@ flag kwin_draw_cached_subimages (KPixCanvasImageCache cache,
 				 int x_off, int y_off,
 				 unsigned int num_areas,
 				 KPixCanvasRefreshArea *areas)
-/*  [PURPOSE] This routine will draw sections of a previously computed image
+/*  [SUMMARY] Draw previously computed cached subimages.
+    [PURPOSE] This routine will draw sections of a previously computed image
     cache data (computed by <<kwin_draw_pc_image>>) onto the canvas on which
     the original image was drawn.
     <cache> The cache data.
@@ -1873,9 +1573,9 @@ flag kwin_draw_cached_subimages (KPixCanvasImageCache cache,
     VERIFY_CANVAS (canvas);
     /*  It's a shame to have to throw away the cache validity  */
     if (canvas->pspage != NULL) return (FALSE);
-    if (canvas->draw_cached_image == NULL)
+    if (canvas->draw_funcs.cached_image == NULL)
     {
-	(void) fprintf (stderr, "Cache created but no support for drawing!\n");
+	fprintf (stderr, "Cache created but no support for drawing!\n");
 	return (FALSE);
     }
     if (!canvas->visible) return (TRUE);
@@ -1900,7 +1600,7 @@ flag kwin_draw_cached_subimages (KPixCanvasImageCache cache,
 	    im_y_off = 0;
 	}
 	if ( (width < 1) || (height < 1) ) continue;
-	if ( !(*canvas->draw_cached_image) (cache,
+	if ( !(*canvas->draw_funcs.cached_image) (cache,
 					    (count <num_areas-1) ? FALSE :TRUE,
 					    ca_x_off, ca_y_off, width, height,
 					    im_x_off, im_y_off,
@@ -1925,13 +1625,15 @@ flag kwin_draw_point (KPixCanvas canvas, double x, double y,
     static char function_name[] = "kwin_draw_point";
 
     VERIFY_CANVAS (canvas);
-    if (canvas->pspage != NULL)
+    if (canvas->draw_funcs.point == NULL)
     {
-	a_func_abort (function_name, "PostScript output not yet supported");
-	return (FALSE);
+	fprintf (stderr, "Cannot draw point!\n");
+	a_prog_bug (function_name);
     }
-    return ( canvas->draw_point (canvas->info, (double) canvas->xoff + x,
-				 (double) canvas->yoff + y, pixel_value) );
+    return ( canvas->draw_funcs.point (canvas->draw_funcs.info,
+				       (double) canvas->xoff + x,
+				       (double) canvas->yoff + y,
+				       pixel_value) );
 }   /*  End Function kwin_draw_point  */
 
 /*PUBLIC_FUNCTION*/
@@ -1950,11 +1652,14 @@ flag kwin_draw_points (KPixCanvas canvas, double *x_array, double *y_array,
     static char function_name[] = "kwin_draw_points";
 
     VERIFY_CANVAS (canvas);
-    if (canvas->draw_points != NULL)
+#ifdef DISABLED  /*  Need to add canvas offsets to arrays  */
+    if (canvas->draw_funcs.points != NULL)
     {
-	return ( (*canvas->draw_points) (canvas->info, x_array, y_array,
-					 num_points, pixel_value) );
+	return ( (*canvas->draw_funcs.points) (canvas->draw_funcs.info,
+					       x_array, y_array,
+					       num_points, pixel_value) );
     }
+#endif
     /*  Do this the hard way  */
     for (count = 0; count < num_points; ++count)
     {
@@ -1989,38 +1694,21 @@ flag kwin_draw_line (KPixCanvas canvas, double x0, double y0,
     int x, y;
     int tmp;
     int delta_x, delta_y;
-    unsigned short red, green, blue;
     static char function_name[] = "kwin_draw_line";
 
     VERIFY_CANVAS (canvas);
-    if (canvas->pspage != NULL)
-    {
-	/*  Do a PostScript draw  */
-	get_colours_from_pixels (canvas, &pixel_value, &red, &green, &blue, 1);
-	/*  Flip vertical  */
-	y0 = (double) canvas->height - 1.0 - y0;
-	y1 = (double) canvas->height - 1.0 - y1;
-	return ( psw_rgb_line ( canvas->pspage,
-			       (double) red / MAX_INTENSITY,
-			       (double) green / MAX_INTENSITY,
-			       (double) blue / MAX_INTENSITY,
-			       x0 / (double) (canvas->width - 1),
-			       y0 / (double) (canvas->height - 1),
-			       x1 / (double) (canvas->width - 1),
-			       y1 / (double) (canvas->height - 1) ) );
-    }
-    if ( (i_x1 == i_x0) && (i_y1 == i_y0) )
+    if ( (x1 == x0) && (y1 == y0) )
     {
 	return ( kwin_draw_point (canvas, x0, y0, pixel_value) );
     }
-    if (canvas->draw_line != NULL)
+    if (canvas->draw_funcs.line != NULL)
     {
-	return ( (*canvas->draw_line) (canvas->info,
-				       (double) canvas->xoff + x0,
-				       (double) canvas->yoff + y0,
-				       (double) canvas->xoff + x1,
-				       (double) canvas->yoff + y1,
-				       pixel_value) );
+	return ( (*canvas->draw_funcs.line) (canvas->draw_funcs.info,
+					     (double) canvas->xoff + x0,
+					     (double) canvas->yoff + y0,
+					     (double) canvas->xoff + x1,
+					     (double) canvas->yoff + y1,
+					     pixel_value) );
     }
     /*  First do horizontal draw  */
     if (i_x1 < i_x0)
@@ -2112,6 +1800,20 @@ flag kwin_draw_lines (KPixCanvas canvas, int *x_array, int *y_array,
     static char function_name[] = "kwin_draw_lines";
 
     VERIFY_CANVAS (canvas);
+    if (canvas->draw_funcs.lines == NULL)
+    {
+	/*  Do this the hard way  */
+	for (count = 0; count < num_points - 1; ++count)
+	{
+	    if ( !kwin_draw_line (canvas, x_array[count], y_array[count],
+				  x_array[count + 1], y_array[count + 1],
+				  pixel_value) )
+	    {
+		return (FALSE);
+	    }
+	}
+	return (TRUE);
+    }
     if ( ( x_arr = (double *) m_alloc (sizeof *x_arr * num_points) ) == NULL )
     {
 	m_error_notify (function_name, "x array");
@@ -2123,40 +1825,66 @@ flag kwin_draw_lines (KPixCanvas canvas, int *x_array, int *y_array,
 	m_free ( (char *) x_arr );
 	return (FALSE);
     }
-    if (canvas->draw_lines != NULL)
-    {
-	for (count = 0; count < num_points; ++count)
-	{
-	    x_arr[count] = (double) (x_array[count] + canvas->xoff);
-	    y_arr[count] = (double) (y_array[count] + canvas->yoff);
-	}
-	retval = (*canvas->draw_lines) (canvas->info, x_arr, y_arr, num_points,
-					pixel_value);
-	m_free ( (char *) x_arr );
-	m_free ( (char *) y_arr );
-	return (retval);
-    }
-    /*  Do this the hard way  */
     for (count = 0; count < num_points; ++count)
     {
-	x_arr[count] = (double) x_array[count];
-	y_arr[count] = (double) y_array[count];
+	x_arr[count] = (double) (x_array[count] + canvas->xoff);
+	y_arr[count] = (double) (y_array[count] + canvas->yoff);
     }
+    retval = (*canvas->draw_funcs.lines) (canvas->draw_funcs.info,
+					  x_arr, y_arr, num_points,
+					  pixel_value);
+    m_free ( (char *) x_arr );
+    m_free ( (char *) y_arr );
+    return (retval);
+}   /*  End Function kwin_draw_lines  */
+
+/*TRANSITION_FUNCTION*/
+flag kwin_draw_lines_TRANSITION (KPixCanvas canvas,
+				 CONST double *x_array, CONST double *y_array,
+				 int num_points, unsigned long pixel_value)
+/*  [SUMMARY] Draw multiple connected lines onto a pixel canvas.
+    <canvas> The canvas.
+    <x_array> The horizontal co-ordinates of the points.
+    <y_array> The vetical co-ordinates of the points.
+    <num_points> The number of points. The number of lines drawn is 1 less than
+    this value.
+    <pixel_value> The pixel value to use.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    int count, length;
+    double x_arr[COORD_BUF_SIZE], y_arr[COORD_BUF_SIZE];
+    static char function_name[] = "kwin_draw_lines_TRANSITION";
+
+    VERIFY_CANVAS (canvas);
+    if (canvas->draw_funcs.lines != NULL)
+    {
+	for (; num_points > 0;
+	     num_points -= length, x_array += length, y_array += length)
+	{
+	    length = (num_points >COORD_BUF_SIZE) ? COORD_BUF_SIZE :num_points;
+	    for (count = 0; count < length; ++count)
+	    {
+		x_arr[count] = x_array[count] + (double) canvas->xoff;
+		y_arr[count] = y_array[count] + (double) canvas->yoff;
+	    }
+	    if ( !(*canvas->draw_funcs.lines) (canvas->draw_funcs.info,
+					       x_arr, y_arr, length,
+					       pixel_value) ) return (FALSE);
+	}
+    }
+    /*  Do this the hard way  */
     for (count = 0; count < num_points - 1; ++count)
     {
-	if ( !kwin_draw_line (canvas, x_arr[count], y_arr[count],
-			      x_arr[count + 1], y_arr[count + 1],
+	if ( !kwin_draw_line (canvas, x_array[count], y_array[count],
+			      x_array[count + 1], y_array[count + 1],
 			      pixel_value) )
 	{
-	    m_free ( (char *) x_arr );
-	    m_free ( (char *) y_arr );
 	    return (FALSE);
 	}
     }
-    m_free ( (char *) x_arr );
-    m_free ( (char *) y_arr );
     return (TRUE);
-}   /*  End Function kwin_draw_lines  */
+}   /*  End Function kwin_draw_lines_TRANSITION  */
 
 /*PUBLIC_FUNCTION*/
 flag kwin_fill_ellipse (KPixCanvas canvas,
@@ -2172,36 +1900,20 @@ flag kwin_fill_ellipse (KPixCanvas canvas,
     [RETURNS] TRUE on success, else FALSE.
 */
 {
-    unsigned short red, green, blue;
     static char function_name[] = "kwin_fill_ellipse";
 
     VERIFY_CANVAS (canvas);
-    if (canvas->pspage != NULL)
+    if (canvas->draw_funcs.arc == NULL)
     {
-	/*  Do a PostScript draw  */
-	get_colours_from_pixels (canvas, &pixel_value, &red, &green, &blue, 1);
-	/*  Flip vertical  */
-	cy = canvas->height - 1.0 - cy;
-	return ( psw_rgb_ellipse (canvas->pspage,
-				  (double) red / MAX_INTENSITY,
-				  (double) green / MAX_INTENSITY,
-				  (double) blue / MAX_INTENSITY,
-				  cx / (double) (canvas->width - 1),
-				  cy / (double) (canvas->height - 1),
-				  rx / (double) (canvas->width - 1),
-				  ry / (double) (canvas->height - 1),
-				  TRUE) );
-    }
-    if (canvas->draw_arc == NULL)
-    {
-	(void) fprintf (stderr, "Filling arcs not supported\n");
+	fprintf (stderr, "Filling arcs not supported\n");
 	return (FALSE);
     }
-    return ( (*canvas->draw_arc) (canvas->info,
-				  (double) canvas->xoff + cx - rx,
-				  (double) canvas->yoff + cy - ry,
-				  2.0 * rx, 2.0 * ry,
-				  64 * 360, 64 * 360, pixel_value, TRUE) );
+    return ( (*canvas->draw_funcs.arc) (canvas->draw_funcs.info,
+					(double) canvas->xoff + cx - rx,
+					(double) canvas->yoff + cy - ry,
+					2.0 * rx, 2.0 * ry,
+					64 * 360, 64 * 360, pixel_value,
+					TRUE) );
 }   /*  End Function kwin_fill_ellipse  */
 
 /*PUBLIC_FUNCTION*/
@@ -2219,10 +1931,7 @@ flag kwin_fill_polygon (KPixCanvas canvas, int *point_x, int *point_y,
 */
 {
     flag retval;
-    int tmp;
-    unsigned short red, green, blue;
     unsigned int coord_count;
-    double xscale, yscale;
     double *x_arr, *y_arr;
     static char function_name[] = "kwin_fill_polygon";
 
@@ -2241,31 +1950,9 @@ flag kwin_fill_polygon (KPixCanvas canvas, int *point_x, int *point_y,
 	m_free ( (char *) x_arr );
 	return (FALSE);
     }
-    if (canvas->pspage != NULL)
+    if (canvas->draw_funcs.polygon == NULL)
     {
-	/*  Do a PostScript draw  */
-	get_colours_from_pixels (canvas, &pixel_value, &red, &green, &blue, 1);
-	xscale = 1.0 / (double) (canvas->width - 1);
-	yscale = 1.0 / (double) (canvas->height - 1);
-	for (coord_count = 0; coord_count < num_vertices; ++coord_count)
-	{
-	    x_arr[coord_count] = (double) point_x[coord_count] * xscale;
-	    /*  Flip vertical  */
-	    tmp = canvas->height - 1 - point_y[coord_count];
-	    y_arr[coord_count] = (double) tmp * yscale;
-	}
-	retval = psw_rgb_polygon (canvas->pspage,
-				  (double) red / MAX_INTENSITY,
-				  (double) green / MAX_INTENSITY,
-				  (double) blue / MAX_INTENSITY,
-				  x_arr, y_arr, num_vertices, TRUE);
-	m_free ( (char *) x_arr );
-	m_free ( (char *) y_arr );
-	return (retval);
-    }
-    if (canvas->draw_polygon == NULL)
-    {
-	(void) fprintf (stderr, "Filling polygons not supported\n");
+	fprintf (stderr, "Filling polygons not supported\n");
 	m_free ( (char *) x_arr );
 	m_free ( (char *) y_arr );
 	return (FALSE);
@@ -2275,8 +1962,9 @@ flag kwin_fill_polygon (KPixCanvas canvas, int *point_x, int *point_y,
 	x_arr[coord_count] = (double) (point_x[coord_count] + canvas->xoff);
 	y_arr[coord_count] = (double) (point_y[coord_count] + canvas->yoff);
     }
-    retval = (*canvas->draw_polygon) (canvas->info, x_arr, y_arr, num_vertices,
-				      pixel_value, convex, TRUE);
+    retval = (*canvas->draw_funcs.polygon) (canvas->draw_funcs.info,
+					    x_arr, y_arr, num_vertices,
+					    pixel_value, convex, TRUE);
     m_free ( (char *) x_arr );
     m_free ( (char *) y_arr );
     return (retval);
@@ -2302,19 +1990,15 @@ flag kwin_draw_string (KPixCanvas canvas, double x, double y,
     static char function_name[] = "kwin_draw_string";
 
     VERIFY_CANVAS (canvas);
-    if (canvas->pspage != NULL)
+    if (canvas->draw_funcs.string == NULL)
     {
-	a_func_abort (function_name, "PostScript output not yet supported");
+	fprintf (stderr, "Drawing strings not supported\n");
 	return (FALSE);
     }
-    if (canvas->draw_string == NULL)
-    {
-	(void) fprintf (stderr, "Drawing strings not supported\n");
-	return (FALSE);
-    }
-    return ( (*canvas->draw_string) (canvas->info, (double) canvas->xoff + x,
-				     (double) canvas->yoff + y,
-				     string, pixel_value, clear_under) );
+    return ( (*canvas->draw_funcs.string) (canvas->draw_funcs.info,
+					   (double) canvas->xoff + x,
+					   (double) canvas->yoff + y,
+					   string, pixel_value, clear_under) );
 }   /*  End Function kwin_draw_string  */
 
 /*PUBLIC_FUNCTION*/
@@ -2335,13 +2019,13 @@ flag kwin_draw_rectangle (KPixCanvas canvas, double x, double y,
     static char function_name[] = "kwin_draw_rectangle";
 
     VERIFY_CANVAS (canvas);
-    if (canvas->draw_rectangle != NULL)
+    if (canvas->draw_funcs.rectangle != NULL)
     {
-	return ( (*canvas->draw_rectangle) (canvas->info,
-					    (double) canvas->xoff + x,
-					    (double) canvas->yoff + y,
-					    width, height, pixel_value,
-					    FALSE) );
+	return ( (*canvas->draw_funcs.rectangle) (canvas->draw_funcs.info,
+						  (double) canvas->xoff + x,
+						  (double) canvas->yoff + y,
+						  width, height, pixel_value,
+						  FALSE) );
     }
     /*  Do it the slow way  */
     x1 = x + width - 1.0;
@@ -2371,13 +2055,13 @@ flag kwin_fill_rectangle (KPixCanvas canvas, double x, double y,
 
     VERIFY_CANVAS (canvas);
     if ( (width < 1.0) || (height < 1.0) ) return (TRUE);
-    if (canvas->draw_rectangle != NULL)
+    if (canvas->draw_funcs.rectangle != NULL)
     {
-	return ( (*canvas->draw_rectangle) (canvas->info,
-					    (double) canvas->xoff + x,
-					    (double) canvas->yoff + y,
-					    width, height, pixel_value,
-					    TRUE) );
+	return ( (*canvas->draw_funcs.rectangle) (canvas->draw_funcs.info,
+						  (double) canvas->xoff + x,
+						  (double) canvas->yoff + y,
+						  width, height, pixel_value,
+						  TRUE) );
     }
     /*  Do it the slow way  */
     px[0] = (int) x;
@@ -2404,36 +2088,20 @@ flag kwin_draw_ellipse (KPixCanvas canvas, double cx, double cy,
     [RETURNS] TRUE on success, else FALSE.
 */
 {
-    unsigned short red, green, blue;
     static char function_name[] = "kwin_draw_ellipse";
 
     VERIFY_CANVAS (canvas);
-    if (canvas->pspage != NULL)
+    if (canvas->draw_funcs.arc == NULL)
     {
-	/*  Do a PostScript draw  */
-	get_colours_from_pixels (canvas, &pixel_value, &red, &green, &blue, 1);
-	/*  Flip vertical  */
-	cy = canvas->height - 1.0 - cy;
-	return ( psw_rgb_ellipse (canvas->pspage,
-				  (double) red / MAX_INTENSITY,
-				  (double) green / MAX_INTENSITY,
-				  (double) blue / MAX_INTENSITY,
-				  cx / (double) (canvas->width - 1),
-				  cy / (double) (canvas->height - 1),
-				  rx / (double) (canvas->width - 1),
-				  ry / (double) (canvas->height - 1),
-				  FALSE) );
-    }
-    if (canvas->draw_arc == NULL)
-    {
-	(void) fprintf (stderr, "Drawing arcs not supported\n");
+	fprintf (stderr, "Drawing arcs not supported\n");
 	return (FALSE);
     }
-    return ( (*canvas->draw_arc) (canvas->info,
-				  (double) canvas->xoff + cx - rx,
-				  (double) canvas->yoff + cy - ry,
-				  2.0 * rx, 2.0 * ry,
-				  64 * 360, 64 * 360, pixel_value, FALSE) );
+    return ( (*canvas->draw_funcs.arc) (canvas->draw_funcs.info,
+					(double) canvas->xoff + cx - rx,
+					(double) canvas->yoff + cy - ry,
+					2.0 * rx, 2.0 * ry,
+					64 * 360, 64 * 360, pixel_value,
+					FALSE) );
 }   /*  End Function kwin_draw_ellipse  */
 
 /*PUBLIC_FUNCTION*/
@@ -2457,7 +2125,7 @@ flag kwin_draw_ellipses (KPixCanvas canvas, int *cx, int *cy, int *rx, int *ry,
     static char function_name[] = "kwin_draw_ellipses";
 
     VERIFY_CANVAS (canvas);
-    if (canvas->draw_arcs != NULL)
+    if (canvas->draw_funcs.arcs != NULL)
     {
 	if ( ( x_arr = (double *) m_alloc (sizeof *x_arr * num_ellipses) )
 	    == NULL )
@@ -2519,10 +2187,11 @@ flag kwin_draw_ellipses (KPixCanvas canvas, int *cx, int *cy, int *rx, int *ry,
 	    angle1_arr[count] = 64 * 360;
 	    angle2_arr[count] = 64 * 360;
 	}
-	retval = (*canvas->draw_arcs) (canvas->info, x_arr, y_arr,
-				       width_arr, height_arr,
-				       angle1_arr, angle2_arr,
-				       num_ellipses, pixel_value, FALSE);
+	retval = (*canvas->draw_funcs.arcs) (canvas->draw_funcs.info,
+					     x_arr, y_arr,
+					     width_arr, height_arr,
+					     angle1_arr, angle2_arr,
+					     num_ellipses, pixel_value, FALSE);
 	m_free ( (char *) x_arr );
 	m_free ( (char *) y_arr );
 	m_free ( (char *) width_arr );
@@ -2565,7 +2234,7 @@ flag kwin_fill_ellipses (KPixCanvas canvas, int *cx, int *cy, int *rx, int *ry,
     static char function_name[] = "kwin_fill_ellipses";
 
     VERIFY_CANVAS (canvas);
-    if (canvas->draw_arcs != NULL)
+    if (canvas->draw_funcs.arcs != NULL)
     {
 	if ( ( x_arr = (double *) m_alloc (sizeof *x_arr * num_ellipses) )
 	    == NULL )
@@ -2627,7 +2296,7 @@ flag kwin_fill_ellipses (KPixCanvas canvas, int *cx, int *cy, int *rx, int *ry,
 	    angle1_arr[count] = 64 * 360;
 	    angle2_arr[count] = 64 * 360;
 	}
-	retval = (*canvas->draw_arcs) (canvas->info, x_arr, y_arr,
+	retval = (*canvas->draw_funcs.arcs) (canvas->draw_funcs.info, x_arr, y_arr,
 				       width_arr, height_arr,
 				       angle1_arr, angle2_arr,
 				       num_ellipses, pixel_value, TRUE);
@@ -2672,7 +2341,7 @@ flag kwin_draw_segments (KPixCanvas canvas, int *x0, int *y0, int *x1, int *y1,
     static char function_name[] = "kwin_draw_segments";
 
     VERIFY_CANVAS (canvas);
-    if (canvas->draw_segments != NULL)
+    if (canvas->draw_funcs.segments != NULL)
     {
 	if ( ( x0_arr = (double *) m_alloc (sizeof *x0_arr * num_segments) )
 	    == NULL )
@@ -2711,9 +2380,10 @@ flag kwin_draw_segments (KPixCanvas canvas, int *x0, int *y0, int *x1, int *y1,
 	    x1_arr[count] = (double) (x1[count] + canvas->xoff);
 	    y1_arr[count] = (double) (y1[count] + canvas->yoff);
 	}
-	retval = (*canvas->draw_segments) (canvas->info, x0_arr, y0_arr,
-					   x1_arr, y1_arr, num_segments,
-					   pixel_value);
+	retval = (*canvas->draw_funcs.segments) (canvas->draw_funcs.info,
+						 x0_arr, y0_arr,
+						 x1_arr, y1_arr, num_segments,
+						 pixel_value);
 	m_free ( (char *) x0_arr );
 	m_free ( (char *) y0_arr );
 	m_free ( (char *) x1_arr );
@@ -2732,6 +2402,47 @@ flag kwin_draw_segments (KPixCanvas canvas, int *x0, int *y0, int *x1, int *y1,
     }
     return (TRUE);
 }   /*  End Function kwin_draw_segments  */
+
+/*TRANSITION_FUNCTION*/
+flag kwin_draw_segments_TRANSITION (KPixCanvas canvas, double *x0, double *y0,
+				    double *x1, double *y1,
+				    int num_segments,unsigned long pixel_value)
+/*  [SUMMARY] Draw multiple disjoint lines onto a pixel canvas.
+    [NOTE] This routine will be renamed to <kwin_draw_segments> in Karma v2.0.
+    <canvas> The canvas.
+    <x0> The horizontal start co-ordinates of the segments.
+    <y0> The vetical start co-ordinates of the segments.
+    <x1> The horizontal end co-ordinates of the segments.
+    <y1> The vetical end co-ordinates of the segments.
+    <num_segments> The number of segments.
+    <pixel_value> The pixel value to use.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    int count;
+    static char function_name[] = "kwin_draw_segments_TRANSITION";
+
+    VERIFY_CANVAS (canvas);
+#ifdef DISABLED  /*  Need to add canvas offsets  */
+    if (canvas->draw_funcs.segments != NULL)
+    {
+	return ( (*canvas->draw_funcs.segments) (canvas->draw_funcs.info,
+						 x0, y0,
+						 x1, y1, num_segments,
+						 pixel_value) );
+    }
+#endif
+    /*  Do this the hard way  */
+    for (count = 0; count < num_segments; ++count)
+    {
+	if ( !kwin_draw_line (canvas, x0[count], y0[count],
+			      x1[count], y1[count], pixel_value) )
+	{
+	    return (FALSE);
+	}
+    }
+    return (TRUE);
+}   /*  End Function kwin_draw_segments_TRANSITION  */
 
 
 /*  Other public routines follow  */
@@ -2766,7 +2477,7 @@ void kwin_free_cache_data (KPixCanvasImageCache cache)
     VERIFY_CANVAS (canvas);
     if (canvas->free_cache_data == NULL)
     {
-	(void) fprintf (stderr, "Don't know how to free cache\n");
+	fprintf (stderr, "Don't know how to free cache\n");
 	a_prog_bug (function_name);
     }
     (*canvas->free_cache_data) (cache);
@@ -2803,7 +2514,7 @@ flag kwin_convert_to_canvas_coord (KPixCanvas canvas, int xin, int yin,
     *xout = xin - canvas->xoff;
     *yout = yin - canvas->yoff;
     if ( (*xout < 0) || (*xout >= canvas->width) ||
-	(*yout < 0) || (*yout >= canvas->height) ) return (FALSE);
+	 (*yout < 0) || (*yout >= canvas->height) ) return (FALSE);
     return (TRUE);
 }   /*  End Function kwin_convert_to_canvas_coord  */
 
@@ -2828,7 +2539,7 @@ flag kwin_convert_from_canvas_coord (KPixCanvas canvas, int xin, int yin,
     *xout = xin + canvas->xoff;
     *yout = yin + canvas->yoff;
     if ( (xin < 0) || (xin >= canvas->width) ||
-	(yin < 0) || (yin >= canvas->height) ) return (FALSE);
+	 (yin < 0) || (yin >= canvas->height) ) return (FALSE);
     return (TRUE);
 }   /*  End Function kwin_convert_from_canvas_coord  */
 
@@ -2857,17 +2568,47 @@ flag kwin_get_colour (KPixCanvas canvas, CONST char *colourname,
     VERIFY_CANVAS (canvas);
     if (colourname == NULL)
     {
-	(void) fprintf (stderr, "NULL colourname pointer passed\n");
+	fprintf (stderr, "NULL colourname pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (canvas->get_colour == NULL)
     {
-	(void) fprintf (stderr, "Colourname allocation not supported\n");
+	fprintf (stderr, "Colourname allocation not supported\n");
 	return (FALSE);
     }
     return ( (*canvas->get_colour) (canvas->info, colourname, pixel_value,
 				    red, green, blue) );
 }   /*  End Function kwin_get_colour  */
+
+/*EXPERIMENTAL_FUNCTION*/
+flag kwin_get_pixel_RGB_values (KPixCanvas canvas, unsigned long *pixels,
+				unsigned short *reds,
+				unsigned short *greens,
+				unsigned short *blues,
+				unsigned int num_colours)
+/*  [SUMMARY] Get RGB components of pixel values.
+    [PURPOSE] This routine will determine the RGB components of an array of
+    colourmap entries.
+    <canvas> The pixel canvas.
+    <pixels> The array of colourmap indices.
+    <reds> The red components will be written to this array.
+    <greens> The green components will be written to this array.
+    <blues> The blue components will be written to this array.
+    <num_colours> The number of colours in the arrays.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    static char function_name[] = "kwin_get_pixel_RGB_values";
+
+    VERIFY_CANVAS (canvas);
+    if (canvas->query_colourmap == NULL)
+    {
+	fprintf (stderr, "Colourmap querying not supported.\n");
+	return (FALSE);
+    }
+    return ( (*canvas->query_colourmap) (canvas->info, pixels,
+					 reds, greens, blues, num_colours) );
+}   /*  End Function kwin_get_pixel_RGB_values  */
 
 /*PUBLIC_FUNCTION*/
 KPixCanvasFont kwin_load_font (KPixCanvas canvas, CONST char *fontname)
@@ -2885,12 +2626,12 @@ KPixCanvasFont kwin_load_font (KPixCanvas canvas, CONST char *fontname)
     VERIFY_CANVAS (canvas);
     if (fontname == NULL)
     {
-	(void) fprintf (stderr, "NULL fontname pointer passed\n");
+	fprintf (stderr, "NULL fontname pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (canvas->load_font == NULL)
     {
-	(void) fprintf (stderr, "Font loading not supported\n");
+	fprintf (stderr, "Font loading not supported\n");
 	return (NULL);
     }
     if ( ( font = (KPixCanvasFont) m_alloc (sizeof *font) ) == NULL )
@@ -2930,12 +2671,12 @@ flag kwin_get_string_size (KPixCanvasFont font, CONST char *string, ...)
     VERIFY_CANVAS (canvas);
     if (string == NULL)
     {
-	(void) fprintf (stderr, "NULL string pointer passed\n");
+	fprintf (stderr, "NULL string pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (canvas->get_string_size == NULL)
     {
-	(void) fprintf (stderr, "Font sizing not supported\n");
+	fprintf (stderr, "Font sizing not supported\n");
 	return (FALSE);
     }
     retval = (*canvas->get_string_size) (font->info, string, argp);
@@ -2973,7 +2714,8 @@ static KPixCanvas alloc_canvas ()
     canvas->font = NULL;
     canvas->parent = NULL;
     canvas->info = NULL;
-    canvas->draw_point = ( flag (*) () ) NULL;
+    canvas->draw_funcs.info = NULL;
+    canvas->draw_funcs.point = ( flag (*) () ) NULL;
     canvas->create_child = ( void *(*) () ) NULL;
     canvas->user_ptr = NULL;
     canvas->line_width = 0.0;
@@ -3005,7 +2747,7 @@ static flag child_position_event_func (KPixCanvas parent, int x, int y,
     VERIFY_CANVAS (parent);
     if ( (handle = (struct child_type *) *f_info) == NULL )
     {
-	(void) fprintf (stderr, "NULL child_type structure pointer\n");
+	fprintf (stderr, "NULL child_type structure pointer\n");
 	a_prog_bug (function_name);
     }
     child = handle->child;
@@ -3018,7 +2760,7 @@ static flag child_position_event_func (KPixCanvas parent, int x, int y,
 #ifdef not_implemented
 static void not_implemented (char *s)
 {
-    (void) fprintf (stderr, "%s: not implemented yet\n", s);
+    fprintf (stderr, "%s: not implemented yet\n", s);
 }   /*  End Function not_implemented  */
 #endif
 
@@ -3085,31 +2827,3 @@ static flag position_event_func (void *object, void *client1_data,
     return ( (*func) (canvas, data->x, data->y, data->event_code,
 		      data->e_info, client1_data) );
 }   /*  End Function position_event_func  */
-
-static flag get_colours_from_pixels (KPixCanvas canvas, unsigned long *pixels,
-				     unsigned short *reds,
-				     unsigned short *greens,
-				     unsigned short *blues,
-				     unsigned int num_colours)
-/*  [PURPOSE] This routine will determine the RGB components of an array of
-    colourmap entries.
-    <canvas> The pixel canvas.
-    <pixels> The array of colourmap indices.
-    <reds> The red components will be written to this array.
-    <greens> The green components will be written to this array.
-    <blues> The blue components will be written to this array.
-    <num_colours> The number of colours in the arrays.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-{
-    static char function_name[] = "__kwin_get_colours_from_pixels";
-
-    VERIFY_CANVAS (canvas);
-    if (canvas->query_colourmap == NULL)
-    {
-	(void) fprintf (stderr, "Colourmap querying not supported.\n");
-	return (FALSE);
-    }
-    return ( (*canvas->query_colourmap) (canvas->info, pixels,
-					 reds, greens, blues, num_colours) );
-}   /*  End Function get_colours_from_pixels  */

@@ -126,7 +126,7 @@ Alternatively, once the maximum is computed for a chunk (each job
 works on one chunk), this value can be merged into the global
 value. However this requires some synchronisation between
 threads. When a thread wants to update the global value it needs to
-aquire exclusive access the it, modify it and then release
+aquire exclusive access to it, modify it and then release
 it. This is termed "locking" a resource (the global maximum
 value). Provided the period the global variable is locked is small,
 contention between threads is kept to a minumum. The <mt_setlock>
@@ -203,10 +203,10 @@ launching jobs. Note that this assumes that each job takes the same
 amount of time. If this is not the case, some threads will be idle
 part of the time, and the work will take longer because of the bad
 load balancing. This can be improved by increasing the number of jobs
-(perhaps by 4), hence reducing the maximum time any thread spends
-idle. If the number of jobs is increased too much the overheads may
-become significant, so one needs to make a compromise. Hence I suggest
-4.
+(perhaps by a factor of 4), hence reducing the maximum time any thread
+spends idle. If the number of jobs is increased too much the overheads
+may become significant, so one needs to make a compromise. Hence I
+suggest 4.
 
 /*------------------------------------------------------*/
 /* Multi-threading sample program: more efficient       */

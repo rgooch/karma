@@ -36,9 +36,19 @@
 #define K_CANVAS_EVENT_MIDDLE_MOUSE_RELEASE (unsigned int) 8
 #define K_CANVAS_EVENT_RIGHT_MOUSE_RELEASE (unsigned int) 9
 #define K_CANVAS_EVENT_PLAIN_KEY_PRESS (unsigned int) 10
+#define K_CANVAS_EVENT_MODIFIED_KEY_PRESS (unsigned int) 11
 
 #define K_CANVAS_EVENT_UNDEFINED (unsigned int) 29999
 
 #define K_CANVAS_EVENT_USER_SPACE (unsigned int) 30000
+
+
+/*  Mask is an unsigned long and immediately follows '\0' terminator in string
+    buffer  */
+#define K_CANVAS_EVENT_LEFT_MOUSE_MASK 0x01
+#define K_CANVAS_EVENT_MIDDLE_MOUSE_MASK 0x02
+#define K_CANVAS_EVENT_RIGHT_MOUSE_MASK 0x04
+#define K_CANVAS_EVENT_CONTROL_KEY_MASK 0x08
+
 
 #endif  /*  K_EVENT_CODES_H  */

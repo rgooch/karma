@@ -45,8 +45,20 @@
     Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
 
-    Last updated by Richard Gooch   4-JUN-1996: Took account of new fields in
+    Updated by      Richard Gooch   4-JUN-1996: Took account of new fields in
   dimension descriptor for first and last co-ordinate.
+
+    Updated by      Richard Gooch   21-AUG-1996: Created <vrender_get_eye_info>
+
+    Updated by      Richard Gooch   2-SEP-1996: Created
+  <vrender_view_notify_func>.
+
+    Updated by      Richard Gooch   12-SEP-1996: Do not allocate reorder buffer
+  for left and right eyes if stereo has not yet been displayed, rather,
+  allocate on demand in <reorder_worker>.
+
+    Last updated by Richard Gooch   29-OCT-1996: Tidied up macros to keep
+  Solaris 2 compiler happy.
 
 
 */
@@ -82,11 +94,11 @@
 #define CONTEXT_MAGIC_NUMBER (unsigned int) 1453908345
 #define PROTOCOL_VERSION (unsigned int) 0
 
-#define VERIFY_CONTEXT(context) if (context == NULL) \
-{(void) fprintf (stderr, "NULL vrend context passed\n"); \
+#define VERIFY_CONTEXT(ctx) if (ctx == NULL) \
+{fprintf (stderr, "NULL vrend context passed\n"); \
  a_prog_bug (function_name); } \
-if (context->magic_number != CONTEXT_MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid vrend context object\n"); \
+if (ctx->magic_number != CONTEXT_MAGIC_NUMBER) \
+{fprintf (stderr, "Invalid vrend context object\n"); \
  a_prog_bug (function_name); }
 
 
@@ -148,6 +160,7 @@ typedef struct
     int start_plane;
     int length;
     float t_enter;
+    float t_leave;
     signed char *ray;
 } ray_data;
 
@@ -209,6 +222,7 @@ struct vrendercontext_type
     flag never_did_stereo;
     KCallbackList image_desc_notify_list;
     KCallbackList cache_notify_list;
+    KCallbackList view_notify_list;
 /*
     unsigned int (*alloc_func) ();
     KCallbackList resize_list;
@@ -240,7 +254,7 @@ STATIC_FUNCTION (void shader_destroy_func, (Shader shader) );
 STATIC_FUNCTION (void compute_output_image_desc,
 		 (KVolumeRenderContext context) );
 STATIC_FUNCTION (void compute_view_info_cache, (KVolumeRenderContext context));
-STATIC_FUNCTION (void compute_eye_info_cache, (eye_info *eye) );
+STATIC_FUNCTION (void compute_eye_info_cache, (eye_info *eye, flag no_alloc) );
 STATIC_FUNCTION (void rotate_3d,
 		 (RotatedKcoord_3d *rot, Kcoord_3d orig, unsigned int step) );
 STATIC_FUNCTION (void generate_line,
@@ -354,6 +368,7 @@ KVolumeRenderContext vrender_create_context (void *info, ...)
     context->never_did_stereo = TRUE;
     context->image_desc_notify_list = NULL;
     context->cache_notify_list = NULL;
+    context->view_notify_list = NULL;
     if ( !process_context_attributes (context, argp) )
     {
 	context->magic_number = 0;
@@ -413,7 +428,7 @@ flag vrender_get_context_attributes (KVolumeRenderContext context, ...)
 	  case VRENDER_CONTEXT_ATT_VIEW:
 	    if ( ( view = va_arg (argp, view_specification *) ) == NULL )
 	    {
-		(void) fprintf (stderr, "NULL view pointer passed\n");
+		fprintf (stderr, "NULL view pointer passed\n");
 		a_prog_bug (function_name);
 	    }
 	    m_copy ( (char *) view, (char *) &context->view, sizeof *view );
@@ -421,7 +436,7 @@ flag vrender_get_context_attributes (KVolumeRenderContext context, ...)
 	  case VRENDER_CONTEXT_ATT_SUBCUBE_X_START:
 	    if ( ( ul_ptr = va_arg (argp, unsigned long *) ) == NULL )
 	    {
-		(void) fprintf (stderr, "NULL x_start pointer passed\n");
+		fprintf (stderr, "NULL x_start pointer passed\n");
 		a_prog_bug (function_name);
 	    }
 	    *ul_ptr = context->subcube_x_start;
@@ -429,7 +444,7 @@ flag vrender_get_context_attributes (KVolumeRenderContext context, ...)
 	  case VRENDER_CONTEXT_ATT_SUBCUBE_X_END:
 	    if ( ( ul_ptr = va_arg (argp, unsigned long *) ) == NULL )
 	    {
-		(void) fprintf (stderr, "NULL x_end pointer passed\n");
+		fprintf (stderr, "NULL x_end pointer passed\n");
 		a_prog_bug (function_name);
 	    }
 	    *ul_ptr = context->subcube_x_end;
@@ -437,7 +452,7 @@ flag vrender_get_context_attributes (KVolumeRenderContext context, ...)
 	  case VRENDER_CONTEXT_ATT_SUBCUBE_Y_START:
 	    if ( ( ul_ptr = va_arg (argp, unsigned long *) ) == NULL )
 	    {
-		(void) fprintf (stderr, "NULL y_start pointer passed\n");
+		fprintf (stderr, "NULL y_start pointer passed\n");
 		a_prog_bug (function_name);
 	    }
 	    *ul_ptr = context->subcube_y_start;
@@ -445,7 +460,7 @@ flag vrender_get_context_attributes (KVolumeRenderContext context, ...)
 	  case VRENDER_CONTEXT_ATT_SUBCUBE_Y_END:
 	    if ( ( ul_ptr = va_arg (argp, unsigned long *) ) == NULL )
 	    {
-		(void) fprintf (stderr, "NULL y_end pointer passed\n");
+		fprintf (stderr, "NULL y_end pointer passed\n");
 		a_prog_bug (function_name);
 	    }
 	    *ul_ptr = context->subcube_y_end;
@@ -453,7 +468,7 @@ flag vrender_get_context_attributes (KVolumeRenderContext context, ...)
 	  case VRENDER_CONTEXT_ATT_SUBCUBE_Z_START:
 	    if ( ( ul_ptr = va_arg (argp, unsigned long *) ) == NULL )
 	    {
-		(void) fprintf (stderr, "NULL z_start pointer passed\n");
+		fprintf (stderr, "NULL z_start pointer passed\n");
 		a_prog_bug (function_name);
 	    }
 	    *ul_ptr = context->subcube_z_start;
@@ -461,7 +476,7 @@ flag vrender_get_context_attributes (KVolumeRenderContext context, ...)
 	  case VRENDER_CONTEXT_ATT_SUBCUBE_Z_END:
 	    if ( ( ul_ptr = va_arg (argp, unsigned long *) ) == NULL )
 	    {
-		(void) fprintf (stderr, "NULL z_end pointer passed\n");
+		fprintf (stderr, "NULL z_end pointer passed\n");
 		a_prog_bug (function_name);
 	    }
 	    *ul_ptr = context->subcube_z_end;
@@ -469,7 +484,7 @@ flag vrender_get_context_attributes (KVolumeRenderContext context, ...)
 	  case VRENDER_CONTEXT_ATT_IMAGE_DESC:
 	    if ( ( arr_desc = va_arg (argp, array_desc **) ) == NULL )
 	    {
-		(void) fprintf (stderr,
+		fprintf (stderr,
 				"NULL image descriptor pointer passed\n");
 		a_prog_bug (function_name);
 	    }
@@ -479,14 +494,14 @@ flag vrender_get_context_attributes (KVolumeRenderContext context, ...)
 	  case VRENDER_CONTEXT_ATT_VALID_IMAGE_DESC:
 	    if ( ( flag_ptr = va_arg (argp, flag *) ) == NULL )
 	    {
-		(void) fprintf (stderr,
+		fprintf (stderr,
 				"NULL valid flag pointer passed\n");
 		a_prog_bug (function_name);
 	    }
 	    *flag_ptr = context->valid_image_desc;
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Unknown attribute key: %u\n", att_key);
+	    fprintf (stderr, "Unknown attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	    break;
 	}
@@ -526,7 +541,7 @@ void vrender_register_shader (void (*slow_func) (), void (*fast_func) (),
     *ptr = (void *) fast_func;
     if ( !ds_packet_all_data (pack_desc) )
     {
-	(void) fprintf (stderr, "Shader packet descriptor not atomic\n");
+	fprintf (stderr, "Shader packet descriptor not atomic\n");
 	a_prog_bug (function_name);
     }
     if ( ( tmp.pack_desc = ds_copy_desc_until (pack_desc, NULL) ) == NULL )
@@ -564,7 +579,7 @@ void vrender_change_shader_blank_packet (CONST char *name,
 
     if (aa_get_pair (shaders, (void *) name, (void **) &shader) == NULL)
     {
-	(void) fprintf (stderr, "Shader: \"%s\" not found\n", name);
+	fprintf (stderr, "Shader: \"%s\" not found\n", name);
 	a_prog_bug (function_name);
     }
     m_copy (shader->blank_packet, blank_packet, shader->packet_size);
@@ -642,17 +657,17 @@ flag vrender_to_buffer (KVolumeRenderContext context, char *left_buffer,
     VERIFY_CONTEXT (context);
     if (context->cube == NULL)
     {
-	(void) fprintf (stderr, "No cube specified!\n");
+	fprintf (stderr, "No cube specified!\n");
 	a_prog_bug (function_name);
     }
     if (context->shader == NULL)
     {
-	(void) fprintf (stderr, "No shader specified!\n");
+	fprintf (stderr, "No shader specified!\n");
 	a_prog_bug (function_name);
     }
     if (left_buffer == NULL)
     {
-	(void) fprintf (stderr, "No left image buffer specified!\n");
+	fprintf (stderr, "No left image buffer specified!\n");
 	a_prog_bug (function_name);
     }
     compute_output_image_desc (context);
@@ -720,7 +735,8 @@ flag vrender_to_buffer (KVolumeRenderContext context, char *left_buffer,
 CONST signed char *vrender_collect_ray (KVolumeRenderContext context,
 					unsigned int eye_view,
 					Kcoord_2d pos_2d, Kcoord_3d *ray_start,
-					Kcoord_3d *direction, float *t_enter,
+					Kcoord_3d *direction,
+					float *t_enter, float *t_leave,
 					unsigned int *ray_length)
 /*  [SUMMARY] Collect a ray projected from an image plane into a volume.
     <context> The volume rendering context. This specifies the volume and view
@@ -733,6 +749,8 @@ CONST signed char *vrender_collect_ray (KVolumeRenderContext context,
     <direction> The 3-dimensional direction vector of the ray is written here.
     This is not normalised.
     <t_enter> The distance down the ray corresponding to the first voxel is
+    written here.
+    <t_leave> The distance down the ray corresponding to the last voxel is
     written here.
     <ray_length> The length of the ray through the volume is written here. If
     the ray does not intersect the volume, 0 is written here.
@@ -747,13 +765,12 @@ CONST signed char *vrender_collect_ray (KVolumeRenderContext context,
     int x_coord, y_coord;
     unsigned int length;
     float min_d, max_d;
-    float t_leave;
     static char function_name[] = "vrender_collect_ray";
 
     VERIFY_CONTEXT (context);
     if (context->cube == NULL)
     {
-	(void) fprintf (stderr, "No cube specified!\n");
+	fprintf (stderr, "No cube specified!\n");
 	a_prog_bug (function_name);
     }
     compute_view_info_cache (context);
@@ -769,7 +786,7 @@ CONST signed char *vrender_collect_ray (KVolumeRenderContext context,
 	eye = &context->right;
 	break;
       default:
-	(void) fprintf (stderr, "Illegal value of eye_view: %u\n", eye_view);
+	fprintf (stderr, "Illegal value of eye_view: %u\n", eye_view);
 	a_prog_bug (function_name);
 	break;
     }
@@ -828,10 +845,11 @@ CONST signed char *vrender_collect_ray (KVolumeRenderContext context,
 	ray = eye->reorder_rays + x_coord + y_coord * context->h_dim.length;
 	if (ray->ray == NULL)
 	{
-	    (void) fprintf (stderr, "NULL ray  %f  %f\n", pos_2d.x, pos_2d.y);
+	    fprintf (stderr, "NULL ray  %f  %f\n", pos_2d.x, pos_2d.y);
 	    return (NULL);
 	}
 	*t_enter = ray->t_enter;
+	*t_leave = ray->t_leave;
 	*ray_length = ray->length;
 	return ( (CONST signed char *) ray->ray );
     }
@@ -845,7 +863,7 @@ CONST signed char *vrender_collect_ray (KVolumeRenderContext context,
 					   &one_on_ray_dir,
 					   &eye->rot_subcube_start,
 					   &eye->rot_subcube_end,
-					   &min_d, &max_d, t_enter,&t_leave) )
+					   &min_d, &max_d, t_enter, t_leave) )
     {
 	*ray_length = 0;
 	return (NULL);
@@ -868,7 +886,7 @@ CONST signed char *vrender_collect_ray (KVolumeRenderContext context,
 	context->query_ray_length = length;
     }
     collect_ray_rough (context->cube, eye, rot_ray_start, ray_direction,
-		       *t_enter, t_leave, context->query_ray, length);
+		       *t_enter, *t_leave, context->query_ray, length);
     *ray_length = length;
     return ( (CONST signed char *) context->query_ray );
 }   /*  End Function vrender_collect_ray  */
@@ -899,7 +917,7 @@ flag vrender_project_3d (KVolumeRenderContext context, unsigned int eye_view,
     VERIFY_CONTEXT (context);
     if (context->cube == NULL)
     {
-	(void) fprintf (stderr, "No cube specified!\n");
+	fprintf (stderr, "No cube specified!\n");
 	a_prog_bug (function_name);
     }
     compute_view_info_cache (context);
@@ -915,7 +933,7 @@ flag vrender_project_3d (KVolumeRenderContext context, unsigned int eye_view,
 	eye = &context->right;
 	break;
       default:
-	(void) fprintf (stderr, "Illegal value of eye_view: %u\n", eye_view);
+	fprintf (stderr, "Illegal value of eye_view: %u\n", eye_view);
 	a_prog_bug (function_name);
 	break;
     }
@@ -945,7 +963,7 @@ flag vrender_project_3d (KVolumeRenderContext context, unsigned int eye_view,
     else
     {
 	/*  Perspective projection  */
-	/*  Find distance down ray where view plane is intersected  */
+	/*  Find distance down ray where raster plane is intersected  */
 	t = geom_intersect_plane_with_ray (eye->orig_ras_plane_centre,
 					   eye->orig_direction,
 					   eye->orig_position, ray_direction,
@@ -954,10 +972,8 @@ flag vrender_project_3d (KVolumeRenderContext context, unsigned int eye_view,
 	tmp3d.x = t * ray_direction.x;
 	tmp3d.y = t * ray_direction.y;
 	tmp3d.z = t * ray_direction.z;
-	point_2d->x = geom_vector_dot_product (eye->orig_horizontal,
-					       tmp3d);
-	point_2d->y = geom_vector_dot_product (context->view.vertical,
-					       tmp3d);
+	point_2d->x = geom_vector_dot_product (eye->orig_horizontal, tmp3d);
+	point_2d->y = geom_vector_dot_product (context->view.vertical, tmp3d);
 	if (!test_visible) return (FALSE);
 	ray_start = eye->orig_position;
     }
@@ -1004,14 +1020,14 @@ flag vrender_project_3d (KVolumeRenderContext context, unsigned int eye_view,
 /*
 	if ( (point_3d.x == 0.0) && (point_3d.y == 0.0) && (point_3d.z ==0.0) )
 	{
-	    (void) fprintf (stderr, "distance: %e\n",
+	    fprintf (stderr, "distance: %e\n",
 			    distance_down_ray);
 	}
 */
 	return (TRUE);
     }
 /*
-    (void) fprintf (stderr,
+    fprintf (stderr,
 		    "distance_down_ray: %e  t_enter: %e  t_leave: %e\n",
 		    distance_down_ray, t_enter, t_leave);
 */
@@ -1044,7 +1060,7 @@ void vrender_compute_caches (KVolumeRenderContext context, unsigned int eyes,
     VERIFY_CONTEXT (context);
     if (context->cube == NULL)
     {
-	(void) fprintf (stderr, "No cube specified!\n");
+	fprintf (stderr, "No cube specified!\n");
 	a_prog_bug (function_name);
     }
     compute_output_image_desc (context);
@@ -1052,7 +1068,7 @@ void vrender_compute_caches (KVolumeRenderContext context, unsigned int eyes,
     if (eyes & VRENDER_EYE_MASK_CYCLOPS) while (eye_worker(&context->cyclops));
     if (eyes & VRENDER_EYE_MASK_LEFT) while ( eye_worker (&context->left) );
     if (eyes & VRENDER_EYE_MASK_RIGHT) while ( eye_worker (&context->right) );
-    if (notify) (void) c_call_callbacks (context->cache_notify_list,
+    if (notify) c_call_callbacks (context->cache_notify_list,
 					 (void *) (uaddr) eyes);
 }   /*  End Function vrender_compute_caches  */
 
@@ -1088,7 +1104,7 @@ KCallbackFunc vrender_cache_notify_func
     [PURPOSE] This routine will register a function which should be called
     whenever the cache for one or more eye views is computed.
     <context> The volume render context.
-    <func> The routine to be called. The The prototype function is
+    <func> The routine to be called. The prototype function is
     [<VRENDER_PROTO_cache_notify_func>]
     <info> The initial arbitrary information pointer.
     [RETURNS] A KCallbackFunc object on success. On failure, the process aborts
@@ -1101,6 +1117,75 @@ KCallbackFunc vrender_cache_notify_func
 				  ( flag (*) () ) func, context, info, TRUE,
 				  NULL, FALSE, FALSE) );
 }   /*  End Function vrender_cache_notify_func  */
+
+/*PUBLIC_FUNCTION*/
+KCallbackFunc vrender_view_notify_func
+    (KVolumeRenderContext context,
+     void (*func) (KVolumeRenderContext context, void **info),
+     void *info)
+/*  [SUMMARY] Register view changed computed callback.
+    [PURPOSE] This routine will register a function which should be called
+    whenever the view for a context is changed.
+    <context> The volume render context.
+    <func> The routine to be called. The prototype function is
+    [<VRENDER_PROTO_view_notify_func>]. This is called after view information
+    has been computed, but before any cache information is computed.
+    <info> The initial arbitrary information pointer.
+    [RETURNS] A KCallbackFunc object on success. On failure, the process aborts
+*/
+{
+    static char function_name[] = "vrender_view_notify_func";
+
+    VERIFY_CONTEXT (context);
+    return ( c_register_callback (&context->view_notify_list,
+				  ( flag (*) () ) func, context, info, TRUE,
+				  NULL, FALSE, FALSE) );
+}   /*  End Function vrender_view_notify_func  */
+
+/*PUBLIC_FUNCTION*/
+void vrender_get_eye_info (KVolumeRenderContext context, unsigned int eye_view,
+			   Kcoord_3d *ras_centre, Kcoord_3d *direction,
+			   Kcoord_3d *horizontal)
+/*  [SUMMARY] Get eye information.
+    <context> The volume render context which determines the view information.
+    <eye_view> The eye which will see the point. See [<VRENDER_EYES>] for a
+    list of legal values.
+    <ras_centre> The centre of the raster plane is written here.
+    <direction> The direction towards infinity is written here.
+    <horizontal> The horizontal direction vector is written here.
+    [RETURNS] Nothing.
+*/
+{
+    eye_info *eye = NULL;  /*  Initialised to keep compiler happy  */
+    static char function_name[] = "vrender_get_eye_info";
+
+    VERIFY_CONTEXT (context);
+    if (context->cube == NULL)
+    {
+	fprintf (stderr, "No cube specified!\n");
+	a_prog_bug (function_name);
+    }
+    compute_view_info_cache (context);
+    switch (eye_view)
+    {
+      case VRENDER_EYE_CHOICE_CYCLOPS:
+	eye = &context->cyclops;
+	break;
+      case VRENDER_EYE_CHOICE_LEFT:
+	eye = &context->left;
+	break;
+      case VRENDER_EYE_CHOICE_RIGHT:
+	eye = &context->right;
+	break;
+      default:
+	fprintf (stderr, "Illegal value of eye_view: %u\n", eye_view);
+	a_prog_bug (function_name);
+	break;
+    }
+    *ras_centre = eye->orig_ras_plane_centre;
+    *direction = eye->orig_direction;
+    *horizontal = eye->orig_horizontal;
+}   /*  End Function vrender_project_3d  */
 
 
 /*  Private functions follow  */
@@ -1138,12 +1223,12 @@ static flag process_context_attributes (KVolumeRenderContext context,
 	    {
 		if (iarray_num_dim (cube) != 3)
 		{
-		    (void) fprintf (stderr, "Cube not 3-dimensional\n");
+		    fprintf (stderr, "Cube not 3-dimensional\n");
 		    a_prog_bug (function_name);
 		}
 		if (iarray_type (cube) != K_BYTE)
 		{
-		    (void) fprintf (stderr, "Cube not type K_BYTE\n");
+		    fprintf (stderr, "Cube not type K_BYTE\n");
 		    a_prog_bug (function_name);
 		}
 	    }
@@ -1160,7 +1245,7 @@ static flag process_context_attributes (KVolumeRenderContext context,
 	  case VRENDER_CONTEXT_ATT_VIEW:
 	    if ( ( view = va_arg (argp, view_specification *) ) == NULL )
 	    {
-		(void) fprintf (stderr, "NULL view specification pointer\n");
+		fprintf (stderr, "NULL view specification pointer\n");
 		a_prog_bug (function_name);
 	    }
 	    m_copy ( (char *) &context->view, (char *) view, sizeof *view );
@@ -1169,13 +1254,13 @@ static flag process_context_attributes (KVolumeRenderContext context,
 	  case VRENDER_CONTEXT_ATT_SHADER:
 	    if ( ( shader_name = va_arg (argp, CONST char *) ) == NULL )
 	    {
-		(void) fprintf (stderr, "NULL shader name pointer\n");
+		fprintf (stderr, "NULL shader name pointer\n");
 		a_prog_bug (function_name);
 	    }
 	    if (aa_get_pair (shaders, (void *) shader_name, (void **) &shader)
 		== NULL)
 	    {
-		(void) fprintf (stderr, "Shader: \"%s\" not found\n",
+		fprintf (stderr, "Shader: \"%s\" not found\n",
 				shader_name);
 		a_prog_bug (function_name);
 	    }
@@ -1193,7 +1278,7 @@ static flag process_context_attributes (KVolumeRenderContext context,
 	    }
 	    if (ulong >= context->subcube_x_end)
 	    {
-		(void) fprintf(stderr,
+		fprintf(stderr,
 			       "Subcube x start: %lu not less than end: %lu\n",
 			       ulong, context->subcube_x_end);
 		a_prog_bug (function_name);
@@ -1213,7 +1298,7 @@ static flag process_context_attributes (KVolumeRenderContext context,
 	    }
 	    if (ulong <= context->subcube_x_start)
 	    {
-		(void) fprintf(stderr,
+		fprintf(stderr,
 			       "Subcube x end: %lu not greater than start: %lu\n",
 			       ulong, context->subcube_x_start);
 		a_prog_bug (function_name);
@@ -1233,7 +1318,7 @@ static flag process_context_attributes (KVolumeRenderContext context,
 	    }
 	    if (ulong >= context->subcube_y_end)
 	    {
-		(void) fprintf(stderr,
+		fprintf(stderr,
 			       "Subcube y start: %lu not less than end: %lu\n",
 			       ulong, context->subcube_y_end);
 		a_prog_bug (function_name);
@@ -1253,7 +1338,7 @@ static flag process_context_attributes (KVolumeRenderContext context,
 	    }
 	    if (ulong <= context->subcube_y_start)
 	    {
-		(void) fprintf(stderr,
+		fprintf(stderr,
 			       "Subcube y end: %lu not greater than start: %lu\n",
 			       ulong, context->subcube_y_start);
 		a_prog_bug (function_name);
@@ -1273,7 +1358,7 @@ static flag process_context_attributes (KVolumeRenderContext context,
 	    }
 	    if (ulong >= context->subcube_z_end)
 	    {
-		(void) fprintf(stderr,
+		fprintf(stderr,
 			       "Subcube z start: %lu not less than end: %lu\n",
 			       ulong, context->subcube_z_end);
 		a_prog_bug (function_name);
@@ -1293,7 +1378,7 @@ static flag process_context_attributes (KVolumeRenderContext context,
 	    }
 	    if (ulong <= context->subcube_z_start)
 	    {
-		(void) fprintf(stderr,
+		fprintf(stderr,
 			       "Subcube z end: %lu not greater than start: %lu\n",
 			       ulong, context->subcube_z_start);
 		a_prog_bug (function_name);
@@ -1307,7 +1392,7 @@ static flag process_context_attributes (KVolumeRenderContext context,
 	    if ( (ui_val != VRENDER_PROJECTION_PARALLEL) &&
 		(ui_val != VRENDER_PROJECTION_PERSPECTIVE) )
 	    {
-		(void) fprintf (stderr, "Illegal projection type: %u\n",
+		fprintf (stderr, "Illegal projection type: %u\n",
 				ui_val);
 		a_prog_bug (function_name);
 	    }
@@ -1317,7 +1402,7 @@ static flag process_context_attributes (KVolumeRenderContext context,
 	  case VRENDER_CONTEXT_ATT_EYE_SEPARATION:
 	    if ( ( d_val = va_arg (argp, double) ) <= 0.0 )
 	    {
-		(void) fprintf (stderr,
+		fprintf (stderr,
 				"Separation: %e not greater than zero\n",
 				d_val);
 		a_prog_bug (function_name);
@@ -1335,7 +1420,7 @@ static flag process_context_attributes (KVolumeRenderContext context,
 	    }
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Unknown attribute key: %u\n", att_key);
+	    fprintf (stderr, "Unknown attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	    break;
 	}
@@ -1506,7 +1591,7 @@ static void compute_output_image_desc (KVolumeRenderContext context)
 	m_abort (function_name, "job structures");
     }
     context->valid_image_desc = TRUE;
-    (void) c_call_callbacks (context->image_desc_notify_list, NULL);
+    c_call_callbacks (context->image_desc_notify_list, NULL);
 }   /*  End Function compute_output_image_desc  */
 
 static void compute_view_info_cache (KVolumeRenderContext context)
@@ -1527,7 +1612,7 @@ static void compute_view_info_cache (KVolumeRenderContext context)
     compute_output_image_desc (context);
     if (!context->valid_image_desc)
     {
-	(void) fprintf (stderr, "No valid image descriptor\n");
+	fprintf (stderr, "No valid image descriptor\n");
 	a_prog_bug (function_name);
     }
     /*  Normalise vertical vector  */
@@ -1567,21 +1652,22 @@ static void compute_view_info_cache (KVolumeRenderContext context)
     /*  Mono eye (cyclops)  */
     eye = &context->cyclops;
     eye->orig_position = context->view.position;
-    compute_eye_info_cache (&context->cyclops);
+    compute_eye_info_cache (&context->cyclops, FALSE);
     factor = context->eye_separation / 2.0;
     /*  Left eye  */
     eye = &context->left;
     eye->orig_position.x = context->view.position.x - horizontal.x * factor;
     eye->orig_position.y = context->view.position.y - horizontal.y * factor;
     eye->orig_position.z = context->view.position.z - horizontal.z * factor;
-    compute_eye_info_cache (&context->left);
+    compute_eye_info_cache (&context->left, context->never_did_stereo);
     /*  Right eye  */
     eye = &context->right;
     eye->orig_position.x = context->view.position.x + horizontal.x * factor;
     eye->orig_position.y = context->view.position.y + horizontal.y * factor;
     eye->orig_position.z = context->view.position.z + horizontal.z * factor;
-    compute_eye_info_cache (&context->right);
+    compute_eye_info_cache (&context->right, context->never_did_stereo);
     context->valid_view_info_cache = TRUE;
+    c_call_callbacks (context->view_notify_list, NULL);
     /*  No point computing lines or re-order buffer if work procedures not
 	supported.  */
     if ( !wf_test_supported () ) return;
@@ -1593,11 +1679,12 @@ static void compute_view_info_cache (KVolumeRenderContext context)
     }
 }   /*  End Function compute_view_info_cache  */
 
-static void compute_eye_info_cache (eye_info *eye)
+static void compute_eye_info_cache (eye_info *eye, flag no_alloc)
 /*  [PURPOSE] This routine will compute the view information cache for a volume
     rendering context.
     <eye> The eye information. This is updated. The position must already be
     valid.
+    <no_alloc> If TRUE, the routine will not allocate the reorder buffer.
     [RETURNS] Nothing.
 */
 {
@@ -1712,6 +1799,7 @@ static void compute_eye_info_cache (eye_info *eye)
 	    m_abort (function_name, "array of plane pointers");
 	}
     }
+    /*  Compute base addresses for each plane  */
     for (i_tmp = 0; i_tmp < context->cube->lengths[depth_dim_index]; ++i_tmp)
     {
 	eye->planes[i_tmp] = (signed char *) context->cube->data + eye->d_offsets[i_tmp];
@@ -1756,7 +1844,7 @@ static void compute_eye_info_cache (eye_info *eye)
 	}
 	eye->num_lines_allocated = context->v_dim.length;
 /*
-	(void) fprintf (stderr, "Allocated: %lu bytes for line cache\n",
+	fprintf (stderr, "Allocated: %lu bytes for line cache\n",
 			sizeof *eye->lines * context->v_dim.length);
 */
     }
@@ -1780,12 +1868,15 @@ static void compute_eye_info_cache (eye_info *eye)
 	}
 	eye->reorder_plane_size = plane_size;
 /*
-	(void) fprintf (stderr, "Allocated: %lu bytes for plane of rays\n",
+	fprintf (stderr, "Allocated: %lu bytes for plane of rays\n",
 			sizeof *eye->reorder_rays * plane_size);
 */
 	m_clear ( (char *) eye->reorder_rays,
 		 sizeof *eye->reorder_rays * plane_size );
     }
+    /*  Invalidate reorder cache  */
+    eye->num_reordered_lines = 0;
+    eye->num_setup_lines = 0;
     /*  Ensure enough space is allocated for re-ordered cube  */
     cube_size = iarray_dim_length (context->cube, 0);
     cube_size *= iarray_dim_length (context->cube, 1);
@@ -1793,18 +1884,24 @@ static void compute_eye_info_cache (eye_info *eye)
     if (eye->reorder_buf_size < cube_size)
     {
 	if (eye->reorder_buffer != NULL) m_free ( (char *)eye->reorder_buffer);
+	if (no_alloc)
+	{
+	    /*  Do not allocate buffer at this time: set to NULL to indicate
+		to workers that it should be computed later  */
+	    eye->reorder_buffer = NULL;
+	    eye->next_block = NULL;
+	    return;
+	}
+	/*  Now is the time to allocate the reorder buffer  */
 	if ( ( eye->reorder_buffer = (signed char *) m_alloc (cube_size) )
 	    == NULL )
 	{
 	    m_abort (function_name, "reorder buffer");
 	}
 	eye->reorder_buf_size = cube_size;
-	(void) fprintf (stderr, "Allocated: %lu bytes for reorder buffer\n",
-			cube_size);
+	fprintf (stderr, "Allocated: %lu bytes for reorder buffer\n",
+		 cube_size);
     }
-    /*  Invalidate reorder cache  */
-    eye->num_reordered_lines = 0;
-    eye->num_setup_lines = 0;
     eye->next_block = eye->reorder_buffer;
 }   /*  End Function compute_eye_info_cache  */
 
@@ -1837,7 +1934,7 @@ static void rotate_3d (RotatedKcoord_3d *rot, Kcoord_3d orig,unsigned int step)
 	rot->d = orig.z;
 	break;
       default:
-	(void) fprintf (stderr, "Illegal step code: %u\n", step);
+	fprintf (stderr, "Illegal step code: %u\n", step);
 	a_prog_bug (function_name);
 	break;
     }
@@ -1963,11 +2060,11 @@ static void generate_line (void *pool_info,
 		m_copy (left_image, context->shader->blank_packet,
 			context->shader->packet_size);
 /*
-		(void) fprintf (stderr, "y: %u  start: %u  stop: %u\n",
+		fprintf (stderr, "y: %u  start: %u  stop: %u\n",
 				y_coord,
 				eye->lines[y_coord].start,
 				eye->lines[y_coord].stop);
-		(void) fprintf (stderr, "pixel: %u,%u cannot see volume\n",
+		fprintf (stderr, "pixel: %u,%u cannot see volume\n",
 				x_coord, y_coord);
 */
 		continue;
@@ -2590,7 +2687,7 @@ static void reorder_job (void *pool_info, void *call_info1, void *call_info2,
     uaddr y_coord = (uaddr) call_info2;
     unsigned int x_coord;
     float x, y;
-    float min_d, max_d, t_leave;
+    float min_d, max_d;
     float x_min, x_scale, y_min, y_scale;
     eye_info *eye = (eye_info *) call_info1;
     ray_data *ray;
@@ -2655,7 +2752,7 @@ static void reorder_job (void *pool_info, void *call_info1, void *call_info2,
 					       &eye->rot_subcube_start,
 					       &eye->rot_subcube_end,
 					       &min_d, &max_d,
-					       &ray->t_enter, &t_leave) )
+					       &ray->t_enter, &ray->t_leave) )
 	{
 	    ray->length = 0;
 	    ray->ray = NULL;
@@ -2679,10 +2776,12 @@ static void reorder_job (void *pool_info, void *call_info1, void *call_info2,
 	if (context->smooth_cache)
 	{
 	    collect_ray_smooth (context->cube, eye, ray_start, ray_direction,
-				ray->t_enter, t_leave, ray->ray, ray->length);
+				ray->t_enter, ray->t_leave, ray->ray,
+				ray->length);
 	}
 	else collect_ray_rough (context->cube, eye, ray_start, ray_direction,
-				ray->t_enter, t_leave, ray->ray, ray->length);
+				ray->t_enter, ray->t_leave, ray->ray,
+				ray->length);
     }
 }   /*  End Function reorder_job  */
 
@@ -2694,19 +2793,35 @@ static flag reorder_worker (eye_info *eye)
 {
     KVolumeRenderContext context = eye->context;
     KThreadPool pool;
-    uaddr y_coord;
+    uaddr y_coord, cube_size;
     int x_coord;
     unsigned int count, num_to_compute, num_threads;
     ray_data *ray;
     signed char *end_buffer;
     static char function_name[] = "__vrender_reorder_worker";
 
+    if (eye->reorder_buffer == NULL)
+    {
+	/*  There is no reordered buffer, so do it now  */
+	cube_size = iarray_dim_length (context->cube, 0);
+	cube_size *= iarray_dim_length (context->cube, 1);
+	cube_size *= iarray_dim_length (context->cube, 2);
+	if ( ( eye->reorder_buffer = (signed char *) m_alloc (cube_size) )
+	    == NULL )
+	{
+	    m_abort (function_name, "reorder buffer");
+	}
+	eye->reorder_buf_size = cube_size;
+	fprintf (stderr, "Allocated: %lu bytes for reorder buffer\n",
+		 cube_size);
+	eye->next_block = eye->reorder_buffer;
+    }
     y_coord = eye->num_setup_lines;
     if (y_coord < context->v_dim.length)
     {
 	/*  First need to setup each ray. After all lines done, then we can
 	    collect rays. We have to do this because we want to multi-thread
-	    this operation. Because syncronising the next block in the reorder
+	    this operation. Because synchronising the next block in the reorder
 	    buffer is too hard with multiple threads, we split the setup
 	    (allocation) task from the collection task.  */
 	ray = eye->reorder_rays + y_coord * context->h_dim.length;
@@ -2728,7 +2843,7 @@ static flag reorder_worker (eye_info *eye)
 		/*  Check if reorder buffer too small  */
 		if (eye->next_block + ray->length > end_buffer)
 		{
-		    (void) fprintf (stderr, "Reorder buffer too small\n");
+		    fprintf (stderr, "Reorder buffer too small\n");
 		    a_prog_bug (function_name);
 		}
 		ray->ray = eye->next_block;
@@ -2750,7 +2865,7 @@ static flag reorder_worker (eye_info *eye)
 /*
 	if (eye->num_setup_lines >= context->v_dim.length)
 	{
-	    (void) fprintf (stderr, "Reorder buffer for eye setup\n");
+	    fprintf (stderr, "Reorder buffer for eye setup\n");
 	}
 */
 	return (TRUE);
@@ -2788,14 +2903,14 @@ static flag worker_function (void **info)
     if (context->never_did_stereo)
     {
 	context->worker = NULL;
-	(void) c_call_callbacks (context->cache_notify_list, (void *) eyes);
+	c_call_callbacks (context->cache_notify_list, (void *) eyes);
 	return (FALSE);
     }
     eyes |= VRENDER_EYE_MASK_LEFT | VRENDER_EYE_MASK_RIGHT;
     if ( eye_worker (&context->left) ) return (TRUE);
     if ( eye_worker (&context->right) ) return (TRUE);
     context->worker = NULL;
-    (void) c_call_callbacks (context->cache_notify_list, (void *) eyes);
+    c_call_callbacks (context->cache_notify_list, (void *) eyes);
     return (FALSE);
 }   /*  End Function worker_function  */
 
@@ -2838,7 +2953,7 @@ static flag compute_line_for_cache (eye_info *eye)
 	if (eye->num_lines_computed >= context->v_dim.length)
 	{
 /*
-	    (void) fprintf (stderr, "Line cache for eye computed\n");
+	    fprintf (stderr, "Line cache for eye computed\n");
 */
 	    return (FALSE);
 	}
@@ -2893,7 +3008,7 @@ static flag compute_line_for_cache (eye_info *eye)
 	    if (eye->num_lines_computed >= context->v_dim.length)
 	    {
 /*
-		(void) fprintf (stderr, "Line cache for eye computed\n");
+		fprintf (stderr, "Line cache for eye computed\n");
 */
 		return (FALSE);
 	    }
@@ -2923,7 +3038,7 @@ static flag compute_line_for_cache (eye_info *eye)
     if (eye->num_lines_computed >= context->v_dim.length)
     {
 /*
-	(void) fprintf (stderr, "Line cache for eye computed\n");
+	fprintf (stderr, "Line cache for eye computed\n");
 */
 	return (FALSE);
     }

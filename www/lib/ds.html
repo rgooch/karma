@@ -50,6 +50,12 @@
 </td></tr>
 <tr><td><a href=ds.html#ds_complex_to_real_1D>ds_complex_to_real_1D</a></td><td>Convert a 1 dimensional array of complex values to real values.
 </td></tr>
+<tr><td><a href=ds.html#ds_find_1D_sum>ds_find_1D_sum</a></td><td>Find the sum of a 1D array.
+</td></tr>
+<tr><td><a href=ds.html#ds_find_1D_stats>ds_find_1D_stats</a></td><td>Compute simple statistics for a 1D array.
+</td></tr>
+<tr><td><a href=ds.html#ds_find_2D_stats>ds_find_2D_stats</a></td><td>Compute simple statistics for a 2D array.
+</td></tr>
 <tr><td><a href=ds.html#ds_put_unique_named_value>ds_put_unique_named_value</a></td><td>Add a unique named value to a Karma general data structure.
 </td></tr>
 <tr><td><a href=ds.html#ds_put_unique_named_string>ds_put_unique_named_string</a></td><td>Add a unique named string to a Karma general data structure.
@@ -58,11 +64,17 @@
 </td></tr>
 <tr><td><a href=ds.html#ds_get_unique_named_string>ds_get_unique_named_string</a></td><td>Get a unique named string from a Karma general data structure.
 </td></tr>
+<tr><td><a href=ds.html#ds_copy_unique_named_element>ds_copy_unique_named_element</a></td><td>Copy a unique named element from one packet to another.
+</td></tr>
+<tr><td><a href=ds.html#ds_get_fits_axis>ds_get_fits_axis</a></td><td>Get the FITS axis number of a dimension.
+</td></tr>
 <tr><td><a href=ds.html#ds_cmap_alloc_colourmap>ds_cmap_alloc_colourmap</a></td><td>Allocate a Karma data structure to hold a colourmap.
 </td></tr>
 <tr><td><a href=ds.html#ds_cmap_find_colourmap>ds_cmap_find_colourmap</a></td><td>Search a Karma data structure for an instance of a colourmap.
 </td></tr>
 <tr><td><a href=ds.html#ds_cmap_get_all_colourmaps>ds_cmap_get_all_colourmaps</a></td><td>Search an array of Karma data structures for colourmaps.
+</td></tr>
+<tr><td><a href=ds.html#ds_contour>ds_contour</a></td><td>Extract contours from a 2-dimensional array.
 </td></tr>
 <tr><td><a href=ds.html#ds_copy_packet>ds_copy_packet</a></td><td>Copy a packet.
 </td></tr>
@@ -166,6 +178,10 @@
 </td></tr>
 <tr><td><a href=ds.html#ds_get_handle_in_list>ds_get_handle_in_list</a></td><td>Find sub-structure in a linked list.
 </td></tr>
+<tr><td><a href=ds.html#ds_history_append_string>ds_history_append_string</a></td><td>Add a history string to a Karma data structure.
+</td></tr>
+<tr><td><a href=ds.html#ds_history_copy>ds_history_copy</a></td><td>Copy history information.
+</td></tr>
 <tr><td><a href=ds.html#ds_list_insert>ds_list_insert</a></td><td>Insert an entry into the fragmented section of a linked list.
 </td></tr>
 <tr><td><a href=ds.html#ds_list_append>ds_list_append</a></td><td>Append an entry to a linked list.
@@ -187,6 +203,8 @@
 <tr><td><a href=ds.html#ds_remove_tiling_info>ds_remove_tiling_info</a></td><td>Remove any tiling information from an array descriptor.
 </td></tr>
 <tr><td><a href=ds.html#ds_append_gen_struct>ds_append_gen_struct</a></td><td>Append a general data structure to a multi_array structure.
+</td></tr>
+<tr><td><a href=ds.html#ds_autotile_array>ds_autotile_array</a></td><td>Choose tiling scheme automatically.
 </td></tr>
 <tr><td><a href=ds.html#ds_put_element>ds_put_element</a></td><td>Write out an element of data.
 </td></tr>
@@ -545,13 +563,16 @@
     character arrays are copied, so the arrays of characters and the array of
     pointers may be subsequently deallocated.
 <br><li><i>num_elements :</i> 
-    The number of atomic elements in the array packet.
+    The number of atomic elements in the array packet. If this
+    is 0, no packet descriptor is allocated.
 <br><li><i>data_types :</i> 
     The types of the elements in the array. See
-    <a href=ds.html#DS_KARMA_DATA_TYPES>DS_KARMA_DATA_TYPES</a> for a list of legal values.
+    <a href=ds.html#DS_KARMA_DATA_TYPES>DS_KARMA_DATA_TYPES</a> for a list of legal values. This may be NULL if
+    <em>num_elements</em> is 0.
 <br><li><i>data_names :</i> 
     The array of element names. The name strings are copied, thus
-    the memory used for the input strings may be subsequently deallocated.
+    the memory used for the input strings may be subsequently deallocated. This
+    may be NULL if <em>num_elements</em> is 0.
 <br></ul><b>Returns:</b>     An array descriptor pointer on success, else NULL.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_alloc_contiguous_list></a> flag
  <b>ds_alloc_contiguous_list</b><i>    (CONST packet_desc *list_desc,
@@ -731,7 +752,115 @@
     The conversion type to apply.
 <br></ul><b>Returns:</b>     Nothing.
 <br><b>Multithreading Level:</b> Safe.
-<br><p><hr> <a name=ds_put_unique_named_value></a> flag
+<br><p><hr> <a name=ds_find_1D_sum></a> flag
+ <b>ds_find_1D_sum</b><i>    (CONST char *data, unsigned int elem_type,
+		     unsigned int num_values, CONST uaddr *offsets,
+		     unsigned int stride, double sum[2])
+</i><br><p>    This routine will find the sum of a single trace (element
+    versus a dimension). This routine may be called repeatedly with multiple
+    traces in order to build an aggregate sum of all traces.
+<p><b>Parameters:</b><ul><li><i>data :</i> 
+    A pointer to the data. Misaligned data will cause bus errors on some
+    platforms.
+<br><li><i>elem_type :</i> 
+    The type of the element.
+<br><li><i>num_values :</i> 
+    The length of the dimension.
+<br><li><i>offsets :</i> 
+    The address offsets for data along the dimension.
+<br><li><i>stride :</i> 
+    If the value of  offsets  is NULL, this gives the stride (in
+    bytes) between consecutive values along the dimension.
+<br><li><i>sum :</i> 
+    The sum is written here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Safe.
+<br><p><hr> <a name=ds_find_1D_stats></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>ds_find_1D_stats</b><i>    (CONST char *data,
+		       unsigned int num_values, uaddr *offsets,
+		       unsigned int elem_type, unsigned int conv_type,
+		       double *min, double *max,
+		       double *mean, double *stddev,
+		       double *sum, double *sumsq, unsigned long *npoints)
+</i><br><p>    This routine will find the minimum, maximum, mean, rms, sum and
+    sum-of-squares of a single trace (element versus a dimension).
+    Blanked values are excluded.
+<p><b>Parameters:</b><ul><li><i>data :</i> 
+    A pointer to the data. Misaligned data will cause bus errors on some
+    platforms.
+<br><li><i>num_values :</i> 
+    The number of values to process.
+<br><li><i>offsets :</i> 
+    The address offsets for data along the dimension.
+<br><li><i>elem_type :</i> 
+    The type of the element.
+<br><li><i>conv_type :</i> 
+    The type of conversion to use for complex numbers.
+<br><li><i>min :</i> 
+    The minimum value will be written here.
+<br><li><i>max :</i> 
+    The maximum value will be written here.
+<br><li><i>mean :</i> 
+    The mean value will be written here.
+<br><li><i>stddev :</i> 
+    The standard deviation will be written here.
+<br><li><i>sum :</i> 
+    The total of all values will be written here.
+<br><li><i>sumsq :</i> 
+    The total of the squares of all values will be written here.
+<br><li><i>npoints :</i> 
+    The number of values used to compute statistics will be written
+    here. This may differ from num_values if there are blanked pixels.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Safe.
+<br><b>Note:</b><ul> <li>     The minimum and maximum value must be initialised to a very large
+    positive number and a very large negative number, respectively, outside of
+    the routine. In other words, the routine does not initialise these values
+    prior to testing for the minimum and maximum.
+</ul><p><hr> <a name=ds_find_2D_stats></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>ds_find_2D_stats</b><i>    (CONST char *data,
+		       unsigned int length1, uaddr *offsets1,
+		       unsigned int length2, uaddr *offsets2,
+		       unsigned int elem_type, unsigned int conv_type,
+		       double *min, double *max, double *mean,
+		       double *stddev, double *sum, unsigned long *npoints)
+</i><br><p>    This routine will find the minimum, maximum, mean, rms and sum of
+    a single plane (element versus two dimensions).
+<p><b>Parameters:</b><ul><li><i>data :</i> 
+    A pointer to the data.
+<br><li><i>length1 :</i> 
+    The number of values to process along one of the dimensions. For
+    efficiency this should be the more significant dimension.
+<br><li><i>offsets1 :</i> 
+    The address offsets for data along the corresponding dimension.
+<br><li><i>length2 :</i> 
+    The number of values to process along the other of the dimensions
+<br><li><i>offsets2 :</i> 
+    The address offsets for data along the corresponding dimension.
+<br><li><i>elem_type :</i> 
+    The type of the element.
+<br><li><i>conv_type :</i> 
+    The type of conversion to use for complex numbers.
+<br><li><i>min :</i> 
+    The minimum value will be written here.
+<br><li><i>max :</i> 
+    The maximum value will be written here.
+<br><li><i>mean :</i> 
+    The mean value will be written here.
+<br><li><i>stddev :</i> 
+    The standard deviation will be written here.
+<br><li><i>sum :</i> 
+    The total of all values will be written here.
+<br><li><i>npoints :</i> 
+    The number of values used to compute statistics will be written
+    here. This will differ from num_values if there are blanked pixels.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Safe.
+<br><b>Note:</b><ul> <li>     The minimum and maximum value must be initialised to a very large
+    positive number and a very large negative number, respectively, outside of
+    the routine. In other words, the routine does not initialise these values
+    prior to testing for the minimum and maximum.
+</ul><p><hr> <a name=ds_put_unique_named_value></a> flag
  <b>ds_put_unique_named_value</b><i>    (packet_desc *pack_desc, char **packet,
 				CONST char *name, unsigned int type,
 				double value[2], flag update)
@@ -790,7 +919,8 @@
     The name of the value.
 <br><li><i>type :</i> 
     The type of the element found will be written here. If this is NULL,
-    nothing is written here.
+    nothing is written here. On error, the type of the element is written here.
+    The value NONE is written here if the element does not exist.
 <br><li><i>value :</i> 
     The value of the element data will be written here.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
@@ -806,6 +936,47 @@
     The element name.
 <br></ul><b>Returns:</b>     A pointer to a dynamically allocated copy of the string on
     success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_copy_unique_named_element></a> flag
+ <b>ds_copy_unique_named_element</b><i>    (packet_desc *out_desc, char **out_packet,
+				   CONST packet_desc *in_desc,
+				   CONST char *in_packet, CONST char *name,
+				   flag fail_if_not_found,
+				   flag fail_on_duplicate, flag replace)
+</i><br><p>    Copy a unique named element from one packet to another.
+<p><b>Parameters:</b><ul><li><i>out_desc :</i> 
+    The packet descriptor to add the name to. This descriptor will
+    be modified.
+<br><li><i>out_packet :</i> 
+    The pointer to the unique packet. Note that the existing
+    packet data is copied to a new packet, and a pointer to this packet is
+    written back here.
+<br><li><i>in_desc :</i> 
+    The input packet descriptor.
+<br><li><i>in_packet :</i> 
+    The input packet.
+<br><li><i>name :</i> 
+    The name of the element to copy.
+<br><li><i>fail_if_not_found :</i> 
+    If TRUE, the routine will fail if the element does not
+    exist in the input packet.
+<br><li><i>fail_on_duplicate :</i> 
+    If TRUE, the routine will fail if the element already
+    exists in the output packet.
+<br><li><i>replace :</i> 
+    If TRUE and the element already exists in the output packet, it
+    is replaced.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_fits_axis></a> unsigned int
+ <b>ds_get_fits_axis</b><i>    (CONST packet_desc *top_pack_desc,
+			       CONST char *top_packet, CONST char *dim_name)
+</i><br><p>    Get the FITS axis number of a dimension.
+<p><b>Parameters:</b><ul><li><i>top_pack_desc :</i> 
+    The top-level packet descriptor.
+<br><li><i>top_packet :</i> 
+    The top-level packet.
+<br><li><i>dim_name :</i> 
+    The name of the dimension.
+<br></ul><b>Returns:</b>     The FITS axis number on success, else 0.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_cmap_alloc_colourmap></a> unsigned short *
  <b>ds_cmap_alloc_colourmap</b><i>    (unsigned int size,
 					 multi_array **multi_desc,
@@ -904,9 +1075,54 @@
     and <em>num_restr</em> set to zero. In this case, the routine will only return a
     colourmap if there is only one instance of a colourmap in the entire data
     structure.
-</ul><p><hr> <a name=ds_copy_packet></a> flag
- <b>ds_copy_packet</b><i>    (packet_desc *pack_desc, char *dest_packet,
-		     char *source_packet)
+</ul><p><hr> <a name=ds_contour></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>unsigned int
+ <b>ds_contour</b><i>    (CONST char *image, unsigned int elem_type,
+			 CONST dim_desc *hdim, CONST uaddr *hoffsets,
+			 CONST dim_desc *vdim, CONST uaddr *voffsets,
+			 unsigned int num_contours,
+			 CONST double *contour_levels,
+			 uaddr *buf_size,
+			 double **x0_arr, double **y0_arr,
+			 double **x1_arr, double **y1_arr)
+</i><br><p>    This routine will extract contours from a 2-dimensional
+    Intelligent Array, producing a list of line segments that approximate the
+    countours. The co-ordinates of the line segments are in linear world
+    co-ordinates.
+<p><b>Parameters:</b><ul><li><i>image :</i> 
+    The start of the image slice data.
+<br><li><i>elem_type :</i> 
+    The type of the data.
+<br><li><i>hdim :</i> 
+    The horizontal dimension descriptor.
+<br><li><i>hoffsets :</i> 
+    The address offsets for data along the horizontal dimension.
+<br><li><i>vdim :</i> 
+    The vertical dimension descriptor.
+<br><li><i>voffsets :</i> 
+    The address offsets for data along the vertical dimension.
+<br><li><i>num_contours :</i> 
+    The number of contour levels.
+<br><li><i>contour_levels :</i> 
+    The array of contour levels.
+<br><li><i>buf_size :</i> 
+    A pointer to the size of the co-ordinate arrays. This is
+    modified.
+<br><li><i>x0_arr :</i> 
+    A pointer to a co-ordinate array pointer. The co-ordinate array
+    may be internally reallocated, hence the array pointer may be modified.
+<br><li><i>y0_arr :</i> 
+    A pointer to a co-ordinate array pointer. The co-ordinate array
+    may be internally reallocated, hence the array pointer may be modified.
+<br><li><i>x1_arr :</i> 
+    A pointer to a co-ordinate array pointer. The co-ordinate array
+    may be internally reallocated, hence the array pointer may be modified.
+<br><li><i>y1_arr :</i> 
+    A pointer to a co-ordinate array pointer. The co-ordinate array
+    may be internally reallocated, hence the array pointer may be modified.
+<br></ul><b>Returns:</b>     The number of line segments extracted.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_copy_packet></a> flag
+ <b>ds_copy_packet</b><i>    (CONST packet_desc *pack_desc, char *dest_packet,
+		     CONST char *source_packet)
 </i><br><p>    Copy a packet.
 <p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
     The packet descriptor.
@@ -919,7 +1135,7 @@
     linked lists in the packet, not the arrays and linked lists which may be
     pointed to.
 </ul><p><hr> <a name=ds_copy_desc_until></a> packet_desc *
- <b>ds_copy_desc_until</b><i>    (packet_desc *inp_desc, CONST char *name)
+ <b>ds_copy_desc_until</b><i>    (CONST packet_desc *inp_desc, CONST char *name)
 </i><br><p>    This routine will recursively copy a packet descriptor until
     an element with a specified name is found, at which time the copying
     process stops. The routine will trap such errors as multiple occurences of
@@ -937,7 +1153,8 @@
     If this is NULL, then the entire data structure descriptor is copied.
 <br></ul><b>Returns:</b>     A pointer to the new packet descriptor on success, else NULL.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_copy_array_desc_until></a> array_desc *
- <b>ds_copy_array_desc_until</b><i>    (array_desc *inp_desc, CONST char *name)
+ <b>ds_copy_array_desc_until</b><i>    (CONST array_desc *inp_desc,
+				      CONST char *name)
 </i><br><p>    This routine will make a copy of an array descriptor and all
     sub-descriptors until a specified name is encountered. All tiling
     information is copied, but address offset arrays are NOT copied.
@@ -948,14 +1165,14 @@
     the entire data structure descriptor is copied.
 <br></ul><b>Returns:</b>     A pointer to the array descriptor created on success, else NULL.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_copy_dim_desc></a> dim_desc *
- <b>ds_copy_dim_desc</b><i>    (dim_desc *inp_desc)
+ <b>ds_copy_dim_desc</b><i>    (CONST dim_desc *inp_desc)
 </i><br><p>    Copy a dimension descriptor.
 <p><b>Parameters:</b><ul><li><i>inp_desc :</i> 
     The input 
 <br></ul><b>Returns:</b>     A pointer to a freshly allocated dimension descriptor on success,
     else NULL.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_copy_data></a> flag
- <b>ds_copy_data</b><i>    (packet_desc *inp_desc, char *inp_data,
+ <b>ds_copy_data</b><i>    (CONST packet_desc *inp_desc, CONST char *inp_data,
 		   packet_desc *out_desc, char *out_data)
 </i><br><p>    This routine will copy data from one data structure to another,
     provided the two data structures have the same format. If there are any
@@ -979,7 +1196,7 @@
     The output data memory allocation.
 <br></ul><b>Returns:</b>     TRUE if the two packet descriptors are identical, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_copy_array></a> flag
- <b>ds_copy_array</b><i>    (array_desc *inp_desc, char *inp_data,
+ <b>ds_copy_array</b><i>    (CONST array_desc *inp_desc, CONST char *inp_data,
 		    array_desc *out_desc, char *out_data)
 </i><br><p>    This routine will copy data from one array to another. The two
     arrays must be the same, else the copying process will stop.
@@ -996,7 +1213,7 @@
     The output data memory allocation.
 <br></ul><b>Returns:</b>     TRUE if the two array descriptors are identical, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_copy_list></a> flag
- <b>ds_copy_list</b><i>    (packet_desc *inp_desc, list_header *inp_head,
+ <b>ds_copy_list</b><i>    (CONST packet_desc *inp_desc, CONST list_header *inp_head,
 		   packet_desc *out_desc, list_header *out_head)
 </i><br><p>    This routine will copy a linked list to another.
     The routine will recursively copy sub arrays and linked lists.
@@ -1226,7 +1443,7 @@
 <br></ul><b>Returns:</b>     The absolute magnitude of the converted value on success,
     else TOOBIG.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_coordinate></a> double
- <b>ds_get_coordinate</b><i>    (dim_desc *dimension, unsigned long coord_num)
+ <b>ds_get_coordinate</b><i>    (CONST dim_desc *dimension, double coord_num)
 </i><br><p>    Get a co-ordinate along a dimension.
 <p><b>Parameters:</b><ul><li><i>dimension :</i> 
     The dimension descriptor.
@@ -1287,7 +1504,7 @@
     The type of the element.
 <br></ul><b>Returns:</b>     TRUE if the element type is legal, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_identify_name></a> unsigned int
- <b>ds_identify_name</b><i>    (multi_array *multi_desc, CONST char *name,
+ <b>ds_identify_name</b><i>    (CONST multi_array *multi_desc, CONST char *name,
 			       char **encls_desc, unsigned int *index)
 </i><br><p>    Search a data structure for a name.
 <p><b>Parameters:</b><ul><li><i>multi_desc :</i> 
@@ -1304,7 +1521,7 @@
 <br></ul><b>Returns:</b>     A code based on the type of the item with the same name. See
     <a href=ds.html#DS_IDENT_TABLE>DS_IDENT_TABLE</a> for a list of possible values.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_f_array_name></a> unsigned int
- <b>ds_f_array_name</b><i>    (multi_array *multi_desc, CONST char *name,
+ <b>ds_f_array_name</b><i>    (CONST multi_array *multi_desc, CONST char *name,
 			      char **encls_desc, unsigned int *index)
 </i><br><p>    This routine will search a multi array general data structure
     header for an occurrence of an array name.
@@ -1340,7 +1557,7 @@
 <br></ul><b>Returns:</b>     A code based on the type of the item with the same name. See
     <a href=ds.html#DS_IDENT_TABLE>DS_IDENT_TABLE</a> for a list of possible values.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_f_name_in_array></a> unsigned int
- <b>ds_f_name_in_array</b><i>    (array_desc *arr_desc, CONST char *name,
+ <b>ds_f_name_in_array</b><i>    (CONST array_desc *arr_desc, CONST char *name,
 				 char **encls_desc, unsigned int *index)
 </i><br><p>    This routine will search an array descriptor for occurrences of a
     named item. The routine searches both the dimension names and the packet
@@ -1372,7 +1589,7 @@
     number of elements in the packet.
 <br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     If the specified name occurs twice, the program aborts.
 </ul><p><hr> <a name=ds_find_hole></a> unsigned int
- <b>ds_find_hole</b><i>    (packet_desc *inp_desc, packet_desc **out_desc,
+ <b>ds_find_hole</b><i>    (CONST packet_desc *inp_desc, packet_desc **out_desc,
 			   unsigned int *elem_num)
 </i><br><p>    This routine will recursively search a packet descriptor for a
     hole (element type NONE or element descriptor pointer NULL).
@@ -1387,7 +1604,7 @@
 <br></ul><b>Returns:</b>     A code indicating the status of the search. See
     <a href=ds.html#DS_IDENT_TABLE>DS_IDENT_TABLE</a> for a list of possible values.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_compare_packet_desc></a> flag
- <b>ds_compare_packet_desc</b><i>    (packet_desc *desc1, packet_desc *desc2,
+ <b>ds_compare_packet_desc</b><i>    (CONST packet_desc *desc1,CONST packet_desc *desc2,
 			     flag recursive)
 </i><br><p>    Recursively compare two packet descriptors.
 <p><b>Parameters:</b><ul><li><i>desc1 :</i> 
@@ -1399,7 +1616,7 @@
     sub-arrays and linked list descriptors.
 <br></ul><b>Returns:</b>     TRUE if the two packet descriptors are equal, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_compare_array_desc></a> flag
- <b>ds_compare_array_desc</b><i>    (array_desc *desc1, array_desc *desc2,
+ <b>ds_compare_array_desc</b><i>    (CONST array_desc *desc1, CONST array_desc *desc2,
 			    flag recursive)
 </i><br><p>    Recursively compare two array descriptors.
 <p><b>Parameters:</b><ul><li><i>desc1 :</i> 
@@ -1411,7 +1628,7 @@
     array packet descriptors.
 <br></ul><b>Returns:</b>     TRUE if the two array descriptors are equal, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_compare_dim_desc></a> flag
- <b>ds_compare_dim_desc</b><i>    (dim_desc *desc1, dim_desc *desc2)
+ <b>ds_compare_dim_desc</b><i>    (CONST dim_desc *desc1, CONST dim_desc *desc2)
 </i><br><p>    Compare two dimension descriptors.
 <p><b>Parameters:</b><ul><li><i>desc1 :</i> 
     One of the dimension descriptors.
@@ -1419,7 +1636,7 @@
     The other dimension descriptor.
 <br></ul><b>Returns:</b>     TRUE if the two dimension descriptors are equal, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_f_dim_in_array></a> unsigned int
- <b>ds_f_dim_in_array</b><i>    (array_desc *arr_desc, CONST char *name)
+ <b>ds_f_dim_in_array</b><i>    (CONST array_desc *arr_desc, CONST char *name)
 </i><br><p>    Find dimension in array.
 <p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
     The array descriptor.
@@ -1430,8 +1647,8 @@
     the number of dimensions in the array.
 <br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     If the specified name occurs twice, the program aborts.
 </ul><p><hr> <a name=ds_get_array_offset></a> unsigned long
- <b>ds_get_array_offset</b><i>    (array_desc *arr_desc,
-				   unsigned long *coordinates)
+ <b>ds_get_array_offset</b><i>    (CONST array_desc *arr_desc,
+				   CONST unsigned long *coordinates)
 </i><br><p>    Compute offset of a co-ordinate in an array.
 <p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
     The array descriptor.
@@ -1440,7 +1657,7 @@
     co-ordinate.
 <br></ul><b>Returns:</b>     The offset of the co-ordinate in packets.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_coord_num></a> unsigned long
- <b>ds_get_coord_num</b><i>    (dim_desc *dimension, double coordinate,
+ <b>ds_get_coord_num</b><i>    (CONST dim_desc *dimension, double coordinate,
 				unsigned int bias)
 </i><br><p>    Get index of a co-ordinate along a dimension.
 <p><b>Parameters:</b><ul><li><i>dimension :</i> 
@@ -1488,7 +1705,7 @@
     The number of data values to convert.
 <br></ul><b>Returns:</b>     TRUE if the data was successfully converted, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_get_coordinate_array></a> double *
- <b>ds_get_coordinate_array</b><i>    (dim_desc *dimension)
+ <b>ds_get_coordinate_array</b><i>    (CONST dim_desc *dimension)
 </i><br><p>    This routine will get a co-ordinate array for a dimension. If the
     dimension is regularly spaced, then the co-ordinate array is computed, else
     if it is irregularly spaced, it is copied from the dimension descriptor.
@@ -1673,7 +1890,28 @@
     If the item is a dimension, the parent is an array.
     If the item is an atomic element in a linked list, the parent is a
     list header.
-</ul><p><hr> <a name=ds_list_insert></a> void
+</ul><p><hr> <a name=ds_history_append_string></a> flag
+ <b>ds_history_append_string</b><i>    (multi_array *multi_desc, CONST char *string,
+			       flag new_alloc)
+</i><br><p>    Add a history string to a Karma data structure.
+<p><b>Parameters:</b><ul><li><i>multi_desc :</i> 
+    The multi_array descriptor.
+<br><li><i>string :</i> 
+    The history string to add.
+<br><li><i>new_alloc :</i> 
+    If TRUE, the routine will allocate a new copy of the history
+    string, else it will copy the pointer (in which case the string must never
+    be externally deallocated or changed).
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_history_copy></a> flag
+ <b>ds_history_copy</b><i>    (multi_array *out, CONST multi_array *in)
+</i><br><p>    Copy history information.
+<p><b>Parameters:</b><ul><li><i>out :</i> 
+    The output multi_array descriptor to copy the history to.
+<br><li><i>in :</i> 
+    The input multi_array descriptor to copy the history from.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_list_insert></a> void
  <b>ds_list_insert</b><i>    (list_header *list_head, list_entry *new_entry,
 		     list_entry *entry)
 </i><br><p>    Insert an entry into the fragmented section of a linked list.
@@ -1815,6 +2053,15 @@
 <br><li><i>append_arrayname :</i> 
     The name of the appended data structure.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_autotile_array></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>ds_autotile_array</b><i>    (array_desc *arr_desc, flag allow_truncate)
+</i><br><p>    This routine will choose an opimum tiling scheme for an array.
+<p><b>Parameters:</b><ul><li><i>arr_desc :</i> 
+    The array descriptor. This is modified.
+<br><li><i>allow_truncate :</i> 
+    If TRUE, the routine will shorten the lengths of
+    dimensions to allow tiling.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_put_element></a> char *
  <b>ds_put_element</b><i>    (char *output, unsigned int type, double input[2])
 </i><br><p>    Write out an element of data.
@@ -1860,7 +2107,7 @@
     The number of data elements to write.
 <br></ul><b>Returns:</b>     TRUE if the data was successfully converted, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ds_put_named_element></a> flag
- <b>ds_put_named_element</b><i>    (packet_desc *pack_desc, char *packet,
+ <b>ds_put_named_element</b><i>    (CONST packet_desc *pack_desc, char *packet,
 			   CONST char *name, double value[2])
 </i><br><p>    Update a named element in a specified packet.
 <p><b>Parameters:</b><ul><li><i>pack_desc :</i> 
@@ -2184,4 +2431,6 @@
 </td></tr><tr><td>IDENT_DIMENSION   </td><td>parent is a dimension descriptor
 </td></tr><tr><td>K_ARRAY           </td><td>parent is an array descriptor
 </td></tr><tr><td>LISTP             </td><td>parent is a linked list descriptor
-</table><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>
+</table><p>
+<hr><a href="../index.html">Back to Karma Home Page</a>
+<hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.ariel.com.au/">Ariel Internet Services</a></address></center></body></html>

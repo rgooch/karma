@@ -51,19 +51,29 @@
 
     Updated by      Richard Gooch   31-MAR-1996: Changed documentation style.
 
-    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+    Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
+
+    Updated by      Richard Gooch   8-AUG-1996: Created <ch_fill>,
+  <ch_drain_to_boundary> and <ch_fill_to_boundary> routines.
+
+    Last updated by Richard Gooch   10-AUG-1996: Copied from main.c the
+  <ch_read_and_swap_blocks> and <ch_swap_and_write_blocks> routines. Modified
+  <ch_read_and_swap_blocks> to process in sections.
 
 
 */
 #include <stdio.h>
 #include <stdarg.h>
+#include <errno.h>
 #include <karma.h>
 #include <karma_ch.h>
 #include <karma_m.h>
 #include <karma_a.h>
 
-#define BUF_LEN 4096
+#define BUF_LEN 262144
+#define SWAP_BUF_SIZE 65536
+#define SWAP_READ_LENGTH 4194304  /*  4 MBytes  */
 
 #define VERIFY_CHANNEL(ch) if (ch == NULL) \
 {(void) fprintf (stderr, "NULL channel passed\n"); \
@@ -281,7 +291,7 @@ unsigned int ch_drain (Channel channel, unsigned int length)
     [RETURNS] The number of bytes drained.
 */
 {
-    unsigned int block, read;
+    unsigned int block, n_read;
     unsigned int num_drained = 0;
     char buffer[BUF_LEN];
 
@@ -289,12 +299,40 @@ unsigned int ch_drain (Channel channel, unsigned int length)
     {
 	block = length - num_drained;
 	if (block > BUF_LEN) block = BUF_LEN;
-	read = ch_read (channel, buffer, block);
-	num_drained += read;
-	if (read < block) return (num_drained);
+	n_read = ch_read (channel, buffer, block);
+	num_drained += n_read;
+	if (n_read < block) return (num_drained);
     }
     return (num_drained);
 }   /*  End Function ch_drain  */
+
+/*PUBLIC_FUNCTION*/
+unsigned int ch_fill (Channel channel, unsigned int length, char fill_value)
+/*  [SUMMARY] Fill a channel with bytes.
+    [PURPOSE] This routine will write a specified byte to a channel a number of
+    times.
+    <channel> The Channel object.
+    <length> The number of bytes to write.
+    <fill_value> The fill value.
+    [RETURNS] The number of bytes written.
+*/
+{
+    unsigned int block, n_write;
+    unsigned int num_written = 0;
+    char buffer[BUF_LEN];
+
+    /*  Fill buffer  */
+    for (block = 0; block < BUF_LEN; ++block) buffer[block] = fill_value;
+    while (num_written < length)
+    {
+	block = length - num_written;
+	if (block > BUF_LEN) block = BUF_LEN;
+	n_write = ch_write (channel, buffer, block);
+	num_written += n_write;
+	if (n_write < block) return (num_written);
+    }
+    return (num_written);
+}   /*  End Function ch_fill  */
 
 /*PUBLIC_FUNCTION*/
 flag ch_printf (Channel channel, CONST char *format, ...)
@@ -313,3 +351,166 @@ flag ch_printf (Channel channel, CONST char *format, ...)
     va_end (argp);
     return ( ch_puts (channel, buffer, FALSE) );
 }   /*  End Function ch_printf  */
+
+/*PUBLIC_FUNCTION*/
+flag ch_drain_to_boundary (Channel channel, uaddr size)
+/*  [SUMMARY] Drain bytes from a channel until a specified boundary.
+    [PURPOSE] This routine will drain (read) from a channel until the current
+    read position is aligned with a boundary.
+    channel, ignoring the data.
+    <channel> The Channel object.
+    <size> The size to align to.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    unsigned long read_pos, write_pos;
+    extern char *sys_errlist[];
+    static char function_name[] = "ch_drain_to_boundary";
+
+    if (size == 0)
+    {
+	fprintf (stderr, "zero size\n");
+	a_prog_bug (function_name);
+    }
+    if ( !ch_tell (channel, &read_pos, &write_pos) )
+    {
+	fprintf (stderr, "Error getting position\t%s\n", sys_errlist[errno]);
+	return (FALSE);
+    }
+    if (read_pos % size == 0) return (TRUE);
+    size = size - read_pos % size;
+    if (ch_drain (channel, size) < size)
+    {
+	if (errno == 0) return (FALSE);
+	fprintf (stderr, "Error draining\t%s\n", sys_errlist[errno]);
+	return (FALSE);
+    }
+    return (TRUE);
+}   /*  End Function ch_drain_to_boundary  */
+
+/*PUBLIC_FUNCTION*/
+flag ch_fill_to_boundary (Channel channel, uaddr size, char fill_value)
+/*  [SUMMARY] Write bytes to a channel until a specified boundary.
+    [PURPOSE] This routine will write bytes to a channel until the current
+    write position is aligned with a boundary.
+    channel, ignoring the data.
+    <channel> The Channel object.
+    <size> The size to align to.
+    <fill_value> The value to fill with.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    unsigned long read_pos, write_pos;
+    extern char *sys_errlist[];
+    static char function_name[] = "ch_fill_to_boundary";
+
+    if (size == 0)
+    {
+	fprintf (stderr, "zero size\n");
+	a_prog_bug (function_name);
+    }
+    if ( !ch_tell (channel, &read_pos, &write_pos) )
+    {
+	fprintf (stderr, "Error getting position\t%s\n", sys_errlist[errno]);
+	return (FALSE);
+    }
+    if (write_pos % size == 0) return (TRUE);
+    size = size - write_pos % size;
+    if (ch_fill (channel, size, fill_value) < size)
+    {
+	fprintf (stderr, "Error draining\t%s\n", sys_errlist[errno]);
+	return (FALSE);
+    }
+    return (TRUE);
+}   /*  End Function ch_fill_to_boundary  */
+
+/*EXPERIMENTAL_FUNCTION*/
+unsigned int ch_read_and_swap_blocks (Channel channel, char *buffer,
+				      unsigned int num_blocks,
+				      unsigned int block_size)
+/*  [SUMMARY] Read blocks from a channel and swap bytes.
+    [PURPOSE] This routine will read a number of blocks from a channel and
+    places them into a buffer after swapping (reversing the order).
+    <channel> The channel object.
+    <buffer> The buffer to write the data into.
+    <num_blocks> The number of blocks to read.
+    <block_size> The size (in bytes) of each block.
+    [NOTE] If the channel is a connection and the number of bytes readable from
+    the connection is equal to or more than <<num_blocks * block_size>> the
+    routine will NOT block.
+    [RETURNS] The number of bytes read. Errors may cause partial blocks to be
+    read.
+*/
+{
+    unsigned int num_read;
+    unsigned int tot_bytes_read = 0;
+    unsigned int length;
+    unsigned int blocks_to_read, max_blocks;
+    static char function_name[] = "ch_read_and_swap_blocks";
+
+    VERIFY_CHANNEL (channel);
+    if (buffer == NULL)
+    {
+	(void) fprintf (stderr, "NULL pointer passed\n");
+	a_prog_bug (function_name);
+    }
+    /*  Divide the transfer into multiple sections, which reduces the amount of
+	disc activity due to swapping. If the sections are too large, the net
+	effect is a massive disc-to-disc copy, since a write to virtual memory
+	can result in a write to disc if there is insufficient RAM  */
+    max_blocks = SWAP_READ_LENGTH / block_size;
+    for (; num_blocks > 0; num_blocks -= blocks_to_read, buffer += length)
+    {
+	blocks_to_read = (num_blocks > max_blocks) ? max_blocks : num_blocks;
+	length = blocks_to_read * block_size;
+	if ( ( num_read = ch_read (channel, buffer, length) ) < length )
+	{
+	    return (tot_bytes_read);
+	}
+	tot_bytes_read += num_read;
+	m_copy_and_swap_blocks (buffer, NULL, block_size, 0, block_size,
+				blocks_to_read);
+    }
+    return (tot_bytes_read);
+}   /*  End Function ch_read_and_swap_blocks  */
+
+/*EXPERIMENTAL_FUNCTION*/
+unsigned int ch_swap_and_write_blocks (Channel channel, CONST char *buffer,
+				       unsigned int num_blocks,
+				       unsigned int block_size)
+/*  [SUMMARY] Write blocks to a channel after swapping bytes.
+    [PURPOSE] This routine will write a number of blocks to a channel after
+    swapping the bytes.
+    <channel> The channel object.
+    <buffer> The buffer to read the data from.
+    <num_blocks> The number of blocks to write.
+    <block_size> The size (in bytes) of each block.
+    [RETURNS] The number of bytes written. Errors may cause partial blocks to
+    be written.
+*/
+{
+    unsigned int tot_bytes_written, bytes_written, bytes_to_write, nblocks;
+    char swap_buffer[SWAP_BUF_SIZE];
+    static char function_name[] = "ch_swap_and_write_blocks";
+
+    VERIFY_CHANNEL (channel);
+    if (buffer == NULL)
+    {
+	(void) fprintf (stderr, "NULL pointer passed\n");
+	a_prog_bug (function_name);
+    }
+    for (tot_bytes_written = 0; num_blocks > 0;
+	 num_blocks -= nblocks, buffer += bytes_written)
+    {
+	nblocks = num_blocks;
+	if (nblocks * block_size > SWAP_BUF_SIZE)
+	    nblocks = SWAP_BUF_SIZE / block_size;
+	m_copy_and_swap_blocks (swap_buffer, buffer, block_size, block_size,
+				block_size, nblocks);
+	bytes_to_write = nblocks * block_size;
+	bytes_written = ch_write (channel, swap_buffer, bytes_to_write);
+	tot_bytes_written += bytes_written;
+	if (bytes_written < bytes_to_write) return (tot_bytes_written);
+    }
+    return (tot_bytes_written);
+}   /*  End Function ch_swap_and_write_blocks  */

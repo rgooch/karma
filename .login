@@ -2,7 +2,7 @@
 # every  Karma  user.
 
 
-#   Copyright (C) 1992,1993,1994,1995  Richard Gooch
+#   Copyright (C) 1992-1996  Richard Gooch
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 
 # Written by		Richard Gooch	22-SEP-1992
 
-# Last updated by	Richard Gooch	2-MAY-1996
+# Last updated by	Richard Gooch	15-JUL-1996
 
 
 # Define Karma installed base (for ordinary users)
@@ -63,7 +63,7 @@ setenv KARMAINCLUDEPATH ${KARMABASE}/include
 
 # Set version number environment variable
 set _versionfile = $KARMAINCLUDEPATH/k_version.h
-set tmp = `fgrep KARMA_VERSION $_versionfile | tr '"' ' ' | tr - ' '`
+set tmp = `fgrep KARMA_VERSION $_versionfile | tr '"' ' '`
 setenv KARMA_VERSION "$tmp[$#tmp]"
 if ("$KARMA_VERSION" == "") then
     echo "WARNING: KARMA_VERSION environment variable could not be computed."

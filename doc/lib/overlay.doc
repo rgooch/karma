@@ -9,25 +9,25 @@ $LIBRARY          karmagraphics
 $LINKWITH         -lkarmagraphics
 $END
 
-$FUNCTION         overlay_create_list
-$RETURN_TYPE      KOverlayList
+$FUNCTION           overlay_create_list
+$RETURN_TYPE        KOverlayList
 $PARAMETER_LIST
     (void *info)
-$SUMMARY          Create a managed overlay object list.
+$SUMMARY            Create a managed overlay object list.
 $PURPOSE
     Create a managed overlay object list.
-$PARAMETER        info :
+$PARAMETER          info :
     The arbitrary information pointer for the overlay list. This may be
     NULL.
 $RETURNS
     A KOverlayList object on success, else NULL.
 $END
 
-$FUNCTION         overlay_specify_iarray_2d
-$RETURN_TYPE      void
+$FUNCTION           overlay_specify_iarray_2d
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KOverlayList olist, iarray array)
-$SUMMARY          Extract specifications from an Intelligent Array.
+$SUMMARY            Extract specifications from an Intelligent Array.
 $PURPOSE
     This routine will specify horizontal and vertical label matching
     for an overlay list based on the dimension names of a 2-dimensional
@@ -35,426 +35,426 @@ $PURPOSE
     restrictions are removed) if the Intelligent Array is a pure 2-dimensional
     array. If the array is an alias of a plane of a 3-dimensional (or greater)
     array, then further restrictions are imposed.
-$PARAMETER        olist :
+$PARAMETER          olist :
     The overlay list object.
-$PARAMETER        array :
+$PARAMETER          array :
     The Intelligent Array.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         overlay_specify_canvas
-$RETURN_TYPE      void
+$FUNCTION           overlay_specify_canvas
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KOverlayList olist, KWorldCanvas canvas)
-$SUMMARY          Extract specification from a world canvas.
+$SUMMARY            Extract specification from a world canvas.
 $PURPOSE
     This routine will register a world canvas to extract
     specification information from for all future overlay objects which are
     created with an overlay object list.
-$PARAMETER        olist :
+$PARAMETER          olist :
     The overlay list object.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         overlay_associate_display_canvas
-$RETURN_TYPE      flag
+$FUNCTION           overlay_associate_display_canvas
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KOverlayList olist, KWorldCanvas canvas)
-$SUMMARY          Associate display canvas with overlay list.
+$SUMMARY            Associate display canvas with overlay list.
 $PURPOSE
     This routine will register a world canvas to display overlay
     objects on when overlay objects received (either by overlay_* function
     calls within the application or over a "2D_overlay" connection). Multiple
     canvases may  be associated with an overlay list.
-$PARAMETER        olist :
+$PARAMETER          olist :
     The overlay list object.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
 $RETURNS
     TRUE on success, else FALSE (indicating that an error occurred
     refreshing the canvas).
 $END
 
-$FUNCTION         overlay_unassociate_display_canvas
-$RETURN_TYPE      flag
+$FUNCTION           overlay_unassociate_display_canvas
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KOverlayList olist,
 					 KWorldCanvas canvas)
-$SUMMARY          Dissassociate a world canvas to display overlay objects.
+$SUMMARY            Dissassociate a world canvas to display overlay objects.
 $PURPOSE
     Dissassociate a world canvas to display overlay objects.
-$PARAMETER        olist :
+$PARAMETER          olist :
     The overlay list object.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
 $RETURNS
     TRUE if the canvas was associated, else FALSE.
 $END
 
-$FUNCTION         overlay_redraw_on_canvas
-$RETURN_TYPE      flag
+$FUNCTION           overlay_redraw_on_canvas
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KOverlayList olist, KWorldCanvas canvas)
-$SUMMARY          Redraw an overlay list onto a world canvas.
+$SUMMARY            Redraw an overlay list onto a world canvas.
 $PURPOSE
     Redraw an overlay list onto a world canvas.
-$PARAMETER        olist :
+$PARAMETER          olist :
     The overlay list object.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         overlay_line
-$RETURN_TYPE      unsigned int
+$FUNCTION           overlay_line
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (KOverlayList olist,
 			   unsigned int type0, double x0,double y0,
 			   unsigned int type1, double x1, double y1,
 			   char *colourname)
-$SUMMARY          Add a line to an overlay object list. See also [<overlay_lines>].
+$SUMMARY            Add a line to an overlay object list. See also [<overlay_lines>].
 $PURPOSE
     Add a line to an overlay object list. See also [<overlay_lines>].
-$PARAMETER        olist :
+$PARAMETER          olist :
     The overlay list object.
-$PARAMETER        type0 :
+$PARAMETER          type0 :
     The type of the first co-ordinate.
-$PARAMETER        x0 :
+$PARAMETER          x0 :
     The horizontal position of the first co-ordinate.
-$PARAMETER        y0 :
+$PARAMETER          y0 :
     The vertical position of the first co-ordinate.
-$PARAMETER        type1 :
+$PARAMETER          type1 :
     The type of the second co-ordinate.
-$PARAMETER        x1 :
+$PARAMETER          x1 :
     The horizontal position of the second co-ordinate.
-$PARAMETER        y1 :
+$PARAMETER          y1 :
     The vertical position of the second co-ordinate.
-$PARAMETER        colourname :
+$PARAMETER          colourname :
     The colourname.
 $RETURNS
     The objectID on success, else 0.
 $END
 
-$FUNCTION         overlay_lines
-$RETURN_TYPE      unsigned int
+$FUNCTION           overlay_lines
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (KOverlayList olist, unsigned int num_coords,
 			    unsigned int *types, double *x_arr, double *y_arr,
 			    char *colourname)
-$SUMMARY          Add many lines to an overlay list.
+$SUMMARY            Add many lines to an overlay list.
 $PURPOSE
     This routine will add a number of connected lines to an overlay
     object list. These lines will form a single object. Using this routine is
     far more efficient than calling <-overlay_line-> repeatedly.
-$PARAMETER        olist :
+$PARAMETER          olist :
     The overlay list.
-$PARAMETER        num_coords :
+$PARAMETER          num_coords :
     The number of co-ordinates. The number of lines is one less
     than this value.
-$PARAMETER        types :
+$PARAMETER          types :
     An array of co-ordinate types. If this is NULL, all co-ordinates
     are assumed to be world co-ordinates.
-$PARAMETER        x_arr :
+$PARAMETER          x_arr :
     The horizontal co-ordinate values.
-$PARAMETER        y_arr :
+$PARAMETER          y_arr :
     The vertical co-ordinate values.
-$PARAMETER        colourname :
+$PARAMETER          colourname :
     The colourname.
 $RETURNS
     The objectID on success, else 0.
 $END
 
-$FUNCTION         overlay_text
-$RETURN_TYPE      unsigned int
+$FUNCTION           overlay_text
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (KOverlayList olist, char *string, unsigned int type,
 			   double x, double y, char *colourname,
 			   char *fontname, flag clear_under)
-$SUMMARY          Add a text string to an overlay object list.
+$SUMMARY            Add a text string to an overlay object list.
 $PURPOSE
     Add a text string to an overlay object list.
-$PARAMETER        olist :
+$PARAMETER          olist :
     The overlay list object.
-$PARAMETER        string :
+$PARAMETER          string :
     The text string.
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the co-ordinate.
-$PARAMETER        x :
+$PARAMETER          x :
     The horizontal position of the co-ordinate.
-$PARAMETER        y :
+$PARAMETER          y :
     The vertical position of the co-ordinate.
-$PARAMETER        colourname :
+$PARAMETER          colourname :
     The colourname.
-$PARAMETER        fontname :
+$PARAMETER          fontname :
     The font name.
-$PARAMETER        clear_under :
+$PARAMETER          clear_under :
     If TRUE, then both the foreground and background of the
     characters will be drawn.
 $RETURNS
     The objectID on success, else 0.
 $END
 
-$FUNCTION         overlay_ellipse
-$RETURN_TYPE      unsigned int
+$FUNCTION           overlay_ellipse
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (KOverlayList olist,
 			      unsigned int ctype,double cx, double cy,
 			      unsigned int rtype, double rx, double ry,
 			      char *colourname, flag filled)
-$SUMMARY          Add an ellipse to an overlay list. See also [<overlay_eillipses>]
+$SUMMARY            Add an ellipse to an overlay list. See also [<overlay_eillipses>]
 $PURPOSE
     Add an ellipse to an overlay list. See also [<overlay_eillipses>]
-$PARAMETER        olist :
+$PARAMETER          olist :
     The overlay list object.
-$PARAMETER        ctype :
+$PARAMETER          ctype :
     The type of the centre co-ordinate.
-$PARAMETER        cx :
+$PARAMETER          cx :
     The horizontal position of the centre co-ordinate.
-$PARAMETER        cy :
+$PARAMETER          cy :
     The vertical position of the centre co-ordinate.
-$PARAMETER        rtype :
+$PARAMETER          rtype :
     The type of the radius co-ordinate.
-$PARAMETER        rx :
+$PARAMETER          rx :
     The horizontal radius.
-$PARAMETER        ry :
+$PARAMETER          ry :
     The vertical radius.
-$PARAMETER        colourname :
+$PARAMETER          colourname :
     The colourname.
-$PARAMETER        filled :
+$PARAMETER          filled :
     If TRUE the ellipse will be filled.
 $RETURNS
     The objectID on success, else 0.
 $END
 
-$FUNCTION         overlay_filled_polygon
-$RETURN_TYPE      unsigned int
+$FUNCTION           overlay_filled_polygon
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (KOverlayList olist,
 				     unsigned int num_coords,
 				     unsigned int *types,
 				     double *x_arr, double *y_arr,
 				     char *colourname)
-$SUMMARY          Add a filled polygon to an overlay object list.
+$SUMMARY            Add a filled polygon to an overlay object list.
 $PURPOSE
     Add a filled polygon to an overlay object list.
-$PARAMETER        olist :
+$PARAMETER          olist :
     The overlay list object.
-$PARAMETER        num_coords :
+$PARAMETER          num_coords :
     The number of co-ordinates (vertices).
-$PARAMETER        types :
+$PARAMETER          types :
     The array of co-ordinate type values. If this is NULL, all
     co-ordinates are assumed to be world co-ordinates.
-$PARAMETER        x_arr :
+$PARAMETER          x_arr :
     The array of horizontal co-ordinate values.
-$PARAMETER        y_arr :
+$PARAMETER          y_arr :
     The array of vertical co-ordinate values.
-$PARAMETER        colourname :
+$PARAMETER          colourname :
     The colour name.
 $RETURNS
     The objectID on success, else 0.
 $END
 
-$FUNCTION         overlay_vector
-$RETURN_TYPE      unsigned int
+$FUNCTION           overlay_vector
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (KOverlayList olist,
 			     unsigned int stype, double sx, double sy,
 			     unsigned int dtype, double dx, double dy,
 			     char *colourname)
-$SUMMARY          Add a vector to an overlay list.
+$SUMMARY            Add a vector to an overlay list.
 $PURPOSE
     This routine will add a vector (directed line) to an overlay
     object list. See also <-overlay_vectors->.
-$PARAMETER        olist :
+$PARAMETER          olist :
     The overlay list object.
-$PARAMETER        stype :
+$PARAMETER          stype :
     The type of the start co-ordinate.
-$PARAMETER        sx :
+$PARAMETER          sx :
     The horizontal position of the start co-ordinate.
-$PARAMETER        sy :
+$PARAMETER          sy :
     The vertical position of the start co-ordinate.
-$PARAMETER        dtype :
+$PARAMETER          dtype :
     The type of the vector direction.
-$PARAMETER        dx :
+$PARAMETER          dx :
     The horizontal vector direction.
-$PARAMETER        dy :
+$PARAMETER          dy :
     The vertical vector direction.
-$PARAMETER        colourname :
+$PARAMETER          colourname :
     The colour name.
 $RETURNS
     The objectID on success, else 0.
 $END
 
-$FUNCTION         overlay_ellipses
-$RETURN_TYPE      unsigned int
+$FUNCTION           overlay_ellipses
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (KOverlayList olist, unsigned int num_ellipses,
 			       unsigned int *ctypes, double *cx, double *cy,
 			       unsigned int *rtypes, double *rx, double *ry,
 			       char *colourname, flag filled)
-$SUMMARY          Add many ellipses to an overlay list.
+$SUMMARY            Add many ellipses to an overlay list.
 $PURPOSE
     This routine will add a number of ellipses to an overlay object
     list. These ellipses will form a single object. Using this routine is far
     more efficient than calling <-overlay_ellipse-> repeatedly.
-$PARAMETER        olist :
+$PARAMETER          olist :
     The overlay list object.
-$PARAMETER        num_ellipses :
+$PARAMETER          num_ellipses :
     The number of ellipses.
-$PARAMETER        ctypes :
+$PARAMETER          ctypes :
     The types of the centre co-ordinates. If this is NULL, all
     co-ordinates are assumed to be world co-ordinates.
-$PARAMETER        cx :
+$PARAMETER          cx :
     The horizontal positions of the centre co-ordinates.
-$PARAMETER        cy :
+$PARAMETER          cy :
     The vertical positions of the centre co-ordinates.
-$PARAMETER        rtypes :
+$PARAMETER          rtypes :
     The types of the radii co-ordinates. If this is NULL, all
     co-ordinates are assumed to be world co-ordinates.
-$PARAMETER        rx :
+$PARAMETER          rx :
     The horizontal radii.
-$PARAMETER        ry :
+$PARAMETER          ry :
     The vertical radii.
-$PARAMETER        colourname :
+$PARAMETER          colourname :
     The colour name.
-$PARAMETER        filled :
+$PARAMETER          filled :
     If TRUE the ellipses will be filled.
 $RETURNS
     The objectID on success, else 0.
 $END
 
-$FUNCTION         overlay_segments
-$RETURN_TYPE      unsigned int
+$FUNCTION           overlay_segments
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (KOverlayList olist, unsigned int num_segments,
 			       unsigned int *types0, double *x0, double *y0,
 			       unsigned int *types1, double *x1, double *y1,
 			       char *colourname)
-$SUMMARY          Add many segments to an overlay list.
+$SUMMARY            Add many segments to an overlay list.
 $PURPOSE
     This routine will add a number of disjoint line segments to an
     overlay object list. These segments will form a single object. Using this
     routine is far more efficient than calling <-overlay_line-> repeatedly.
-$PARAMETER        olist :
+$PARAMETER          olist :
     The overlay list object.
-$PARAMETER        num_segments :
+$PARAMETER          num_segments :
     The number of segments.
-$PARAMETER        types0 :
+$PARAMETER          types0 :
     The types of the start co-ordinates. If this is NULL, all
     co-ordinates are assumed to be world co-ordinates.
-$PARAMETER        x0 :
+$PARAMETER          x0 :
     The horizontal positions of the start co-ordinates.
-$PARAMETER        y0 :
+$PARAMETER          y0 :
     The vertical positions of the start co-ordinates.
-$PARAMETER        types1 :
+$PARAMETER          types1 :
     The types of the stop co-ordinates. If this is NULL, all
     co-ordinates are assumed to be world co-ordinates.
-$PARAMETER        x1 :
+$PARAMETER          x1 :
     The horizontal positions of the stop co-ordinates.
-$PARAMETER        y1 :
+$PARAMETER          y1 :
     The vertical positions of the stop co-ordinates.
-$PARAMETER        colourname :
+$PARAMETER          colourname :
     The colour name.
 $RETURNS
     The objectID on success, else 0.
 $END
 
-$FUNCTION         overlay_vectors
-$RETURN_TYPE      unsigned int
+$FUNCTION           overlay_vectors
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (KOverlayList olist, unsigned int num_vectors,
 			      unsigned int *stypes, double *sx, double *sy,
 			      unsigned int *dtypes, double *dx, double *dy,
 			      char *colourname)
-$SUMMARY          Add many vectors to an overlay list.
+$SUMMARY            Add many vectors to an overlay list.
 $PURPOSE
     This routine will add a number of vectors (directed lines) to an
     overlay object list. These vectors will form a single object. Using this
     routine is far more efficient than calling <-overlay_vector-> repeatedly.
-$PARAMETER        olist :
+$PARAMETER          olist :
     The overlay list object.
-$PARAMETER        num_vectors :
+$PARAMETER          num_vectors :
     The number of vectors.
-$PARAMETER        stypes :
+$PARAMETER          stypes :
     The types of the start co-ordinates. If this is NULL, all
     co-ordinates are assumed to be world co-ordinates.
-$PARAMETER        sx :
+$PARAMETER          sx :
     The horizontal positions of the start co-ordinates.
-$PARAMETER        sy :
+$PARAMETER          sy :
     The vertical positions of the start co-ordinates.
-$PARAMETER        dtypes :
+$PARAMETER          dtypes :
     The types of the vector directions. If this is NULL, all
     directions are assumed to be in world co-ordinates.
-$PARAMETER        dx :
+$PARAMETER          dx :
     The horizontal vector directions.
-$PARAMETER        dy :
+$PARAMETER          dy :
     The vertical vector directions.
-$PARAMETER        colourname :
+$PARAMETER          colourname :
     The colour name.
 $RETURNS
     The objectID on success, else 0.
 $END
 
-$FUNCTION         overlay_remove_objects
-$RETURN_TYPE      flag
+$FUNCTION           overlay_remove_objects
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KOverlayList olist, unsigned int num_objects)
-$SUMMARY          Remove objects from the end of an overlay object list.
+$SUMMARY            Remove objects from the end of an overlay object list.
 $PURPOSE
     Remove objects from the end of an overlay object list.
-$PARAMETER        olist :
+$PARAMETER          olist :
     The overlay list object.
-$PARAMETER        num_objects :
+$PARAMETER          num_objects :
     The number of objects to remove. If this is 0, then the list
     is emptied.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         overlay_remove_object
-$RETURN_TYPE      flag
+$FUNCTION           overlay_remove_object
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KOverlayList olist, unsigned int id_in_list,
 			    unsigned int list_id)
-$SUMMARY          Remove one object from an overlay object list.
+$SUMMARY            Remove one object from an overlay object list.
 $PURPOSE
     Remove one object from an overlay object list.
-$PARAMETER        olist :
+$PARAMETER          olist :
     The overlay list object.
-$PARAMETER        id_in_list :
+$PARAMETER          id_in_list :
     The object ID. This ID refers to an object created by a
     particular list master or slave.
-$PARAMETER        list_id :
+$PARAMETER          list_id :
     The ID of the list which created the object. If this is 0, the
     list given by <<olist>> is assumed.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         overlay_move_object
-$RETURN_TYPE      flag
+$FUNCTION           overlay_move_object
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KOverlayList olist, unsigned int id_in_list,
 			  unsigned int list_id, double dx, double dy)
-$SUMMARY          Move a object in an overlay object list.
+$SUMMARY            Move a object in an overlay object list.
 $PURPOSE
     Move a object in an overlay object list.
-$PARAMETER        olist :
+$PARAMETER          olist :
     The overlay list object.
-$PARAMETER        id_in_list :
+$PARAMETER          id_in_list :
     The object ID. This ID refers to an object created by a
     particular list master or slave.
-$PARAMETER        list_id :
+$PARAMETER          list_id :
     The ID of the list which created the object. If this is 0, the
     list given by <<olist>> is assumed.
-$PARAMETER        dx :
+$PARAMETER          dx :
     The horizontal distance to move.
-$PARAMETER        dy :
+$PARAMETER          dy :
     The vertical distance to move.
 $RETURNS
     TRUE on success, else FALSE.

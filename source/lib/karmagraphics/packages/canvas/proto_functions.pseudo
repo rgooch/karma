@@ -63,8 +63,6 @@ flag CANVAS_PROTO_position_func (KWorldCanvas canvas, double x, double y,
     <canvas> The canvas on which the event occurred.
     <x> The horizontal world co-ordinate of the event.
     <y> The vertical world co-ordinate of the event.
-    [NOTE] These values will have been transformed by the registered
-    transform function (see [<canvas_register_transform_func>]).
     <event_code> The arbitrary event code.
     <e_info> A pointer to arbitrary event information.
     <f_info> A pointer to an arbitrary function information pointer.
@@ -72,23 +70,27 @@ flag CANVAS_PROTO_position_func (KWorldCanvas canvas, double x, double y,
     function being called.
     <y_lin> The vertical linear world co-ordinate prior to the transform
     function being called.
+    [NOTE] The world co-ordinate values will have been transformed by the
+    registered transform function (see [<canvas_register_transform_func>]).
     [RETURNS] TRUE if the event was consumed, else FALSE indicating that
     the event is still to be processed.
 */
 
 /*PROTOTYPE_FUNCTION*/  /*
 flag CANVAS_PROTO_coord_convert_func (KWorldCanvas canvas,
-				      struct win_scale_type *win_scale,
-				      double *x, double *y,
+				      unsigned int num_coords,
+				      CONST double *xin, CONST double *yin,
+				      double *xout, double *yout,
 				      flag to_world, void **info)
     [SUMMARY] Co-ordinate conversion callback.
     [PURPOSE] This routine will convert between world co-ordinates and pixel
     co-ordinates for a world canvas.
     <canvas> The canvas.
-    <win_scale> A pointer to the window scaling information. The data
-    herein may be modified.
-    <x> A pointer to the horizontal co-ordinate storage. This is updated.
-    <y> A pointer to the vertical co-ordinate storage. This is updated.
+    <num_coords> The number of co-ordinates to transform.
+    <xin> The array of input horizontal co-ordinates.
+    <yin> The array of input vertical co-ordinates.
+    <xout> The array of output horizontal co-ordinates are written here.
+    <yout> The array of output vertical co-ordinates are written here.
     <to_world> If TRUE, then a pixel to world co-ordinate transform is
     required, else a world to pixel co-ordinate transform is required.
     <info> A pointer to the arbitrary canvas information pointer.

@@ -7,11 +7,11 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         d_enter_daemon_mode
-$RETURN_TYPE      void
+$FUNCTION           d_enter_daemon_mode
+$RETURN_TYPE        void
 $PARAMETER_LIST
     ()
-$SUMMARY          Enter daemon mode.
+$SUMMARY            Enter daemon mode.
 $PURPOSE
     This routine will cause the module to enter daemon mode. This
     involves detatching from a terminal.
@@ -19,11 +19,11 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         d_test_daemon_mode
-$RETURN_TYPE      flag
+$FUNCTION           d_test_daemon_mode
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     ()
-$SUMMARY          Test if the module is running in daemon mode.
+$SUMMARY            Test if the module is running in daemon mode.
 $PURPOSE
     Test if the module is running in daemon mode.
 $RETURNS

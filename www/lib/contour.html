@@ -1,0 +1,247 @@
+<html><head><title>Package: contour</title></head> 
+<body>
+<center><h1>The "contour" Package</h1></center>    These routines are meant to provide a high level mechanism to create and
+    manipulate contour images (2-dimensional slices of Karma data structures).
+    These contour images utilise the world canvases available in the
+    <a href=canvas.html#canvas>canvas</a> package, hence the resulting code is device independent.
+    NOTE: THIS PACKAGE IS WORK IN PROGRESS. THE INTERFACE MAY CHANGE IN THE
+    NEXT RELEASE, POSSIBLY WITHOUT NOTICE.
+<p><b>Library:</b> karmagraphics
+<br><b>Link With:</b> -lkarmagraphics
+<br><p><a name=contour></a></table><h4>Functions</h4><table><tr><td><a href=contour.html#contour_init>contour_init</a></td><td>Initialise the package for a particular canvas.
+</td></tr>
+<tr><td><a href=contour.html#contour_create_restr>contour_create_restr</a></td><td>Create contour image from 2D slice with restrictions.
+</td></tr>
+<tr><td><a href=contour.html#contour_create_from_iarray>contour_create_from_iarray</a></td><td>Create a contour image from an Intelligent Array.
+</td></tr>
+<tr><td><a href=contour.html#contour_create_sequence>contour_create_sequence</a></td><td>Create a sequence of contour images from a 3D slice.
+</td></tr>
+<tr><td><a href=contour.html#contour_create_sequence_from_iarray>contour_create_sequence_from_iarray</a></td><td>Create a sequence of contour images from an Intelligent Array.
+</td></tr>
+<tr><td><a href=contour.html#contour_set_active>contour_set_active</a></td><td>Set active state for a contour image controlled refresh.
+</td></tr>
+<tr><td><a href=contour.html#contour_register_data_change>contour_register_data_change</a></td><td>Notify data for contour image has changed.
+</td></tr>
+<tr><td><a href=contour.html#contour_destroy>contour_destroy</a></td><td>Destroy contour image.
+</td></tr>
+<tr><td><a href=contour.html#contour_set_canvas_attributes>contour_set_canvas_attributes</a></td><td>Set the contour image attributes for a world canvas.
+</td></tr>
+<tr><td><a href=contour.html#contour_set_levels>contour_set_levels</a></td><td>Set/update the contour levels for a KContourImage object.
+</td></tr>
+<tr><td><a href=contour.html#contour_get_worldcanvas>contour_get_worldcanvas</a></td><td>Get the world canvas for a contour image.
+</td></tr>
+</table><p><hr><center><h2>Functions</h2></center><hr> <a name=contour_init></a> void
+ <b>contour_init</b><i>    (KWorldCanvas canvas, ...)
+</i><br><p>    This routine will initialise the <a href=contour.html#contour>contour</a> package for a
+    particular world canvas. Calling this routine causes a number of callback
+    routines internal to the package to be registered with the canvas (such
+    as refresh and position event callbacks). This routine must be called
+    before creating contour images.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>... :</i> 
+    The list of parameter attribute-key attribute-value-ptr pairs
+    must follow. This list must be terminated with the CONTOUR_CANVAS_ATT_END.
+    See <a href=contour.html#CONTOUR_CANVAS_ATTRIBUTES>CONTOUR_CANVAS_ATTRIBUTES</a> for the list of attributes.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=contour_create_restr></a> KContourImage
+ <b>contour_create_restr</b><i>    (KWorldCanvas canvas,
+				    multi_array *multi_desc,
+				    array_desc *arr_desc, char *slice,
+				    unsigned int hdim, unsigned int vdim,
+				    unsigned int elem_index,
+				    unsigned int num_levels,
+				    CONST double *contour_levels,
+				    unsigned num_restr,
+				    char **restr_names, double *restr_values)
+</i><br><p>    This routine will create a contour image object from a
+    2-dimensional slice of a Karma data structure. At a later time, this
+    contour image may be made visible. This routine will not cause the canvas
+    to be refreshed.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas onto which the contour image may be drawn. Many
+    contour images may be associated with a single canvas.
+<br><li><i>multi_desc :</i> 
+    The  multi_array  descriptor which contains the Karma data
+    structure. The routine increments the attachment count on the descriptor
+    on successful completion. This may be NULL.
+<br><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>slice :</i> 
+    The start of the slice data.
+<br><li><i>hdim :</i> 
+    The dimension index of the horizontal dimension.
+<br><li><i>vdim :</i> 
+    The dimension index of the vertical dimension.
+<br><li><i>elem_index :</i> 
+    The element index in the data packets.
+<br><li><i>num_levels :</i> 
+    The number of contour levels. This may be 0.
+<br><li><i>contour_levels :</i> 
+    The array of contour levels.
+<br><li><i>num_restr :</i> 
+    The number of matched restrictions.
+<br><li><i>restr_names :</i> 
+    The restriction names.
+<br><li><i>restr_values :</i> 
+    The restriction values.
+<br></ul><b>Returns:</b>     A KContourImage object on success, NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     Restriction information is automatically deallocated when
+    <a href=contour.html#contour_destroy>contour_destroy</a> is called.
+</ul><p><hr> <a name=contour_create_from_iarray></a> KContourImage
+ <b>contour_create_from_iarray</b><i>    (KWorldCanvas canvas, iarray array,
+					  flag swap, unsigned int num_levels,
+					  CONST double *contour_levels)
+</i><br><p>    This routine will create a contour image object from a
+    2-dimensional Intelligant Array. At a later time, this contour image may
+    be made visible. This routine will not cause the canvas to be refreshed.
+    Many contour images may be associated with a single canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>array :</i> 
+    The Intelligent Array. The underlying <em>multi_array</em> data
+    structure will have its attachment count incremented upon successful
+    completion.
+<br><li><i>swap :</i> 
+    If TRUE the y axis will be displayed horizontally.
+<br><li><i>num_levels :</i> 
+    The number of contour levels. This may be 0.
+<br><li><i>contour_levels :</i> 
+    The array of contour levels.
+<br></ul><b>Returns:</b>     A KContourImage object on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=contour_create_sequence></a> KContourImage *
+ <b>contour_create_sequence</b><i>    (KWorldCanvas canvas,
+					multi_array *multi_desc,
+					array_desc *arr_desc, char *cube,
+					unsigned int hdim, unsigned int vdim,
+					unsigned int fdim,
+					unsigned int elem_index,
+					unsigned int num_levels,
+					CONST double *contour_levels)
+</i><br><p>    This routine will create a sequence of contour image objects
+    from a 3-dimensional cube of a Karma data structure. At a later time, this
+    sequence of contour images may be made visible in any order.
+    This routine will not cause the canvas to be refreshed.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>multi_desc :</i> 
+    The  multi_array  descriptor which contains the Karma data
+    structure. The routine increments the attachment count on the descriptor
+    on successful completion. This may be NULL.
+<br><li><i>arr_desc :</i> 
+    The array descriptor.
+<br><li><i>cube :</i> 
+    The start of the cube data.
+<br><li><i>hdim :</i> 
+    The dimension index of the horizontal dimension.
+<br><li><i>vdim :</i> 
+    The dimension index of the vertical dimension.
+<br><li><i>fdim :</i> 
+    The dimension index of the frame dimension (dimension containing the
+    sequence). The number of frames is the same as the length of this
+    dimension.
+<br><li><i>elem_index :</i> 
+    The element index in the data packets.
+<br><li><i>num_levels :</i> 
+    The number of contour levels. This may be 0.
+<br><li><i>contour_levels :</i> 
+    The array of contour levels.
+<br></ul><b>Returns:</b>     A pointer to a dynamically allocated array of contour image
+    objects on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=contour_create_sequence_from_iarray></a> KContourImage *
+ <b>contour_create_sequence_from_iarray</b><i>    (KWorldCanvas canvas, iarray array,
+     unsigned int hdim, unsigned int vdim, unsigned int fdim,
+     unsigned int num_levels, CONST double *contour_levels)
+</i><br><p>    This routine will create a sequence of contour image objects
+    from a 3-dimensional Intelligent Array. At a later time, this sequence of
+    contour images may be made visible in any order.
+    This routine will not cause the canvas to be refreshed.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>array :</i> 
+    The Intelligent Array. The underlying <em>multi_array</em> data
+    structure will have its attachment count incremented upon successful
+    completion.
+<br><li><i>hdim :</i> 
+    The dimension index of the horizontal dimension.
+<br><li><i>vdim :</i> 
+    The dimension index of the vertical dimension.
+<br><li><i>fdim :</i> 
+    The dimension index of the frame dimension (dimension containing the
+    sequence). The number of frames is the same as the length of this
+    dimension.
+<br><li><i>num_levels :</i> 
+    The number of contour levels. This may be 0.
+<br><li><i>contour_levels :</i> 
+    The array of contour levels.
+<br></ul><b>Returns:</b>     A pointer to a dynamically allocated array of contour image
+    objects on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=contour_set_active></a> flag
+ <b>contour_set_active</b><i>    (KContourImage cimage, flag active, flag force_refresh,
+			 flag refresh_if_changed, flag exclusive)
+</i><br><p>    This routine will make a contour image active or inactive.
+<p><b>Parameters:</b><ul><li><i>cimage :</i> 
+    The contour image.
+<br><li><i>active :</i> 
+    If TRUE, the contourable image is made active, else it is made
+    inactive.
+<br><li><i>force_refresh :</i> 
+    If TRUE, the canvas is always refreshed.
+<br><li><i>refresh_if_changed :</i> 
+    If TRUE, the canvas is refreshed if the contourable
+    image active state changed.
+<br><li><i>exclusive :</i> 
+    If TRUE and <em>active</em> is TRUE, make this contour image the
+    only active one for this canvas.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=contour_register_data_change></a> flag
+ <b>contour_register_data_change</b><i>    (KContourImage cimage)
+</i><br><p>    This routine will register a change in the Karma data structure
+    associated with a contour image. If the contour image is active, it will
+    be immediately redrawn on its canvas.
+<p><b>Parameters:</b><ul><li><i>cimage :</i> 
+    The contour image.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=contour_destroy></a> void
+ <b>contour_destroy</b><i>    (KContourImage cimage)
+</i><br><p>    This routine will destroy a contour image.
+<p><b>Parameters:</b><ul><li><i>cimage :</i> 
+    The contour image.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The associated <em>multi_array</em> descriptor is also deallocated (or
+    at least, the attachment count is decreased).
+</ul><p><hr> <a name=contour_set_canvas_attributes></a> void
+ <b>contour_set_canvas_attributes</b><i>    (KWorldCanvas canvas, ...)
+</i><br><p>    Set the contour image attributes for a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas.
+<br><li><i>... :</i> 
+    The list of parameter attribute-key attribute-value-ptr pairs
+    must follow. This list must be terminated with the CONTOUR_CANVAS_ATT_END.
+    See <a href=contour.html#CONTOUR_CANVAS_ATTRIBUTES>CONTOUR_CANVAS_ATTRIBUTES</a> for the list of attributes.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The canvas is not refreshed by this operation.
+</ul><p><hr> <a name=contour_set_levels></a> void
+ <b>contour_set_levels</b><i>    (KContourImage cimage, unsigned int num_levels,
+			 CONST double *contour_levels,
+			 CONST unsigned long *contour_pixels)
+</i><br><p>    This routine will set/update the contour levels for a
+    KContourImage object. The canvas is not refreshed by this operation.
+<p><b>Parameters:</b><ul><li><i>cimage :</i> 
+    The KContourImage object.
+<br><li><i>num_levels :</i> 
+    The number of contour levels.
+<br><li><i>contour_levels :</i> 
+    The array of contour levels.
+<br><li><i>contour_pixels :</i> 
+    The array of contour pixels. This may be NULL.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=contour_get_worldcanvas></a> KWorldCanvas
+ <b>contour_get_worldcanvas</b><i>    (KContourImage cimage)
+</i><br><p>    Get the world canvas for a contour image.
+<p><b>Parameters:</b><ul><li><i>cimage :</i> 
+    The KContourImage object.
+<br></ul><b>Returns:</b>     The KWorldCanvas object.
+<br><b>Multithreading Level:</b> Unsafe<br><p>
+<hr><a href="../index.html">Back to Karma Home Page</a>
+<hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.ariel.com.au/">Ariel Internet Services</a></address></center></body></html>

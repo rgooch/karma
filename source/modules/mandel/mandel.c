@@ -37,14 +37,14 @@
 
     Updated by      Richard Gooch   18-MAY-1996: Changed to <kcmap_va_create>.
 
-    Last updated by Richard Gooch   1-JUN-1996: Cleaned code to keep
+    Updated by      Richard Gooch   1-JUN-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   28-JUL-1996: Made use of thread-private
+  information to update flop count.
 
 
 */
-#ifdef OS_Solaris
-#  include <thread.h>
-#endif
 #include <stdio.h>
 #include <math.h>
 #include <errno.h>
@@ -63,6 +63,7 @@
 #include <karma_st.h>
 #include <karma_ch.h>
 #include <karma_cf.h>
+#include <karma_im.h>
 #include <karma_a.h>
 #include <karma_m.h>
 #ifdef OS_VXMVX
@@ -70,17 +71,7 @@
 #  include <vx/vx.h>
 #endif
 
-#define VERSION "1.2"
-
-#ifdef OS_Solaris
-#  define LOCK mutex_lock (&global_lock)
-#  define UNLOCK mutex_unlock (&global_lock)
-#endif
-
-#ifndef LOCK
-#  define LOCK
-#  define UNLOCK
-#endif
+#define VERSION "1.3"
 
 
 STATIC_FUNCTION (void compute, () );
@@ -105,10 +96,6 @@ EXTERN_FUNCTION (int compute_x,
 
 static char *output_file = NULL;
 static unsigned int num_iterations = 1000;
-static int flop_count = 0;
-#ifdef OS_Solaris
-static mutex_t global_lock;
-#endif
 
 /*  Image parameters  */
 float x_min = -2.0;
@@ -185,6 +172,7 @@ int main (int argc, char **argv)
 	exit (RV_UNDEF_ERROR);
     }
 #endif
+    im_register_lib_version (KARMA_VERSION);
     /*  Enter the event loop  */
     module_run (argc, argv, "mandel", VERSION, ( flag (*) () ) NULL, -1, 0,
 		FALSE);
@@ -195,17 +183,18 @@ static void compute ()
 {
     iarray image;
     int y_pos, y_step, num_jobs, job_count;
-    char *data;
+    unsigned int num_threads, thread_count, flop_count;
     long wall_clock_time_taken;
     struct timeval start_time;
     struct timeval stop_time;
-    static struct timezone tz = {0, 0};
 #ifdef HAS_GETRUSAGE
     long cputime_taken;
     struct rusage start_usage;
     struct rusage stop_usage;
 #endif  /*  HAS_GETRUSAGE  */
-    extern int flop_count;
+    char *data;
+    unsigned int *flop_ptr;
+    static struct timezone tz = {0, 0};
     extern unsigned int num_iterations;
     extern unsigned int x_pixels;
     extern unsigned int y_pixels;
@@ -226,6 +215,7 @@ static void compute ()
 	{
 	    m_abort (function_name, "thread pool");
 	}
+	mt_new_thread_info (pool, NULL, sizeof flop_count);
     }
     flop_count = 0;
     if ( ( image = iarray_create_2D (y_pixels, x_pixels, K_UBYTE) ) == NULL )
@@ -252,8 +242,11 @@ static void compute ()
 	(void) exit (RV_SYS_ERROR);
     }
 #endif  /*  HAS_GETRUSAGE  */
-    num_jobs = mt_num_threads (pool);
-    num_jobs = (num_jobs > 1) ? num_jobs * 4 : 1;
+    num_threads = mt_num_threads (pool);
+    /*  Clear thread info  */
+    flop_ptr = (unsigned int *) mt_get_thread_info (pool);
+    m_clear (mt_get_thread_info (pool), num_threads * sizeof flop_count);
+    num_jobs = (num_threads > 1) ? num_threads * 4 : 1;
     if (num_jobs > y_pixels) num_jobs = y_pixels;
     y_step = y_pixels / num_jobs;
     data = image->data;
@@ -265,6 +258,11 @@ static void compute ()
 		       data, (void *) y_pos, (void *) (y_pos + y_step), NULL);
     }
     mt_wait_for_all_jobs (pool);
+    /*  Accumulate flop_count  */
+    for (thread_count = 0; thread_count < num_threads; ++thread_count)
+    {
+	flop_count += flop_ptr[thread_count];
+    }
     if (gettimeofday (&stop_time, &tz) != 0)
     {
 	(void) fprintf (stderr, "Error getting time of day\t%s%c\n",
@@ -284,10 +282,19 @@ static void compute ()
     cputime_taken *= 1000;
     cputime_taken += (stop_usage.ru_utime.tv_usec -
 		      start_usage.ru_utime.tv_usec) / 1000;
-    (void) fprintf (stderr,
-		    "Realtime: %ld ms\tCPUtime MFLOPS: %ld\trealtime MFLOPS: %ld\n",
-		    wall_clock_time_taken, (flop_count / cputime_taken) / 1000,
-		    (flop_count / wall_clock_time_taken) / 1000);
+    if (cputime_taken > 0)
+    {
+	fprintf (stderr,
+		 "Realtime: %ld ms\tCPUtime MFLOPS: %ld\trealtime MFLOPS: %ld\n",
+		 wall_clock_time_taken, (flop_count / cputime_taken) / 1000,
+		 (flop_count / wall_clock_time_taken) / 1000);
+    }
+    else
+    {
+	(void) fprintf (stderr, "Realtime: %ld ms\trealtime MFLOPS: %ld\n",
+			wall_clock_time_taken,
+			(flop_count / wall_clock_time_taken) / 1000);
+    }
 #else
     (void) fprintf (stderr, "Realtime: %ld ms\trealtime MFLOPS: %ld\n",
 		    wall_clock_time_taken,
@@ -305,16 +312,16 @@ static void compute_xy (void *pool_info,
 			void *call_info3, void *call_info4, void *thread_info)
 {
     int y_index;
-    int tmp_flop_count = 0;
     int y_start = (iaddr) call_info2;
     int y_stop = (iaddr) call_info3;
+    unsigned int tmp_flop_count = 0;
     unsigned char *data = (unsigned char *) call_info1;
+    unsigned int *flop_ptr = (unsigned int *) thread_info;
     float cy;
 #ifdef OS_VXMVX
     float four = 4.0, one = 1.0;
 #endif
     extern int num_colours;
-    extern int flop_count;
     extern unsigned int x_pixels;
     extern float x_min;
     extern float x_max;
@@ -327,7 +334,6 @@ static void compute_xy (void *pool_info,
     extern int screen_height;
     extern unsigned int *frame_buffer;
 #endif
-    extern char *sys_errlist[];
     /*static char function_name[] = "compute_xy";*/
 
     for (y_index = y_start; y_index < y_stop; ++y_index, data += x_pixels)
@@ -344,9 +350,7 @@ static void compute_xy (void *pool_info,
 				     x_min, x_pixels, x_scale, 1, num_colours);
 #endif
     }
-    LOCK;
-    flop_count += tmp_flop_count;
-    UNLOCK;
+    *flop_ptr += tmp_flop_count;
 }   /*  End Function compute_xy  */
 
 #ifdef OS_VXMVX

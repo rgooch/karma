@@ -119,11 +119,27 @@
   routine to always compute dimension limits. Required because reference pixel
   index was not used properly in some readers.
 
-    Last updated by Richard Gooch   19-JUN-1996: Improved <fix_descriptor>
+    Updated by      Richard Gooch   19-JUN-1996: Improved <fix_descriptor>
   routine to strip quote characters in FITS-style keywords and created
   <find_dimension> to support a more flexible (robust) algorithm for finding
   dimensions which correspond to FITS-style "CTYPEn" values. Also compare data
   name with "BUNIT" value.
+
+    Updated by      Richard Gooch   13-JUL-1996: Fixed bug in <fix_descriptor>
+  routine so that array element name is not changed when "BUNIT" is empty.
+
+    Updated by      Richard Gooch   6-AUG-1996: Copied "CRVALn" value to
+  <<reference>> field of dimension descriptor.
+
+    Updated by      Richard Gooch   10-AUG-1996: Took account of new return
+  status from <dsrw_put_multi>.
+
+    Updated by      Richard Gooch   15-AUG-1996: No longer update <<reference>>
+  field of dimension descriptor.
+
+    Last updated by Richard Gooch   25-SEP-1996: Changed <fix_descriptor> to
+  implement the new FITS-style co-ordinate handling, where dimension
+  co-ordinates range from 0 to length - 1.
 
 
 */
@@ -222,7 +238,7 @@ static flag add_to_cache_list (char *filename, multi_array *multi_desc,
 
     if ( (filename == NULL) || (multi_desc == NULL) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     if ( ( new_entry = (struct cache_type *) m_alloc (sizeof *new_entry) )
@@ -274,7 +290,7 @@ static void remove_from_cache_list (void *object, void *client1_data,
 
     if (entry->magic_number != MAGIC_NUMBER)
     {
-	(void) fprintf (stderr, "Cache list entry is not valid\n");
+	fprintf (stderr, "Cache list entry is not valid\n");
 	a_prog_bug (function_name);
     }
     entry->magic_number = 0;
@@ -289,9 +305,8 @@ static void remove_from_cache_list (void *object, void *client1_data,
     {
 	if ( !ch_close (entry->channel) )
 	{
-	    (void) fprintf (stderr,
-			    "Error closing channel for data structure\t%s\n",
-			    sys_errlist[errno]);
+	    fprintf (stderr, "Error closing channel for data structure\t%s\n",
+		     sys_errlist[errno]);
 	}
     }
     m_free ( (char *) entry );
@@ -438,14 +453,14 @@ static int get_connection_num (CONST char *string)
     char *char_ptr;
     if (*string != '[')
     {
-	(void) fprintf (stderr, "Left bracket ('[') missing\n");
+	fprintf (stderr, "Left bracket ('[') missing\n");
 	return (-1);
     }
     index = strtol (string + 1, &char_ptr, 10);
     if (*char_ptr != ']')
     {
 	/*  Not terminated properly  */
-	(void) fprintf (stderr, "Right bracket (']') missing\n");
+	fprintf (stderr, "Right bracket (']') missing\n");
 	return (-1);
     }
     return (index);
@@ -483,8 +498,8 @@ static char *convert_object_to_filename (CONST char *object_name)
 	m_error_notify (function_name, "filename");
 	return (NULL);
     }
-    (void) strcpy (filename, object_name);
-    (void) strcat (filename, default_extension);
+    strcpy (filename, object_name);
+    strcat (filename, default_extension);
     return (filename);
 }   /*  End Function convert_object_to_filename  */
 
@@ -516,9 +531,9 @@ static void close_mmap_channel (void *object, void *client1_data,
 
     if ( !ch_close (channel) )
     {
-	(void) fprintf (stderr,
-			"Error closing memory mapped channel for data structure\t%s\n",
-			sys_errlist[errno]);
+	fprintf (stderr,
+		 "Error closing memory mapped channel for data structure\t%s\n",
+		 sys_errlist[errno]);
     }
 }   /*  End Function close_mmap_channel  */
 
@@ -532,8 +547,8 @@ static void remove_conn_data (void *object, void *client1_data,
 {
     static char function_name[] = "remove_conn_data";
 
-    (void) fprintf (stderr,
-		    "Attempt to deallocate multi_array data structure received from a connection\n");
+    fprintf (stderr,
+	     "Attempt to deallocate multi_array data structure received from a connection\n");
     a_prog_bug (function_name);
 }   /*  End Function remove_conn_data  */
 
@@ -547,7 +562,7 @@ static flag fix_descriptor (multi_array *multi_desc)
 {
     flag changed = FALSE;
     unsigned int count;
-    double cdelta, crval, crpix, first_coord, last_coord, thres;
+    double cdelta, crval, crpix;
     char *dim_name, *ptr, *bunit;
     char *top_packet, **top_packet_ptr;
     packet_desc *top_pack_desc;
@@ -562,8 +577,12 @@ static flag fix_descriptor (multi_array *multi_desc)
     top_pack_desc = multi_desc->headers[0];
     top_packet_ptr = multi_desc->data;
     top_packet = multi_desc->data[0];
-    /*  Check for missmatch between negative FITS "CDELT" values and dimension
-	descriptors  */
+    /*  Check for missmatch between FITS axes and dimension descriptors. The
+	way Karma deals with FITS-style non-linear co-ordinate systems is to
+	set the dimension co-ordinate system to range from 0 to length - 1
+	(in other words, straight data pixel positions). It is then left to
+	the <wcs> package to translate linear (pixel) co-ordinates to proper
+	world co-ordinates  */
     /*  Theoretically, one should use the "NAXIS" keyword to determine how many
 	axes there are to check, but since perhaps not everyone writes this
 	keyword, I just keep searching until there are no more "CTYPEn"
@@ -586,21 +605,21 @@ static flag fix_descriptor (multi_array *multi_desc)
 						 top_packet, next_ctype) )
     {
 	/*  Copy and deallocate  */
-	(void) strcpy (dname, dim_name);
+	strcpy (dname, dim_name);
 	m_free (dim_name);
 	/*  Prepare for next one  */
-	(void) sprintf (next_ctype, "CTYPE%u", count + 1);
+	sprintf (next_ctype, "CTYPE%u", count + 1);
 	/*  Now ready to start doing some processing. First strip any quote
 	    characters  */
 	if (dname[0] == '\'')
 	{
 	    /*  Strip quote  */
-	    (void) strcpy (txt, dname + 1);
-	    (void) strcpy (dname, txt);
+	    strcpy (txt, dname + 1);
+	    strcpy (dname, txt);
 	    if ( ( ptr = strrchr (dname, '\'') ) != NULL ) *ptr = '\0';
 	    /*  Strip trailing whitespace  */
 	    while ( (ptr > dname) && isspace (*ptr) ) *ptr-- = '\0';
-	    (void) sprintf (txt, "CTYPE%u", count);
+	    sprintf (txt, "CTYPE%u", count);
 	    if ( !ds_put_unique_named_string (top_pack_desc, top_packet_ptr,
 					      txt, dname, TRUE) )
 	    {
@@ -614,34 +633,34 @@ static flag fix_descriptor (multi_array *multi_desc)
 	    /*  No corresponding dimension name: assume degenerate axis  */
 	    continue;
 	}
-	(void) sprintf (txt, "CDELT%u", count);
+	sprintf (txt, "CDELT%u", count);
 	if ( !ds_get_unique_named_value (top_pack_desc, top_packet, txt, NULL,
 					 value) ) continue;
 	cdelta = value[0];
-	(void) sprintf (txt, "CRVAL%u", count);
+	sprintf (txt, "CRVAL%u", count);
 	if ( !ds_get_unique_named_value (top_pack_desc, top_packet, txt, NULL,
 					 value) ) continue;
 	crval = value[0];
-	(void) sprintf (txt, "CRPIX%u", count);
+	sprintf (txt, "CRPIX%u", count);
 	if ( !ds_get_unique_named_value (top_pack_desc, top_packet, txt, NULL,
 					 value) ) continue;
 	crpix = value[0];
-	first_coord = crval - (crpix - 1.0) * cdelta;
-	last_coord = first_coord + cdelta * (double) (dim->length - 1);
+	/*  This dimension has a FITS-style co-ordinate system sitting on top
+	    of it. Ensure dimension co-ordinates range from 0 to length - 1  */
+	if ( (dim->first_coord != 0.0) ||
+	     ( dim->last_coord != (double) (dim->length - 1) ) )
+	{
+	    /*  Ignore the comments below for now  */
 	/*  I would prefer to test for equality between computed and found
 	    dimension limits, but non-deterministic roundoff errors prevent
 	    this, requiring me to use a threshold. Roundoff errors could still
 	    pose a problem if the dimension length is 1e8 or greater, but this
 	    is rather unlikely
+	    thres = fabs (cdelta) * 1e-6;
 	    */
-	thres = fabs (cdelta) * 1e-6;
-	if ( (fabs (first_coord - dim->first_coord) > thres) ||
-	     (fabs (last_coord - dim->last_coord) > thres) )
-	{
-	    (void) fprintf (stderr, "Fixing dimension limits: \"%s\"\n",
-			    dname);
-	    dim->first_coord = first_coord;
-	    dim->last_coord = last_coord;
+	    fprintf (stderr, "Fixing dimension limits: \"%s\"\n", dname);
+	    dim->first_coord = 0.0;
+	    dim->last_coord = dim->length - 1;
 	    changed = TRUE;
 	}
     }
@@ -665,9 +684,15 @@ static flag fix_descriptor (multi_array *multi_desc)
     if ( ( bunit = ds_get_unique_named_string (top_pack_desc, top_packet,
 					       "BUNIT") ) == NULL )
 	return (changed);
+    if (*bunit == '\0')
+    {
+	m_free (bunit);
+	return (changed);
+    }
+    fprintf ( stderr, "bunit len: %d\n", strlen (bunit) );
     /*  Fiddle descriptor  */
-    (void) fprintf (stderr, "Changed array element: \"%s\" to \"%s\"\n",
-		    arr_desc->packet->element_desc[0], bunit);
+    fprintf (stderr, "Changed array element: \"%s\" to \"%s\"\n",
+	     arr_desc->packet->element_desc[0], bunit);
     m_free (arr_desc->packet->element_desc[0]);
     arr_desc->packet->element_desc[0] = bunit;
     changed = TRUE;
@@ -688,6 +713,7 @@ static dim_desc *find_dimension (packet_desc *top_pack_desc, CONST char *ctype,
     descriptor name is changed to this.
     <changed> The value TRUE is written here if the dimension descriptor is
     changed, else nothing is written here.
+    <dim_index> The dimension index is written here
     [RETURNS] The dimension descriptor if found, else NULL.
 */
 {
@@ -751,8 +777,8 @@ static dim_desc *find_dimension (packet_desc *top_pack_desc, CONST char *ctype,
     {
 	m_abort (function_name, "dimension name");
     }
-    (void) fprintf (stderr, "Changed dimension name: \"%s\" to \"%s\"\n",
-		    txt, ctype);
+    fprintf (stderr, "Changed dimension name: \"%s\" to \"%s\"\n",
+	     txt, ctype);
     *changed = TRUE;
     return (dim);
 }   /*  End Function find_dimension  */
@@ -840,17 +866,17 @@ flag dsxfr_put_multi (CONST char *object, multi_array *multi_desc)
 
     if (object == NULL)
     {
-	(void) fprintf (stderr, "NULL string pointer passed\n");
+	fprintf (stderr, "NULL string pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (*object == '\0')
     {
-	(void) fprintf (stderr, "Empty string passed\n");
+	fprintf (stderr, "Empty string passed\n");
 	a_prog_bug (function_name);
     }
     if (multi_desc == NULL)
     {
-	(void) fprintf (stderr, "NULL descriptor pointer passed\n");
+	fprintf (stderr, "NULL descriptor pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (connection_name_length < 0)
@@ -871,13 +897,12 @@ flag dsxfr_put_multi (CONST char *object, multi_array *multi_desc)
 	    /*  Write to connections with specified module name  */
 	    if ( ( char_ptr = strchr (object, ':') ) == NULL )
 	    {
-		(void) fprintf (stderr, "Bad name: \"%s\"\n", object);
+		fprintf (stderr, "Bad name: \"%s\"\n", object);
 		return (FALSE);
 	    }
 	    if (*++char_ptr == '\0')
 	    {
-		(void) fprintf (stderr, "Module name missing from: \"%s\"\n",
-				object);
+		fprintf (stderr, "Module name missing from: \"%s\"\n", object);
 		return (FALSE);
 	    }
 	    if (*char_ptr == '!')
@@ -901,8 +926,8 @@ flag dsxfr_put_multi (CONST char *object, multi_array *multi_desc)
 							    connection_count) )
 		== NULL )
 	    {
-		(void) fprintf (stderr, "Could not find connection: %u\n",
-				connection_count);
+		fprintf (stderr, "Could not find connection: %u\n",
+			 connection_count);
 		a_prog_bug (function_name);
 	    }
 	    if (module_name != NULL)
@@ -921,11 +946,15 @@ flag dsxfr_put_multi (CONST char *object, multi_array *multi_desc)
 		}
 	    }
 	    channel = conn_get_channel (connection);
-	    dsrw_write_multi (channel, multi_desc);
+	    if ( !dsrw_write_multi (channel, multi_desc) )
+	    {
+		fprintf (stderr, "Error writing Karma data structure\n");
+		return (FALSE);
+	    }
 	    if ( !ch_flush (channel) )
 	    {
-		(void) fprintf (stderr, "Error flushing channel\t%s\n",
-				sys_errlist[errno]);
+		fprintf (stderr, "Error flushing channel\t%s\n",
+			 sys_errlist[errno]);
 		return (FALSE);
 	    }
 	}
@@ -951,8 +980,8 @@ flag dsxfr_put_multi (CONST char *object, multi_array *multi_desc)
 	if ( ( connection_num =
 	      get_connection_num (char_ptr + connection_name_length) ) < 0 )
 	{
-	    (void) fprintf (stderr, "%s: bad object name: \"%s\"\n",
-			    function_name, object);
+	    fprintf (stderr, "%s: bad object name: \"%s\"\n",
+		     function_name, object);
 	    return (FALSE);
 	}
 	/*  Send data over numbered connection  */
@@ -961,16 +990,19 @@ flag dsxfr_put_multi (CONST char *object, multi_array *multi_desc)
 					  (unsigned int) connection_num) )
 	    == NULL )
 	{
-	    (void) fprintf (stderr, "Could not find connection: %d\n",
-			    connection_num);
+	    fprintf (stderr, "Could not find connection: %d\n",connection_num);
 	    return (FALSE);
 	}
 	channel = conn_get_channel (connection);
-	dsrw_write_multi (channel, multi_desc);
+	if ( !dsrw_write_multi (channel, multi_desc) )
+	{
+	    fprintf (stderr, "Error writing Karma data structure\n");
+	    return (FALSE);
+	}
 	if ( !ch_flush (channel) )
 	{
-	    (void) fprintf (stderr, "Error flushing channel\t%s\n",
-			    sys_errlist[errno]);
+	    fprintf (stderr, "Error flushing channel\t%s\n",
+		     sys_errlist[errno]);
 	    return (FALSE);
 	}
 	return (TRUE);
@@ -992,8 +1024,8 @@ flag dsxfr_put_multi (CONST char *object, multi_array *multi_desc)
 	if (errno != ENOENT)
 	{
 	    /*  Error, not simply missing file  */
-	    (void) fprintf (stderr, "Error accessing file: \"%s\"\t%s\n",
-			    filename, sys_errlist[errno]);
+	    fprintf (stderr, "Error accessing file: \"%s\"\t%s\n",
+		     filename, sys_errlist[errno]);
 	    m_free (filename);
 	    return (FALSE);
 	}
@@ -1008,12 +1040,12 @@ flag dsxfr_put_multi (CONST char *object, multi_array *multi_desc)
 	    m_free (filename);
 	    return (FALSE);
 	}
-	(void) strcpy (tilde_filename, filename);
-	(void) strcat (tilde_filename, "~");
+	strcpy (tilde_filename, filename);
+	strcat (tilde_filename, "~");
 	if (rename (filename, tilde_filename) != 0)
 	{
-	    (void) fprintf (stderr, "Error renaming file: \"%s\"\t%s\n",
-			    filename, sys_errlist[errno]);
+	    fprintf (stderr, "Error renaming file: \"%s\"\t%s\n",
+		     filename, sys_errlist[errno]);
 	    m_free (tilde_filename);
 	    m_free (filename);
 	    return (FALSE);
@@ -1022,16 +1054,21 @@ flag dsxfr_put_multi (CONST char *object, multi_array *multi_desc)
     }
     if ( ( channel = ch_open_file (filename, "w") ) == NULL )
     {
-	(void) fprintf (stderr, "Error opening file: \"%s\" for output\t%s\n",
-			filename, sys_errlist[errno]);
+	fprintf (stderr, "Error opening file: \"%s\" for output\t%s\n",
+		 filename, sys_errlist[errno]);
 	m_free (filename);
 	return (FALSE);
     }
     m_free (filename);
-    dsrw_write_multi (channel, multi_desc);
+    if ( !dsrw_write_multi (channel, multi_desc) )
+    {
+	fprintf (stderr, "Error writing Karma data structure\n");
+	ch_close (channel);
+	return (FALSE);
+    }
     if ( !ch_close (channel) )
     {
-	(void) fprintf (stderr, "Error closing channel\n");
+	fprintf (stderr, "Error closing channel\n");
 	return (FALSE);
     }
     return (TRUE);
@@ -1088,12 +1125,12 @@ multi_array *dsxfr_get_multi (CONST char *object, flag cache,
 
     if (object == NULL)
     {
-	(void) fprintf (stderr, "NULL string pointer passed\n");
+	fprintf (stderr, "NULL string pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (*object == '\0')
     {
-	(void) fprintf (stderr, "Empty string passed\n");
+	fprintf (stderr, "Empty string passed\n");
 	a_prog_bug (function_name);
     }
     FLAG_VERIFY (writeable);
@@ -1116,7 +1153,7 @@ multi_array *dsxfr_get_multi (CONST char *object, flag cache,
 	}
 	if ( ( info = conn_get_connection_info (connection) ) == NULL )
 	{
-	    (void) fprintf (stderr, "No data yet on connection: 0\n");
+	    fprintf (stderr, "No data yet on connection: 0\n");
 	    return (NULL);
 	}
 	entry = (struct conn_type *) info;
@@ -1129,8 +1166,8 @@ multi_array *dsxfr_get_multi (CONST char *object, flag cache,
 	if ( ( connection_num =
 	      get_connection_num (char_ptr + connection_name_length) ) < 0 )
 	{
-	    (void) fprintf (stderr, "%s: bad object name: \"%s\"\n",
-			    function_name, object);
+	    fprintf (stderr, "%s: bad object name: \"%s\"\n",
+		     function_name, object);
 	    return (NULL);
 	}
 	/*  Read data from numbered connection  */
@@ -1139,14 +1176,12 @@ multi_array *dsxfr_get_multi (CONST char *object, flag cache,
 					(unsigned int) connection_num) )
 	    == NULL )
 	{
-	    (void) fprintf (stderr, "Could not find connection: %d\n",
-			    connection_num);
+	    fprintf (stderr, "Could not find connection: %d\n",connection_num);
 	    return (NULL);
 	}
 	if ( ( info = conn_get_connection_info (connection) ) == NULL )
 	{
-	    (void) fprintf (stderr, "No data yet on connection: %d\n",
-			    connection_num);
+	    fprintf (stderr, "No data yet on connection: %d\n",connection_num);
 	    return (NULL);
 	}
 	entry = (struct conn_type *) info;
@@ -1178,8 +1213,8 @@ multi_array *dsxfr_get_multi (CONST char *object, flag cache,
     if ( ( channel = ch_map_disc (filename, mmap_option, writeable, TRUE) )
 	== NULL )
     {
-	(void) fprintf (stderr, "Error opening file: \"%s\" for input\t%s\n",
-			filename, sys_errlist[errno]);
+	fprintf (stderr, "Error opening file: \"%s\" for input\t%s\n",
+		 filename, sys_errlist[errno]);
 	m_free (filename);
 	return (NULL);
     }
@@ -1187,18 +1222,17 @@ multi_array *dsxfr_get_multi (CONST char *object, flag cache,
     {
 	if ( !ch_close (channel) )
 	{
-	    (void) fprintf (stderr, "Error closing disc channel: \"%s\"\t%s\n",
-			    filename, sys_errlist[errno]);
+	    fprintf (stderr, "Error closing disc channel: \"%s\"\t%s\n",
+		     filename, sys_errlist[errno]);
 	}
 	m_free (filename);
 	return (NULL);
     }
     if ( fix_descriptor (multi_desc) )
     {
-	(void) fprintf (stderr,
-			"Karma descriptor fixed. Saving new file: \"%s\"\n",
-			object);
-	(void) dsxfr_put_multi (object, multi_desc);
+	fprintf (stderr, "Karma descriptor fixed. Saving new file: \"%s\"\n",
+		 object);
+	dsxfr_put_multi (object, multi_desc);
     }
     if ( ch_test_for_mmap (channel) )
     {
@@ -1213,7 +1247,7 @@ multi_array *dsxfr_get_multi (CONST char *object, flag cache,
 	if ( !add_to_cache_list (filename, multi_desc, mapped ? channel : NULL,
 				 mapped, writeable) )
 	{
-	    (void) fprintf (stderr, "Error cacheing data structure\n");
+	    fprintf (stderr, "Error cacheing data structure\n");
 	}
 	/*  Increment the attachment count  */
 	++multi_desc->attachments;
@@ -1230,8 +1264,8 @@ multi_array *dsxfr_get_multi (CONST char *object, flag cache,
     {
 	if ( !ch_close (channel) )
 	{
-	    (void) fprintf (stderr, "Error closing disc channel: \"%s\"\t%s\n",
-			    filename, sys_errlist[errno]);
+	    fprintf (stderr, "Error closing disc channel: \"%s\"\t%s\n",
+		     filename, sys_errlist[errno]);
 	}
     }
     m_free (filename);
@@ -1253,7 +1287,7 @@ void dsxfr_register_read_func (void (*read_func) ())
 
     if (read_callback != NULL)
     {
-	(void) fprintf (stderr, "Read callback function already registered\n");
+	fprintf (stderr, "Read callback function already registered\n");
 	a_prog_bug (function_name);
     }
     read_callback = read_func;
@@ -1274,8 +1308,7 @@ void dsxfr_register_close_func ( void (*close_func) () )
 
     if (close_callback != NULL)
     {
-	(void) fprintf (stderr,
-			"Closure callback function already registered\n");
+	fprintf (stderr, "Closure callback function already registered\n");
 	a_prog_bug (function_name);
     }
     close_callback = close_func;

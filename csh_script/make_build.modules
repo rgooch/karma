@@ -24,24 +24,23 @@
 #     Richard Gooch, c/o ATNF, P. O. Box 76, Epping, N.S.W., 2121, Australia.
 
 set build_dir = $KARMAROOT/build/$MACHINE_OS/modules
-#if (-e $build_dir) then
-#    echo "$build_dir  exists: please remove it first"
-#    exit 1
-#endif
 
 if ( ! -d $KARMAROOT/source/modules ) then
     echo "Directory:  $KARMAROOT/source/modules  does not exist!"
     exit 2
 endif
 
-mkdir $build_dir
+if ( ! -d $build_dir ) then
+    mkdir $build_dir
+endif
 
 cd $KARMAROOT/source/modules
 foreach dir (*)
-    test -h $dir/.$MACHINE_OS
-    if ("$status" == "0") then
-	echo $dir
-	mkdir $build_dir/$dir
-	touch $build_dir/$dir/depend
-    endif
+    if ( ! -d $dir ) continue
+    test -L $dir/.$MACHINE_OS
+    if ("$status" != "0") continue
+    if (-d $build_dir/$dir) continue
+    echo $dir
+    mkdir $build_dir/$dir
+    touch $build_dir/$dir/depend
 end

@@ -4,7 +4,7 @@
 #   $KARMALIBPATH  directory, needed for the shared library implementations
 #   on some platforms.
 
-#   Copyright (C) 1994,1995  Richard Gooch
+#   Copyright (C) 1994-1996  Richard Gooch
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -25,18 +25,22 @@
 #     Richard Gooch, c/o ATNF, P. O. Box 76, Epping, N.S.W., 2121, Australia.
 
 switch ("$OS")
+    case "ConvexOS":
+    case "ULTRIX":
+    case "VXMVX":
+	# Machines which don't support shared libraries go above
+	exit 0
+	breaksw
     case "SunOS":
     case "Linux":
     case "Solaris":
 	# Machines which support library version numbers go above
 	breaksw
     case "IRIX5":
+    case "IRIX6":
     case "OSF1":
     case "HPUX":
-    case "ConvexOS":
-    case "ULTRIX":
     case "AIX":
-    case "VXMVX":
 	# Machines which don't support library version numbers go above
 	exit 0
 	breaksw
@@ -45,8 +49,6 @@ switch ("$OS")
 	breaksw
 endsw
 
-@ karma_version = `echo $KARMA_VERSION | cut -d. -f1`
-
 cd $KARMAROOT/build/$MACHINE_OS/lib
 set libraries = (karma*)
 
@@ -54,7 +56,7 @@ cd $KARMALIBPATH
 
 # First remove all old versions of shared libraries
 foreach lib ($libraries)
-    foreach file (lib${lib}.so.*.*)
+    foreach file (lib${lib}.so.*)
 	if ("$file" != "lib${lib}.so.$KARMA_VERSION") then
 	    echo "Removing: $file"
 	    rm $file
@@ -68,6 +70,23 @@ foreach lib ($libraries)
     end
 end
 
+switch ("$OS")
+    case "SunOS":
+	# Machines where a .so symbolic link is not required go above
+	exit 0
+	breaksw
+    case "Linux":
+    case "Solaris":
+    case "IRIX5":
+    case "OSF1":
+    case "HPUX":
+    case "AIX":
+	# Machines where a .so symbolic link is required go above
+	breaksw
+    default:
+	# Default is a .so symbolic link is required
+	breaksw
+endsw
 # Now make sure symbolic link points to the current (only) version
 set soname_extension = ""
 foreach lib ($libraries)

@@ -62,8 +62,19 @@
   unaligned string types in <ds_put_unique_named_string> and
   <ds_get_unique_named_string>.
 
-    Last updated by Richard Gooch   9-APR-1996: Changed to new documentation
+    Updated by      Richard Gooch   9-APR-1996: Changed to new documentation
   format.
+
+    Updated by      Richard Gooch   8-AUG-1996: Created
+  <ds_copy_unique_named_element> routine.
+
+    Updated by      Richard Gooch   9-AUG-1996: Added <fail_if_not_found>
+  parameter to <ds_copy_unique_named_element> routine.
+
+    Updated by      Richard Gooch   29-AUG-1996: Made
+  <ds_get_unique_named_value> tolerant when element is a string type.
+
+    Last updated by Richard Gooch   29-SEP-1996: Created <ds_get_fits_axis>.
 
 
 */
@@ -109,7 +120,7 @@ flag ds_put_unique_named_value (packet_desc *pack_desc, char **packet,
     if ( !IS_ALIGNED ( value, sizeof (double) ) )
 #endif
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"value  address: %p not on a double boundary\n",
 			value);
 	a_prog_bug (function_name);
@@ -117,7 +128,7 @@ flag ds_put_unique_named_value (packet_desc *pack_desc, char **packet,
     /*  Test to see if element is legal  */
     if ( !ds_element_is_atomic (type) )
     {
-	(void) fprintf (stderr, "Element type: %u is not atomic\n", type);
+	fprintf (stderr, "Element type: %u is not atomic\n", type);
 	return (FALSE);
     }
     /*  Test to see if named item already exists  */
@@ -132,13 +143,13 @@ flag ds_put_unique_named_value (packet_desc *pack_desc, char **packet,
 	{
 	    return ( ds_put_named_element (pack_desc, *packet, name, value) );
 	}
-	(void) fprintf (stderr, "Element: \"%s\" already exists\n", name);
+	fprintf (stderr, "Element: \"%s\" already exists\n", name);
 	return (FALSE);
 /*
 	break;
 */
       case IDENT_DIMENSION:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Item: \"%s\" already used for a dimension name\n",
 			name);
 	return (FALSE);
@@ -146,14 +157,14 @@ flag ds_put_unique_named_value (packet_desc *pack_desc, char **packet,
 	break;
 */
       case IDENT_MULTIPLE:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Item: \"%s\" has multiple occurrences\n", name);
 	return (FALSE);
 /*
 	break;
 */
       default:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Illegal return value from function: ds_f_name_in_packet\n");
 	a_prog_bug (function_name);
 	break;
@@ -210,9 +221,9 @@ flag ds_put_unique_named_value (packet_desc *pack_desc, char **packet,
     m_copy (new_packet, *packet, old_packet_size);
     /*  Write in new element descriptor information  */
     new_element_types[pack_desc->num_elements] = type;
-    (void) strcpy (new_element_desc[pack_desc->num_elements], name);
+    strcpy (new_element_desc[pack_desc->num_elements], name);
     /*  Write in new data  */
-    (void) ds_put_element (new_packet + old_packet_size, type, value);
+    ds_put_element (new_packet + old_packet_size, type, value);
     /*  Deallocate old types, descriptor pointers and packet data  */
     m_free ( (char *) pack_desc->element_types );
     m_free ( (char *) pack_desc->element_desc );
@@ -257,7 +268,7 @@ flag ds_put_unique_named_string (packet_desc *pack_desc, char **packet,
     FLAG_VERIFY (update);
     if (string == NULL)
     {
-	(void) fprintf (stderr, "NULL pointer passed\n");
+	fprintf (stderr, "NULL pointer passed\n");
 	a_prog_bug (function_name);
     }
     /*  Test to see if named item already exists  */
@@ -270,14 +281,14 @@ flag ds_put_unique_named_string (packet_desc *pack_desc, char **packet,
       case IDENT_ELEMENT:
 	if (pack_desc->element_types[elem_index] != K_VSTRING)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Element: \"%s\" must be of type K_VSTRING\n",
 			    name);
 	    return (FALSE);
 	}
 	if (!update)
 	{
-	    (void) fprintf (stderr, "Element: \"%s\" already exists\n", name);
+	    fprintf (stderr, "Element: \"%s\" already exists\n", name);
 	    return (FALSE);
 	}
 	if ( ( copy = m_alloc (strlen (string) + 1) ) == NULL )
@@ -285,7 +296,7 @@ flag ds_put_unique_named_string (packet_desc *pack_desc, char **packet,
 	    m_error_notify (function_name, "copy of string");
 	    return (FALSE);
 	}
-	(void) strcpy (copy, string);
+	strcpy (copy, string);
 	/*  Deallocate old string  */
 	element = *packet + ds_get_element_offset (pack_desc, elem_index);
 	if (*(char **) element != NULL) m_free (*(char **) element);
@@ -295,7 +306,7 @@ flag ds_put_unique_named_string (packet_desc *pack_desc, char **packet,
 	break;
 */
       case IDENT_DIMENSION:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Item: \"%s\" already used for a dimension name\n",
 			name);
 	return (FALSE);
@@ -303,14 +314,14 @@ flag ds_put_unique_named_string (packet_desc *pack_desc, char **packet,
 	break;
 */
       case IDENT_MULTIPLE:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Item: \"%s\" has multiple occurrences\n", name);
 	return (FALSE);
 /*
 	break;
 */
       default:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Illegal return value from function: ds_f_name_in_packet\n");
 	a_prog_bug (function_name);
 	break;
@@ -368,7 +379,7 @@ flag ds_put_unique_named_string (packet_desc *pack_desc, char **packet,
     m_copy (new_packet, *packet, old_packet_size);
     /*  Write in new element descriptor information  */
     new_element_types[pack_desc->num_elements] = K_VSTRING;
-    (void) strcpy (new_element_desc[pack_desc->num_elements], name);
+    strcpy (new_element_desc[pack_desc->num_elements], name);
     /*  Write in new data  */
     if ( ( copy = m_alloc (strlen (string) + 1) ) == NULL )
     {
@@ -379,7 +390,7 @@ flag ds_put_unique_named_string (packet_desc *pack_desc, char **packet,
 	m_free ( (char *) new_element_desc );
 	return (FALSE);
     }
-    (void) strcpy (copy, string);
+    strcpy (copy, string);
     element = new_packet + ds_get_element_offset (pack_desc,
 						  pack_desc->num_elements);
 #ifdef NEED_ALIGNED_DATA
@@ -410,12 +421,13 @@ flag ds_get_unique_named_value (CONST packet_desc *pack_desc,
     <packet> A pointer to the packet containing the named value.
     <name> The name of the value.
     <type> The type of the element found will be written here. If this is NULL,
-    nothing is written here.
+    nothing is written here. On error, the type of the element is written here.
+    The value NONE is written here if the element does not exist.
     <value> The value of the element data will be written here.
     [RETURNS] TRUE on success, else FALSE.
 */
 {
-    unsigned int elem_num;
+    unsigned int elem_num, elem_type;
     static char function_name[] = "ds_get_unique_named_value";
 
 #ifdef MACHINE_i386
@@ -424,28 +436,30 @@ flag ds_get_unique_named_value (CONST packet_desc *pack_desc,
     if ( !IS_ALIGNED ( value, sizeof (double) ) )
 #endif
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"value  address: %p not on a double boundary\n",
 			value);
 	a_prog_bug (function_name);
     }
     /*  Try to find element  */
     if ( ( elem_num = ds_f_elem_in_packet (pack_desc, name) ) >=
-	pack_desc->num_elements )
+	 pack_desc->num_elements )
     {
+	if (type != NULL) *type = NONE;
 	return (FALSE);
     }
-    if (type != NULL)
+    elem_type = pack_desc->element_types[elem_num];
+    if (type != NULL) *type = elem_type;
+    if ( !ds_element_is_atomic (elem_type) )
     {
-	*type = pack_desc->element_types[elem_num];
+	fprintf (stderr, "Element: \"%s\" is not atomic\n", name);
+	return (FALSE);
     }
-    if (ds_get_element (packet + ds_get_element_offset (pack_desc, elem_num),
-			pack_desc->element_types[elem_num], value,
-			(flag *) NULL)
-	!= TRUE)
+    if ( !ds_get_element (packet + ds_get_element_offset (pack_desc, elem_num),
+			  pack_desc->element_types[elem_num], value,
+			  (flag *) NULL) )
     {
-	(void) fprintf (stderr, "Error getting data for element: \"%s\"\n",
-			name);
+	fprintf (stderr, "Error getting data for element: \"%s\"\n", name);
 	return (FALSE);
     }
     return (TRUE);
@@ -490,7 +504,7 @@ char *ds_get_unique_named_string (CONST packet_desc *pack_desc,
 	orig = (* (FString *) element ).string;
 	break;
       default:
-	(void) fprintf (stderr, "Element is not a named string\n");
+	fprintf (stderr, "Element is not a named string\n");
 	return (NULL);
 /*
 	break;
@@ -501,6 +515,114 @@ char *ds_get_unique_named_string (CONST packet_desc *pack_desc,
 	m_error_notify (function_name, "string copy");
 	return (NULL);
     }
-    (void) strcpy (copy, orig);
+    strcpy (copy, orig);
     return (copy);
 }   /*  End Function ds_get_unique_named_string  */
+
+/*PUBLIC_FUNCTION*/
+flag ds_copy_unique_named_element (packet_desc *out_desc, char **out_packet,
+				   CONST packet_desc *in_desc,
+				   CONST char *in_packet, CONST char *name,
+				   flag fail_if_not_found,
+				   flag fail_on_duplicate, flag replace)
+/*  [SUMMARY] Copy a unique named element from one packet to another.
+    <out_desc> The packet descriptor to add the name to. This descriptor will
+    be modified.
+    <out_packet> The pointer to the unique packet. Note that the existing
+    packet data is copied to a new packet, and a pointer to this packet is
+    written back here.
+    <in_desc> The input packet descriptor.
+    <in_packet> The input packet.
+    <name> The name of the element to copy.
+    <fail_if_not_found> If TRUE, the routine will fail if the element does not
+    exist in the input packet.
+    <fail_on_duplicate> If TRUE, the routine will fail if the element already
+    exists in the output packet.
+    <replace> If TRUE and the element already exists in the output packet, it
+    is replaced.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    flag ok;
+    unsigned int elem_num, elem_type;
+    char *new_string;
+    double value[2];
+
+    if (ds_f_elem_in_packet (out_desc, name) < out_desc->num_elements)
+    {
+	/*  Element already exists  */
+	if (fail_on_duplicate) return (FALSE);
+	if (!replace) return (TRUE);
+    }
+    /*  Try to find element  */
+    if ( ( elem_num = ds_f_elem_in_packet (in_desc, name) ) >=
+	 in_desc->num_elements )
+    {
+	return (fail_if_not_found ? FALSE : TRUE);
+    }
+    elem_type = in_desc->element_types[elem_num];
+    if ( ds_element_is_atomic (elem_type) )
+    {
+	if ( !ds_get_element (in_packet + ds_get_element_offset (in_desc,
+								 elem_num),
+			      in_desc->element_types[elem_num], value,
+			      (flag *) NULL) )
+	{
+	    fprintf (stderr, "Error getting data for element: \"%s\"\n",
+			    name);
+	    return (FALSE);
+	}
+	return ( ds_put_unique_named_value (out_desc, out_packet,
+					    name, elem_type, value, FALSE) );
+    }
+    if (elem_type != K_VSTRING)
+    {
+	fprintf (stderr, "Not VSTRING type\n");
+	return (FALSE);
+    }
+    /*  VSTRING type  */
+    if ( ( new_string = ds_get_unique_named_string (in_desc, in_packet, name) )
+	 == NULL ) return (FALSE);
+    ok = ds_put_unique_named_string (out_desc, out_packet, name, new_string,
+				     TRUE);
+    m_free (new_string);
+    return (ok);
+}   /*  End Function ds_copy_unique_named_element  */
+
+/*PUBLIC_FUNCTION*/
+unsigned int ds_get_fits_axis (CONST packet_desc *top_pack_desc,
+			       CONST char *top_packet, CONST char *dim_name)
+/*  [SUMMARY] Get the FITS axis number of a dimension.
+    <top_pack_desc> The top-level packet descriptor.
+    <top_packet> The top-level packet.
+    <dim_name> The name of the dimension.
+    [RETURNS] The FITS axis number on success, else 0.
+*/
+{
+    unsigned int count;
+    char *ptr;
+    char ctype[STRING_LENGTH], dname[STRING_LENGTH];
+
+    /*  Theoretically, one should use the "NAXIS" keyword to determine how many
+	axes there are to check, but since perhaps not everyone writes this
+	keyword, I just keep searching until there are no more "CTYPEn"
+	keywords. If "CTYPEn" does not exist, assume "CTYPEm" (where m > n)
+	does not exist.
+	Note that this whole scheme depends on the Karma dimension names being
+	the same as those in the FITS header
+	*/
+    for (count = 1; TRUE; ++count)
+    {
+	sprintf (ctype, "CTYPE%u", count);
+	if ( ( ptr = ds_get_unique_named_string (top_pack_desc, top_packet,
+						 ctype) ) == NULL )
+	{
+	    return (0);
+	}
+	strcpy (dname, ptr);
+	m_free (ptr);
+	if (strcmp (dim_name, dname) != 0) continue;
+	/*  Found it!  */
+	return (count);
+    }
+}   /*  End Function ds_get_fits_axis  */

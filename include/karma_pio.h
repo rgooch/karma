@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   13-SEP-1992
 
-    Last updated by Richard Gooch   12-APR-1996
+    Last updated by Richard Gooch   6-SEP-1996
 
 */
 
@@ -59,10 +59,16 @@ EXTERN_FUNCTION (flag pio_write_float, (Channel channel, float data) );
 EXTERN_FUNCTION (flag pio_read_float, (Channel channel, float *data) );
 EXTERN_FUNCTION (flag pio_read_float_nantrap,
 		 (Channel channel, float *data, flag *was_nan) );
+EXTERN_FUNCTION (uaddr pio_read_floats,
+		 (Channel channel, uaddr num_values, float *data,
+		  uaddr *num_nan) );
 EXTERN_FUNCTION (flag pio_write_double, (Channel channel, double data) );
 EXTERN_FUNCTION (flag pio_read_double, (Channel channel, double *data) );
 EXTERN_FUNCTION (flag pio_read_double_nantrap,
 		 (Channel channel, double *data, flag *was_nan) );
+EXTERN_FUNCTION (uaddr pio_read_doubles,
+		 (Channel channel, uaddr num_values, double *data,
+		  uaddr *num_nan) );
 EXTERN_FUNCTION (flag pio_write32s, (Channel channel, long data) );
 EXTERN_FUNCTION (flag pio_read32s, (Channel channel, long *data) );
 EXTERN_FUNCTION (flag pio_write16s, (Channel channel, long data) );

@@ -44,6 +44,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <unistd.h>
+#include <errno.h>
 #include <karma.h>
 #include <karma_module.h>
 #include <karma_iarray.h>
@@ -124,7 +125,6 @@ FILE *fp;
     extern double voffset;
     extern double hsize;
     extern double vsize;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
 
     if ( ( inp_filename = ex_word (p, &p) ) == NULL )

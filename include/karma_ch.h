@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   12-SEP-1992
 
-    Last updated by Richard Gooch   29-JUN-1996
+    Last updated by Richard Gooch   10-AUG-1996
 
 */
 
@@ -69,14 +69,8 @@ EXTERN_FUNCTION (flag ch_close, (Channel channel) );
 EXTERN_FUNCTION (flag ch_flush, (Channel channel) );
 EXTERN_FUNCTION (unsigned int ch_read, (Channel channel, char *buffer,
 					unsigned int length) );
-EXTERN_FUNCTION (unsigned int ch_read_and_swap_blocks,
-		 (Channel channel, char *buffer,
-		  unsigned int num_blocks, unsigned int block_size) );
 EXTERN_FUNCTION (unsigned int ch_write, (Channel channel, CONST char *buffer,
 					 unsigned int length) );
-EXTERN_FUNCTION (unsigned int ch_swap_and_write_blocks,
-		 (Channel channel, CONST char *buffer, unsigned int num_blocks,
-		  unsigned int block_size) );
 EXTERN_FUNCTION (void ch_close_all_channels, () );
 EXTERN_FUNCTION (flag ch_seek, (Channel channel, unsigned long position) );
 EXTERN_FUNCTION (int ch_get_bytes_readable, (Channel channel) );
@@ -113,7 +107,18 @@ EXTERN_FUNCTION (flag ch_puts, (Channel channel, CONST char *string,
 				flag newline) );
 EXTERN_FUNCTION (unsigned int ch_drain,
 		 (Channel channel, unsigned int length) );
+EXTERN_FUNCTION (unsigned int ch_fill,
+		 (Channel channel, unsigned int length, char fill_value) );
 EXTERN_FUNCTION (flag ch_printf, (Channel channel, CONST char *format, ...) );
+EXTERN_FUNCTION (flag ch_drain_to_boundary, (Channel channel, uaddr size) );
+EXTERN_FUNCTION (flag ch_fill_to_boundary,
+		 (Channel channel, uaddr size, char fill_value) );
+EXTERN_FUNCTION (unsigned int ch_read_and_swap_blocks,
+		 (Channel channel, char *buffer,
+		  unsigned int num_blocks, unsigned int block_size) );
+EXTERN_FUNCTION (unsigned int ch_swap_and_write_blocks,
+		 (Channel channel, CONST char *buffer, unsigned int num_blocks,
+		  unsigned int block_size) );
 
 
 /*  File:  ch_globals.h  */

@@ -1,1 +1,9 @@
-../generic/karma
+LIB = karma
+
+CFLAGS =
+LDFLAGS =
+DEPENDFLAGS =
+
+include $(KARMAROOT)/source/lib/makefiles/$(OS)/GNUmakefile.rules
+
+all:    $(shared_target) $(shared_archive) clean

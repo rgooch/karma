@@ -12,34 +12,34 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         va_scale_float
-$RETURN_TYPE      void
+$FUNCTION           va_scale_float
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (float *out, int out_stride, float *inp, int inp_stride,
 		     int length, float scale, float offset)
-$SUMMARY          Scale and offset an array of floats.
+$SUMMARY            Scale and offset an array of floats.
 $PURPOSE
     This routine will perform a scale and offset operation on an
     array of floating point numbers. The arithmetic form is as follows:
     out[i] = inp[i] * scale + offset
-$PARAMETER        out :
+$PARAMETER          out :
     The result array will be written here.
-$PARAMETER        out_stride :
+$PARAMETER          out_stride :
     The stride (in floats) of consecutive elements in the output
     array.
-$PARAMETER        inp :
+$PARAMETER          inp :
     The input array.
-$PARAMETER        inp_stride :
+$PARAMETER          inp_stride :
     The stride (in floats) of consecutive elements in the input
     array.
 $NOTE
     The elements of the input and output arrays must be aligned on a
     float boundary.
-$PARAMETER        length :
+$PARAMETER          length :
     The length of the input and output arrays.
-$PARAMETER        scale :
+$PARAMETER          scale :
     The scale factor.
-$PARAMETER        offset :
+$PARAMETER          offset :
     The offset value.
 $RETURNS
     Nothing.

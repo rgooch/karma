@@ -146,12 +146,12 @@ void ds_list_append (list_header *list_head, list_entry *entry)
 	(void) fprintf (stderr, "NULL list entry pointer passed\n");
 	a_prog_bug (function_name);
     }
-    if ( list_head->magic != MAGIC_LIST_HEADER )
+    if (list_head->magic != MAGIC_LIST_HEADER)
     {
 	(void) fprintf (stderr, "List header has bad magic number\n");
 	a_prog_bug (function_name);
     }
-    if ( list_head->first_frag_entry == NULL )
+    if (list_head->first_frag_entry == NULL)
     {
 	/*  Empty list  */
         list_head->first_frag_entry = entry;

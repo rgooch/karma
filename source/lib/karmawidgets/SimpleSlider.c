@@ -33,8 +33,12 @@
 
     Updated by      Richard Gooch   6-MAY-1996
 
-    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+    Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   2-SEP-1996: Check if pixel canvas exists
+  prior to refreshing in <set_value> to cope with case where value is set prior
+  to widget realisation.
 
 
 */
@@ -263,8 +267,8 @@ static Boolean SimpleSlider__SetValues (Widget Current, Widget Request,
     if (new->core.width < 50) new->core.width = 50;
     if (new->slider.minimum > new->slider.maximum)
     {
-	(void) fprintf (stderr, "Minimum: %d is greater than maximum: %d\n",
-			new->slider.minimum, new->slider.maximum);
+	fprintf (stderr, "Minimum: %d is greater than maximum: %d\n",
+		 new->slider.minimum, new->slider.maximum);
 	a_prog_bug (function_name);
     }
     if ( (new->slider.valuePtr != current->slider.valuePtr) &&
@@ -272,7 +276,7 @@ static Boolean SimpleSlider__SetValues (Widget Current, Widget Request,
     {
 	if ( !IS_ALIGNED (new->slider.valuePtr, sizeof *new->slider.valuePtr) )
 	{
-	    (void) fprintf (stderr, "valuePtr: %p is not aligned\n",
+	    fprintf (stderr, "valuePtr: %p is not aligned\n",
 			    new->slider.valuePtr);
 	    a_prog_bug (function_name);
 	}
@@ -343,18 +347,18 @@ static void refresh_func (KPixCanvas canvas, int width, int height,
     }
     if (top->slider.showValue)
     {
-	(void) sprintf (txt, "%d", top->slider.value);
+	sprintf (txt, "%d", top->slider.value);
 	kwin_draw_string (canvas,
 			  pos.value_string_x_start, pos.value_string_y_start,
 			  txt, black_pixel, FALSE);
     }
     if (top->slider.showRange)
     {
-	(void) sprintf (txt, "%d", top->slider.minimum);
+	sprintf (txt, "%d", top->slider.minimum);
 	kwin_draw_string (canvas,
 			  pos.min_string_x_start, pos.bottom_string_y_start,
 			  txt, black_pixel, FALSE);
-	(void) sprintf (txt, "%d", top->slider.maximum);
+	sprintf (txt, "%d", top->slider.maximum);
 	kwin_draw_string (canvas,
 			  pos.max_string_x_start, pos.bottom_string_y_start,
 			  txt, black_pixel, FALSE);
@@ -616,7 +620,7 @@ static void setup_position_parameters (SimpleSliderWidget top,
 				    KWIN_STRING_DESCENT, &descent,
 				    KWIN_STRING_END) )
 	{
-	    (void) fprintf (stderr, "Error getting string size\n");
+	    fprintf (stderr, "Error getting string size\n");
 	    a_prog_bug (function_name);
 	}
     }
@@ -654,20 +658,20 @@ static void setup_position_parameters (SimpleSliderWidget top,
     /*  Determine width of min and max strings  */
     if (top->slider.showValue || top->slider.showRange)
     {
-	(void) sprintf (txt, "%d", top->slider.minimum);
+	sprintf (txt, "%d", top->slider.minimum);
 	if ( !kwin_get_string_size (font, txt,
 				    KWIN_STRING_WIDTH, &min_width,
 				    KWIN_STRING_END) )
 	{
-	    (void) fprintf (stderr, "Error getting string width\n");
+	    fprintf (stderr, "Error getting string width\n");
 	    a_prog_bug (function_name);
 	}
-	(void) sprintf (txt, "%d", top->slider.maximum);
+	sprintf (txt, "%d", top->slider.maximum);
 	if ( !kwin_get_string_size (font, txt,
 				    KWIN_STRING_WIDTH, &max_width,
 				    KWIN_STRING_END) )
 	{
-	    (void) fprintf (stderr, "Error getting string width\n");
+	    fprintf (stderr, "Error getting string width\n");
 	    a_prog_bug (function_name);
 	}
     }
@@ -684,7 +688,7 @@ static void setup_position_parameters (SimpleSliderWidget top,
 				    KWIN_STRING_WIDTH, &label_width,
 				    KWIN_STRING_END) )
 	{
-	    (void) fprintf (stderr, "Error getting string size\n");
+	    fprintf (stderr, "Error getting string size\n");
 	    a_prog_bug (function_name);
 	}
     }
@@ -762,7 +766,7 @@ static void setup_position_parameters (SimpleSliderWidget top,
     info->thumb_x_start = info->bar_x_start + slider_pos;
     if (info->thumb_x_start + THUMB_WIDTH >= info->bar_x_stop)
     {
-	(void) fprintf (stderr, "Slider ran past right limit\n");
+	fprintf (stderr, "Slider ran past right limit\n");
 	info->thumb_x_start = info->bar_x_stop - THUMB_WIDTH;
     }
     info->thumb_x_stop = info->thumb_x_start + THUMB_WIDTH;
@@ -785,7 +789,10 @@ static void set_value (SimpleSliderWidget top, int new_value, flag callback,
     if (new_value > top->slider.maximum) new_value = top->slider.maximum;
     top->slider.value = new_value;
     if (top->slider.valuePtr != NULL) *top->slider.valuePtr = new_value;
-    kwin_resize (top->canvas.monoPixCanvas, TRUE, 0, 0, 0, 0);
+    if (top->canvas.monoPixCanvas != NULL)
+    {
+	kwin_resize (top->canvas.monoPixCanvas, TRUE, 0, 0, 0, 0);
+    }
     /*  Set allow_timer flag *before* calling callbacks, since in the
 	callbacks the widget may be set insensitive, and hence the flag
 	will be cleared again. If the timer is added before calling the
@@ -815,12 +822,12 @@ static void timer_cbk (XtPointer client_data, XtIntervalId *id)
 
     if (sw->slider.timer == 0)
     {
-	(void) fprintf (stderr, "%s: no timer! Ignoring\n", function_name);
+	fprintf (stderr, "%s: no timer! Ignoring\n", function_name);
 	return;
     }
     if (!sw->slider.allow_timer)
     {
-	(void) fprintf (stderr, "%s: timer disabled! Ignoring\n",
+	fprintf (stderr, "%s: timer disabled! Ignoring\n",
 			function_name);
 	return;
     }
@@ -829,7 +836,7 @@ static void timer_cbk (XtPointer client_data, XtIntervalId *id)
     /*  Generate synthetic click event (based on last click event) which will
 	then cause the value to be updated, the callbacks to be called and the
 	timer to be started.  */
-    (void) position_func (sw->canvas.monoPixCanvas,
+    position_func (sw->canvas.monoPixCanvas,
 			  sw->slider.last_x, sw->slider.last_y,
 			  sw->slider.last_event_code, NULL, &f_info);
     /* decrement delay time, but clamp */

@@ -7,25 +7,25 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         panel_create
-$RETURN_TYPE      KControlPanel
+$FUNCTION           panel_create
+$RETURN_TYPE        KControlPanel
 $PARAMETER_LIST
     (flag blank)
-$SUMMARY          Create a control panel object.
+$SUMMARY            Create a control panel object.
 $PURPOSE
     Create a control panel object.
-$PARAMETER        blank :
+$PARAMETER          blank :
     If TRUE, then the routine will create a blank form, else it will
     add some internally defined panel items.
 $RETURNS
     A KControlPanel object on success, else NULL.
 $END
 
-$FUNCTION         panel_create_group
-$RETURN_TYPE      KControlPanel
+$FUNCTION           panel_create_group
+$RETURN_TYPE        KControlPanel
 $PARAMETER_LIST
     ()
-$SUMMARY          Create a panel to contain a group.
+$SUMMARY            Create a panel to contain a group.
 $PURPOSE
     This routine will create a control panel object which is a
     container for a group of items. Panel items may be added to this panel
@@ -35,27 +35,27 @@ $RETURNS
     A KControlPanel object on success, else NULL.
 $END
 
-$FUNCTION         panel_add_item
-$RETURN_TYPE      void
+$FUNCTION           panel_add_item
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KControlPanel panel, char *name, char *comment,
 		     unsigned int type, void *value_ptr, ...)
-$SUMMARY          Add an item to a panel.
+$SUMMARY            Add an item to a panel.
 $PURPOSE
     This routine will add a panel item to a KControlPanel object.
     Each panel item has a number of "attributes". First come the "core"
     attributes, follwed by the optional attributes.
     Below are the core attributes:
-$PARAMETER        panel :
+$PARAMETER          panel :
     The control panel to add to.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the panel item.
-$PARAMETER        comment :
+$PARAMETER          comment :
     the comment (eg. name of the units: "(km/sec)").
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the panel item. See <-DS_KARMA_DATA_TYPES-> and
     <-PANEL_ITEM_TYPES-> for legal values.
-$PARAMETER        value_ptr :
+$PARAMETER          value_ptr :
     A pointer to the panel item data storage.
 $PARAMETER        ... :
     The optional attributes are given as pairs of attribute-key
@@ -65,63 +65,79 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         panel_push_onto_stack
-$RETURN_TYPE      void
+$FUNCTION           panel_push_onto_stack
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KControlPanel panel)
-$SUMMARY          Push a control panel object onto the control panel stack.
+$SUMMARY            Push a control panel object onto the control panel stack.
 $PURPOSE
     Push a control panel object onto the control panel stack.
-$PARAMETER        panel :
+$PARAMETER          panel :
     The control panel.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         panel_pop_from_stack
-$RETURN_TYPE      void
+$FUNCTION           panel_pop_from_stack
+$RETURN_TYPE        void
 $PARAMETER_LIST
     ()
-$SUMMARY          Pop last pushed control panel object from control panel stack.
+$SUMMARY            Pop last pushed control panel object from control panel stack.
 $PURPOSE
     Pop last pushed control panel object from control panel stack.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         panel_process_command_with_stack
-$RETURN_TYPE      flag
+$FUNCTION           panel_process_command_with_stack
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *cmd, flag (*unknown_func) (),
 				       FILE *fp)
-$SUMMARY          Process a command.
+$SUMMARY            Process a command.
 $PURPOSE
     This routine will process a command, using the top control panel
     on the stack to interpret it.
-$PARAMETER        cmd :
+$PARAMETER          cmd :
     The command.
-$PARAMETER        unknown_func :
+$PARAMETER          unknown_func :
     The function that is called when the command is not
     understood. If this is NULL, then a message is displayed if the command is
     not understood. The prototype function is <-PANEL_PROTO_decode_func->.
-$PARAMETER        fp :
+$PARAMETER          fp :
     Output messages are directed here.
 $RETURNS
     TRUE if more commands should be processed, else FALSE, indicating
     that the control panel's "exit" command was entered.
 $END
 
-$PROTO_FUNC       PANEL_PROTO_decode_func
-$RETURN_TYPE      flag
+$EXPERIMENTAL_FUNC  panel_put_history_with_stack
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (multi_array *multi_desc, flag module_header)
+$SUMMARY            Put history into Karma multi_array structure.
+$PURPOSE
+    Put history into Karma multi_array structure.
+$PARAMETER          multi_desc :
+    The data structure to append history to.
+$PARAMETER          module_header :
+    If TRUE the module name and version are appended before the
+    parameter information.
+$RETURNS
+    TRUE on sucess, else FALSE
+$END
+
+$PROTO_FUNC         PANEL_PROTO_decode_func
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *command, FILE *fp)
-$SUMMARY          Command line decode callback.
+$SUMMARY            Command line decode callback.
 $PURPOSE
     This function is called whenever a command string is to be
     processed.
-$PARAMETER        command :
+$PARAMETER          command :
     The command string.
-$PARAMETER        fp :
+$PARAMETER          fp :
     The output file.
 $RETURNS
     TRUE if more commands should be processed, else FALSE,

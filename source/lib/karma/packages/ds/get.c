@@ -110,9 +110,15 @@
     Updated by      Richard Gooch   28-JUN-1996: Changed more pointers to
   CONST.
 
-    Last updated by Richard Gooch   29-JUN-1996: Fixed bug in
+    Updated by      Richard Gooch   29-JUN-1996: Fixed bug in
   <ds_can_swaptransfer_element> where some swappable types were not correctly
   reported as being such.
+
+    Updated by      Richard Gooch   20-JUL-1996: Changed more pointers to
+  CONST.
+
+    Last updated by Richard Gooch   2-AUG-1996: Changed type of co-ordinate
+  index parameter for <ds_get_coordinate> to double.
 
 
 */
@@ -164,7 +170,7 @@ double ds_convert_atomic (CONST char *datum, unsigned int datum_type,
 }   /*  End Function ds_convert_atomic  */
 
 /*PUBLIC_FUNCTION*/
-double ds_get_coordinate (dim_desc *dimension, unsigned long coord_num)
+double ds_get_coordinate (CONST dim_desc *dimension, double coord_num)
 /*  [SUMMARY] Get a co-ordinate along a dimension.
     <dimension> The dimension descriptor.
     <coord_num> The co-ordinate index.
@@ -181,20 +187,20 @@ double ds_get_coordinate (dim_desc *dimension, unsigned long coord_num)
 	/*  Invalid co-ordinate number  */
         return (TOOBIG);
     }
-    if (coord_num == 0)
+    if (coord_num <= 0.0)
     {
 	return (dimension->first_coord);
     }
     if (dimension->coordinates == NULL)
     {
 	/*  Co-ordinate list not present: calculate co-ordinate */
-        return ( dimension->first_coord + (double) coord_num *
+        return ( dimension->first_coord + coord_num *
 		 (dimension->last_coord - dimension->first_coord) /
 		 (double) (dimension->length - 1) );
     }
     else
     {
-	return (dimension->coordinates[coord_num]);
+	return (dimension->coordinates[(uaddr)coord_num]);
     }
 }   /*  End Function ds_get_coordinate  */
 
@@ -455,7 +461,7 @@ flag ds_element_is_legal (unsigned int element_type)
 }   /*  End Function ds_element_is_legal  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int ds_identify_name (multi_array *multi_desc, CONST char *name,
+unsigned int ds_identify_name (CONST multi_array *multi_desc, CONST char *name,
 			       char **encls_desc, unsigned int *index)
 /*  [SUMMARY] Search a data structure for a name.
     <multi_desc> The multi_array descriptor.
@@ -509,7 +515,7 @@ unsigned int ds_identify_name (multi_array *multi_desc, CONST char *name,
 }   /*  End Function ds_identify_name  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int ds_f_array_name (multi_array *multi_desc, CONST char *name,
+unsigned int ds_f_array_name (CONST multi_array *multi_desc, CONST char *name,
 			      char **encls_desc, unsigned int *index)
 /*  [SUMMARY] Search a the top level of a data structure for a name.
     [PURPOSE] This routine will search a multi array general data structure
@@ -700,7 +706,7 @@ unsigned int ds_f_name_in_packet (CONST packet_desc *pack_desc,
 }   /*  End Function ds_f_name_in_packet  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int ds_f_name_in_array (array_desc *arr_desc, CONST char *name,
+unsigned int ds_f_name_in_array (CONST array_desc *arr_desc, CONST char *name,
 				 char **encls_desc, unsigned int *index)
 /*  [SUMMARY] Recursively search for named item under an array.
     [PURPOSE] This routine will search an array descriptor for occurrences of a
@@ -813,7 +819,7 @@ unsigned int ds_f_elem_in_packet (CONST packet_desc *pack_desc,
 }   /*  End Function ds_f_elem_in_packet  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int ds_find_hole (packet_desc *inp_desc, packet_desc **out_desc,
+unsigned int ds_find_hole (CONST packet_desc *inp_desc, packet_desc **out_desc,
 			   unsigned int *elem_num)
 /*  [SUMMARY] Recursively search packet for a hole.
     [PURPOSE] This routine will recursively search a packet descriptor for a
@@ -853,7 +859,7 @@ unsigned int ds_find_hole (packet_desc *inp_desc, packet_desc **out_desc,
 		return (IDENT_MULTIPLE);
             }
             return_value = IDENT_ELEMENT;
-            *out_desc = inp_desc;
+            *out_desc = (packet_desc *) inp_desc;
             *elem_num = elem_count;
         }
         if (inp_desc->element_types[elem_count] == K_ARRAY)
@@ -887,7 +893,7 @@ unsigned int ds_find_hole (packet_desc *inp_desc, packet_desc **out_desc,
 }   /*  End Function ds_find_hole  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_compare_packet_desc (packet_desc *desc1, packet_desc *desc2,
+flag ds_compare_packet_desc (CONST packet_desc *desc1,CONST packet_desc *desc2,
 			     flag recursive)
 /*  [SUMMARY] Recursively compare two packet descriptors.
     <desc1> One of the packet descriptors.
@@ -973,7 +979,7 @@ flag ds_compare_packet_desc (packet_desc *desc1, packet_desc *desc2,
 }   /*  End Function ds_compare_packet_desc  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_compare_array_desc (array_desc *desc1, array_desc *desc2,
+flag ds_compare_array_desc (CONST array_desc *desc1, CONST array_desc *desc2,
 			    flag recursive)
 /*  [SUMMARY] Recursively compare two array descriptors.
     <desc1> One of the array descriptors.
@@ -1011,7 +1017,7 @@ flag ds_compare_array_desc (array_desc *desc1, array_desc *desc2,
 }   /*  End Function ds_compare_array_desc  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_compare_dim_desc (dim_desc *desc1, dim_desc *desc2)
+flag ds_compare_dim_desc (CONST dim_desc *desc1, CONST dim_desc *desc2)
 /*  [SUMMARY] Compare two dimension descriptors.
     <desc1> One of the dimension descriptors.
     <desc2> The other dimension descriptor.
@@ -1057,7 +1063,7 @@ flag ds_compare_dim_desc (dim_desc *desc1, dim_desc *desc2)
 }   /*  End Function ds_compare_dim_desc  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int ds_f_dim_in_array (array_desc *arr_desc, CONST char *name)
+unsigned int ds_f_dim_in_array (CONST array_desc *arr_desc, CONST char *name)
 /*  [SUMMARY] Find dimension in array.
     <arr_desc> The array descriptor.
     <name> The name of the dimension to find. If this is NULL, then the routine
@@ -1099,8 +1105,8 @@ unsigned int ds_f_dim_in_array (array_desc *arr_desc, CONST char *name)
 }   /*  End Function ds_f_dim_in_array  */
 
 /*PUBLIC_FUNCTION*/
-unsigned long ds_get_array_offset (array_desc *arr_desc,
-				   unsigned long *coordinates)
+unsigned long ds_get_array_offset (CONST array_desc *arr_desc,
+				   CONST unsigned long *coordinates)
 /*  [SUMMARY] Compute offset of a co-ordinate in an array.
     <arr_desc> The array descriptor.
     <coordinates> The array of dimension co-ordinates which specifies the
@@ -1137,7 +1143,7 @@ unsigned long ds_get_array_offset (array_desc *arr_desc,
 }   /*  End Function ds_get_array_offset  */
 
 /*PUBLIC_FUNCTION*/
-unsigned long ds_get_coord_num (dim_desc *dimension, double coordinate,
+unsigned long ds_get_coord_num (CONST dim_desc *dimension, double coordinate,
 				unsigned int bias)
 /*  [SUMMARY] Get index of a co-ordinate along a dimension.
     <dimension> The dimension descriptor.
@@ -1658,7 +1664,7 @@ flag ds_get_elements (CONST char *data, unsigned int data_type,
 }   /*  End Function ds_get_elements  */
 
 /*PUBLIC_FUNCTION*/
-double *ds_get_coordinate_array (dim_desc *dimension)
+double *ds_get_coordinate_array (CONST dim_desc *dimension)
 /*  [SUMMARY] Get co-ordinate array for a dimension.
     [PURPOSE] This routine will get a co-ordinate array for a dimension. If the
     dimension is regularly spaced, then the co-ordinate array is computed, else

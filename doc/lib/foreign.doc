@@ -7,24 +7,24 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         foreign_fits_read_header
-$RETURN_TYPE      multi_array *
+$FUNCTION           foreign_fits_read_header
+$RETURN_TYPE        multi_array *
 $PARAMETER_LIST
     (Channel channel, flag data_alloc,
 				       flag convert_int_to_float,
 				       flag sanitise, ...)
-$SUMMARY          Read a FITS header.
+$SUMMARY            Read a FITS header.
 $PURPOSE
     This routine will read the header of a FITS file from a channel.
     The data section is NOT read.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel to read from.
-$PARAMETER        data_alloc :
+$PARAMETER          data_alloc :
     If TRUE, the data space is allocated.
-$PARAMETER        convert_int_to_float :
+$PARAMETER          convert_int_to_float :
     If TRUE, integer FITS data is converted to floating
     point data.
-$PARAMETER        sanitise :
+$PARAMETER          sanitise :
     If TRUE, FITS axes with length 1 are ignored. This is highly
     recommended.
 $PARAMETER        ... :
@@ -37,23 +37,23 @@ $RETURNS
     NULL.
 $END
 
-$FUNCTION         foreign_fits_read_data
-$RETURN_TYPE      flag
+$FUNCTION           foreign_fits_read_data
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, multi_array *multi_desc,
 			     char *data, uaddr num_values, ...)
-$SUMMARY          Read data in a FITS file.
+$SUMMARY            Read data in a FITS file.
 $PURPOSE
     This routine will read the data of a FITS file from a channel.
     The header section is NOT read.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel to read from.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The Karma data structure to write the data into.
-$PARAMETER        data :
+$PARAMETER          data :
     An alternate data array to write the FITS data into. If this is
     NULL, the routine will write the data into the Karma data structure.
-$PARAMETER        num_values :
+$PARAMETER          num_values :
     The number of values to write into the data array. This is
     only used when data is not NULL.
 $PARAMETER        ... :
@@ -65,33 +65,114 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         foreign_gipsy_test
-$RETURN_TYPE      flag
+$FUNCTION           foreign_fits_write
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (Channel channel, multi_array *multi_desc, ...)
+$SUMMARY            Write a FITS file to a channel.
+$PURPOSE
+    This routine will write a Karma data structure to a FITS file.
+    The routine will automatically generate essential keywords such as:
+    "NAXIS", "NAXISn", "CTYPEn", "CRVALn", "CRPIXn", "CDELTn", "BITPIX",
+    "BUNIT", "BSCALE" and "BZERO". Also, existing keywords in the data
+    structure which do not conflict with the generated keywords are copied.
+$PARAMETER          channel :
+    The channel to write to. The channel is not flushed.
+$PARAMETER          multi_desc :
+    The multi_array descriptor pointer. The routine will find a
+    n-dimensional array within the data structure.
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with FA_FITS_WRITE_END.
+    See <-FOREIGN_ATT_FITS_WRITE-> for a list of defined attributes.
+$RETURNS
+    TRUE on succes, else FALSE.
+$END
+
+$FUNCTION           foreign_fits_write_iarray
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (Channel channel, iarray array, ...)
+$SUMMARY            Write a FITS file to a channel.
+$PURPOSE
+    This routine will write an Intelligent Array to a FITS file.
+    The routine will automatically generate essential keywords such as:
+    "NAXIS", "NAXISn", "CTYPEn", "CRVALn", "CRPIXn", "CDELTn", "BITPIX",
+    "BUNIT", "BSCALE" and "BZERO". Also, existing keywords in the data
+    structure which do not conflict with the generated keywords are copied.
+$PARAMETER          channel :
+    The channel to write to. The channel is not flushed.
+$PARAMETER          array :
+    The Intelligent Array.
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with FA_FITS_WRITE_END.
+    See <-FOREIGN_ATT_FITS_WRITE-> for a list of defined attributes.
+$RETURNS
+    TRUE on succes, else FALSE.
+$END
+
+$EXPERIMENTAL_FUNC  foreign_fits_write_data
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (Channel channel, multi_array *multi_desc,
+			      CONST packet_desc *header_pack_desc,
+			      CONST char *header_packet,
+			      char *data, uaddr num_values, ...)
+$SUMMARY            Write data to a FITS file.
+$PURPOSE
+    This routine will write the data section of a FITS file to a
+    channel. The header section is NOT written.
+$PARAMETER          channel :
+    The channel to write to.
+$PARAMETER          multi_desc :
+    The Karma data structure containing the data.
+$PARAMETER          header_pack_desc :
+    The header packet descriptor.
+$PARAMETER          header_packet :
+    The header packet data.
+$PARAMETER          data :
+    An alternate data array to read the data from. If this is
+    NULL, the routine will read the data from the Karma data structure.
+$PARAMETER          num_values :
+    The number of values to write to the FITS file. This is
+    only used when data is not NULL.
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_FITS_WRITE_DATA_END. See <-FOREIGN_ATT_FITS_WRITE_DATA-> for a list of
+    defined attributes.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION           foreign_gipsy_test
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (CONST char *filename)
-$SUMMARY          Test if a file is part of a GIPSY file set.
+$SUMMARY            Test if a file is part of a GIPSY file set.
 $PURPOSE
     Test if a file is part of a GIPSY file set.
-$PARAMETER        filename :
+$PARAMETER          filename :
     The name of any file in the GIPSY file set.
 $RETURNS
     TRUE if the file is part of a GIPSY file set, else FALSE.
 $END
 
-$FUNCTION         foreign_gipsy_read_header
-$RETURN_TYPE      multi_array *
+$FUNCTION           foreign_gipsy_read_header
+$RETURN_TYPE        multi_array *
 $PARAMETER_LIST
     (Channel channel, flag data_alloc,
 					flag sanitise, ...)
-$SUMMARY          Read a GIPSY file header.
+$SUMMARY            Read a GIPSY file header.
 $PURPOSE
     This routine will read the header of a GIPSY file from a channel.
     The data section is NOT read.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel to read from.
-$PARAMETER        data_alloc :
+$PARAMETER          data_alloc :
     If TRUE, the data space is allocated.
-$PARAMETER        sanitise :
+$PARAMETER          sanitise :
     If TRUE, GIPSY axes with length 1 are ignored. This is highly
     recommended.
 $PARAMETER        ... :
@@ -104,23 +185,23 @@ $RETURNS
     NULL.
 $END
 
-$FUNCTION         foreign_gipsy_read_data
-$RETURN_TYPE      flag
+$FUNCTION           foreign_gipsy_read_data
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, multi_array *multi_desc,
 			      char *data, uaddr num_values, ...)
-$SUMMARY          Read data in a GIPSY image file.
+$SUMMARY            Read data in a GIPSY image file.
 $PURPOSE
     This routine will read the data of a GIPSY image file from a
     channel.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel to read from.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The Karma data structure to write the data into.
-$PARAMETER        data :
+$PARAMETER          data :
     An alternate data array to write the FITS data into. If this is
     NULL, the routine will write the data into the Karma data structure.
-$PARAMETER        num_values :
+$PARAMETER          num_values :
     The number of values to write into the data array. This is
     only used when data is not NULL.
 $PARAMETER        ... :
@@ -132,16 +213,16 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         foreign_gipsy_read
-$RETURN_TYPE      multi_array *
+$FUNCTION           foreign_gipsy_read
+$RETURN_TYPE        multi_array *
 $PARAMETER_LIST
     (CONST char *filename, flag sanitise, ...)
-$SUMMARY          Read a GIPSY file set.
+$SUMMARY            Read a GIPSY file set.
 $PURPOSE
     Read a GIPSY file set.
-$PARAMETER        filename :
+$PARAMETER          filename :
     The name of any file in the GIPSY file set.
-$PARAMETER        sanitise :
+$PARAMETER          sanitise :
     If TRUE, Miriad axes with length 1 are ignored. This is highly
     recommended.
 $PARAMETER        ... :
@@ -153,24 +234,99 @@ $RETURNS
     A multi_array descriptor on success, else NULL.
 $END
 
-$FUNCTION         foreign_guess_and_read
-$RETURN_TYPE      multi_array *
+$FUNCTION           foreign_gipsy_write
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (CONST char *basename, multi_array *multi_desc, ...)
+$SUMMARY            Write a GIPSY file.
+$PURPOSE
+    This routine will write a Karma data structure to a GIPSY
+    file. The routine will automatically generate essential keywords such as:
+    "NAXIS", "NAXISn", "CTYPEn", "CRVALn", "CRPIXn", "CDELTn",
+    "BUNIT", "BSCALE" and "BZERO". Also, existing keywords in the data
+    structure which do not conflict with the generated keywords are copied.
+$PARAMETER          basename :
+    The base filename of the GIPSY file. The ".descr" and ".image"
+    extensions are added automatically.
+$PARAMETER          multi_desc :
+    The multi_array descriptor pointer. The routine will find a
+    n-dimensional array within the data structure.
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_GIPSY_WRITE_END.
+    See <-FOREIGN_ATT_GIPSY_WRITE-> for a list of defined attributes.
+$RETURNS
+    TRUE on succes, else FALSE.
+$END
+
+$FUNCTION           foreign_gipsy_write_iarray
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (CONST char *basename, iarray array, ...)
+$SUMMARY            Write a GIPSY file.
+$PURPOSE
+    This routine will write an Intelligent Array to a GIPSY
+    file. The routine will automatically generate essential keywords such as:
+    "NAXIS", "NAXISn", "CTYPEn", "CRVALn", "CRPIXn", "CDELTn", "BITPIX",
+    "BUNIT", "BSCALE" and "BZERO". Also, existing keywords in the data
+    structure which do not conflict with the generated keywords are copied.
+$PARAMETER          basename :
+    The base filename of the GIPSY file. The ".descr" and ".image"
+    extensions are added automatically.
+$PARAMETER          array :
+    The Intelligent Array.
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_GIPSY_WRITE_END.
+    See <-FOREIGN_ATT_GIPSY_WRITE-> for a list of defined attributes.
+$RETURNS
+    TRUE on succes, else FALSE.
+$END
+
+$EXPERIMENTAL_FUNC  foreign_gipsy_write_header
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (Channel channel,
+				 CONST packet_desc *header_pack_desc,
+				 CONST char *header_packet, ...)
+$SUMMARY            Write a GIPSY header.
+$PURPOSE
+    Write a GIPSY header.
+$PARAMETER          channel :
+    The channel object to write the header to.
+$PARAMETER          header_desc :
+    The FITS-style header packet descriptor.
+$PARAMETER          header_packet :
+    The FITS-style header packet data.
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_GIPSY_WRITE_HEADER_END.
+    See <-FOREIGN_ATT_GIPSY_WRITE_HEADER-> for a list of defined attributes.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION           foreign_guess_and_read
+$RETURN_TYPE        multi_array *
 $PARAMETER_LIST
     (CONST char *filename,
 				     unsigned int mmap_option, flag writeable,
 				     unsigned int *ftype, ...)
-$SUMMARY          Guess file type and read.
+$SUMMARY            Guess file type and read.
 $PURPOSE
     This routine will attempt to guess the filetype of a file and
     in the file, converting to the Karma data format if possible.
-$PARAMETER        filename :
+$PARAMETER          filename :
     The name of the file to read.
-$PARAMETER        mmap_option :
+$PARAMETER          mmap_option :
     This has the same meaning as for the <dsxfr_get_multi>
     routine.
-$PARAMETER        writeable :
+$PARAMETER          writeable :
     This has the same meaning as for the <dsxfr_get_multi> routine.
-$PARAMETER        ftype :
+$PARAMETER          ftype :
     The type of the file that was read in is written here.
 $PARAMETER        ... :
     The optional attributes are given as pairs of attribute-key
@@ -181,33 +337,88 @@ $RETURNS
     NULL.
 $END
 
-$FUNCTION         foreign_miriad_test
-$RETURN_TYPE      flag
+$EXPERIMENTAL_FUNC  foreign_read_and_setup
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (CONST char *filename, unsigned int mmap_option,
+			     flag writeable, unsigned int *ftype, flag inform,
+			     unsigned int num_dim,
+			     unsigned int preferred_type, flag force_type,
+			     iarray *array, double *min, double *max,
+			     flag discard_zero_range,
+			     KwcsAstro *ap)
+$SUMMARY            Read a file and perform some setup.
+$PURPOSE
+    This routine will attempt to guess the filetype of a file and
+    in the file, converting to an Intelligent Array if possible. The routine
+    then performs some simple checks and some other convenience functions.
+$PARAMETER          filename :
+    The name of the file to read.
+$PARAMETER          mmap_option :
+    This has the same meaning as for the <dsxfr_get_multi>
+    routine.
+$PARAMETER          writeable :
+    This has the same meaning as for the <dsxfr_get_multi> routine.
+$PARAMETER          ftype :
+    The type of the file that was read in is written here.
+$PARAMETER          inform :
+    If TRUE, the routine displays some informative messages.
+$PARAMETER          num_dim :
+    The number of dimensions required. If this is 0, any number of
+    dimensions is allowed.
+$PARAMETER          preferred_type :
+    The preferred data type. If this is NONE, then no type is
+    preferred.
+$PARAMETER          force_type :
+    If TRUE, the routine fails if the preferred data type was not
+    available.
+$PARAMETER          array :
+    The Intelligent Array is written here. An existing array pointed to
+    by this is deallocated.
+$PARAMETER          min :
+    The minimum data value in the array is written here. If this is NULL
+    nothing is written here.
+$PARAMETER          max :
+    The maximum data value in the array is written here. If this is NULL
+    nothing is written here.
+$PARAMETER          discard_zero_range :
+    If TRUE, and the range of the data is zero, the
+    routine fails.
+$PARAMETER          ap :
+    The KwcsAstro object for the array is written here. The KwcsAstro
+    object may be NULL (indicating no astronomical projection is available). An
+    existing object is deallocated. If this is NULL, nothing is written here.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION           foreign_miriad_test
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (CONST char *dirname)
-$SUMMARY          Test if a directory is a Miriad Image file.
+$SUMMARY            Test if a directory is a Miriad Image file.
 $PURPOSE
     Test if a directory is a Miriad Image file.
-$PARAMETER        dirname :
+$PARAMETER          dirname :
     The directory name of the Miriad dataset name.
 $RETURNS
     TRUE if the directory is a Miriad Image file, else FALSE.
 $END
 
-$FUNCTION         foreign_miriad_read_header
-$RETURN_TYPE      multi_array *
+$FUNCTION           foreign_miriad_read_header
+$RETURN_TYPE        multi_array *
 $PARAMETER_LIST
     (Channel channel, flag data_alloc,
 					 flag sanitise, ...)
-$SUMMARY          Read a Miriad Image file header.
+$SUMMARY            Read a Miriad Image file header.
 $PURPOSE
     This routine will read the header of a Miriad Image file from a
     channel. The data section is NOT read.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel to read from.
-$PARAMETER        data_alloc :
+$PARAMETER          data_alloc :
     If TRUE, the data space is allocated.
-$PARAMETER        sanitise :
+$PARAMETER          sanitise :
     If TRUE, Miriad axes with length 1 are ignored. This is highly
     recommended.
 $PARAMETER        ... :
@@ -220,16 +431,16 @@ $RETURNS
     NULL.
 $END
 
-$FUNCTION         foreign_miriad_read
-$RETURN_TYPE      multi_array *
+$FUNCTION           foreign_miriad_read
+$RETURN_TYPE        multi_array *
 $PARAMETER_LIST
     (CONST char *dirname, flag sanitise, ...)
-$SUMMARY          Read a Miriad image file.
+$SUMMARY            Read a Miriad image file.
 $PURPOSE
     Read a Miriad image file.
-$PARAMETER        dirname :
+$PARAMETER          dirname :
     The directory name of the Miriad dataset name.
-$PARAMETER        sanitise :
+$PARAMETER          sanitise :
     If TRUE, Miriad axes with length 1 are ignored. This is highly
     recommended.
 $PARAMETER        ... :
@@ -241,14 +452,136 @@ $RETURNS
     A multi_array descriptor on success, else NULL.
 $END
 
-$FUNCTION         foreign_guess_format_from_filename
-$RETURN_TYPE      unsigned int
+$EXPERIMENTAL_FUNC  foreign_miriad_create_data_context
+$RETURN_TYPE        KMiriadDataContext
+$PARAMETER_LIST
+    (CONST char *dirname)
+$SUMMARY            Create a context suitable for reading Miriad Image data.
+$PURPOSE
+    This routine will create a context suitable for reading Miriad
+    Image data. The <-foreign_miriad_read_data-> routine may be used to read
+    data sequentially from the context.
+$PARAMETER          dirname :
+    The directory name of the Miriad dataset name.
+$RETURNS
+    A KMiriadDataContext object on success, else NULL (indicating the
+    image file could not be read).
+$END
+
+$EXPERIMENTAL_FUNC  foreign_miriad_read_data
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (KMiriadDataContext context,
+			       multi_array *multi_desc,
+			       char *data, uaddr num_values, ...)
+$SUMMARY            Read data in a Miriad Image file.
+$PURPOSE
+    This routine will read the data of a Miriad Image file from a
+    KMiradDataContext object. The header section is NOT read.
+$PARAMETER          context :
+    The context to read from.
+$PARAMETER          multi_desc :
+    The Karma data structure to write the data into.
+$PARAMETER          data :
+    An alternate data array to write the data into. If this is NULL,
+    the routine will write the data into the Karma data structure.
+$PARAMETER          num_values :
+    The number of values to write into the data array. This is
+    only used when data is not NULL.
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_MIRIAD_READ_DATA_END. See <-FOREIGN_ATT_MIRIAD_READ_DATA-> for a list
+    of defined attributes.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$EXPERIMENTAL_FUNC  foreign_miriad_close_data_context
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (KMiriadDataContext context)
+$SUMMARY            Close a KMiriadDataContext object.
+$PURPOSE
+    Close a KMiriadDataContext object.
+$PARAMETER          context :
+    The context.
+$RETURNS
+    Nothing.
+$END
+
+$EXPERIMENTAL_FUNC  foreign_miriad_read_history
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (CONST char *dirname, multi_array *multi_desc)
+$SUMMARY            Read the history component of a Miriad Image file.
+$PURPOSE
+    Read the history component of a Miriad Image file.
+$PARAMETER          dirname :
+    The directory name of the Miriad dataset name.
+$PARAMETER          multi_desc :
+    The multi_array header the history will be written to.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION           foreign_miriad_write
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (CONST char *dirname, multi_array *multi_desc, ...)
+$SUMMARY            Write a Miriad Image file.
+$PURPOSE
+    This routine will write a Karma data structure to a Miriad Image
+    file. The routine will automatically generate essential keywords such as:
+    "NAXIS", "NAXISn", "CTYPEn", "CRVALn", "CRPIXn", "CDELTn",
+    "BUNIT", "BSCALE" and "BZERO". Also, existing keywords in the data
+    structure which do not conflict with the generated keywords are copied.
+$PARAMETER          dirname :
+    The directory name of the Miriad Image file.
+$PARAMETER          multi_desc :
+    The multi_array descriptor pointer. The routine will find a
+    n-dimensional array within the data structure.
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_MIRIAD_WRITE_END.
+    See <-FOREIGN_ATT_MIRIAD_WRITE-> for a list of defined attributes.
+$RETURNS
+    TRUE on succes, else FALSE.
+$END
+
+$FUNCTION           foreign_miriad_write_iarray
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (CONST char *dirname, iarray array, ...)
+$SUMMARY            Write a Miriad Image file.
+$PURPOSE
+    This routine will write an Intelligent Array to a Miriad Image
+    file. The routine will automatically generate essential keywords such as:
+    "NAXIS", "NAXISn", "CTYPEn", "CRVALn", "CRPIXn", "CDELTn", "BITPIX",
+    "BUNIT", "BSCALE" and "BZERO". Also, existing keywords in the data
+    structure which do not conflict with the generated keywords are copied.
+$PARAMETER          dirname :
+    The directory name of the Miriad Image file.
+$PARAMETER          array :
+    The Intelligent Array.
+$PARAMETER        ... :
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_MIRIAD_WRITE_END.
+    See <-FOREIGN_ATT_MIRIAD_WRITE-> for a list of defined attributes.
+$RETURNS
+    TRUE on succes, else FALSE.
+$END
+
+$FUNCTION           foreign_guess_format_from_filename
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (CONST char *filename)
-$SUMMARY          Attempt to guess the format of a file by examining its filename.
+$SUMMARY            Attempt to guess the format of a file by examining its filename.
 $PURPOSE
     Attempt to guess the format of a file by examining its filename.
-$PARAMETER        filename :
+$PARAMETER          filename :
     The name of the file.
 $RETURNS
     A value indicating the format of the file. The value
@@ -256,14 +589,14 @@ $RETURNS
     <-FOREIGN_TYPES-> for a list of possible values.
 $END
 
-$FUNCTION         foreign_ppm_read
-$RETURN_TYPE      multi_array *
+$FUNCTION           foreign_ppm_read
+$RETURN_TYPE        multi_array *
 $PARAMETER_LIST
     (Channel channel, ...)
-$SUMMARY          Read a colour image in PPM format from a channel.
+$SUMMARY            Read a colour image in PPM format from a channel.
 $PURPOSE
     Read a colour image in PPM format from a channel.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel to read from.
 $PARAMETER        ... :
     The optional attributes are given as pairs of attribute-key
@@ -273,20 +606,20 @@ $RETURNS
     A pointer to the multi_array data structure on success, else NULL
 $END
 
-$FUNCTION         foreign_ppm_write
-$RETURN_TYPE      flag
+$FUNCTION           foreign_ppm_write
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, multi_array *multi_desc, flag binary,
 			...)
-$SUMMARY          Write a colour image to a channel in PPM format
+$SUMMARY            Write a colour image to a channel in PPM format
 $PURPOSE
     Write a colour image to a channel in PPM format
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel to write to. The channel is not flushed.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The multi_array descriptor pointer. The routine will find a
     TrueColour image or a PseudoColour image within the data structure.
-$PARAMETER        binary :
+$PARAMETER          binary :
     If TRUE, the pixels will be written in binary mode.
 $PARAMETER        ... :
     The optional attributes are given as pairs of attribute-key
@@ -296,14 +629,114 @@ $RETURNS
     TRUE on succes, else FALSE.
 $END
 
-$FUNCTION         foreign_sunras_read
-$RETURN_TYPE      multi_array *
+$EXPERIMENTAL_FUNC  foreign_ppm_write_pseudo
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (Channel channel, flag binary,
+			       CONST char *image, unsigned int type,
+			       uaddr *hoffsets, uaddr *voffsets,
+			       unsigned int width, unsigned int height,
+			       CONST unsigned short *cmap_reds,
+			       CONST unsigned short *cmap_greens,
+			       CONST unsigned short *cmap_blues,
+			       unsigned int cmap_size,unsigned int cmap_stride,
+			       double i_min, double i_max)
+$SUMMARY            Write a PseudoColor image to a channel in PPM format.
+$PURPOSE
+    Write a PseudoColor image to a channel in PPM format.
+$PARAMETER          channel :
+    The channel to write to. The channel is not flushed.
+$PARAMETER          binary :
+    If TRUE, the pixels will be written in binary mode.
+$PARAMETER          image :
+    The image data.
+$PARAMETER          type :
+    The type of the image data.
+$PARAMETER          hoffsets :
+    The array of horizontal byte offsets.
+$PARAMETER          voffsets :
+    The array of vertical byte offsets.
+$PARAMETER          width :
+    The width of the image.
+$PARAMETER          height :
+    The height of the image.
+$PARAMETER          cmap_reds :
+    The red colourmap values.
+$PARAMETER          cmap_greens :
+    The green colourmap values.
+$PARAMETER          cmap_blues :
+    The blue colourmap values.
+$PARAMETER          cmap_size :
+    The number of colourmap entries.
+$PARAMETER          cmap_stride :
+    The stride (in unsigned shorts) between colourmap values.
+$PARAMETER          i_min :
+    The minimum image value. Image values below this will be clipped.
+$PARAMETER          i_max :
+    The maximum image value. Image values above this will be clipped.
+$MT-LEVEL         Unsafe.
+$RETURNS
+    TRUE on succes, else FALSE.
+$END
+
+$EXPERIMENTAL_FUNC  foreign_ppm_write_rgb
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (Channel channel, flag binary,
+			    CONST unsigned char *image_red,
+			    CONST unsigned char *image_green,
+			    CONST unsigned char *image_blue,
+			    uaddr *hoffsets, uaddr *voffsets,
+			    unsigned int width, unsigned int height,
+			    CONST unsigned short *cmap_red,
+			    CONST unsigned short *cmap_green,
+			    CONST unsigned short *cmap_blue,
+			    unsigned int cmap_stride)
+$SUMMARY            Write a TrueColor image to a channel in Sun rasterfile format
+$PURPOSE
+    Write a TrueColor image to a channel in Sun rasterfile format
+$PARAMETER          channel :
+    The channel to write to. The channel is not flushed.
+$PARAMETER          binary :
+    If TRUE, the pixels will be written in binary mode.
+$PARAMETER          red_image :
+    The red image data.
+$PARAMETER          green_image :
+    The green image data.
+$PARAMETER          blue_image :
+    The blue image data.
+$PARAMETER          hoffsets :
+    The array of horizontal byte offsets.
+$PARAMETER          voffsets :
+    The array of vertical byte offsets.
+$PARAMETER          width :
+    The width of the image.
+$PARAMETER          height :
+    The height of the image.
+$PARAMETER          cmap_red :
+    The red component colourmap entries. 256 entries required. If
+    this is NULL a linear mapping is assumed.
+$PARAMETER          cmap_green :
+    The green component colourmap entries. 256 entries required.
+    If this is NULL a linear mapping is assumed.
+$PARAMETER          cmap_blue :
+    The blue component colourmap entries. 256 entries required. If
+    this is NULL a linear mapping is assumed.
+$PARAMETER          cmap_stride :
+    The stride (in unsigned shorts) between colourmap values.
+$MT-LEVEL         Unsafe.
+$RETURNS
+    TRUE on succes, else FALSE.
+$END
+
+$FUNCTION           foreign_sunras_read
+$RETURN_TYPE        multi_array *
 $PARAMETER_LIST
     (Channel channel, ...)
-$SUMMARY          Read an image in Sun rasterfile format from a channel.
+$SUMMARY            Read an image in Sun rasterfile format from a channel.
 $PURPOSE
     Read an image in Sun rasterfile format from a channel.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel to read from.
 $PARAMETER        ... :
     The optional attributes are given as pairs of attribute-key
@@ -314,16 +747,16 @@ $RETURNS
     A pointer to the multi_array data structure on success, else NULL
 $END
 
-$FUNCTION         foreign_sunras_write
-$RETURN_TYPE      flag
+$FUNCTION           foreign_sunras_write
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, multi_array *multi_desc, ...)
-$SUMMARY          Write a colour image to a channel in Sun rasterfile format
+$SUMMARY            Write a colour image to a channel in Sun rasterfile format
 $PURPOSE
     Write a colour image to a channel in Sun rasterfile format
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel to write to. The channel is not flushed.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The multi_array descriptor pointer. The routine will find a
     TrueColour image or a PseudoColour image within the data structure.
 $PARAMETER        ... :
@@ -331,6 +764,103 @@ $PARAMETER        ... :
     attribute-value pairs. This list must be terminated with
     FA_SUNRAS_WRITE_END. See <-FOREIGN_ATT_SUNRAS_WRITE-> for a list of defined
     attributes.
+$MT-LEVEL         Unsafe.
+$RETURNS
+    TRUE on succes, else FALSE.
+$END
+
+$EXPERIMENTAL_FUNC  foreign_sunras_write_pseudo
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (Channel channel,
+				  CONST char *image, unsigned int type,
+				  uaddr *hoffsets, uaddr *voffsets,
+				  unsigned int width, unsigned int height,
+				  CONST unsigned short *cmap_reds,
+				  CONST unsigned short *cmap_greens,
+				  CONST unsigned short *cmap_blues,
+				  unsigned int cmap_size,
+				  unsigned int cmap_stride,
+				  double i_min, double i_max)
+$SUMMARY            Write a PseudoColor image to a channel in Sun rasterfile format
+$PURPOSE
+    Write a PseudoColor image to a channel in Sun rasterfile format
+$PARAMETER          channel :
+    The channel to write to. The channel is not flushed.
+$PARAMETER          image :
+    The image data.
+$PARAMETER          type :
+    The type of the image data.
+$PARAMETER          hoffsets :
+    The array of horizontal byte offsets.
+$PARAMETER          voffsets :
+    The array of vertical byte offsets.
+$PARAMETER          width :
+    The width of the image.
+$PARAMETER          height :
+    The height of the image.
+$PARAMETER          cmap_reds :
+    The red colourmap values.
+$PARAMETER          cmap_greens :
+    The green colourmap values.
+$PARAMETER          cmap_blues :
+    The blue colourmap values.
+$PARAMETER          cmap_size :
+    The number of colourmap entries.
+$PARAMETER          cmap_stride :
+    The stride (in unsigned shorts) between colourmap values.
+$PARAMETER          i_min :
+    The minimum image value. Image values below this will be clipped.
+$PARAMETER          i_max :
+    The maximum image value. Image values above this will be clipped.
+$MT-LEVEL         Unsafe.
+$RETURNS
+    TRUE on succes, else FALSE.
+$END
+
+$EXPERIMENTAL_FUNC  foreign_sunras_write_rgb
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (Channel channel,
+			       CONST unsigned char *image_red,
+			       CONST unsigned char *image_green,
+			       CONST unsigned char *image_blue,
+			       uaddr *hoffsets, uaddr *voffsets,
+			       unsigned int width, unsigned int height,
+			       CONST unsigned short *cmap_red,
+			       CONST unsigned short *cmap_green,
+			       CONST unsigned short *cmap_blue,
+			       unsigned int cmap_stride)
+$SUMMARY            Write a TrueColor image to a channel in Sun rasterfile format
+$PURPOSE
+    Write a TrueColor image to a channel in Sun rasterfile format
+$PARAMETER          channel :
+    The channel to write to. The channel is not flushed.
+$PARAMETER          red_image :
+    The red image data.
+$PARAMETER          green_image :
+    The green image data.
+$PARAMETER          blue_image :
+    The blue image data.
+$PARAMETER          hoffsets :
+    The array of horizontal byte offsets.
+$PARAMETER          voffsets :
+    The array of vertical byte offsets.
+$PARAMETER          width :
+    The width of the image.
+$PARAMETER          height :
+    The height of the image.
+$PARAMETER          cmap_red :
+    The red component colourmap entries. 256 entries required. If
+    this is NULL a linear mapping is assumed.
+$PARAMETER          cmap_green :
+    The green component colourmap entries. 256 entries required.
+    If this is NULL a linear mapping is assumed.
+$PARAMETER          cmap_blue :
+    The blue component colourmap entries. 256 entries required. If
+    this is NULL a linear mapping is assumed.
+$PARAMETER          cmap_stride :
+    The stride (in unsigned shorts) between colourmap values.
 $MT-LEVEL         Unsafe.
 $RETURNS
     TRUE on succes, else FALSE.

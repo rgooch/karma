@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   29-MAY-1996
 
-    Last updated by Richard Gooch   27-JUN-1996
+    Last updated by Richard Gooch   28-SEP-1996
 
 */
 
@@ -76,7 +76,7 @@ EXTERN_FUNCTION (void wcs_astro_format,
 		  char string[STRING_LENGTH], double value) );
 EXTERN_FUNCTION (void wcs_astro_format_extra,
 		 (KwcsAstro ap, char string[STRING_LENGTH]) );
-EXTERN_FUNCTION (void wcs_format_all,
+EXTERN_FUNCTION (void wcs_astro_format_all,
 		 (KwcsAstro ap, char coord_string[STRING_LENGTH],
 		  CONST char *name0, double coord0,
 		  CONST char *name1, double coord1,
@@ -84,6 +84,9 @@ EXTERN_FUNCTION (void wcs_format_all,
 		  unsigned int num_restr, CONST char **restr_names,
 		  CONST double *restr_values,
 		  char other_string[STRING_LENGTH]) );
+EXTERN_FUNCTION (flag wcs_astro_get_preferred_units,
+		 (char new_units[STRING_LENGTH],char format_str[STRING_LENGTH],
+		  double *scale, CONST char *old_units) );
 
 
 #endif /*  KARMA_WCS_H  */

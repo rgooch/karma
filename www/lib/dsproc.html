@@ -55,13 +55,14 @@
     TRUE.
 <br></ul><b>Returns:</b>     Nothing.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=DSPROC_PROTO_pre_process></a> flag
- <b>DSPROC_PROTO_pre_process</b><i>    (multi_array *multi_desc)
+ <b>DSPROC_PROTO_pre_process</b><i>    (CONST multi_array *multi_desc)
 </i><br><p>    Perform pre-processing on a multi_array data structure.
 <p><b>Parameters:</b><ul><li><i>multi_desc :</i> 
     The data structure.
 <br></ul><b>Returns:</b>     TRUE if processing is to continue, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=DSPROC_PROTO_process_array></a> flag
- <b>DSPROC_PROTO_process_array</b><i>    (packet_desc *inp_desc, char *inp_data,
+ <b>DSPROC_PROTO_process_array</b><i>    (CONST packet_desc *inp_desc,
+				 CONST char *inp_data,
 				 packet_desc **out_desc, char **out_data)
 </i><br><p>    Process a general data structure into an output structure.
 <p><b>Parameters:</b><ul><li><i>inp_desc :</i> 
@@ -74,11 +75,14 @@
     The output data pointer should be written here.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=DSPROC_PROTO_post_process></a> flag
- <b>DSPROC_PROTO_post_process</b><i>    (multi_array *inp_desc, multi_array *out_desc)
+ <b>DSPROC_PROTO_post_process</b><i>    (CONST multi_array *inp_desc,
+				multi_array *out_desc)
 </i><br><p>    Perform post-processing on a multi_array data structure.
 <p><b>Parameters:</b><ul><li><i>inp_desc :</i> 
     The input multi_array descriptor.
 <br><li><i>out_desc :</i> 
     The output multi_array_descriptor.
 <br></ul><b>Returns:</b>     TRUE if the array is to be saved/transmitted, else FALSE.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>
+<br><b>Multithreading Level:</b> Unsafe<br><p>
+<hr><a href="../index.html">Back to Karma Home Page</a>
+<hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.ariel.com.au/">Ariel Internet Services</a></address></center></body></html>

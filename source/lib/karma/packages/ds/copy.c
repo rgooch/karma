@@ -67,8 +67,11 @@
     Updated by      Richard Gooch   30-MAY-1996: Fixed bug with copying VSTRING
   type in <ds_copy_data> indroduced by last change.
 
-    Last updated by Richard Gooch   3-JUN-1996: Took account of new fields in
+    Updated by      Richard Gooch   3-JUN-1996: Took account of new fields in
   dimension descriptor for first and last co-ordinate.
+
+    Last updated by Richard Gooch   29-SEP-1996: Added  CONST  declarations
+  where appropriate.
 
 
 */
@@ -92,8 +95,8 @@ static flag copy_tiled_data (/* arr_desc_inp, inp_data, arr_desc_out,
 /*  Public routines follow  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_copy_packet (packet_desc *pack_desc, char *dest_packet,
-		     char *source_packet)
+flag ds_copy_packet (CONST packet_desc *pack_desc, char *dest_packet,
+		     CONST char *source_packet)
 /*  [SUMMARY] Copy a packet.
     <pack_desc> The packet descriptor.
     <dest_packet> The destination packet data will be written here.
@@ -118,7 +121,7 @@ flag ds_copy_packet (packet_desc *pack_desc, char *dest_packet,
 }   /*  End Funtion ds_copy_packet  */
 
 /*PUBLIC_FUNCTION*/
-packet_desc *ds_copy_desc_until (packet_desc *inp_desc, CONST char *name)
+packet_desc *ds_copy_desc_until (CONST packet_desc *inp_desc, CONST char *name)
 /*  [SUMMARY] Recursively copy a packet descriptor.
     [PURPOSE] This routine will recursively copy a packet descriptor until
     an element with a specified name is found, at which time the copying
@@ -259,7 +262,8 @@ packet_desc *ds_copy_desc_until (packet_desc *inp_desc, CONST char *name)
 }   /*  End Function ds_copy_desc_until  */
 
 /*PUBLIC_FUNCTION*/
-array_desc *ds_copy_array_desc_until (array_desc *inp_desc, CONST char *name)
+array_desc *ds_copy_array_desc_until (CONST array_desc *inp_desc,
+				      CONST char *name)
 /*  [SUMMARY] Recursively copy an array descriptor.
     [PURPOSE] This routine will make a copy of an array descriptor and all
     sub-descriptors until a specified name is encountered. All tiling
@@ -336,7 +340,7 @@ array_desc *ds_copy_array_desc_until (array_desc *inp_desc, CONST char *name)
 }   /*  End Function ds_copy_array_desc_until  */
 
 /*PUBLIC_FUNCTION*/
-dim_desc *ds_copy_dim_desc (dim_desc *inp_desc)
+dim_desc *ds_copy_dim_desc (CONST dim_desc *inp_desc)
 /*  [SUMMARY] Copy a dimension descriptor.
     <inp_desc> The input 
     [RETURNS] A pointer to a freshly allocated dimension descriptor on success,
@@ -378,7 +382,7 @@ dim_desc *ds_copy_dim_desc (dim_desc *inp_desc)
 }   /*  End Function ds_copy_dim_desc  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_copy_data (packet_desc *inp_desc, char *inp_data,
+flag ds_copy_data (CONST packet_desc *inp_desc, CONST char *inp_data,
 		   packet_desc *out_desc, char *out_data)
 /*  [SUMMARY] Copy data between Karma data structures.
     [PURPOSE] This routine will copy data from one data structure to another,
@@ -559,7 +563,7 @@ flag ds_copy_data (packet_desc *inp_desc, char *inp_data,
 }   /*  End Function ds_copy_data  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_copy_array (array_desc *inp_desc, char *inp_data,
+flag ds_copy_array (CONST array_desc *inp_desc, CONST char *inp_data,
 		    array_desc *out_desc, char *out_data)
 /*  [SUMMARY] Recursively copy array data.
     [PURPOSE] This routine will copy data from one array to another. The two
@@ -683,7 +687,7 @@ flag ds_copy_array (array_desc *inp_desc, char *inp_data,
 }   /*  End Function ds_copy_array  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_copy_list (packet_desc *inp_desc, list_header *inp_head,
+flag ds_copy_list (CONST packet_desc *inp_desc, CONST list_header *inp_head,
 		   packet_desc *out_desc, list_header *out_head)
 /*  [SUMMARY] Recursively copy linked lists.
     [PURPOSE] This routine will copy a linked list to another.

@@ -8,6 +8,12 @@
 </td></tr>
 <tr><td><a href=foreign.html#foreign_fits_read_data>foreign_fits_read_data</a></td><td>Read data in a FITS file.
 </td></tr>
+<tr><td><a href=foreign.html#foreign_fits_write>foreign_fits_write</a></td><td>Write a FITS file to a channel.
+</td></tr>
+<tr><td><a href=foreign.html#foreign_fits_write_iarray>foreign_fits_write_iarray</a></td><td>Write a FITS file to a channel.
+</td></tr>
+<tr><td><a href=foreign.html#foreign_fits_write_data>foreign_fits_write_data</a></td><td>Write data to a FITS file.
+</td></tr>
 <tr><td><a href=foreign.html#foreign_gipsy_test>foreign_gipsy_test</a></td><td>Test if a file is part of a GIPSY file set.
 </td></tr>
 <tr><td><a href=foreign.html#foreign_gipsy_read_header>foreign_gipsy_read_header</a></td><td>Read a GIPSY file header.
@@ -16,7 +22,15 @@
 </td></tr>
 <tr><td><a href=foreign.html#foreign_gipsy_read>foreign_gipsy_read</a></td><td>Read a GIPSY file set.
 </td></tr>
+<tr><td><a href=foreign.html#foreign_gipsy_write>foreign_gipsy_write</a></td><td>Write a GIPSY file.
+</td></tr>
+<tr><td><a href=foreign.html#foreign_gipsy_write_iarray>foreign_gipsy_write_iarray</a></td><td>Write a GIPSY file.
+</td></tr>
+<tr><td><a href=foreign.html#foreign_gipsy_write_header>foreign_gipsy_write_header</a></td><td>Write a GIPSY header.
+</td></tr>
 <tr><td><a href=foreign.html#foreign_guess_and_read>foreign_guess_and_read</a></td><td>Guess file type and read.
+</td></tr>
+<tr><td><a href=foreign.html#foreign_read_and_setup>foreign_read_and_setup</a></td><td>Read a file and perform some setup.
 </td></tr>
 <tr><td><a href=foreign.html#foreign_miriad_test>foreign_miriad_test</a></td><td>Test if a directory is a Miriad Image file.
 </td></tr>
@@ -24,15 +38,35 @@
 </td></tr>
 <tr><td><a href=foreign.html#foreign_miriad_read>foreign_miriad_read</a></td><td>Read a Miriad image file.
 </td></tr>
+<tr><td><a href=foreign.html#foreign_miriad_create_data_context>foreign_miriad_create_data_context</a></td><td>Create a context suitable for reading Miriad Image data.
+</td></tr>
+<tr><td><a href=foreign.html#foreign_miriad_read_data>foreign_miriad_read_data</a></td><td>Read data in a Miriad Image file.
+</td></tr>
+<tr><td><a href=foreign.html#foreign_miriad_close_data_context>foreign_miriad_close_data_context</a></td><td>Close a KMiriadDataContext object.
+</td></tr>
+<tr><td><a href=foreign.html#foreign_miriad_read_history>foreign_miriad_read_history</a></td><td>Read the history component of a Miriad Image file.
+</td></tr>
+<tr><td><a href=foreign.html#foreign_miriad_write>foreign_miriad_write</a></td><td>Write a Miriad Image file.
+</td></tr>
+<tr><td><a href=foreign.html#foreign_miriad_write_iarray>foreign_miriad_write_iarray</a></td><td>Write a Miriad Image file.
+</td></tr>
 <tr><td><a href=foreign.html#foreign_guess_format_from_filename>foreign_guess_format_from_filename</a></td><td>Attempt to guess the format of a file by examining its filename.
 </td></tr>
 <tr><td><a href=foreign.html#foreign_ppm_read>foreign_ppm_read</a></td><td>Read a colour image in PPM format from a channel.
 </td></tr>
 <tr><td><a href=foreign.html#foreign_ppm_write>foreign_ppm_write</a></td><td>Write a colour image to a channel in PPM format
 </td></tr>
+<tr><td><a href=foreign.html#foreign_ppm_write_pseudo>foreign_ppm_write_pseudo</a></td><td>Write a PseudoColor image to a channel in PPM format.
+</td></tr>
+<tr><td><a href=foreign.html#foreign_ppm_write_rgb>foreign_ppm_write_rgb</a></td><td>Write a TrueColor image to a channel in Sun rasterfile format
+</td></tr>
 <tr><td><a href=foreign.html#foreign_sunras_read>foreign_sunras_read</a></td><td>Read an image in Sun rasterfile format from a channel.
 </td></tr>
 <tr><td><a href=foreign.html#foreign_sunras_write>foreign_sunras_write</a></td><td>Write a colour image to a channel in Sun rasterfile format
+</td></tr>
+<tr><td><a href=foreign.html#foreign_sunras_write_pseudo>foreign_sunras_write_pseudo</a></td><td>Write a PseudoColor image to a channel in Sun rasterfile format
+</td></tr>
+<tr><td><a href=foreign.html#foreign_sunras_write_rgb>foreign_sunras_write_rgb</a></td><td>Write a TrueColor image to a channel in Sun rasterfile format
 </td></tr>
 </table><h4>Tables</h4><table><tr><td><a href=foreign.html#FOREIGN_ATT_FITS_READ_HEADER>FOREIGN_ATT_FITS_READ_HEADER</a></td><td>List of attributes for reading FITS headers
 </td></tr>
@@ -100,6 +134,66 @@
     FA_FITS_READ_DATA_END. See <a href=foreign.html#FOREIGN_ATT_FITS_READ_DATA>FOREIGN_ATT_FITS_READ_DATA</a> for a list of
     defined attributes.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=foreign_fits_write></a> flag
+ <b>foreign_fits_write</b><i>    (Channel channel, multi_array *multi_desc, ...)
+</i><br><p>    This routine will write a Karma data structure to a FITS file.
+    The routine will automatically generate essential keywords such as:
+    "NAXIS", "NAXISn", "CTYPEn", "CRVALn", "CRPIXn", "CDELTn", "BITPIX",
+    "BUNIT", "BSCALE" and "BZERO". Also, existing keywords in the data
+    structure which do not conflict with the generated keywords are copied.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel to write to. The channel is not flushed.
+<br><li><i>multi_desc :</i> 
+    The multi_array descriptor pointer. The routine will find a
+    n-dimensional array within the data structure.
+<br><li><i>... :</i> 
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with FA_FITS_WRITE_END.
+    See <a href=foreign.html#FOREIGN_ATT_FITS_WRITE>FOREIGN_ATT_FITS_WRITE</a> for a list of defined attributes.
+<br></ul><b>Returns:</b>     TRUE on succes, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=foreign_fits_write_iarray></a> flag
+ <b>foreign_fits_write_iarray</b><i>    (Channel channel, iarray array, ...)
+</i><br><p>    This routine will write an Intelligent Array to a FITS file.
+    The routine will automatically generate essential keywords such as:
+    "NAXIS", "NAXISn", "CTYPEn", "CRVALn", "CRPIXn", "CDELTn", "BITPIX",
+    "BUNIT", "BSCALE" and "BZERO". Also, existing keywords in the data
+    structure which do not conflict with the generated keywords are copied.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel to write to. The channel is not flushed.
+<br><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>... :</i> 
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with FA_FITS_WRITE_END.
+    See <a href=foreign.html#FOREIGN_ATT_FITS_WRITE>FOREIGN_ATT_FITS_WRITE</a> for a list of defined attributes.
+<br></ul><b>Returns:</b>     TRUE on succes, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=foreign_fits_write_data></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>foreign_fits_write_data</b><i>    (Channel channel, multi_array *multi_desc,
+			      CONST packet_desc *header_pack_desc,
+			      CONST char *header_packet,
+			      char *data, uaddr num_values, ...)
+</i><br><p>    This routine will write the data section of a FITS file to a
+    channel. The header section is NOT written.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel to write to.
+<br><li><i>multi_desc :</i> 
+    The Karma data structure containing the data.
+<br><li><i>header_pack_desc :</i> 
+    The header packet descriptor.
+<br><li><i>header_packet :</i> 
+    The header packet data.
+<br><li><i>data :</i> 
+    An alternate data array to read the data from. If this is
+    NULL, the routine will read the data from the Karma data structure.
+<br><li><i>num_values :</i> 
+    The number of values to write to the FITS file. This is
+    only used when data is not NULL.
+<br><li><i>... :</i> 
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_FITS_WRITE_DATA_END. See <a href=foreign.html#FOREIGN_ATT_FITS_WRITE_DATA>FOREIGN_ATT_FITS_WRITE_DATA</a> for a list of
+    defined attributes.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=foreign_gipsy_test></a> flag
  <b>foreign_gipsy_test</b><i>    (CONST char *filename)
 </i><br><p>    Test if a file is part of a GIPSY file set.
@@ -160,6 +254,60 @@
     FA_GIPSY_READ_END. See <a href=foreign.html#FOREIGN_ATT_GIPSY_READ>FOREIGN_ATT_GIPSY_READ</a> for a list of defined
     attributes.
 <br></ul><b>Returns:</b>     A multi_array descriptor on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=foreign_gipsy_write></a> flag
+ <b>foreign_gipsy_write</b><i>    (CONST char *basename, multi_array *multi_desc, ...)
+</i><br><p>    This routine will write a Karma data structure to a GIPSY
+    file. The routine will automatically generate essential keywords such as:
+    "NAXIS", "NAXISn", "CTYPEn", "CRVALn", "CRPIXn", "CDELTn",
+    "BUNIT", "BSCALE" and "BZERO". Also, existing keywords in the data
+    structure which do not conflict with the generated keywords are copied.
+<p><b>Parameters:</b><ul><li><i>basename :</i> 
+    The base filename of the GIPSY file. The ".descr" and ".image"
+    extensions are added automatically.
+<br><li><i>multi_desc :</i> 
+    The multi_array descriptor pointer. The routine will find a
+    n-dimensional array within the data structure.
+<br><li><i>... :</i> 
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_GIPSY_WRITE_END.
+    See <a href=foreign.html#FOREIGN_ATT_GIPSY_WRITE>FOREIGN_ATT_GIPSY_WRITE</a> for a list of defined attributes.
+<br></ul><b>Returns:</b>     TRUE on succes, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=foreign_gipsy_write_iarray></a> flag
+ <b>foreign_gipsy_write_iarray</b><i>    (CONST char *basename, iarray array, ...)
+</i><br><p>    This routine will write an Intelligent Array to a GIPSY
+    file. The routine will automatically generate essential keywords such as:
+    "NAXIS", "NAXISn", "CTYPEn", "CRVALn", "CRPIXn", "CDELTn", "BITPIX",
+    "BUNIT", "BSCALE" and "BZERO". Also, existing keywords in the data
+    structure which do not conflict with the generated keywords are copied.
+<p><b>Parameters:</b><ul><li><i>basename :</i> 
+    The base filename of the GIPSY file. The ".descr" and ".image"
+    extensions are added automatically.
+<br><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>... :</i> 
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_GIPSY_WRITE_END.
+    See <a href=foreign.html#FOREIGN_ATT_GIPSY_WRITE>FOREIGN_ATT_GIPSY_WRITE</a> for a list of defined attributes.
+<br></ul><b>Returns:</b>     TRUE on succes, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=foreign_gipsy_write_header></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>foreign_gipsy_write_header</b><i>    (Channel channel,
+				 CONST packet_desc *header_pack_desc,
+				 CONST char *header_packet, ...)
+</i><br><p>    Write a GIPSY header.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object to write the header to.
+<br><li><i>header_desc :</i> 
+    The FITS-style header packet descriptor.
+<br><li><i>header_packet :</i> 
+    The FITS-style header packet data.
+<br><li><i>... :</i> 
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_GIPSY_WRITE_HEADER_END.
+    See <a href=foreign.html#FOREIGN_ATT_GIPSY_WRITE_HEADER>FOREIGN_ATT_GIPSY_WRITE_HEADER</a> for a list of defined attributes.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=foreign_guess_and_read></a> multi_array *
  <b>foreign_guess_and_read</b><i>    (CONST char *filename,
 				     unsigned int mmap_option, flag writeable,
@@ -181,6 +329,54 @@
     See <a href=foreign.html#FOREIGN_ATT_GUESS>FOREIGN_ATT_GUESS</a> for a list of defined attributes.
 <br></ul><b>Returns:</b>     A pointer to the multi_array data structure on success, else
     NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=foreign_read_and_setup></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>foreign_read_and_setup</b><i>    (CONST char *filename, unsigned int mmap_option,
+			     flag writeable, unsigned int *ftype, flag inform,
+			     unsigned int num_dim,
+			     unsigned int preferred_type, flag force_type,
+			     iarray *array, double *min, double *max,
+			     flag discard_zero_range,
+			     KwcsAstro *ap)
+</i><br><p>    This routine will attempt to guess the filetype of a file and
+    in the file, converting to an Intelligent Array if possible. The routine
+    then performs some simple checks and some other convenience functions.
+<p><b>Parameters:</b><ul><li><i>filename :</i> 
+    The name of the file to read.
+<br><li><i>mmap_option :</i> 
+    This has the same meaning as for the <dsxfr_get_multi>
+    routine.
+<br><li><i>writeable :</i> 
+    This has the same meaning as for the <dsxfr_get_multi> routine.
+<br><li><i>ftype :</i> 
+    The type of the file that was read in is written here.
+<br><li><i>inform :</i> 
+    If TRUE, the routine displays some informative messages.
+<br><li><i>num_dim :</i> 
+    The number of dimensions required. If this is 0, any number of
+    dimensions is allowed.
+<br><li><i>preferred_type :</i> 
+    The preferred data type. If this is NONE, then no type is
+    preferred.
+<br><li><i>force_type :</i> 
+    If TRUE, the routine fails if the preferred data type was not
+    available.
+<br><li><i>array :</i> 
+    The Intelligent Array is written here. An existing array pointed to
+    by this is deallocated.
+<br><li><i>min :</i> 
+    The minimum data value in the array is written here. If this is NULL
+    nothing is written here.
+<br><li><i>max :</i> 
+    The maximum data value in the array is written here. If this is NULL
+    nothing is written here.
+<br><li><i>discard_zero_range :</i> 
+    If TRUE, and the range of the data is zero, the
+    routine fails.
+<br><li><i>ap :</i> 
+    The KwcsAstro object for the array is written here. The KwcsAstro
+    object may be NULL (indicating no astronomical projection is available). An
+    existing object is deallocated. If this is NULL, nothing is written here.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=foreign_miriad_test></a> flag
  <b>foreign_miriad_test</b><i>    (CONST char *dirname)
 </i><br><p>    Test if a directory is a Miriad Image file.
@@ -220,6 +416,86 @@
     FA_MIRIAD_READ_END. See <a href=foreign.html#FOREIGN_ATT_MIRIAD_READ>FOREIGN_ATT_MIRIAD_READ</a> for a list of defined
     attributes.
 <br></ul><b>Returns:</b>     A multi_array descriptor on success, else NULL.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=foreign_miriad_create_data_context></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>KMiriadDataContext
+ <b>foreign_miriad_create_data_context</b><i>    (CONST char *dirname)
+</i><br><p>    This routine will create a context suitable for reading Miriad
+    Image data. The <a href=foreign.html#foreign_miriad_read_data>foreign_miriad_read_data</a> routine may be used to read
+    data sequentially from the context.
+<p><b>Parameters:</b><ul><li><i>dirname :</i> 
+    The directory name of the Miriad dataset name.
+<br></ul><b>Returns:</b>     A KMiriadDataContext object on success, else NULL (indicating the
+    image file could not be read).
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=foreign_miriad_read_data></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>foreign_miriad_read_data</b><i>    (KMiriadDataContext context,
+			       multi_array *multi_desc,
+			       char *data, uaddr num_values, ...)
+</i><br><p>    This routine will read the data of a Miriad Image file from a
+    KMiradDataContext object. The header section is NOT read.
+<p><b>Parameters:</b><ul><li><i>context :</i> 
+    The context to read from.
+<br><li><i>multi_desc :</i> 
+    The Karma data structure to write the data into.
+<br><li><i>data :</i> 
+    An alternate data array to write the data into. If this is NULL,
+    the routine will write the data into the Karma data structure.
+<br><li><i>num_values :</i> 
+    The number of values to write into the data array. This is
+    only used when data is not NULL.
+<br><li><i>... :</i> 
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_MIRIAD_READ_DATA_END. See <a href=foreign.html#FOREIGN_ATT_MIRIAD_READ_DATA>FOREIGN_ATT_MIRIAD_READ_DATA</a> for a list
+    of defined attributes.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=foreign_miriad_close_data_context></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>void
+ <b>foreign_miriad_close_data_context</b><i>    (KMiriadDataContext context)
+</i><br><p>    Close a KMiriadDataContext object.
+<p><b>Parameters:</b><ul><li><i>context :</i> 
+    The context.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=foreign_miriad_read_history></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>foreign_miriad_read_history</b><i>    (CONST char *dirname, multi_array *multi_desc)
+</i><br><p>    Read the history component of a Miriad Image file.
+<p><b>Parameters:</b><ul><li><i>dirname :</i> 
+    The directory name of the Miriad dataset name.
+<br><li><i>multi_desc :</i> 
+    The multi_array header the history will be written to.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=foreign_miriad_write></a> flag
+ <b>foreign_miriad_write</b><i>    (CONST char *dirname, multi_array *multi_desc, ...)
+</i><br><p>    This routine will write a Karma data structure to a Miriad Image
+    file. The routine will automatically generate essential keywords such as:
+    "NAXIS", "NAXISn", "CTYPEn", "CRVALn", "CRPIXn", "CDELTn",
+    "BUNIT", "BSCALE" and "BZERO". Also, existing keywords in the data
+    structure which do not conflict with the generated keywords are copied.
+<p><b>Parameters:</b><ul><li><i>dirname :</i> 
+    The directory name of the Miriad Image file.
+<br><li><i>multi_desc :</i> 
+    The multi_array descriptor pointer. The routine will find a
+    n-dimensional array within the data structure.
+<br><li><i>... :</i> 
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_MIRIAD_WRITE_END.
+    See <a href=foreign.html#FOREIGN_ATT_MIRIAD_WRITE>FOREIGN_ATT_MIRIAD_WRITE</a> for a list of defined attributes.
+<br></ul><b>Returns:</b>     TRUE on succes, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=foreign_miriad_write_iarray></a> flag
+ <b>foreign_miriad_write_iarray</b><i>    (CONST char *dirname, iarray array, ...)
+</i><br><p>    This routine will write an Intelligent Array to a Miriad Image
+    file. The routine will automatically generate essential keywords such as:
+    "NAXIS", "NAXISn", "CTYPEn", "CRVALn", "CRPIXn", "CDELTn", "BITPIX",
+    "BUNIT", "BSCALE" and "BZERO". Also, existing keywords in the data
+    structure which do not conflict with the generated keywords are copied.
+<p><b>Parameters:</b><ul><li><i>dirname :</i> 
+    The directory name of the Miriad Image file.
+<br><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>... :</i> 
+    The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. This list must be terminated with
+    FA_MIRIAD_WRITE_END.
+    See <a href=foreign.html#FOREIGN_ATT_MIRIAD_WRITE>FOREIGN_ATT_MIRIAD_WRITE</a> for a list of defined attributes.
+<br></ul><b>Returns:</b>     TRUE on succes, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=foreign_guess_format_from_filename></a> unsigned int
  <b>foreign_guess_format_from_filename</b><i>    (CONST char *filename)
 </i><br><p>    Attempt to guess the format of a file by examining its filename.
@@ -254,7 +530,93 @@
     attribute-value pairs. This list must be terminated with FA_PPM_WRITE_END.
     See <a href=foreign.html#FOREIGN_ATT_PPM_WRITE>FOREIGN_ATT_PPM_WRITE</a> for a list of defined attributes.
 <br></ul><b>Returns:</b>     TRUE on succes, else FALSE.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=foreign_sunras_read></a> multi_array *
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=foreign_ppm_write_pseudo></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>foreign_ppm_write_pseudo</b><i>    (Channel channel, flag binary,
+			       CONST char *image, unsigned int type,
+			       uaddr *hoffsets, uaddr *voffsets,
+			       unsigned int width, unsigned int height,
+			       CONST unsigned short *cmap_reds,
+			       CONST unsigned short *cmap_greens,
+			       CONST unsigned short *cmap_blues,
+			       unsigned int cmap_size,unsigned int cmap_stride,
+			       double i_min, double i_max)
+</i><br><p>    Write a PseudoColor image to a channel in PPM format.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel to write to. The channel is not flushed.
+<br><li><i>binary :</i> 
+    If TRUE, the pixels will be written in binary mode.
+<br><li><i>image :</i> 
+    The image data.
+<br><li><i>type :</i> 
+    The type of the image data.
+<br><li><i>hoffsets :</i> 
+    The array of horizontal byte offsets.
+<br><li><i>voffsets :</i> 
+    The array of vertical byte offsets.
+<br><li><i>width :</i> 
+    The width of the image.
+<br><li><i>height :</i> 
+    The height of the image.
+<br><li><i>cmap_reds :</i> 
+    The red colourmap values.
+<br><li><i>cmap_greens :</i> 
+    The green colourmap values.
+<br><li><i>cmap_blues :</i> 
+    The blue colourmap values.
+<br><li><i>cmap_size :</i> 
+    The number of colourmap entries.
+<br><li><i>cmap_stride :</i> 
+    The stride (in unsigned shorts) between colourmap values.
+<br><li><i>i_min :</i> 
+    The minimum image value. Image values below this will be clipped.
+<br><li><i>i_max :</i> 
+    The maximum image value. Image values above this will be clipped.
+<br></ul><b>Returns:</b>     TRUE on succes, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe.
+<br><p><hr> <a name=foreign_ppm_write_rgb></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>foreign_ppm_write_rgb</b><i>    (Channel channel, flag binary,
+			    CONST unsigned char *image_red,
+			    CONST unsigned char *image_green,
+			    CONST unsigned char *image_blue,
+			    uaddr *hoffsets, uaddr *voffsets,
+			    unsigned int width, unsigned int height,
+			    CONST unsigned short *cmap_red,
+			    CONST unsigned short *cmap_green,
+			    CONST unsigned short *cmap_blue,
+			    unsigned int cmap_stride)
+</i><br><p>    Write a TrueColor image to a channel in Sun rasterfile format
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel to write to. The channel is not flushed.
+<br><li><i>binary :</i> 
+    If TRUE, the pixels will be written in binary mode.
+<br><li><i>red_image :</i> 
+    The red image data.
+<br><li><i>green_image :</i> 
+    The green image data.
+<br><li><i>blue_image :</i> 
+    The blue image data.
+<br><li><i>hoffsets :</i> 
+    The array of horizontal byte offsets.
+<br><li><i>voffsets :</i> 
+    The array of vertical byte offsets.
+<br><li><i>width :</i> 
+    The width of the image.
+<br><li><i>height :</i> 
+    The height of the image.
+<br><li><i>cmap_red :</i> 
+    The red component colourmap entries. 256 entries required. If
+    this is NULL a linear mapping is assumed.
+<br><li><i>cmap_green :</i> 
+    The green component colourmap entries. 256 entries required.
+    If this is NULL a linear mapping is assumed.
+<br><li><i>cmap_blue :</i> 
+    The blue component colourmap entries. 256 entries required. If
+    this is NULL a linear mapping is assumed.
+<br><li><i>cmap_stride :</i> 
+    The stride (in unsigned shorts) between colourmap values.
+<br></ul><b>Returns:</b>     TRUE on succes, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe.
+<br><p><hr> <a name=foreign_sunras_read></a> multi_array *
  <b>foreign_sunras_read</b><i>    (Channel channel, ...)
 </i><br><p>    Read an image in Sun rasterfile format from a channel.
 <p><b>Parameters:</b><ul><li><i>channel :</i> 
@@ -278,6 +640,89 @@
     attribute-value pairs. This list must be terminated with
     FA_SUNRAS_WRITE_END. See <a href=foreign.html#FOREIGN_ATT_SUNRAS_WRITE>FOREIGN_ATT_SUNRAS_WRITE</a> for a list of defined
     attributes.
+<br></ul><b>Returns:</b>     TRUE on succes, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe.
+<br><p><hr> <a name=foreign_sunras_write_pseudo></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>foreign_sunras_write_pseudo</b><i>    (Channel channel,
+				  CONST char *image, unsigned int type,
+				  uaddr *hoffsets, uaddr *voffsets,
+				  unsigned int width, unsigned int height,
+				  CONST unsigned short *cmap_reds,
+				  CONST unsigned short *cmap_greens,
+				  CONST unsigned short *cmap_blues,
+				  unsigned int cmap_size,
+				  unsigned int cmap_stride,
+				  double i_min, double i_max)
+</i><br><p>    Write a PseudoColor image to a channel in Sun rasterfile format
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel to write to. The channel is not flushed.
+<br><li><i>image :</i> 
+    The image data.
+<br><li><i>type :</i> 
+    The type of the image data.
+<br><li><i>hoffsets :</i> 
+    The array of horizontal byte offsets.
+<br><li><i>voffsets :</i> 
+    The array of vertical byte offsets.
+<br><li><i>width :</i> 
+    The width of the image.
+<br><li><i>height :</i> 
+    The height of the image.
+<br><li><i>cmap_reds :</i> 
+    The red colourmap values.
+<br><li><i>cmap_greens :</i> 
+    The green colourmap values.
+<br><li><i>cmap_blues :</i> 
+    The blue colourmap values.
+<br><li><i>cmap_size :</i> 
+    The number of colourmap entries.
+<br><li><i>cmap_stride :</i> 
+    The stride (in unsigned shorts) between colourmap values.
+<br><li><i>i_min :</i> 
+    The minimum image value. Image values below this will be clipped.
+<br><li><i>i_max :</i> 
+    The maximum image value. Image values above this will be clipped.
+<br></ul><b>Returns:</b>     TRUE on succes, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe.
+<br><p><hr> <a name=foreign_sunras_write_rgb></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>foreign_sunras_write_rgb</b><i>    (Channel channel,
+			       CONST unsigned char *image_red,
+			       CONST unsigned char *image_green,
+			       CONST unsigned char *image_blue,
+			       uaddr *hoffsets, uaddr *voffsets,
+			       unsigned int width, unsigned int height,
+			       CONST unsigned short *cmap_red,
+			       CONST unsigned short *cmap_green,
+			       CONST unsigned short *cmap_blue,
+			       unsigned int cmap_stride)
+</i><br><p>    Write a TrueColor image to a channel in Sun rasterfile format
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel to write to. The channel is not flushed.
+<br><li><i>red_image :</i> 
+    The red image data.
+<br><li><i>green_image :</i> 
+    The green image data.
+<br><li><i>blue_image :</i> 
+    The blue image data.
+<br><li><i>hoffsets :</i> 
+    The array of horizontal byte offsets.
+<br><li><i>voffsets :</i> 
+    The array of vertical byte offsets.
+<br><li><i>width :</i> 
+    The width of the image.
+<br><li><i>height :</i> 
+    The height of the image.
+<br><li><i>cmap_red :</i> 
+    The red component colourmap entries. 256 entries required. If
+    this is NULL a linear mapping is assumed.
+<br><li><i>cmap_green :</i> 
+    The green component colourmap entries. 256 entries required.
+    If this is NULL a linear mapping is assumed.
+<br><li><i>cmap_blue :</i> 
+    The blue component colourmap entries. 256 entries required. If
+    this is NULL a linear mapping is assumed.
+<br><li><i>cmap_stride :</i> 
+    The stride (in unsigned shorts) between colourmap values.
 <br></ul><b>Returns:</b>     TRUE on succes, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe.
 <br><p><hr><center><h2>Tables</h2></center><hr> <a name=FOREIGN_ATT_FITS_READ_HEADER><b>FOREIGN_ATT_FITS_READ_HEADER</b></a><p> <table><tr><td>Name                       </td><td>Type  </td><td>Meaning
@@ -327,4 +772,6 @@
 </td></tr><tr><td>
 </td></tr><tr><td>FA_SUNRAS_WRITE_END       </td><td>          </td><td>End of varargs list
 </td></tr><tr><td>FA_SUNRAS_WRITE_NO_IMAGE  </td><td>flag *    </td><td>No image found in data structure
-</table><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>
+</table><p>
+<hr><a href="../index.html">Back to Karma Home Page</a>
+<hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.ariel.com.au/">Ariel Internet Services</a></address></center></body></html>

@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   13-SEP-1992
 
-    Last updated by Richard Gooch   3-JUN-1996
+    Last updated by Richard Gooch   15-AUG-1996
 
 */
 

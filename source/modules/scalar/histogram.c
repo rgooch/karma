@@ -48,8 +48,10 @@
     Updated by      Richard Gooch   29-NOV-1993: Fixed bug in
   compute_histogram  .
 
-    Last updated by Richard Gooch   30-MAY-1996: Cleaned code to keep
+    Updated by      Richard Gooch   30-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   28-SEP-1996: Copy and append new history.
 
 
 */
@@ -63,10 +65,11 @@
 #include <karma_ds.h>
 #include <karma_st.h>
 #include <karma_ex.h>
+#include <karma_im.h>
 #include <karma_a.h>
 #include <karma_m.h>
 
-#define VERSION "1.1"
+#define VERSION "1.2"
 
 #define NUMARRAYS 100
 #define BLOCK_LENGTH 256
@@ -75,7 +78,8 @@ EXTERN_FUNCTION (flag histogram, (char *command, FILE *fp) );
 
 flag pre_process ();
 flag process_array ();
-flag post_process ();
+STATIC_FUNCTION (flag post_process,
+		 (CONST multi_array *inp_desc, multi_array *out_desc) );
 packet_desc *generate_desc ();
 flag find_scale ();
 flag find_array_minmax ();
@@ -104,6 +108,7 @@ int main (int argc, char **argv)
     KControlPanel panel;
     static char function_name[] = "main";
 
+    im_register_lib_version (KARMA_VERSION);
     if ( ( panel = panel_create (FALSE) ) == NULL )
     {
 	m_abort (function_name, "control panel");
@@ -197,7 +202,6 @@ char **out_data;
 {
     extern unsigned int *hist_array;
     extern char *element_name;
-    extern char *sys_errlist[];
     static char function_name[] = "process_array";
 
     if ( (inp_desc == NULL) || (out_desc == NULL) )
@@ -347,31 +351,23 @@ char *inp_data;
     return (return_value);
 }   /*  End Function generate_desc  */
 
-flag post_process (/* inp_array, out_array */)
-/*  This routine will perform post processing on the composite array pointed
-    to by  out_array  .
-    The routine will copy over history information from the input composite
-    array pointed to by  inp_array  .
-    The routine returns TRUE if the array is to be saved, else it
-    returns FALSE.
-*/
-/*
-struct composite_array *inp_array;
-struct composite_array *out_array;
+static flag post_process (CONST multi_array *inp_desc, multi_array *out_desc)
+/*  [SUMMARY] Perform post-processing on a multi_array data structure.
+    <inp_desc> The input multi_array descriptor.
+    <out_desc> The output multi_array_descriptor.
+    [RETURNS] TRUE if the array is to be saved/transmitted, else FALSE.
 */
 {
-#ifdef dummy
     char txt[STRING_LENGTH];
     extern char *element_name;
-    extern struct variable_description vble[];
-    static char function_name[] = "post_process";
+    extern char module_name[STRING_LENGTH + 1];
+    /*static char function_name[] = "post_process";*/
 
-    ez_description (out_array, vble);
-    (void) sprintf (txt, "Name of converted element: \"%s\"", element_name);
-    composite_descr (txt, out_array);
-    ds_copy_composite_descr (inp_array, out_array);
-#endif
-    return (TRUE);
+    if ( !ds_history_copy (out_desc, inp_desc) ) return (FALSE);
+    if ( !panel_put_history_with_stack (out_desc, TRUE) ) return (FALSE);
+    sprintf (txt, "%s: Name of selected element: \"%s\"",
+	     module_name, element_name);
+    return ds_history_append_string (out_desc, txt, TRUE);
 }   /*  End Function post_process   */
 
 flag find_scale (encls_desc, type, data, index)

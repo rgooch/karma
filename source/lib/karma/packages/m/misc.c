@@ -61,8 +61,11 @@
     Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
   format.
 
-    Last updated by Richard Gooch   15-JUN-1996: Created
+    Updated by      Richard Gooch   15-JUN-1996: Created
   <m_copy_and_swap_blocks>.
+
+    Last updated by Richard Gooch   13-OCT-1996: Trapped NULL pointer in
+  <m_dup>.
 
 
 */
@@ -470,7 +473,13 @@ char *m_dup (CONST char *original, uaddr size)
 */
 {
     char *duplicate;
+    static char function_name[] = "m_dup";
 
+    if (original == NULL)
+    {
+	fprintf (stderr, "NULL pointer passed\n");
+	prog_bug (function_name);
+    }
     if ( ( duplicate = m_alloc (size) ) == NULL ) return (NULL);
     m_copy (duplicate, original, size);
     return (duplicate);

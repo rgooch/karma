@@ -11,43 +11,43 @@ $LIBRARY          karmaXt
 $LINKWITH         -lkarmaXt
 $END
 
-$FUNCTION         chx_register_app_context
-$RETURN_TYPE      void
+$FUNCTION           chx_register_app_context
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (XtAppContext context)
-$SUMMARY          Register Xt application context for event management.
+$SUMMARY            Register Xt application context for event management.
 $PURPOSE
     This routine will register the application context to use for
     channel management with the Xt toolkit. This must be called before ANY
     reference is made to any other <<chx>> routines (i.e. before passing to
     <-conn_register_managers->).
-$PARAMETER        context :
+$PARAMETER          context :
     The application context.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         chx_manage
-$RETURN_TYPE      flag
+$FUNCTION           chx_manage
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     ( Channel channel, void *info, flag (*input_func) (),
 		  void (*close_func) (), flag (*output_func) (),
 		  flag (*exception_func) () )
-$SUMMARY          Manage a channel for activity by registering callback routines.
+$SUMMARY            Manage a channel for activity by registering callback routines.
 $PURPOSE
     This routine will manage a channel for activity by registering
     callback routines. The Xt Intrinsics event management scheme is used for
     the underlying management. See <-chm_manage-> for the interface definition.
 $END
 
-$FUNCTION         chx_unmanage
-$RETURN_TYPE      void
+$FUNCTION           chx_unmanage
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Channel channel)
-$SUMMARY          Terminate the management of a channel for activity.
+$SUMMARY            Terminate the management of a channel for activity.
 $PURPOSE
     Terminate the management of a channel for activity.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object to unmanage.
 $NOTE
     This routine will NOT close the channel (nor does it assume the

@@ -1,0 +1,7 @@
+/*PROTOTYPE_FUNCTION*/  /*
+void IARRAY_PROTO_destroy_func (iarray array, void *info)
+    [SUMMARY] Register destruction of an Intelligent Array.
+    <array> The Intelligent Array.
+    <info> A pointer to the arbitrary information.
+    [RETURNS] Nothing.
+*/

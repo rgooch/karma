@@ -12,11 +12,11 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         wf_test_supported
-$RETURN_TYPE      flag
+$FUNCTION           wf_test_supported
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     ()
-$SUMMARY          Test if application supports work functions.
+$SUMMARY            Test if application supports work functions.
 $PURPOSE
     This routine will determine if work functions have been supported
     by the application.
@@ -24,11 +24,11 @@ $RETURNS
     TRUE if work functions are supported, else FALSE.
 $END
 
-$FUNCTION         wf_register_support
-$RETURN_TYPE      void
+$FUNCTION           wf_register_support
+$RETURN_TYPE        void
 $PARAMETER_LIST
     ()
-$SUMMARY          Register support for work functions.
+$SUMMARY            Register support for work functions.
 $PURPOSE
     This routine will inform the package that the application will
     support work functions. This routine may only be called once.
@@ -36,28 +36,28 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         wf_register_notify_func
-$RETURN_TYPE      KCallbackFunc
+$FUNCTION           wf_register_notify_func
+$RETURN_TYPE        KCallbackFunc
 $PARAMETER_LIST
     (void (*func) (void *info), void *info)
-$SUMMARY          Register new work function callback.
+$SUMMARY            Register new work function callback.
 $PURPOSE
     This routine will register a routine which is called whenever a
     new work function is registered.
-$PARAMETER        func :
+$PARAMETER          func :
     The function that is called when a new work function is registered.
     The prototype function is <-WF_PROTO_new_func->.
-$PARAMETER        info :
+$PARAMETER          info :
     The initial arbitrary information pointer.
 $RETURNS
     A KCallbackFunc object. On failure, the process aborts.
 $END
 
-$FUNCTION         wf_work_to_be_done
-$RETURN_TYPE      flag
+$FUNCTION           wf_work_to_be_done
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     ()
-$SUMMARY          Test for pending work functions waiting to be called.
+$SUMMARY            Test for pending work functions waiting to be called.
 $PURPOSE
     This routine will determine if there are any pending work
     functions waiting to be called.
@@ -65,11 +65,11 @@ $RETURNS
     TRUE if any work functions are pending, else FALSE.
 $END
 
-$FUNCTION         wf_do_work
-$RETURN_TYPE      flag
+$FUNCTION           wf_do_work
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     ()
-$SUMMARY          Do some work.
+$SUMMARY            Do some work.
 $PURPOSE
     This routine will call any pending work functions. The work
     function at the top of the list is called once only.
@@ -77,66 +77,66 @@ $RETURNS
     TRUE if more work is left to be done, else FALSE.
 $END
 
-$FUNCTION         wf_register_func
-$RETURN_TYPE      KWorkFunc
+$FUNCTION           wf_register_func
+$RETURN_TYPE        KWorkFunc
 $PARAMETER_LIST
     (flag (*func) (void **info), void *info,
 			    unsigned int priority)
-$SUMMARY          Register a work function.
+$SUMMARY            Register a work function.
 $PURPOSE
     This routine will register a work function. The work function at
     the top of the list is the one that is always called. Only when the work
     function at the top of the list is unregistered will the next work function
     be called.
-$PARAMETER        func :
+$PARAMETER          func :
     The routine to be called. The prototype function is
     <-WF_PROTO_work_func->.
-$PARAMETER        info :
+$PARAMETER          info :
     The initial arbitrary work function information pointer.
-$PARAMETER        priority :
+$PARAMETER          priority :
     The priority level of the work function. See <-WF_PRIORITIES->
     for a list of legal values.
 $RETURNS
     A KWorkFunc object. On failure, the process aborts.
 $END
 
-$FUNCTION         wf_unregister_func
-$RETURN_TYPE      void
+$FUNCTION           wf_unregister_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorkFunc wf)
-$SUMMARY          Unregister a work function.
+$SUMMARY            Unregister a work function.
 $PURPOSE
     This routine will unregister a work function. The second function
     in the list will moved to the top of the list. A work function cannot
     unregister itself in this manner.
-$PARAMETER        wf :
+$PARAMETER          wf :
     The KWorkFunc object.
 $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       WF_PROTO_new_func
-$RETURN_TYPE      void
+$PROTO_FUNC         WF_PROTO_new_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (void *info)
-$SUMMARY          New work function callback.
+$SUMMARY            New work function callback.
 $PURPOSE
     This routine is called whenever a new work function is
     registered.
-$PARAMETER        info :
+$PARAMETER          info :
     An arbitrary information pointer.
 $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       WF_PROTO_work_func
-$RETURN_TYPE      flag
+$PROTO_FUNC         WF_PROTO_work_func
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (void **info)
-$SUMMARY          Work function.
+$SUMMARY            Work function.
 $PURPOSE
     This routine is called to perform some work.
-$PARAMETER        info :
+$PARAMETER          info :
     A pointer to the arbitrary work function information pointer.
 $RETURNS
     TRUE if the work function should be called again, else FALSE

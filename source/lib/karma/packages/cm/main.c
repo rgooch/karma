@@ -169,7 +169,6 @@ flag cm_manage ( int pid, void (*stop_func) (), void (*term_func) (),
     struct child_pid_type *new_entry;
     struct child_pid_type *last_entry = NULL; /*Initialised to keep gcc happy*/
     extern struct child_pid_type *child_pid_list;
-    extern char *sys_errlist[];
     static char function_name[] = "cm_manage";
 
     init_sig_child_handler ();
@@ -227,7 +226,6 @@ void cm_unmanage (int pid)
 #ifdef CAN_FORK
     struct child_pid_type *entry;
     extern struct child_pid_type *child_pid_list;
-    extern char *sys_errlist[];
     static char function_name[] = "cm_unmanage";
 
     init_sig_child_handler ();

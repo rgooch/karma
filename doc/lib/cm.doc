@@ -10,26 +10,26 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         cm_manage
-$RETURN_TYPE      flag
+$FUNCTION           cm_manage
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     ( int pid, void (*stop_func) (), void (*term_func) (),
 		void (*exit_func) () )
-$SUMMARY          Register a function to manage a child process.
+$SUMMARY            Register a function to manage a child process.
 $PURPOSE
     This routine will manage a child process for state changes by
     registering callback routines.
-$PARAMETER        pid :
+$PARAMETER          pid :
     The child process ID to manage.
-$PARAMETER        stop_func :
+$PARAMETER          stop_func :
     This routine is called when the child is stopped (by a SIGTTIN,
     SIGTTOU, SIGTSTP, or SIGSTOP signal). If this is NULL, no callback routine
     is installed. The prototype function is <-CM_PROTO_stop_func->
-$PARAMETER        term_func :
+$PARAMETER          term_func :
     This routine is called when the child terminates due to a
     signal. If this is NULL, no callback routine is installed. The prototype
     function is <-CM_PROTO_term_func->.
-$PARAMETER        exit_func :
+$PARAMETER          exit_func :
     This routine is called when the child exits due to a call to
     <<_exit>>. If this is NULL, no callback routine is installed. The prototype
     function is <-CM_PROTO_exit_func->.
@@ -41,24 +41,24 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         cm_unmanage
-$RETURN_TYPE      void
+$FUNCTION           cm_unmanage
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (int pid)
-$SUMMARY          Terminate the management of a child process for state changes.
+$SUMMARY            Terminate the management of a child process for state changes.
 $PURPOSE
     Terminate the management of a child process for state changes.
-$PARAMETER        pid :
+$PARAMETER          pid :
     The ID of the child process to unmanage.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cm_poll
-$RETURN_TYPE      void
+$FUNCTION           cm_poll
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (flag block)
-$SUMMARY          Poll for child process state changes.
+$SUMMARY            Poll for child process state changes.
 $PURPOSE
     This routine will poll for any change in status of child
     processes. If the operating system does not support forking, the routine
@@ -66,7 +66,7 @@ $PURPOSE
     <-cm_manage-> will have any callback routines called. If a child has not
     been registered using <-cm_manage-> then the routine will print a warning
     message stating that the child was not managed.
-$PARAMETER        block :
+$PARAMETER          block :
     If TRUE, the routine will poll forever until a child changes status
     or a signal is caught.
 $NOTE
@@ -76,11 +76,11 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cm_poll_silent
-$RETURN_TYPE      void
+$FUNCTION           cm_poll_silent
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (flag block)
-$SUMMARY          Poll for child process state changes.
+$SUMMARY            Poll for child process state changes.
 $PURPOSE
     This routine will poll for any change in status of child
     processes. If the operating system does not support forking, the routine
@@ -88,7 +88,7 @@ $PURPOSE
     <-cm_manage-> will have any callback routines called. If a child has not
     been registered using <-cm_manage-> then the routine will print a warning
     message stating that the child was not managed.
-$PARAMETER        block :
+$PARAMETER          block :
     If TRUE, the routine will poll forever until a child changes status
     or a signal is caught.
 $NOTE
@@ -98,51 +98,51 @@ $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       CM_PROTO_stop_func
-$RETURN_TYPE      void
+$PROTO_FUNC         CM_PROTO_stop_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (int pid, int sig)
-$SUMMARY          This routine is called when a child process is stopped.
+$SUMMARY            This routine is called when a child process is stopped.
 $PURPOSE
     This routine is called when a child process is stopped.
-$PARAMETER        pid :
+$PARAMETER          pid :
     The process ID.
-$PARAMETER        sig :
+$PARAMETER          sig :
     The signal which stopped the process.
 $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       CM_PROTO_term_func
-$RETURN_TYPE      void
+$PROTO_FUNC         CM_PROTO_term_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (int pid, int sig, struct rusage *rusage)
-$SUMMARY          This routine is called when a child process is killed.
+$SUMMARY            This routine is called when a child process is killed.
 $PURPOSE
     This routine is called when a child process is killed.
-$PARAMETER        pid :
+$PARAMETER          pid :
     The process ID.
-$PARAMETER        sig :
+$PARAMETER          sig :
     The signal which killed the process.
-$PARAMETER        rusage :
+$PARAMETER          rusage :
     The resource usage information. If this is NULL, the platform does
     not support this.
 $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       CM_PROTO_exit_func
-$RETURN_TYPE      void
+$PROTO_FUNC         CM_PROTO_exit_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (int pid, int value, struct rusage *rusage)
-$SUMMARY          This routine is called when a child process exits.
+$SUMMARY            This routine is called when a child process exits.
 $PURPOSE
     This routine is called when a child process exits.
-$PARAMETER        pid :
+$PARAMETER          pid :
     The process ID.
-$PARAMETER        value :
+$PARAMETER          value :
     The value passed to <<_exit>>.
-$PARAMETER        rusage :
+$PARAMETER          rusage :
     The resource usage information. If this is NULL, the platform does
     not support this.
 $RETURNS

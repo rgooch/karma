@@ -11,32 +11,32 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         p_write_buf_float
-$RETURN_TYPE      flag
+$FUNCTION           p_write_buf_float
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *buffer, float data)
-$SUMMARY          Write a floating point number to a buffer.
+$SUMMARY            Write a floating point number to a buffer.
 $PURPOSE
     Write a floating point number to a buffer.
-$PARAMETER        buffer :
+$PARAMETER          buffer :
     A pointer to the buffer. This buffer must be at least 4 bytes long
-$PARAMETER        data :
+$PARAMETER          data :
     The data. This must be in host natural byte order. The data will be
     converted to IEEE network format prior to writing.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         p_read_buf_float
-$RETURN_TYPE      flag
+$FUNCTION           p_read_buf_float
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (char *buffer, float *data)
-$SUMMARY          Read a floating point number from a buffer.
+    (CONST char *buffer, float *data)
+$SUMMARY            Read a floating point number from a buffer.
 $PURPOSE
     Read a floating point number from a buffer.
-$PARAMETER        buffer :
+$PARAMETER          buffer :
     A pointer to the buffer. This buffer must be at least 4 bytes long
-$PARAMETER        data :
+$PARAMETER          data :
     The output data will be written here. This will be in host natural
     byte order. The data will be converted from network byte order after
     reading.
@@ -46,32 +46,58 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         p_write_buf_double
-$RETURN_TYPE      flag
+$EXPERIMENTAL_FUNC  p_read_buf_floats
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (CONST char *buffer, uaddr num_values, float *data,
+			uaddr *num_nan)
+$SUMMARY            Read floating point data from a buffer, trapping NaNs.
+$PURPOSE
+    This routine will read many floating point numbers from a buffer
+    and will optionally trap IEEE Not-A-Number (NaN) values. Trapped NaNs are
+    converted to the TOOBIG value.
+$PARAMETER          buffer :
+    A pointer to the buffer. This buffer must be at least
+    4 * <<num_values>> bytes long
+$PARAMETER          num_values :
+    The number of values to read.
+$PARAMETER          data :
+    The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+$PARAMETER          num_nan :
+    The number of NaN values found will be written here. If this is
+    NULL then NaN values are not trapped.
+$RETURNS
+    The number of values read and converted.
+$END
+
+$FUNCTION           p_write_buf_double
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *buffer, double data)
-$SUMMARY          Write a double precision floating point number to a buffer.
+$SUMMARY            Write a double precision floating point number to a buffer.
 $PURPOSE
     Write a double precision floating point number to a buffer.
-$PARAMETER        buffer :
+$PARAMETER          buffer :
     A pointer to the buffer. This buffer must be at least 8 bytes long
-$PARAMETER        data :
+$PARAMETER          data :
     The data. This must be in host natural byte order. The data will be
     converted to IEEE network format prior to writing.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         p_read_buf_double
-$RETURN_TYPE      flag
+$FUNCTION           p_read_buf_double
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (char *buffer, double *data)
-$SUMMARY          Read a double precision floating point number from a buffer.
+    (CONST char *buffer, double *data)
+$SUMMARY            Read a double precision floating point number from a buffer.
 $PURPOSE
     Read a double precision floating point number from a buffer.
-$PARAMETER        buffer :
+$PARAMETER          buffer :
     A pointer to the buffer. This buffer must be at least 8 bytes long
-$PARAMETER        data :
+$PARAMETER          data :
     The output data will be written here. This will be in host natural
     byte order. The data will be converted from network byte order after
     reading.
@@ -81,32 +107,58 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         p_write_buf16s
-$RETURN_TYPE      flag
+$EXPERIMENTAL_FUNC  p_read_buf_doubles
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (CONST char *buffer, uaddr num_values, double *data,
+			 uaddr *num_nan)
+$SUMMARY            Read double floating point data from a buffer, trapping NaNs.
+$PURPOSE
+    This routine will read many double precision floating point
+    numbers from a buffer and will optionally trap IEEE Not-A-Number (NaN)
+    values. Trapped NaNs are converted to the TOOBIG value.
+$PARAMETER          buffer :
+    A pointer to the buffer. This buffer must be at least
+    8 * <<num_values>> bytes long
+$PARAMETER          num_values :
+    The number of values to read.
+$PARAMETER          data :
+    The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+$PARAMETER          num_nan :
+    The number of NaN values found will be written here. If this is
+    NULL then NaN values are not trapped.
+$RETURNS
+    The number of values read and converted.
+$END
+
+$FUNCTION           p_write_buf16s
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *buffer, long data)
-$SUMMARY          Write 16 bits of signed data to a buffer,
+$SUMMARY            Write 16 bits of signed data to a buffer,
 $PURPOSE
     Write 16 bits of signed data to a buffer,
-$PARAMETER        buffer :
+$PARAMETER          buffer :
     A pointer to the buffer. This buffer must be at least 2 bytes long
-$PARAMETER        data :
+$PARAMETER          data :
     The data. This must be in host natural byte order. The data will be
     converted to network byte order prior to writing.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         p_read_buf16s
-$RETURN_TYPE      flag
+$FUNCTION           p_read_buf16s
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *buffer, long *data)
-$SUMMARY          Read 16 bits of signed data from a buffer.
+$SUMMARY            Read 16 bits of signed data from a buffer.
 $PURPOSE
     Read 16 bits of signed data from a buffer.
-$PARAMETER        buffer :
+$PARAMETER          buffer :
     A pointer to the buffer. This buffer must be at least 2 bytes long
-$PARAMETER        data :
+$PARAMETER          data :
     The output data will be written here. This will be in host natural
     byte order. The data will be converted from network byte order after
     reading.
@@ -114,32 +166,32 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         p_write_buf32s
-$RETURN_TYPE      flag
+$FUNCTION           p_write_buf32s
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *buffer, long data)
-$SUMMARY          Write 32 bits of signed data to a buffer,
+$SUMMARY            Write 32 bits of signed data to a buffer,
 $PURPOSE
     Write 32 bits of signed data to a buffer,
-$PARAMETER        buffer :
+$PARAMETER          buffer :
     A pointer to the buffer. This buffer must be at least 2 bytes long
-$PARAMETER        data :
+$PARAMETER          data :
     The data. This must be in host natural byte order. The data will be
     converted to network byte order prior to writing.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         p_read_buf32s
-$RETURN_TYPE      flag
+$FUNCTION           p_read_buf32s
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *buffer, long *data)
-$SUMMARY          Read 32 bits of signed data from a buffer.
+$SUMMARY            Read 32 bits of signed data from a buffer.
 $PURPOSE
     Read 32 bits of signed data from a buffer.
-$PARAMETER        buffer :
+$PARAMETER          buffer :
     A pointer to the buffer. This buffer must be at least 2 bytes long
-$PARAMETER        data :
+$PARAMETER          data :
     The output data will be written here. This will be in host natural
     byte order. The data will be converted from network byte order after
     reading.
@@ -147,32 +199,32 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         p_write_buf16
-$RETURN_TYPE      flag
+$FUNCTION           p_write_buf16
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *buffer, unsigned long data)
-$SUMMARY          Write 16 bits of unsigned data to a buffer,
+$SUMMARY            Write 16 bits of unsigned data to a buffer,
 $PURPOSE
     Write 16 bits of unsigned data to a buffer,
-$PARAMETER        buffer :
+$PARAMETER          buffer :
     A pointer to the buffer. This buffer must be at least 2 bytes long
-$PARAMETER        data :
+$PARAMETER          data :
     The data. This must be in host natural byte order. The data will be
     converted to network byte order prior to writing.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         p_read_buf16
-$RETURN_TYPE      flag
+$FUNCTION           p_read_buf16
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *buffer, unsigned long *data)
-$SUMMARY          Read 16 bits of unsigned data from a buffer.
+$SUMMARY            Read 16 bits of unsigned data from a buffer.
 $PURPOSE
     Read 16 bits of unsigned data from a buffer.
-$PARAMETER        buffer :
+$PARAMETER          buffer :
     A pointer to the buffer. This buffer must be at least 2 bytes long
-$PARAMETER        data :
+$PARAMETER          data :
     The output data will be written here. This will be in host natural
     byte order. The data will be converted from network byte order after
     reading.
@@ -180,32 +232,32 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         p_write_buf32
-$RETURN_TYPE      flag
+$FUNCTION           p_write_buf32
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *buffer, unsigned long data)
-$SUMMARY          Write 32 bits of unsigned data to a buffer,
+$SUMMARY            Write 32 bits of unsigned data to a buffer,
 $PURPOSE
     Write 32 bits of unsigned data to a buffer,
-$PARAMETER        buffer :
+$PARAMETER          buffer :
     A pointer to the buffer. This buffer must be at least 4 bytes long
-$PARAMETER        data :
+$PARAMETER          data :
     The data. This must be in host natural byte order. The data will be
     converted to network byte order prior to writing.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         p_read_buf32
-$RETURN_TYPE      flag
+$FUNCTION           p_read_buf32
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *buffer, unsigned long *data)
-$SUMMARY          Read 32 bits of unsigned data from a buffer.
+$SUMMARY            Read 32 bits of unsigned data from a buffer.
 $PURPOSE
     Read 32 bits of unsigned data from a buffer.
-$PARAMETER        buffer :
+$PARAMETER          buffer :
     A pointer to the buffer. This buffer must be at least 4 bytes long
-$PARAMETER        data :
+$PARAMETER          data :
     The output data will be written here. This will be in host natural
     byte order. The data will be converted from network byte order after
     reading.
@@ -213,32 +265,32 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         p_write_buf64
-$RETURN_TYPE      flag
+$FUNCTION           p_write_buf64
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *buffer, unsigned long data)
-$SUMMARY          Write 64 bits of data to a buffer.
+$SUMMARY            Write 64 bits of data to a buffer.
 $PURPOSE
     Write 64 bits of data to a buffer.
-$PARAMETER        buffer :
+$PARAMETER          buffer :
     A pointer to the buffer. This buffer must be at least 8 bytes long
-$PARAMETER        data :
+$PARAMETER          data :
     The data. This must be in host natural byte order. The data will be
     converted to network byte order prior to writing.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         p_read_buf64
-$RETURN_TYPE      flag
+$FUNCTION           p_read_buf64
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *buffer, unsigned long *data)
-$SUMMARY          Read 64 bits of signed data from a buffer.
+$SUMMARY            Read 64 bits of signed data from a buffer.
 $PURPOSE
     Read 64 bits of signed data from a buffer.
-$PARAMETER        buffer :
+$PARAMETER          buffer :
     A pointer to the buffer. This buffer must be at least 8 bytes long
-$PARAMETER        data :
+$PARAMETER          data :
     The output data will be written here. This will be in host natural
     byte order. The data will be converted from network byte order after
     reading.

@@ -37,8 +37,11 @@
 
     Updated by      Richard Gooch   4-MAY-1996: Switched to KtoggleWidget.
 
-    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+    Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   15-SEP-1996: Made use of new <kwin_xutil_*>
+  routines.
 
 
 */
@@ -97,9 +100,6 @@ STATIC_FUNCTION (Widget create_button,
 		 (char *name, WidgetClass type, char *label, Widget parent,
 		  Widget left, flag small) );
 STATIC_FUNCTION (void setup_comms, (Display *display) );
-STATIC_FUNCTION (Visual *get_visual, () );
-STATIC_FUNCTION (XVisualInfo *get_visinfo_for_visual,
-		 (Display *dpy, Visual *visual) );
 
 
 /*  Private data  */
@@ -113,6 +113,7 @@ String fallback_resources[] =
     "Kcolourmap*ExclusiveMenu.background:                 turquoise",
     "Kcolourmap*Value*background:                         #d0a0a0",
     "Kcolourmap*quitButton*background:                    orange",
+    "Kcolourmap*SimpleSlider.foreground:                  Sea Green",
     "Kcolourmap*background:                               aquamarine",
     "Kcolourmap*font:                                     9x15bold",
     NULL
@@ -137,8 +138,6 @@ int main (int argc, char **argv)
     Visual *pseudocolour_visual;
     Visual *root_visual;
     Screen *screen;
-    ERRNO_TYPE errno;
-    extern char *sys_errlist[];
     static char function_name[] = "main";
 
 #ifdef SIGFPE_ABORT
@@ -168,8 +167,9 @@ int main (int argc, char **argv)
     setup_comms (dpy);
     /*  Get visual information  */
     root_visual = XDefaultVisualOfScreen (screen);
-    vinfo = get_visinfo_for_visual (dpy, root_visual);
-    if ( ( pseudocolour_visual = get_visual (screen) ) == NULL )
+    vinfo = kwin_xutil_get_visinfo_for_visual (dpy, root_visual);
+    kwin_xutil_get_visuals (screen, &pseudocolour_visual, NULL, NULL);
+    if (pseudocolour_visual == NULL)
     {
 	(void) fprintf (stderr, "No 8 bit PseudoColour visual available\n");
 	exit (RV_UNDEF_ERROR);
@@ -392,63 +392,3 @@ static void setup_comms (Display *display)
 	(void) fprintf (stderr, "Port allocated: %d\n", server_port_number);
     }
 }   /*  End Function setup_comms  */
-
-static Visual *get_visual (screen)
-/*  This routine will attempt to get a PseudoColour visual.
-    The X Window screen must be given by  screen  .
-    The routine returns a visual.
-*/
-Screen *screen;
-{
-    int num_vinfos;
-    Visual *visual;
-    XVisualInfo vinfo_template, *vinfos;
-
-    vinfo_template.screen = XScreenNumberOfScreen (screen);
-    vinfo_template.colormap_size = 256;
-    vinfo_template.depth = 8;
-    vinfo_template.class = PseudoColor;
-    if ( ( vinfos =
-	  XGetVisualInfo (XDisplayOfScreen (screen),
-			  VisualScreenMask | VisualDepthMask |
-			  VisualClassMask | VisualColormapSizeMask,
-			  &vinfo_template, &num_vinfos) ) == NULL )
-    {
-	return (NULL);
-    }
-    visual = vinfos[0].visual;
-    XFree ( (char *) vinfos );
-    return (visual);
-}   /*  End Function get_visual  */
-
-static XVisualInfo *get_visinfo_for_visual (dpy, visual)
-/*  This routine will get the visual information structure for a visual.
-    The X display must be given by  dpy  .
-    The visual must be given by  visual  .
-    The routine returns a pointer to an XVisualInfo structure on succes, else
-    it returns NULL. The XVisualInfo structure must be freed by XFree()
-*/
-Display *dpy;
-Visual *visual;
-{
-    int num_vinfos;
-    XVisualInfo vinfo_template;
-    XVisualInfo *vinfos;
-    static char function_name[] = "get_visinfo_for_visual";
-
-    vinfo_template.visualid = XVisualIDFromVisual (visual);
-    vinfos = XGetVisualInfo (dpy, VisualIDMask, &vinfo_template, &num_vinfos);
-    if (num_vinfos < 1)
-    {
-	(void) fprintf (stderr, "Error getting visual info for visual: %p\n",
-			visual);
-	a_prog_bug (function_name);
-    }
-    if (num_vinfos > 1)
-    {
-	(void) fprintf (stderr,
-			"WARNING: number of visuals for visual: %p is: %d\n",
-			visual, num_vinfos);
-    }
-    return (vinfos);
-}   /*  End Function get_visinfo_for_visual  */

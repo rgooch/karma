@@ -6,34 +6,34 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         psw_va_create
-$RETURN_TYPE      PostScriptPage
+$FUNCTION           psw_va_create
+$RETURN_TYPE        PostScriptPage
 $PARAMETER_LIST
     (Channel channel, double hoffset, double voffset,
 			      double hsize, double vsize, flag portrait,
 			      flag eps, ...)
-$SUMMARY          Create a PostScriptPage object.
+$SUMMARY            Create a PostScriptPage object.
 $PURPOSE
     This routine will create a PostScriptPage object ready for
     writing PostScript commands to. The routine automatically writes the
     PostScript header.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel to write to.
-$PARAMETER        hoffset :
+$PARAMETER          hoffset :
     The horizontal offset (in centimeters) of the co-ordinate origin.
-$PARAMETER        voffset :
+$PARAMETER          voffset :
     The vertical offset (in centimeters) of the co-ordinate origin.
-$PARAMETER        hsize :
+$PARAMETER          hsize :
     The desired horizontal size of the co-ordinate system (in
     centimeters).
-$PARAMETER        vsize :
+$PARAMETER          vsize :
     The desired vertical size of the co-ordinate system (in
     centimeters).
-$PARAMETER        portrait :
+$PARAMETER          portrait :
     If TRUE, objects will be drawn in portrait mode (i.e. the x-axis
     will be horizontal), else they will be drawn in landscape mode (i.e. the
     x-axis will be vertical).
-$PARAMETER        eps :
+$PARAMETER          eps :
     If TRUE the file format will be Encapsulated PostScript, else
     regular PostScript is written.
 $NOTE
@@ -47,48 +47,48 @@ $RETURNS
     A PostScriptPage object on success, else NULL
 $END
 
-$FUNCTION         psw_mono_image
-$RETURN_TYPE      flag
+$FUNCTION           psw_mono_image
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (PostScriptPage pspage, CONST unsigned char *image,
 		     unsigned int xlen, unsigned int ylen,
 		     CONST uaddr *xoffsets, CONST uaddr *yoffsets,
 		     CONST unsigned char imap[256],
 		     double xstart, double ystart, double xend, double yend)
-$SUMMARY          Write a monochrome image to a PostScriptPage object.
+$SUMMARY            Write a monochrome image to a PostScriptPage object.
 $PURPOSE
     Write a monochrome image to a PostScriptPage object.
-$PARAMETER        pspage :
+$PARAMETER          pspage :
     The PostScriptPage object.
-$PARAMETER        image :
+$PARAMETER          image :
     The image.
-$PARAMETER        xlen :
+$PARAMETER          xlen :
     The horizontal size of the image (in pixels).
-$PARAMETER        ylen :
+$PARAMETER          ylen :
     The vertical size of the image (in pixels).
-$PARAMETER        xoffsets :
+$PARAMETER          xoffsets :
     The horizontal offset array. If this is NULL, the image data is
     assumed to be contiguous in memory.
-$PARAMETER        yoffsets :
+$PARAMETER          yoffsets :
     The vertical offset array. If this is NULL, the image data is
     assumed to be contiguous in memory.
-$PARAMETER        imap :
+$PARAMETER          imap :
     The intensity mapping to use. If this is NULL, a linear mapping is
     used (0 = black, 255 = white).
-$PARAMETER        xstart :
+$PARAMETER          xstart :
     The x starting point (scaled from 0.0 to 1.0).
-$PARAMETER        ystart :
+$PARAMETER          ystart :
     The y starting point (scaled from 0.0 to 1.0).
-$PARAMETER        xend :
+$PARAMETER          xend :
     The x ending point (scaled from 0.0 to 1.0).
-$PARAMETER        yend :
+$PARAMETER          yend :
     The y ending point (scaled from 0.0 to 1.0).
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         psw_pseudocolour_image
-$RETURN_TYPE      flag
+$FUNCTION           psw_pseudocolour_image
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (PostScriptPage pspage, CONST unsigned char *image,
 			     unsigned int xlen, unsigned int ylen,
@@ -98,43 +98,43 @@ $PARAMETER_LIST
 			     CONST unsigned char imap_blue[256],
 			     double xstart, double ystart,
 			     double xend, double yend)
-$SUMMARY          Write a pseudocolour image to a PostScriptPage object.
+$SUMMARY            Write a pseudocolour image to a PostScriptPage object.
 $PURPOSE
     Write a pseudocolour image to a PostScriptPage object.
-$PARAMETER        pspage :
+$PARAMETER          pspage :
     The PostScriptPage object.
-$PARAMETER        image :
+$PARAMETER          image :
     The image.
-$PARAMETER        xlen :
+$PARAMETER          xlen :
     The horizontal size of the image (in pixels).
-$PARAMETER        ylen :
+$PARAMETER          ylen :
     The vertical size of the image (in pixels).
-$PARAMETER        xoffsets :
+$PARAMETER          xoffsets :
     The horizontal offset array. If this is NULL, the image data is
     assumed to be contiguous in memory.
-$PARAMETER        yoffsets :
+$PARAMETER          yoffsets :
     The vertical offset array. If this is NULL, the image data is
     assumed to be contiguous in memory.
-$PARAMETER        imap_red :
+$PARAMETER          imap_red :
     The red component colourmap entries.
-$PARAMETER        imap_green :
+$PARAMETER          imap_green :
     The green component colourmap entries.
-$PARAMETER        imap_blue :
+$PARAMETER          imap_blue :
     The blue component colourmap entries.
-$PARAMETER        xstart :
+$PARAMETER          xstart :
     The x starting point (scaled from 0.0 to 1.0).
-$PARAMETER        ystart :
+$PARAMETER          ystart :
     The y starting point (scaled from 0.0 to 1.0).
-$PARAMETER        xend :
+$PARAMETER          xend :
     The x ending point (scaled from 0.0 to 1.0).
-$PARAMETER        yend :
+$PARAMETER          yend :
     The y ending point (scaled from 0.0 to 1.0).
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         psw_rgb_image
-$RETURN_TYPE      flag
+$FUNCTION           psw_rgb_image
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (PostScriptPage pspage, CONST unsigned char *image_reds,
 		    CONST unsigned char *image_greens,
@@ -145,56 +145,56 @@ $PARAMETER_LIST
 		    CONST uaddr *xoffsets_blue, CONST uaddr *yoffsets_blue,
 		    uaddr stride,
 		    double xstart, double ystart, double xend, double yend)
-$SUMMARY          Write a truecolour image to a PostScriptPage object.
+$SUMMARY            Write a truecolour image to a PostScriptPage object.
 $PURPOSE
     Write a truecolour image to a PostScriptPage object.
-$PARAMETER        pspage :
+$PARAMETER          pspage :
     The PostScriptPage object.
-$PARAMETER        image_red :
+$PARAMETER          image_red :
     The red component image.
-$PARAMETER        image_green :
+$PARAMETER          image_green :
     The green component image.
-$PARAMETER        image_blue :
+$PARAMETER          image_blue :
     The blue component image.
-$PARAMETER        xlen :
+$PARAMETER          xlen :
     The horizontal size of the image (in pixels).
-$PARAMETER        ylen :
+$PARAMETER          ylen :
     The vertical size of the image (in pixels).
-$PARAMETER        xoffsets_red :
+$PARAMETER          xoffsets_red :
     The horizontal offset array for the red component image. If
     this is NULL, the image data is assumed to be contiguous in memory.
-$PARAMETER        yoffsets_red :
+$PARAMETER          yoffsets_red :
     The vertical offset array for the red component image. If
     this is NULL, the image data is assumed to be contiguous in memory.
-$PARAMETER        xoffsets_green :
+$PARAMETER          xoffsets_green :
     The horizontal offset array for the green component image.
     If this is NULL, the image data is assumed to be contiguous in memory.
-$PARAMETER        yoffsets_green :
+$PARAMETER          yoffsets_green :
     The vertical offset array for the green component image.
     If this is NULL, the image data is assumed to be contiguous in memory.
-$PARAMETER        xoffsets_blue :
+$PARAMETER          xoffsets_blue :
     The horizontal offset array for the blue component image.
     If this is NULL, the image data is assumed to be contiguous in memory.
-$PARAMETER        yoffsets_blue :
+$PARAMETER          yoffsets_blue :
     The vertical offset array for the blue component image. If
     this is NULL, the image data is assumed to be contiguous in memory.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride of successive component values. This is ignored if
     both offset arrays are supplied for a component image.
-$PARAMETER        xstart :
+$PARAMETER          xstart :
     The x starting point (scaled from 0.0 to 1.0).
-$PARAMETER        ystart :
+$PARAMETER          ystart :
     The y starting point (scaled from 0.0 to 1.0).
-$PARAMETER        xend :
+$PARAMETER          xend :
     The x ending point (scaled from 0.0 to 1.0).
-$PARAMETER        yend :
+$PARAMETER          yend :
     The y ending point (scaled from 0.0 to 1.0).
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         psw_directcolour_image
-$RETURN_TYPE      flag
+$FUNCTION           psw_directcolour_image
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (PostScriptPage pspage,
 			     CONST unsigned char *image_reds,
@@ -213,234 +213,234 @@ $PARAMETER_LIST
 			     CONST unsigned char imap_blue[256],
 			     double xstart, double ystart,
 			     double xend, double yend)
-$SUMMARY          Write a directcolour image to a PostScriptPage object.
+$SUMMARY            Write a directcolour image to a PostScriptPage object.
 $PURPOSE
     Write a directcolour image to a PostScriptPage object.
-$PARAMETER        pspage :
+$PARAMETER          pspage :
     The PostScriptPage object.
-$PARAMETER        image_red :
+$PARAMETER          image_red :
     The red component image.
-$PARAMETER        image_green :
+$PARAMETER          image_green :
     The green component image.
-$PARAMETER        image_blue :
+$PARAMETER          image_blue :
     The blue component image.
-$PARAMETER        xlen :
+$PARAMETER          xlen :
     The horizontal size of the image (in pixels).
-$PARAMETER        ylen :
+$PARAMETER          ylen :
     The vertical size of the image (in pixels).
-$PARAMETER        xoffsets_red :
+$PARAMETER          xoffsets_red :
     The horizontal offset array for the red component image. If
     this is NULL, the image data is assumed to be contiguous in memory.
-$PARAMETER        yoffsets_red :
+$PARAMETER          yoffsets_red :
     The vertical offset array for the red component image. If
     this is NULL, the image data is assumed to be contiguous in memory.
-$PARAMETER        xoffsets_green :
+$PARAMETER          xoffsets_green :
     The horizontal offset array for the green component image.
     If this is NULL, the image data is assumed to be contiguous in memory.
-$PARAMETER        yoffsets_green :
+$PARAMETER          yoffsets_green :
     The vertical offset array for the green component image.
     If this is NULL, the image data is assumed to be contiguous in memory.
-$PARAMETER        xoffsets_blue :
+$PARAMETER          xoffsets_blue :
     The horizontal offset array for the blue component image.
     If this is NULL, the image data is assumed to be contiguous in memory.
-$PARAMETER        yoffsets_blue :
+$PARAMETER          yoffsets_blue :
     The vertical offset array for the blue component image. If
     this is NULL, the image data is assumed to be contiguous in memory.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride of successive component values. This is ignored if
     both offset arrays are supplied for a component image.
-$PARAMETER        imap_red :
+$PARAMETER          imap_red :
     The red component colourmap entries.
-$PARAMETER        imap_green :
+$PARAMETER          imap_green :
     The green component colourmap entries.
-$PARAMETER        imap_blue :
+$PARAMETER          imap_blue :
     The blue component colourmap entries.
-$PARAMETER        xstart :
+$PARAMETER          xstart :
     The x starting point (scaled from 0.0 to 1.0).
-$PARAMETER        ystart :
+$PARAMETER          ystart :
     The y starting point (scaled from 0.0 to 1.0).
-$PARAMETER        xend :
+$PARAMETER          xend :
     The x ending point (scaled from 0.0 to 1.0).
-$PARAMETER        yend :
+$PARAMETER          yend :
     The y ending point (scaled from 0.0 to 1.0).
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         psw_close
-$RETURN_TYPE      flag
+$FUNCTION           psw_close
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (PostScriptPage pspage, flag flush, flag close)
-$SUMMARY          Close a PostScriptPage object.
+$SUMMARY            Close a PostScriptPage object.
 $PURPOSE
     This routine will write a tail to a PostScriptPage object and
     will deallocate the object.
-$PARAMETER        pspage :
+$PARAMETER          pspage :
     The PostScriptPage object.
-$PARAMETER        flush :
+$PARAMETER          flush :
     If TRUE, the underlying channel obect is flushed.
-$PARAMETER        close :
+$PARAMETER          close :
     If TRUE, the underlying channel obect is closed.
 $RETURNS
     TRUE on succes, else FALSE. In either case, the PostScriptPage
     object is deallocated (and closed if <<close>> is TRUE).
 $END
 
-$FUNCTION         psw_finish
-$RETURN_TYPE      flag
+$FUNCTION           psw_finish
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (PostScriptPage pspage, flag eps, flag flush, flag close)
-$SUMMARY          Close a PostScriptPage object.
+$SUMMARY            Close a PostScriptPage object.
 $PURPOSE
     This routine will write a tail to a PostScriptPage object and
     will deallocate the object.
-$PARAMETER        pspage :
+$PARAMETER          pspage :
     The PostScriptPage object.
-$PARAMETER        eps :
+$PARAMETER          eps :
     If TRUE the file format should be Encapsulated PostScript, else
     regular PostScript is written.
-$PARAMETER        flush :
+$PARAMETER          flush :
     If TRUE, the underlying channel obect is flushed.
-$PARAMETER        close :
+$PARAMETER          close :
     If TRUE, the underlying channel obect is closed.
 $RETURNS
     TRUE on succes, else FALSE. In either case, the PostScriptPage
     object is deallocated (and closed if <<close>> is TRUE).
 $END
 
-$FUNCTION         psw_rgb_line
-$RETURN_TYPE      flag
+$FUNCTION           psw_rgb_line
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (PostScriptPage pspage, double red, double green,double blue,
 		   double xstart, double ystart, double xend, double yend)
-$SUMMARY          Write a colour line to a PostScriptPage object.
+$SUMMARY            Write a colour line to a PostScriptPage object.
 $PURPOSE
     Write a colour line to a PostScriptPage object.
-$PARAMETER        pspage :
+$PARAMETER          pspage :
     The PostScriptPage object.
-$PARAMETER        red :
+$PARAMETER          red :
     The red component value. The range is: 0.0 (dark) to 1.0 (light)
-$PARAMETER        green :
+$PARAMETER          green :
     The green component value. The range is: 0.0 (dark) to 1.0 (light)
-$PARAMETER        blue :
+$PARAMETER          blue :
     The blue component value. The range is: 0.0 (dark) to 1.0 (light)
-$PARAMETER        xstart :
+$PARAMETER          xstart :
     The x starting point (scaled from 0.0 to 1.0).
-$PARAMETER        ystart :
+$PARAMETER          ystart :
     The y starting point (scaled from 0.0 to 1.0).
-$PARAMETER        xend :
+$PARAMETER          xend :
     The x ending point (scaled from 0.0 to 1.0).
-$PARAMETER        yend :
+$PARAMETER          yend :
     The y ending point (scaled from 0.0 to 1.0).
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         psw_rgb_polygon
-$RETURN_TYPE      flag
+$FUNCTION           psw_rgb_polygon
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (PostScriptPage pspage,
 		      double red, double green, double blue,
 		      CONST double *x_arr, CONST double *y_arr,
 		      unsigned int num_points, flag fill)
-$SUMMARY          Write a colour polygon to a PostScriptPage object.
+$SUMMARY            Write a colour polygon to a PostScriptPage object.
 $PURPOSE
     Write a colour polygon to a PostScriptPage object.
-$PARAMETER        pspage :
+$PARAMETER          pspage :
     The PostScriptPage object.
-$PARAMETER        red :
+$PARAMETER          red :
     The red component value. The range is: 0.0 (dark) to 1.0 (light)
-$PARAMETER        green :
+$PARAMETER          green :
     The green component value. The range is: 0.0 (dark) to 1.0 (light)
-$PARAMETER        blue :
+$PARAMETER          blue :
     The blue component value. The range is: 0.0 (dark) to 1.0 (light)
-$PARAMETER        x_arr :
+$PARAMETER          x_arr :
     The array of x vertices. This is scaled from 0.0 to 1.0
-$PARAMETER        y_arr :
+$PARAMETER          y_arr :
     The array of y vertices. This is scaled from 0.0 to 1.0
-$PARAMETER        num_points :
+$PARAMETER          num_points :
     The number of vertices.
-$PARAMETER        fill :
+$PARAMETER          fill :
     If TRUE, the polygon is filled.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         psw_rgb_ellipse
-$RETURN_TYPE      flag
+$FUNCTION           psw_rgb_ellipse
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (PostScriptPage pspage,
 		      double red, double green, double blue,
 		      double cx, double cy, double rx, double ry, flag fill)
-$SUMMARY          Write a colour ellipse to a PostScriptPage object.
+$SUMMARY            Write a colour ellipse to a PostScriptPage object.
 $PURPOSE
     Write a colour ellipse to a PostScriptPage object.
-$PARAMETER        pspage :
+$PARAMETER          pspage :
     The PostScriptPage object.
-$PARAMETER        red :
+$PARAMETER          red :
     The red component value. The range is: 0.0 (dark) to 1.0 (light)
-$PARAMETER        green :
+$PARAMETER          green :
     The green component value. The range is: 0.0 (dark) to 1.0 (light)
-$PARAMETER        blue :
+$PARAMETER          blue :
     The blue component value. The range is: 0.0 (dark) to 1.0 (light)
-$PARAMETER        cx :
+$PARAMETER          cx :
     The x centre. This is scaled from 0.0 to 1.0
-$PARAMETER        cy :
+$PARAMETER          cy :
     The y centre. This is scaled from 0.0 to 1.0
-$PARAMETER        rx :
+$PARAMETER          rx :
     The x radius. This is scaled from 0.0 to 1.0
-$PARAMETER        ry :
+$PARAMETER          ry :
     The y radius. This is scaled from 0.0 to 1.0
-$PARAMETER        fill :
+$PARAMETER          fill :
     If TRUE, the ellipse is filled.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         psw_rgb_text
-$RETURN_TYPE      flag
+$FUNCTION           psw_rgb_text
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (PostScriptPage pspage, double red, double green,double blue,
 		   CONST char *string, CONST char *fontname,
 		   unsigned int fontsize,
 		   double xstart, double ystart, double angle)
-$SUMMARY          Write a colour string to a PostScriptPage object.
+$SUMMARY            Write a colour string to a PostScriptPage object.
 $PURPOSE
     Write a colour string to a PostScriptPage object.
-$PARAMETER        pspage :
+$PARAMETER          pspage :
     The PostScriptPage object.
-$PARAMETER        red :
+$PARAMETER          red :
     The red component value. The range is: 0.0 (dark) to 1.0 (light)
-$PARAMETER        green :
+$PARAMETER          green :
     The green component value. The range is: 0.0 (dark) to 1.0 (light)
-$PARAMETER        blue :
+$PARAMETER          blue :
     The blue component value. The range is: 0.0 (dark) to 1.0 (light)
-$PARAMETER        string :
+$PARAMETER          string :
     The string.
-$PARAMETER        fontname :
+$PARAMETER          fontname :
     The fontname to use. If this is NULL, the default font will be
     used.
-$PARAMETER        fontsize :
+$PARAMETER          fontsize :
     The size of the font (in millimeters).
-$PARAMETER        xstart :
+$PARAMETER          xstart :
     The x starting point (scaled from 0.0 to 1.0).
-$PARAMETER        ystart :
+$PARAMETER          ystart :
     The y starting point (scaled from 0.0 to 1.0).
-$PARAMETER        angle :
+$PARAMETER          angle :
     The angle to rotate the text through (in degrees). Positive angles
     rotate counter-clockwise from horizontal.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         psw_set_attributes
-$RETURN_TYPE      flag
+$FUNCTION           psw_set_attributes
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (PostScriptPage pspage, ...)
-$SUMMARY          Set the attributes for a PostScriptPage object.
+$SUMMARY            Set the attributes for a PostScriptPage object.
 $PURPOSE
     Set the attributes for a PostScriptPage object.
-$PARAMETER        pspage :
+$PARAMETER          pspage :
     The PostScriptPage object.
 $PARAMETER        ... :
     The optional list of parameter attribute-key attribute-value

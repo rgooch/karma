@@ -9,9 +9,9 @@ TARGETS =	$(KARMABINPATH)/kpvslice
 all:	$(TARGETS)	generic_clean
 
 
-KPVSLICE  = main_xt.c generic.c event.c pvget.c
+KPVSLICE  = main_xt.c generic.c event.c pvget.c globals.c
 
-KPVSLICEO = main_xt.o generic.o event.o pvget.o
+KPVSLICEO = main_xt.o generic.o event.o pvget.o globals.o
 
 $(KARMABINPATH)/kpvslice:	$(KPVSLICEO) $(KDEPLIB_KARMAWIDGETS) \
 			$(KDEPLIB_KARMAGRAPHICS) \

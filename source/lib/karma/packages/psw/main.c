@@ -80,14 +80,16 @@
     Updated by      Richard Gooch   1-JUN-1996: Created
   <psw_directcolour_image>.
 
-    Last updated by Richard Gooch   1-JUl-1996: Created <psw_va_create> and
+    Updated by      Richard Gooch   1-JUL-1996: Created <psw_va_create> and
   <psw_close> routines.
+
+    Last updated by Richard Gooch   14-SEP-1996: Fixed offset problem when
+  drawing images in landscape mode and image is offset.
 
 
 */
 #include <stdio.h>
 #include <math.h>
-#include <stdarg.h>
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
@@ -295,7 +297,7 @@ flag psw_mono_image (PostScriptPage pspage, CONST unsigned char *image,
     else
     {
 	hos = ystart;
-	vos = xstart;
+	vos = 1.0 - xend;
 	hss = yend - ystart;
 	vss = xend - xstart;
 	hlen = ylen;
@@ -388,7 +390,7 @@ flag psw_pseudocolour_image (PostScriptPage pspage, CONST unsigned char *image,
     else
     {
 	hos = ystart;
-	vos = xstart;
+	vos = 1.0 - xend;
 	hss = yend - ystart;
 	vss = xend - xstart;
 	hlen = ylen;
@@ -398,7 +400,7 @@ flag psw_pseudocolour_image (PostScriptPage pspage, CONST unsigned char *image,
 		     "%% PseudoColour image follows at: %e %e to %e %e\n",
 		     xstart, ystart, xend, yend) ) return (FALSE);
     if ( !ch_printf (channel, "%7.4f  %7.4f translate %7.4f  %7.4f scale\n",
-		    hos, vos, hss, vss) ) return (FALSE);
+		     hos, vos, hss, vss) ) return (FALSE);
     if ( !ch_printf (channel,
 		     "/nx %5d def /ny %5d def /nbits %3d def /rline %5d string def\n",
 		     hlen, vlen, 8, hlen) ) return (FALSE);
@@ -497,7 +499,7 @@ flag psw_rgb_image (PostScriptPage pspage, CONST unsigned char *image_reds,
     else
     {
 	hos = ystart;
-	vos = xstart;
+	vos = 1.0 - xend;
 	hss = yend - ystart;
 	vss = xend - xstart;
 	hlen = ylen;
@@ -631,7 +633,7 @@ flag psw_directcolour_image (PostScriptPage pspage,
     else
     {
 	hos = ystart;
-	vos = xstart;
+	vos = 1.0 - xend;
 	hss = yend - ystart;
 	vss = xend - xstart;
 	hlen = ylen;

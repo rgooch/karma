@@ -72,8 +72,11 @@
     Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
   format.
 
-    Last updated by Richard Gooch   5-MAY-1996: Added notification of
+    Updated by      Richard Gooch   5-MAY-1996: Added notification of
   allocation failure when M_ALLOC_DEBUG is TRUE.
+
+    Last updated by Richard Gooch   2-AUG-1996: Documented
+  M_ALLOC_MAX_CHECK_INTERVAL environment variable.
 
 
 */
@@ -184,6 +187,8 @@ char *m_alloc (uaddr size)
     the routine will print allocation debugging information.
     [NOTE] If the environment variable "M_ALLOC_FAST" is set to "TRUE" then NO
     periodic integrity check of memory is performed and no debugging
+    [NOTE] The "M_ALLOC_MAX_CHECK_INTERVAL" environment variable controls the
+    maximum interval between integrity checks.
     information will be printed.
 */
 {

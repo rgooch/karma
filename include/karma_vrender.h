@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   15-OCT-1995
 
-    Last updated by Richard Gooch   25-MAR-1996
+    Last updated by Richard Gooch   2-SEP-1996
 
 */
 
@@ -104,9 +104,8 @@ EXTERN_FUNCTION (flag vrender_to_buffer,
 		  void (*notify_func) (void *info), void *info) );
 EXTERN_FUNCTION (CONST signed char *vrender_collect_ray,
 		 (KVolumeRenderContext context, unsigned int eye_view,
-		  Kcoord_2d pos_2d,
-		  Kcoord_3d *ray_start, Kcoord_3d *direction, float *t_enter,
-		  unsigned int *ray_length) );
+		  Kcoord_2d pos_2d, Kcoord_3d *ray_start, Kcoord_3d *direction,
+		  float *t_enter, float *t_leave, unsigned int *ray_length) );
 EXTERN_FUNCTION (flag vrender_project_3d,
 		 (KVolumeRenderContext context, unsigned int eye_view,
 		  Kcoord_3d point_3d, Kcoord_2d *point_2d,
@@ -123,6 +122,14 @@ EXTERN_FUNCTION (KCallbackFunc vrender_cache_notify_func,
 		  void (*func) (KVolumeRenderContext context, void **info,
 				uaddr eyes),
 		  void *info) );
+EXTERN_FUNCTION (KCallbackFunc vrender_view_notify_func,
+		 (KVolumeRenderContext context,
+		  void (*func) (KVolumeRenderContext context, void **info),
+		  void *info) );
+EXTERN_FUNCTION (void vrender_get_eye_info,
+		 (KVolumeRenderContext context, unsigned int eye_view,
+		  Kcoord_3d *ras_centre, Kcoord_3d *direction,
+		  Kcoord_3d *horizontal) );
 
 
 #endif /*  KARMA_VRENDER_H  */

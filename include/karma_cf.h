@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   23-FEB-1993
 
-    Last updated by Richard Gooch   23-JUN-1995
+    Last updated by Richard Gooch   1-OCT-1996
 
 */
 
@@ -184,5 +184,9 @@ EXTERN_FUNCTION (void cf_mandelbrot,
 		  unsigned short *greens, unsigned short *blues,
 		  unsigned int stride,
 		  double x, double y, void *var_param) );
+EXTERN_FUNCTION (void cf_rgb2,
+		 (unsigned int num_cells, unsigned short *reds,
+		  unsigned short *greens, unsigned short *blues,
+		  unsigned int stride, double x, double y, void *var_param) );
 
 #endif /*  KARMA_CF_H  */

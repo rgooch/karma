@@ -10,95 +10,95 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         dsra_multi_desc
-$RETURN_TYPE      multi_array *
+$FUNCTION           dsra_multi_desc
+$RETURN_TYPE        multi_array *
 $PARAMETER_LIST
     (Channel channel)
-$SUMMARY          Read ASCII representation of a multi_array data structure.
+$SUMMARY            Read ASCII representation of a multi_array data structure.
 $PURPOSE
     This routine will read the ASCII representation of a multi_array
     data structure descriptor from a channel object.
 $NOTE
     The routine will NOT allocate space for data, nor will it read any
     data.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object to read from.
 $RETURNS
     A pointer to the multi array header on success, else NULL.
 $END
 
-$FUNCTION         dsra_packet_desc
-$RETURN_TYPE      packet_desc *
+$FUNCTION           dsra_packet_desc
+$RETURN_TYPE        packet_desc *
 $PARAMETER_LIST
     (Channel channel)
-$SUMMARY          Read ASCII representation of a packet descriptor.
+$SUMMARY            Read ASCII representation of a packet descriptor.
 $PURPOSE
     This routine will read the ASCII representation of a packet
     descriptor from a channel object. The routine will recursively read in
     array and linked list descriptors if required.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object to read from.
 $RETURNS
     A pointer to the packet descriptor on success, else NULL.
 $END
 
-$FUNCTION         dsra_element_desc
-$RETURN_TYPE      flag
+$FUNCTION           dsra_element_desc
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, unsigned int *type, char name[])
-$SUMMARY          Read ASCII representation of an element descriptor.
+$SUMMARY            Read ASCII representation of an element descriptor.
 $PURPOSE
     Read ASCII representation of an element descriptor.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object to read from.
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the element is written here.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the element is written here. The length of the buffer
     must be <<STRING_LENGTH>> bytes.
 $RETURNS
     TRUE if a valid element descriptor was read, else FALSE.
 $END
 
-$FUNCTION         dsra_array_desc
-$RETURN_TYPE      array_desc *
+$FUNCTION           dsra_array_desc
+$RETURN_TYPE        array_desc *
 $PARAMETER_LIST
     (Channel channel, unsigned int type)
-$SUMMARY          Read ASCII representation of an array descriptor.
+$SUMMARY            Read ASCII representation of an array descriptor.
 $PURPOSE
     Read ASCII representation of an array descriptor.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object to read from.
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the array. Legal values for this are:
     ARRAYP    K_ARRAY
 $RETURNS
     A pointer to the array descriptor on success, else NULL.
 $END
 
-$FUNCTION         dsra_dim_desc
-$RETURN_TYPE      dim_desc *
+$FUNCTION           dsra_dim_desc
+$RETURN_TYPE        dim_desc *
 $PARAMETER_LIST
     (Channel channel)
-$SUMMARY          Read ASCII representation of a dimension descriptor.
+$SUMMARY            Read ASCII representation of a dimension descriptor.
 $PURPOSE
     Read ASCII representation of a dimension descriptor.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object to read from.
 $RETURNS
     A pointer to the dimension descriptor on success, else NULL.
 $END
 
-$FUNCTION         dsra_multi_data
-$RETURN_TYPE      flag
+$FUNCTION           dsra_multi_data
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, multi_array *multi_desc)
-$SUMMARY          READ ASCII representation of data in a multi_array descriptor.
+$SUMMARY            READ ASCII representation of data in a multi_array descriptor.
 $PURPOSE
     READ ASCII representation of data in a multi_array descriptor.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object to read from.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The multi_array descriptor to store the data in. This is
     modified.
 $NOTE
@@ -108,167 +108,167 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsra_packet
-$RETURN_TYPE      flag
+$FUNCTION           dsra_packet
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, packet_desc *descriptor, char *packet)
-$SUMMARY          Read ASCII representation of a data packet.
+$SUMMARY            Read ASCII representation of a data packet.
 $PURPOSE
     This routine will read the ASCII representation of a data packet.
     The routine will recursively read in sub arrays and linked lists.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object to read from.
-$PARAMETER        descriptor :
+$PARAMETER          descriptor :
     The packet descriptor.
-$PARAMETER        packet :
+$PARAMETER          packet :
     The packet data will be written here. The packet storage must
     already have been allocated.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsra_element
-$RETURN_TYPE      flag
+$FUNCTION           dsra_element
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, unsigned int type, char *desc,
 		   char *element)
-$SUMMARY          Read ASCII representation of an element.
+$SUMMARY            Read ASCII representation of an element.
 $PURPOSE
     Read ASCII representation of an element.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object to read from.
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the element.
-$PARAMETER        desc :
+$PARAMETER          desc :
     The descriptor for the element.
-$PARAMETER        element :
+$PARAMETER          element :
     The element data will be written here.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsra_array
-$RETURN_TYPE      flag
+$FUNCTION           dsra_array
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, array_desc *descriptor, char *array)
-$SUMMARY          Read ASCII representation of an array of data packets.
+$SUMMARY            Read ASCII representation of an array of data packets.
 $PURPOSE
     Read ASCII representation of an array of data packets.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object to read from.
-$PARAMETER        descriptor :
+$PARAMETER          descriptor :
     The array descriptor.
-$PARAMETER        array :
+$PARAMETER          array :
     The array data will be written here.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsra_list
-$RETURN_TYPE      flag
+$FUNCTION           dsra_list
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, packet_desc *descriptor, list_header *header)
-$SUMMARY          Read ASCII represention of a linked list.
+$SUMMARY            Read ASCII represention of a linked list.
 $PURPOSE
     This routine will read in the ASCII representation of a linked
     list of data from a channel object. The routine will recursively read in
     sub arrays and linked lists.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object to read from.
-$PARAMETER        descriptor :
+$PARAMETER          descriptor :
     The descriptor for the list packets.
-$PARAMETER        header :
+$PARAMETER          header :
     The linked list header. This is modified. The linked list entries
     will be contiguous in memory.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         dsra_flag
-$RETURN_TYPE      flag
+$FUNCTION           dsra_flag
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, flag *logical)
-$SUMMARY          Read ASCII representation of a boolean value.
+$SUMMARY            Read ASCII representation of a boolean value.
 $PURPOSE
     Read ASCII representation of a boolean value.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object to read from.
-$PARAMETER        logical :
+$PARAMETER          logical :
     The boolean value will be written here.
 $RETURNS
     TRUE if the flag was read in without error, else FALSE.
 $END
 
-$FUNCTION         dsra_type
-$RETURN_TYPE      flag
+$FUNCTION           dsra_type
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, unsigned int *type)
-$SUMMARY          Read ASCII representation of a data type.
+$SUMMARY            Read ASCII representation of a data type.
 $PURPOSE
     Read ASCII representation of a data type.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object to read from.
-$PARAMETER        type :
+$PARAMETER          type :
     The type value will be written here.
 $RETURNS
     TRUE if the type was read without error, else FALSE.
 $END
 
-$FUNCTION         dsra_uint
-$RETURN_TYPE      flag
+$FUNCTION           dsra_uint
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, unsigned int *value)
-$SUMMARY          Read the ASCII representation of an unsigned integer.
+$SUMMARY            Read the ASCII representation of an unsigned integer.
 $PURPOSE
     Read the ASCII representation of an unsigned integer.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object to read from.
-$PARAMETER        value :
+$PARAMETER          value :
     The result is written here.
 $RETURNS
     TRUE if successful, else FALSE.
 $END
 
-$FUNCTION         dsra_int
-$RETURN_TYPE      flag
+$FUNCTION           dsra_int
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, int *value)
-$SUMMARY          Read the ASCII representation of a signed integer.
+$SUMMARY            Read the ASCII representation of a signed integer.
 $PURPOSE
     Read the ASCII representation of a signed integer.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object to read from.
-$PARAMETER        value :
+$PARAMETER          value :
     The result is written here.
 $RETURNS
     TRUE if successful, else FALSE.
 $END
 
-$FUNCTION         dsra_float
-$RETURN_TYPE      flag
+$FUNCTION           dsra_float
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, float *value)
-$SUMMARY          Read the ASCII representation of a floating point value.
+$SUMMARY            Read the ASCII representation of a floating point value.
 $PURPOSE
     Read the ASCII representation of a floating point value.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object to read from.
-$PARAMETER        value :
+$PARAMETER          value :
     The result is written here.
 $RETURNS
     TRUE if successful, else FALSE.
 $END
 
-$FUNCTION         dsra_double
-$RETURN_TYPE      flag
+$FUNCTION           dsra_double
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, double *value)
-$SUMMARY          Read ASCII representation of a double floating point value.
+$SUMMARY            Read ASCII representation of a double floating point value.
 $PURPOSE
     Read ASCII representation of a double floating point value.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object to read from.
-$PARAMETER        value :
+$PARAMETER          value :
     The result is written here.
 $RETURNS
     TRUE if successful, else FALSE.

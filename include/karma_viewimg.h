@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   18-APR-1993
 
-    Last updated by Richard Gooch   21-JUN-1996
+    Last updated by Richard Gooch   27-OCT-1996
 
 */
 
@@ -78,6 +78,7 @@ typedef struct viewableimage_type * ViewableImage;
 #define VIEWIMG_VATT_RED_INDEX       7
 #define VIEWIMG_VATT_GREEN_INDEX     8
 #define VIEWIMG_VATT_BLUE_INDEX      9
+#define VIEWIMG_VATT_MULTI_ARRAY     10
 
 
 /*  File:   main.c  */
@@ -102,6 +103,9 @@ EXTERN_FUNCTION (ViewableImage *viewimg_create_sequence,
 		  array_desc *arr_desc, char *cube,
 		  unsigned int hdim, unsigned int vdim, unsigned int fdim,
 		  unsigned int elem_index) );
+EXTERN_FUNCTION (ViewableImage *viewimg_create_sequence_from_iarray,
+		 (KWorldCanvas canvas, iarray array,
+		  unsigned int hdim, unsigned int vdim, unsigned int fdim) );
 EXTERN_FUNCTION (ViewableImage viewimg_create_rgb,
 		 (KWorldCanvas canvas, multi_array *multi_desc,
 		  array_desc *arr_desc, char *slice, unsigned int hdim,
@@ -156,6 +160,16 @@ EXTERN_FUNCTION (flag viewimg_draw_edit_object, (ViewableImage vimage,
 /*  File: drag_n_zoom.c  */
 EXTERN_FUNCTION (void viewimg_create_drag_and_zoom_interface,
 		 (KWorldCanvas canvas) );
+
+/*  File: statistics.c  */
+EXTERN_FUNCTION (flag viewimg_statistics_position_func,
+		 (ViewableImage vimage, double x, double y,
+		  void *value, unsigned int event_code,
+		  void *e_info, void **f_info, double x_lin, double y_lin,
+		  unsigned int value_type) );
+EXTERN_FUNCTION (flag viewimg_statistics_compute,
+		 (ViewableImage vimage,
+		  double lx0, double ly0, double lx1, double ly1) );
 
 
 #endif /*  KARMA_VIEWIMG_H  */

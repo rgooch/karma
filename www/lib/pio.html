@@ -26,11 +26,15 @@
 </td></tr>
 <tr><td><a href=pio.html#pio_read_float_nantrap>pio_read_float_nantrap</a></td><td>Read floating point data from a channel object, trapping NaNs.
 </td></tr>
+<tr><td><a href=pio.html#pio_read_floats>pio_read_floats</a></td><td>Read floating point data from a channel object, trapping NaNs.
+</td></tr>
 <tr><td><a href=pio.html#pio_write_double>pio_write_double</a></td><td>Write double precision floating point data to a channel object.
 </td></tr>
 <tr><td><a href=pio.html#pio_read_double>pio_read_double</a></td><td>Read double precision floating point data from a channel object.
 </td></tr>
 <tr><td><a href=pio.html#pio_read_double_nantrap>pio_read_double_nantrap</a></td><td>Read floating point data from a channel object, trapping NaNs.
+</td></tr>
+<tr><td><a href=pio.html#pio_read_doubles>pio_read_doubles</a></td><td>Read double float data from a channel object, trapping NaNs.
 </td></tr>
 <tr><td><a href=pio.html#pio_write32s>pio_write32s</a></td><td>Write 32 bits of signed data to a channel object.
 </td></tr>
@@ -135,6 +139,24 @@
     The value TRUE will be written here if the value was NaN, else
     FALSE is written here.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_read_floats></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>uaddr
+ <b>pio_read_floats</b><i>    (Channel channel, uaddr num_values, float *data,
+		       uaddr *num_nan)
+</i><br><p>    This routine will read many floating point numbers from a channel
+    object and will optionally trap IEEE Not-A-Number (NaN) values. Trapped
+    NaNs are converted to the TOOBIG value.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>num_values :</i> 
+    The number of values to read.
+<br><li><i>data :</i> 
+    The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+<br><li><i>num_nan :</i> 
+    The number of NaN values found will be written here. If this is
+    NULL then NaN values are not trapped.
+<br></ul><b>Returns:</b>     The number of values read and converted.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_write_double></a> flag
  <b>pio_write_double</b><i>    (Channel channel, double data)
 </i><br><p>    Write double precision floating point data to a channel object.
@@ -168,6 +190,24 @@
     The value TRUE will be written here if the value was NaN, else
     FALSE is written here.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_read_doubles></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>uaddr
+ <b>pio_read_doubles</b><i>    (Channel channel, uaddr num_values, double *data,
+			uaddr *num_nan)
+</i><br><p>    This routine will read many double precision floating point
+    numbers from a channel object and will optionally trap IEEE Not-A-Number
+    (NaN) values. Trapped NaNs are converted to the TOOBIG value.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>num_values :</i> 
+    The number of values to read.
+<br><li><i>data :</i> 
+    The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+<br><li><i>num_nan :</i> 
+    The number of NaN values found will be written here. If this is
+    NULL then NaN values are not trapped.
+<br></ul><b>Returns:</b>     The number of values read and converted.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=pio_write32s></a> flag
  <b>pio_write32s</b><i>    (Channel channel, long data)
 </i><br><p>    Write 32 bits of signed data to a channel object.
@@ -243,4 +283,6 @@
 <br></ul><b>Returns:</b>     A pointer to a dynamically allocated string on success,
     else NULL. If a zero length string was read, the returned buffer is one
     character long and contains the '\0' character.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>
+<br><b>Multithreading Level:</b> Unsafe<br><p>
+<hr><a href="../index.html">Back to Karma Home Page</a>
+<hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.ariel.com.au/">Ariel Internet Services</a></address></center></body></html>

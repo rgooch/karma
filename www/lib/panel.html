@@ -16,6 +16,8 @@
 </td></tr>
 <tr><td><a href=panel.html#panel_process_command_with_stack>panel_process_command_with_stack</a></td><td>Process a command.
 </td></tr>
+<tr><td><a href=panel.html#panel_put_history_with_stack>panel_put_history_with_stack</a></td><td>Put history into Karma multi_array structure.
+</td></tr>
 </table><h4>Prototype Functions</h4><table><tr><td><a href=panel.html#PANEL_PROTO_decode_func>PANEL_PROTO_decode_func</a></td><td>Command line decode callback.
 </td></tr>
 </table><h4>Tables</h4><table><tr><td><a href=panel.html#PANEL_ATTRIBUTES>PANEL_ATTRIBUTES</a></td><td>List of attributes for panel item objects
@@ -84,6 +86,15 @@
     Output messages are directed here.
 <br></ul><b>Returns:</b>     TRUE if more commands should be processed, else FALSE, indicating
     that the control panel's "exit" command was entered.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=panel_put_history_with_stack></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>panel_put_history_with_stack</b><i>    (multi_array *multi_desc, flag module_header)
+</i><br><p>    Put history into Karma multi_array structure.
+<p><b>Parameters:</b><ul><li><i>multi_desc :</i> 
+    The data structure to append history to.
+<br><li><i>module_header :</i> 
+    If TRUE the module name and version are appended before the
+    parameter information.
+<br></ul><b>Returns:</b>     TRUE on sucess, else FALSE
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=PANEL_PROTO_decode_func></a> flag
  <b>PANEL_PROTO_decode_func</b><i>    (char *command, FILE *fp)
 </i><br><p>    This function is called whenever a command string is to be
@@ -115,4 +126,6 @@
                                      PIA_NUM_CHOICE_STRINGS and
                                      PIA_CHOICE_STRINGS)
 </td></tr><tr><td>PIT_GROUP         </td><td>KControlPanel      </td><td>Group item
-</table><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>
+</table><p>
+<hr><a href="../index.html">Back to Karma Home Page</a>
+<hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.ariel.com.au/">Ariel Internet Services</a></address></center></body></html>

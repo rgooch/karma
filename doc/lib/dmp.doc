@@ -7,229 +7,229 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         dmp_multi_desc
-$RETURN_TYPE      void
+$FUNCTION           dmp_multi_desc
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (FILE *fp, multi_array *multi_desc, flag comments)
-$SUMMARY          Dump a multi_array descriptor to a file.
+$SUMMARY            Dump a multi_array descriptor to a file.
 $PURPOSE
     This routine will dump a multi_array descriptor to a file,
     writing in ASCII format.
-$PARAMETER        fp :
+$PARAMETER          fp :
     The file pointer.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The descriptor.
-$PARAMETER        comments :
+$PARAMETER          comments :
     If TRUE, the routine will append comments to the lines written,
     else it will not.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         dmp_packet_desc
-$RETURN_TYPE      void
+$FUNCTION           dmp_packet_desc
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (FILE *fp, packet_desc *pack_desc, flag comments)
-$SUMMARY          Dump a packet descriptor to a file.
+$SUMMARY            Dump a packet descriptor to a file.
 $PURPOSE
     This routine will dump a packet descriptor to a file,
     writing in ASCII format.
-$PARAMETER        fp :
+$PARAMETER          fp :
     The file pointer.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The descriptor.
-$PARAMETER        comments :
+$PARAMETER          comments :
     If TRUE, the routine will append comments to the lines written,
     else it will not.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         dmp_element_desc
-$RETURN_TYPE      void
+$FUNCTION           dmp_element_desc
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (FILE *fp, unsigned int type, char *desc, flag comments)
-$SUMMARY          Dump an element descriptor to a file.
+$SUMMARY            Dump an element descriptor to a file.
 $PURPOSE
     This routine will dump an element descriptor to a file, writing
     in ASCII.
-$PARAMETER        fp :
+$PARAMETER          fp :
     The file.
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the element.
-$PARAMETER        desc :
+$PARAMETER          desc :
     The element descriptor. If the element is an array pointer or a
     linked list pointer, that descriptor will also be dumped.
-$PARAMETER        comments :
+$PARAMETER          comments :
     If TRUE, the routine will append comments to the lines written,
     else it will not.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         dmp_array_desc
-$RETURN_TYPE      void
+$FUNCTION           dmp_array_desc
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (FILE *fp, array_desc *arr_desc, flag comments)
-$SUMMARY          Dump an array descriptor to a file.
+$SUMMARY            Dump an array descriptor to a file.
 $PURPOSE
     This routine will dump an array descriptor to a file,
     writing in ASCII format. The packet descriptor for the array will also be
     dumped (this is a recursive process).
-$PARAMETER        fp :
+$PARAMETER          fp :
     The file pointer.
-$PARAMETER        array_desc :
+$PARAMETER          array_desc :
     The descriptor.
-$PARAMETER        comments :
+$PARAMETER          comments :
     If TRUE, the routine will append comments to the lines written,
     else it will not.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         dmp_dim_desc
-$RETURN_TYPE      void
+$FUNCTION           dmp_dim_desc
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (FILE *fp, dim_desc *dimension, flag comments)
-$SUMMARY          Dump a dimension descriptor to a file.
+$SUMMARY            Dump a dimension descriptor to a file.
 $PURPOSE
     This routine will dump a dimension descriptor to a file,
     writing in ASCII format. The packet descriptor for the array will also be
     dumped (this is a recursive process).
-$PARAMETER        fp :
+$PARAMETER          fp :
     The file pointer.
-$PARAMETER        dimension :
+$PARAMETER          dimension :
     The descriptor.
-$PARAMETER        comments :
+$PARAMETER          comments :
     If TRUE, the routine will append comments to the lines written,
     else it will not.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         dmp_multi_data
-$RETURN_TYPE      void
+$FUNCTION           dmp_multi_data
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (FILE *fp, multi_array *multi_desc, flag comments)
-$SUMMARY          Dump the data in a multi_array descriptor to a file.
+$SUMMARY            Dump the data in a multi_array descriptor to a file.
 $PURPOSE
     This routine will dump the data in a multi_array descriptor to a
     file, writing in ASCII format.
-$PARAMETER        fp :
+$PARAMETER          fp :
     The file pointer.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The descriptor.
-$PARAMETER        comments :
+$PARAMETER          comments :
     If TRUE, the routine will append comments to the lines written,
     else it will not.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         dmp_packet
-$RETURN_TYPE      void
+$FUNCTION           dmp_packet
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (FILE *fp, packet_desc *pack_desc, char *packet, flag comments)
-$SUMMARY          Dump a packet to a file.
+$SUMMARY            Dump a packet to a file.
 $PURPOSE
     This routine will dump a packet to a file, writing in ASCII
     format.
-$PARAMETER        fp :
+$PARAMETER          fp :
     The file pointer.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The descriptor.
-$PARAMETER        packet :
+$PARAMETER          packet :
     The packet.
-$PARAMETER        comments :
+$PARAMETER          comments :
     If TRUE, the routine will append comments to the lines written,
     else it will not.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         dmp_element
-$RETURN_TYPE      void
+$FUNCTION           dmp_element
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (FILE *fp, unsigned int type, char *desc, char *element,
 		  flag comments)
-$SUMMARY          Dump an element to a file.
+$SUMMARY            Dump an element to a file.
 $PURPOSE
     This routine will dump an element to a file, writing in ASCII
     format.
-$PARAMETER        fp :
+$PARAMETER          fp :
     The file.
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the element.
-$PARAMETER        desc :
+$PARAMETER          desc :
     The element descriptor. If the element is an array pointer or a
     linked list pointer, that data will also be dumped.
-$PARAMETER        element :
+$PARAMETER          element :
     The element.
-$PARAMETER        comments :
+$PARAMETER          comments :
     If TRUE, the routine will append comments to the lines written,
     else it will not.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         dmp_array
-$RETURN_TYPE      void
+$FUNCTION           dmp_array
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (FILE *fp, array_desc *arr_desc, char *array, flag comments)
-$SUMMARY          Dump an array to a file.
+$SUMMARY            Dump an array to a file.
 $PURPOSE
     This routine will dump an array to a file, writing in ASCII
     format.
-$PARAMETER        fp :
+$PARAMETER          fp :
     The file pointer.
-$PARAMETER        array_desc :
+$PARAMETER          array_desc :
     The descriptor.
-$PARAMETER        array :
+$PARAMETER          array :
     The array.
-$PARAMETER        comments :
+$PARAMETER          comments :
     If TRUE, the routine will append comments to the lines written,
     else it will not.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         dmp_list
-$RETURN_TYPE      void
+$FUNCTION           dmp_list
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (FILE *fp, packet_desc *pack_desc, list_header *list_head,
 	       flag comments)
-$SUMMARY          Dump a linked list to a file.
+$SUMMARY            Dump a linked list to a file.
 $PURPOSE
     This routine will dump an array descriptor to a file,
     writing in ASCII format.
-$PARAMETER        fp :
+$PARAMETER          fp :
     The file pointer.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The list descriptor.
-$PARAMETER        list_head :
+$PARAMETER          list_head :
     A pointer to the list header.
-$PARAMETER        comments :
+$PARAMETER          comments :
     If TRUE, the routine will append comments to the lines written,
     else it will not.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         dmp_flag
-$RETURN_TYPE      void
+$FUNCTION           dmp_flag
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (FILE *fp, flag logical, char *comment_string, flag comments)
-$SUMMARY          Dump a flag value to a file.
+$SUMMARY            Dump a flag value to a file.
 $PURPOSE
     This routine will dump the ASCII representation of a flag value
     to a file.
-$PARAMETER        fp :
+$PARAMETER          fp :
     The file.
-$PARAMETER        logical :
+$PARAMETER          logical :
     The flag value.
-$PARAMETER        comment_string :
+$PARAMETER          comment_string :
     The comment string.
-$PARAMETER        comments :
+$PARAMETER          comments :
     If TRUE, the comment string is written.
 $RETURNS
     Nothing.

@@ -56,9 +56,6 @@
 #define MAX_DIMENSIONS (unsigned int) 1
 #define MAX_POLY_COEFFICIENTS (unsigned int) 10
 
-STATIC_FUNCTION (flag kfuncgen, (char *command, FILE *fp) );
-STATIC_FUNCTION (void generate_file,
-		 (char *arrayname, unsigned int elem_type) );
 
 
 /*  Private data  */
@@ -115,6 +112,9 @@ static unsigned int function_type = FUNC_POLYNOMIAL;
 
 
 /*  Private functions  */
+STATIC_FUNCTION (flag kfuncgen, (char *command, FILE *fp) );
+STATIC_FUNCTION (void generate_file,
+		 (char *arrayname, unsigned int elem_type) );
 STATIC_FUNCTION (flag compute_polynomial,
 		 (unsigned int length, double min, double max,
 		  char *array, unsigned int elem_type) );
@@ -225,9 +225,10 @@ int main (int argc, char **argv)
     return (RV_OK);
 }   /*  End Function main   */
 
-static flag kfuncgen (p, fp)
-char *p;
-FILE *fp;
+
+/*  Private functions follow  */
+
+static flag kfuncgen (char *p, FILE *fp)
 {
     char *arrayfile;
     extern unsigned int elem_type;
@@ -276,7 +277,6 @@ static void generate_file (char *arrayname, unsigned int elem_type)
     extern double maxima[MAX_DIMENSIONS];
     extern char *names[MAX_DIMENSIONS];
     extern char *elem_name;
-    extern char *sys_errlist[];
     static char function_name[] = "generate_file";
 
     if ( ( array = ds_easy_alloc_array (&multi_desc,
@@ -635,7 +635,6 @@ static flag compute_random (unsigned int length, char *array,
     extern double maximum_value;
     extern double offset;
     extern char host_type_sizes[NUMTYPES];
-    extern char *sys_errlist[];
     static char function_name[] = "compute_random";
 
     /*  If element type is complex, then double array size and change element

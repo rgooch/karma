@@ -7,8 +7,8 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         col_hsb_slice_to_rgb_array
-$RETURN_TYPE      void
+$FUNCTION           col_hsb_slice_to_rgb_array
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned long rgb_array[65536],
 				 unsigned long red_mask,
@@ -17,30 +17,30 @@ $PARAMETER_LIST
 				 float min_brightness, float max_brightness,
 				 float start_hue, float stop_hue,
 				 float saturation)
-$SUMMARY          Generate a table of RGB values from a slice of HSB space.
+$SUMMARY            Generate a table of RGB values from a slice of HSB space.
 $PURPOSE
     This routine will convert a slice in HSB (Hue, Saturation and
     Brightness) colour space to a 2-dimensional array of RGB (Red, Green and
     Blue) values. The HSB slice covers a range of hue and brightness at a fixed
     satutation.
-$PARAMETER        rgb_array :
+$PARAMETER          rgb_array :
     The 256*256 array of RGB values will be written here. The upper
     dimension will map to brightness and the lower dimension will map to hue.
-$PARAMETER        red_mask :
+$PARAMETER          red_mask :
     The bitmask used when writing the red colour component.
-$PARAMETER        green_mask :
+$PARAMETER          green_mask :
     The bitmask used when writing the green colour component.
-$PARAMETER        blue_mask :
+$PARAMETER          blue_mask :
     The bitmask used when writing the blue colour component.
-$PARAMETER        min_brightness :
+$PARAMETER          min_brightness :
     The minimum brightness. The valid range is 0.0 to 1.0
-$PARAMETER        max_brightness :
+$PARAMETER          max_brightness :
     The maximum brightness. The valid range is 0.0 to 1.0
-$PARAMETER        start_hue :
+$PARAMETER          start_hue :
     The start hue. The valid range is 0.0 to just under 6.0
-$PARAMETER        stop_hue :
+$PARAMETER          stop_hue :
     The end hue. The valid range is 0.0 to just under 6.0
-$PARAMETER        saturation :
+$PARAMETER          saturation :
     The saturation value. The valid range is 0.0 to 1.0
 $MT-LEVEL         Safe.
 $RETURNS

@@ -9,9 +9,9 @@ TARGETS =	$(KARMABINPATH)/kview
 all:	$(TARGETS)	generic_clean
 
 
-KVIEW =		main_xt.c generic.c
+KVIEW =		main_xt.c generic.c globals.c
 
-KVIEWO =	main_xt.o generic.o
+KVIEWO =	main_xt.o generic.o globals.o
 
 $(KARMABINPATH)/kview:	$(KVIEWO) $(KDEPLIB_KARMAWIDGETS) \
 			$(KDEPLIB_KARMAGRAPHICS) \

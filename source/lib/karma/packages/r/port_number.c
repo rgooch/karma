@@ -55,8 +55,11 @@
     Updated by      Richard Gooch   26-NOV-1994: Moved to
   packages/r/port_number.c
 
-    Last updated by Richard Gooch   13-APR-1996: Changed to new documentation
+    Updated by      Richard Gooch   13-APR-1996: Changed to new documentation
   format.
+
+    Last updated by Richard Gooch   25-OCT-1996: Hash in UID when computing
+  default port number.
 
 
 */
@@ -64,12 +67,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <karma.h>
 #include <karma_r.h>
 
 #define DISPLAYS_PER_MACHINE 5
 #define SERVICE_TO_PORT_FACTOR 5
 #define DISPLAY_TO_PORT_FACTOR (SERVICE_TO_PORT_FACTOR * DISPLAYS_PER_MACHINE)
+#define MODULUS_VALUE 4003
 
 /*  Private functions  */
 
@@ -87,8 +92,8 @@ char *r_get_karmabase ()
 
     if ( ( karmabase = r_getenv ("KARMABASE") ) == NULL )
     {
-	(void) fprintf (stderr, "Environment variable KARMABASE not found\n");
-	(void) fprintf (stderr, "Defaulting to: %s\n", def_karmabase);
+	fprintf (stderr, "Environment variable KARMABASE not found\n");
+	fprintf (stderr, "Defaulting to: %s\n", def_karmabase);
 	karmabase = def_karmabase;
     }
     return (karmabase);
@@ -112,13 +117,13 @@ int r_get_service_number (CONST char *module_name)
     {
 	if ( (module_name[count] <= ' ') || (module_name[count] > '~') )
 	{
-	    (void) fprintf (stderr, "Illegal character: value: %d\n",
-			    module_name[count]);
+	    fprintf (stderr, "Illegal character: value: %d\n",
+		     module_name[count]);
 	    return (-1);
 	}
 	num = num * (module_name[count] - ' ');
 	num += count;
-	num %= 4003;
+	num %= MODULUS_VALUE;
 	if (num < 1) num = 1;
     }
     return (num);
@@ -133,7 +138,6 @@ char *r_get_host_from_display (CONST char *display)
     <display> The display string. If this is NULL, the host "unix" is returned.
     [RETURNS] A pointer to a statically allocated string which will contain the
     host name on success, else NULL.
-
 */
 {
     char *char_ptr;
@@ -145,27 +149,25 @@ char *r_get_host_from_display (CONST char *display)
 	if ( ( char_ptr = strchr (display, ':') ) == NULL )
 	{
 	    /*  Error in format  */
-	    (void) fprintf (stderr,
-			    "Error in display format: \"%s\"\n",
-			    display);
+	    fprintf (stderr, "Error in display format: \"%s\"\n", display);
 	    return (NULL);
 	}
 	if (char_ptr != display)
 	{
 	    /*  Not a ":d.s" string  */
-	    (void) strncpy ( host, display,
+	    strncpy ( host, display,
 			    (unsigned int) (char_ptr - display) );
 	    host[char_ptr - display] = '\0';
 	}
 	else
 	{
-	    (void) strcpy (host, "unix");
+	    strcpy (host, "unix");
 	}
     }
     else
     {
 	/*  display  does not exist  */
-	(void) strcpy (host, "unix");
+	strcpy (host, "unix");
     }
     return (host);
 }   /*  End Function r_get_host_from_display  */
@@ -192,9 +194,7 @@ int r_get_display_num_from_display (CONST char *display)
     /*  display  passed  */
     if ( ( char_ptr = strchr (display, ':') ) == NULL )
     {
-	(void) fprintf (stderr,
-			"Error in  display  format: \"%s\"\n",
-			display);
+	fprintf (stderr, "Error in  display  format: \"%s\"\n", display);
 	return (-1);
     }
     ++char_ptr;
@@ -203,9 +203,7 @@ int r_get_display_num_from_display (CONST char *display)
 	/*  Display number of 0 or smaller: check for '0' character  */
 	if (*char_ptr != '0')
 	{
-	    (void) fprintf (stderr,
-			    "Error in  display  format: \"%s\"\n",
-			    display);
+	    fprintf (stderr, "Error in  display  format: \"%s\"\n", display);
 	    return (-1);
 	}
     }
@@ -234,9 +232,7 @@ int r_get_screen_num_from_display (CONST char *display)
     /*  display  passed  */
     if ( ( char_ptr = strchr (display, ':') ) == NULL )
     {
-	(void) fprintf (stderr,
-			"Error in  display  format: \"%s\"\n",
-			display);
+	fprintf (stderr, "Error in  display  format: \"%s\"\n", display);
 	return (-1);
     }
     if ( ( char_ptr = strchr (char_ptr, '.') ) == NULL )
@@ -249,9 +245,7 @@ int r_get_screen_num_from_display (CONST char *display)
 	/*  Screen number of 0 or smaller: check for '0' character  */
 	if (*char_ptr != '0')
 	{
-	    (void) fprintf (stderr,
-			    "Error in  display  format: \"%s\"\n",
-			    display);
+	    fprintf (stderr, "Error in  display  format: \"%s\"\n", display);
 	    return (-1);
 	}
     }
@@ -281,11 +275,13 @@ int r_get_def_port (CONST char *module_name, CONST char *display)
     /*  Get Karma service number  */
     if ( ( service_num = r_get_service_number (module_name) ) < 0 )
     {
-	(void) fprintf (stderr,
-			"Service number not found for module: \"%s\"\n",
-			module_name);
+	fprintf (stderr, "Service number not found for module: \"%s\"\n",
+		 module_name);
 	return (-1);
     }
+    /*  Hash in UID in an attempt to partition users from each other. Add 1 to
+	UID just in case root runs a module  */
+    service_num = ( service_num * (getuid () + 1) ) % MODULUS_VALUE;
     return (SERVICE_TO_PORT_FACTOR * service_num +
 	    display_num * DISPLAY_TO_PORT_FACTOR);
 }   /*  End Function r_get_def_port  */

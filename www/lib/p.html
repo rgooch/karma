@@ -12,9 +12,13 @@
 </td></tr>
 <tr><td><a href=p.html#p_read_buf_float>p_read_buf_float</a></td><td>Read a floating point number from a buffer.
 </td></tr>
+<tr><td><a href=p.html#p_read_buf_floats>p_read_buf_floats</a></td><td>Read floating point data from a buffer, trapping NaNs.
+</td></tr>
 <tr><td><a href=p.html#p_write_buf_double>p_write_buf_double</a></td><td>Write a double precision floating point number to a buffer.
 </td></tr>
 <tr><td><a href=p.html#p_read_buf_double>p_read_buf_double</a></td><td>Read a double precision floating point number from a buffer.
+</td></tr>
+<tr><td><a href=p.html#p_read_buf_doubles>p_read_buf_doubles</a></td><td>Read double floating point data from a buffer, trapping NaNs.
 </td></tr>
 <tr><td><a href=p.html#p_write_buf16s>p_write_buf16s</a></td><td>Write 16 bits of signed data to a buffer,
 </td></tr>
@@ -46,7 +50,7 @@
     converted to IEEE network format prior to writing.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=p_read_buf_float></a> flag
- <b>p_read_buf_float</b><i>    (char *buffer, float *data)
+ <b>p_read_buf_float</b><i>    (CONST char *buffer, float *data)
 </i><br><p>    Read a floating point number from a buffer.
 <p><b>Parameters:</b><ul><li><i>buffer :</i> 
     A pointer to the buffer. This buffer must be at least 4 bytes long
@@ -56,7 +60,26 @@
     reading.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The data will be converted from IEEE network format after reading.
-</ul><p><hr> <a name=p_write_buf_double></a> flag
+</ul><p><hr> <a name=p_read_buf_floats></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>p_read_buf_floats</b><i>    (CONST char *buffer, uaddr num_values, float *data,
+			uaddr *num_nan)
+</i><br><p>    This routine will read many floating point numbers from a buffer
+    and will optionally trap IEEE Not-A-Number (NaN) values. Trapped NaNs are
+    converted to the TOOBIG value.
+<p><b>Parameters:</b><ul><li><i>buffer :</i> 
+    A pointer to the buffer. This buffer must be at least
+    4 * <em>num_values</em> bytes long
+<br><li><i>num_values :</i> 
+    The number of values to read.
+<br><li><i>data :</i> 
+    The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+<br><li><i>num_nan :</i> 
+    The number of NaN values found will be written here. If this is
+    NULL then NaN values are not trapped.
+<br></ul><b>Returns:</b>     The number of values read and converted.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=p_write_buf_double></a> flag
  <b>p_write_buf_double</b><i>    (char *buffer, double data)
 </i><br><p>    Write a double precision floating point number to a buffer.
 <p><b>Parameters:</b><ul><li><i>buffer :</i> 
@@ -66,7 +89,7 @@
     converted to IEEE network format prior to writing.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=p_read_buf_double></a> flag
- <b>p_read_buf_double</b><i>    (char *buffer, double *data)
+ <b>p_read_buf_double</b><i>    (CONST char *buffer, double *data)
 </i><br><p>    Read a double precision floating point number from a buffer.
 <p><b>Parameters:</b><ul><li><i>buffer :</i> 
     A pointer to the buffer. This buffer must be at least 8 bytes long
@@ -76,7 +99,26 @@
     reading.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The data will be converted from IEEE network format after reading.
-</ul><p><hr> <a name=p_write_buf16s></a> flag
+</ul><p><hr> <a name=p_read_buf_doubles></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>p_read_buf_doubles</b><i>    (CONST char *buffer, uaddr num_values, double *data,
+			 uaddr *num_nan)
+</i><br><p>    This routine will read many double precision floating point
+    numbers from a buffer and will optionally trap IEEE Not-A-Number (NaN)
+    values. Trapped NaNs are converted to the TOOBIG value.
+<p><b>Parameters:</b><ul><li><i>buffer :</i> 
+    A pointer to the buffer. This buffer must be at least
+    8 * <em>num_values</em> bytes long
+<br><li><i>num_values :</i> 
+    The number of values to read.
+<br><li><i>data :</i> 
+    The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+<br><li><i>num_nan :</i> 
+    The number of NaN values found will be written here. If this is
+    NULL then NaN values are not trapped.
+<br></ul><b>Returns:</b>     The number of values read and converted.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=p_write_buf16s></a> flag
  <b>p_write_buf16s</b><i>    (char *buffer, long data)
 </i><br><p>    Write 16 bits of signed data to a buffer,
 <p><b>Parameters:</b><ul><li><i>buffer :</i> 
@@ -171,4 +213,6 @@
     byte order. The data will be converted from network byte order after
     reading.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>
+<br><b>Multithreading Level:</b> Unsafe<br><p>
+<hr><a href="../index.html">Back to Karma Home Page</a>
+<hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.ariel.com.au/">Ariel Internet Services</a></address></center></body></html>

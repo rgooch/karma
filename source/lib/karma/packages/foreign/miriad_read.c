@@ -61,8 +61,28 @@
   convert to "Axis n (deg)" otherwise name is multiply used. Improved
   efficiency of data reader several times.
 
-    Last updated by Richard Gooch   28-JUN-1996: No longer use FITS reader to
+    Updated by      Richard Gooch   28-JUN-1996: No longer use FITS reader to
   read data.
+
+    Updated by      Richard Gooch   6-AUG-1996: Copied "CRVALn" value to
+  reference field of dimension descriptor.
+
+    Updated by      Richard Gooch   15-AUG-1996: No longer update <<reference>>
+  field of dimension descriptor.
+
+    Updated by      Richard Gooch   29-AUG-1996: Allowed some axes to not have
+  names but still use as many supplied names as possible.
+
+    Updated by      Richard Gooch   5-SEP-1996: Made use of <pio_read_floats>.
+
+    Updated by      Richard Gooch   25-SEP-1996: Changed to implement the new
+  FITS-style co-ordinate handling, where dimension co-ordinates range from 0
+  to length - 1. Fixed scale conversion of rest frequency.
+
+    Updated by      Richard Gooch   26-SEP-1996: "RESTFREQ" keyword now scaled.
+
+    Last updated by Richard Gooch   29-OCT-1996: Tidied up macros to keep
+  Solaris 2 compiler happy.
 
 
 */
@@ -88,16 +108,19 @@
 #include <karma_st.h>
 #include <karma_m.h>
 #include <karma_a.h>
-
+#include <karma_s.h>
+#define OS_H_VARIABLES
+#include <os.h>
 
 #define MIN_ITEM_SIZE 16
+#define BLOCK_LENGTH 1048576
 #define MAGIC_NUMBER 486734598
 
-#define VERIFY_CONTEXT(context) if (context == NULL) \
-{(void) fprintf (stderr, "NULL context passed\n"); \
+#define VERIFY_CONTEXT(ctx) if (ctx == NULL) \
+{fprintf (stderr, "NULL context passed\n"); \
  a_prog_bug (function_name); } \
-if (context->magic_number != MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid context object\n"); \
+if (ctx->magic_number != MAGIC_NUMBER) \
+{fprintf (stderr, "Invalid context object\n"); \
  a_prog_bug (function_name); }
 
 /*  Structure declarations  */
@@ -124,7 +147,6 @@ struct miriad_data_context_type
 /*  Declarations of private functions follow  */
 STATIC_FUNCTION (unsigned int get_alignment_padding,
 		 (uaddr position, uaddr size) );
-STATIC_FUNCTION (flag align_read, (Channel channel, uaddr size) );
 STATIC_FUNCTION (unsigned int read_miriad_type, (Channel channel) );
 STATIC_FUNCTION (multi_array *make_desc,
 		 (HeaderItem first_item, unsigned int naxis, flag data_alloc,
@@ -134,6 +156,12 @@ STATIC_FUNCTION (HeaderItem find_item,
 STATIC_FUNCTION (void free_header, (HeaderItem first_item) );
 STATIC_FUNCTION (flag get_next_mask_value,
 		 (KMiriadDataContext context, flag *mask) );
+STATIC_FUNCTION (flag convert_units, (HeaderItem first_item) );
+STATIC_FUNCTION (flag scale_item,
+		 (HeaderItem first_item, CONST char *name, double scale) );
+STATIC_FUNCTION (flag read_data,
+		 (KMiriadDataContext context,char *data, uaddr num_values,
+		  unsigned long *blank_count) );
 
 
 /*  Public functions follow  */
@@ -153,26 +181,26 @@ flag foreign_miriad_test (CONST char *dirname)
     if (stat (dirname, &statbuf) != 0)
     {
 	if (errno == ENOENT) return (FALSE);
-	(void) fprintf (stderr, "Error statting file: \"%s\"\t%s\n",
-			dirname, sys_errlist[errno]);
+	fprintf (stderr, "Error statting file: \"%s\"\t%s\n",
+		 dirname, sys_errlist[errno]);
 	return (FALSE);
     }
     if ( !S_ISDIR (statbuf.st_mode) ) return (FALSE);
-    (void) sprintf (header_name, "%s/header", dirname);
-    (void) sprintf (image_name, "%s/image", dirname);
+    sprintf (header_name, "%s/header", dirname);
+    sprintf (image_name, "%s/image", dirname);
     if (stat (header_name, &statbuf) != 0)
     {
 	if (errno == ENOENT) return (FALSE);
-	(void) fprintf (stderr, "Error statting file: \"%s\"\t%s\n",
-			header_name, sys_errlist[errno]);
+	fprintf (stderr, "Error statting file: \"%s\"\t%s\n",
+		 header_name, sys_errlist[errno]);
 	return (FALSE);
     }
     if ( !S_ISREG (statbuf.st_mode) ) return (FALSE);
     if (stat (image_name, &statbuf) != 0)
     {
 	if (errno == ENOENT) return (FALSE);
-	(void) fprintf (stderr, "Error statting file: \"%s\"\t%s\n",
-			image_name, sys_errlist[errno]);
+	fprintf (stderr, "Error statting file: \"%s\"\t%s\n",
+		 image_name, sys_errlist[errno]);
 	return (FALSE);
     }
     if ( !S_ISREG (statbuf.st_mode) ) return (FALSE);
@@ -208,6 +236,7 @@ multi_array *foreign_miriad_read_header (Channel channel, flag data_alloc,
     multi_array *multi_desc;
     char *ch_ptr;
     char item_buf[MIN_ITEM_SIZE];
+    extern char network_type_bytes[NUMTYPES];
     extern char host_type_sizes[NUMTYPES];
 #ifdef DEBUG
     extern char *data_type_names[NUMTYPES];
@@ -218,7 +247,7 @@ multi_array *foreign_miriad_read_header (Channel channel, flag data_alloc,
     va_start (argp, sanitise);
     if (channel == NULL)
     {
-	(void) fprintf (stderr, "NULL pointer passed\n");
+	fprintf (stderr, "NULL pointer passed\n");
 	a_prog_bug (function_name);
     }
     FLAG_VERIFY (data_alloc);
@@ -229,7 +258,7 @@ multi_array *foreign_miriad_read_header (Channel channel, flag data_alloc,
 	switch (att_key)
 	{
 	  default:
-	    (void) fprintf (stderr, "Unknown attribute key: %u\n", att_key);
+	    fprintf (stderr, "Unknown attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	    break;
 	}
@@ -247,7 +276,7 @@ multi_array *foreign_miriad_read_header (Channel channel, flag data_alloc,
 	/*  First comes the item name  */
 	if (strlen (item_buf) > MIN_ITEM_SIZE + 2)
 	{
-	    (void) fprintf (stderr, "Item: \"%s\" name too big\n", item_buf);
+	    fprintf (stderr, "Item: \"%s\" name too big\n", item_buf);
 	    free_header (first_item);
 	    return (NULL);
 	}
@@ -256,7 +285,7 @@ multi_array *foreign_miriad_read_header (Channel channel, flag data_alloc,
 	    m_abort (function_name, "item name");
 	}
 	/*  Make keywords FITS like (yuk)  */
-	(void) st_upr (item->name);
+	st_upr (item->name);
 	item_size = item_buf[MIN_ITEM_SIZE - 1];
 	/*  Ignore the "MOSTABLE" keyword which contains undescribed data (for
 	    the mosaicing beams)
@@ -272,16 +301,16 @@ multi_array *foreign_miriad_read_header (Channel channel, flag data_alloc,
 	}
 	if (item_size < 4)
 	{
-	    (void) fprintf (stderr, "Item: \"%s\" size: %d too small\n",
-			    item->name, item_size);
+	    fprintf (stderr, "Item: \"%s\" size: %d too small\n",
+		     item->name, item_size);
 	    free_header (first_item);
 	    return (NULL);
 	}
 	/*  Determine the data type  */
 	if ( ( item->type = read_miriad_type (channel) ) == NONE )
 	{
-	    (void) fprintf (stderr, "Error reading type for item: \"%s\"\n",
-			    item->name);
+	    fprintf (stderr, "Error reading type for item: \"%s\"\n",
+		     item->name);
 	    free_header (first_item);
 	    return (NULL);
 	}
@@ -300,8 +329,8 @@ multi_array *foreign_miriad_read_header (Channel channel, flag data_alloc,
 	    *(char **) item->data = ch_ptr;
 	    if (ch_read (channel, ch_ptr, string_size) < string_size)
 	    {
-		(void) fprintf (stderr, "Error reading string\t%s\n",
-				sys_errlist[errno]);
+		fprintf (stderr, "Error reading string\t%s\n",
+			 sys_errlist[errno]);
 		free_header (first_item);
 		return (NULL);
 	    }
@@ -310,20 +339,25 @@ multi_array *foreign_miriad_read_header (Channel channel, flag data_alloc,
 	}
 	else
 	{
-	    type_size = host_type_sizes[item->type];
+	    type_size = network_type_bytes[item->type];
 	    if (type_size + 4 > item_size)
 	    {
-		(void) fprintf (stderr,
-				"Item: \"%s\" size: %d too small for data\n",
-				item->name, item_size);
+		fprintf (stderr, "Item: \"%s\" size: %d too small for data\n",
+			 item->name, item_size);
+		free_header (first_item);
+		return (NULL);
+	    }
+	    if (type_size == 0)
+	    {
+		fprintf (stderr, "Item type: %u has zero size\n", item->type);
 		free_header (first_item);
 		return (NULL);
 	    }
 	    drain_size = get_alignment_padding (4, type_size);
 	    if (4 + drain_size + type_size != item_size)
 	    {
-		(void) fprintf (stderr, "Item: \"%s\" has: %u extra bytes\n",
-				item->name, item_size - 4 - drain_size);
+		fprintf (stderr, "Item: \"%s\" has: %u extra bytes\n",
+			 item->name, item_size - 4 - drain_size);
 		free_header (first_item);
 		return (NULL);
 	    }
@@ -349,13 +383,13 @@ multi_array *foreign_miriad_read_header (Channel channel, flag data_alloc,
 	{
 	    if (item->type != K_INT)
 	    {
-		(void) fprintf (stderr, "NAXIS keyword not of type integer\n");
+		fprintf (stderr, "NAXIS keyword not of type integer\n");
 		free_header (first_item);
 		return (NULL);
 	    }
 	    if ( (naxis = *(int *) item->data) < 1 )
 	    {
-		(void) fprintf (stderr, "NAXIS value: %d negative!\n", naxis);
+		fprintf (stderr, "NAXIS value: %d negative!\n", naxis);
 		free_header (first_item);
 		return (NULL);
 	    }
@@ -364,22 +398,28 @@ multi_array *foreign_miriad_read_header (Channel channel, flag data_alloc,
 	item->next = first_item;
 	first_item = item;
 	/*  The last thing to do is read any padding  */
-	keep_going = align_read (channel, MIN_ITEM_SIZE);
+	keep_going = ch_drain_to_boundary (channel, MIN_ITEM_SIZE);
     }
     if (naxis < 1)
     {
-	(void) fprintf (stderr, "No NAXIS keyword found!\n");
+	fprintf (stderr, "No NAXIS keyword found!\n");
 	free_header (first_item);
 	return (NULL);
     }
 #ifdef DEBUG
     for (item = first_item; item != NULL; item = item->next)
     {
-	(void) fprintf (stderr, "Item name: \"%s\" type: %s\tvalue:\t",
-			item->name, data_type_names[item->type]);
+	fprintf (stderr, "Item name: \"%s\" type: %s\tvalue:\t",
+		 item->name, data_type_names[item->type]);
 	dmp_element (stderr, item->type, NULL, item->data, FALSE);
     }
 #endif
+    /*  Convert units from Miriad to FITS  */
+    if ( !convert_units (first_item) )
+    {
+	free_header (first_item);
+	return (NULL);
+    }
     /*  Construct Karma data structure  */
     if ( ( multi_desc = make_desc (first_item, naxis, data_alloc, sanitise) )
 	== NULL )
@@ -425,27 +465,27 @@ multi_array *foreign_miriad_read (CONST char *dirname, flag sanitise, ...)
 	    blank_count = va_arg (argp, unsigned long *);
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Unknown attribute key: %u\n", att_key);
+	    fprintf (stderr, "Unknown attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	    break;
 	}
     }
     va_end (argp);
     if (blank_count == NULL) blank_count = &blank_count_local;
-    (void) sprintf (header_name, "%s/header", dirname);
+    sprintf (header_name, "%s/header", dirname);
     if ( ( channel = ch_open_file (header_name, "r") ) == NULL )
     {
-	(void) fprintf (stderr, "Error opening: \"%s\"\t%s\n",
-			header_name, sys_errlist[errno]);
+	fprintf (stderr, "Error opening: \"%s\"\t%s\n",
+		 header_name, sys_errlist[errno]);
 	return (NULL);
     }
     multi_desc = foreign_miriad_read_header (channel, TRUE, sanitise,
 					     FA_MIRIAD_READ_HEADER_END);
-    (void) ch_close (channel);
+    ch_close (channel);
     if (multi_desc == NULL) return (NULL);
     if ( ( context = foreign_miriad_create_data_context (dirname) ) == NULL )
     {
-	(void) fprintf (stderr, "Error creating KMiriadDataContext object\n");
+	fprintf (stderr, "Error creating KMiriadDataContext object\n");
 	ds_dealloc_multi (multi_desc);
 	return (NULL);
     }
@@ -453,11 +493,12 @@ multi_array *foreign_miriad_read (CONST char *dirname, flag sanitise, ...)
 				    FA_MIRIAD_READ_DATA_NUM_BLANKS,blank_count,
 				    FA_MIRIAD_READ_DATA_END) )
     {
-	(void) fprintf (stderr, "Error reading KMiriadDataContext object\n");
+	fprintf (stderr, "Error reading KMiriadDataContext object\n");
 	ds_dealloc_multi (multi_desc);
 	return (NULL);
     }
     foreign_miriad_close_data_context (context);
+    foreign_miriad_read_history (dirname, multi_desc);
     return (multi_desc);
 }   /*  End Function foreign_miriad_read  */
 
@@ -480,8 +521,8 @@ KMiriadDataContext foreign_miriad_create_data_context (CONST char *dirname)
     extern char *sys_errlist[];
     static char function_name[] = "foreign_miriad_create_data_context";
 
-    (void) sprintf (image_name, "%s/image", dirname);
-    (void) sprintf (mask_name, "%s/mask", dirname);
+    sprintf (image_name, "%s/image", dirname);
+    sprintf (mask_name, "%s/mask", dirname);
     if ( ( context = (KMiriadDataContext) m_alloc (sizeof *context) ) == NULL )
     {
 	m_abort (function_name, "data context");
@@ -489,8 +530,8 @@ KMiriadDataContext foreign_miriad_create_data_context (CONST char *dirname)
     /*  Open the image file  */
     if ( ( context->image_channel = ch_open_file (image_name, "r") ) == NULL )
     {
-	(void) fprintf (stderr, "Error opening: \"%s\"\t%s\n",
-			image_name, sys_errlist[errno]);
+	fprintf (stderr, "Error opening: \"%s\"\t%s\n",
+		 image_name, sys_errlist[errno]);
 	m_free ( (char *) context );
 	return (NULL);
     }
@@ -500,15 +541,15 @@ KMiriadDataContext foreign_miriad_create_data_context (CONST char *dirname)
 	float data  */
     if ( !pio_read32 (context->image_channel, &type) )
     {
-	(void) fprintf (stderr, "Error reading image data type\t%s\n",
-			sys_errlist[errno]);
-	(void) ch_close (context->image_channel);
+	fprintf (stderr, "Error reading image data type\t%s\n",
+		 sys_errlist[errno]);
+	ch_close (context->image_channel);
 	return (NULL);
     }
     if (type != 4)
     {
-	(void) fprintf (stderr, "Image data type: %lu is not 4!\n", type);
-	(void) ch_close (context->image_channel);
+	fprintf (stderr, "Image data type: %lu is not 4!\n", type);
+	ch_close (context->image_channel);
 	return (NULL);
     }
     /*  After the first 4 bytes, the rest of the image file is the same as FITS
@@ -520,8 +561,8 @@ KMiriadDataContext foreign_miriad_create_data_context (CONST char *dirname)
 	if (errno != ENOENT)
 	{
 	    /*  Strange error, but return data anyway  */
-	    (void) fprintf (stderr, "Error statting file: \"%s\"\t%s\n",
-			    mask_name, sys_errlist[errno]);
+	    fprintf (stderr, "Error statting file: \"%s\"\t%s\n",
+		     mask_name, sys_errlist[errno]);
 	}
 	/*  Not present: good  */
 	context->mask_channel = NULL;
@@ -542,18 +583,18 @@ KMiriadDataContext foreign_miriad_create_data_context (CONST char *dirname)
     type = 2;
     if ( !pio_read32 (context->mask_channel, &type) )
     {
-	(void) fprintf (stderr, "Error reading mask data type\t%s\n",
-			sys_errlist[errno]);
-	(void) ch_close (context->image_channel);
-	(void) ch_close (context->mask_channel);
+	fprintf (stderr, "Error reading mask data type\t%s\n",
+		 sys_errlist[errno]);
+	ch_close (context->image_channel);
+	ch_close (context->mask_channel);
 	m_free ( (char *) context );
 	return (NULL);
     }
     if (type != 2)
     {
-	(void) fprintf (stderr, "Mask data type: %lu is not 2!\n", type);
-	(void) ch_close (context->image_channel);
-	(void) ch_close (context->mask_channel);
+	fprintf (stderr, "Mask data type: %lu is not 2!\n", type);
+	ch_close (context->image_channel);
+	ch_close (context->mask_channel);
 	m_free ( (char *) context );
 	return (NULL);
     }
@@ -563,7 +604,8 @@ KMiriadDataContext foreign_miriad_create_data_context (CONST char *dirname)
 	Bit 31 corresponds to the first data value. A bit '1' indicates the
 	corresponding data value is good, else it should be blanked.
 	Hence, every 31 masks are stored in a 32 bit word, where the bits are
-	stored on disc in MSB order  */
+	stored on disc in MSB order. So for the first 32 bit word in the file,
+	the bit 0x00000001 (MSB) corresponds to the first data value  */
     context->last_mask_bit_in_word = 31;
     context->magic_number = MAGIC_NUMBER;
     return (context);
@@ -590,15 +632,12 @@ flag foreign_miriad_read_data (KMiriadDataContext context,
 */
 {
     va_list argp;
-    flag mask;
+    uaddr block_length;
     unsigned int att_key;
     unsigned long blank_count_local;
     unsigned long *blank_count = NULL;
-    float *f_ptr;
-    uaddr value_count;
     packet_desc *pack_desc;
     array_desc *arr_desc;
-    extern char *sys_errlist[];
     static char function_name[] = "foreign_miriad_read_data";
 
     VERIFY_CONTEXT (context);
@@ -613,7 +652,7 @@ flag foreign_miriad_read_data (KMiriadDataContext context,
 	    blank_count = va_arg (argp, unsigned long *);
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Unknown attribute key: %u\n", att_key);
+	    fprintf (stderr, "Unknown attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	    break;
 	}
@@ -628,63 +667,27 @@ flag foreign_miriad_read_data (KMiriadDataContext context,
 	data = *(char **) multi_desc->data[0];
 	if (data == NULL)
 	{
-	    (void) fprintf (stderr, "No array to write data into!\n");
+	    fprintf (stderr, "No array to write data into!\n");
 	    a_prog_bug (function_name);
 	}
 	num_values = ds_get_array_size (arr_desc);
     }
-    /*  Read section of data  */
-    if ( ds_can_transfer_element_as_block (K_FLOAT) )
+    /*  Divide the transfer into multiple sections, which reduces the amount of
+	disc activity due to swapping. If the sections are too large, the net
+	effect is a massive disc-to-disc copy, since a write to virtual memory
+	can result in a write to disc if there is insufficient RAM  */
+    for (; num_values > 0;
+	 num_values -= block_length, data += sizeof (float) * block_length)
     {
-	if (ch_read (context->image_channel, data, num_values * 4) <
-	    num_values * 4)
+	block_length = (num_values > BLOCK_LENGTH) ? BLOCK_LENGTH : num_values;
+	if ( !read_data (context, data, block_length, blank_count) )
 	{
-	    (void) fprintf (stderr, "Error reading image data\t%s\n",
-			    sys_errlist[errno]);
 	    return (FALSE);
 	}
-    }
-    else if ( ds_can_swaptransfer_element (K_FLOAT) )
-    {
-	if (ch_read_and_swap_blocks (context->image_channel, data,
-				     num_values, 4) < num_values * 4)
+	if ( s_check_for_int () )
 	{
-	    (void) fprintf (stderr, "Error reading image data\t%s\n",
-			    sys_errlist[errno]);
+	    fprintf (stderr, "control_c abort: reading terminated\n");
 	    return (FALSE);
-	}
-    }
-    else
-    {
-	/*  Read data one value at a time  */
-	f_ptr = (float *) data;
-	for (value_count = 0; value_count < num_values; value_count++, ++f_ptr)
-	{
-	    if ( !pio_read_float (context->image_channel, f_ptr) )
-	    {
-		(void) fprintf (stderr, "Error reading image data\t%s\n",
-				sys_errlist[errno]);
-		return (FALSE);
-	    }
-	}
-    }
-    if (context->mask_channel == NULL) return (TRUE);
-    /*  Read section of mask and apply to data  */
-    /*  Read mask one bit at a time  */
-    f_ptr = (float *) data;
-    for (value_count = 0; value_count < num_values; value_count++, ++f_ptr)
-    {
-	if ( !get_next_mask_value (context, &mask) )
-	{
-	    (void) fprintf (stderr, "Error reading mask data\t%s\n",
-			    sys_errlist[errno]);
-	    return (FALSE);
-	}
-	if (!mask)
-	{
-	    /*  Mask is clear: bad data, so blank the value  */
-	    *f_ptr = TOOBIG;
-	    ++*blank_count;
 	}
     }
     return (TRUE);
@@ -700,11 +703,87 @@ void foreign_miriad_close_data_context (KMiriadDataContext context)
     static char function_name[] = "foreign_miriad_close_data_context";
 
     VERIFY_CONTEXT (context);
-    (void) ch_close (context->image_channel);
-    if (context->mask_channel != NULL) (void) ch_close (context->mask_channel);
+    ch_close (context->image_channel);
+    if (context->mask_channel != NULL) ch_close (context->mask_channel);
     context->magic_number = 0;
     m_free ( (char *) context );
 }   /*  End Function foreign_miriad_close_data_context  */
+
+/*EXPERIMENTAL_FUNCTION*/
+flag foreign_miriad_read_history (CONST char *dirname, multi_array *multi_desc)
+/*  [SUMMARY] Read the history component of a Miriad Image file.
+    <dirname> The directory name of the Miriad dataset name.
+    <multi_desc> The multi_array header the history will be written to.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    Channel channel;
+    struct stat statbuf;
+    char history_name[STRING_LENGTH];
+    char txt[STRING_LENGTH];
+    extern char *sys_errlist[];
+    static char function_name[] = "foreign_miriad_read_history";
+
+    if ( (dirname == NULL) || (multi_desc == NULL) )
+    {
+	fprintf (stderr, "NULL pointer(s) passed\n");
+	a_prog_bug (function_name);
+    }
+    sprintf (history_name, "%s/history", dirname);
+    /*  Test if history file present  */
+    if (stat (history_name, &statbuf) != 0)
+    {
+	if (errno != ENOENT)
+	{
+	    /*  Strange error  */
+	    fprintf (stderr, "Error statting file: \"%s\"\t%s\n",
+		     history_name, sys_errlist[errno]);
+	    return (FALSE);
+	}
+	/*  Not present: I can deal with that  */
+	return (TRUE);
+    }
+    if ( ( channel = ch_open_file (history_name, "r") ) == NULL )
+    {
+	return (FALSE);
+    }
+    while ( ch_getl (channel, txt, STRING_LENGTH) )
+    {
+	if ( !ds_history_append_string (multi_desc, txt, TRUE) )
+	{
+	    m_error_notify (function_name, "history string");
+	    ch_close (channel);
+	    return (FALSE);
+	}
+    }
+    return ( ch_close (channel) );
+}   /*  End Function foreign_miriad_read_history  */
+
+/*UNPUBLISHED_FUNCTION*/
+double foreign_miriad_get_units_scale (CONST char *name)
+/*  [SUMMARY] Determine the scale to convert Miriad to FITS value.
+    <name> The name of the unit.
+    [RETURNS] The scale value.
+*/
+{
+    double scale;
+
+    if (st_nicmp (name, "RA---", 5) == 0) scale = 180.0 / PI;
+    else if (st_nicmp (name, "DEC--", 5) == 0) scale = 180.0 / PI;
+    else if (st_nicmp (name, "GLON-", 5) == 0) scale = 180.0 / PI;
+    else if (st_nicmp (name, "GLAT-", 5) == 0) scale = 180.0 / PI;
+    else if (st_nicmp (name, "ELON-", 5) == 0) scale = 180.0 / PI;
+    else if (st_nicmp (name, "ELAT-", 5) == 0) scale = 180.0 / PI;
+    else if (st_nicmp (name, "FREQ", 4) == 0) scale = 1e9;
+    else if (st_nicmp (name, "VELO", 4) == 0) scale = 1e3;
+    else if (st_nicmp (name, "FELO", 4) == 0) scale = 1e3;
+    else if (st_nicmp (name, "RESTFREQ", 8) == 0) scale = 1e9;
+    else if (st_icmp (name, "ANGLE") == 0) scale = 180.0 / PI;
+    else if (st_icmp (name, "BMIN") == 0) scale = 180.0 / PI;
+    else if (st_icmp (name, "BMAJ") == 0) scale = 180.0 / PI;
+    else scale = 1.0;
+    return (scale);
+}   /*  End Function foreign_miriad_get_units_scale  */
 
 
 /*  Private functions follow  */
@@ -718,27 +797,17 @@ static unsigned int get_alignment_padding (uaddr position, uaddr size)
 */
 {
     uaddr pad;
+    static char function_name[] = "get_alignment_padding";
 
+    if (size == 0)
+    {
+	fprintf (stderr, "zero size!\n");
+	a_prog_bug (function_name);
+    }
     pad = position % size;
     if (pad == 0) return (0);
     return (size - pad);
 }   /*  End Function get_alignment_padding  */
-
-static flag align_read (Channel channel, uaddr size)
-/*  [PURPOSE] This routine will align the next read from a channel to a
-    specified boundary.
-    <channel> The channel.
-    <size> The size to align to.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-{
-    unsigned long read_pos, write_pos;
-
-    if ( !ch_tell (channel, &read_pos, &write_pos) ) return (FALSE);
-    size = get_alignment_padding (read_pos, size);
-    if (ch_drain (channel, size) < size) return (FALSE);
-    return (TRUE);
-}   /*  End Function align_read  */
 
 static unsigned int read_miriad_type (Channel channel)
 /*  [PURPOSE] This routine will read the 4 bytes in a Miriad file which contain
@@ -775,7 +844,7 @@ static unsigned int read_miriad_type (Channel channel)
 	out_type = K_COMPLEX;
 	break;
       default:
-	(void) fprintf (stderr, "Bad Miriad out_type: %lu\n", in_type);
+	fprintf (stderr, "Bad Miriad out_type: %lu\n", in_type);
 	out_type = NONE;
 	break;
     }
@@ -795,18 +864,14 @@ static multi_array *make_desc (HeaderItem first_item, unsigned int naxis,
 */
 {
     HeaderItem item, crpix_item, crval_item, cdelt_item;
-    flag all_dim_names_given = TRUE;
     int axis_length;
     unsigned int num_items, num_dim, axis_count;
     unsigned int elem_type = K_FLOAT;
-    double scale;
     packet_desc *top_pack_desc;
     array_desc *arr_desc;
     char *top_packet, *element;
     char *elem_name, *name;
     uaddr *dim_lengths;
-    double *first_arr;
-    double *last_arr;
     char **dim_names;
     multi_array *multi_desc;
     char txt[STRING_LENGTH];
@@ -821,54 +886,32 @@ static multi_array *make_desc (HeaderItem first_item, unsigned int naxis,
 	m_error_notify (function_name, "dimension lengths");
 	return (NULL);
     }
-    /*  Compute dimension first and last co-ordinates  */
-    if ( ( first_arr = (double *) m_alloc (sizeof *first_arr * naxis) )
-	== NULL )
-    {
-	m_error_notify (function_name, "dimension first_arr");
-	m_free ( (char *) dim_lengths );
-	return (NULL);
-    }
-    if ( ( last_arr = (double *) m_alloc (sizeof *last_arr * naxis) )
-	== NULL )
-    {
-	m_error_notify (function_name, "dimension last_arr");
-	m_free ( (char *) dim_lengths );
-	m_free ( (char *) first_arr );
-	return (NULL);
-    }
     /*  Create array of dimension name pointers  */
     if ( ( dim_names = (char **) m_alloc (sizeof *dim_names * naxis) )
 	== NULL )
     {
 	m_error_notify (function_name, "dimension name pointers");
 	m_free ( (char *) dim_lengths );
-	m_free ( (char *) first_arr );
-	m_free ( (char *) last_arr );
 	return (NULL);
     }
     /*  Grab dimension information from header  */
     for (axis_count = naxis, num_dim = 0; axis_count > 0; --axis_count)
     {
 	/*  Search for this axis name  */
-	(void) sprintf (txt, "NAXIS%d", axis_count);
+	sprintf (txt, "NAXIS%d", axis_count);
 	if ( ( item = find_item (first_item, txt) ) == NULL )
 	{
-	    (void) fprintf (stderr, "%s: naxis: %u but no \"%s\" item found\n",
-			    function_name, axis_count, txt);
+	    fprintf (stderr, "%s: naxis: %u but no \"%s\" item found\n",
+		     function_name, axis_count, txt);
 	    m_free ( (char *) dim_lengths );
-	    m_free ( (char *) first_arr );
-	    m_free ( (char *) last_arr );
 	    m_free ( (char *) dim_names );
 	    return (NULL);
 	}
 	if (item->type != K_INT)
 	{
-	    (void) fprintf (stderr, "%s: item: \"%s\" not integer type\n",
-			    function_name, txt);
+	    fprintf (stderr, "%s: item: \"%s\" not integer type\n",
+		     function_name, txt);
 	    m_free ( (char *) dim_lengths );
-	    m_free ( (char *) first_arr );
-	    m_free ( (char *) last_arr );
 	    m_free ( (char *) dim_names );
 	    return (NULL);
 	}
@@ -876,30 +919,27 @@ static multi_array *make_desc (HeaderItem first_item, unsigned int naxis,
 	if ( sanitise && (axis_length < 2) ) continue;
 	/*  Put entry in arrays  */
 	/*  First the name  */
-	(void) sprintf (txt, "CTYPE%d", axis_count);
+	sprintf (txt, "CTYPE%d", axis_count);
 	if ( ( item = find_item (first_item, txt) ) == NULL )
 	{
-	    all_dim_names_given = FALSE;
-	    scale = 1.0;
+	    dim_names[num_dim] = NULL;
+	}
+	else if (item->type != K_VSTRING)
+	{
+	    fprintf (stderr, "%s: item: \"%s\" not vstring type\n",
+		     function_name, txt);
+	    m_free ( (char *) dim_lengths );
+	    m_free ( (char *) dim_names );
+	    return (NULL);
 	}
 	else
 	{
+	    /*  Axis name was found  */
 	    dim_names[num_dim] = *(char **) item->data;
 	    name = dim_names[num_dim];
-	    if (st_nicmp (name, "RA---", 5) == 0) scale = 180.0 / PI;
-	    else if (st_nicmp (name, "DEC--", 5) == 0) scale = 180.0 / PI;
-	    else if (st_nicmp (name, "GLON-", 5) == 0) scale = 180.0 / PI;
-	    else if (st_nicmp (name, "GLAT-", 5) == 0) scale = 180.0 / PI;
-	    else if (st_nicmp (name, "ELON-", 5) == 0) scale = 180.0 / PI;
-	    else if (st_nicmp (name, "ELAT-", 5) == 0) scale = 180.0 / PI;
-	    else if (st_nicmp (name, "FREQ", 4) == 0) scale = 1e9;
-	    else if (st_nicmp (name, "VELO", 4) == 0) scale = 1e3;
-	    else if (st_nicmp (name, "FELO", 4) == 0) scale = 1e3;
-	    else if (st_nicmp (name, "RESTFREQ", 8) == 0) scale = 1e3;
-	    else if (st_icmp (name, "ANGLE") == 0)
+	    if (st_icmp (name, "ANGLE") == 0)
 	    {
-		scale = 180.0 / PI;
-		(void) sprintf (txt, "Axis %u (deg)", num_dim);
+		sprintf (txt, "Axis %u (deg)", num_dim);
 		m_free (name);
 		if ( ( name = st_dup (txt) ) == NULL )
 		{
@@ -908,10 +948,9 @@ static multi_array *make_desc (HeaderItem first_item, unsigned int naxis,
 		dim_names[num_dim] = name;
 		*(char **) item->data = name;
 	    }
-	    else scale = 1.0;
 	}
 	dim_lengths[num_dim] = axis_length;
-	(void) sprintf (txt, "CRPIX%d", axis_count);
+	sprintf (txt, "CRPIX%d", axis_count);
 	if ( ( crpix_item = find_item (first_item, txt) ) != NULL )
 	{
 	    if (crpix_item->type == K_DOUBLE)
@@ -924,71 +963,50 @@ static multi_array *make_desc (HeaderItem first_item, unsigned int naxis,
 	    }
 	    else
 	    {
-		(void) fprintf (stderr,
-				"%s: warning: \"%s\" not float or double\n",
-				function_name, txt);
+		fprintf (stderr, "%s: warning: \"%s\" not float or double\n",
+			 function_name, txt);
 		crpix_item = NULL;
 	    }
 	}
-	(void) sprintf (txt, "CRVAL%d", axis_count);
+	sprintf (txt, "CRVAL%d", axis_count);
 	if ( ( crval_item = find_item (first_item, txt) ) != NULL )
 	{
 	    if (crval_item->type == K_DOUBLE)
 	    {
-		*(double *) crval_item->data *= scale;
 		crval_item->d_data = *(double *) crval_item->data;
 	    }
 	    else if (crval_item->type == K_FLOAT)
 	    {
-		*(float *) crval_item->data *= scale;
 		crval_item->d_data = *(float *) crval_item->data;
 	    }
 	    else
 	    {
-		(void) fprintf (stderr,
-				"%s: warning: \"%s\" not float or double\n",
-				function_name, txt);
+		fprintf (stderr, "%s: warning: \"%s\" not float or double\n",
+			 function_name, txt);
 		crval_item = NULL;
 	    }
 	}
-	(void) sprintf (txt, "CDELT%d", axis_count);
+	sprintf (txt, "CDELT%d", axis_count);
 	if ( ( cdelt_item = find_item (first_item, txt) ) != NULL )
 	{
 	    if (cdelt_item->type == K_DOUBLE)
 	    {
-		*(double *) cdelt_item->data *= scale;
 		cdelt_item->d_data = *(double *) cdelt_item->data;
 	    }
 	    else if (cdelt_item->type == K_FLOAT)
 	    {
-		*(float *) cdelt_item->data *= scale;
 		cdelt_item->d_data = *(float *) cdelt_item->data;
 	    }
 	    else
 	    {
-		(void) fprintf (stderr,
-				"%s: warning: \"%s\" not float or double\n",
-				function_name, txt);
+		fprintf (stderr, "%s: warning: \"%s\" not float or double\n",
+			 function_name, txt);
 		cdelt_item = NULL;
 	    }
 	}
-	if ( (crpix_item == NULL) || (crval_item == NULL) ||
-	    (cdelt_item == NULL) )
-	{
-	    first_arr[num_dim] = 0.0;
-	    last_arr[num_dim] = (double) (axis_length - 1);
-	}
-	else
-	{
-	    first_arr[num_dim] = (crval_item->d_data -
-				  (crpix_item->d_data - 1.0) *
-				  cdelt_item->d_data);
-	    last_arr[num_dim] = ( first_arr[num_dim] + cdelt_item->d_data *
-				  (double) (axis_length - 1) );
-	}
 	++num_dim;
     }
-    (void) sprintf (txt, "BUNIT");
+    sprintf (txt, "BUNIT");
     if ( ( item = find_item (first_item, txt) ) == NULL )
     {
 	elem_name = def_elem_name;
@@ -996,20 +1014,16 @@ static multi_array *make_desc (HeaderItem first_item, unsigned int naxis,
     else elem_name = *(char **) item->data;
     if ( (elem_name != NULL) && (strlen (elem_name) < 1) )
     {
-	(void) fprintf (stderr,
-			"WARNING: BUNIT is an empty string: defaulting to ");
-	(void) fprintf (stderr, "\"%s\"\n", def_elem_name);
+	fprintf (stderr, "WARNING: BUNIT is an empty string: defaulting to ");
+	fprintf (stderr, "\"%s\"\n", def_elem_name);
 	elem_name = def_elem_name;
     }
     /*  Create the array descriptor  */
     arr_desc = ds_easy_alloc_array_desc
-	(num_dim, dim_lengths, first_arr, last_arr, (CONST double **) NULL,
-	 (CONST char **) (all_dim_names_given ? dim_names : NULL),
-	 1, &elem_type, (CONST char **) &elem_name);
+	(num_dim, dim_lengths, NULL, NULL, (CONST double **) NULL,
+	 (CONST char **) dim_names, 1, &elem_type, (CONST char **) &elem_name);
     
     m_free ( (char *) dim_lengths );
-    m_free ( (char *) first_arr );
-    m_free ( (char *) last_arr );
     m_free ( (char *) dim_names );
     if (arr_desc == NULL) return (NULL);
     if ( ( multi_desc = ds_alloc_multi (1) ) == NULL )
@@ -1078,7 +1092,7 @@ static HeaderItem find_item (HeaderItem first_item, CONST char *name)
 
     for (item = first_item; item != NULL; item = item->next)
     {
-	if (strcmp (item->name, name) == 0) return (item);
+	if (st_icmp (item->name, name) == 0) return (item);
     }
     return (NULL);
 }   /*  End Function find_item  */
@@ -1123,3 +1137,129 @@ static flag get_next_mask_value (KMiriadDataContext context, flag *mask)
     context->last_mask_bit_in_word = 0;
     return (TRUE);
 }   /*  End Function get_next_mask_value  */
+
+static flag convert_units (HeaderItem first_item)
+/*  [SUMMARY] Convert header units from Miriad to FITS.
+    <first_item> A pointer to the first header item.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    flag keep_going;
+    HeaderItem item;
+    unsigned int axis_count;
+    double scale;
+    char txt[STRING_LENGTH];
+    static char function_name[] = "__foreign_miriad_read_convert_units";
+
+    /*  First process "CRVALn" and "CDELTn" keywords associated with each
+	"CTYPEn" keyword found  */
+    for (axis_count = 1, keep_going = TRUE; keep_going; ++axis_count)
+    {
+	sprintf (txt, "CTYPE%u", axis_count);
+	if ( ( item = find_item (first_item, txt) ) == NULL )
+	{
+	    keep_going = FALSE;
+	    continue;
+	}
+	else if (item->type != K_VSTRING)
+	{
+	    fprintf (stderr, "%s: item: \"%s\" not vstring type\n",
+		     function_name, txt);
+	    return (FALSE);
+	}
+	scale = foreign_miriad_get_units_scale (*(char **) item->data);
+	if (scale == 1.0)
+	{
+	    /*  No scaling: ignore  */
+	    continue;
+	}
+	/*  Update "CRVALn" if present  */
+	sprintf (txt, "CRVAL%u", axis_count);
+	if ( !scale_item (first_item, txt, scale) ) return (FALSE);
+	/*  Update "CDELTn" if present  */
+	sprintf (txt, "CDELT%u", axis_count);
+	if ( !scale_item (first_item, txt, scale) ) return (FALSE);
+    }
+    /*  Update "RESTFREQ" if present  */
+    scale = foreign_miriad_get_units_scale ("RESTFREQ");
+    if ( !scale_item (first_item, "RESTFREQ", scale) ) return (FALSE);
+    /*  Update "BMIN" if present  */
+    scale = foreign_miriad_get_units_scale ("BMIN");
+    if ( !scale_item (first_item, "BMIN", scale) ) return (FALSE);
+    /*  Update "BMAJ" if present  */
+    scale = foreign_miriad_get_units_scale ("BMAJ");
+    if ( !scale_item (first_item, "BMAJ", scale) ) return (FALSE);
+    return (TRUE);
+}   /*  End Function convert_units  */
+
+static flag scale_item (HeaderItem first_item, CONST char *name, double scale)
+/*  [SUMMARY] Scale an atomic element.
+    <first_item> A pointer to the first header item.
+    <name> The name of the element to scale.
+    <scale> The scale value to apply.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    HeaderItem item;
+    static char function_name[] = "__foreign_miriad_read_scale_item";
+
+    if ( ( item = find_item (first_item, name) ) == NULL ) return (TRUE);
+    if (item->type == K_DOUBLE) *(double *) item->data *= scale;
+    else if (item->type == K_FLOAT) *(float *) item->data *= scale;
+    else
+    {
+	fprintf (stderr, "%s: warning: \"%s\" not float or double\n",
+		 function_name, name);
+	return (FALSE);
+    }
+    return (TRUE);
+}   /*  End Function scale_item  */
+
+static flag read_data (KMiriadDataContext context,char *data, uaddr num_values,
+		       unsigned long *blank_count)
+/*  [SUMMARY] Read data in a Miriad Image file.
+    [PURPOSE] This routine will read the data of a Miriad Image file from a
+    KMiradDataContext object. The header section is NOT read.
+    <context> The context to read from.
+    <data> The data array to write the data into.
+    <num_values> The number of values to write into the data array.
+    <blank_count> A pointer to the number of blanks. This is updated.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    flag mask;
+    uaddr value_count;
+    unsigned long blank_count_local = 0;
+    float *f_ptr;
+    extern char *sys_errlist[];
+    /*static char function_name[] = "foreign_miriad_read_data";*/
+
+    /*  Read section of data  */
+    if (pio_read_floats (context->image_channel, num_values, (float *) data,
+			 NULL) < num_values)
+    {
+	fprintf (stderr, "Error reading image data\t%s\n", sys_errlist[errno]);
+	return (FALSE);
+    }
+    if (context->mask_channel == NULL) return (TRUE);
+    /*  Read section of mask and apply to data  */
+    /*  Read mask one bit at a time  */
+    f_ptr = (float *) data;
+    for (value_count = 0; value_count < num_values; value_count++, ++f_ptr)
+    {
+	if ( !get_next_mask_value (context, &mask) )
+	{
+	    fprintf (stderr, "Error reading mask data\t%s\n",
+		     sys_errlist[errno]);
+	    return (FALSE);
+	}
+	if (!mask)
+	{
+	    /*  Mask is clear: bad data, so blank the value  */
+	    *f_ptr = TOOBIG;
+	    ++blank_count_local;
+	}
+    }
+    *blank_count += blank_count_local;
+    return (TRUE);
+}   /*  End Function read_data  */

@@ -35,6 +35,7 @@
 
 */
 #include <stdio.h>
+#include <errno.h>
 #include <karma.h>
 #include <karma_chm.h>
 #include <karma_ch.h>
@@ -73,7 +74,6 @@ int main (int argc, char **argv)
     extern Channel rxlog;
     extern char module_name[STRING_LENGTH + 1];
     extern char *remote_spec;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
 
     im_register_module_name ("tcplog");
@@ -140,7 +140,6 @@ static flag dock_input_func (Channel dock, void **info)
     unsigned long inet_addr;
     struct conn_info_type *con_local, *con_remote;
     extern char *remote_spec;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "dock_input_func";
 
@@ -205,7 +204,6 @@ static flag input_func (Channel channel, void **info)
 {
     int bytes_readable;
     struct conn_info_type *con;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static uaddr buf_size = 0;
     static char *buffer = NULL;

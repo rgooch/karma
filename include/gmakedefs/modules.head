@@ -5,6 +5,7 @@
 #	MODULE_CFLAGS	Optional module-specific C compiler flags
 #	KARMALIBS	Karma libraries
 #	XLIBS		Optional X11 libraries
+#	X_OS_LIBS	Extra OS-specific X11 libraries
 #	MODULELIBS	Optional module-specific libraries
 #	XLIBPATH	Optional colon-separated list of directories containing
 #			the X11 libraries
@@ -21,7 +22,7 @@
 
 #########################No user servicable parts below########################
 
-machine_dir =	.$(MACHINE_OS)
+machine_dir = .$(MACHINE_OS)
 
 LDFLAGS = $(KOPTIMISE)
 
@@ -47,6 +48,7 @@ KARMALIBS = -lkarma
 endif
 # Add X stuff if needed
 ifdef XLIBS
+x_os_libs = $(X_OS_LIBS)
 ifdef XLIBPATH
 xlibdirs = $(XLIBPATH)
 endif
@@ -71,7 +73,7 @@ endif
 # Add module-specific C Compiler flags
 CFLAGS = $(MODULE_CFLAGS) $(cflags1)
 
-LIBS  = $(KARMALIBS) $(XLIBS) $(MODULELIBS) -lm
+LIBS  = $(KARMALIBS) $(XLIBS) $(x_os_libs) $(MODULELIBS) -lm
 
 CLIBS =	$(LIBS) $(OS_LIBS)
 FLIBS = $(LIBS) -lc $(OS_LIBS)

@@ -121,7 +121,6 @@ static void generate_file (char *arrayfile)
     extern unsigned int slice_pos;
     extern char *x_name;
     extern char *y_name;
-    extern char *sys_errlist[];
     /*static char function_name[] = "generate_file";*/
 
     if ( ( cube = iarray_read_nD (arrayfile, FALSE, NULL, 3, NULL, NULL,

@@ -15,6 +15,7 @@ typedef struct _ZoomPolicyPart
     Bool          autoIntensityScale;
     /*  Private resources  */
     flag auto_refresh;
+    double log_cycles;
 } ZoomPolicyPart, *ZoomPolicyPartPtr;
 
 typedef struct _ZoomPolicyRec

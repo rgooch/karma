@@ -41,8 +41,33 @@
 
     Updated by      Richard Gooch   21-JUN-1996: Created <wcs_astro_format_all>
 
-    Last updated by Richard Gooch   28-JUN-1996: Fixed bug in
+    Updated by      Richard Gooch   28-JUN-1996: Fixed bug in
   <wcs_astro_transform> when either RA or DEC values not supplied.
+
+    Updated by      Richard Gooch   5-AUG-1996: Fixed bug in
+  <wcs_astro_format_dec> when dealing with {-1 < dec < 0}.
+
+    Updated by      Richard Gooch   29-AUG-1996: Created
+  <wcs_astro_get_preferred_units> routine.
+
+    Updated by      Richard Gooch   25-SEP-1996: Changed to implement the new
+  FITS-style co-ordinate handling, where dimension co-ordinates range from 0
+  to length - 1.
+
+    Updated by      Richard Gooch   28-SEP-1996: Supported offset angle axes.
+  Fixed name for <wcs_astro_format_all> so that "astro" is a part of the name.
+
+    Updated by      Richard Gooch   6-OCT-1996: Added support for Cartesian
+  (*-CAR) projection.
+
+    Updated by      Richard Gooch   7-OCT-1996: Added support for Digital Sky
+  Survey plate solutions (i.e. x,y -> RA,DEC).
+
+    Updated by      Richard Gooch   7-OCT-1996: Added support for Digital Sky
+  Survey inverse plate solutions (i.e. RA,DEC -> x,y).
+
+    Last updated by Richard Gooch   15-OCT-1996: Added support for Rectangular
+  (*-ARC) projection.
 
 
 */
@@ -63,12 +88,15 @@
 
 
 /*  Projection types  */
-#define PROJ_INIT    -1    /*  Initialised           */
-#define PROJ_SIN     0     /*  Orthographic          */
-#define PROJ_TAN     1     /*  Gnomonic              */
-#define PROJ_NCP     2     /*  North Celestial Pole  */
-#define PROJ_FLT     3     /*  Flat                  */
-#define PROJ_UNKNOWN 4     /*  Unknown               */
+#define PROJ_INIT    -1    /*  Initialised                                */
+#define PROJ_UNKNOWN 0     /*  Unknown                                    */
+#define PROJ_SIN     1     /*  Orthographic                               */
+#define PROJ_TAN     2     /*  Gnomonic                                   */
+#define PROJ_NCP     3     /*  North Celestial Pole                       */
+#define PROJ_FLT     4     /*  Flat                                       */
+#define PROJ_ARC     5     /*  Rectangular                                */
+#define PROJ_CAR     6     /*  Cartesian (seen in Miriad for DSS images)  */
+#define PROJ_DSS     7     /*  Digital Sky Survey plate solutions         */
 
 /*  Direction types  */
 #define DIR_ADtoXY  0       /*  alpha,delta -> x,y          */
@@ -77,22 +105,26 @@
 #define DIR_XYtoAD  3       /*  x,y         -> alpha,delta  */
 
 /*  Velocity types  */
-#define VELOCITY_UNKNOWN 0  /*  Unknown                     */
-#define VELOCITY_VELO    1  /*  m/s                         */
-#define VELOCITY_FELO    2  /*  m/s                         */
-#define VELOCITY_FREQ    3  /*  Hz                          */
+#define VELOCITY_UNKNOWN 0  /*  Unknown                           */
+#define VELOCITY_VELO    1  /*  m/s (radio doppler convention)    */
+#define VELOCITY_FELO    2  /*  m/s (optical doppler convention)  */
+#define VELOCITY_FREQ    3  /*  Hz                                */
+#define VELOCITY_RAWVEL  4  /*  m/s  rest frequency not known     */
 
 /*  Equinox types  */
 #define EQUINOX_J2000  0   /*  Julian 2000           */
 #define EQUINOX_B1950  1   /*  Bessellian 1950       */
 
+/*  DSS stuff  */
+#define NUM_PLATE_COEFFS 20
+
 #define MAGIC_NUMBER (unsigned int) 2076765342
 
 #define VERIFY_AP(ap) if (ap == NULL) \
-{(void) fprintf (stderr, "NULL astro context passed\n"); \
+{fprintf (stderr, "NULL astro context passed\n"); \
  a_prog_bug (function_name); } \
 if (ap->magic_number != MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid astro context object\n"); \
+{fprintf (stderr, "Invalid astro context object\n"); \
  a_prog_bug (function_name); }
 
 
@@ -101,7 +133,9 @@ if (ap->magic_number != MAGIC_NUMBER) \
 struct sky_coord_type
 {
     char dim_name[STRING_LENGTH];
-    double reference;        /*  Degrees  */
+    double reference;        /*  Degrees  (CRVALn) in degrees               */
+    double ref_pos;          /*  Pixel position of renference (CRPIXn - 1)  */
+    double increment;        /*  Increment between pixels (CDELTn)          */
     double sin_ref;
     double cos_ref;
 };
@@ -110,6 +144,19 @@ struct velocity_coord_type
 {
     char dim_name[STRING_LENGTH];
     unsigned int type;
+    double reference;        /*  Reference pixel (CRVALn)                   */
+    double ref_pos;          /*  Pixel position of renference (CRPIXn - 1)  */
+    double increment;        /*  Increment between pixels (CDELTn)          */
+    double restfreq;         /*  Rest frequency (Hz)                        */
+};
+
+struct linear_coord_type
+{
+    char dim_name[STRING_LENGTH];
+    double reference;        /*  Reference pixel (CRVALn)                   */
+    double ref_pos;          /*  Pixel position of renference (CRPIXn - 1)  */
+    double increment;        /*  Increment between pixels (CDELTn)          */
+    struct linear_coord_type *next;
 };
 
 struct extra_type
@@ -117,6 +164,23 @@ struct extra_type
     char *ctype;
     double refval;
     struct extra_type *next;
+};
+
+struct dss_plate_type  /*  Digital Sky Survey plate solution  */
+{
+    double corner_pixel_x1;            /*  Pixels                            */
+    double corner_pixel_y1;            /*  Pixels                            */
+    double scale;                      /*  arcsec/mm                         */
+    double pixel_size_x;               /*  Microns                           */
+    double pixel_size_y;               /*  Microns                           */
+    double centre_ra;                  /*  Degrees                           */
+    double centre_dec;                 /*  Degrees                           */
+    double centre_off_x;               /*  Microns                           */
+    double centre_off_y;               /*  Microns                           */
+    unsigned int num_amdx;
+    double amdx[NUM_PLATE_COEFFS];     /*  Plate solution Xi co-efficients   */
+    unsigned int num_amdy;
+    double amdy[NUM_PLATE_COEFFS];     /*  Plate solution Eta co-efficients  */
 };
 
 struct astro_projection_type
@@ -131,8 +195,11 @@ struct astro_projection_type
     struct sky_coord_type ra;
     /*  Declination axis  */
     struct sky_coord_type dec;
+    struct dss_plate_type *dss;
     /*  Velocity axis  */
     struct velocity_coord_type vel;
+    /*  Linear co-ordinate axes  */
+    struct linear_coord_type *linear_axes;
     /*  Extra information  */
     struct extra_type *first_extra;
     /*  Buffer for unspecified RA or DEC co-ordinates  */
@@ -154,6 +221,7 @@ struct astro_projection_type
 */
 
 /*  Private functions  */
+STATIC_FUNCTION (KwcsAstro create_new, () );
 STATIC_FUNCTION (flag process_axis,
 		 (KwcsAstro ap,
 		  CONST packet_desc *pack_desc, CONST char *packet,
@@ -187,6 +255,31 @@ STATIC_FUNCTION (void transform_ra_dec_tan,
 STATIC_FUNCTION (void transform_ra_dec_ncp,
 		 (KwcsAstro ap, unsigned int num_coords,
 		  double *ra, double *dec, unsigned int direction) );
+STATIC_FUNCTION (void transform_ra_dec_flat,
+		 (KwcsAstro ap, unsigned int num_coords,
+		  double *ra, double *dec, unsigned int direction) );
+STATIC_FUNCTION (void transform_ra_dec_arc,
+		 (KwcsAstro ap, unsigned int num_coords,
+		  double *ra, double *dec, unsigned int direction) );
+STATIC_FUNCTION (void transform_ra_dec_car,
+		 (KwcsAstro ap, unsigned int num_coords,
+		  double *ra, double *dec, unsigned int direction) );
+STATIC_FUNCTION (void transform_vel,
+		 (KwcsAstro ap, unsigned int num_coords, double *vel,
+		  flag to_linear) );
+STATIC_FUNCTION (void transform_linear,
+		 (KwcsAstro ap, unsigned int num_coords,
+		  CONST char *name, double *coords, flag to_pix) );
+STATIC_FUNCTION (flag scan_dss_header,
+		 (KwcsAstro ap, CONST packet_desc *pack_desc,
+		  CONST char *packet) );
+STATIC_FUNCTION (void transform_ra_dec_dss,
+		 (KwcsAstro ap, unsigned int num_coords,
+		  double *ra, double *dec, unsigned int direction) );
+STATIC_FUNCTION (void dss_xy2radec, (KwcsAstro ap, unsigned int num_coords,
+				     double *ra, double *dec) );
+STATIC_FUNCTION (void dss_radec2xy, (KwcsAstro ap, unsigned int num_coords,
+				     double *ra, double *dec) );
 
 
 /*  Public functions follow  */
@@ -209,7 +302,7 @@ KwcsAstro wcs_astro_setup (CONST packet_desc *pack_desc, CONST char *packet)
 
     if ( (pack_desc == NULL) || (packet == NULL) )
     {
-	(void) fputs ("NULL pointer(s) passed\n", stderr);
+	fputs ("NULL pointer(s) passed\n", stderr);
 	a_prog_bug (function_name);
     }
     /*  Theoretically, one should use the "NAXIS" keyword to determine how many
@@ -218,27 +311,18 @@ KwcsAstro wcs_astro_setup (CONST packet_desc *pack_desc, CONST char *packet)
 	keywords. If "CTYPEn" does not exist, assume "CTYPEm" (where m > n)
 	does not exist.
 	Note that this whole scheme depends on the Karma dimension names being
-	the same as those in the FITS header  */
+	the same as those in the FITS header. For Digital Sky Survey data,
+	which doesn't use "CTYPEn" and friends, this assumption is irrelevant
+	*/
     if ( (key_string_value = ds_get_unique_named_string (pack_desc, packet,
 							 "CTYPE1") ) == NULL )
     {
-	return (NULL);
+	/*  It's not a conventional header: perhaps it's DSS data?  */
+	if ( !ds_get_unique_named_value (pack_desc, packet, "PLTSCALE", NULL,
+					 value) ) return (NULL);
     }
-    if ( ( new = (KwcsAstro) m_alloc (sizeof *new) ) == NULL )
-    {
-	m_error_notify (function_name, "KwcsAstro object");
-	return (NULL);
-    }
-    /*  Initialise  */
-    new->projection = PROJ_INIT;
-    new->sin_rotation = TOOBIG;
-    new->cos_rotation = TOOBIG;
-    new->equinox = EQUINOX_J2000;
+    if ( ( new = create_new () ) == NULL ) return (NULL);
     equinox_val = 2000;
-    new->vel.type = VELOCITY_UNKNOWN;
-    new->first_extra = NULL;
-    new->radec_buffer = NULL;
-    new->radec_buf_len = 0;
     if ( ds_get_unique_named_value (pack_desc, packet, "EQUINOX", NULL,value) )
     {
 	/*  EQUINOX: preferred FITS keyword  */
@@ -258,8 +342,7 @@ KwcsAstro wcs_astro_setup (CONST packet_desc *pack_desc, CONST char *packet)
     else if (equinox_val == 1950) new->equinox = EQUINOX_B1950;
     else
     {
-	(void) fprintf (stderr, "Unknown equinox: %d, assuming J2000\n",
-			equinox_val);
+	fprintf (stderr, "Unknown equinox: %d, assuming J2000\n", equinox_val);
 	new->equinox = EQUINOX_J2000;
     }
     /*  Start searching for and processing RA and DEC information  */
@@ -274,12 +357,21 @@ KwcsAstro wcs_astro_setup (CONST packet_desc *pack_desc, CONST char *packet)
 	}
 	m_free (key_string_value);
 	++count;
-	(void) sprintf (txt, "CTYPE%u", count);
+	sprintf (txt, "CTYPE%u", count);
 	key_string_value = ds_get_unique_named_string (pack_desc, packet, txt);
+    }
+    if (new->projection == PROJ_INIT)
+    {
+	/*  No conventional RA-DEC projection found yet: try DSS plate soln. */
+	if ( !scan_dss_header (new, pack_desc, packet) )
+	{
+	    m_free ( (char *) new );
+	    return (NULL);
+	}
     }
     if (new->projection == PROJ_INIT) new->projection = PROJ_UNKNOWN;
     if ( (new->projection == PROJ_UNKNOWN) &&
-	 (new->vel.type == VELOCITY_UNKNOWN) )
+	 (new->vel.type == VELOCITY_UNKNOWN) && (new->linear_axes == NULL) )
     {
 	m_free ( (char *) new );
 	return (NULL);
@@ -300,14 +392,20 @@ void wcs_astro_destroy (KwcsAstro ap)
     [RETURNS] Nothing.
 */
 {
+    struct linear_coord_type *curr, *next;
     static char function_name[] = "wcs_astro_destroy";
 
     VERIFY_AP (ap);
+    for (curr = ap->linear_axes; curr != NULL; curr = next)
+    {
+	next = curr->next;
+	m_free ( (char *) curr );
+    }
     m_clear ( (char *) ap, sizeof *ap );
     m_free ( (char *) ap );
 }   /*  End Function wcs_astro_destroy  */
 
-/*EXPERIMENTAL_FUNCTION*/
+/*PUBLIC_FUNCTION*/
 flag wcs_astro_test_radec (KwcsAstro ap)
 /*  [SUMMARY] Test if a KwcsAstro object has RA and DEC defined.
     <ap> The KwcsAstro object. This may be NULL.
@@ -322,7 +420,7 @@ flag wcs_astro_test_radec (KwcsAstro ap)
     return (TRUE);
 }   /*  End Function wcs_astro_test_radec  */
 
-/*EXPERIMENTAL_FUNCTION*/
+/*PUBLIC_FUNCTION*/
 flag wcs_astro_test_velocity (KwcsAstro ap)
 /*  [SUMMARY] Test if a KwcsAstro object has velocity or frequency defined.
     <ap> The KwcsAstro object. This may be NULL.
@@ -370,6 +468,7 @@ void wcs_astro_transform (KwcsAstro ap, unsigned int num_coords,
     if (vel != NULL)
     {
 	/*  Transform velocity  */
+	transform_vel (ap, num_coords, vel, vel_to_linear);
     }
     if ( (ra == NULL) && (dec == NULL) ) return;
     /*  Transform RA and DEC  */
@@ -381,8 +480,7 @@ void wcs_astro_transform (KwcsAstro ap, unsigned int num_coords,
 	if ( !fill_radec_buffer (ap, ap->ra.dim_name, num_coords,
 				 num_restr, restr_names, restr_values) )
 	{
-	    (void) fprintf (stderr, "%s: RA information missing\n",
-			    function_name);
+	    fprintf (stderr, "%s: RA information missing\n", function_name);
 	    return;
 	}
 	ra = ap->radec_buffer;
@@ -395,8 +493,7 @@ void wcs_astro_transform (KwcsAstro ap, unsigned int num_coords,
 	if ( !fill_radec_buffer (ap, ap->dec.dim_name, num_coords,
 				 num_restr, restr_names, restr_values) )
 	{
-	    (void) fprintf (stderr, "%s: DEC information missing\n",
-			    function_name);
+	    fprintf (stderr, "%s: DEC information missing\n", function_name);
 	    return;
 	}
 	dec = ap->radec_buffer;
@@ -410,7 +507,7 @@ void wcs_astro_transform (KwcsAstro ap, unsigned int num_coords,
 	direction = DIR_XDtoAY;
 	if (ap->cos_rotation == 0.0)
 	{
-	    (void) fprintf (stderr, "%s: bad rotation\n", function_name);
+	    fprintf (stderr, "%s: bad rotation\n", function_name);
 	    return;
 	}
     }
@@ -418,14 +515,12 @@ void wcs_astro_transform (KwcsAstro ap, unsigned int num_coords,
     {
 	if (ap->cos_rotation == 0.0)
 	{
-	    (void) fprintf (stderr, "%s: bad rotation\n", function_name);
+	    fprintf (stderr, "%s: bad rotation\n", function_name);
 	    return;
 	}
 	direction = DIR_AYtoXD;
     }
     else direction = DIR_ADtoXY;
-    /*(void) fprintf (stderr, "f: %d %d d: %u  RAin: %e  DECin: %.10e  ",
-		    ra_to_linear, dec_to_linear, direction, ra[0], dec[0]);*/
     switch (ap->projection)
     {
       case PROJ_SIN:
@@ -438,11 +533,21 @@ void wcs_astro_transform (KwcsAstro ap, unsigned int num_coords,
 	transform_ra_dec_ncp (ap, num_coords, ra, dec, direction);
 	break;
       case PROJ_FLT:
+	transform_ra_dec_flat (ap, num_coords, ra, dec, direction);
+	break;
+      case PROJ_ARC:
+	transform_ra_dec_arc (ap, num_coords, ra, dec, direction);
+	break;
+      case PROJ_CAR:
+	transform_ra_dec_car (ap, num_coords, ra, dec, direction);
+	break;
+      case PROJ_DSS:
+	transform_ra_dec_dss (ap, num_coords, ra, dec, direction);
 	break;
       default:
+	fprintf (stderr, "Unknown projection: %u\n", ap->projection);
 	break;
     }
-    /*(void) fprintf (stderr, "RAout: %e\n", ra[0]);*/
 }   /*  End Function wcs_astro_transform  */
 
 /*PUBLIC_FUNCTION*/
@@ -496,13 +601,16 @@ void wcs_astro_transform3 (KwcsAstro ap, unsigned int num_coords,
     wcs_astro_transform (ap, num_coords, ra, ra_to_linear,
 			 dec, dec_to_linear, vel, vel_to_linear,
 			 num_restr, restr_names, restr_values);
+    transform_linear (ap, num_coords, name0, coords0, to_lin1);
+    transform_linear (ap, num_coords, name1, coords1, to_lin1);
+    transform_linear (ap, num_coords, name2, coords2, to_lin1);
 }   /*  End Function wcs_astro_transform3  */
 
 /*PUBLIC_FUNCTION*/
 void wcs_astro_format_ra (char *string, double ra)
 /*  [SUMMARY] Format a Right Ascension value into a string.
     <string> The string to write to. Sufficient storage must be available.
-    <ra> The Right Ascension value.
+    <ra> The Right Ascension value in degrees.
     [RETURNS] Nothing.
 */
 {
@@ -518,7 +626,7 @@ void wcs_astro_format_ra (char *string, double ra)
     ra -= minutes;
     ra *= 60.0;
     seconds = ra;
-    (void) sprintf (string, "%.2dh %.2dm %5.2fs",
+    sprintf (string, "%.2dh %.2dm %5.2fs",
 		    (int) hours, (int) minutes, seconds);
 }   /*  End Function wcs_astro_format_ra  */
 
@@ -526,26 +634,29 @@ void wcs_astro_format_ra (char *string, double ra)
 void wcs_astro_format_dec (char *string, double dec)
 /*  [SUMMARY] Format a Declination value into a string.
     <string> The string to write to. Sufficient storage must be available.
-    <dec> The Declination value.
+    <dec> The Declination value in degrees.
     [RETURNS] Nothing.
 */
 {
+    flag negative = FALSE;
     double degrees, minutes, seconds;
 
     if (dec < 0.0)
     {
-	degrees = ceil (dec);
 	dec = fabs (dec);
+	negative = TRUE;
     }
-    else degrees = floor (dec);
+    degrees = floor (dec);
     dec -= fabs (degrees);
     dec *= 60.0;
     minutes = floor (dec);
     dec -= minutes;
     dec *= 60.0;
     seconds = dec;
-    (void) sprintf (string, "%.2dd %.2dm %5.2fs",
-		    (int) degrees, (int) minutes, seconds);
+    if (negative) sprintf (string, "-%.2dd %.2dm %5.2fs",
+				  (int) degrees, (int) minutes, seconds);
+    else sprintf (string, "%.2dd %.2dm %5.2fs",
+			 (int) degrees, (int) minutes, seconds);
 }   /*  End Function wcs_astro_format_dec  */
 
 /*PUBLIC_FUNCTION*/
@@ -564,6 +675,7 @@ void wcs_astro_format_vel (KwcsAstro ap, char *string, double vel)
     {
       case VELOCITY_VELO:
       case VELOCITY_FELO:
+      case VELOCITY_RAWVEL:
 	sprintf (string, "Vel: %.2f km/s", vel * 1e-3);
 	break;
       case VELOCITY_FREQ:
@@ -578,7 +690,7 @@ void wcs_astro_format_vel (KwcsAstro ap, char *string, double vel)
 /*PUBLIC_FUNCTION*/
 void wcs_astro_format (KwcsAstro ap, CONST char *dim_name,
 		       char string[STRING_LENGTH], double value)
-/*  [SUMMARY] Format a value.
+/*  [SUMMARY] Format a value. No transformation is applied.
     <ap> The KwcsAstro object.
     <dim_name> The name of the dimension.
     <string> The string to write to.
@@ -586,21 +698,23 @@ void wcs_astro_format (KwcsAstro ap, CONST char *dim_name,
     [RETURNS] Nothing.
 */
 {
+    int str_len;
     char stokes_char;
     char txt[STRING_LENGTH];
     static char function_name[] = "wcs_astro_format";
 
     VERIFY_AP (ap);
+    str_len = strlen (dim_name);
     if (strcmp (dim_name, ap->ra.dim_name) == 0)
     {
 	wcs_astro_format_ra (txt, value);
-	(void) sprintf (string, "Ra %s", txt);
+	sprintf (string, "Ra %s", txt);
 	return;
     }
     if (strcmp (dim_name, ap->dec.dim_name) == 0)
     {
 	wcs_astro_format_dec (txt, value);
-	(void) sprintf (string, "Dec %s", txt);
+	sprintf (string, "Dec %s", txt);
 	return;
     }
     if (strcmp (dim_name, ap->vel.dim_name) == 0)
@@ -631,7 +745,16 @@ void wcs_astro_format (KwcsAstro ap, CONST char *dim_name,
 	sprintf (string, "Stokes %c", stokes_char);
 	return;
     }
-    (void) sprintf (string, "%e %s", value, dim_name);
+    else if ( (strcmp (dim_name, "ANGLE") == 0) ||
+	      (strcmp (dim_name + str_len - 5, "(deg)") == 0) )
+    {
+	/*  Offset angle  */
+	wcs_astro_format_dec (txt, value);
+	sprintf (string, "Offset %s", txt);
+	return;
+    }
+    /*  Don't know how to deal with this one  */
+    sprintf (string, "%e %s", value, dim_name);
 }   /*  End Function wcs_astro_format  */
 
 /*PUBLIC_FUNCTION*/
@@ -651,19 +774,19 @@ void wcs_astro_format_extra (KwcsAstro ap, char string[STRING_LENGTH])
     for (curr = ap->first_extra; curr != NULL; curr = curr->next)
     {
 	wcs_astro_format (ap, curr->ctype, txt, curr->refval);
-	(void) strcat (string, txt);
-	if (curr->next != NULL) (void) strcat (string, "  ");
+	strcat (string, txt);
+	if (curr->next != NULL) strcat (string, "  ");
     }
 }   /*  End Function wcs_astro_format_extra  */
 
 /*PUBLIC_FUNCTION*/
-void wcs_format_all (KwcsAstro ap, char coord_string[STRING_LENGTH],
-		     CONST char *name0, double coord0,
-		     CONST char *name1, double coord1,
-		     CONST char *name2, double coord2,
-		     unsigned int num_restr, CONST char **restr_names,
-		     CONST double *restr_values,
-		     char other_string[STRING_LENGTH])
+void wcs_astro_format_all (KwcsAstro ap, char coord_string[STRING_LENGTH],
+			   CONST char *name0, double coord0,
+			   CONST char *name1, double coord1,
+			   CONST char *name2, double coord2,
+			   unsigned int num_restr, CONST char **restr_names,
+			   CONST double *restr_values,
+			   char other_string[STRING_LENGTH])
 /*  [SUMMARY] Transform and format all available information.
     [PURPOSE] This routine will transform and format all available information.
     The data is transformed from linear to non-linear values.
@@ -686,14 +809,14 @@ void wcs_format_all (KwcsAstro ap, char coord_string[STRING_LENGTH],
     flag dec_to_linear;
     flag vel_to_linear;
     unsigned int count;
-    double radec_value;
+    double radec_value, value;
     double *ra;
     double *dec;
     double *vel;
     CONST char *unspec_name = NULL;
     struct extra_type *curr;
     char txt[STRING_LENGTH];
-    static char function_name[] = "wcs_format_all";
+    static char function_name[] = "wcs_astro_format_all";
 
     VERIFY_AP (ap);
     *coord_string = '\0';
@@ -714,8 +837,7 @@ void wcs_format_all (KwcsAstro ap, char coord_string[STRING_LENGTH],
 				 num_restr, restr_names, restr_values) )
 	     == NULL )
 	{
-	    (void) fprintf (stderr, "%s: missing DEC information\n",
-			    function_name);
+	    fprintf (stderr, "%s: missing DEC information\n", function_name);
 	    return;
 	}
 	ra = &radec_value;
@@ -728,38 +850,47 @@ void wcs_format_all (KwcsAstro ap, char coord_string[STRING_LENGTH],
 				 num_restr, restr_names, restr_values) )
 	     == NULL )
 	{
-	    (void) fprintf (stderr, "%s: missing RA information\n",
-			    function_name);
+	    fprintf (stderr, "%s: missing RA information\n", function_name);
 	    return;
 	}
 	dec = &radec_value;
     }
     wcs_astro_transform (ap, 1, ra, FALSE, dec, FALSE, vel, FALSE,
 			 num_restr, restr_names, restr_values);
+    transform_linear (ap, 1, name0, &coord0, FALSE);
     wcs_astro_format (ap, name0, coord_string, coord0);
     if (name1 != NULL)
     {
+	transform_linear (ap, 1, name1, &coord1, FALSE);
 	wcs_astro_format (ap, name1, txt, coord1);
-	(void) strcat (coord_string, "  ");
-	(void) strcat (coord_string, txt);
+	strcat (coord_string, "  ");
+	strcat (coord_string, txt);
     }
     if (name2 != NULL)
     {
+	transform_linear (ap, 1, name2, &coord2, FALSE);
 	wcs_astro_format (ap, name2, txt, coord2);
-	(void) strcat (coord_string, "  ");
-	(void) strcat (coord_string, txt);
+	strcat (coord_string, "  ");
+	strcat (coord_string, txt);
     }
     /*  Add any restriction information  */
     for (count = 0; count < num_restr; ++count)
     {
 	if (unspec_name == restr_names[count])
 	{
-	    wcs_astro_format (ap, restr_names[count], txt, radec_value);
+	    value = radec_value;
 	}
-	else wcs_astro_format (ap, restr_names[count], txt,
-			       restr_values[count]);
-	(void) strcat (coord_string, "  ");
-	(void) strcat (coord_string, txt);
+	else
+	{
+	    value = restr_values[count];
+	    if (strcmp (restr_names[count], ap->vel.dim_name) == 0)
+	    {
+		transform_vel (ap, 1, &value, FALSE);
+	    }
+	}
+	wcs_astro_format (ap, restr_names[count], txt, value);
+	strcat (coord_string, "  ");
+	strcat (coord_string, txt);
     }
     for (curr = ap->first_extra; curr != NULL; curr = curr->next)
     {
@@ -768,13 +899,98 @@ void wcs_format_all (KwcsAstro ap, char coord_string[STRING_LENGTH],
 	    wcs_astro_format (ap, curr->ctype, txt, radec_value);
 	}
 	else wcs_astro_format (ap, curr->ctype, txt, curr->refval);
-	(void) strcat (other_string, txt);
-	if (curr->next != NULL) (void) strcat (other_string, "  ");
+	strcat (other_string, txt);
+	if (curr->next != NULL) strcat (other_string, "  ");
     }
-}   /*  End Function wcs_format_all  */
+}   /*  End Function wcs_astro_format_all  */
+
+/*EXPERIMENTAL_FUNCTION*/
+flag wcs_astro_get_preferred_units (char new_units[STRING_LENGTH],
+				    char format_str[STRING_LENGTH],
+				    double *scale, CONST char *old_units)
+/*  [SUMMARY] Get preferred units for data.
+    <new_units> The new units string is written here.
+    <format_str> The format string is written here.
+    <scale> The scale value to convert to the new units will be written here.
+    <old_units> The old units string.
+    [RETURNS] TRUE if preferred units were found, else FALSE.
+*/
+{
+    if (strncmp (old_units, "M/S", 3) == 0)
+    {
+	strcpy (new_units, "km/s");
+	strcpy (format_str, "%.2f");
+	*scale = 1e-3;
+    }
+    else if (strncmp (old_units, "KM/S", 4) == 0)
+    {
+	strcpy (new_units, "km/s");
+	strcpy (format_str, "%.1f");
+	*scale = 1.0;
+    }
+    else if (strncmp (old_units, "JY/BEAM", 7) == 0)
+    {
+	strcpy (new_units, "mJy/Beam");
+	strcpy (format_str, "%.1f");
+	*scale = 1e+3;
+    }
+    else if (strncmp (old_units, "FREQ", 4) == 0)
+    {
+	strcpy (new_units, "MHz");
+	strcpy (format_str, "%.3f");
+	*scale = 1e-6;
+    }
+    else if (strcmp (old_units, "HZ") == 0)
+    {
+	strcpy (new_units, "MHz");
+	strcpy (format_str, "%.3f");
+	*scale = 1e-6;
+    }
+    else if (strncmp (old_units, "FELO", 4) == 0)
+    {
+	strcpy (new_units, "km/s");
+	strcpy (format_str, "%.2f");
+	*scale = 1e-3;
+    }
+    else if (strncmp (old_units, "VELO", 4) == 0)
+    {
+	strcpy (new_units, "km/s");
+	strcpy (format_str, "%.2f");
+	*scale = 1e-3;
+    }
+    else return (FALSE);
+    return (TRUE);
+}   /*  End Function wcs_astro_get_preferred_units  */
 
 
 /*  Private functions follow  */
+
+static KwcsAstro create_new ()
+/*  [SUMMARY] Create new KwcsAstro object.
+    [RETURNS] A KwcsAstro object on success, else NULL.
+*/
+{
+    KwcsAstro new;
+    static char function_name[] = "__wcs_astro_create_new";
+
+    if ( ( new = (KwcsAstro) m_alloc (sizeof *new) ) == NULL )
+    {
+	m_error_notify (function_name, "KwcsAstro object");
+	return (NULL);
+    }
+    /*  Initialise  */
+    new->projection = PROJ_INIT;
+    new->dss = NULL;
+    new->sin_rotation = TOOBIG;
+    new->cos_rotation = TOOBIG;
+    new->equinox = EQUINOX_J2000;
+    new->vel.type = VELOCITY_UNKNOWN;
+    new->linear_axes = NULL;
+    new->first_extra = NULL;
+    new->radec_buffer = NULL;
+    new->radec_buf_len = 0;
+    return (new);
+}   /*  End Function create_new  */
 
 static flag process_axis (KwcsAstro ap,
 			  CONST packet_desc *pack_desc, CONST char *packet,
@@ -793,15 +1009,29 @@ static flag process_axis (KwcsAstro ap,
     unsigned int item_index;
     double deg_to_rad = PION180;
     struct sky_coord_type *sky = NULL;
+    struct velocity_coord_type *vel = NULL;
+    struct linear_coord_type *linear = NULL;
     char *encls_desc;
     char txt[STRING_LENGTH];
-    double reference[2];
+    double crval[2], crpix[2], cdelt[2];
     double value[2];
+    static char function_name[] = "__wcs_astro_process_axis";
 
-    (void) sprintf (txt, "CRVAL%u", index);
-    if ( !ds_get_unique_named_value (pack_desc, packet, txt, NULL, reference) )
+    str_len = strlen (axis_name);
+    sprintf (txt, "CRVAL%u", index);
+    if ( !ds_get_unique_named_value (pack_desc, packet, txt, NULL, crval) )
     {
-	return (FALSE);
+	return (TRUE);
+    }
+    sprintf (txt, "CRPIX%u", index);
+    if ( !ds_get_unique_named_value (pack_desc, packet, txt, NULL, crpix) )
+    {
+	return (TRUE);
+    }
+    sprintf (txt, "CDELT%u", index);
+    if ( !ds_get_unique_named_value (pack_desc, packet, txt, NULL, cdelt) )
+    {
+	return (TRUE);
     }
     if (strncmp (axis_name, "RA-", 3) == 0)
     {
@@ -813,18 +1043,49 @@ static flag process_axis (KwcsAstro ap,
 	/*  Declination  */
 	sky = &ap->dec;
     }
+    else if (strncmp (axis_name, "FREQ", 4) == 0)
+    {
+	/*  Frequency  */
+	vel = &ap->vel;
+	ap->vel.type = VELOCITY_FREQ;
+    }
+    else if (strncmp (axis_name, "VELO", 4) == 0)
+    {
+	/*  Velocity  */
+	vel = &ap->vel;
+	ap->vel.type = VELOCITY_VELO;
+    }
+    else if (strncmp (axis_name, "FELO", 4) == 0)
+    {
+	/*  Velocity  */
+	vel = &ap->vel;
+	ap->vel.type = VELOCITY_FELO;
+    }
+    else if ( (strcmp (axis_name, "ANGLE") == 0) ||
+	      (strcmp (axis_name + str_len - 5, "(deg)") == 0) )
+    {
+	/*  Offset angle  */
+	if ( ( linear = (struct linear_coord_type *)
+	       m_alloc (sizeof *linear) ) == NULL )
+	{
+	    m_abort (function_name, "linear axis");
+	}
+    }
     if (sky != NULL)
     {
 	/*  Right ascension or declination  */
-	sky->reference = reference[0];
+	sky->reference = crval[0];
+	sky->ref_pos = crpix[0] - 1.0;
+	sky->increment = cdelt[0];
 	sky->cos_ref = cos (sky->reference * deg_to_rad);
 	sky->sin_ref = sin (sky->reference * deg_to_rad);
 	/*  Determine the projection system  */
-	str_len = strlen (axis_name);
 	if (strcmp (axis_name + str_len - 4, "-SIN") == 0) proj = PROJ_SIN;
 	else if (strcmp (axis_name + str_len -4, "-TAN") == 0) proj = PROJ_TAN;
 	else if (strcmp (axis_name + str_len -4, "-NCP") == 0) proj = PROJ_NCP;
 	else if (strcmp (axis_name + str_len -4, "-FLT") == 0) proj = PROJ_FLT;
+	else if (strcmp (axis_name + str_len -4, "-ARC") == 0) proj = PROJ_ARC;
+	else if (strcmp (axis_name + str_len -4, "-CAR") == 0) proj = PROJ_CAR;
 	else proj = PROJ_UNKNOWN;
 	if (ap->projection == PROJ_INIT)
 	{
@@ -832,10 +1093,10 @@ static flag process_axis (KwcsAstro ap,
 	}
 	else if (ap->projection != proj)
 	{
-	    (void) fputs ("Projections do not match\n", stderr);
+	    fputs ("Projections do not match\n", stderr);
 	    return (FALSE);
 	}
-	(void) sprintf (txt, "CROTA%u", index);
+	sprintf (txt, "CROTA%u", index);
 	if ( ds_get_unique_named_value (pack_desc, packet, txt, NULL, value) &&
 	     (value[0] != 0.0) )
 	{
@@ -849,25 +1110,30 @@ static flag process_axis (KwcsAstro ap,
 	    ap->sin_rotation = sin (deg_to_rad * value[0]);
 	    ap->cos_rotation = cos (deg_to_rad * value[0]);
 	}
-	(void) strcpy (sky->dim_name, axis_name);
+	strcpy (sky->dim_name, axis_name);
     }
-    else if (strncmp (axis_name, "FREQ", 4) == 0)
+    if (vel != NULL)
     {
-	/*  Frequency  */
-	ap->vel.type = VELOCITY_FREQ;
-	(void) strcpy (ap->vel.dim_name, axis_name);
+	vel->reference = crval[0];
+	vel->ref_pos = crpix[0] - 1.0;
+	vel->increment = cdelt[0];
+	strcpy (ap->vel.dim_name, axis_name);
+	if ( !ds_get_unique_named_value (pack_desc, packet, "RESTFREQ", NULL,
+					 value) )
+	{
+	    vel->restfreq = TOOBIG;
+	    if (ap->vel.type == VELOCITY_VELO) ap->vel.type = VELOCITY_RAWVEL;
+	}
+	else vel->restfreq = value[0];
     }
-    else if (strncmp (axis_name, "VELO", 4) == 0)
+    if (linear != NULL)
     {
-	/*  Velocity  */
-	ap->vel.type = VELOCITY_VELO;
-	(void) strcpy (ap->vel.dim_name, axis_name);
-    }
-    else if (strncmp (axis_name, "FELO", 4) == 0)
-    {
-	/*  Velocity  */
-	ap->vel.type = VELOCITY_FELO;
-	(void) strcpy (ap->vel.dim_name, axis_name);
+	linear->reference = crval[0];
+	linear->ref_pos = crpix[0] - 1.0;
+	linear->increment = cdelt[0];
+	strcpy (linear->dim_name, axis_name);
+	linear->next = ap->linear_axes;
+	ap->linear_axes = linear;
     }
     /*  Check if this axis is a dimension  */
     /*  Search for specified name first  */
@@ -875,7 +1141,7 @@ static flag process_axis (KwcsAstro ap,
 				  &item_index) )
     {
       case IDENT_NOT_FOUND:
-	add_extra (ap, axis_name, reference[0]);
+	add_extra (ap, axis_name, crval[0]);
 	break;
       default:
 	break;
@@ -1073,7 +1339,6 @@ static void transform_ra_dec_sin (KwcsAstro ap, unsigned int num_coords,
     <ap> The KwcsAstro object.
     <num_coords> The number of co-ordinates to transform.
     <ra> A pointer to the right ascension values. These will be modified.
-    co-ordinates, else they are transformed to non-linear co-ordinates.
     <dec> A pointer to the declination values. These will be modified.
     <direction> The direction of the transform.
     [RETURNS] Nothing.
@@ -1088,10 +1353,12 @@ static void transform_ra_dec_sin (KwcsAstro ap, unsigned int num_coords,
     double diff_alpha, sin_diff_alpha, cos_diff_alpha;
     double one = 1.0;
 
-    for (count = 0; count < num_coords; ++count)
+    if (direction == DIR_ADtoXY)
     {
-	if (direction == DIR_ADtoXY)
+	/*  Convert from RA,DEC to x,y  */
+	for (count = 0; count < num_coords; ++count)
 	{
+	    /*  Convert degrees to offset radians  */
 	    diff_alpha = (ra[count] - ap->ra.reference) * deg_to_rad;
 	    delta = dec[count] * deg_to_rad;
 	    cos_delta = cos (delta);
@@ -1101,18 +1368,22 @@ static void transform_ra_dec_sin (KwcsAstro ap, unsigned int num_coords,
 	    /*  Rotate  */
 	    x = l * ap->cos_rotation + m * ap->sin_rotation;
 	    y = m * ap->cos_rotation - l * ap->sin_rotation;
-	    /*  Convert back to degrees and add to reference  */
-	    ra[count] = ap->ra.reference + x * rad_to_deg;
-	    dec[count] = ap->dec.reference + y * rad_to_deg;
+	    /*  Convert to pixel positions  */
+	    ra[count] = ap->ra.ref_pos + x * rad_to_deg / ap->ra.increment;
+	    dec[count] = ap->dec.ref_pos + y * rad_to_deg / ap->dec.increment;
 	}
-	else if (direction == DIR_XDtoAY)
-	{
-	    double b, c, s;
+    }
+    else if (direction == DIR_XDtoAY)
+    {
+	/*  Convert from x,DEC to RA,y  */
+	double b, c, s;
 
+	for (count = 0; count < num_coords; ++count)
+	{
 	    alpha = ap->cos_rotation;
+	    x = (ra[count] - ap->ra.ref_pos) * ap->ra.increment * deg_to_rad;
 	    b = ap->dec.sin_ref * ap->sin_rotation;
 	    delta = deg_to_rad * dec[count];
-	    x = deg_to_rad * (ra[count] - ap->ra.reference);
 	    cos_delta = cos (delta);
 	    sin_delta = sin (delta);
 	    s = x - sin_delta * ap->dec.cos_ref * ap->sin_rotation;
@@ -1124,16 +1395,21 @@ static void transform_ra_dec_sin (KwcsAstro ap, unsigned int num_coords,
 	    b = cos_delta * ap->dec.sin_ref * cos_alpha * ap->cos_rotation;
 	    c = cos_delta * sin_alpha * ap->sin_rotation;
 	    ra[count] = ap->ra.reference + rad_to_deg * diff_alpha;
-	    dec[count] = ap->dec.reference + rad_to_deg * (alpha - b - c);
+	    dec[count] = ap->dec.ref_pos + rad_to_deg * (alpha - b - c) /
+		ap->dec.increment;
 	}
-	else if (direction == DIR_AYtoXD)
-	{
-	    double b, c;
+    }
+    else if (direction == DIR_AYtoXD)
+    {
+	/*  Convert from RA,y to x,DEC  */
+	double b, c;
 
-	    diff_alpha = deg_to_rad * (ra[count] - ap->ra.reference);
+	for (count = 0; count < num_coords; ++count)
+	{
+    	    diff_alpha = deg_to_rad * (ra[count] - ap->ra.reference);
 	    cos_diff_alpha = cos (diff_alpha);
 	    sin_diff_alpha = sin (diff_alpha);
-	    y = deg_to_rad * (dec[count] - ap->dec.reference);
+	    y = deg_to_rad * (dec[count] - ap->dec.ref_pos) *ap->dec.increment;
 	    alpha = ap->dec.cos_ref * ap->cos_rotation;
 	    b = ap->dec.sin_ref * cos_diff_alpha * ap->cos_rotation +
 		sin_diff_alpha * ap->sin_rotation;
@@ -1143,14 +1419,19 @@ static void transform_ra_dec_sin (KwcsAstro ap, unsigned int num_coords,
 	    alpha = cos_delta * sin_diff_alpha * ap->cos_rotation;
 	    b = sin_delta * ap->dec.cos_ref * ap->sin_rotation;
 	    c = cos_delta * ap->dec.sin_ref * cos_diff_alpha *ap->sin_rotation;
-	    ra[count] = ap->ra.reference + rad_to_deg * (alpha + b - c);
+	    ra[count] = ap->ra.ref_pos + rad_to_deg * (alpha + b - c) /
+		ap->ra.increment;
 	    dec[count] = rad_to_deg * delta;
 	}
-	else if (direction == DIR_XYtoAD)
+    }
+    else if (direction == DIR_XYtoAD)
+    {
+	/*  Convert from x,y to RA,DEC  */
+	for (count = 0; count < num_coords; ++count)
 	{
-	    /*  Subtract reference and convert to radians  */
-	    x = (ra[count] - ap->ra.reference) * deg_to_rad;
-	    y = (dec[count] - ap->dec.reference) * deg_to_rad;
+	    /*  Convert pixels to offset radians  */
+	    x = (ra[count] - ap->ra.ref_pos) * ap->ra.increment * deg_to_rad;
+	    y = (dec[count] - ap->dec.ref_pos) * ap->dec.increment *deg_to_rad;
 	    /*  Rotate  */
 	    l = x * ap->cos_rotation - y * ap->sin_rotation;
 	    m = y * ap->cos_rotation + x * ap->sin_rotation;
@@ -1172,7 +1453,6 @@ static void transform_ra_dec_tan (KwcsAstro ap, unsigned int num_coords,
     <ap> The KwcsAstro object.
     <num_coords> The number of co-ordinates to transform.
     <ra> A pointer to the right ascension values. These will be modified.
-    co-ordinates, else they are transformed to non-linear co-ordinates.
     <dec> A pointer to the declination values. These will be modified.
     <direction> The direction of the transform.
     [RETURNS] Nothing.
@@ -1187,10 +1467,12 @@ static void transform_ra_dec_tan (KwcsAstro ap, unsigned int num_coords,
     double diff_alpha, sin_diff_alpha, cos_diff_alpha;
     double minus_one = -1.0;
 
-    for (count = 0; count < num_coords; ++count)
+    if (direction == DIR_ADtoXY)
     {
-	if (direction == DIR_ADtoXY)
+	/*  Convert from RA,DEC to x,y  */
+	for (count = 0; count < num_coords; ++count)
 	{
+	    /*  Convert degrees to offset radians  */
 	    diff_alpha = (ra[count] - ap->ra.reference) * deg_to_rad;
 	    cos_diff_alpha = cos (diff_alpha);
 	    delta = dec[count] * deg_to_rad;
@@ -1204,15 +1486,19 @@ static void transform_ra_dec_tan (KwcsAstro ap, unsigned int num_coords,
 	    /*  Rotate  */
 	    x = l * ap->cos_rotation + m * ap->sin_rotation;
 	    y = m * ap->cos_rotation - l * ap->sin_rotation;
-	    /*  Convert back to degrees and add to reference  */
-	    ra[count] = ap->ra.reference + x * rad_to_deg;
-	    dec[count] = ap->dec.reference + y * rad_to_deg;
+	    /*  Convert to pixel positions  */
+	    ra[count] = ap->ra.ref_pos + x * rad_to_deg / ap->ra.increment;
+	    dec[count] = ap->dec.ref_pos + y * rad_to_deg / ap->dec.increment;
 	}
-	else if (direction == DIR_XDtoAY)
-	{
-	    double b, c, s, tan_delta;
+    }
+    else if (direction == DIR_XDtoAY)
+    {
+	/*  Convert from x,DEC to RA,y  */
+	double b, c, s, tan_delta;
 
-	    x = deg_to_rad * (ra[count] - ap->ra.reference);
+	for (count = 0; count < num_coords; ++count)
+	{
+	    x = (ra[count] - ap->ra.ref_pos) * ap->ra.increment * deg_to_rad;
 	    alpha = ap->cos_rotation;
 	    b = x * ap->dec.cos_ref + ap->dec.sin_ref * ap->sin_rotation;
 	    c = x * ap->dec.sin_ref - ap->dec.cos_ref * ap->sin_rotation;
@@ -1230,17 +1516,21 @@ static void transform_ra_dec_tan (KwcsAstro ap, unsigned int num_coords,
 	    s = sin_delta * ap->dec.sin_ref;
 	    tmp = cos_delta * ap->dec.cos_ref * cos_diff_alpha;
 	    ra[count] = ap->ra.reference + rad_to_deg * diff_alpha;
-	    dec[count] = ap->dec.reference +
-		rad_to_deg * (alpha - b - c) / (s + tmp);
+	    dec[count] = ap->dec.ref_pos +
+		rad_to_deg * (alpha - b - c) / (s + tmp) / ap->dec.increment;
 	}
-	else if (direction == DIR_AYtoXD)
-	{
-	    double b, c, s, tan_delta;
+    }
+    else if (direction == DIR_AYtoXD)
+    {
+	/*  Convert from RA,y to x,DEC  */
+	double b, c, s, tan_delta;
 
+	for (count = 0; count < num_coords; ++count)
+	{
 	    diff_alpha = deg_to_rad * (ra[count] - ap->ra.reference);
 	    cos_diff_alpha = cos (diff_alpha);
 	    sin_diff_alpha = sin (diff_alpha);
-	    y = deg_to_rad * (dec[count] - ap->dec.reference);
+	    y = deg_to_rad * (dec[count] - ap->dec.ref_pos) *ap->dec.increment;
 	    alpha = ap->dec.sin_ref * cos_diff_alpha * ap->cos_rotation;
 	    b = sin_diff_alpha * ap->sin_rotation;
 	    c = y * ap->dec.cos_ref * cos_diff_alpha;
@@ -1252,17 +1542,21 @@ static void transform_ra_dec_tan (KwcsAstro ap, unsigned int num_coords,
 	    c = ap->dec.sin_ref * cos_diff_alpha * ap->sin_rotation;
 	    s = tan_delta * ap->dec.sin_ref;
 	    tmp = ap->dec.cos_ref * cos_diff_alpha;
-	    ra[count] = ap->ra.reference +
-		rad_to_deg * (alpha + b - c) / (s + tmp);
+	    ra[count] = ap->ra.ref_pos +
+		rad_to_deg * (alpha + b - c) / (s + tmp) / ap->ra.increment;
 	    dec[count] = rad_to_deg * atan (tan_delta);
 	}
-	else if (direction == DIR_XYtoAD)
-	{
-	    double s;
+    }
+    else if (direction == DIR_XYtoAD)
+    {
+	/*  Convert from x,y to RA,DEC  */
+	double s;
 
-	    /*  Subtract reference and convert to radians  */
-	    x = (ra[count] - ap->ra.reference) * deg_to_rad;
-	    y = (dec[count] - ap->dec.reference) * deg_to_rad;
+	for (count = 0; count < num_coords; ++count)
+	{
+	    /*  Convert pixels to offset radians  */
+	    x = (ra[count] - ap->ra.ref_pos) * ap->ra.increment * deg_to_rad;
+	    y = (dec[count] - ap->dec.ref_pos) * ap->dec.increment *deg_to_rad;
 	    /*  Rotate  */
 	    l = x * ap->cos_rotation - y * ap->sin_rotation;
 	    m = y * ap->cos_rotation + x * ap->sin_rotation;
@@ -1289,7 +1583,6 @@ static void transform_ra_dec_ncp (KwcsAstro ap, unsigned int num_coords,
     <ap> The KwcsAstro object.
     <num_coords> The number of co-ordinates to transform.
     <ra> A pointer to the right ascension values. These will be modified.
-    co-ordinates, else they are transformed to non-linear co-ordinates.
     <dec> A pointer to the declination values. These will be modified.
     <direction> The direction of the transform.
     [RETURNS] Nothing.
@@ -1306,10 +1599,12 @@ static void transform_ra_dec_ncp (KwcsAstro ap, unsigned int num_coords,
     double one = 1.0;
     double minus_one = -1.0;
 
-    for (count = 0; count < num_coords; ++count)
+    if (direction == DIR_ADtoXY)
     {
-	if (direction == DIR_ADtoXY)
+	/*  Convert from RA,DEC to x,y  */
+	for (count = 0; count < num_coords; ++count)
 	{
+	    /*  Convert degrees to offset radians  */
 	    diff_alpha = (ra[count] - ap->ra.reference) * deg_to_rad;
 	    delta = dec[count] * deg_to_rad;
 	    cos_delta = cos (delta);
@@ -1319,15 +1614,19 @@ static void transform_ra_dec_ncp (KwcsAstro ap, unsigned int num_coords,
 	    /*  Rotate  */
 	    x = l * ap->cos_rotation + m * ap->sin_rotation;
 	    y = m * ap->cos_rotation - l * ap->sin_rotation;
-	    /*  Convert back to degrees and add to reference  */
-	    ra[count] = ap->ra.reference + x * rad_to_deg;
-	    dec[count] = ap->dec.reference + y * rad_to_deg;
+	    /*  Convert to pixel positions  */
+	    ra[count] = ap->ra.ref_pos + x * rad_to_deg / ap->ra.increment;
+	    dec[count] = ap->dec.ref_pos + y * rad_to_deg / ap->dec.increment;
 	}
-	else if (direction == DIR_XDtoAY)
-	{
-	    double b, c, s;
+    }
+    else if (direction == DIR_XDtoAY)
+    {
+	/*  Convert from x,DEC to RA,y  */
+	double b, c, s;
 
-	    x = deg_to_rad * (ra[count] - ap->ra.reference);
+	for (count = 0; count < num_coords; ++count)
+	{
+	    x = (ra[count] - ap->ra.ref_pos) * ap->ra.increment * deg_to_rad;
 	    cos_delta = cos (deg_to_rad * dec[count]);
 	    alpha = ap->cos_rotation;
 	    b = ap->sin_rotation / ap->dec.sin_ref;
@@ -1338,14 +1637,19 @@ static void transform_ra_dec_ncp (KwcsAstro ap, unsigned int num_coords,
 	    b = ap->cos_rotation *cos_delta *cos (diff_alpha) /ap->dec.sin_ref;
 	    c = ap->sin_rotation * cos_delta * sin (diff_alpha);
 	    ra[count] = ap->ra.reference + rad_to_deg * diff_alpha;
-	    dec[count] = ap->dec.reference + rad_to_deg * (alpha - b - c);
+	    dec[count] = ap->dec.ref_pos + rad_to_deg * (alpha - b - c) /
+		ap->dec.increment;
 	}
-	else if (direction == DIR_AYtoXD)
-	{
-	    double b, c, s, q;
+    }
+    else if (direction == DIR_AYtoXD)
+    {
+	/*  Convert from RA,y to x,DEC  */
+	double b, c, s, q;
 
-	    y = deg_to_rad * (dec[count] - ap->dec.reference);
+	for (count = 0; count < num_coords; ++count)
+	{
 	    diff_alpha = deg_to_rad * (ra[count] - ap->ra.reference);
+	    y = deg_to_rad * (dec[count] - ap->dec.ref_pos) *ap->dec.increment;
 	    cos_diff_alpha = cos (diff_alpha);
 	    sin_diff_alpha = sin (diff_alpha);
 	    s = ap->dec.cos_ref * ap->cos_rotation - y * ap->dec.sin_ref;
@@ -1361,14 +1665,19 @@ static void transform_ra_dec_ncp (KwcsAstro ap, unsigned int num_coords,
 	    alpha = cos_delta * sin_diff_alpha * ap->cos_rotation;
 	    b = ap->dec.cos_ref * ap->sin_rotation / ap->dec.sin_ref;
 	    c = cos_delta * cos_diff_alpha * ap->sin_rotation /ap->dec.sin_ref;
-	    ra[count] = ap->ra.reference + rad_to_deg * (alpha + b - c);
+	    ra[count] = ap->ra.ref_pos + rad_to_deg * (alpha + b - c) /
+		ap->ra.increment;
 	    dec[count] = rad_to_deg * delta;
 	}
-	else if (direction == DIR_XYtoAD)
+    }
+    else if (direction == DIR_XYtoAD)
+    {
+	/*  Convert from x,y to RA,DEC  */
+	for (count = 0; count < num_coords; ++count)
 	{
-	    /*  Subtract reference and convert to radians  */
-	    x = (ra[count] - ap->ra.reference) * deg_to_rad;
-	    y = (dec[count] - ap->dec.reference) * deg_to_rad;
+	    /*  Convert pixels to offset radians  */
+	    x = (ra[count] - ap->ra.ref_pos) * ap->ra.increment * deg_to_rad;
+	    y = (dec[count] - ap->dec.ref_pos) * ap->dec.increment *deg_to_rad;
 	    /*  Rotate  */
 	    l = x * ap->cos_rotation - y * ap->sin_rotation;
 	    m = y * ap->cos_rotation + x * ap->sin_rotation;
@@ -1384,3 +1693,680 @@ static void transform_ra_dec_ncp (KwcsAstro ap, unsigned int num_coords,
 	}
     }
 }   /*  End Function transform_ra_dec_ncp  */
+
+static void transform_ra_dec_flat (KwcsAstro ap, unsigned int num_coords,
+				   double *ra, double *dec,
+				   unsigned int direction)
+/*  [SUMMARY] Flat projection of co-ordinates.
+    <ap> The KwcsAstro object.
+    <num_coords> The number of co-ordinates to transform.
+    <ra> A pointer to the right ascension values. These will be modified.
+    <dec> A pointer to the declination values. These will be modified.
+    <direction> The direction of the transform.
+    [RETURNS] Nothing.
+*/
+{
+    unsigned int count;
+
+    if (direction == DIR_ADtoXY)
+    {
+	/*  Convert from RA,DEC to x,y  */
+	for (count = 0; count < num_coords; ++count)
+	{
+	    ra[count] = ap->ra.ref_pos + (ra[count] - ap->ra.reference) /
+		ap->ra.increment;
+	    dec[count] = ap->dec.ref_pos + (dec[count] - ap->dec.reference) /
+		ap->dec.increment;
+	}
+    }
+    else if (direction == DIR_XDtoAY)
+    {
+	/*  Convert from x,DEC to RA,y  */
+	for (count = 0; count < num_coords; ++count)
+	{
+	    ra[count] = ap->ra.reference + (ra[count] - ap->ra.ref_pos) *
+		ap->ra.increment;
+	    dec[count] = ap->dec.ref_pos + (dec[count] - ap->dec.reference) /
+		ap->dec.increment;
+	}
+    }
+    else if (direction == DIR_AYtoXD)
+    {
+	/*  Convert from RA,y to x,DEC  */
+	for (count = 0; count < num_coords; ++count)
+	{
+	    ra[count] = ap->ra.ref_pos + (ra[count] - ap->ra.reference) /
+		ap->ra.increment;
+	    dec[count] = ap->dec.reference + (dec[count] - ap->dec.ref_pos) *
+		ap->dec.increment;
+	}
+    }
+    else if (direction == DIR_XYtoAD)
+    {
+	/*  Convert from x,y to RA,DEC  */
+	for (count = 0; count < num_coords; ++count)
+	{
+	    ra[count] = ap->ra.reference + (ra[count] - ap->ra.ref_pos) *
+		ap->ra.increment;
+	    dec[count] = ap->dec.reference + (dec[count] - ap->dec.ref_pos) *
+		ap->dec.increment;
+	}
+    }
+}   /*  End Function transform_ra_dec_flat  */
+
+static void transform_ra_dec_arc (KwcsAstro ap, unsigned int num_coords,
+				  double *ra, double *dec,
+				  unsigned int direction)
+/*  [SUMMARY] Rectangular projection of co-ordinates.
+    <ap> The KwcsAstro object.
+    <num_coords> The number of co-ordinates to transform.
+    <ra> A pointer to the right ascension values. These will be modified.
+    <dec> A pointer to the declination values. These will be modified.
+    <direction> The direction of the transform.
+    [RETURNS] Nothing.
+*/
+{
+    unsigned int count;
+    double deg_to_rad = PION180;
+    double rad_to_deg = 180.0 / PI;
+    double l, m, x, y;
+    double delta, sin_delta, cos_delta;
+    double diff_alpha, sin_diff_alpha, cos_diff_alpha;
+    double one = 1.0;
+
+    if (direction == DIR_ADtoXY)
+    {
+	/*  Convert from RA,DEC to x,y  */
+	double a, s, t;
+
+	for (count = 0; count < num_coords; ++count)
+	{
+	    /*  Convert degrees to offset radians  */
+	    diff_alpha = (ra[count] - ap->ra.reference) * deg_to_rad;
+	    delta = dec[count] * deg_to_rad;
+	    cos_diff_alpha = cos (diff_alpha);
+	    sin_diff_alpha = sin (diff_alpha);
+	    cos_delta = cos (delta);
+	    sin_delta = sin (delta);
+	    s = sin_delta * ap->dec.sin_ref +
+		cos_delta * ap->dec.cos_ref * cos_diff_alpha;
+	    if (s > one) s = one;
+	    else if (s < -one) s = -one;
+	    t = acos (s);
+	    if (t == 0.0) a = one;
+	    else a = t / sin (t);
+	    l = a * cos_delta * sin_diff_alpha;
+	    m = a * (sin_delta * ap->dec.cos_ref -
+		     cos_delta * ap->dec.sin_ref * cos_diff_alpha);
+	    /*  Rotate  */
+	    x = l * ap->cos_rotation + m * ap->sin_rotation;
+	    y = m * ap->cos_rotation - l * ap->sin_rotation;
+	    /*  Convert to pixel positions  */
+	    ra[count] = ap->ra.ref_pos + x * rad_to_deg / ap->ra.increment;
+	    dec[count] = ap->dec.ref_pos + y * rad_to_deg / ap->dec.increment;
+	}
+    }
+    else if (direction == DIR_XDtoAY)
+    {
+	/*  Convert from x,DEC to RA,y  */
+	double a, b, f, t, yold;
+
+	if (ap->cos_rotation == 0.0) return;
+	for (count = 0; count < num_coords; ++count)
+	{
+	    x = (ra[count] - ap->ra.ref_pos) * ap->ra.increment * deg_to_rad;
+	    delta = deg_to_rad * dec[count];
+	    cos_delta = cos (delta);
+	    sin_delta = sin (delta);
+	    a = x * ap->sin_rotation * ap->dec.cos_ref;
+	    b = ap->cos_rotation * ap->dec.cos_ref;
+	    y = 0.0;
+	    do
+	    {
+		yold = y;
+		t = sqrt (x * x + y * y);
+		if (t == 0.0) f = one;
+		else f = sin (t) / t;
+		y = (sin_delta - ap->dec.sin_ref * cos (t) - a * f) / b / f;
+	    }
+	    while (fabs (y - yold) > 1e-10);
+	    t = sqrt (x * x + y * y);
+	    if (t == 0.0) f = one;
+	    else f = sin (t) / t;
+	    diff_alpha = asin (f * (x * ap->cos_rotation -
+				    y * ap->sin_rotation) / cos_delta);
+	    ra[count] = ap->ra.reference + rad_to_deg * diff_alpha;
+	    dec[count] = ap->dec.ref_pos + rad_to_deg * y / ap->dec.increment;
+	}
+    }
+    else if (direction == DIR_AYtoXD)
+    {
+	/*  Convert from RA,y to x,DEC  */
+	double a, b, c, s, t, xold;
+
+	if (ap->cos_rotation == 0.0) return;
+	for (count = 0; count < num_coords; ++count)
+	{
+    	    diff_alpha = deg_to_rad * (ra[count] - ap->ra.reference);
+	    cos_diff_alpha = cos (diff_alpha);
+	    sin_diff_alpha = sin (diff_alpha);
+	    y = deg_to_rad * (dec[count] - ap->dec.ref_pos) *ap->dec.increment;
+	    a = atan (ap->dec.sin_ref / ap->dec.cos_ref / cos_diff_alpha);
+	    b = sqrt (one - ap->dec.cos_ref * ap->dec.cos_ref *
+		      sin_diff_alpha * sin_diff_alpha);
+	    x = 0.0;
+	    do
+	    {
+		xold = x;
+		t = sqrt (x * x + y * y);
+		s = cos (t) / b;
+		if (s > one) s = one;
+		else if (s < -one) s = one;
+		c = acos (s);
+		if (y < 0.0) delta = a - c;
+		else delta = a + c;
+		x = ( y * ap->sin_rotation +
+		      cos (delta) * sin_diff_alpha * t / sin (t) ) /
+		    ap->cos_rotation;
+	    }
+	    while (fabs (x - xold) > 1e-10);
+	    ra[count] = ap->ra.ref_pos + rad_to_deg * x / ap->ra.increment;
+	    dec[count] = rad_to_deg * delta;
+	}
+    }
+    else if (direction == DIR_XYtoAD)
+    {
+	/*  Convert from x,y to RA,DEC  */
+	double a, t;
+
+	for (count = 0; count < num_coords; ++count)
+	{
+	    /*  Convert pixels to offset radians  */
+	    x = (ra[count] - ap->ra.ref_pos) * ap->ra.increment * deg_to_rad;
+	    y = (dec[count] - ap->dec.ref_pos) * ap->dec.increment *deg_to_rad;
+	    /*  Rotate  */
+	    l = x * ap->cos_rotation - y * ap->sin_rotation;
+	    m = y * ap->cos_rotation + x * ap->sin_rotation;
+	    t = sqrt (l * l + m * m);
+	    if (t == 0.0) a = one;
+	    else a = sin (t) / t;
+	    delta = asin ( a *m * ap->dec.cos_ref + ap->dec.sin_ref *cos (t) );
+	    /*  Convert back to degrees and add to reference  */
+	    ra[count] = ap->ra.reference + asin ( a * l / cos (delta) ) *
+		rad_to_deg;
+	    dec[count] = rad_to_deg * delta;
+	}
+    }
+}   /*  End Function transform_ra_dec_arc  */
+
+static void transform_ra_dec_car (KwcsAstro ap, unsigned int num_coords,
+				   double *ra, double *dec,
+				   unsigned int direction)
+/*  [SUMMARY] Cartesian projection of co-ordinates.
+    <ap> The KwcsAstro object.
+    <num_coords> The number of co-ordinates to transform.
+    <ra> A pointer to the right ascension values. These will be modified.
+    <dec> A pointer to the declination values. These will be modified.
+    <direction> The direction of the transform.
+    [NOTE] This projection is used by Miriad to approximate the plate solutions
+    of DSS (Digital Sky Survey) images. It is better to use the plate solutions
+    directly.
+    [RETURNS] Nothing.
+*/
+{
+    unsigned int count;
+    double l, m, x, y;
+    double diff_alpha, diff_delta;
+
+    if (direction == DIR_ADtoXY)
+    {
+	/*  Convert from RA,DEC to x,y  */
+	for (count = 0; count < num_coords; ++count)
+	{
+	    /*  Convert degrees to offset degrees  */
+	    diff_alpha = ra[count] - ap->ra.reference;
+	    diff_delta = dec[count] - ap->dec.reference;
+	    l = diff_alpha * ap->dec.cos_ref;
+	    m = diff_delta;
+	    /*  Rotate  */
+	    x = l * ap->cos_rotation + m * ap->sin_rotation;
+	    y = m * ap->cos_rotation - l * ap->sin_rotation;
+	    /*  Convert to pixel positions  */
+	    ra[count] = ap->ra.ref_pos + x / ap->ra.increment;
+	    dec[count] = ap->dec.ref_pos + y / ap->dec.increment;
+	}
+    }
+    else if (direction == DIR_XDtoAY)
+    {
+	/*  Convert from x,DEC to RA,y  */
+	fprintf (stderr,
+		 "x,DEC to RA,y conversion for Cartesian projection not supported yet\n");
+	return;
+    }
+    else if (direction == DIR_AYtoXD)
+    {
+	/*  Convert from RA,y to x,DEC  */
+	fprintf (stderr,
+		 "RA,y to x,DEC conversion for Cartesian projection not supported yet\n");
+	return;
+    }
+    else if (direction == DIR_XYtoAD)
+    {
+	/*  Convert from x,y to RA,DEC  */
+	for (count = 0; count < num_coords; ++count)
+	{
+	    /*  Convert pixels to offset degrees  */
+	    x = (ra[count] - ap->ra.ref_pos) * ap->ra.increment;
+	    y = (dec[count] - ap->dec.ref_pos) * ap->dec.increment;
+	    /*  Rotate  */
+	    l = x * ap->cos_rotation - y * ap->sin_rotation;
+	    m = y * ap->cos_rotation + x * ap->sin_rotation;
+	    /*  Transform and add to reference  */
+	    ra[count] = ap->ra.reference + l / ap->dec.cos_ref;
+	    dec[count] = ap->dec.reference + m;
+	}
+    }
+}   /*  End Function transform_ra_dec_car  */
+
+static void transform_vel (KwcsAstro ap, unsigned int num_coords,
+			   double *vel, flag to_linear)
+/*  [SUMMARY] Velocity/frequency transformation.
+    <ap> The KwcsAstro object.
+    <num_coords> The number of co-ordinates to transform.
+    <vel> A pointer to the velocity/frequency values. These will be modified.
+    <to_linear> If TRUE the values are transformed to linear
+    co-ordinates, else they are transformed to non-linear co-ordinates.
+    [RETURNS] Nothing.
+*/
+{
+    unsigned int count;
+    double n;
+    double c = 299792458.0;
+
+    switch (ap->vel.type)
+    {
+      case VELOCITY_UNKNOWN:
+	break;
+      case VELOCITY_FELO:
+	for (count = 0; count < num_coords; ++count)
+	{
+	    if (to_linear)
+	    {
+		/*  TODO: this should really be a non-linear transformation  */
+		vel[count] = ap->vel.ref_pos + (vel[count] - ap->vel.reference)
+		    / ap->vel.increment;
+	    }
+	    else
+	    {
+		n = vel[count] - ap->vel.ref_pos;
+		vel[count] = 1.0 / ( ( n / (ap->vel.reference + ap->vel.increment + c) ) + (1.0 - n) / (ap->vel.reference + c) ) - c;
+	    }
+	}
+	break;
+      case VELOCITY_VELO:
+      case VELOCITY_FREQ:
+      case VELOCITY_RAWVEL:
+	for (count = 0; count < num_coords; ++count)
+	{
+	    if (to_linear)
+	    {
+		vel[count] = ap->vel.ref_pos + (vel[count] - ap->vel.reference)
+		    / ap->vel.increment;
+	    }
+	    else
+	    {
+		vel[count] = ap->vel.reference + (vel[count] - ap->vel.ref_pos)
+		    * ap->vel.increment;
+	    }
+	}
+	break;
+      default:
+	break;
+    }
+}   /*  End Function transform_vel  */
+
+static void transform_linear (KwcsAstro ap, unsigned int num_coords,
+			      CONST char *name, double *coords, flag to_pix)
+/*  [SUMMARY] Linear transformation.
+    <ap> The KwcsAstro object.
+    <num_coords> The number of co-ordinates to transform.
+    <name> The axis name. This may be NULL.
+    <coords> A pointer to the co-ordinate values. These will be modified.
+    <to_pix> If TRUE the values are transformed to pixel
+    co-ordinates, else they are transformed to world co-ordinates.
+    [RETURNS] Nothing.
+*/
+{
+    unsigned int count;
+    struct linear_coord_type *curr;
+    struct linear_coord_type *found = NULL;
+
+    if (name == NULL) return;
+    /*  First search for matching linear co-ordinate axis  */
+    for (curr = ap->linear_axes; (curr != NULL) && (found == NULL);
+	 curr = curr->next)
+    {
+	if (strcmp (curr->dim_name, name) == 0) found = curr;
+    }
+    if (found == NULL) return;
+    for (count = 0; count < num_coords; ++count)
+    {
+	if (to_pix)
+	{
+	    coords[count] = found->ref_pos + (coords[count] - found->reference)
+		/ found->increment;
+	}
+	else
+	{
+	    coords[count] = found->reference + (coords[count] - found->ref_pos)
+		* found->increment;
+	}
+    }
+}   /*  End Function transform_linear  */
+
+static flag scan_dss_header (KwcsAstro ap, CONST packet_desc *pack_desc,
+			     CONST char *packet)
+/*  [SUMMARY] Attempt to scan DSS header information.
+    <ap> The KwcsAstro object.
+    <pack_desc> The packet descriptor containing the FITS-style keywords.
+    <packet> The packet data containing the FITS-stype keyword data.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    flag scan;
+    double pltdecsn;
+    struct dss_plate_type *new;
+    char *ptr;
+    char txt[STRING_LENGTH];
+    double cnpix1[2], cnpix2[2], pltscale[2], xpixelsz[2], ypixelsz[2];
+    double pltrah[2], pltram[2], pltras[2], pltdecd[2], pltdecm[2], pltdecs[2];
+    double ppo3[2], ppo6[2];
+    double value[2];
+    static char function_name[] = "scan_dss_header";
+
+    if ( !ds_get_unique_named_value (pack_desc, packet, "CNPIX1", NULL,
+				     cnpix1) ) return (TRUE);
+    if ( !ds_get_unique_named_value (pack_desc, packet, "CNPIX2", NULL,
+				     cnpix2) ) return (TRUE);
+    if ( !ds_get_unique_named_value (pack_desc, packet, "PLTSCALE", NULL,
+				     pltscale) ) return (TRUE);
+    if ( !ds_get_unique_named_value (pack_desc, packet, "XPIXELSZ", NULL,
+				     xpixelsz) ) return (TRUE);
+    if ( !ds_get_unique_named_value (pack_desc, packet, "YPIXELSZ", NULL,
+				     ypixelsz) ) return (TRUE);
+    /*  Some fool decided it was better to put the plate centre RA and DEC
+	values into seven (!) separate header keywords. Unbelievable!  */
+    if ( !ds_get_unique_named_value (pack_desc, packet, "PLTRAH", NULL,
+				     pltrah) ) return (TRUE);
+    if ( !ds_get_unique_named_value (pack_desc, packet, "PLTRAM", NULL,
+				     pltram) ) return (TRUE);
+    if ( !ds_get_unique_named_value (pack_desc, packet, "PLTRAS", NULL,
+				     pltras) ) return (TRUE);
+    /*  And to hammer home the stupidity, a string is used to give the sign  */
+    if ( ( ptr = ds_get_unique_named_string (pack_desc, packet, "PLTDECSN") )
+	 == NULL ) return (TRUE);
+    pltdecsn = (*ptr == '-') ? -1.0 : 1.0;
+    m_free (ptr);
+    if ( !ds_get_unique_named_value (pack_desc, packet, "PLTDECD", NULL,
+				     pltdecd) ) return (TRUE);
+    if ( !ds_get_unique_named_value (pack_desc, packet, "PLTDECM", NULL,
+				     pltdecm) ) return (TRUE);
+    if ( !ds_get_unique_named_value (pack_desc, packet, "PLTDECS", NULL,
+				     pltdecs) ) return (TRUE);
+    if ( !ds_get_unique_named_value (pack_desc, packet, "PPO3", NULL,
+				     ppo3) ) return (TRUE);
+    if ( !ds_get_unique_named_value (pack_desc, packet, "PPO6", NULL,
+				     ppo6) ) return (TRUE);
+    /*  Now have all the "essentials" (except for some number of Xi and Eta
+	co-efficients  */
+    if ( ( new = (struct dss_plate_type *) m_alloc (sizeof *new) ) == NULL )
+    {
+	m_error_notify (function_name, "plate solution structure");
+	return (FALSE);
+    }
+    new->corner_pixel_x1 = cnpix1[0];
+    new->corner_pixel_y1 = cnpix2[0];
+    new->scale = pltscale[0];
+    new->pixel_size_x = xpixelsz[0];
+    new->pixel_size_y = ypixelsz[0];
+    /*  Now have to convert those seven lovely RA,DEC values into one RA and
+	one DEC value. I like having to do all this work  */
+    new->centre_ra = (pltrah[0] + pltram[0] / 60.0 + pltras[0] / 3600.0) *15.0;
+    new->centre_dec = pltdecd[0] + pltdecm[0] / 60.0 + pltdecs[0] / 3600.0;
+    new->centre_dec *= pltdecsn;
+    new->centre_off_x = ppo3[0];
+    new->centre_off_y = ppo6[0];
+    /*  Now get the Xi co-efficients  */
+    for (scan = TRUE, new->num_amdx = 0; scan; )
+    {
+	sprintf (txt, "AMDX%u", new->num_amdx + 1);
+	if ( ds_get_unique_named_value (pack_desc, packet, txt, NULL, value) )
+	{
+	    new->amdx[new->num_amdx++] = value[0];
+	}
+	else scan = FALSE;
+    }
+    /*  Now get the Eta co-efficients  */
+    for (scan = TRUE, new->num_amdy = 0; scan; )
+    {
+	sprintf (txt, "AMDY%u", new->num_amdy + 1);
+	if ( ds_get_unique_named_value (pack_desc, packet, txt, NULL, value) )
+	{
+	    new->amdy[new->num_amdy++] = value[0];
+	}
+	else scan = FALSE;
+    }
+    ap->dss = new;
+    ap->projection = PROJ_DSS;
+    strcpy (ap->ra.dim_name, "Axis 1");
+    strcpy (ap->dec.dim_name, "Axis 0");
+    return (TRUE);
+}   /*  End Function scan_dss_header  */
+
+static void transform_ra_dec_dss (KwcsAstro ap, unsigned int num_coords,
+				   double *ra, double *dec,
+				   unsigned int direction)
+/*  [SUMMARY] DSS projection of co-ordinates.
+    <ap> The KwcsAstro object.
+    <num_coords> The number of co-ordinates to transform.
+    <ra> A pointer to the right ascension values. These will be modified.
+    <dec> A pointer to the declination values. These will be modified.
+    <direction> The direction of the transform.
+    [RETURNS] Nothing.
+*/
+{
+    if (direction == DIR_ADtoXY)
+    {
+	/*  Convert from RA,DEC to x,y  */
+	dss_radec2xy (ap, num_coords, ra, dec);
+    }
+    else if (direction == DIR_XDtoAY)
+    {
+	/*  Convert from x,DEC to RA,y  */
+	fprintf (stderr,
+		 "x,DEC to RA,y conversion for DSS projection not supported yet\n");
+	return;
+    }
+    else if (direction == DIR_AYtoXD)
+    {
+	/*  Convert from RA,y to x,DEC  */
+	fprintf (stderr,
+		 "RA,y to x,DEC conversion for DSS projection not supported yet\n");
+	return;
+    }
+    else if (direction == DIR_XYtoAD)
+    {
+	/*  Convert from x,y to RA,DEC  */
+	dss_xy2radec (ap, num_coords, ra, dec);
+    }
+}   /*  End Function transform_ra_dec_dss  */
+
+static void dss_xy2radec (KwcsAstro ap, unsigned int num_coords,
+			  double *ra, double *dec)
+/*  [SUMMARY] Convert x,y (pixels) on a DSS plate to RA,DEC.
+    <ap> The KwcsAstro object.
+    <num_coords> The number of co-ordinates to transform.
+    <ra> A pointer to the right ascension values. These will be modified.
+    <dec> A pointer to the declination values. These will be modified.
+    [RETURNS] Nothing.
+*/
+{
+    unsigned int count;
+    double x, y, xx, yy, xy, xxPyy;
+    double xi, eta;
+    double arcsec2rad = PION180 / 3600.0;
+    double cos_dec, tan_dec, f;
+    double *a, *b;
+
+    a = ap->dss->amdx - 1;
+    b = ap->dss->amdy - 1;
+    cos_dec = cos (ap->dss->centre_dec * PION180);
+    tan_dec = tan (ap->dss->centre_dec * PION180);
+    for (count = 0; count < num_coords; ++count)
+    {
+	/*  Convert pixel positions to offset from plate centre in mm  */
+	x = 1e-3 * (ap->dss->centre_off_x -
+		    (ra[count] + ap->dss->corner_pixel_x1) *
+		    ap->dss->pixel_size_x);
+	/*  Y is flipped!  */
+	y = -1e-3 * (ap->dss->centre_off_y -
+		     (dec[count] + ap->dss->corner_pixel_y1) *
+		     ap->dss->pixel_size_y);
+	xx = x * x;
+	yy = y * y;
+	xy = x * y;
+	xxPyy = xx + yy;
+	/*  Note how co-efficients start from 1, not 0. This makes it
+	    easier to relate back to the equations  */
+	xi = a[1] * x + a[2] * y + a[3] + a[4] * xx + a[5] * xy + a[6] * yy +
+	    a[7] * xxPyy + a[8] * x * xx + a[9] * x * xy + a[10] * x * yy +
+	    a[11] * y * yy + a[12] * x * xxPyy + a[13] * x * xxPyy * xxPyy;
+	eta = b[1] * y + b[2] * x + b[3] + b[4] * yy + b[5] * xy +
+	    b[6] * xx + b[7] * xxPyy + b[8] * y * yy + b[9] * x * yy +
+	    b[10] * x * xy + b[11] * x * xx + b[12] * y * xxPyy +
+	    b[13] * y * xxPyy * xxPyy;
+	xi *= arcsec2rad;
+	eta *= arcsec2rad;
+	/*  Compute RA,DEC in J2000  */
+	f = 1.0 - eta * tan_dec;
+	ra[count] = atan ( (xi / cos_dec) / f ) / PION180 +
+	    ap->dss->centre_ra;
+	dec[count] = atan ( ( (eta + tan_dec) *
+			      cos ( (ra[count] - ap->dss->centre_ra) *
+				    PION180 ) ) / f ) / PION180;
+    }
+}   /*  End Function dss_xy2radec  */
+
+static void dss_radec2xy (KwcsAstro ap, unsigned int num_coords,
+			  double *ra, double *dec)
+/*  [SUMMARY] Convert RA,DEC to x,y (pixels) on a DSS plate.
+    <ap> The KwcsAstro object.
+    <num_coords> The number of co-ordinates to transform.
+    <ra> A pointer to the right ascension values. These will be modified.
+    <dec> A pointer to the declination values. These will be modified.
+    [NOTE] This routine must compute the inverse of the plate solution, which
+    requires iteration, so this may be a little slow.
+    [RETURNS] Nothing.
+*/
+{
+    int iter_count;
+    int max_iter = 50;
+    int total_iters = 0;
+    unsigned int count;
+    double tolerance, z, f, cos_dec, sin_dec, cos_dec0, sin_dec0;
+    double cos_dra, sin_dra;
+    double xi0, eta0;
+    double x, y, xx, yy, xy, xxPyy, xT2, yT2;
+    double Dx = 0.0;  /*  Initialised to keep compiler happy  */
+    double Dy = 0.0;  /*  Initialised to keep compiler happy  */
+    double xi, eta, Dxi_Dx, Dxi_Dy, Deta_Dx, Deta_Dy, delta_xi, delta_eta;
+    double *a, *b;
+
+    a = ap->dss->amdx - 1;
+    b = ap->dss->amdy - 1;
+    /*  Compute tolerance (10% of pixel size)  */
+    tolerance = ap->dss->pixel_size_x;
+    if (tolerance > ap->dss->pixel_size_y) tolerance = ap->dss->pixel_size_y;
+    tolerance *= 1e-4;
+    /*  Cache a few values  */
+    z = ap->dss->centre_dec * PION180;
+    cos_dec0 = cos (z);
+    sin_dec0 = sin (z);
+    for (count = 0; count < num_coords; ++count)
+    {
+	/*  Convert RA, DEC to Xi, Eta co-rdinates  */
+	z = dec[count] * PION180;
+	cos_dec = cos (z);
+	sin_dec = sin (z);
+	z = (ra[count] - ap->dss->centre_ra) * PION180;
+	cos_dra = cos (z);
+	sin_dra = sin (z);
+	f = 180.0 * 3600.0 / PI / (sin_dec * sin_dec0 +
+				   cos_dec * cos_dec0 * cos_dra);
+	xi0 = cos_dec * sin_dra * f;
+	eta0 = (sin_dec * cos_dec0 - cos_dec * sin_dec0 * cos_dra) * f;
+	/*  Begin iterating. Make a first guess of offset in mm  */
+	x = xi0 / ap->dss->scale;
+	y = eta0 / ap->dss->scale;
+	for (iter_count = 0, Dx = 9.0 * tolerance, Dy = 9.0 * tolerance;
+	     (iter_count < max_iter) && (fabs (Dx) > tolerance) &&
+		 (fabs (Dy) > tolerance);
+	     ++iter_count)
+	{
+	    /*  Compute plate co-ordinates and their derivatives  */
+	    /*  Note how co-efficients start from 1, not 0. This makes it
+		easier to relate back to the equations  */
+	    xx = x * x;
+	    yy = y * y;
+	    xy = x * y;
+	    xxPyy = xx + yy;
+	    xT2 = 2.0 * x;
+	    yT2 = 2.0 * y;
+	    /*  Compute Xi  */
+	    xi = a[1] * x + a[2] * y + a[3] + a[4] * xx + a[5] * xy +
+		a[6] * yy + a[7] * xxPyy + a[8] * x * xx + a[9] * x * xy +
+		a[10] * x * yy + a[11] * y * yy + a[12] * x * xxPyy +
+		a[13] * x * xxPyy * xxPyy;
+	    /*  Compute derivative of Xi wrt x  */
+	    Dxi_Dx = ( a[1] + a[4] * xT2 + a[5] * y + a[7] * xT2 +
+		       a[8] * 3.0 * xx + a[9] * 2.0 * xy + a[10] * yy +
+		       a[12] * (3.0 * xx + yy) +
+		       a[13] * (5.0 * xx * xx + 6.0 * xx * yy + yy * yy) );
+	    /*  Compute derivative of Xi wrt y  */
+	    Dxi_Dy = ( a[2] + a[5] * x + a[6] * yT2 + a[7] * yT2 +
+		       a[9] * xx + a[10] * x * yT2 + a[11] * 3.0 * yy +
+		       a[12] * x * yT2 +
+		       a[13] * (4.0 * xx * xy + 4.0 * xy * yy) );
+	    /*  Compute Eta  */
+	    eta = b[1] * y + b[2] * x + b[3] + b[4] * yy + b[5] * xy +
+		b[6] * xx + b[7] * xxPyy + b[8] * y * yy + b[9] * x * yy +
+		b[10] * x * xy + b[11] * x * xx + b[12] * y * xxPyy +
+		b[13] * y * xxPyy * xxPyy;
+	    /*  Compute derivative of Eta wrt x  */
+	    Deta_Dx = ( b[2] + b[5] * y + b[6] * xT2 + b[7] * xT2 + b[9] * yy +
+			b[10] * xT2 * y + b[11] * 3.0 * xx + b[12] * y * xT2 +
+			b[13] * y * (4.0 * x * xx + 4.0 * x * yy) );
+	    /*  Compute derivative of Eta wrt y  */
+	    Deta_Dy = ( b[1] + b[4] * yT2 + b[5] * x + b[7] * yT2 +
+			b[8] * 3.0 * yy + b[9] * x * yT2 + b[10] * xx +
+			b[12] * (xx + 3.0 * yy) +
+			b[13] * (5.0 * yy * yy + 6.0 * yy * xx + xx * xx) );
+	    /*  Compute error terms  */
+	    delta_xi = xi0 - xi;
+	    delta_eta = eta0 - eta;
+	    /*  Compute correction  */
+	    z = 1.0 / (Dxi_Dx * Deta_Dy - Dxi_Dy * Deta_Dx);
+	    Dx = (delta_xi * Deta_Dy - delta_eta * Dxi_Dy) * z;
+	    Dy = (delta_eta * Dxi_Dx - delta_xi * Deta_Dx) * z;
+	    /*  Apply correction  */
+	    x += Dx;
+	    y += Dy;
+	}
+	total_iters += iter_count;
+	/*  Convert offsets in mm to pixels  */
+	ra[count] = (ap->dss->centre_off_x - 1e3 * x) / ap->dss->pixel_size_x -
+	    ap->dss->corner_pixel_x1;
+	dec[count] = (ap->dss->centre_off_y + 1e3 *y) / ap->dss->pixel_size_y -
+	    ap->dss->corner_pixel_y1;
+    }
+}   /*  End Function dss_radec2xy  */

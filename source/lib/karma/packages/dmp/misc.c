@@ -74,6 +74,7 @@
 #include <karma_dmp.h>
 #include <karma_ds.h>
 #include <karma_a.h>
+#include <karma_m.h>
 #include <os.h>
 
 

@@ -74,7 +74,17 @@
 </td></tr>
 <tr><td><a href=ch.html#ch_drain>ch_drain</a></td><td>Drain bytes from a channel.
 </td></tr>
+<tr><td><a href=ch.html#ch_fill>ch_fill</a></td><td>Fill a channel with bytes.
+</td></tr>
 <tr><td><a href=ch.html#ch_printf>ch_printf</a></td><td>Write formatted output to a channel.
+</td></tr>
+<tr><td><a href=ch.html#ch_drain_to_boundary>ch_drain_to_boundary</a></td><td>Drain bytes from a channel until a specified boundary.
+</td></tr>
+<tr><td><a href=ch.html#ch_fill_to_boundary>ch_fill_to_boundary</a></td><td>Write bytes to a channel until a specified boundary.
+</td></tr>
+<tr><td><a href=ch.html#ch_read_and_swap_blocks>ch_read_and_swap_blocks</a></td><td>Read blocks from a channel and swap bytes.
+</td></tr>
+<tr><td><a href=ch.html#ch_swap_and_write_blocks>ch_swap_and_write_blocks</a></td><td>Write blocks to a channel after swapping bytes.
 </td></tr>
 </table><h4>Prototype Functions</h4><table><tr><td><a href=ch.html#CH_PROTO_size_func>CH_PROTO_size_func</a></td><td>Get number of bytes readable.
 </td></tr>
@@ -520,6 +530,17 @@
 <br><li><i>length :</i> 
     The number of bytes to drain.
 <br></ul><b>Returns:</b>     The number of bytes drained.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_fill></a> unsigned int
+ <b>ch_fill</b><i>    (Channel channel, unsigned int length, char fill_value)
+</i><br><p>    This routine will write a specified byte to a channel a number of
+    times.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The Channel object.
+<br><li><i>length :</i> 
+    The number of bytes to write.
+<br><li><i>fill_value :</i> 
+    The fill value.
+<br></ul><b>Returns:</b>     The number of bytes written.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_printf></a> flag
  <b>ch_printf</b><i>    (Channel channel, CONST char *format, ...)
 </i><br><p>    Write formatted output to a channel.
@@ -530,6 +551,63 @@
 <br><li><i>... :</i> 
     The optional parameters. See <em>fprintf</em>.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_drain_to_boundary></a> flag
+ <b>ch_drain_to_boundary</b><i>    (Channel channel, uaddr size)
+</i><br><p>    This routine will drain (read) from a channel until the current
+    read position is aligned with a boundary.
+    channel, ignoring the data.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The Channel object.
+<br><li><i>size :</i> 
+    The size to align to.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_fill_to_boundary></a> flag
+ <b>ch_fill_to_boundary</b><i>    (Channel channel, uaddr size, char fill_value)
+</i><br><p>    This routine will write bytes to a channel until the current
+    write position is aligned with a boundary.
+    channel, ignoring the data.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The Channel object.
+<br><li><i>size :</i> 
+    The size to align to.
+<br><li><i>fill_value :</i> 
+    The value to fill with.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=ch_read_and_swap_blocks></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>unsigned int
+ <b>ch_read_and_swap_blocks</b><i>    (Channel channel, char *buffer,
+				      unsigned int num_blocks,
+				      unsigned int block_size)
+</i><br><p>    This routine will read a number of blocks from a channel and
+    places them into a buffer after swapping (reversing the order).
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>buffer :</i> 
+    The buffer to write the data into.
+<br><li><i>num_blocks :</i> 
+    The number of blocks to read.
+<br><li><i>block_size :</i> 
+    The size (in bytes) of each block.
+<br></ul><b>Returns:</b>     The number of bytes read. Errors may cause partial blocks to be
+    read.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     If the channel is a connection and the number of bytes readable from
+    the connection is equal to or more than <em>num_blocks * block_size</em> the
+    routine will NOT block.
+</ul><p><hr> <a name=ch_swap_and_write_blocks></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>unsigned int
+ <b>ch_swap_and_write_blocks</b><i>    (Channel channel, CONST char *buffer,
+				       unsigned int num_blocks,
+				       unsigned int block_size)
+</i><br><p>    This routine will write a number of blocks to a channel after
+    swapping the bytes.
+<p><b>Parameters:</b><ul><li><i>channel :</i> 
+    The channel object.
+<br><li><i>buffer :</i> 
+    The buffer to read the data from.
+<br><li><i>num_blocks :</i> 
+    The number of blocks to write.
+<br><li><i>block_size :</i> 
+    The size (in bytes) of each block.
+<br></ul><b>Returns:</b>     The number of bytes written. Errors may cause partial blocks to
+    be written.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=CH_PROTO_size_func></a> unsigned int
  <b>CH_PROTO_size_func</b><i>    (Channel channel, void **info)
 </i><br><p>    This routine will determine the approximate number of bytes that
@@ -609,4 +687,6 @@
 </td></tr><tr><td>K_CH_MAP_LARGE               </td><td>Map if file over 1 MByte
 </td></tr><tr><td>K_CH_MAP_IF_AVAILABLE        </td><td>Map if operating system supports it
 </td></tr><tr><td>K_CH_MAP_ALWAYS              </td><td>Always map, fail if not supported.
-</table><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>
+</table><p>
+<hr><a href="../index.html">Back to Karma Home Page</a>
+<hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.ariel.com.au/">Ariel Internet Services</a></address></center></body></html>

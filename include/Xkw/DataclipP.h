@@ -1,3 +1,40 @@
+/*  DataclipP.h
+
+    Private header for  Dataclip  widget class.
+
+    Copyright (C) 1994-1996  Richard Gooch
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Library General Public
+    License as published by the Free Software Foundation; either
+    version 2 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Library General Public License for more details.
+
+    You should have received a copy of the GNU Library General Public
+    License along with this library; if not, write to the Free
+    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+    Richard Gooch may be reached by email at  karma-request@atnf.csiro.au
+    The postal address is:
+      Richard Gooch, c/o ATNF, P. O. Box 76, Epping, N.S.W., 2121, Australia.
+*/
+
+/*
+
+    This include file contains the private class declarations for the
+  Dataclip widget, a graphical widget to select data regions for Xt.
+
+
+    Written by      Richard Gooch   23-OCT-1994
+
+    Last updated by Richard Gooch   2-OCT-1996
+
+*/
+
 
 #ifndef DataclipP__H
 #define DataclipP__H
@@ -20,6 +57,7 @@ typedef struct _DataclipPart
     Bool            verbose;
     Bool            showBlankControl;
     Cardinal        fixedOutputType;
+    Bool            autoPopdown;
     /*  Private resources: must start on a  double  boundary  */
     double data_min;
     double data_max;
@@ -40,6 +78,7 @@ typedef struct _DataclipPart
     Widget max_label;
     Widget lower_label;
     Widget upper_label;
+    Widget cursor_label;
     Widget dialog;
     Widget cnv;
     flag popped_up;

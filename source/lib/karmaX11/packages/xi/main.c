@@ -211,7 +211,6 @@ XImage *xi_create_image (Display *display, Window window,
 {
     XImage *ximage;
     XWindowAttributes window_attributes;
-    extern char *sys_errlist[];
     static char function_name[] = "xi_create_image";
 
     if ( (display == NULL) || (share == NULL) )

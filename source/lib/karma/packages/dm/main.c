@@ -41,6 +41,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <string.h>
 #include <sys/types.h>
 #include <errno.h>
 #include <os.h>
@@ -122,7 +123,7 @@ flag dm_manage ( int fd, void *info, flag (*input_func) (),
     struct managed_fd_type *new_entry;
     struct managed_fd_type *last_entry = NULL; /*  Init. for gcc -Wall  */
     extern struct managed_fd_type *managed_fd_list;
-    extern char *sys_errlist[];
+    /*extern char *sys_errlist[];*/
     static char function_name[] = "dm_manage";
 
     /*  Check if descriptor is a connection  */
@@ -516,10 +517,7 @@ static void close_fd (struct managed_fd_type *entry)
     [RETURNS] Nothing.
 */
 {
-    extern char *sys_errlist[];
-/*
-    static char function_name[] = "close_fd";
-*/
+    /*static char function_name[] = "close_fd";*/
 
     if (entry->close_func != NULL)
     {

@@ -39,8 +39,11 @@
     Updated by      Richard Gooch   14-JUN-1995: Created <ex_uint> because
   <ex_int> failed on crayPVP with value greater than 0x7fffffff.
 
-    Last updated by Richard Gooch   12-APR-1996: Changed to new documentation
+    Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
   format.
+
+    Last updated by Richard Gooch   27-SEP-1996: Added special case to <ex_str>
+  when string only contains two consecutive double quotes.
 
 
 */
@@ -500,7 +503,9 @@ char *ex_str (char *str, char **rest)
     double quote character may appear anywhere in the sub-string, and will
     force all whitespace characters except '\n' into the output string. A
     second double quote character unquotes the previous quote. These double
-    quote characters are not copied, unless they are consecutive.
+    quote characters are not copied, unless they are consecutive. If the string
+    contains only two double quote characters, an empty string (i.e. only a
+    '\0' character is present) is returned.
     <str> The string to extract from.
     <rest> A pointer beyond the value will be written here. If this is NULL,
     nothing is written here.
@@ -509,7 +514,8 @@ char *ex_str (char *str, char **rest)
 {
     flag finished = FALSE;
     char quote = '\0';
-    char *return_value;
+    int len;
+    char *substr;
     char *out_ptr;
     static char function_name[] = "ex_str";
 
@@ -526,12 +532,32 @@ char *ex_str (char *str, char **rest)
     {
 	++str;
     }
-    if ( ( return_value = m_alloc (strlen (str) + 1) ) == NULL )
+    if (*str == '\0')
+    {
+	if (rest != NULL)
+	{
+	    *rest = NULL;
+	}
+	return (NULL);
+    }
+    len = strlen (str);
+    if ( (str[0] == '"') && (str[1] == '"') &&
+	 ( (str[2] == '\0') || isspace (str[2]) ) )
+    {
+	if ( ( substr = m_alloc (1) ) == NULL )
+	{
+	    m_error_notify (function_name, "empty string copy");
+	    return (NULL);
+	}
+	substr[0] = '\0';
+	return (substr);
+    }
+    if ( ( substr = m_alloc (len + 1) ) == NULL )
     {
 	m_error_notify (function_name, "sub-string copy");
 	return (NULL);
     }
-    out_ptr = return_value;
+    out_ptr = substr;
     while (finished == FALSE)
     {
 	switch (*str)
@@ -579,7 +605,7 @@ char *ex_str (char *str, char **rest)
     }
     if (quote != '\0')
     {
-	(void) fprintf (stderr, "Warning: closing quote not found\n");
+	fprintf (stderr, "Warning: closing quote not found\n");
 	return (NULL);
     }
     if (rest != NULL)
@@ -591,5 +617,5 @@ char *ex_str (char *str, char **rest)
 	}
 	*rest = (*str == '\0') ? '\0' : str;
     }
-    return (return_value);
+    return (substr);
 }   /*  End Function ex_str  */

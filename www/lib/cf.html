@@ -56,6 +56,8 @@
 </td></tr>
 <tr><td><a href=cf.html#cf_mirp>cf_mirp</a></td><td>Compute a MIRP colourmap.
 </td></tr>
+<tr><td><a href=cf.html#cf_rgb2>cf_rgb2</a></td><td>Compute a MIRP colourmap.
+</td></tr>
 </table><p><hr><center><h2>Functions</h2></center><hr> <a name=cf_mandelbrot></a> void
  <b>cf_mandelbrot</b><i>    (unsigned int num_cells, unsigned short *reds,
 		    unsigned short *greens, unsigned short *blues,
@@ -629,4 +631,28 @@
 <br><li><i>var_param :</i> 
     A parameter used to compute the colour values. Ignored.
 <br></ul><b>Returns:</b>     Nothing.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=cf_rgb2></a> void
+ <b>cf_rgb2</b><i>    (unsigned int num_cells, unsigned short *reds,
+	      unsigned short *greens, unsigned short *blues,
+	      unsigned int stride, double x, double y, void *var_param)
+</i><br><p>    Compute a MIRP colourmap.
+<p><b>Parameters:</b><ul><li><i>num_cells :</i> 
+    The number of colour cells to modify.
+<br><li><i>reds :</i> 
+    The red intensity values.
+<br><li><i>greens :</i> 
+    The green intensity values.
+<br><li><i>blues :</i> 
+    The blue intensity values.
+<br><li><i>stride :</i> 
+    The stride (in unsigned shorts) between intensity values.
+<br><li><i>x :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>y :</i> 
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+<br><li><i>var_param :</i> 
+    A parameter used to compute the colour values. Ignored.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p>
+<hr><a href="../index.html">Back to Karma Home Page</a>
+<hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.ariel.com.au/">Ariel Internet Services</a></address></center></body></html>

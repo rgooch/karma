@@ -104,8 +104,10 @@
     Updated by      Richard Gooch   5-JUN-1996: Added colour scaling attributes
   and made use of them.
 
-    Last updated by Richard Gooch   23-JUN-1996: Added <cf_greyscale3> to the
+    Updated by      Richard Gooch   23-JUN-1996: Added <cf_greyscale3> to the
   list.
+
+    Last updated by Richard Gooch   1-OCT-1996: Added <cf_rgb2> to the list.
 
 
 */
@@ -1519,6 +1521,7 @@ static void initialise ()
     kcmap_add_RGB_func ("Ronekers",   cf_ronekers,   0, 0);
     kcmap_add_RGB_func ("Smooth",     cf_smooth,     0, 0);
     kcmap_add_RGB_func ("Staircase",  cf_staircase,  0, 0);
+    kcmap_add_RGB_func ("Velocity Field",  cf_rgb2,  0, 0);
     kcmap_add_RGB_func ("Mandelbrot", cf_mandelbrot, 0, 0);
     conn_register_server_protocol ("colourmap_indices", PROTOCOL_VERSION, 0,
 				   register_new_cmap_indices_slave,
@@ -1926,7 +1929,6 @@ static void register_cmap_connection_close (Connection connection, void *info)
 {
     unsigned int num_cells;
     Kcolourmap cmap;
-    extern char *sys_errlist[];
     static char function_name[] = "register_cmap_connection_close";
 
     cmap = (Kcolourmap) info;
@@ -2094,7 +2096,6 @@ static flag read_full_cmap (Connection connection, void **info)
     unsigned short *colour_array;
     char *packet;
     packet_desc *pack_desc;
-    extern char *sys_errlist[];
     static char function_name[] = "read_full_cmap";
 
     cmap = (Kcolourmap) *info;

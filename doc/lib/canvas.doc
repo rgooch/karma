@@ -10,91 +10,92 @@ $LIBRARY          karmagraphics
 $LINKWITH         -lkarmagraphics
 $END
 
-$FUNCTION         canvas_draw_edit_list
-$RETURN_TYPE      flag
+$FUNCTION           canvas_draw_edit_list
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KWorldCanvas canvas, KImageEditList ilist)
-$SUMMARY          Draw a list of edit objects to a world canvas.
+$SUMMARY            Draw a list of edit objects to a world canvas.
 $PURPOSE
     Draw a list of edit objects to a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas.
-$PARAMETER        ilist :
+$PARAMETER          ilist :
     The instruction list.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         canvas_draw_edit_object
-$RETURN_TYPE      flag
+$FUNCTION           canvas_draw_edit_object
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KWorldCanvas canvas, char *object)
-$SUMMARY          Draw one edit object to a world canvas.
+$SUMMARY            Draw one edit object to a world canvas.
 $PURPOSE
     Draw one edit object to a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas.
-$PARAMETER        object :
+$PARAMETER          object :
     The edit object.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         canvas_create
-$RETURN_TYPE      KWorldCanvas
+$FUNCTION           canvas_create
+$RETURN_TYPE        KWorldCanvas
 $PARAMETER_LIST
     (KPixCanvas pixcanvas, Kcolourmap cmap,
 			    struct win_scale_type *win_scale)
-$SUMMARY          Create world canvas.
+$SUMMARY            Create world canvas.
 $PURPOSE
     This routine will create a world canvas, ready for drawing, from
     a KPixCanvas (pixel canvas) object. The origin of a KWorldCanvas is the
     lower-left corner.
-$PARAMETER        pixcanvas :
+$PARAMETER          pixcanvas :
     The pixel canvas object.
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap. If this is NULL, the canvas will only permit drawing
     using pixel values. This precludes the use of drawing PseudoColour images
     and drawing geometric primitives using data values.
 $NOTE
     Resize events on the colourmap will cause the canvas to be
     refreshed.
-$PARAMETER        win_scale :
+$PARAMETER          win_scale :
     The window scaling information. The <<x_offset>> <<x_pixels>>
-    <<y_offset>> and <<y_pixels>> fields are determined internally.
+    <<y_offset>> and <<y_pixels>> fields are determined internally. If this is
+    NULL a default scale is choosen.
 $RETURNS
     A world canvas object on success, else NULL.
 $END
 
-$FUNCTION         canvas_register_refresh_func
-$RETURN_TYPE      KCallbackFunc
+$FUNCTION           canvas_register_refresh_func
+$RETURN_TYPE        KCallbackFunc
 $PARAMETER_LIST
     (KWorldCanvas canvas,
 					    void (*refresh_func) (),void *info)
-$SUMMARY          Register world canvas refresh callback.
+$SUMMARY            Register world canvas refresh callback.
 $PURPOSE
     This routine will register a refresh function for a world canvas.
     The refresh function will be called whenever the contents of the canvas
     need to be redrawn. Many refresh functions may be registered per canvas.
     The first function registered is the first function called upon refresh.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas.
-$PARAMETER        refresh_func :
+$PARAMETER          refresh_func :
     The function that is called when the canvas is to be
     refreshed. The prototype function is <-CANVAS_PROTO_refresh_func->.
-$PARAMETER        info :
+$PARAMETER          info :
     The initial arbitrary canvas information pointer.
 $RETURNS
     A KCallbackFunc object.
 $END
 
-$FUNCTION         canvas_register_size_control_func
-$RETURN_TYPE      void
+$FUNCTION           canvas_register_size_control_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas,
 					void (*size_control_func) (),
 					void *info)
-$SUMMARY          Register size control callback.
+$SUMMARY            Register size control callback.
 $PURPOSE
     This routine will register the size control function for a world
     canvas. This function will be called whenever the lower level pixel canvas
@@ -104,49 +105,49 @@ $PURPOSE
     size control routine is called before any refresh functions are called.
     This is a means for a higher level object to take control of the world
     canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        size_control_func :
+$PARAMETER          size_control_func :
     The function that is called when the canvas is to be
     refreshed. The prototype function is <-CANVAS_PROTO_size_control_func->.
-$PARAMETER        info :
+$PARAMETER          info :
     The initial arbitrary canvas information pointer.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_register_position_event_func
-$RETURN_TYPE      KCallbackFunc
+$FUNCTION           canvas_register_position_event_func
+$RETURN_TYPE        KCallbackFunc
 $PARAMETER_LIST
     (KWorldCanvas canvas,
 						   flag (*func) (),
 						   void *f_info)
-$SUMMARY          Register position event callback.
+$SUMMARY            Register position event callback.
 $PURPOSE
     This routine will register a position event function for a world
     canvas. The position event function will be called whenever a position
     event on the canvas has not been consumed. Many position event functions
     may be registered per canvas. The first function registered is the first
     function called upon a position event.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas.
-$PARAMETER        func :
+$PARAMETER          func :
     The function that is called when a position event occurs. The
     prototype function is <-CANVAS_PROTO_position_func->.
-$PARAMETER        f_info :
+$PARAMETER          f_info :
     The initial arbitrary function information pointer.
 $RETURNS
     A KCallbackFunc object.
 $END
 
-$FUNCTION         canvas_get_attributes
-$RETURN_TYPE      void
+$FUNCTION           canvas_get_attributes
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas, ...)
-$SUMMARY          Get canvas attributes.
+$SUMMARY            Get canvas attributes.
 $PURPOSE
     Get canvas attributes.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas.
 $PARAMETER        ... :
     The optional attributes are given as pairs of attribute-key
@@ -156,14 +157,14 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_set_attributes
-$RETURN_TYPE      flag
+$FUNCTION           canvas_set_attributes
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KWorldCanvas canvas, ...)
-$SUMMARY          Set canvas attributes.
+$SUMMARY            Set canvas attributes.
 $PURPOSE
     Set canvas attributes.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas.
 $PARAMETER        ... :
     The optional attributes are given as pairs of attribute-key
@@ -173,23 +174,23 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         canvas_resize
-$RETURN_TYPE      flag
+$FUNCTION           canvas_resize
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KWorldCanvas canvas, struct win_scale_type *win_scale,
 		    flag always_clear)
-$SUMMARY          Resize a world canvas.
+$SUMMARY            Resize a world canvas.
 $PURPOSE
     This routine will register a resize in the world canvas size.
     This will cause any refresh routines registered for the canvas to be
     called. The associated pixel canvas is refreshed, hence, refresh routines
     registered for the pixel canvas will also be called.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        win_scale :
+$PARAMETER          win_scale :
     The new window scaling information. If this is NULL no change
     is made to the window scaling information, and a simple refresh occurs.
-$PARAMETER        always_clear :
+$PARAMETER          always_clear :
     If FALSE, <<win_scale>> is NULL and there is a size
     control function registered for the world canvas, then if that function
     does not change the values of the <<x_offset>>, <<x_pixels>>, <<y_offset>>
@@ -200,28 +201,28 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         canvas_specify
-$RETURN_TYPE      flag
+$FUNCTION           canvas_specify
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KWorldCanvas canvas, char *xlabel, char *ylabel,
 		     unsigned int num_restr, char **restr_names,
 		     double *restr_values)
-$SUMMARY          Set specification information for a world canvas.
+$SUMMARY            Set specification information for a world canvas.
 $PURPOSE
     This routine will change the specifications for a canvas. This
     includes the horizontal and vertical dimension labels and any restrictions.
     The entire specification is copied (i.e. the inputs may be freed).
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        xlabel :
+$PARAMETER          xlabel :
     The horizontal dimension label.
-$PARAMETER        ylabel :
+$PARAMETER          ylabel :
     The vertical dimension label.
-$PARAMETER        num_restr :
+$PARAMETER          num_restr :
     The number of restrictions.
-$PARAMETER        restr_names :
+$PARAMETER          restr_names :
     The array of restriction names.
-$PARAMETER        restr_values :
+$PARAMETER          restr_values :
     The restriction values.
 $NOTE
     This routine DOES NOT cause the canvas to be refreshed. It is highly
@@ -231,224 +232,238 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         canvas_get_specification
-$RETURN_TYPE      void
+$FUNCTION           canvas_get_specification
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas, char **xlabel,
 			       char **ylabel, unsigned int *num_restr,
 			       char ***restr_names, double **restr_values)
-$SUMMARY          Get specification information for a world canvas.
+$SUMMARY            Get specification information for a world canvas.
 $PURPOSE
     This routine will get the specifications for a canvas. This
     includes the horizontal and vertical dimension labels and any restrictions.
     Only pointers are copied (i.e. the outputs may NOT be freed).
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        xlabel :
+$PARAMETER          xlabel :
     The pointer to the horizontal dimension label will be written here
-$PARAMETER        ylabel :
+$PARAMETER          ylabel :
     The pointer to the vertical dimension label will be written here.
-$PARAMETER        num_restr :
+$PARAMETER          num_restr :
     The number of restrictions will be written here.
-$PARAMETER        restr_names :
+$PARAMETER          restr_names :
     The pointer to the array of restriction names will be written
     here.
-$PARAMETER        restr_values :
+$PARAMETER          restr_values :
     The pointer to the array of restriction values will be
     written here.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_convert_to_canvas_coords
-$RETURN_TYPE      void
+$FUNCTION           canvas_convert_to_canvas_coords
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas, flag clip,
 				      unsigned int num_coords,
 				      CONST double *xin, CONST double *yin,
 				      double *xout_lin, double *yout_lin,
 				      double *xout, double *yout)
-$SUMMARY          Convert pixel co-ordinates to world co-ordinates.
+$SUMMARY            Convert pixel co-ordinates to world co-ordinates.
 $PURPOSE
     Convert pixel co-ordinates to world co-ordinates.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        clip :
+$PARAMETER          clip :
     If TRUE, pixel co-ordinates are first clipped to the canvas
     boundaries prior to conversion.
-$PARAMETER        num_coords :
+$PARAMETER          num_coords :
     The number of co-ordinates to convert.
-$PARAMETER        xin :
+$PARAMETER          xin :
     The array of input horizontal pixel co-ordinates.
-$PARAMETER        yin :
+$PARAMETER          yin :
     The array of input vertical pixel co-ordinates.
-$PARAMETER        xout_lin :
+$PARAMETER          xout_lin :
     The array of output horizontal linear world co-ordinates are
     written here. If this is NULL, nothing is written here.
-$PARAMETER        yout_lin :
+$PARAMETER          yout_lin :
     The array of output vertical linear world co-ordinates are
     written here. If this is NULL, nothing is written here.
-$PARAMETER        xout :
+$PARAMETER          xout :
     The array of output horizontal non-linear world co-ordinates are
     written here. If this is NULL, nothing is written here.
-$PARAMETER        yout :
+$PARAMETER          yout :
     The array of output vertical non-linear world co-ordinates are
     written here. If this is NULL, nothing is written here.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_convert_from_canvas_coord
-$RETURN_TYPE      flag
+$FUNCTION           canvas_convert_from_canvas_coords
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas,
-				       double xin, double yin,
-				       int *xout, int *yout)
-$SUMMARY          Convert non-linear world co-ordinates to pixel co-ordinates
+					flag clip, flag linear,
+					unsigned int num_coords,
+					CONST double *xin, CONST double *yin,
+					double *xout, double *yout)
+$SUMMARY            Convert world co-ordinates to pixel co-ordinates.
 $PURPOSE
-    Convert non-linear world co-ordinates to pixel co-ordinates
-$PARAMETER        canvas :
+    Convert world co-ordinates to pixel co-ordinates.
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        xin :
-    The horizontal world co-ordinate.
-$PARAMETER        yin :
-    The vertical world co-ordinate.
-$PARAMETER        xout :
-    The lower level horizontal canvas co-ordinate will be written here.
-$PARAMETER        yout :
-    The lower level vertical canvas co-ordinate will be written here.
+$PARAMETER          clip :
+    If TRUE, world co-ordinates are first clipped to the canvas
+    boundaries prior to conversion.
+$PARAMETER          linear :
+    If TRUE, the input world co-ordinates are assumed to be linear,
+    hence no non-linear to linear co-ordinate transformation is applied.
+$PARAMETER          num_coords :
+    The number of co-ordinates to convert.
+$PARAMETER          xin :
+    The array of input horizontal world co-ordinates.
+$PARAMETER          yin :
+    The array of input vertical world co-ordinates.
+$PARAMETER          xout :
+    The array of output horizontal pixel co-ordinates are written here.
+$PARAMETER          yout :
+    The array of output vertical pixel co-ordinates are written here.
 $RETURNS
-    TRUE if the co-ordinate lies within the canvas boundaries,
-    else FALSE (although a conversion is still performed).
+    Nothing.
 $END
 
-$FUNCTION         canvas_register_d_convert_func
-$RETURN_TYPE      void
+$FUNCTION           canvas_register_coords_convert_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas,
-				     flag (*coord_convert_func) (), void *info)
-$SUMMARY          Register co-ordinate conversion function.
+					  flag (*coord_convert_func) (),
+					  void *info)
+$SUMMARY            Register co-ordinate conversion function.
 $PURPOSE
     This routine will register the co-ordinate conversion function
     for a world canvas. This function will be called whenever conversions
     between world co-ordinates and pixel co-ordinates are performed. Only one
     co-ordinate conversion function is permitted per canvas. This is a means
     for a higher level object to take control of the world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        func :
+$PARAMETER          func :
     The function that is called when co-ordinates are to be converted.
     The prototype function is <-CANVAS_PROTO_coord_convert_func->.
-$PARAMETER        info :
+$PARAMETER          info :
     The initial arbitrary canvas information pointer.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_coord_transform
-$RETURN_TYPE      flag
+$FUNCTION           canvas_coords_transform
+$RETURN_TYPE        void
 $PARAMETER_LIST
-    (KWorldCanvas canvas, double *x, double *y,
-			     flag to_linear)
-$SUMMARY          Transform world co-ordinates.
+    (KWorldCanvas canvas, unsigned int num_coords,
+			      double *x, flag x_to_linear,
+			      double *y, flag y_to_linear)
+$SUMMARY            Transform world co-ordinates.
 $PURPOSE
     This routine will transform co-ordinates in a world canvas using
     the registered co-ordinate transform function (see
     <-canvas_register_transforms_func->).
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        x :
-    A pointer to the horizontal world co-ordinate. This is modified.
-$PARAMETER        y :
-    A pointer to the vertical world co-ordinate. This is modified.
-$PARAMETER        to_linear :
-    If TRUE then the routine will transform (possibly) non-linear
-    world co-ordinates to linear world co-ordinates, else the transform is from
-    linear to non-linear co-ordinates.
+$PARAMETER          num_coords :
+    The number of co-ordinates to transform.
+$PARAMETER          x :
+    The array of horizontal world co-ordinates. These are modified.
+$PARAMETER          x_to_linear :
+    If TRUE, then the horizontal co-ordinates are converted from
+    non-linear to linear, else they are converted from linear to non-linear.
+$PARAMETER          y :
+    The array of vertical world co-ordinates. These are modified.
+$PARAMETER          y_to_linear :
+    If TRUE, then the vertical co-ordinates are converted from
+    non-linear to linear, else they are converted from linear to non-linear.
 $RETURNS
-    TRUE if the linear world co-ordinate lies within the canvas
-    boundaries, else FALSE (although a conversion is still performed).
+    Nothing.
 $END
 
-$FUNCTION         canvas_register_transforms_func
-$RETURN_TYPE      void
+$FUNCTION           canvas_register_transforms_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas,
 				      void (*coord_transform_func) (),
 				      void *info)
-$SUMMARY          Register non-linear co-ordinate transformation function.
+$SUMMARY            Register non-linear co-ordinate transformation function.
 $PURPOSE
     This routine will register the co-ordinate transform function
     for a world canvas. The co-ordinate transform function transforms the
     linear world co-ordinates used internally by the world canvas to be
     transformed into non-linear co-ordinates for external use. Only one
     co-ordinate transform function is permitted per canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        coord_transform_func :
+$PARAMETER          coord_transform_func :
     The function that is called when co-ordinates are to
     be transformed. The prototype function is
     <-CANVAS_PROTO_coord_transform_func->.
-$PARAMETER        info :
+$PARAMETER          info :
     The initial arbitrary transform information pointer.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_get_pixcanvas
-$RETURN_TYPE      KPixCanvas
+$FUNCTION           canvas_get_pixcanvas
+$RETURN_TYPE        KPixCanvas
 $PARAMETER_LIST
     (KWorldCanvas canvas)
-$SUMMARY          Get the underlying pixel canvas of a world canvas.
+$SUMMARY            Get the underlying pixel canvas of a world canvas.
 $PURPOSE
     Get the underlying pixel canvas of a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
 $RETURNS
     The KPixCanvas object.
 $END
 
-$FUNCTION         canvas_get_colour
-$RETURN_TYPE      flag
+$FUNCTION           canvas_get_colour
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (KWorldCanvas canvas, char *colourname,
+    (KWorldCanvas canvas, CONST char *colourname,
 			unsigned long *pixel_value, unsigned short *red,
 			unsigned short *green, unsigned short *blue)
-$SUMMARY          Get (possibly allocating) a colourcell for a canvas.
+$SUMMARY            Get (possibly allocating) a colourcell for a canvas.
 $PURPOSE
     Get (possibly allocating) a colourcell for a canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        colourname :
+$PARAMETER          colourname :
     The name of the colour to get.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value will be written here.
 $NOTE
     The pixel value is valid ONLY for the underlying pixel canvas.
     ALSO: the pixel value becomes invalid EVERY time the underlying pixel
     canvas is refreshed/ resized. If the pixel canvas is refreshed/ resized,
     this routine MUST be called again.
-$PARAMETER        red :
+$PARAMETER          red :
     The red intensity in the hardware colourmap for the pixel will be
     written here. If this is NULL, nothing is written here.
-$PARAMETER        green :
+$PARAMETER          green :
     The green intensity in the hardware colourmap for the pixel will be
     written here. If this is NULL, nothing is written here.
-$PARAMETER        blue :
+$PARAMETER          blue :
     The blue intensity in the hardware colourmap for the pixel will be
     written here. If this is NULL, nothing is written here.
 $RETURNS
     TRUE if the colourcell was allocated, else FALSE.
 $END
 
-$FUNCTION         canvas_set_dressing
-$RETURN_TYPE      void
+$FUNCTION           canvas_set_dressing
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas, ...)
-$SUMMARY          Set dressing parameters for a world canvas.
+$SUMMARY            Set dressing parameters for a world canvas.
 $PURPOSE
     Set dressing parameters for a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas.
 $PARAMETER        ... :
     The list of parameter attribute-key attribute-value pairs. This
@@ -459,11 +474,11 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_sequence_dressing_refresh
-$RETURN_TYPE      void
+$FUNCTION           canvas_sequence_dressing_refresh
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas)
-$SUMMARY          Set order in which dressing is refreshed.
+$SUMMARY            Set order in which dressing is refreshed.
 $PURPOSE
     This routine will sequence the dressing (axes, etc.) refresh
     function for a world canvas. If this routine is not called, the dressing
@@ -473,66 +488,66 @@ $PURPOSE
     <-canvas_register_refresh_func->) will be called on refresh prior to the
     dressing being drawn and all refresh functions registered after this
     routine is called will be called *after* the dressing is drawn.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_draw_dressing
-$RETURN_TYPE      void
+$FUNCTION           canvas_draw_dressing
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas)
-$SUMMARY          Draw the dressing (axes, etc.) for a world canvas.
+$SUMMARY            Draw the dressing (axes, etc.) for a world canvas.
 $PURPOSE
     Draw the dressing (axes, etc.) for a world canvas.
 $NOTE
     This routine is called automatically each time the canvas is
     refreshed.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_get_cmap
-$RETURN_TYPE      Kcolourmap
+$FUNCTION           canvas_get_cmap
+$RETURN_TYPE        Kcolourmap
 $PARAMETER_LIST
     (KWorldCanvas canvas)
-$SUMMARY          Get the Kcolourmap object associated with a world canvas.
+$SUMMARY            Get the Kcolourmap object associated with a world canvas.
 $PURPOSE
     Get the Kcolourmap object associated with a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
 $RETURNS
     The Kcolourmap object. This may be NULL (indicating there is no
     colourmap associated with the canvas).
 $END
 
-$FUNCTION         canvas_draw_image
-$RETURN_TYPE      flag
+$FUNCTION           canvas_draw_image
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KWorldCanvas canvas, array_desc *arr_desc, char *slice,
 			unsigned int hdim, unsigned int vdim,
 			unsigned int elem_index,
 			KPixCanvasImageCache *cache_ptr)
-$SUMMARY          Draw a PseudoColour image onto a world canvas.
+$SUMMARY            Draw a PseudoColour image onto a world canvas.
 $PURPOSE
     This routine will draw a 2-dimensional PseudoColour slice of a
     Karma array onto a world canvas. This slice may be tiled.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor for the image.
-$PARAMETER        slice :
+$PARAMETER          slice :
     The start of the slice (image) data.
-$PARAMETER        hdim :
+$PARAMETER          hdim :
     The dimension index of the horizontal dimension.
-$PARAMETER        vdim :
+$PARAMETER          vdim :
     The dimension index of the vertical dimension.
-$PARAMETER        elem_index :
+$PARAMETER          elem_index :
     The element index of the data packets.
-$PARAMETER        cache_ptr :
+$PARAMETER          cache_ptr :
     The routine may produce cache data which will vastly increase
     the speed of subsequent operations on this data. The routine will write a
     pointer to this data here. Prior to process exit, a call MUST be made to
@@ -542,8 +557,8 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         canvas_draw_rgb_image
-$RETURN_TYPE      flag
+$FUNCTION           canvas_draw_rgb_image
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KWorldCanvas canvas, array_desc *arr_desc,
 			    CONST char *slice,
@@ -551,27 +566,27 @@ $PARAMETER_LIST
 			    unsigned int red_index, unsigned int green_index,
 			    unsigned int blue_index,
 			    KPixCanvasImageCache *cache_ptr)
-$SUMMARY          Draw a TrueColour image onto a world canvas.
+$SUMMARY            Draw a TrueColour image onto a world canvas.
 $PURPOSE
     This routine will draw a 2-dimensional TrueColour slice of a
     Karma array onto a world canvas. This slice may be tiled.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor for the image.
-$PARAMETER        slice :
+$PARAMETER          slice :
     The start of the slice (image) data.
-$PARAMETER        hdim :
+$PARAMETER          hdim :
     The dimension index of the horizontal dimension.
-$PARAMETER        vdim :
+$PARAMETER          vdim :
     The dimension index of the vertical dimension.
-$PARAMETER        red_index :
+$PARAMETER          red_index :
     The element index of the red components.
-$PARAMETER        green_index :
+$PARAMETER          green_index :
     The element index of the green components.
-$PARAMETER        blue_index :
+$PARAMETER          blue_index :
     The element index of the blue components.
-$PARAMETER        cache_ptr :
+$PARAMETER          cache_ptr :
     The routine may produce cache data which will vastly increase
     the speed of subsequent operations on this data. The routine will write a
     pointer to this data here. Prior to process exit, a call MUST be made to
@@ -581,451 +596,524 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         canvas_draw_point
-$RETURN_TYPE      void
+$FUNCTION           canvas_draw_point
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas, double x, double y,
 			double value[2])
-$SUMMARY          Draw a single point onto a world canvas.
+$SUMMARY            Draw a single point onto a world canvas.
 $PURPOSE
     Draw a single point onto a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        x :
+$PARAMETER          x :
     The horizontal world co-ordinate of the point.
-$PARAMETER        y :
+$PARAMETER          y :
     The vertical world co-ordinate of the point.
-$PARAMETER        value :
+$PARAMETER          value :
     The data value to use. This is of type K_DCOMPLEX.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_draw_point_p
-$RETURN_TYPE      void
+$FUNCTION           canvas_draw_point_p
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas, double x, double y,
 			  unsigned long pixel_value)
-$SUMMARY          Draw a single point onto a world canvas.
+$SUMMARY            Draw a single point onto a world canvas.
 $PURPOSE
     Draw a single point onto a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        x :
+$PARAMETER          x :
     The horizontal world co-ordinate of the point.
-$PARAMETER        y :
+$PARAMETER          y :
     The vertical world co-ordinate of the point.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value to use.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_draw_line
-$RETURN_TYPE      void
+$FUNCTION           canvas_draw_line
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas,
 		       double x0, double y0, double x1, double y1,
 		       double value[2])
-$SUMMARY          Draw a single line onto a world canvas.
+$SUMMARY            Draw a single line onto a world canvas.
 $PURPOSE
     Draw a single line onto a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        x0 :
+$PARAMETER          x0 :
     The horizontal world co-ordinate of the first point.
-$PARAMETER        y0 :
+$PARAMETER          y0 :
     The vertical world co-ordinate of the first point.
-$PARAMETER        x1 :
+$PARAMETER          x1 :
     The horizontal world co-ordinate of the second point.
-$PARAMETER        y1 :
+$PARAMETER          y1 :
     The vertical world co-ordinate of the second point.
-$PARAMETER        value :
+$PARAMETER          value :
     The data value to use. This is of type K_DCOMPLEX.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_draw_line_p
-$RETURN_TYPE      void
+$FUNCTION           canvas_draw_line_p
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas,
 			 double x0, double y0, double x1, double y1,
 			 unsigned long pixel_value)
-$SUMMARY          Draw a single line onto a world canvas.
+$SUMMARY            Draw a single line onto a world canvas.
 $PURPOSE
     Draw a single line onto a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        x0 :
+$PARAMETER          x0 :
     The horizontal world co-ordinate of the first point.
-$PARAMETER        y0 :
+$PARAMETER          y0 :
     The vertical world co-ordinate of the first point.
-$PARAMETER        x1 :
+$PARAMETER          x1 :
     The horizontal world co-ordinate of the second point.
-$PARAMETER        y1 :
+$PARAMETER          y1 :
     The vertical world co-ordinate of the second point.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value to use.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_draw_ellipse
-$RETURN_TYPE      void
+$FUNCTION           canvas_draw_ellipse
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas,
 			  double centre_x, double centre_y,
 			  double radius_x, double radius_y, double value[2])
-$SUMMARY          Draw an ellipse onto a world canvas.
+$SUMMARY            Draw an ellipse onto a world canvas.
 $PURPOSE
     Draw an ellipse onto a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        centre_x :
+$PARAMETER          centre_x :
     The horizontal world co-ordinate of the centre of the ellipse.
-$PARAMETER        centre_y :
+$PARAMETER          centre_y :
     The vertical world co-ordinate of the centre of the ellipse.
-$PARAMETER        radius_x :
+$PARAMETER          radius_x :
     The horizontal radius in world co-ordinates.
-$PARAMETER        radius_y :
+$PARAMETER          radius_y :
     The vertical radius in world co-ordinates.
-$PARAMETER        value :
+$PARAMETER          value :
     The complex value to draw the ellipse with. This must be of type
     K_DCOMPLEX.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_draw_ellipse_p
-$RETURN_TYPE      void
+$FUNCTION           canvas_draw_ellipse_p
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas,
 			    double centre_x, double centre_y,
 			    double radius_x, double radius_y,
 			    unsigned long pixel_value)
-$SUMMARY          Draw an ellipse onto a world canvas.
+$SUMMARY            Draw an ellipse onto a world canvas.
 $PURPOSE
     Draw an ellipse onto a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        centre_x :
+$PARAMETER          centre_x :
     The horizontal world co-ordinate of the centre of the ellipse.
-$PARAMETER        centre_y :
+$PARAMETER          centre_y :
     The vertical world co-ordinate of the centre of the ellipse.
-$PARAMETER        radius_x :
+$PARAMETER          radius_x :
     The horizontal radius in world co-ordinates.
-$PARAMETER        radius_y :
+$PARAMETER          radius_y :
     The vertical radius in world co-ordinates.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value to draw the ellipse with.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_fill_ellipse
-$RETURN_TYPE      void
+$FUNCTION           canvas_fill_ellipse
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas,
 			  double centre_x, double centre_y,
 			  double radius_x, double radius_y, double value[2])
-$SUMMARY          Draw a filled ellipse onto a world canvas.
+$SUMMARY            Draw a filled ellipse onto a world canvas.
 $PURPOSE
     Draw a filled ellipse onto a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        centre_x :
+$PARAMETER          centre_x :
     The horizontal world co-ordinate of the centre of the ellipse.
-$PARAMETER        centre_y :
+$PARAMETER          centre_y :
     The vertical world co-ordinate of the centre of the ellipse.
-$PARAMETER        radius_x :
+$PARAMETER          radius_x :
     The horizontal radius in world co-ordinates.
-$PARAMETER        radius_y :
+$PARAMETER          radius_y :
     The vertical radius in world co-ordinates.
-$PARAMETER        value :
+$PARAMETER          value :
     The complex value to fill the ellipse with. This must be of type
     K_DCOMPLEX.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_fill_ellipse_p
-$RETURN_TYPE      void
+$FUNCTION           canvas_fill_ellipse_p
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas,
 			    double centre_x, double centre_y,
 			    double radius_x, double radius_y,
 			    unsigned long pixel_value)
-$SUMMARY          Draw a filled ellipse onto a world canvas.
+$SUMMARY            Draw a filled ellipse onto a world canvas.
 $PURPOSE
     Draw a filled ellipse onto a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        centre_x :
+$PARAMETER          centre_x :
     The horizontal world co-ordinate of the centre of the ellipse.
-$PARAMETER        centre_y :
+$PARAMETER          centre_y :
     The vertical world co-ordinate of the centre of the ellipse.
-$PARAMETER        radius_x :
+$PARAMETER          radius_x :
     The horizontal radius in world co-ordinates.
-$PARAMETER        radius_y :
+$PARAMETER          radius_y :
     The vertical radius in world co-ordinates.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value to fill the ellipse with.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_fill_polygon
-$RETURN_TYPE      flag
+$FUNCTION           canvas_fill_polygon
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KWorldCanvas canvas, edit_coord *coords,
 			  unsigned int num_vertices, double value[2],
 			  flag convex)
-$SUMMARY          Draw a filled polygon onto a world canvas.
+$SUMMARY            Draw a filled polygon onto a world canvas.
 $PURPOSE
     Draw a filled polygon onto a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        coords :
+$PARAMETER          coords :
     The array of world co-ordinates of vertices of the polygon.
-$PARAMETER        num_vertices :
+$PARAMETER          num_vertices :
     The number of vertices in the polygon.
-$PARAMETER        value :
+$PARAMETER          value :
     The complex value to fill the polygon with. This must be of type
     K_DCOMPLEX.
-$PARAMETER        convex :
+$PARAMETER          convex :
     If TRUE, then the points must form a convex polygon.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         canvas_draw_rectangle
-$RETURN_TYPE      void
+$FUNCTION           canvas_draw_rectangle
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas, double x, double y,
 			    double width, double height, double value[2])
-$SUMMARY          Draw a single rectangle onto a world canvas.
+$SUMMARY            Draw a single rectangle onto a world canvas.
 $PURPOSE
     Draw a single rectangle onto a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        x :
+$PARAMETER          x :
     The horizontal offset of the rectangle.
-$PARAMETER        y :
+$PARAMETER          y :
     The vertical offset of the rectangle.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the rectangle.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the rectangle.
-$PARAMETER        value :
+$PARAMETER          value :
     The data value to use. This is of type K_DCOMPLEX.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_draw_rectangle_p
-$RETURN_TYPE      void
+$FUNCTION           canvas_draw_rectangle_p
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas, double x, double y,
 			      double width, double height,
 			      unsigned long pixel_value)
-$SUMMARY          Draw a single rectangle onto a world canvas.
+$SUMMARY            Draw a single rectangle onto a world canvas.
 $PURPOSE
     Draw a single rectangle onto a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        x :
+$PARAMETER          x :
     The horizontal offset of the rectangle.
-$PARAMETER        y :
+$PARAMETER          y :
     The vertical offset of the rectangle.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the rectangle.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the rectangle.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value to use.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_fill_rectangle
-$RETURN_TYPE      void
+$FUNCTION           canvas_fill_rectangle
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas, double x, double y,
 			    double width, double height, double value[2])
-$SUMMARY          Fill a single rectangle onto a world canvas.
+$SUMMARY            Fill a single rectangle onto a world canvas.
 $PURPOSE
     Fill a single rectangle onto a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        x :
+$PARAMETER          x :
     The horizontal offset of the rectangle.
-$PARAMETER        y :
+$PARAMETER          y :
     The vertical offset of the rectangle.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the rectangle.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the rectangle.
-$PARAMETER        value :
+$PARAMETER          value :
     The data value to use. This is of type K_DCOMPLEX.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_fill_rectangle_p
-$RETURN_TYPE      void
+$FUNCTION           canvas_fill_rectangle_p
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas, double x, double y,
 			      double width, double height,
 			      unsigned long pixel_value)
-$SUMMARY          Fill a single rectangle onto a world canvas.
+$SUMMARY            Fill a single rectangle onto a world canvas.
 $PURPOSE
     Fill a single rectangle onto a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        x :
+$PARAMETER          x :
     The horizontal offset of the rectangle.
-$PARAMETER        y :
+$PARAMETER          y :
     The vertical offset of the rectangle.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the rectangle.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the rectangle.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value to use.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_draw_lines
-$RETURN_TYPE      void
-$PARAMETER_LIST
-    (KWorldCanvas canvas, double *x_array, double *y_array,
-			int num_points, double value[2])
-$SUMMARY          Draw multiple connected lines onto a world canvas.
-$PURPOSE
-    Draw multiple connected lines onto a world canvas.
-$PARAMETER        canvas :
-    The world canvas object.
-$PARAMETER        x_array :
-    The horizontal world co-ordinates of the points. If this is NULL,
-    the routine assumes horizontal co-ordinates equally spaced across the world
-    canvas.
-$PARAMETER        y_array :
-    The vertical world co-ordinates of the points. If this is NULL,
-    the routine assumes vertical co-ordinates equally spaced across the world
-    canvas.
-$PARAMETER        num_points :
-    The number of points. The number of lines drawn is 1 less than
-    this value.
-$PARAMETER        value :
-    The data value to use. This is of type K_DCOMPLEX.
-$RETURNS
-    Nothing.
-$END
-
-$FUNCTION         canvas_draw_lines_p
-$RETURN_TYPE      void
+$FUNCTION           canvas_draw_lines
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas,
-			  double *x_array, double *y_array, int num_points,
-			  unsigned long pixel_value)
-$SUMMARY          Draw multiple connected lines onto a world canvas.
+			CONST double *x_array, CONST double *y_array,
+			int num_points, double value[2])
+$SUMMARY            Draw multiple connected lines onto a world canvas.
 $PURPOSE
     Draw multiple connected lines onto a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        x_array :
+$PARAMETER          x_array :
     The horizontal world co-ordinates of the points. If this is NULL,
     the routine assumes horizontal co-ordinates equally spaced across the world
     canvas.
-$PARAMETER        y_array :
+$PARAMETER          y_array :
     The vertical world co-ordinates of the points. If this is NULL,
     the routine assumes vertical co-ordinates equally spaced across the world
     canvas.
-$PARAMETER        num_points :
+$PARAMETER          num_points :
     The number of points. The number of lines drawn is 1 less than
     this value.
-$PARAMETER        pixel_value :
+$PARAMETER          value :
+    The data value to use. This is of type K_DCOMPLEX.
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           canvas_draw_lines_p
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (KWorldCanvas canvas,
+			  CONST double *x_array, CONST double *y_array,
+			  int num_points, unsigned long pixel_value)
+$SUMMARY            Draw multiple connected lines onto a world canvas.
+$PURPOSE
+    Draw multiple connected lines onto a world canvas.
+$PARAMETER          canvas :
+    The world canvas object.
+$PARAMETER          x_array :
+    The horizontal world co-ordinates of the points. If this is NULL,
+    the routine assumes horizontal co-ordinates equally spaced across the world
+    canvas.
+$PARAMETER          y_array :
+    The vertical world co-ordinates of the points. If this is NULL,
+    the routine assumes vertical co-ordinates equally spaced across the world
+    canvas.
+$PARAMETER          num_points :
+    The number of points. The number of lines drawn is 1 less than
+    this value.
+$PARAMETER          pixel_value :
     The pixel value to use.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_init_win_scale
-$RETURN_TYPE      void
+$FUNCTION           canvas_draw_segments
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (KWorldCanvas canvas,
+			   CONST double *x0, CONST double *y0,
+			   CONST double *x1, CONST double *y1,
+			   int num_segments, double value[2])
+$SUMMARY            Draw multiple disjoint lines onto a world canvas.
+$PURPOSE
+    Draw multiple disjoint lines onto a world canvas.
+$PARAMETER          canvas :
+    The world canvas object.
+$PARAMETER          x0 :
+    The horizontal start co-ordinates of the segments.
+$PARAMETER          y0 :
+    The vetical start co-ordinates of the segments.
+$PARAMETER          x1 :
+    The horizontal end co-ordinates of the segments.
+$PARAMETER          y1 :
+    The vetical end co-ordinates of the segments.
+$PARAMETER          num_segments :
+    The number of segments.
+$PARAMETER          value :
+    The data value to use. This is of type K_DCOMPLEX.
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           canvas_draw_segments_p
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (KWorldCanvas canvas,
+			     CONST double *x0, CONST double *y0,
+			     CONST double *x1, CONST double *y1,
+			     int num_segments, unsigned long pixel_value)
+$SUMMARY            Draw multiple disjoint lines onto a world canvas.
+$PURPOSE
+    Draw multiple disjoint lines onto a world canvas.
+$PARAMETER          canvas :
+    The world canvas object.
+$PARAMETER          x0 :
+    The horizontal start co-ordinates of the segments.
+$PARAMETER          y0 :
+    The vetical start co-ordinates of the segments.
+$PARAMETER          x1 :
+    The horizontal end co-ordinates of the segments.
+$PARAMETER          y1 :
+    The vetical end co-ordinates of the segments.
+$PARAMETER          num_segments :
+    The number of segments.
+$PARAMETER          pixel_value :
+    The pixel value to use.
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           canvas_init_win_scale
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (struct win_scale_type *win_scale,
 			    unsigned int magic_number)
-$SUMMARY          Initialise win_scale structure.
+$SUMMARY            Initialise win_scale structure.
 $PURPOSE
     This routine will initialise a window scaling structure with
     sensible values. This routine may be used prior to calling <canvas_create>.
-$PARAMETER        win_scale :
+$PARAMETER          win_scale :
     A pointer to the window scaling structure.
-$PARAMETER        magic_number :
+$PARAMETER          magic_number :
     The value of this must be K_WIN_SCALE_MAGIC_NUMBER.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_use_log_scale
-$RETURN_TYPE      void
+$FUNCTION           canvas_use_log_scale
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas, flag x_log, flag y_log)
-$SUMMARY          Enable logarithmic scaling for a world canvas.
+$SUMMARY            Enable logarithmic scaling for a world canvas.
 $PURPOSE
     This routine will enable logarithmic scaling of the co-ordinates
     for a world canvas object.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        x_log :
+$PARAMETER          x_log :
     If TRUE, the horizontal co-ordinates will be scaled
     logarithmically, else they will be scaled linearly.
-$PARAMETER        y_log :
+$PARAMETER          y_log :
     If TRUE the vertical co-ordinates should be scaled logarithmically,
     else they will be scaled linearly.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         canvas_create_stroke_instruction
-$RETURN_TYPE      flag
+$EXPERIMENTAL_FUNC  canvas_use_astro_transform
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (KWorldCanvas canvas, KwcsAstro *ap)
+$SUMMARY            Use astronomical sky projections for a canvas.
+$PURPOSE
+    Use astronomical sky projections for a canvas.
+$PARAMETER          canvas :
+    The world canvas object.
+$PARAMETER          ap :
+    A pointer to the storage for a KwcsAstro object. The storage may
+    contain a NULL object.
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           canvas_create_stroke_instruction
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KWorldCanvas canvas,
 				       double x0, double y0,
 				       double x1, double y1,
 				       unsigned int brush_width,
 				       double value[2], KImageEditList ilist)
-$SUMMARY          Create an image editing stroke instruction.
+$SUMMARY            Create an image editing stroke instruction.
 $PURPOSE
     This routine will create a 2-dimensional edit stroke instruction,
     according to the specification in the <-iedit-> package and will append it
     to a managed edit list.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas which contains the world co-ordinate system.
-$PARAMETER        x0 :
+$PARAMETER          x0 :
     The starting horizontal co-ordidinate of the stroke.
-$PARAMETER        y0 :
+$PARAMETER          y0 :
     The starting vertical co-ordidinate of the stroke.
-$PARAMETER        x1 :
+$PARAMETER          x1 :
     The ending horizontal co-ordidinate of the stroke.
-$PARAMETER        y1 :
+$PARAMETER          y1 :
     The ending vertical co-ordidinate of the stroke.
-$PARAMETER        brush_width :
+$PARAMETER          brush_width :
     The width of the stroke (in canvas pixels). This must be at
     least 1.
-$PARAMETER        value :
+$PARAMETER          value :
     The data value in the stroke instruction. This must be of type
     K_DCOMPLEX.
-$PARAMETER        ilist :
+$PARAMETER          ilist :
     The managed edit list.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$PROTO_FUNC       CANVAS_PROTO_refresh_func
-$RETURN_TYPE      void
+$PROTO_FUNC         CANVAS_PROTO_refresh_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas, int width, int height,
 				struct win_scale_type *win_scale,
@@ -1034,34 +1122,34 @@ $PARAMETER_LIST
 				unsigned int num_areas,
 				KPixCanvasRefreshArea *areas,
 				flag *honoured_areas)
-$SUMMARY          Refresh event callback.
+$SUMMARY            Refresh event callback.
 $PURPOSE
     This routine is a refresh event consumer for a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas being refreshed.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the canvas in pixels.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the canvas in pixels.
-$PARAMETER        win_scale :
+$PARAMETER          win_scale :
     A pointer to the window scaling information.
-$PARAMETER        cmap :
+$PARAMETER          cmap :
     The colourmap associated with the canvas.
-$PARAMETER        cmap_resize :
+$PARAMETER          cmap_resize :
     TRUE if the refresh function was called as a result of a
     colourmap resize, else FALSE.
-$PARAMETER        info :
+$PARAMETER          info :
     A pointer to the arbitrary canvas information pointer.
-$PARAMETER        pspage :
+$PARAMETER          pspage :
     If not NULL, the PostScriptPage object the refresh is
     redirected to.
-$PARAMETER        num_areas :
+$PARAMETER          num_areas :
     The number of areas that need to be refreshed. If this is
     0 then the entire pixel canvas needs to be refreshed.
-$PARAMETER        areas :
+$PARAMETER          areas :
     The list of areas that need to be refreshed. Note that these
     areas are given in pixel co-ordinates.
-$PARAMETER        honoured_areas :
+$PARAMETER          honoured_areas :
     If the value TRUE is written here it is assumed the
     routine honoured the list of refresh areas and did not write outside
     these areas and hence the list of areas will be passed to subsequent
@@ -1072,30 +1160,30 @@ $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       CANVAS_PROTO_size_control_func
-$RETURN_TYPE      void
+$PROTO_FUNC         CANVAS_PROTO_size_control_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas,
 				     int width, int height,
 				     struct win_scale_type *win_scale,
 				     void **info, flag *boundary_clear)
-$SUMMARY          Size control callback.
+$SUMMARY            Size control callback.
 $PURPOSE
     This routine will modify the window scaling information for a
     world canvas. While this routine is running, colourmap resize events are
     ignored. Hence this routine may safely cause the associated Kcolourmap
     object to be resized.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the canvas in pixels.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the canvas in pixels.
-$PARAMETER        win_scale :
+$PARAMETER          win_scale :
     The window scaling information. This may be modified.
-$PARAMETER        info :
+$PARAMETER          info :
     A pointer to the arbitrary canvas information pointer.
-$PARAMETER        boundary_clear :
+$PARAMETER          boundary_clear :
     If the value TRUE is written here then the
     <-canvas_resize-> routine will attempt to clear only the boundary between
     the pixel canvas and the world canvas. If the value FALSE is written here
@@ -1105,73 +1193,77 @@ $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       CANVAS_PROTO_position_func
-$RETURN_TYPE      flag
+$PROTO_FUNC         CANVAS_PROTO_position_func
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KWorldCanvas canvas, double x, double y,
 				 unsigned int event_code, void *e_info,
 				 void **f_info, double x_lin, double y_lin)
-$SUMMARY          Position event callback.
+$SUMMARY            Position event callback.
 $PURPOSE
     This routine is a position event consumer for a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas on which the event occurred.
-$PARAMETER        x :
+$PARAMETER          x :
     The horizontal world co-ordinate of the event.
-$PARAMETER        y :
+$PARAMETER          y :
     The vertical world co-ordinate of the event.
-$NOTE
-    These values will have been transformed by the registered
-    transform function (see <-canvas_register_transform_func->).
-$PARAMETER        event_code :
+$PARAMETER          event_code :
     The arbitrary event code.
-$PARAMETER        e_info :
+$PARAMETER          e_info :
     A pointer to arbitrary event information.
-$PARAMETER        f_info :
+$PARAMETER          f_info :
     A pointer to an arbitrary function information pointer.
-$PARAMETER        x_lin :
+$PARAMETER          x_lin :
     The horizontal linear world co-ordinate prior to the transform
     function being called.
-$PARAMETER        y_lin :
+$PARAMETER          y_lin :
     The vertical linear world co-ordinate prior to the transform
     function being called.
+$NOTE
+    The world co-ordinate values will have been transformed by the
+    registered transform function (see <-canvas_register_transform_func->).
 $RETURNS
     TRUE if the event was consumed, else FALSE indicating that
     the event is still to be processed.
 $END
 
-$PROTO_FUNC       CANVAS_PROTO_coord_convert_func
-$RETURN_TYPE      flag
+$PROTO_FUNC         CANVAS_PROTO_coord_convert_func
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KWorldCanvas canvas,
-				      struct win_scale_type *win_scale,
-				      double *x, double *y,
+				      unsigned int num_coords,
+				      CONST double *xin, CONST double *yin,
+				      double *xout, double *yout,
 				      flag to_world, void **info)
-$SUMMARY          Co-ordinate conversion callback.
+$SUMMARY            Co-ordinate conversion callback.
 $PURPOSE
     This routine will convert between world co-ordinates and pixel
     co-ordinates for a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        win_scale :
-    A pointer to the window scaling information. The data
-    herein may be modified.
-$PARAMETER        x :
-    A pointer to the horizontal co-ordinate storage. This is updated.
-$PARAMETER        y :
-    A pointer to the vertical co-ordinate storage. This is updated.
-$PARAMETER        to_world :
+$PARAMETER          num_coords :
+    The number of co-ordinates to transform.
+$PARAMETER          xin :
+    The array of input horizontal co-ordinates.
+$PARAMETER          yin :
+    The array of input vertical co-ordinates.
+$PARAMETER          xout :
+    The array of output horizontal co-ordinates are written here.
+$PARAMETER          yout :
+    The array of output vertical co-ordinates are written here.
+$PARAMETER          to_world :
     If TRUE, then a pixel to world co-ordinate transform is
     required, else a world to pixel co-ordinate transform is required.
-$PARAMETER        info :
+$PARAMETER          info :
     A pointer to the arbitrary canvas information pointer.
 $RETURNS
     TRUE if the conversion was completed, else FALSE indicating
     that the default conversions should be used.
 $END
 
-$PROTO_FUNC       CANVAS_PROTO_coord_transform_func
-$RETURN_TYPE      void
+$PROTO_FUNC         CANVAS_PROTO_coord_transform_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas,
 					unsigned int num_coords,
@@ -1180,31 +1272,31 @@ $PARAMETER_LIST
 					double left_x, double right_x,
 					double bottom_y, double top_y,
 					void **info)
-$SUMMARY          Co-ordinate transformation callback.
+$SUMMARY            Co-ordinate transformation callback.
 $PURPOSE
     This routine will transform between linear and non-linear world
     co-ordinates.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas on which the event occurred.
-$PARAMETER        num_coords :
+$PARAMETER          num_coords :
     The number of co-ordinates to transform.
-$PARAMETER        x :
+$PARAMETER          x :
     The array of horizontal world co-ordinates. These are modified.
-$PARAMETER        x_to_linear :
+$PARAMETER          x_to_linear :
     If TRUE, then the horizontal co-ordinates are converted from
     non-linear to linear, else they are converted from linear to non-linear.
-$PARAMETER        y :
+$PARAMETER          y :
     The array of vertical world co-ordinates. These are modified.
-$PARAMETER        y_to_linear :
+$PARAMETER          y_to_linear :
     If TRUE, then the vertical co-ordinates are converted from
     non-linear to linear, else they are converted from linear to non-linear.
-$PARAMETER        info :
+$PARAMETER          info :
     A pointer to the arbitrary transform information pointer.
 $RETURNS
     Nothing.
 $END
 
-$TABLE            KWIN_ATTRIBUTES
+$TABLE            CANVAS_ATTRIBUTES
 $COLUMNS          4
 $SUMMARY          List of attributes for KWorldCanvas objects
 $TABLE_DATA

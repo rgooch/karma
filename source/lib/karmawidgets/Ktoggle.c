@@ -265,10 +265,6 @@ ClassInit()
   */
   class->ktoggle_class.Set = Ladders;
   class->ktoggle_class.Unset = Snakes;
-  return;
-  
-/* We should never get here. */
-  XtError("Aborting, due to errors resolving bindings in the Ktoggle widget.");
 }
 
 static void Initialize(request, new)

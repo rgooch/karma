@@ -323,10 +323,7 @@ void *s_ignore (int sig)
 */
 {
 #ifdef CAN_FORK
-    extern char *sys_errlist[];
-/*
-    static char function_name[] = "s_ignore";
-*/
+    /*static char function_name[] = "s_ignore";*/
 
     return ( (void *) signal (sig, SIG_IGN) );
 

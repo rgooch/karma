@@ -63,7 +63,10 @@
     Updated by      Richard Gooch   9-APR-1996: Changed to new documentation
   format.
 
-    Last updated by Richard Gooch   6-JUN-1996: Write 0 to K_UBYTE for blanks.
+    Updated by      Richard Gooch   6-JUN-1996: Write 0 to K_UBYTE for blanks.
+
+    Last updated by Richard Gooch   15-OCT-1996: Added CONST declaration to
+  <ds_put_named_element>.
 
 
 */
@@ -663,7 +666,7 @@ flag ds_put_element_many_times (char *data, unsigned int data_type,
 }   /*  End Function ds_put_element_many_times  */
 
 /*PUBLIC_FUNCTION*/
-flag ds_put_named_element (packet_desc *pack_desc, char *packet,
+flag ds_put_named_element (CONST packet_desc *pack_desc, char *packet,
 			   CONST char *name, double value[2])
 /*  [SUMMARY] Update a named element in a specified packet.
     <pack_desc> The packet descriptor.

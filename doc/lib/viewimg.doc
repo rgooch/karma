@@ -9,43 +9,61 @@ $LIBRARY          karmagraphics
 $LINKWITH         -lkarmagraphics
 $END
 
-$FUNCTION         viewimg_draw_edit_list
-$RETURN_TYPE      flag
+$EXPERIMENTAL_FUNC  viewimg_create_drag_and_zoom_interface
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (KWorldCanvas canvas)
+$SUMMARY            Create a drag and zoom user interface for a canvas.
+$PURPOSE
+    This routine will create a drag and zoom user interface for a
+    world canvas. When the user presses the left mouse button in the canvas and
+    moves the mouse with the button still pressed a rubber-band box will be
+    drawn on the canvas. When the left mouse button is released the image in
+    the rubber-banded box is zoomed to fill as much of the canvas as is
+    possible, depending on the zoom policy.
+$PARAMETER          canvas :
+    The world canvas object.
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           viewimg_draw_edit_list
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (ViewableImage vimage, KImageEditList ilist)
-$SUMMARY          Draw edit list into array associated with viewable image.
+$SUMMARY            Draw edit list into array associated with viewable image.
 $PURPOSE
     This routine will draw a list of edit objects to the
     2-dimensional data associated with a viewable image object.
-$PARAMETER        vimage :
+$PARAMETER          vimage :
     The viewable image.
-$PARAMETER        ilist :
+$PARAMETER          ilist :
     The list of edit objects.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         viewimg_draw_edit_object
-$RETURN_TYPE      flag
+$FUNCTION           viewimg_draw_edit_object
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (ViewableImage vimage, char *object)
-$SUMMARY          Draw edit object into array associated with viewable image.
+$SUMMARY            Draw edit object into array associated with viewable image.
 $PURPOSE
     This routine will draw one edit object to the 2-dimensional data
     associated with a viewable image object.
-$PARAMETER        vimage :
+$PARAMETER          vimage :
     The viewable image.
-$PARAMETER        object :
+$PARAMETER          object :
     The edit object.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         viewimg_init
-$RETURN_TYPE      void
+$FUNCTION           viewimg_init
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas)
-$SUMMARY          Initialise the package for a particular canvas.
+$SUMMARY            Initialise the package for a particular canvas.
 $PURPOSE
     This routine will initialise the <-viewimg-> package for a
     particular world canvas. Calling this routine causes a number of callback
@@ -54,14 +72,14 @@ $PURPOSE
     optional at the moment: the routines which create viewable images perform
     this function automatically. In version 2.0 of Karma, this use of this
     routine before creating viewable images will become mandatory.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         viewimg_create_restr
-$RETURN_TYPE      ViewableImage
+$FUNCTION           viewimg_create_restr
+$RETURN_TYPE        ViewableImage
 $PARAMETER_LIST
     (KWorldCanvas canvas,
 				    multi_array *multi_desc,
@@ -70,35 +88,35 @@ $PARAMETER_LIST
 				    unsigned int elem_index,
 				    unsigned num_restr,
 				    char **restr_names, double *restr_values)
-$SUMMARY          Create viewable image from 2D slice with restrictions.
+$SUMMARY            Create viewable image from 2D slice with restrictions.
 $PURPOSE
     This routine will create a PseudoColour viewable image object
     from a 2-dimensional slice of a Karma data structure. At a later time, this
     viewable image may be made visible. This routine will not cause the canvas
     to be refreshed.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas onto which the viewable image may be drawn. Many
     viewable images may be associated with a single canvas.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The  multi_array  descriptor which contains the Karma data
     structure. The routine increments the attachment count on the descriptor
     on successful completion. This may be NULL.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
-$PARAMETER        slice :
+$PARAMETER          slice :
     The start of the slice data.
-$PARAMETER        hdim :
+$PARAMETER          hdim :
     The dimension index of the horizontal dimension.
-$PARAMETER        vdim :
+$PARAMETER          vdim :
     The dimension index of the vertical dimension.
-$PARAMETER        elem_index :
+$PARAMETER          elem_index :
     The element index in the data packets.
-$PARAMETER        num_restr :
+$PARAMETER          num_restr :
     The number of matched restrictions. If this is 0, no
     restrictions are recorded (this is the same as calling <-viewimg_create->).
-$PARAMETER        restr_names :
+$PARAMETER          restr_names :
     The restriction names.
-$PARAMETER        restr_values :
+$PARAMETER          restr_values :
     The restriction values.
 $NOTE
     Restriction information is automatically deallocated when
@@ -112,35 +130,35 @@ $RETURNS
     A viewable image on success, NULL.
 $END
 
-$FUNCTION         viewimg_create
-$RETURN_TYPE      ViewableImage
+$FUNCTION           viewimg_create
+$RETURN_TYPE        ViewableImage
 $PARAMETER_LIST
     (KWorldCanvas canvas, multi_array *multi_desc,
 			      array_desc *arr_desc, char *slice,
 			      unsigned int hdim, unsigned int vdim,
 			      unsigned int elem_index)
-$SUMMARY          Create viewable image from 2D slice.
+$SUMMARY            Create viewable image from 2D slice.
 $PURPOSE
     This routine will create a PseudoColour viewable image object
     from a 2-dimensional slice of a Karma data structure. At a later time, this
     viewable image may be made visible. This routine will not cause the canvas
     to be refreshed.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas onto which the viewable image may be drawn. Many
     viewable images may be associated with a single canvas.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The  multi_array  descriptor which contains the Karma data
     structure. The routine increments the attachment count on the descriptor
     on successful completion. This may be NULL.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
-$PARAMETER        slice :
+$PARAMETER          slice :
     The start of the slice data.
-$PARAMETER        hdim :
+$PARAMETER          hdim :
     The dimension index of the horizontal dimension.
-$PARAMETER        vdim :
+$PARAMETER          vdim :
     The dimension index of the vertical dimension.
-$PARAMETER        elem_index :
+$PARAMETER          elem_index :
     The element index in the data packets.
 $NOTE
     The routine may produce cache data which will vastly increase the
@@ -151,24 +169,24 @@ $RETURNS
     A viewable image on success, NULL.
 $END
 
-$FUNCTION         viewimg_create_from_iarray
-$RETURN_TYPE      ViewableImage
+$FUNCTION           viewimg_create_from_iarray
+$RETURN_TYPE        ViewableImage
 $PARAMETER_LIST
     (KWorldCanvas canvas, iarray array,
 					  flag swap)
-$SUMMARY          Create a viewable image from an Intelligent Array.
+$SUMMARY            Create a viewable image from an Intelligent Array.
 $PURPOSE
     This routine will create a viewable image object from a
-    2-dimensional Intelligant Array. At a later time, this viewable image may
+    2-dimensional Intelligent Array. At a later time, this viewable image may
     be made visible. This routine will not cause the canvas to be refreshed.
     Many viewable images may be associated with a single canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        array :
+$PARAMETER          array :
     The Intelligent Array. The underlying <<multi_array>> data
     structure will have its attachment count incremented upon successful
     completion.
-$PARAMETER        swap :
+$PARAMETER          swap :
     If TRUE the y axis will be displayed horizontally.
 $NOTE
     The routine may produce cache data which will vastly increase the
@@ -179,8 +197,8 @@ $RETURNS
     A viewable image on success, else NULL.
 $END
 
-$FUNCTION         viewimg_create_sequence
-$RETURN_TYPE      ViewableImage *
+$FUNCTION           viewimg_create_sequence
+$RETURN_TYPE        ViewableImage *
 $PARAMETER_LIST
     (KWorldCanvas canvas,
 					multi_array *multi_desc,
@@ -188,31 +206,31 @@ $PARAMETER_LIST
 					unsigned int hdim, unsigned int vdim,
 					unsigned int fdim,
 					unsigned int elem_index)
-$SUMMARY          Create a sequence of viewable images from a 3D slice.
+$SUMMARY            Create a sequence of viewable images from a 3D slice.
 $PURPOSE
     This routine will create a sequence of viewable image objects
     from a 3-dimensional cube of a Karma data structure. At a later time, this
     sequence of viewable images may be made visible in any order.
     This routine will not cause the canvas to be refreshed.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The  multi_array  descriptor which contains the Karma data
     structure. The routine increments the attachment count on the descriptor
     on successful completion. This may be NULL.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
-$PARAMETER        cube :
+$PARAMETER          cube :
     The start of the cube data.
-$PARAMETER        hdim :
+$PARAMETER          hdim :
     The dimension index of the horizontal dimension.
-$PARAMETER        vdim :
+$PARAMETER          vdim :
     The dimension index of the vertical dimension.
-$PARAMETER        fdim :
+$PARAMETER          fdim :
     The dimension index of the frame dimension (dimension containing the
     sequence). The number of frames is the same as the length of this
     dimension.
-$PARAMETER        elem_index :
+$PARAMETER          elem_index :
     The element index in the data packets.
 $NOTE
     The routine may produce cache data which will vastly increase the
@@ -224,8 +242,46 @@ $RETURNS
     objects on success, else NULL.
 $END
 
-$FUNCTION         viewimg_create_rgb
-$RETURN_TYPE      ViewableImage
+$FUNCTION           viewimg_create_sequence_from_iarray
+$RETURN_TYPE        ViewableImage *
+$PARAMETER_LIST
+    (KWorldCanvas canvas,
+						    iarray array,
+						    unsigned int hdim,
+						    unsigned int vdim,
+						    unsigned int fdim)
+$SUMMARY            Create a sequence of viewable images from an Intelligent Array.
+$PURPOSE
+    This routine will create a sequence of viewable image objects
+    from a 3-dimensional Intelligent Array. At a later time, this sequence of
+    viewable images may be made visible in any order.
+    This routine will not cause the canvas to be refreshed.
+$PARAMETER          canvas :
+    The world canvas object.
+$PARAMETER          array :
+    The Intelligent Array. The underlying <<multi_array>> data
+    structure will have its attachment count incremented upon successful
+    completion.
+$PARAMETER          hdim :
+    The dimension index of the horizontal dimension.
+$PARAMETER          vdim :
+    The dimension index of the vertical dimension.
+$PARAMETER          fdim :
+    The dimension index of the frame dimension (dimension containing the
+    sequence). The number of frames is the same as the length of this
+    dimension.
+$NOTE
+    The routine may produce cache data which will vastly increase the
+    speed of subsequent operations on this data. Prior to process exit, a call
+    MUST be made to <-viewimg_destroy->, otherwise shared memory segments could
+    remain after the process exits.
+$RETURNS
+    A pointer to a dynamically allocated array of viewable image
+    objects on success, else NULL.
+$END
+
+$FUNCTION           viewimg_create_rgb
+$RETURN_TYPE        ViewableImage
 $PARAMETER_LIST
     (KWorldCanvas canvas, multi_array *multi_desc,
 				  array_desc *arr_desc, char *slice,
@@ -234,41 +290,41 @@ $PARAMETER_LIST
 				  unsigned int green_index,
 				  unsigned int blue_index, unsigned num_restr,
 				  char **restr_names, double *restr_values)
-$SUMMARY          Create a TrueColour viewable image.
+$SUMMARY            Create a TrueColour viewable image.
 $PURPOSE
     This routine will create a TrueColour viewable image object from
     a 2-dimensional slice of a Karma data structure. At a later time, this
     viewable image may be made visible. This routine will not cause the canvas
     to be refreshed.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas onto which the viewable image may be drawn. Many
     viewable images may be associated with a single canvas.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The  multi_array  descriptor which contains the Karma data
     structure. The routine increments the attachment count on the descriptor on
     successful completion. This may be NULL.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
-$PARAMETER        slice :
+$PARAMETER          slice :
     The start of the slice data.
-$PARAMETER        hdim :
+$PARAMETER          hdim :
     The dimension index of the horizontal dimension.
-$PARAMETER        vdim :
+$PARAMETER          vdim :
     The dimension index of the vertical dimension.
-$PARAMETER        red_index :
+$PARAMETER          red_index :
     The element index of the red component in the data packets.
-$PARAMETER        green_index :
+$PARAMETER          green_index :
     The element index of the green component in the data packets.
-$PARAMETER        blue_index :
+$PARAMETER          blue_index :
     The element index of the blue component in the data packets.
 $NOTE
     The 3 colour components must be of type  K_UBYTE  .
-$PARAMETER        num_restr :
+$PARAMETER          num_restr :
     The number of matched restrictions. If this is 0, no
     restrictions are recorded.
-$PARAMETER        restr_names :
+$PARAMETER          restr_names :
     The restriction names.
-$PARAMETER        restr_values :
+$PARAMETER          restr_values :
     The restriction values.
 $NOTE
     Restriction information is automatically deallocated when
@@ -282,8 +338,8 @@ $RETURNS
     A viewable image on success, else NULL.
 $END
 
-$FUNCTION         viewimg_create_rgb_sequence
-$RETURN_TYPE      ViewableImage *
+$FUNCTION           viewimg_create_rgb_sequence
+$RETURN_TYPE        ViewableImage *
 $PARAMETER_LIST
     (KWorldCanvas canvas,
 					    multi_array *multi_desc,
@@ -297,44 +353,44 @@ $PARAMETER_LIST
 					    unsigned num_restr,
 					    char **restr_names,
 					    double *restr_values)
-$SUMMARY          Create sequence of TrueColour viewable images from 3D slice.
+$SUMMARY            Create sequence of TrueColour viewable images from 3D slice.
 $PURPOSE
     This routine will create a sequence of TrueColour viewable image
     objects from a 3-dimensional cube of a Karma data structure. At a later
     time, this sequence of viewable images may be made visible in any order.
     This routine will not cause the canvas to be refreshed.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas onto which the viewable image may be drawn. Many
     viewable images may be associated with a single canvas.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The  multi_array  descriptor which contains the Karma data
     structure must. The routine increments the attachment count on the
     descriptor on successful completion. This may be NULL.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
-$PARAMETER        cube :
+$PARAMETER          cube :
     The start of the cube data.
-$PARAMETER        hdim :
+$PARAMETER          hdim :
     The dimension index of the horizontal dimension.
-$PARAMETER        vdim :
+$PARAMETER          vdim :
     The dimension index of the vertical dimension.
-$PARAMETER        fdim :
+$PARAMETER          fdim :
     The dimension index of the frame dimension (dimension containing the
     sequence). The number of frames is the same as the length of this dimension
-$PARAMETER        red_index :
+$PARAMETER          red_index :
     The element index of the red component in the data packets.
-$PARAMETER        green_index :
+$PARAMETER          green_index :
     The element index of the green component in the data packets.
-$PARAMETER        blue_index :
+$PARAMETER          blue_index :
     The element index of the blue component in the data packets.
 $NOTE
     The 3 colour components must be of type K_UBYTE.
-$PARAMETER        num_restr :
+$PARAMETER          num_restr :
     The number of matched restrictions. If this is 0, no
     restrictions are recorded.
-$PARAMETER        restr_names :
+$PARAMETER          restr_names :
     The restriction names.
-$PARAMETER        restr_values :
+$PARAMETER          restr_values :
     The restriction values.
 $NOTE
     Restriction information is copied into internally allocated
@@ -348,16 +404,16 @@ $RETURNS
     A viewable image on success, else NULL.
 $END
 
-$FUNCTION         viewimg_make_active
-$RETURN_TYPE      flag
+$FUNCTION           viewimg_make_active
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (ViewableImage vimage)
-$SUMMARY          Make viewable image active and possibly refresh.
+$SUMMARY            Make viewable image active and possibly refresh.
 $PURPOSE
     This routine will make a viewable image the active image for its
     associated world canvas. The canvas is then refreshed (possibly resized),
     provided that the new viewable image was not already active.
-$PARAMETER        vimage :
+$PARAMETER          vimage :
     The viewable image.
 $RETURNS
     TRUE on success, else FALSE.
@@ -365,17 +421,17 @@ $SEE_ALSO
     ALSO] <-viewimg_set_active->.
 $END
 
-$FUNCTION         viewimg_set_active
-$RETURN_TYPE      flag
+$FUNCTION           viewimg_set_active
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (ViewableImage vimage, flag refresh)
-$SUMMARY          Make viewable image active with controlled refresh.
+$SUMMARY            Make viewable image active with controlled refresh.
 $PURPOSE
     This routine will make a viewable image the active image for its
     associated world canvas.
-$PARAMETER        vimage :
+$PARAMETER          vimage :
     The viewable image.
-$PARAMETER        refresh :
+$PARAMETER          refresh :
     If TRUE, the canvas is always refreshed, if FALSE, the canvas is
     not refreshed.
 $RETURNS
@@ -384,31 +440,31 @@ $SEE_ALSO
     ALSO] <-viewimg_make_active->.
 $END
 
-$FUNCTION         viewimg_register_data_change
-$RETURN_TYPE      flag
+$FUNCTION           viewimg_register_data_change
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (ViewableImage vimage)
-$SUMMARY          Notify data for viewable image has changed.
+$SUMMARY            Notify data for viewable image has changed.
 $PURPOSE
     This routine will register a change in the Karma data structure
     associated with a viewable image. If the viewable image is active, it will
     be immediately redrawn on its canvas.
-$PARAMETER        vimage :
+$PARAMETER          vimage :
     The viewable image.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         viewimg_destroy
-$RETURN_TYPE      void
+$FUNCTION           viewimg_destroy
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (ViewableImage vimage)
-$SUMMARY          Destroy viewable image.
+$SUMMARY            Destroy viewable image.
 $PURPOSE
     This routine will destroy a viewable image. If this is not called
     prior to process exit, shared memory segments could remain after the
     process exits.
-$PARAMETER        vimage :
+$PARAMETER          vimage :
     The viewable image.
 $NOTE
     The associated <<multi_array>> descriptor is also deallocated (or
@@ -417,41 +473,41 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         viewimg_get_active
-$RETURN_TYPE      ViewableImage
+$FUNCTION           viewimg_get_active
+$RETURN_TYPE        ViewableImage
 $PARAMETER_LIST
     (KWorldCanvas canvas)
-$SUMMARY          Get the active ViewableImage associated with a world canvas.
+$SUMMARY            Get the active ViewableImage associated with a world canvas.
 $PURPOSE
     Get the active ViewableImage associated with a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
 $RETURNS
     The active viewable image on success, else NULL (indicating no
     viewable image is active for the canvas).
 $END
 
-$FUNCTION         viewimg_test_active
-$RETURN_TYPE      flag
+$FUNCTION           viewimg_test_active
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (ViewableImage vimage)
-$SUMMARY          Test if viewable image is active.
+$SUMMARY            Test if viewable image is active.
 $PURPOSE
     This routine will test if a viewable image is the active image
     for its associated world canvas.
-$PARAMETER        vimage :
+$PARAMETER          vimage :
     The viewable image.
 $RETURNS
     TRUE if the viewable image is actice, else FALSE.
 $END
 
-$FUNCTION         viewimg_register_position_event_func
-$RETURN_TYPE      KCallbackFunc
+$FUNCTION           viewimg_register_position_event_func
+$RETURN_TYPE        KCallbackFunc
 $PARAMETER_LIST
     (KWorldCanvas canvas,
 						    flag (*func) (),
 						    void *f_info)
-$SUMMARY          Register position event callback.
+$SUMMARY            Register position event callback.
 $PURPOSE
     This routine will register a position event function for a world
     canvas which has a number of ViewableImage objects associated with it.
@@ -459,74 +515,74 @@ $PURPOSE
     canvas has not been consumed. Many position event functions may be
     registered per canvas. The first function registered is the first function
     called upon a position event.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
-$PARAMETER        func :
+$PARAMETER          func :
     The function that is called when a position event occurs. The
     prototype function is <-VIEWIMG_PROTO_position_func->.
-$PARAMETER        f_info :
+$PARAMETER          f_info :
     The initial arbitrary function information pointer.
 $RETURNS
     A handle to a KWorldCanvasPositionFunc object.
 $END
 
-$FUNCTION         viewimg_fill_ellipse
-$RETURN_TYPE      flag
+$FUNCTION           viewimg_fill_ellipse
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (ViewableImage vimage,
 			   double centre_x, double centre_y,
 			   double radius_x, double radius_y, double value[2])
-$SUMMARY          Draw an ellipse into an array associated with a viewable image.
+$SUMMARY            Draw an ellipse into an array associated with a viewable image.
 $PURPOSE
     This routine will draw a filled ellipse into a 2 dimensional
     slice of data associated with a viewable image.
-$PARAMETER        vimage :
+$PARAMETER          vimage :
     The viewable image.
-$PARAMETER        centre_x :
+$PARAMETER          centre_x :
     The horizontal world co-ordinate of the centre of the ellipse.
-$PARAMETER        centre_y :
+$PARAMETER          centre_y :
     The vertical world co-ordinate of the centre of the ellipse.
-$PARAMETER        radius_x :
+$PARAMETER          radius_x :
     The horizontal radius.
-$PARAMETER        radius_y :
+$PARAMETER          radius_y :
     The vertical radius.
-$PARAMETER        value :
+$PARAMETER          value :
     The complex value to fill the ellipse. This must be of type
     K_DCOMPLEX.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         viewimg_fill_polygon
-$RETURN_TYPE      flag
+$FUNCTION           viewimg_fill_polygon
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (ViewableImage vimage, edit_coord *coords,
 			   unsigned int num_vertices, double value[2])
-$SUMMARY          Draw a polygon into an array associated with a viewable image.
+$SUMMARY            Draw a polygon into an array associated with a viewable image.
 $PURPOSE
     This routine will draw a filled polygon into a 2 dimensional
     slice of data associated with a viewable image.
-$PARAMETER        vimage :
+$PARAMETER          vimage :
     The viewable image.
-$PARAMETER        coords :
+$PARAMETER          coords :
     The array of world co-ordinates of vertices of the polygon.
-$PARAMETER        num_vertices :
+$PARAMETER          num_vertices :
     The number of vertices in the polygon.
-$PARAMETER        value :
+$PARAMETER          value :
     The complex value to fill the polygon with. This must be of type
     K_DCOMPLEX.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         viewimg_get_canvas_attributes
-$RETURN_TYPE      void
+$FUNCTION           viewimg_get_canvas_attributes
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas, ...)
-$SUMMARY          Get the viewable image attributes for a world canvas.
+$SUMMARY            Get the viewable image attributes for a world canvas.
 $PURPOSE
     Get the viewable image attributes for a world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas object.
 $PARAMETER        ... :
     The list of parameter attribute-key attribute-value-ptr pairs
@@ -536,15 +592,15 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         viewimg_set_canvas_attributes
-$RETURN_TYPE      void
+$FUNCTION           viewimg_set_canvas_attributes
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KWorldCanvas canvas, ...)
-$SUMMARY          Set the viewable image attributes for a world canvas.
+$SUMMARY            Set the viewable image attributes for a world canvas.
 $PURPOSE
     This routine will control the autoscaling options used when
     viewable images are displayed on their associated world canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The world canvas.
 $PARAMETER        ... :
     The list of parameter attribute-key attribute-value-ptr pairs
@@ -556,14 +612,14 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         viewimg_get_attributes
-$RETURN_TYPE      void
+$FUNCTION           viewimg_get_attributes
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (ViewableImage vimage, ...)
-$SUMMARY          Get the attributes for a viewable image.
+$SUMMARY            Get the attributes for a viewable image.
 $PURPOSE
     Get the attributes for a viewable image.
-$PARAMETER        vimage :
+$PARAMETER          vimage :
     The ViewableImage.
 $PARAMETER        ... :
     The list of parameter attribute-key attribute-value-ptr pairs
@@ -573,56 +629,144 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         viewimg_get_worldcanvas
-$RETURN_TYPE      KWorldCanvas
+$EXPERIMENTAL_FUNC  viewimg_partial_refresh
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (KWorldCanvas canvas, unsigned int num_areas,
+			      KPixCanvasRefreshArea *areas)
+$SUMMARY            Perform a partial refresh of a canvas.
+$PURPOSE
+    This routine will perform a partial refresh of a canvas. This
+    call is similar to <<kwin_partial_refresh>> except that areas are not
+    cleared prior to drawing if they lie within the image boundary.
+$PARAMETER          canvas :
+    The world canvas.
+$PARAMETER          num_areas :
+    The number of areas in the pixel canvas to refresh.
+$PARAMETER          areas :
+    The list of areas to refresh. The values here are updated to ensure
+    all points lie within the boundaries of the underlaying pixel canvas.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION           viewimg_get_worldcanvas
+$RETURN_TYPE        KWorldCanvas
 $PARAMETER_LIST
     (ViewableImage vimage)
-$SUMMARY          Get the world canvas for a viewable image.
+$SUMMARY            Get the world canvas for a viewable image.
 $PURPOSE
     Get the world canvas for a viewable image.
-$PARAMETER        vimage :
+$PARAMETER          vimage :
     The ViewableImage object.
 $RETURNS
     The KWorldCanvas object.
 $END
 
-$PROTO_FUNC       VIEWIMG_PROTO_position_func
-$RETURN_TYPE      flag
+$EXPERIMENTAL_FUNC  viewimg_statistics_position_func
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (ViewableImage vimage,
+				       double x, double y,
+				       void *value, unsigned int event_code,
+				       void *e_info, void **f_info,
+				       double x_lin, double y_lin,
+				       unsigned int value_type)
+$SUMMARY            Position event callback.
+$PURPOSE
+    This routine is a position event consumer for a world canvas
+    which has a number of ViewableImage objects associated with it.
+$PARAMETER          viewimg :
+    The active viewable image.
+$PARAMETER          x :
+    The horizontal world co-ordinate of the event.
+$PARAMETER          y :
+    The vertical world co-ordinate of the event.
+    These values will have been transformed by the registered transform
+    function (see <-canvas_register_transform_func->) for the associated
+    world canvas.
+$PARAMETER          value :
+    A pointer to the data value in the viewable image corresponding
+    to the event co-ordinates.
+$PARAMETER          event_code :
+    The arbitrary event code.
+$PARAMETER          e_info :
+    The arbitrary event information.
+$PARAMETER          f_info :
+    The arbitrary function information pointer.
+$PARAMETER          x_lin :
+    The linear horizontal world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+$PARAMETER          y_lin :
+    The linear vertical world co-ordinate (the co-ordinate prior
+    to the transform function being called).
+$PARAMETER          value_type :
+    The type of the data value. This may be K_DCOMPLEX or
+    K_UB_RGB.
+$RETURNS
+    TRUE if the event was consumed, else FALSE indicating that
+    the event is still to be processed.
+$END
+
+$EXPERIMENTAL_FUNC  viewimg_statistics_compute
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (ViewableImage vimage,
+				 double lx0, double ly0, double lx1,double ly1)
+$SUMMARY            Compute and display statistics for a subimage.
+$PURPOSE
+    Compute and display statistics for a subimage.
+$PARAMETER          vimage :
+    The active viewable image.
+$PARAMETER          lx0 :
+    The first horizontal linear world co-ordinate.
+$PARAMETER          ly0 :
+    The first vertical linear world co-ordinate.
+$PARAMETER          lx1 :
+    The second horizontal linear world co-ordinate.
+$PARAMETER          ly1 :
+    The second vertical linear world co-ordinate.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$PROTO_FUNC         VIEWIMG_PROTO_position_func
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (ViewableImage vimage, double x, double y,
 				  void *value, unsigned int event_code,
 				  void *e_info, void **f_info,
 				  double x_lin, double y_lin,
 				  unsigned int value_type)
-$SUMMARY          Position event callback.
+$SUMMARY            Position event callback.
 $PURPOSE
     This routine is a position event consumer for a world canvas
     which has a number of ViewableImage objects associated with it.
-$PARAMETER        viewimg :
+$PARAMETER          viewimg :
     The active viewable image.
-$PARAMETER        x :
+$PARAMETER          x :
     The horizontal world co-ordinate of the event.
-$PARAMETER        y :
+$PARAMETER          y :
     The vertical world co-ordinate of the event.
     These values will have been transformed by the registered transform
     function (see <-canvas_register_transform_func->) for the associated
     world canvas.
-$PARAMETER        value :
+$PARAMETER          value :
     A pointer to the data value in the viewable image corresponding
     to the event co-ordinates.
-$PARAMETER        event_code :
+$PARAMETER          event_code :
     The arbitrary event code.
-$PARAMETER        e_info :
+$PARAMETER          e_info :
     The arbitrary event information.
-$PARAMETER        f_info :
+$PARAMETER          f_info :
     The arbitrary function information pointer.
-$PARAMETER        x_lin :
+$PARAMETER          x_lin :
     The linear horizontal world co-ordinate (the co-ordinate prior
     to the transform function being called).
-$PARAMETER        y_lin :
+$PARAMETER          y_lin :
     The linear vertical world co-ordinate (the co-ordinate prior
     to the transform function being called).
-$PARAMETER        value_type :
+$PARAMETER          value_type :
     The type of the data value. This may be K_DCOMPLEX or
     K_UB_RGB.
 $RETURNS
@@ -650,16 +794,17 @@ $TABLE            VIEWIMG_VIEWIMG_ATTRIBUTES
 $COLUMNS          4
 $SUMMARY          List of attributes for viewable images
 $TABLE_DATA
-|.Name                      |,Get Type       |,Set Type     |,Meaning
+|.Name                      |,Get Type       |,Meaning
 |.
-|.VIEWIMG_VATT_END          |,               |,             |,End of varargs list
-|.VIEWIMG_VATT_TRUECOLOUR   |,flag *         |,flag         |,Image is TrueColour
-|.VIEWIMG_VATT_ARRAY_DESC   |,array_desc **  |,array_desc * |,The array descriptor for the image
-|.VIEWIMG_VATT_SLICE        |,char **        |,char *       |,Start of the image data
-|.VIEWIMG_VATT_HDIM         |,unsigned int * |,unsigned int |,The horizontal dimension
-|.VIEWIMG_VATT_VDIM         |,unsigned int * |,unsigned int |,The vertical dimension
-|.VIEWIMG_VATT_PSEUDO_INDEX |,unsigned int * |,unsigned int |,The PseudoColour element index
-|.VIEWIMG_VATT_RED_INDEX    |,unsigned int * |,unsigned int |,The TrueColour red element index
-|.VIEWIMG_VATT_GREEN_INDEX  |,unsigned int * |,unsigned int |,The TrueColour green element index
-|.VIEWIMG_VATT_BLUE_INDEX   |,unsigned int * |,unsigned int |,The TrueColour blue element index
+|.VIEWIMG_VATT_END          |,               |,End of varargs list
+|.VIEWIMG_VATT_TRUECOLOUR   |,flag *         |,Image is TrueColour
+|.VIEWIMG_VATT_ARRAY_DESC   |,array_desc **  |,The array descriptor for the image
+|.VIEWIMG_VATT_SLICE        |,char **        |,Start of the image data
+|.VIEWIMG_VATT_HDIM         |,unsigned int * |,The horizontal dimension
+|.VIEWIMG_VATT_VDIM         |,unsigned int * |,The vertical dimension
+|.VIEWIMG_VATT_PSEUDO_INDEX |,unsigned int * |,The PseudoColour element index
+|.VIEWIMG_VATT_RED_INDEX    |,unsigned int * |,The TrueColour red element index
+|.VIEWIMG_VATT_GREEN_INDEX  |,unsigned int * |,The TrueColour green element index
+|.VIEWIMG_VATT_BLUE_INDEX   |,unsigned int * |,The TrueColour blue element index
+|.VIEWIMG_VATT_MULTI_ARRAY  |,multi_array ** |,The multi_array descriptor
 $END

@@ -6,46 +6,46 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         imc_24to8
-$RETURN_TYPE      flag
+$FUNCTION           imc_24to8
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (unsigned int image_size, unsigned char *image_reds,
 		unsigned char *image_greens, unsigned char *image_blues,
 		int stride24, unsigned char *out_image, int stride8,
 		unsigned int max_colours, unsigned int speed,
 		packet_desc **pack_desc, char **packet)
-$SUMMARY          Convert a 24 bit truecolour image to an 8 bit pseudocolour image.
+$SUMMARY            Convert a 24 bit truecolour image to an 8 bit pseudocolour image.
 $PURPOSE
     Convert a 24 bit truecolour image to an 8 bit pseudocolour image.
-$PARAMETER        image_size :
+$PARAMETER          image_size :
     The size of the image (in pixels).
-$PARAMETER        image_reds :
+$PARAMETER          image_reds :
     The red component data of the truecolour image.
-$PARAMETER        image_greens :
+$PARAMETER          image_greens :
     The green component data of the truecolour image.
-$PARAMETER        image_blues :
+$PARAMETER          image_blues :
     The blue component data of the truecolour image.
-$PARAMETER        stride24 :
+$PARAMETER          stride24 :
     The stride (in bytes) between adjacent pixels in the truecolour
     image.
-$PARAMETER        out_image :
+$PARAMETER          out_image :
     The output (8 bit pseudocolour) image data.
-$PARAMETER        stride8 :
+$PARAMETER          stride8 :
     The stride (in bytes) between adjacent pixels in the pseudocolour
     image.
-$PARAMETER        max_colours :
+$PARAMETER          max_colours :
     The maximum number of unique colours permitted (i.e. the
     maximum colour palette size that can be supported).
-$PARAMETER        speed :
+$PARAMETER          speed :
     The desired speed of the routine. This value may range from 0 to 9.
     A value of 0 will result in the slowest but highest quality conversion
     (i.e. the routine tries very hard to choose the best colour palette). A
     value of 9 will result in the fastest conversion, at the expense of image
     quality.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The pointer to the top level packet descriptor of the general
     data structure which contains the colourmap will be written here.
-$PARAMETER        packet :
+$PARAMETER          packet :
     The pointer to the top level packet of the general data structure
     which contains the colourmap will be written here.
 $RETURNS

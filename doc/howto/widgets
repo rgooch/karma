@@ -103,7 +103,8 @@ segmenting data by value, rather than position.
 
 A simple dialog widget (text entry) which has it's own window. Good
 for implementing a last-minute filename query before doing something
-(like saving data to a file).
+(like saving data to a file). The widget can choose filenames which do
+not already exist.
 
 
   ExclusiveMenu widget
@@ -149,6 +150,22 @@ AnimateControl and Dataclip. It also has zoom controls.
   ================
 
 A simple widget with a "+", "-" buttons and a value display.
+
+
+  Ktoggle widget
+  ==============
+
+A nice toggle widget which can show a cross or a tick to show it's
+state.
+
+
+  MomentGenerator widget
+  ======================
+
+A widget to control the generation of moment maps (the 0th and 1st
+moments are computed). You supply a 3-dimensional Intelligent Array
+and you get two 2-dimensional moment maps. The user can control clip
+levels and the type of algorithm used.
 
 
   MultiCanvas widget
@@ -216,6 +233,14 @@ point may be interactively changed. Nice for slicing through a cube of
 data.
 
 
+  TracePopup widget
+  =================
+
+The will compute and display a 1-dimensional trace from a
+multi-dimensional Intelligent Array. You provide the co-ordinates of
+the trace and the dimension number of the trace and it does the rest.
+
+
   Twodpos widget
   ==============
 
@@ -229,6 +254,12 @@ control something else in the application.
 
 A sort-of slider widget, except that the value is incremented and
 decremented with slow and fast Repeater widgets.
+
+
+  ZoomPolicy widget
+  =================
+
+Control the zooming policy of a set oc KWorldCanvas objects.
 
 
 Tutorial:

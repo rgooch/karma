@@ -2111,7 +2111,6 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
     KPixCanvas pixcanvas;
     KPixCanvasFont font;
     flag clear_under;
-    int tmp_x, tmp_y;
     int x_offset, y_offset, width, height;
     unsigned int object_code;
     unsigned int coord_pack_size;
@@ -2119,6 +2118,7 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
     unsigned int num_coords;
     unsigned int count1, count2;
     unsigned long pixel_value;
+    double tmp_x, tmp_y;
     double value[2];
     char *ptr;
     char *colourname;
@@ -2297,8 +2297,10 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
 	    py[1] -= y_offset;
 	    break;
 	  case OVERLAY_COORD_WORLD:
-	    (void) canvas_convert_from_canvas_coord (canvas,
-						     0.0, 0.0, &tmp_x, &tmp_y);
+	    tmp_x = 0.0;
+	    tmp_y = 0.0;
+	    canvas_convert_from_canvas_coords (canvas, FALSE, FALSE, 1,
+					       &tmp_x, &tmp_y, &tmp_x, &tmp_y);
 	    px[1] -= tmp_x;
 	    py[1] = tmp_y - py[1];
 	    break;
@@ -2341,8 +2343,10 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
 	    py[1] -= y_offset;
 	    break;
 	  case OVERLAY_COORD_WORLD:
-	    (void) canvas_convert_from_canvas_coord (canvas,
-						     0.0, 0.0, &tmp_x, &tmp_y);
+	    tmp_x = 0.0;
+	    tmp_y = 0.0;
+	    canvas_convert_from_canvas_coords (canvas, FALSE, FALSE, 1,
+					       &tmp_x, &tmp_y, &tmp_x, &tmp_y);
 	    px[1] -= tmp_x;
 	    py[1] = tmp_y - py[1];
 	    break;
@@ -2363,8 +2367,10 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
 	convert_to_pixcoords (canvas, num_coords, types, x_arr, y_arr,
 			      coord_pack_size, px, py);
 	num_coords /= 2;
-	(void) canvas_convert_from_canvas_coord (canvas,
-						 0.0, 0.0, &tmp_x, &tmp_y);
+	tmp_x = 0.0;
+	tmp_y = 0.0;
+	canvas_convert_from_canvas_coords (canvas, FALSE, FALSE, 1,
+					   &tmp_x, &tmp_y, &tmp_x, &tmp_y);
 	ptr = types + num_coords * coord_pack_size;
 	for (count1 = 0; count1 < num_coords; ++count1, ptr += coord_pack_size)
 	{
@@ -2425,8 +2431,10 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
 	convert_to_pixcoords (canvas, num_coords, types, x_arr, y_arr,
 			      coord_pack_size, px, py);
 	num_coords /= 2;
-	(void) canvas_convert_from_canvas_coord (canvas,
-						 0.0, 0.0, &tmp_x, &tmp_y);
+	tmp_x = 0.0;
+	tmp_y = 0.0;
+	canvas_convert_from_canvas_coords (canvas, FALSE, FALSE, 1,
+					   &tmp_x, &tmp_y, &tmp_x, &tmp_y);
 	ptr = types + num_coords * coord_pack_size;
 
 	for (count1 = 0; count1 < num_coords; ++count1, ptr += coord_pack_size)
@@ -2515,7 +2523,10 @@ static void convert_to_pixcoords (KWorldCanvas canvas, unsigned int num_coords,
 	    x = left_x + x * (right_x - left_x);
 	    y = bottom_y + y * (top_y - bottom_y);
 	  case OVERLAY_COORD_WORLD:
-	    (void) canvas_convert_from_canvas_coord (canvas, x, y, px, py);
+	    canvas_convert_from_canvas_coords (canvas, FALSE, FALSE, 1,
+					       &x, &y, &x, &y);
+	    *px = x;
+	    *py = y;
 	    break;
 	  case OVERLAY_COORD_LAST:
 	    *px = last_x;

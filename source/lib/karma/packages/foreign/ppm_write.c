@@ -37,8 +37,12 @@
     Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
   format.
 
-    Last updated by Richard Gooch   4-JUN-1996: Created
+    Updated by      Richard Gooch   4-JUN-1996: Created
   <foreign_ppm_write_pseudo> and <foreign_ppm_write_rgb> functions.
+
+    Last updated by Richard Gooch   17-SEP-1996: Fixed bug when writing binary
+  PPM files: maxval was not immediately followed by a whitespace and then image
+  data.
 
 
 */
@@ -228,11 +232,16 @@ flag foreign_ppm_write_pseudo (Channel channel, flag binary,
     }
     if ( !ch_printf (channel, " PPM file written by <%s>\n",
 		     function_name) ) return (FALSE);
-    if ( !ch_printf (channel,
-		     "# Karma library version: %s\n# Module compiled with library version: %s\n",
-		    karma_library_version,module_lib_version) ) return (FALSE);
-    if ( !ch_printf (channel, "%u %u # width height\n255 # max value\n",
+    if ( !ch_printf (channel, "# Karma library version: %s\n",
+		     karma_library_version) ) return (FALSE);
+    if ( !ch_printf (channel, "# Module compiled with library version: %s\n",
+		     module_lib_version) ) return (FALSE);
+    if ( !ch_printf (channel, "%u %u # width height\n",
 		     width, height) ) return (FALSE);
+    if ( !ch_printf (channel,
+		     "# max value follows, then comes the image data\n") )
+	return (FALSE);
+    if ( !ch_printf (channel, "255\n") ) return (FALSE);
     /*  Loop through the image lines  */
     if (cmap_size > 2) d_mul = (cmap_size - 1) / (i_max - i_min);
     else d_mul = 255.0 / (i_max - i_min);
@@ -337,11 +346,16 @@ flag foreign_ppm_write_rgb (Channel channel, flag binary,
     }
     if ( !ch_printf (channel, " PPM file written by <%s>\n",
 		     function_name) ) return (FALSE);
-    if ( !ch_printf (channel,
-		     "# Karma library version: %s\n# Module compiled with library version: %s\n",
-		    karma_library_version,module_lib_version) ) return (FALSE);
-    if ( !ch_printf (channel, "%u %u # width height\n255 # max value\n",
+    if ( !ch_printf (channel, "# Karma library version: %s\n",
+		     karma_library_version) ) return (FALSE);
+    if ( !ch_printf (channel, "# Module compiled with library version: %s\n",
+		     module_lib_version) ) return (FALSE);
+    if ( !ch_printf (channel, "%u %u # width height\n",
 		     width, height) ) return (FALSE);
+    if ( !ch_printf (channel,
+		     "# max value follows, then comes the image data\n") )
+	return (FALSE);
+    if ( !ch_printf (channel, "255\n") ) return (FALSE);
     /*  Loop through the image lines  */
     for (vcount = height - 1; vcount >= 0; --vcount)
     {

@@ -9,272 +9,272 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         cf_mandelbrot
-$RETURN_TYPE      void
+$FUNCTION           cf_mandelbrot
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 		    unsigned short *greens, unsigned short *blues,
 		    unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute a mandelbrot colourmap.
+$SUMMARY            Compute a mandelbrot colourmap.
 $PURPOSE
     Compute a mandelbrot colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_greyscale1
-$RETURN_TYPE      void
+$FUNCTION           cf_greyscale1
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 		    unsigned short *greens, unsigned short *blues,
 		    unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute a greyscale colourmap.
+$SUMMARY            Compute a greyscale colourmap.
 $PURPOSE
     Compute a greyscale colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The array of red intensity values. This may be NULL.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The array of green intensity values. This may be NULL.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The array of blue intensity values. This may be NULL.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values in the
     array.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values.
-$PARAMETER        max_cells :
+$PARAMETER          max_cells :
     A parameter used to compute the colour values.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_greyscale2
-$RETURN_TYPE      void
+$FUNCTION           cf_greyscale2
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 		    unsigned short *greens, unsigned short *blues,
 		    unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute a greyscale colourmap.
+$SUMMARY            Compute a greyscale colourmap.
 $PURPOSE
     Compute a greyscale colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The array of red intensity values. This may be NULL.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The array of green intensity values. This may be NULL.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The array of blue intensity values. This may be NULL.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values in the
     array.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values.
-$PARAMETER        max_cells :
+$PARAMETER          max_cells :
     A parameter used to compute the colour values.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_greyscale3
-$RETURN_TYPE      void
+$FUNCTION           cf_greyscale3
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 		    unsigned short *greens, unsigned short *blues,
 		    unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute a greyscale colourmap.
+$SUMMARY            Compute a greyscale colourmap.
 $PURPOSE
     This routine will compute a greyscale colourmap using the Glynn
     Rogers curvature function.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values. This may be NULL.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values. This may be NULL.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values. This may be NULL.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_rainbow1
-$RETURN_TYPE      void
+$FUNCTION           cf_rainbow1
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 		  unsigned short *greens, unsigned short *blues,
 		  unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute a rainbow colourmap.
+$SUMMARY            Compute a rainbow colourmap.
 $PURPOSE
     This routine will compute a colourmap using the Glynn Rogers
     curvature function. This map goes: blue-cyan-green-yellow-red-magenta.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_rainbow2
-$RETURN_TYPE      void
+$FUNCTION           cf_rainbow2
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 		  unsigned short *greens, unsigned short *blues,
 		  unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute a rainbow colourmap.
+$SUMMARY            Compute a rainbow colourmap.
 $PURPOSE
     This routine will compute a colourmap using the Glynn Rogers
     curvature function. This map goes: black-blue-cyan-green-yellow-red.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_rainbow3
-$RETURN_TYPE      void
+$FUNCTION           cf_rainbow3
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 		  unsigned short *greens, unsigned short *blues,
 		  unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute a rainbow colourmap.
+$SUMMARY            Compute a rainbow colourmap.
 $PURPOSE
     This routine will compute a colourmap using the Glynn Rogers
     curvature function. This map goes: black-blue-cyan-green-yellow-white.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_cyclic1
-$RETURN_TYPE      void
+$FUNCTION           cf_cyclic1
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 		 unsigned short *greens, unsigned short *blues,
 		 unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute a rainbow colourmap.
+$SUMMARY            Compute a rainbow colourmap.
 $PURPOSE
     This routine will compute a colourmap using the Glynn Rogers
     curvature function. This map goes: blue-cyan-green-yellow-white.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_stripchart
-$RETURN_TYPE      void
+$FUNCTION           cf_stripchart
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 		    unsigned short *greens, unsigned short *blues,
 		    unsigned int stride, double x, double y, void *chart)
-$SUMMARY          Compute a rainbow colourmap.
+$SUMMARY            Compute a rainbow colourmap.
 $PURPOSE
     This routine will compute a colourmap using the Glynn Rogers
     curvature function and a strip chart.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values. This may be NULL.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values. This may be NULL.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values. This may be NULL.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
     This changes the curvature of the ramping function.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
     This changes the curvature of the ramping function.
-$PARAMETER        chart :
+$PARAMETER          chart :
     A pointer to a stripchart of type <<stripchart>>.
     The following values are used to determine the shape of the graph:
     0 : graph is at zero for this interval
@@ -286,67 +286,67 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_random_grey
-$RETURN_TYPE      void
+$FUNCTION           cf_random_grey
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 		     unsigned short *greens, unsigned short *blues,
 		     unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute a random grey colourmap.
+$SUMMARY            Compute a random grey colourmap.
 $PURPOSE
     Compute a random grey colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values. This may be NULL.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values. This may be NULL.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values. This may be NULL.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_random_pseudocolour
-$RETURN_TYPE      void
+$FUNCTION           cf_random_pseudocolour
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 			     unsigned short *greens, unsigned short *blues,
 			     unsigned int stride, double x, double y,
 			     void *var_param)
-$SUMMARY          Compute a random pseudocolour colourmap.
+$SUMMARY            Compute a random pseudocolour colourmap.
 $PURPOSE
     Compute a random pseudocolour colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_velocity_compensating_tones
-$RETURN_TYPE      void
+$FUNCTION           cf_velocity_compensating_tones
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells,
 				     unsigned short *reds,
@@ -354,31 +354,31 @@ $PARAMETER_LIST
 				     unsigned short *blues,
 				     unsigned int stride, double x, double y,
 				     void *var_param)
-$SUMMARY          Compute a Velocity (compensating tones) colourmap.
+$SUMMARY            Compute a Velocity (compensating tones) colourmap.
 $PURPOSE
     Compute a Velocity (compensating tones) colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_compressed_colourmap_3r2g2b
-$RETURN_TYPE      void
+$FUNCTION           cf_compressed_colourmap_3r2g2b
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells,
 				     unsigned short *reds,
@@ -386,372 +386,401 @@ $PARAMETER_LIST
 				     unsigned short *blues,
 				     unsigned int stride, double x, double y,
 				     void *var_param)
-$SUMMARY          Compute a compressed colourmap.
+$SUMMARY            Compute a compressed colourmap.
 $PURPOSE
     Compute a compressed colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_ronekers
-$RETURN_TYPE      void
+$FUNCTION           cf_ronekers
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 		  unsigned short *greens, unsigned short *blues,
 		  unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute a Ron Ekers colourmap.
+$SUMMARY            Compute a Ron Ekers colourmap.
 $PURPOSE
     Compute a Ron Ekers colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_background
-$RETURN_TYPE      void
+$FUNCTION           cf_background
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 		    unsigned short *greens, unsigned short *blues,
 		    unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute a background colourmap.
+$SUMMARY            Compute a background colourmap.
 $PURPOSE
     Compute a background colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_heat
-$RETURN_TYPE      void
+$FUNCTION           cf_heat
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 	      unsigned short *greens, unsigned short *blues,
 	      unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute a heat colourmap.
+$SUMMARY            Compute a heat colourmap.
 $PURPOSE
     Compute a heat colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_isophot
-$RETURN_TYPE      void
+$FUNCTION           cf_isophot
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 		 unsigned short *greens, unsigned short *blues,
 		 unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute an isophot colourmap.
+$SUMMARY            Compute an isophot colourmap.
 $PURPOSE
     Compute an isophot colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_mono
-$RETURN_TYPE      void
+$FUNCTION           cf_mono
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 	      unsigned short *greens, unsigned short *blues,
 	      unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute a greyscale colourmap.
+$SUMMARY            Compute a greyscale colourmap.
 $PURPOSE
     Compute a greyscale colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values. This may be NULL.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values. This may be NULL.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values. This may be NULL.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_mousse
-$RETURN_TYPE      void
+$FUNCTION           cf_mousse
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 		unsigned short *greens, unsigned short *blues,
 		unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute a mousse colourmap.
+$SUMMARY            Compute a mousse colourmap.
 $PURPOSE
     Compute a mousse colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_rainbow
-$RETURN_TYPE      void
+$FUNCTION           cf_rainbow
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 		 unsigned short *greens, unsigned short *blues,
 		 unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute a rainbow colourmap.
+$SUMMARY            Compute a rainbow colourmap.
 $PURPOSE
     Compute a rainbow colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_random
-$RETURN_TYPE      void
+$FUNCTION           cf_random
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 		unsigned short *greens, unsigned short *blues,
 		unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute a rainbow colourmap.
+$SUMMARY            Compute a rainbow colourmap.
 $PURPOSE
     Compute a rainbow colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_rgb
-$RETURN_TYPE      void
+$FUNCTION           cf_rgb
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 	     unsigned short *greens, unsigned short *blues,
 	     unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute an rainbow colourmap.
+$SUMMARY            Compute an rainbow colourmap.
 $PURPOSE
     Compute an rainbow colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_smooth
-$RETURN_TYPE      void
+$FUNCTION           cf_smooth
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 		unsigned short *greens, unsigned short *blues,
 		unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute a rainbow colourmap.
+$SUMMARY            Compute a rainbow colourmap.
 $PURPOSE
     Compute a rainbow colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_staircase
-$RETURN_TYPE      void
+$FUNCTION           cf_staircase
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 		   unsigned short *greens, unsigned short *blues,
 		   unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute a staircase colourmap.
+$SUMMARY            Compute a staircase colourmap.
 $PURPOSE
     Compute a staircase colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         cf_mirp
-$RETURN_TYPE      void
+$FUNCTION           cf_mirp
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned short *reds,
 	      unsigned short *greens, unsigned short *blues,
 	      unsigned int stride, double x, double y, void *var_param)
-$SUMMARY          Compute a MIRP colourmap.
+$SUMMARY            Compute a MIRP colourmap.
 $PURPOSE
     Compute a MIRP colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colour cells to modify.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values.
-$PARAMETER        x :
+$PARAMETER          x :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        y :
+$PARAMETER          y :
     A parameter used to compute the colour values, ranging from 0.0 to 1.0.
-$PARAMETER        var_param :
+$PARAMETER          var_param :
+    A parameter used to compute the colour values. Ignored.
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           cf_rgb2
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (unsigned int num_cells, unsigned short *reds,
+	      unsigned short *greens, unsigned short *blues,
+	      unsigned int stride, double x, double y, void *var_param)
+$SUMMARY            Compute a MIRP colourmap.
+$PURPOSE
+    Compute a MIRP colourmap.
+$PARAMETER          num_cells :
+    The number of colour cells to modify.
+$PARAMETER          reds :
+    The red intensity values.
+$PARAMETER          greens :
+    The green intensity values.
+$PARAMETER          blues :
+    The blue intensity values.
+$PARAMETER          stride :
+    The stride (in unsigned shorts) between intensity values.
+$PARAMETER          x :
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+$PARAMETER          y :
+    A parameter used to compute the colour values, ranging from 0.0 to 1.0.
+$PARAMETER          var_param :
     A parameter used to compute the colour values. Ignored.
 $RETURNS
     Nothing.

@@ -10,6 +10,10 @@
 </td></tr>
 <tr><td><a href=imw.html#imw_to8_oi>imw_to8_oi</a></td><td>Convert generic image to 8 bit image, preserving size.
 </td></tr>
+<tr><td><a href=imw.html#imw_scmap_16to24_lossy>imw_scmap_16to24_lossy</a></td><td>Write 16bit image to a 24bit image using a software colourmap.
+</td></tr>
+<tr><td><a href=imw.html#imw_scmap_16to24_o>imw_scmap_16to24_o</a></td><td>Write 16bit image to a 24bit image using a software colourmap.
+</td></tr>
 </table><h4>Prototype Functions</h4><table><tr><td><a href=imw.html#IMW_PROTO_iscale_func>IMW_PROTO_iscale_func</a></td><td>Intensity scaling callback.
 </td></tr>
 </table><p><hr><center><h2>Functions</h2></center><hr> <a name=imw_to8_lossy></a> flag
@@ -136,9 +140,112 @@
     A pointer to arbitrary information for <em>iscale_func</em>.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe.
+<br><p><hr> <a name=imw_scmap_16to24_lossy></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>imw_scmap_16to24_lossy</b><i>    (unsigned char *out_red_image,
+			     unsigned char *out_green_image,
+			     unsigned char *out_blue_image, flag preserve_pad,
+			     iaddr out_hstride, iaddr out_vstride,
+			     int out_width, int out_height,
+			     CONST unsigned short *inp_image,
+			     int inp_width, int inp_height,
+			     CONST iaddr *inp_hoffsets,
+			     CONST iaddr *inp_voffsets,
+			     CONST unsigned char *cmap_red,
+			     CONST unsigned char *cmap_green,
+			     CONST unsigned char *cmap_blue, iaddr cmap_stride)
+</i><br><p>    This routine will write a 16bit PseudoColour image into a 24bit
+    TrueColour image using a software colourmap to convert 16bit values to
+    24bit RGB values. The input and output sizes may be different. The output
+    image is flipped vertically relative to the input image.
+<p><b>Parameters:</b><ul><li><i>out_red_image :</i> 
+    The output red image components will be written here.
+<br><li><i>out_green_image :</i> 
+    The output green image components will be written here.
+<br><li><i>out_blue_image :</i> 
+    The output blue image components will be written here.
+<br><li><i>preserve_pad :</i> 
+    If TRUE, padding bytes between output pixels will be
+    preserved, else they may be overwritten for efficiency.
+<br><li><i>out_hstride :</i> 
+    The horizontal stride in bytes between output pixels.
+<br><li><i>out_vstride :</i> 
+    The vertical stride in bytes between output lines.
+<br><li><i>out_width :</i> 
+    The width of the output image.
+<br><li><i>out_height :</i> 
+    The height of the output image.
+<br><li><i>inp_image :</i> 
+    The input 16bit PseudoColour image.
+<br><li><i>inp_hoffsets :</i> 
+    The array of horizontal input byte offsets.
+<br><li><i>inp_voffsets :</i> 
+    The array of vertical input byte offsets.
+<br><li><i>inp_width :</i> 
+    The width of the input image.
+<br><li><i>inp_height :</i> 
+    The height of the input image.
+<br><li><i>cmap_red :</i> 
+    The red component virtual colourmap.
+<br><li><i>cmap_green :</i> 
+    The green component virtual colourmap.
+<br><li><i>cmap_blue :</i> 
+    The blue component virtual colourmap.
+<br><li><i>cmap_stride :</i> 
+    The stride in bytes between colourmap entries. The number of
+    entries must be 65536 (16bit addressing).
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe.
+<br><p><hr> <a name=imw_scmap_16to24_o></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>imw_scmap_16to24_o</b><i>    (unsigned char *out_red_image,
+			 unsigned char *out_green_image,
+			 unsigned char *out_blue_image, flag preserve_pad,
+			 iaddr out_hstride, iaddr out_vstride,
+			 int width, int height,CONST unsigned short *inp_image,
+			 CONST iaddr *inp_hoffsets, CONST iaddr *inp_voffsets,
+			 CONST unsigned char *cmap_red,
+			 CONST unsigned char *cmap_green,
+			 CONST unsigned char *cmap_blue, iaddr cmap_stride)
+</i><br><p>    This routine will write a 16bit PseudoColour image into a 24bit
+    TrueColour image using a software colourmap to convert 16bit values to
+    24bit RGB values. The image size (in pixels) is preserved. The output
+    image is flipped vertically relative to the input image.
+<p><b>Parameters:</b><ul><li><i>out_red_image :</i> 
+    The output red image components will be written here.
+<br><li><i>out_green_image :</i> 
+    The output green image components will be written here.
+<br><li><i>out_blue_image :</i> 
+    The output blue image components will be written here.
+<br><li><i>preserve_pad :</i> 
+    If TRUE, padding bytes between output pixels will be
+    preserved, else they may be overwritten for efficiency.
+<br><li><i>out_hstride :</i> 
+    The horizontal stride in bytes between output pixels.
+<br><li><i>out_vstride :</i> 
+    The vertical stride in bytes between output lines.
+<br><li><i>width :</i> 
+    The width of the image.
+<br><li><i>height :</i> 
+    The height of the image.
+<br><li><i>inp_image :</i> 
+    The input 16bit PseudoColour image.
+<br><li><i>inp_hoffsets :</i> 
+    The array of horizontal input byte offsets.
+<br><li><i>inp_voffsets :</i> 
+    The array of vertical input byte offsets.
+<br><li><i>cmap_red :</i> 
+    The red component virtual colourmap.
+<br><li><i>cmap_green :</i> 
+    The green component virtual colourmap.
+<br><li><i>cmap_blue :</i> 
+    The blue component virtual colourmap.
+<br><li><i>cmap_stride :</i> 
+    The stride in bytes between colourmap entries. The number of
+    entries must be 65536 (16bit addressing).
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Safe.
 <br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=IMW_PROTO_iscale_func></a> flag
  <b>IMW_PROTO_iscale_func</b><i>    (double *out, unsigned int out_stride,
-			    double *inp, unsigned int inp_stride,
+			    CONST double *inp, unsigned int inp_stride,
 			    unsigned int num_values,
 			    double i_min, double i_max, void *info)
 </i><br><p>    This routine will perform an arbitrary intensity scaling on
@@ -161,4 +268,6 @@
 <br><li><i>info :</i> 
     A pointer to arbitrary information.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>
+<br><b>Multithreading Level:</b> Unsafe<br><p>
+<hr><a href="../index.html">Back to Karma Home Page</a>
+<hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.ariel.com.au/">Ariel Internet Services</a></address></center></body></html>

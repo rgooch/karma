@@ -7,7 +7,7 @@ shared_target = $(KARMALIBPATH)/$(shared_lib)
 
 .PRECIOUS: $(library)
 
-CEXTRAS = -fPIC $(CFLAGS)
+CEXTRAS = $(picflag) $(CFLAGS)
 
 include $(KARMAROOT)/source/lib/makefiles/GNUmakefile.h1
 

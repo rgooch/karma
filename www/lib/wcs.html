@@ -10,6 +10,10 @@
 </td></tr>
 <tr><td><a href=wcs.html#wcs_astro_destroy>wcs_astro_destroy</a></td><td>Destroy KwcsAstro object.
 </td></tr>
+<tr><td><a href=wcs.html#wcs_astro_test_radec>wcs_astro_test_radec</a></td><td>Test if a KwcsAstro object has RA and DEC defined.
+</td></tr>
+<tr><td><a href=wcs.html#wcs_astro_test_velocity>wcs_astro_test_velocity</a></td><td>Test if a KwcsAstro object has velocity or frequency defined.
+</td></tr>
 <tr><td><a href=wcs.html#wcs_astro_transform>wcs_astro_transform</a></td><td>Transform between linear and projected co-ordinates.
 </td></tr>
 <tr><td><a href=wcs.html#wcs_astro_transform3>wcs_astro_transform3</a></td><td>Transform between linear and projected co-ordinates.
@@ -20,11 +24,13 @@
 </td></tr>
 <tr><td><a href=wcs.html#wcs_astro_format_vel>wcs_astro_format_vel</a></td><td>Format a velocity value into a string.
 </td></tr>
-<tr><td><a href=wcs.html#wcs_astro_format>wcs_astro_format</a></td><td>Format a value.
+<tr><td><a href=wcs.html#wcs_astro_format>wcs_astro_format</a></td><td>Format a value. No transformation is applied.
 </td></tr>
 <tr><td><a href=wcs.html#wcs_astro_format_extra>wcs_astro_format_extra</a></td><td>Format extra information.
 </td></tr>
-<tr><td><a href=wcs.html#wcs_format_all>wcs_format_all</a></td><td>Transform and format all available information.
+<tr><td><a href=wcs.html#wcs_astro_format_all>wcs_astro_format_all</a></td><td>Transform and format all available information.
+</td></tr>
+<tr><td><a href=wcs.html#wcs_astro_get_preferred_units>wcs_astro_get_preferred_units</a></td><td>Get preferred units for data.
 </td></tr>
 </table><p><hr><center><h2>Functions</h2></center><hr> <a name=wcs_astro_setup></a> KwcsAstro
  <b>wcs_astro_setup</b><i>    (CONST packet_desc *pack_desc, CONST char *packet)
@@ -40,6 +46,19 @@
 <p><b>Parameters:</b><ul><li><i>ap :</i> 
     The KwcsAstro object.
 <br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wcs_astro_test_radec></a> flag
+ <b>wcs_astro_test_radec</b><i>    (KwcsAstro ap)
+</i><br><p>    Test if a KwcsAstro object has RA and DEC defined.
+<p><b>Parameters:</b><ul><li><i>ap :</i> 
+    The KwcsAstro object. This may be NULL.
+<br></ul><b>Returns:</b>     TRUE if the KwcsAstro object has RA and DEC defined, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wcs_astro_test_velocity></a> flag
+ <b>wcs_astro_test_velocity</b><i>    (KwcsAstro ap)
+</i><br><p>    Test if a KwcsAstro object has velocity or frequency defined.
+<p><b>Parameters:</b><ul><li><i>ap :</i> 
+    The KwcsAstro object. This may be NULL.
+<br></ul><b>Returns:</b>     TRUE if the KwcsAstro object has velocity or frequency defined,
+    else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wcs_astro_transform></a> void
  <b>wcs_astro_transform</b><i>    (KwcsAstro ap, unsigned int num_coords,
 			  double *ra, flag ra_to_linear,
@@ -122,7 +141,7 @@
 <p><b>Parameters:</b><ul><li><i>string :</i> 
     The string to write to. Sufficient storage must be available.
 <br><li><i>ra :</i> 
-    The Right Ascension value.
+    The Right Ascension value in degrees.
 <br></ul><b>Returns:</b>     Nothing.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wcs_astro_format_dec></a> void
  <b>wcs_astro_format_dec</b><i>    (char *string, double dec)
@@ -130,7 +149,7 @@
 <p><b>Parameters:</b><ul><li><i>string :</i> 
     The string to write to. Sufficient storage must be available.
 <br><li><i>dec :</i> 
-    The Declination value.
+    The Declination value in degrees.
 <br></ul><b>Returns:</b>     Nothing.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wcs_astro_format_vel></a> void
  <b>wcs_astro_format_vel</b><i>    (KwcsAstro ap, char *string, double vel)
@@ -145,7 +164,7 @@
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wcs_astro_format></a> void
  <b>wcs_astro_format</b><i>    (KwcsAstro ap, CONST char *dim_name,
 		       char string[STRING_LENGTH], double value)
-</i><br><p>    Format a value.
+</i><br><p>    Format a value. No transformation is applied.
 <p><b>Parameters:</b><ul><li><i>ap :</i> 
     The KwcsAstro object.
 <br><li><i>dim_name :</i> 
@@ -163,14 +182,14 @@
 <br><li><i>string :</i> 
     The string to write to.
 <br></ul><b>Returns:</b>     Nothing.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wcs_format_all></a> void
- <b>wcs_format_all</b><i>    (KwcsAstro ap, char coord_string[STRING_LENGTH],
-		     CONST char *name0, double coord0,
-		     CONST char *name1, double coord1,
-		     CONST char *name2, double coord2,
-		     unsigned int num_restr, CONST char **restr_names,
-		     CONST double *restr_values,
-		     char other_string[STRING_LENGTH])
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wcs_astro_format_all></a> void
+ <b>wcs_astro_format_all</b><i>    (KwcsAstro ap, char coord_string[STRING_LENGTH],
+			   CONST char *name0, double coord0,
+			   CONST char *name1, double coord1,
+			   CONST char *name2, double coord2,
+			   unsigned int num_restr, CONST char **restr_names,
+			   CONST double *restr_values,
+			   char other_string[STRING_LENGTH])
 </i><br><p>    This routine will transform and format all available information.
     The data is transformed from linear to non-linear values.
 <p><b>Parameters:</b><ul><li><i>ap :</i> 
@@ -198,4 +217,20 @@
 <br><li><i>other_string :</i> 
     Formatted extra information is written here.
 <br></ul><b>Returns:</b>     Nothing.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=wcs_astro_get_preferred_units></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>wcs_astro_get_preferred_units</b><i>    (char new_units[STRING_LENGTH],
+				    char format_str[STRING_LENGTH],
+				    double *scale, CONST char *old_units)
+</i><br><p>    Get preferred units for data.
+<p><b>Parameters:</b><ul><li><i>new_units :</i> 
+    The new units string is written here.
+<br><li><i>format_str :</i> 
+    The format string is written here.
+<br><li><i>scale :</i> 
+    The scale value to convert to the new units will be written here.
+<br><li><i>old_units :</i> 
+    The old units string.
+<br></ul><b>Returns:</b>     TRUE if preferred units were found, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p>
+<hr><a href="../index.html">Back to Karma Home Page</a>
+<hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.ariel.com.au/">Ariel Internet Services</a></address></center></body></html>

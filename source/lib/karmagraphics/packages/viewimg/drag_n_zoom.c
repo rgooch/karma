@@ -33,9 +33,18 @@
     Updated by      Richard Gooch   4-JUN-1996: Switched to left-right
   bottom-top co-ordinate specification instead of min-max x and y.
 
-    Last updated by Richard Gooch   17-JUN-1996: Made use of new
+    Updated by      Richard Gooch   17-JUN-1996: Made use of new
   <canvas_convert_to_canvas_coords> routine so that linear to non-linear
   transformation could be avoided.
+
+    Updated by      Richard Gooch   21-OCT-1996: Added zoom-in 'i' and zoom-out
+  'o' feature.
+
+    Updated by      Richard Gooch   25-OCT-1996: Use fallback when green could
+  not be allocated.
+
+    Last updated by Richard Gooch   27-OCT-1996: Compute and display statistics
+  when 's' key is pressed during drag.
 
 
 */
@@ -54,10 +63,10 @@
 #define swap(a,b) {tmp = a; a = b; b = tmp;}
 
 #define VERIFY_DRAGZOOM(dragzoom) if (dragzoom == NULL) \
-{(void) fprintf (stderr, "NULL viewable image passed\n"); \
+{fprintf (stderr, "NULL viewable image passed\n"); \
  a_prog_bug (function_name); } \
 if (dragzoom->magic_number != MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid KDragZoom object\n"); \
+{fprintf (stderr, "Invalid KDragZoom object\n"); \
  a_prog_bug (function_name); }
 
 
@@ -68,10 +77,10 @@ typedef struct
     unsigned int magic_number;
     KWorldCanvas worldcanvas;
     KPixCanvas pixcanvas;
-    int first_x;
-    int first_y;
-    int second_x;
-    int second_y;
+    int first_px, first_py;       /*  Pixel co-ordinates         */
+    int second_px, second_py;     /*  Pixel co-ordinates         */
+    double first_lx, first_ly;    /*  Linear world co-ordinates  */
+    double second_lx, second_ly;  /*  Linear world co-ordinates  */
     flag in_drag;
     KCallbackFunc pos_func;
 } * KDragZoom;
@@ -80,7 +89,8 @@ typedef struct
 /*  Private functions  */
 STATIC_FUNCTION (flag position_func,
 		 (KPixCanvas canvas, int x, int y,
-		  unsigned int event_code, void *e_info, void **f_info) );
+		  unsigned int event_code, void *e_info,
+		  void **f_info) );
 STATIC_FUNCTION (void clear_zoom_box, (KDragZoom dragzoom) );
 
 
@@ -131,11 +141,12 @@ static flag position_func (KPixCanvas canvas, int x, int y,
     the event is still to be processed.
 */
 {
+    ViewableImage vimage;
     int width, height;
     unsigned int visual;
-    unsigned long pixel_value;
-    double px, py;
-    double left_x, right_x, bottom_y, top_y, tmp;
+    unsigned long pixel_value, mask;
+    double px, py, x_lin, y_lin, tmp;
+    double left_x, right_x, bottom_y, top_y;
     double win_left_x, win_right_x, win_bottom_y, win_top_y;
     KDragZoom dragzoom = (KDragZoom) *f_info;
     CONST char *string = e_info;
@@ -149,64 +160,162 @@ static flag position_func (KPixCanvas canvas, int x, int y,
 		 dragzoom->pixcanvas, canvas);
 	a_prog_bug (function_name);
     }
-    /*  Discard spurious mouse move events  */
+    /*  Discard mouse move events quickly  */
     if (event_code == K_CANVAS_EVENT_POINTER_MOVE) return (FALSE);
+    px = x;
+    py = y;
+    canvas_convert_to_canvas_coords (dragzoom->worldcanvas, FALSE, 1, &px, &py,
+				     &x_lin, &y_lin, NULL, NULL);
+    canvas_get_attributes (dragzoom->worldcanvas,
+			   CANVAS_ATT_LEFT_X, &win_left_x,
+			   CANVAS_ATT_RIGHT_X, &win_right_x,
+			   CANVAS_ATT_BOTTOM_Y, &win_bottom_y,
+			   CANVAS_ATT_TOP_Y, &win_top_y,
+			   CANVAS_ATT_END);
     if (event_code == K_CANVAS_EVENT_PLAIN_KEY_PRESS)
     {
-	if (strcmp (string, "u") != 0) return (FALSE);
-	/*  Unzoom  */
-	dragzoom->in_drag = FALSE;
-	viewimg_set_canvas_attributes (dragzoom->worldcanvas,
-				       VIEWIMG_ATT_AUTO_X, TRUE,
-				       VIEWIMG_ATT_AUTO_Y, TRUE,
-				       VIEWIMG_ATT_END);
-	/*  Redraw the canvas  */
-	if ( !kwin_resize (dragzoom->pixcanvas, TRUE, 0, 0, 0, 0) )
+	if (strcmp (string, "u") == 0)
 	{
-	    (void) fprintf (stderr, "%s: Error refreshing window\n",
-			    function_name);
+	    /*  Unzoom  */
+	    dragzoom->in_drag = FALSE;
+	    viewimg_set_canvas_attributes (dragzoom->worldcanvas,
+					   VIEWIMG_ATT_AUTO_X, TRUE,
+					   VIEWIMG_ATT_AUTO_Y, TRUE,
+					   VIEWIMG_ATT_END);
+	    /*  Redraw the canvas  */
+	    if ( !kwin_resize (dragzoom->pixcanvas, TRUE, 0, 0, 0, 0) )
+	    {
+		fprintf (stderr, "%s: Error refreshing window\n",
+			 function_name);
+	    }
+	    return (TRUE);
 	}
-	return (TRUE);
+	else if (strcmp (string, "i") == 0)
+	{
+	    /*  Zoom in 2x  */
+	    dragzoom->in_drag = FALSE;
+	    if ( fabs (x_lin - win_left_x) < fabs (win_right_x - x_lin) )
+	    {
+		/*  Near the left  */
+		tmp = (x_lin - win_left_x) / 2.0;
+	    }
+	    else
+	    {
+		/*  Near the right  */
+		tmp = (win_right_x - x_lin) / 2.0;
+	    }
+	    left_x = x_lin - tmp;
+	    right_x = x_lin + tmp;
+	    if ( fabs (y_lin - win_bottom_y) < fabs (win_top_y - y_lin) )
+	    {
+		/*  Near the bottom  */
+		tmp = (y_lin - win_bottom_y) / 2.0;
+	    }
+	    else
+	    {
+		/*  Near the top  */
+		tmp = (win_top_y - y_lin) / 2.0;
+	    }
+	    bottom_y = y_lin - tmp;
+	    top_y = y_lin + tmp;
+	    canvas_set_attributes (dragzoom->worldcanvas,
+				   CANVAS_ATT_LEFT_X, left_x,
+				   CANVAS_ATT_RIGHT_X, right_x,
+				   CANVAS_ATT_BOTTOM_Y, bottom_y,
+				   CANVAS_ATT_TOP_Y, top_y,
+				   CANVAS_ATT_END);
+	    viewimg_set_canvas_attributes (dragzoom->worldcanvas,
+					   VIEWIMG_ATT_AUTO_X, FALSE,
+					   VIEWIMG_ATT_AUTO_Y, FALSE,
+					   VIEWIMG_ATT_END);
+	    if ( !kwin_resize (dragzoom->pixcanvas, TRUE, 0, 0, 0, 0) )
+	    {
+		fprintf (stderr, "%s: Error refreshing window\n",
+			 function_name);
+	    }
+	    return (TRUE);
+	}
+	else if (strcmp (string, "o") == 0)
+	{
+	    /*  Zoom out 2x  */
+	    tmp = (win_right_x - win_left_x) / 2.0;
+	    left_x = win_left_x - tmp;
+	    right_x = win_right_x + tmp;
+	    tmp = (win_top_y - win_bottom_y) / 2.0;
+	    bottom_y = win_bottom_y - tmp;
+	    top_y = win_top_y + tmp;
+	    canvas_set_attributes (dragzoom->worldcanvas,
+				   CANVAS_ATT_LEFT_X, left_x,
+				   CANVAS_ATT_RIGHT_X, right_x,
+				   CANVAS_ATT_BOTTOM_Y, bottom_y,
+				   CANVAS_ATT_TOP_Y, top_y,
+				   CANVAS_ATT_END);
+	    viewimg_set_canvas_attributes (dragzoom->worldcanvas,
+					   VIEWIMG_ATT_AUTO_X, FALSE,
+					   VIEWIMG_ATT_AUTO_Y, FALSE,
+					   VIEWIMG_ATT_END);
+	    if ( !kwin_resize (dragzoom->pixcanvas, TRUE, 0, 0, 0, 0) )
+	    {
+		fprintf (stderr, "%s: Error refreshing window\n",
+			 function_name);
+	    }
+	    return (TRUE);
+	}
+	else return (FALSE);
     }
+    else if (event_code == K_CANVAS_EVENT_MODIFIED_KEY_PRESS)
+    {
+	m_copy ( (char *) &mask, string + strlen (string) + 1, sizeof mask );
+	if ( (strcmp (string, "s") == 0) &&
+	     (mask == K_CANVAS_EVENT_LEFT_MOUSE_MASK) )
+	{
+	    /*  Only compute statistics for the box  */
+	    if (!dragzoom->in_drag) return (TRUE);
+	    dragzoom->in_drag = FALSE;
+	    vimage = viewimg_get_active (dragzoom->worldcanvas);
+	    if (vimage == NULL) return (TRUE);
+	    viewimg_statistics_compute (vimage,
+					dragzoom->first_lx, dragzoom->first_ly,
+					dragzoom->second_lx,
+					dragzoom->second_ly);
+	    return (TRUE);
+	}
+	else return (FALSE);
+    }
+    /*  Have to do something with the zoom box  */
     if (event_code == K_CANVAS_EVENT_LEFT_MOUSE_CLICK)
     {
-	dragzoom->first_x = x;
-	dragzoom->first_y = y;
+	dragzoom->first_px = px;
+	dragzoom->first_py = py;
+	dragzoom->first_lx = x_lin;
+	dragzoom->first_ly = y_lin;
+	dragzoom->second_px = px;
+	dragzoom->second_py = py;
+	dragzoom->second_lx = x_lin;
+	dragzoom->second_ly = y_lin;
 	dragzoom->in_drag = TRUE;
 	return (TRUE);
     }
     if (event_code == K_CANVAS_EVENT_LEFT_MOUSE_RELEASE)
     {
 	if (!dragzoom->in_drag) return (TRUE);
-	dragzoom->second_x = x;
-	dragzoom->second_y = y;
+	dragzoom->second_px = px;
+	dragzoom->second_py = py;
+	dragzoom->second_lx = x_lin;
+	dragzoom->second_ly = y_lin;
 	dragzoom->in_drag = FALSE;
 	/*  Reject infinite zoom  */
-	if ( (dragzoom->first_x == dragzoom->second_x) ||
-	     (dragzoom->first_y == dragzoom->second_y) ) return (TRUE);
+	if ( (dragzoom->first_px == dragzoom->second_px) ||
+	     (dragzoom->first_py == dragzoom->second_py) ) return (TRUE);
 	/*  Zoom  */
-	canvas_get_attributes (dragzoom->worldcanvas,
-			       CANVAS_ATT_LEFT_X, &win_left_x,
-			       CANVAS_ATT_RIGHT_X, &win_right_x,
-			       CANVAS_ATT_BOTTOM_Y, &win_bottom_y,
-			       CANVAS_ATT_TOP_Y, &win_top_y,
-			       CANVAS_ATT_END);
-	px = dragzoom->first_x;
-	py = dragzoom->first_y;
-	canvas_convert_to_canvas_coords (dragzoom->worldcanvas, TRUE, 1,
-					 &px, &py,
-					 &left_x, &bottom_y,
-					 NULL, NULL);
-	px = dragzoom->second_x;
-	py = dragzoom->second_y;
-	canvas_convert_to_canvas_coords (dragzoom->worldcanvas, TRUE, 1,
-					 &px, &py,
-					 &right_x, &top_y,
-					 NULL, NULL);
+	left_x = dragzoom->first_lx;
+	bottom_y = dragzoom->first_ly;
+	right_x = dragzoom->second_lx;
+	top_y = dragzoom->second_ly;
 	/*  Clip to canvas boundaries  */
 #ifdef DEBUG
-	(void) fprintf (stderr, "wlx: %e  wrx: %e\n", win_left_x, win_right_x);
-	(void) fprintf (stderr, "lx: %e  lr: %e    ", left_x, right_x);
+	fprintf (stderr, "wlx: %e  wrx: %e\n", win_left_x, win_right_x);
+	fprintf (stderr, "lx: %e  lr: %e    ", left_x, right_x);
 #endif
 	if (win_left_x < win_right_x)
 	{
@@ -214,7 +323,7 @@ static flag position_func (KPixCanvas canvas, int x, int y,
 	}
 	else if (right_x > left_x) swap (left_x, right_x);
 #ifdef DEBUG
-	(void) fprintf (stderr, "lx: %e  lr: %e\n", left_x, right_x);
+	fprintf (stderr, "lx: %e  lr: %e\n", left_x, right_x);
 #endif
 	if (win_bottom_y < win_top_y)
 	{
@@ -233,8 +342,8 @@ static flag position_func (KPixCanvas canvas, int x, int y,
 				       VIEWIMG_ATT_END);
 	if ( !kwin_resize (dragzoom->pixcanvas, TRUE, 0, 0, 0, 0) )
 	{
-	    (void) fprintf (stderr, "%s: Error refreshing window\n",
-			    function_name);
+	    fprintf (stderr, "%s: Error refreshing window\n",
+		     function_name);
 	}
 	return (TRUE);
     }
@@ -243,29 +352,32 @@ static flag position_func (KPixCanvas canvas, int x, int y,
 	dragzoom->in_drag = FALSE;
 	return (FALSE);
     }
-    /*  Undraw the zoom box and draw the next one  */
+    /*  Drag to new position: undraw the zoom box and draw the next one  */
+    if (!dragzoom->in_drag) return (TRUE);
     clear_zoom_box (dragzoom);
-    dragzoom->second_x = x;
-    dragzoom->second_y = y;
-    if (dragzoom->first_x < dragzoom->second_x)
+    dragzoom->second_px = px;
+    dragzoom->second_py = py;
+    dragzoom->second_lx = x_lin;
+    dragzoom->second_ly = y_lin;
+    if (dragzoom->first_px < dragzoom->second_px)
     {
-	x = dragzoom->first_x;
-	width = dragzoom->second_x - dragzoom->first_x;
+	px = dragzoom->first_px;
+	width = dragzoom->second_px - dragzoom->first_px;
     }
     else
     {
-	x = dragzoom->second_x;
-	width = dragzoom->first_x - dragzoom->second_x;
+	px = dragzoom->second_px;
+	width = dragzoom->first_px - dragzoom->second_px;
     }
-    if (dragzoom->first_y < dragzoom->second_y)
+    if (dragzoom->first_py < dragzoom->second_py)
     {
-	y = dragzoom->first_y;
-	height = dragzoom->second_y - dragzoom->first_y;
+	py = dragzoom->first_py;
+	height = dragzoom->second_py - dragzoom->first_py;
     }
     else
     {
-	y = dragzoom->second_y;
-	height = dragzoom->first_y - dragzoom->second_y;
+	py = dragzoom->second_py;
+	height = dragzoom->first_py - dragzoom->second_py;
     }
     kwin_get_attributes (dragzoom->pixcanvas,
 			 KWIN_ATT_VISUAL, &visual,
@@ -273,7 +385,17 @@ static flag position_func (KPixCanvas canvas, int x, int y,
     if (visual == KWIN_VISUAL_PSEUDOCOLOUR)
     {
 	if ( !kwin_get_colour (dragzoom->pixcanvas, "green", &pixel_value,
-			       NULL, NULL, NULL) ) return (TRUE);
+			       NULL, NULL, NULL) )
+	{
+	    /*  Can't get green: try white instead  */
+	    if ( !kwin_get_colour (dragzoom->pixcanvas, "white", &pixel_value,
+				   NULL, NULL, NULL) )
+	    {
+		/*  Can't even get white (this should never actually happen
+		    with X), so just pick 0  */
+		pixel_value = 0;
+	    }
+	}
     }
     else
     {
@@ -281,7 +403,8 @@ static flag position_func (KPixCanvas canvas, int x, int y,
 			     KWIN_ATT_PIX_GREEN_MASK, &pixel_value,
 			     KWIN_ATT_END);
     }
-    kwin_draw_rectangle (dragzoom->pixcanvas, x, y, width, height,pixel_value);
+    kwin_draw_rectangle (dragzoom->pixcanvas, px, py, width, height,
+			 pixel_value);
     return (TRUE);
 }   /*  End Function position_func  */
 
@@ -294,25 +417,25 @@ static void clear_zoom_box (KDragZoom dragzoom)
     int x0, y0, x1, y1;
     KPixCanvasRefreshArea areas[4];
 
-    if (dragzoom->first_x > dragzoom->second_x)
+    if (dragzoom->first_px > dragzoom->second_px)
     {
-	x0 = dragzoom->second_x;
-	x1 = dragzoom->first_x;
+	x0 = dragzoom->second_px;
+	x1 = dragzoom->first_px;
     }
     else
     {
-	x0 = dragzoom->first_x;
-	x1 = dragzoom->second_x;
+	x0 = dragzoom->first_px;
+	x1 = dragzoom->second_px;
     }
-    if (dragzoom->first_y > dragzoom->second_y)
+    if (dragzoom->first_py > dragzoom->second_py)
     {
-	y0 = dragzoom->second_y;
-	y1 = dragzoom->first_y;
+	y0 = dragzoom->second_py;
+	y1 = dragzoom->first_py;
     }
     else
     {
-	y0 = dragzoom->first_y;
-	y1 = dragzoom->second_y;
+	y0 = dragzoom->first_py;
+	y1 = dragzoom->second_py;
     }
     /*  Define top horizontal line  */
     areas[0].startx = x0 - 1;
@@ -338,5 +461,5 @@ static void clear_zoom_box (KDragZoom dragzoom)
     areas[3].starty = y0 - 1;
     areas[3].endy = y1 + 1;
     areas[3].clear = TRUE;
-    (void) viewimg_partial_refresh (dragzoom->worldcanvas, 4, areas);
+    viewimg_partial_refresh (dragzoom->worldcanvas, 4, areas);
 }   /*  End Function clear_zoom_box  */

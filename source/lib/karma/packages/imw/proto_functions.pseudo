@@ -1,6 +1,6 @@
 /*PROTOTYPE_FUNCTION*/  /*
 flag IMW_PROTO_iscale_func (double *out, unsigned int out_stride,
-			    double *inp, unsigned int inp_stride,
+			    CONST double *inp, unsigned int inp_stride,
 			    unsigned int num_values,
 			    double i_min, double i_max, void *info)
     [SUMMARY] Intensity scaling callback.

@@ -7,161 +7,161 @@ $LIBRARY          karmaX11
 $LINKWITH         -lkarmaX11
 $END
 
-$FUNCTION         ic_write_kplot_icon
-$RETURN_TYPE      void
+$FUNCTION           ic_write_kplot_icon
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Display *display, Pixmap pixmap,
 			  int width, int height)
-$SUMMARY          Write the icon pixmap required for the <<kplot>> module.
+$SUMMARY            Write the icon pixmap required for the <<kplot>> module.
 $PURPOSE
     Write the icon pixmap required for the <<kplot>> module.
-$PARAMETER        display :
+$PARAMETER          display :
     The X display.
-$PARAMETER        pixmap :
+$PARAMETER          pixmap :
     The pixmap to write to.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the icon.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the icon.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ic_write_kscat_icon
-$RETURN_TYPE      void
+$FUNCTION           ic_write_kscat_icon
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Display *display, Pixmap pixmap,
 			  int width, int height)
-$SUMMARY          Write the icon pixmap required for the <<kscat>> module.
+$SUMMARY            Write the icon pixmap required for the <<kscat>> module.
 $PURPOSE
     Write the icon pixmap required for the <<kscat>> module.
-$PARAMETER        display :
+$PARAMETER          display :
     The X display.
-$PARAMETER        pixmap :
+$PARAMETER          pixmap :
     The pixmap to write to.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the icon.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the icon.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ic_write_funcgen_icon
-$RETURN_TYPE      void
+$FUNCTION           ic_write_funcgen_icon
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Display *display, Pixmap pixmap,
 			    int width, int height)
-$SUMMARY          Write the icon pixmap required for the <<kfuncgen>> module.
+$SUMMARY            Write the icon pixmap required for the <<kfuncgen>> module.
 $PURPOSE
     Write the icon pixmap required for the <<kfuncgen>> module.
-$PARAMETER        display :
+$PARAMETER          display :
     The X display.
-$PARAMETER        pixmap :
+$PARAMETER          pixmap :
     The pixmap to write to.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the icon.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the icon.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ic_write_kimage_icon
-$RETURN_TYPE      void
+$FUNCTION           ic_write_kimage_icon
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Display *display, Pixmap pixmap,
 			   int width, int height)
-$SUMMARY          Write the icon pixmap required for the <<kview>> module.
+$SUMMARY            Write the icon pixmap required for the <<kview>> module.
 $PURPOSE
     Write the icon pixmap required for the <<kview>> module.
-$PARAMETER        display :
+$PARAMETER          display :
     The X display.
-$PARAMETER        pixmap :
+$PARAMETER          pixmap :
     The pixmap to write to.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the icon.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the icon.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ic_write_karma_cm_icon
-$RETURN_TYPE      void
+$FUNCTION           ic_write_karma_cm_icon
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Display *display, Pixmap pixmap,
 			     int width, int height)
-$SUMMARY          Write the icon pixmap required for the <<karma_cm>> module.
+$SUMMARY            Write the icon pixmap required for the <<karma_cm>> module.
 $PURPOSE
     Write the icon pixmap required for the <<karma_cm>> module.
-$PARAMETER        display :
+$PARAMETER          display :
     The X display.
-$PARAMETER        pixmap :
+$PARAMETER          pixmap :
     The pixmap to write to.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the icon.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the icon.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ic_write_datasource_icon
-$RETURN_TYPE      void
+$FUNCTION           ic_write_datasource_icon
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Display *display, Pixmap pixmap,
 			       int width, int height)
-$SUMMARY          Write the icon pixmap required for generic data source modules.
+$SUMMARY            Write the icon pixmap required for generic data source modules.
 $PURPOSE
     Write the icon pixmap required for generic data source modules.
-$PARAMETER        display :
+$PARAMETER          display :
     The X display.
-$PARAMETER        pixmap :
+$PARAMETER          pixmap :
     The pixmap to write to.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the icon.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the icon.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ic_write_datasink_icon
-$RETURN_TYPE      void
+$FUNCTION           ic_write_datasink_icon
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Display *display, Pixmap pixmap,
 			     int width, int height)
-$SUMMARY          Write the icon pixmap required for generic data sink modules.
+$SUMMARY            Write the icon pixmap required for generic data sink modules.
 $PURPOSE
     Write the icon pixmap required for generic data sink modules.
-$PARAMETER        display :
+$PARAMETER          display :
     The X display.
-$PARAMETER        pixmap :
+$PARAMETER          pixmap :
     The pixmap to write to.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the icon.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the icon.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ic_write_datafilter_icon
-$RETURN_TYPE      void
+$FUNCTION           ic_write_datafilter_icon
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Display *display, Pixmap pixmap,
 			       int width, int height)
-$SUMMARY          Write the icon pixmap required for generic data filter modules.
+$SUMMARY            Write the icon pixmap required for generic data filter modules.
 $PURPOSE
     Write the icon pixmap required for generic data filter modules.
-$PARAMETER        display :
+$PARAMETER          display :
     The X display.
-$PARAMETER        pixmap :
+$PARAMETER          pixmap :
     The pixmap to write to.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the icon.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the icon.
 $RETURNS
     Nothing.

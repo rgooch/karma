@@ -45,8 +45,11 @@
 
     Updated by      Richard Gooch   3-MAY-1996: Switched to KtoggleWidget.
 
-    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+    Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   15-AUG-1996: Made use of XkwNdefaultName
+  resource for Dialogpopup widget.
 
 
 */
@@ -247,6 +250,7 @@ static void Initialise (Widget Request, Widget New)
     save_dialog = XtVaCreatePopupShell ("save_dialog", dialogpopupWidgetClass,
 					New,
 					XtNlabel, "Save Filename:",
+					XkwNdefaultName, "cmap",
 					NULL);
     new->cmapwinpopup.save_dialog = save_dialog;
     XtAddCallback (save_dialog, XtNcallback, save_dialog_cbk, New);

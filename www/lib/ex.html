@@ -123,11 +123,15 @@
     double quote character may appear anywhere in the sub-string, and will
     force all whitespace characters except '\n' into the output string. A
     second double quote character unquotes the previous quote. These double
-    quote characters are not copied, unless they are consecutive.
+    quote characters are not copied, unless they are consecutive. If the string
+    contains only two double quote characters, an empty string (i.e. only a
+    '\0' character is present) is returned.
 <p><b>Parameters:</b><ul><li><i>str :</i> 
     The string to extract from.
 <br><li><i>rest :</i> 
     A pointer beyond the value will be written here. If this is NULL,
     nothing is written here.
 <br></ul><b>Returns:</b>     A pointer to a copy of the sub-string.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>
+<br><b>Multithreading Level:</b> Unsafe<br><p>
+<hr><a href="../index.html">Back to Karma Home Page</a>
+<hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.ariel.com.au/">Ariel Internet Services</a></address></center></body></html>

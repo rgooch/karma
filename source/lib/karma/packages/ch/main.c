@@ -141,8 +141,11 @@
   transfers in <ch_read_disc> and <ch_read_memory>. Created
   <ch_read_and_swap_blocks>.
 
-    Last updated by Richard Gooch   29-JUN-1996: Created
+    Updated by      Richard Gooch   29-JUN-1996: Created
   <ch_swap_and_write_blocks>.
+
+    Last updated by Richard Gooch   10-AUG-1996: Moved
+  <ch_read_and_swap_blocks> and <ch_swap_and_write_blocks> routines to misc.c.
 
 
 */
@@ -207,7 +210,6 @@ if (ch->magic_number != CHANNEL_MAGIC_NUMBER) \
 #define CONNECTION_BUF_SIZE (unsigned int) 4096
 #define DEFAULT_BLOCK_SIZE (unsigned int) 4096
 #define CONV_BUF_SIZE (unsigned int) 4096
-#define SWAP_BUF_SIZE (unsigned int) 4096
 
 #define MMAP_LARGE_SIZE 1048576
 
@@ -780,7 +782,6 @@ Channel ch_accept_on_dock (Channel dock, unsigned long *addr)
 */
 {
     Channel channel;
-    extern char *sys_errlist[];
     static char function_name[] = "ch_accept_on_dock";
 
     VERIFY_CHANNEL (dock);
@@ -859,7 +860,6 @@ Channel *ch_alloc_port (unsigned int *port_number, unsigned int retries,
     unsigned int dock_count;
     int *docks;
     Channel *ch_docks;
-    extern char *sys_errlist[];
     static char function_name[] = "ch_alloc_port";
 
     if ( (port_number == NULL) || (num_docks == NULL) )
@@ -1224,109 +1224,6 @@ unsigned int ch_read (Channel channel, char *buffer, unsigned int length)
     return (num_read);
 }   /*  End Function ch_read  */
 
-/*EXPERMIMENTAL_FUNCTION*/
-unsigned int ch_read_and_swap_blocks (Channel channel, char *buffer,
-				      unsigned int num_blocks,
-				      unsigned int block_size)
-/*  [SUMMARY] Read blocks from a channel and swap bytes.
-    [PURPOSE] This routine will read a number of blocks from a channel and
-    places them into a buffer after swapping (reversing the order).
-    <channel> The channel object.
-    <buffer> The buffer to write the data into.
-    <num_blocks> The number of blocks to read.
-    <block_size> The size (in bytes) of each block.
-    [NOTE] If the channel is a connection and the number of bytes readable from
-    the connection is equal to or more than <<num_blocks * block_size>> the
-    routine will NOT block.
-    [RETURNS] The number of bytes read. Errors may cause partial blocks to be
-    read.
-*/
-{
-    unsigned int num_read = 0;  /*  Initialised to keep compiler happy  */
-    unsigned int length = num_blocks * block_size;
-    ChConverter converter, old_converter;
-    static char function_name[] = "ch_read_and_swap_blocks";
-
-    VERIFY_CHANNEL (channel);
-    if (buffer == NULL)
-    {
-	(void) fprintf (stderr, "NULL pointer passed\n");
-	a_prog_bug (function_name);
-    }
-#ifndef DISABLE_CONVERTERS
-    if ( (converter = channel->next_converter) != NULL )
-    {
-	if (converter != channel->top_converter)
-	{
-	    (void) fprintf (stderr, "Converter: %p is not top converter: %p\n",
-			    converter, channel->top_converter);
-	    a_prog_bug (function_name);
-	}
-	/*  Pass it on to a read converter  */
-	old_converter = channel->next_converter;
-	channel->next_converter = converter->next;
-	if ( ( num_read = (*converter->read_func) (channel, buffer, length,
-						   &converter->info) )
-	    < length )
-	{
-	    channel->next_converter = channel->top_converter;
-	    channel->abs_write_pos += num_read;
-	    m_copy_and_swap_blocks (buffer, NULL, block_size, 0, block_size,
-				    num_blocks);
-	    return (num_read);
-	}
-	/*  Read converter has produced all data  */
-	if (converter == channel->top_converter)
-	{
-	    channel->abs_read_pos += num_read;
-	}
-	channel->next_converter = old_converter;
-	return (num_read);
-    }
-#endif
-    /*  Since any read converters would call <ch_read> to do the dirty work,
-	if we get to this point, it means we have no converters for this
-	channel  */
-    switch (channel->type)
-    {
-      case CHANNEL_TYPE_DISC:
-	num_read = ch_read_disc (channel, buffer, length);
-	break;
-      case CHANNEL_TYPE_CONNECTION:
-      case CHANNEL_TYPE_CHARACTER:
-      case CHANNEL_TYPE_FIFO:
-	num_read = ch_read_connection (channel, buffer, length);
-	break;
-      case CHANNEL_TYPE_MEMORY:
-      case CHANNEL_TYPE_MMAP:
-	num_read = ch_read_memory (channel, buffer, length);
-	break;
-      case CHANNEL_TYPE_DOCK:
-	(void) fprintf (stderr, "Read operation not permitted on dock\n");
-	a_prog_bug (function_name);
-	break;
-      case CHANNEL_TYPE_ASYNCHRONOUS:
-	(void) fprintf (stderr,
-			"Read operation not permitted on raw asynchronous\n");
-	a_prog_bug (function_name);
-	break;
-      case CHANNEL_TYPE_SINK:
-	errno = 0;
-	return (0);
-/*
-	break;
-*/
-      default:
-	(void) fprintf (stderr, "Invalid channel type\n");
-	a_prog_bug (function_name);
-	break;
-    }
-    channel->abs_read_pos += num_read;
-    m_copy_and_swap_blocks (buffer, NULL, block_size, 0, block_size,
-			    num_blocks);
-    return (num_read);
-}   /*  End Function ch_read_and_swap_blocks  */
-
 /*PUBLIC_FUNCTION*/
 unsigned int ch_write (Channel channel, CONST char *buffer,unsigned int length)
 /*  [SUMMARY] Write to a channel.
@@ -1418,47 +1315,6 @@ unsigned int ch_write (Channel channel, CONST char *buffer,unsigned int length)
     }
     return (num_written);
 }   /*  End Function ch_write  */
-
-/*EXPERMIMENTAL_FUNCTION*/
-unsigned int ch_swap_and_write_blocks (Channel channel, CONST char *buffer,
-				       unsigned int num_blocks,
-				       unsigned int block_size)
-/*  [SUMMARY] Write blocks to a channel after swapping bytes.
-    [PURPOSE] This routine will write a number of blocks to a channel after
-    swapping the bytes.
-    <channel> The channel object.
-    <buffer> The buffer to read the data from.
-    <num_blocks> The number of blocks to write.
-    <block_size> The size (in bytes) of each block.
-    [RETURNS] The number of bytes written. Errors may cause partial blocks to
-    be written.
-*/
-{
-    unsigned int tot_bytes_written, bytes_written, bytes_to_write, nblocks;
-    char swap_buffer[SWAP_BUF_SIZE];
-    static char function_name[] = "ch_swap_and_write_blocks";
-
-    VERIFY_CHANNEL (channel);
-    if (buffer == NULL)
-    {
-	(void) fprintf (stderr, "NULL pointer passed\n");
-	a_prog_bug (function_name);
-    }
-    for (tot_bytes_written = 0; num_blocks > 0;
-	 num_blocks -= nblocks, buffer += bytes_written)
-    {
-	nblocks = num_blocks;
-	if (nblocks * block_size > SWAP_BUF_SIZE)
-	    nblocks = SWAP_BUF_SIZE / block_size;
-	m_copy_and_swap_blocks (swap_buffer, buffer, block_size, block_size,
-				block_size, nblocks);
-	bytes_to_write = nblocks * block_size;
-	bytes_written = ch_write (channel, swap_buffer, bytes_to_write);
-	tot_bytes_written += bytes_written;
-	if (bytes_written < bytes_to_write) return (tot_bytes_written);
-    }
-    return (tot_bytes_written);
-}   /*  End Function ch_swap_and_write_blocks  */
 
 /*PUBLIC_FUNCTION*/
 void ch_close_all_channels ()
@@ -1611,8 +1467,7 @@ int ch_get_bytes_readable (Channel channel)
 {
     ChConverter converter;
     int bytes_available;
-    unsigned int conv_bytes;
-    extern char *sys_errlist[];
+    int conv_bytes = 0;
     static char function_name[] = "ch_get_bytes_readable";
 
     VERIFY_CHANNEL (channel);
@@ -1690,8 +1545,8 @@ int ch_get_bytes_readable (Channel channel)
 	channel->ch_errno = errno;
 	return (-1);
     }
-    return (conv_bytes + channel->bytes_read - channel->read_buf_pos
-	    + (unsigned int) bytes_available);
+    return (conv_bytes + (int) channel->bytes_read -
+	    (int) channel->read_buf_pos + bytes_available);
 }   /*  End Function ch_get_bytes_readable  */
 
 /*PUBLIC_FUNCTION*/
@@ -1718,7 +1573,6 @@ void ch_open_stdin ()
 */
 {
     flag disc;
-    extern char *sys_errlist[];
     static char function_name[] = "ch_open_stdin";
 
     if (ch_stdin != NULL)
@@ -2374,10 +2228,7 @@ static unsigned int ch_read_disc (Channel channel, char *buffer,
     int bytes_read;
     CONST char *source;
     extern KCallbackList tap_list;
-    extern char *sys_errlist[];
-/*
-    static char function_name[] = "ch_read_disc";
-*/
+    /*static char function_name[] = "ch_read_disc";*/
 
     if ( (channel->bytes_read - channel->read_buf_pos) >= length )
     {

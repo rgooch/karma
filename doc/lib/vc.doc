@@ -7,152 +7,152 @@ $LIBRARY          karmavx
 $LINKWITH         -lkarmavx
 $END
 
-$FUNCTION         vc_get_dpy_handle
-$RETURN_TYPE      Kdisplay
+$FUNCTION           vc_get_dpy_handle
+$RETURN_TYPE        Kdisplay
 $PARAMETER_LIST
     ()
-$SUMMARY          Generate a display handle for later use.
+$SUMMARY            Generate a display handle for later use.
 $PURPOSE
     Generate a display handle for later use.
 $RETURNS
     A pointer to the display handle on success, else NULL.
 $END
 
-$FUNCTION         vc_alloc_colours
-$RETURN_TYPE      unsigned int
+$FUNCTION           vc_alloc_colours
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (unsigned int num_cells,
 			       unsigned long *pixel_values,
 			       unsigned int min_cells, Kdisplay dpy_handle)
-$SUMMARY          Allocate colourcells.
+$SUMMARY            Allocate colourcells.
 $PURPOSE
     This routine will allocate a number of colourcells in a low level
     colourmap (e.g. using the Xlib routine XAllocColorCells).
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colourcells to allocate.
-$PARAMETER        pixel_values :
+$PARAMETER          pixel_values :
     A pointer to the array where the pixel values allocated will
     be written.
-$PARAMETER        min_cells :
+$PARAMETER          min_cells :
     The minimum number of colourcells to allocate. The routine will
     try to allocate at least this number of colourcells.
-$PARAMETER        dpy_handle :
+$PARAMETER          dpy_handle :
     The low level display handle. The meaning of this value
     depends on the lower level graphics library used.
 $RETURNS
     The number of colourcells allocated.
 $END
 
-$FUNCTION         vc_free_colours
-$RETURN_TYPE      void
+$FUNCTION           vc_free_colours
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned long *pixel_values,
 		      Kdisplay dpy_handle)
-$SUMMARY          Free a number of colourcells in a low level colourmap.
+$SUMMARY            Free a number of colourcells in a low level colourmap.
 $PURPOSE
     Free a number of colourcells in a low level colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colourcells to free.
-$PARAMETER        pixel_values :
+$PARAMETER          pixel_values :
     The array of pixel values (colourcells) to free.
-$PARAMETER        dpy_handle :
+$PARAMETER          dpy_handle :
     The low level display handle. The meaning of this value
     depends on the lower level graphics library used.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         vc_store_colours
-$RETURN_TYPE      void
+$FUNCTION           vc_store_colours
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells, unsigned long *pixel_values,
 		       unsigned short *reds, unsigned short *greens,
 		       unsigned short *blues, unsigned int stride,
 		       Kdisplay dpy_handle)
-$SUMMARY          Store colours into a low level colourmap.
+$SUMMARY            Store colours into a low level colourmap.
 $PURPOSE
     Store colours into a low level colourmap.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colourcells to store.
-$PARAMETER        pixel_values :
+$PARAMETER          pixel_values :
     The array of pixel values.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The array of red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The array of green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The array of blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values in each
     array.
-$PARAMETER        dpy_handle :
+$PARAMETER          dpy_handle :
     The low level display handle. The meaning of this value
     depends on the lower level graphics library used.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         vc_store_colours_24bit
-$RETURN_TYPE      void
+$FUNCTION           vc_store_colours_24bit
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (unsigned int num_cells,
 			     unsigned long *pixel_values, unsigned short *reds,
 			     unsigned short *greens, unsigned short *blues,
 			     unsigned int stride, Kdisplay dpy_handle)
-$SUMMARY          Store colours into a low level colourmap.
+$SUMMARY            Store colours into a low level colourmap.
 $PURPOSE
     This routine will store colours into a low level colourmap. The
     colours are stored for the DirectColour (24 bit) visual type.
-$PARAMETER        num_cells :
+$PARAMETER          num_cells :
     The number of colourcells to store.
-$PARAMETER        pixel_values :
+$PARAMETER          pixel_values :
     The array of pixel values.
-$PARAMETER        reds :
+$PARAMETER          reds :
     The array of red intensity values.
-$PARAMETER        greens :
+$PARAMETER          greens :
     The array of green intensity values.
-$PARAMETER        blues :
+$PARAMETER          blues :
     The array of blue intensity values.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in unsigned shorts) between intensity values in each
     array.
-$PARAMETER        dpy_handle :
+$PARAMETER          dpy_handle :
     The low level display handle. The meaning of this value
     depends on the lower level graphics library used.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         vc_get_location
-$RETURN_TYPE      void
+$FUNCTION           vc_get_location
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Kdisplay dpy_handle, unsigned long *serv_hostaddr,
 		      unsigned long *serv_display_num)
-$SUMMARY          Determine the location of the graphics display being used.
+$SUMMARY            Determine the location of the graphics display being used.
 $PURPOSE
     Determine the location of the graphics display being used.
-$PARAMETER        dpy_handle :
+$PARAMETER          dpy_handle :
     The low level display handle. The meaning of this value
     depends on the lower level graphics library used.
-$PARAMETER        serv_hostaddr :
+$PARAMETER          serv_hostaddr :
     The Internet address of the host on which the display is
     running will be written here.
-$PARAMETER        serv_display_num :
+$PARAMETER          serv_display_num :
     The number of the display will be written here.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         vc_set_visualtype
-$RETURN_TYPE      void
+$FUNCTION           vc_set_visualtype
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Kdisplay dpy_handle, unsigned int visual, flag overlay)
-$SUMMARY          Set the current visual of the viewable colourmap.
+$SUMMARY            Set the current visual of the viewable colourmap.
 $PURPOSE
     Set the current visual of the viewable colourmap.
-$PARAMETER        dpy_handle :
+$PARAMETER          dpy_handle :
     The low level display handle.
-$PARAMETER        visual :
+$PARAMETER          visual :
     The visual type for the canvas. Legal values are:
     VC_VX_VISUAL_PSEUDOCOLOUR0    8  bits deep (alpha/overlay channel)
     VC_VX_VISUAL_PSEUDOCOLOUR1    8  bits deep (blue channel)
@@ -165,7 +165,7 @@ $NOTE
     the lower appropriate 8 bits are used. When viewing a DirectColour
     canvas, the lower 24 bits (big endian) are used. Bits 0-7, 8-15
     and 16-23 contain the red, green and blue components, respectively.
-$PARAMETER        overlay :
+$PARAMETER          overlay :
     If TRUE and PseudoColour channel 0 is NOT selected, the overlay
     channel is displayed. A non-zero pixel in the overlay channel will override
     the PseudoColour/DirectColour pixel.
@@ -173,19 +173,19 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         vc_get_visualtype
-$RETURN_TYPE      void
+$FUNCTION           vc_get_visualtype
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Kdisplay dpy_handle, unsigned int *visual,
 			flag *overlay)
-$SUMMARY          Get the current visual of the viewable colourmap.
+$SUMMARY            Get the current visual of the viewable colourmap.
 $PURPOSE
     Get the current visual of the viewable colourmap.
-$PARAMETER        dpy_handle :
+$PARAMETER          dpy_handle :
     The low level display handle.
-$PARAMETER        visual :
+$PARAMETER          visual :
     The visual type for the canvas will be written here.
-$PARAMETER        overlay :
+$PARAMETER          overlay :
     If the overlay channel is visible, the value TRUE will be written
     here, else the value FALSE will be written here.
 $RETURNS

@@ -11,40 +11,40 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         ds_alloc_multi
-$RETURN_TYPE      multi_array *
+$FUNCTION           ds_alloc_multi
+$RETURN_TYPE        multi_array *
 $PARAMETER_LIST
     (unsigned int num_arrays)
-$SUMMARY          Allocate a multi_array descriptor.
+$SUMMARY            Allocate a multi_array descriptor.
 $PURPOSE
     This routine will allocate a multi_array descriptor. The memory
     for the array of pointers to the array names, headers and data arrays is
     also allocated.
-$PARAMETER        num_arrays :
+$PARAMETER          num_arrays :
     The number of independent general data structures arrays.
 $RETURNS
     A pointer to the header on success, else NULL.
 $END
 
-$FUNCTION         ds_alloc_packet_desc
-$RETURN_TYPE      packet_desc *
+$FUNCTION           ds_alloc_packet_desc
+$RETURN_TYPE        packet_desc *
 $PARAMETER_LIST
     (unsigned int num_elem)
-$SUMMARY          Allocate a packet descriptor.
+$SUMMARY            Allocate a packet descriptor.
 $PURPOSE
     This routine will allocate a packet descriptor. The memory for
     the array of element types and descriptors is also allocated.
-$PARAMETER        num_elem :
+$PARAMETER          num_elem :
     The number of elements to allocate.
 $RETURNS
     A pointer to the descriptor on success, else NULL.
 $END
 
-$FUNCTION         ds_alloc_data
-$RETURN_TYPE      char *
+$FUNCTION           ds_alloc_data
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (packet_desc *pack_desc, flag clear, flag array_alloc)
-$SUMMARY          Allocate packet data recursively.
+$SUMMARY            Allocate packet data recursively.
 $PURPOSE
     This routine will allocate all memory required to store data in a
     packet. The routine will recursively allocate space for packets, sub arrays
@@ -52,12 +52,12 @@ $PURPOSE
     The routine is quite robust, cleanly bypassing missing sections of the
     descriptor hierarchy, and deallocating any memory allocated after an
     error occurs.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The packet descriptor.
-$PARAMETER        clear :
+$PARAMETER          clear :
     If TRUE, then the routine will initialise (set to zero) all the
     data.
-$PARAMETER        array_alloc :
+$PARAMETER          array_alloc :
     If FALSE, and an array is an atomic array, then instances of
     that array will NOT be allocated, and a NULL pointer will be written into
     the parent element, else the array will be allocated.
@@ -66,12 +66,12 @@ $RETURNS
     else NULL.
 $END
 
-$FUNCTION         ds_alloc_packet_subdata
-$RETURN_TYPE      flag
+$FUNCTION           ds_alloc_packet_subdata
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (CONST packet_desc *pack_desc, char *packet,
 			      flag clear, flag array_alloc)
-$SUMMARY          Allocate packet sub-data.
+$SUMMARY            Allocate packet sub-data.
 $PURPOSE
     This routine will recursively allocate space for sub arrays of
     packets and linked list headers for a packet. The data space for the packet
@@ -79,14 +79,14 @@ $PURPOSE
     The routine is quite robust, cleanly bypassing missing sections of the
     descriptor hierarchy, and deallocating any memory allocated after an
     error occurs.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The packet descriptor.
-$PARAMETER        packet :
+$PARAMETER          packet :
     The packet data.
-$PARAMETER        clear :
+$PARAMETER          clear :
     If TRUE, then the routine will initialise (set to zero) all the
     sub-structure data.
-$PARAMETER        array_alloc :
+$PARAMETER          array_alloc :
     If FALSE, and an array is an atomic array, then instances of
     that array will NOT be allocated, and a NULL pointer will be written into
     the parent element, else the array will be allocated.
@@ -94,33 +94,33 @@ $RETURNS
     TRUE if all memory could be allocated, else FALSE.
 $END
 
-$FUNCTION         ds_alloc_packet
-$RETURN_TYPE      char *
+$FUNCTION           ds_alloc_packet
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (packet_desc *pack_desc)
-$SUMMARY          Allocate packet.
+$SUMMARY            Allocate packet.
 $PURPOSE
     This routine will allocate memory for a packet. This routine is
     NOT recursive (i.e. sub arrays and linked lists are not allocated).
     The elements of the packet will be set to zero (for all types).
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The packet descriptor.
 $RETURNS
     A pointer to the packet on success, else NULL.
 $END
 
-$FUNCTION         ds_alloc_array_desc
-$RETURN_TYPE      array_desc *
+$FUNCTION           ds_alloc_array_desc
+$RETURN_TYPE        array_desc *
 $PARAMETER_LIST
     (unsigned int num_dimensions,
 				 unsigned int num_levels)
-$SUMMARY          Allocate array descriptor.
+$SUMMARY            Allocate array descriptor.
 $PURPOSE
     This function will allocate a header for a multi-dimensional
     tiled array of data packets.
-$PARAMETER        num_dimensions :
+$PARAMETER          num_dimensions :
     The number of dimensions in the array.
-$PARAMETER        num_levels :
+$PARAMETER          num_levels :
     The number of levels of tiling. If this is 0, the array is not
     tiled.
 $NOTE
@@ -130,41 +130,41 @@ $RETURNS
     A pointer to the descriptor on success, else NULL.
 $END
 
-$FUNCTION         ds_alloc_tiling_info
-$RETURN_TYPE      flag
+$FUNCTION           ds_alloc_tiling_info
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (array_desc *arr_desc, unsigned int num_levels)
-$SUMMARY          Allocate array tiling information.
+$SUMMARY            Allocate array tiling information.
 $PURPOSE
     This routine will allocate tiling information for an array
     descriptor which does not have any existing tiling information.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
-$PARAMETER        num_levels :
+$PARAMETER          num_levels :
     The number of levels of tiling. If this is 0, the array is not
     tiled.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_alloc_dim_desc
-$RETURN_TYPE      dim_desc *
+$FUNCTION           ds_alloc_dim_desc
+$RETURN_TYPE        dim_desc *
 $PARAMETER_LIST
     (CONST char *dim_name, uaddr length,
 			     double first, double last, flag regular)
-$SUMMARY          Allocate a dimension descriptor.
+$SUMMARY            Allocate a dimension descriptor.
 $PURPOSE
     Allocate a dimension descriptor.
-$PARAMETER        dim_name :
+$PARAMETER          dim_name :
     The name of the dimension. The name is copied, thus the input
     character string may be subsequently deallocated.
-$PARAMETER        length :
+$PARAMETER          length :
     The length (number of co-ordinates) of the dimension.
-$PARAMETER        first :
+$PARAMETER          first :
     The first dimension co-ordinate.
-$PARAMETER        last :
+$PARAMETER          last :
     The last dimension co-ordinate.
-$PARAMETER        regular :
+$PARAMETER          regular :
     If TRUE the co-ordinates of the dimension are regularly spaced,
     else the co-ordinates are not regularly spaced. If the co-ordinates are
     regularly spaced the <<coordinates>> field of the array descriptor will be
@@ -174,11 +174,11 @@ $RETURNS
     A pointer to the descriptor on success, else NULL.
 $END
 
-$FUNCTION         ds_alloc_list_head
-$RETURN_TYPE      list_header *
+$FUNCTION           ds_alloc_list_head
+$RETURN_TYPE        list_header *
 $PARAMETER_LIST
     ()
-$SUMMARY          Allocate a linked list header.
+$SUMMARY            Allocate a linked list header.
 $PURPOSE
     This routine will allocate a linked list header.
     The length of the linked list specified in the header will be 0, and the
@@ -191,11 +191,11 @@ $RETURNS
     A pointer to the header on success, else NULL.
 $END
 
-$FUNCTION         ds_alloc_list_entry
-$RETURN_TYPE      list_entry *
+$FUNCTION           ds_alloc_list_entry
+$RETURN_TYPE        list_entry *
 $PARAMETER_LIST
     (packet_desc *list_desc, flag array_alloc)
-$SUMMARY          Allocate a linked list entry.
+$SUMMARY            Allocate a linked list entry.
 $PURPOSE
     This routine will allocate an entry in a linked list (it will
     NOT insert it in the list: see <-ds_list_insert->).
@@ -203,9 +203,9 @@ $PURPOSE
     The routine will initialise (set to zero) the data in the entry.
     The routine will recursively allocate memory for sub arrays and linked
     lists.
-$PARAMETER        list_desc :
+$PARAMETER          list_desc :
     The descriptor for the linked list.
-$PARAMETER        array_alloc :
+$PARAMETER          array_alloc :
     If FALSE, and an array is an atomic array, then instances of
     that array will NOT be allocated, and a NULL pointer will be written into
     the parent element, else the array will be allocated.
@@ -213,24 +213,24 @@ $RETURNS
     A pointer to the entry on success, else NULL.
 $END
 
-$FUNCTION         ds_alloc_array
-$RETURN_TYPE      flag
+$FUNCTION           ds_alloc_array
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (CONST array_desc *arr_desc, char *element, flag clear,
 		     flag array_alloc)
-$SUMMARY          Allocate an array.
+$SUMMARY            Allocate an array.
 $PURPOSE
     This routine will allocate memory for an array. The routine will
     recursively allocate sub arrays and linked lists.
     Any memory which is allocated will be deallocated if an error occurs.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
-$PARAMETER        element :
+$PARAMETER          element :
     The element to write the array pointer.
-$PARAMETER        clear :
+$PARAMETER          clear :
     If TRUE, then the routine will initialise (set to zero) all the
     data.
-$PARAMETER        array_alloc :
+$PARAMETER          array_alloc :
     If FALSE, and an array is an atomic array, then instances of
     that array will NOT be allocated, and a NULL pointer will be written into
     the parent element, else the array will be allocated.
@@ -238,15 +238,15 @@ $RETURNS
     A pointer to the array on success, else NULL.
 $END
 
-$FUNCTION         ds_easy_alloc_array
-$RETURN_TYPE      char *
+$FUNCTION           ds_easy_alloc_array
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (multi_array **multi_desc, unsigned int num_dim,
 			   CONST uaddr *lengths, CONST double *first_arr,
 			   CONST double *last_arr,
 			   CONST char **names, unsigned int data_type,
 			   CONST char *data_name)
-$SUMMARY          Allocate a data structure with a simple array.
+$SUMMARY            Allocate a data structure with a simple array.
 $PURPOSE
     This routine will allocate memory for a multi-dimensional,
     regular array, and the required headers and the multi-array header. The
@@ -255,16 +255,16 @@ $PURPOSE
 $NOTE
     This routine does NOT create a Karma arrayfile. This must be done
     with a call to <-dsxfr_put_multi->.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The multi-array structure pointer to the created structure is
     written here.
-$PARAMETER        num_dim :
+$PARAMETER          num_dim :
     The number of dimensions of the array.
-$PARAMETER        lengths :
+$PARAMETER          lengths :
     The array of dimension lengths.
-$PARAMETER        first_arr :
+$PARAMETER          first_arr :
     An array of first co-ordinate values for each dimension.
-$PARAMETER        last_arr :
+$PARAMETER          last_arr :
     An array of last co-ordinate values for each dimension.
 $NOTE
     If either of <<first_arr>> or <<last_arr>> is NULL, the range of the
@@ -272,15 +272,15 @@ $NOTE
     pointers is NULL, the other array is used to tie one end of the range for
     each dimension. If both pointers are NULL,the minima are 0.0 and the maxima
     are the lengths minus 1.
-$PARAMETER        names :
+$PARAMETER          names :
     The array of dimension names. If this is NULL, the names "Axis 0",
     "Axis 1", ...etc will be used. The character arrays are copied, so the
     arrays of characters and the array of pointers may be subsequently
     deallocated.
-$PARAMETER        data_type :
+$PARAMETER          data_type :
     The type of the elements in the array. See
     <-DS_KARMA_DATA_TYPES-> for a list of legal values.
-$PARAMETER        data_name :
+$PARAMETER          data_name :
     The name of the data type. If this is NULL, then the name
     "Data Value" will be used. The name string is copied, thus the memory used
     for the input string may be subsequently deallocated.
@@ -288,8 +288,8 @@ $RETURNS
     A pointer to the start of the array on success, else NULL.
 $END
 
-$FUNCTION         ds_easy_alloc_n_element_array
-$RETURN_TYPE      char *
+$FUNCTION           ds_easy_alloc_n_element_array
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (multi_array **multi_desc,
 				     unsigned int num_dim,
@@ -300,7 +300,7 @@ $PARAMETER_LIST
 				     unsigned int num_elements,
 				     CONST unsigned int *data_types,
 				     CONST char **data_names)
-$SUMMARY          Allocate a data structure with a simple, multi element array.
+$SUMMARY            Allocate a data structure with a simple, multi element array.
 $PURPOSE
     This routine will allocate memory for a multi-dimensional,
     regular array, and the required headers and the multi-array header. The
@@ -309,16 +309,16 @@ $PURPOSE
 $NOTE
     This routine does NOT create a Karma arrayfile. This must be done
     with a call to <-dsxfr_put_multi->.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The multi-array structure pointer to the created structure is
     written here.
-$PARAMETER        num_dim :
+$PARAMETER          num_dim :
     The number of dimensions of the array.
-$PARAMETER        lengths :
+$PARAMETER          lengths :
     The array of dimension lengths.
-$PARAMETER        first_arr :
+$PARAMETER          first_arr :
     An array of first co-ordinate values for each dimension.
-$PARAMETER        last_arr :
+$PARAMETER          last_arr :
     An array of last co-ordinate values for each dimension.
 $NOTE
     If either of <<first_arr>> or <<last_arr>> is NULL, the range of the
@@ -326,32 +326,32 @@ $NOTE
     pointers is NULL, the other array is used to tie one end of the range for
     each dimension. If both pointers are NULL,the minima are 0.0 and the maxima
     are the lengths minus 1.
-$PARAMETER        names :
+$PARAMETER          names :
     The array of dimension names. If this is NULL, the names "Axis 0",
     "Axis 1", ...etc will be used. The character arrays are copied, so the
     arrays of characters and the array of pointers may be subsequently
     deallocated.
-$PARAMETER        num_elements :
+$PARAMETER          num_elements :
     The number of elements in the array packets.
-$PARAMETER        data_types :
+$PARAMETER          data_types :
     The types of the elements in the array. See
     <-DS_KARMA_DATA_TYPES-> for a list of legal values.
-$PARAMETER        data_names :
+$PARAMETER          data_names :
     The names of the data type. The name strings are copied, thus
     the memory used for the input string may be subsequently deallocated.
 $RETURNS
     A pointer to the start of the array on success, else NULL.
 $END
 
-$FUNCTION         ds_wrap_preallocated_n_element_array
-$RETURN_TYPE      multi_array *
+$FUNCTION           ds_wrap_preallocated_n_element_array
+$RETURN_TYPE        multi_array *
 $PARAMETER_LIST
     (char *array, unsigned int num_dim, CONST uaddr *lengths,
      CONST double *first_arr, CONST double *last_arr,
      CONST double **coordinates, CONST char **names,
      unsigned int num_elements, CONST unsigned int *data_types,
      CONST char **data_names)
-$SUMMARY          Wrap a data structure around an array.
+$SUMMARY            Wrap a data structure around an array.
 $PURPOSE
     This routine will "wrap" an externally allocated array by
     allocating the required descriptors. The array is NOT tiled nor are any
@@ -360,17 +360,17 @@ $PURPOSE
 $NOTE
     This routine does NOT create a Karma arrayfile. This must be done
     with a call to <-dsxfr_put_multi->.
-$PARAMETER        array :
+$PARAMETER          array :
     The externally allocated array. This data must be externally
     deallocated when no longer needed. If this is NULL, then the array data is
     internally allocated (and should not be externally deallocated).
-$PARAMETER        num_dim :
+$PARAMETER          num_dim :
     The number of dimensions of the array.
-$PARAMETER        lengths :
+$PARAMETER          lengths :
     The array of dimension lengths.
-$PARAMETER        first_arr :
+$PARAMETER          first_arr :
     An array of first co-ordinate values for each dimension.
-$PARAMETER        last_arr :
+$PARAMETER          last_arr :
     An array of last co-ordinate values for each dimension.
 $NOTE
     If either of <<first_arr>> or <<last_arr>> is NULL, the range of the
@@ -378,30 +378,30 @@ $NOTE
     pointers is NULL, the other array is used to tie one end of the range for
     each dimension. If both pointers are NULL,the minima are 0.0 and the maxima
     are the lengths minus 1.
-$PARAMETER        coordinates :
+$PARAMETER          coordinates :
     The array of co-ordinate array pointers. If this is NULL,
     all dimensions are assumed to be regularly spaced. If any co-ordinate array
     pointer is NULL, the corresponding dimension is assumed to be regularly
     spaced.
-$PARAMETER        names :
+$PARAMETER          names :
     The array of dimension names. If this is NULL, the names "Axis 0",
     "Axis 1", ...etc will be used. The character arrays are copied, so the
     arrays of characters and the array of pointers may be subsequently
     deallocated.
-$PARAMETER        num_elements :
+$PARAMETER          num_elements :
     The number of elements in the array packets.
-$PARAMETER        data_types :
+$PARAMETER          data_types :
     The types of the elements in the array. See
     <-DS_KARMA_DATA_TYPES-> for a list of legal values.
-$PARAMETER        data_names :
+$PARAMETER          data_names :
     The names of the data type. The name strings are copied, thus
     the memory used for the input string may be subsequently deallocated.
 $RETURNS
     A pointer the multi_array descriptor on success, else NULL.
 $END
 
-$FUNCTION         ds_easy_alloc_array_desc
-$RETURN_TYPE      array_desc *
+$FUNCTION           ds_easy_alloc_array_desc
+$RETURN_TYPE        array_desc *
 $PARAMETER_LIST
     (unsigned int num_dim,
 				      CONST uaddr *lengths,
@@ -412,51 +412,54 @@ $PARAMETER_LIST
 				      unsigned int num_elements,
 				      CONST unsigned int *data_types,
 				      CONST char **data_names)
-$SUMMARY          Allocate a simple array descriptor.
+$SUMMARY            Allocate a simple array descriptor.
 $PURPOSE
     This routine will allocate an array descriptor and its
     associated packet descriptor.
-$PARAMETER        num_dim :
+$PARAMETER          num_dim :
     The number of dimensions in the array.
-$PARAMETER        lengths :
+$PARAMETER          lengths :
     An array of lengths for each dimension (axis).
-$PARAMETER        first_arr :
+$PARAMETER          first_arr :
     An array of first co-ordinate values for each dimension.
-$PARAMETER        last_arr :
+$PARAMETER          last_arr :
     An array of last co-ordinate values for each dimension.
     If either of these pointers is NULL, the range of the co-ordinates will be
     the lengths of the dimensions minus 1. If one of the pointers is NULL, the
     other array is used to tie one end of the range for each dimension. If both
     pointers are NULL,the minima are 0.0 and the maxima are the lengths minus 1
-$PARAMETER        coordinates :
+$PARAMETER          coordinates :
     The array of co-ordinate array pointers. If this is NULL,
     all dimensions are assumed to be regularly spaced. If any co-ordinate array
     pointer is NULL, the corresponding dimension is assumed to be regularly
     spaced.
-$PARAMETER        names :
+$PARAMETER          names :
     An array of string pointers to the names of each dimension. If this
     is NULL, the names "Axis 0", "Axis 1", ...etc will be used. Note: the
     character arrays are copied, so the arrays of characters and the array of
     pointers may be subsequently deallocated.
-$PARAMETER        num_elements :
-    The number of atomic elements in the array packet.
-$PARAMETER        data_types :
+$PARAMETER          num_elements :
+    The number of atomic elements in the array packet. If this
+    is 0, no packet descriptor is allocated.
+$PARAMETER          data_types :
     The types of the elements in the array. See
-    <-DS_KARMA_DATA_TYPES-> for a list of legal values.
-$PARAMETER        data_names :
+    <-DS_KARMA_DATA_TYPES-> for a list of legal values. This may be NULL if
+    <<num_elements>> is 0.
+$PARAMETER          data_names :
     The array of element names. The name strings are copied, thus
-    the memory used for the input strings may be subsequently deallocated.
+    the memory used for the input strings may be subsequently deallocated. This
+    may be NULL if <<num_elements>> is 0.
 $RETURNS
     An array descriptor pointer on success, else NULL.
 $END
 
-$FUNCTION         ds_alloc_contiguous_list
-$RETURN_TYPE      flag
+$FUNCTION           ds_alloc_contiguous_list
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (CONST packet_desc *list_desc,
 			       list_header *list_head, unsigned int length,
 			       flag clear, flag array_alloc)
-$SUMMARY          Allocate a contiguous list of linked list entries.
+$SUMMARY            Allocate a contiguous list of linked list entries.
 $PURPOSE
     This routine will allocate a contiguous block of linked list
     entry data  packets. No <<list_entry>> structures are allocated, they are
@@ -464,16 +467,16 @@ $PURPOSE
     linked lists. The list must be empty.
     The <<contiguous_length>> value in the list header will be set to the list
     length.
-$PARAMETER        list_desc :
+$PARAMETER          list_desc :
     The packet descriptor for the linked list.
-$PARAMETER        list_head :
+$PARAMETER          list_head :
     The list header.
-$PARAMETER        length :
+$PARAMETER          length :
     The number of list entries to allocate.
-$PARAMETER        clear :
+$PARAMETER          clear :
     If TRUE, then the routine will initialise (set to zero) all the
     data.
-$PARAMETER        array_alloc :
+$PARAMETER          array_alloc :
     If FALSE, and an array is an atomic array, then instances of
     that array will NOT be allocated, and a NULL pointer will be written into
     the parent element, else the array will be allocated.
@@ -483,31 +486,31 @@ $NOTE
     On failure, the list header is deallocated.
 $END
 
-$FUNCTION         ds_find_1D_extremes
-$RETURN_TYPE      flag
+$FUNCTION           ds_find_1D_extremes
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (CONST char *data,
 			  unsigned int num_values, uaddr *offsets,
 			  unsigned int elem_type, unsigned int conv_type,
 			  double *min, double *max)
-$SUMMARY          Find the minimum and maximum of a 1D array.
+$SUMMARY            Find the minimum and maximum of a 1D array.
 $PURPOSE
     This routine will find the extremes (minimum and maximum) of a
     single trace (element versus a dimension).
-$PARAMETER        data :
+$PARAMETER          data :
     A pointer to the data. Misaligned data will cause bus errors on some
     platforms.
-$PARAMETER        num_values :
+$PARAMETER          num_values :
     The number of values to process.
-$PARAMETER        offsets :
+$PARAMETER          offsets :
     The address offsets for data along the dimension.
-$PARAMETER        elem_type :
+$PARAMETER          elem_type :
     The type of the element.
-$PARAMETER        conv_type :
+$PARAMETER          conv_type :
     The type of conversion to use for complex numbers.
-$PARAMETER        min :
+$PARAMETER          min :
     The minimum value will be written here.
-$PARAMETER        max :
+$PARAMETER          max :
     The maximum value will be written here.
 $NOTE
     The minimum and maximum value must be initialised to a very large
@@ -519,36 +522,36 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_find_2D_extremes
-$RETURN_TYPE      flag
+$FUNCTION           ds_find_2D_extremes
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (CONST char *data,
 			  unsigned int length1, uaddr *offsets1,
 			  unsigned int length2, uaddr *offsets2,
 			  unsigned int elem_type, unsigned int conv_type,
 			  double *min, double *max)
-$SUMMARY          Find the minimum and maximum of a 2D array.
+$SUMMARY            Find the minimum and maximum of a 2D array.
 $PURPOSE
     This routine will find the extremes (minimum and maximum) of a
     single plane (element versus two dimensions).
-$PARAMETER        data :
+$PARAMETER          data :
     A pointer to the data.
-$PARAMETER        length1 :
+$PARAMETER          length1 :
     The number of values to process along one of the dimensions. For
     efficiency this should be the more significant dimension.
-$PARAMETER        offsets1 :
+$PARAMETER          offsets1 :
     The address offsets for data along the corresponding dimension.
-$PARAMETER        length2 :
+$PARAMETER          length2 :
     The number of values to process along the other of the dimensions
-$PARAMETER        offsets2 :
+$PARAMETER          offsets2 :
     The address offsets for data along the corresponding dimension.
-$PARAMETER        elem_type :
+$PARAMETER          elem_type :
     The type of the element.
-$PARAMETER        conv_type :
+$PARAMETER          conv_type :
     The type of conversion to use for complex numbers.
-$PARAMETER        min :
+$PARAMETER          min :
     The minimum value will be written here.
-$PARAMETER        max :
+$PARAMETER          max :
     The maximum value will be written here.
 $NOTE
     The minimum and maximum value must be initialised to a very large
@@ -560,31 +563,31 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_find_contiguous_extremes
-$RETURN_TYPE      flag
+$FUNCTION           ds_find_contiguous_extremes
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (CONST char *data, unsigned int num_values,
 				  uaddr stride, unsigned int elem_type,
 				  unsigned int conv_type,
 				  double *min, double *max)
-$SUMMARY          Find the minimum and maximum of a contiguous array.
+$SUMMARY            Find the minimum and maximum of a contiguous array.
 $PURPOSE
     This routine will find the extremes (minimum and maximum) of a
     single trace (element versus a dimension).
-$PARAMETER        data :
+$PARAMETER          data :
     A pointer to the data. Misaligned data will cause bus errors on some
     platforms.
-$PARAMETER        num_values :
+$PARAMETER          num_values :
     The number of values to process.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in bytes) between consecutive data values.
-$PARAMETER        elem_type :
+$PARAMETER          elem_type :
     The type of the element.
-$PARAMETER        conv_type :
+$PARAMETER          conv_type :
     The type of conversion to use for complex numbers.
-$PARAMETER        min :
+$PARAMETER          min :
     The minimum value will be written here.
-$PARAMETER        max :
+$PARAMETER          max :
     The maximum value will be written here.
 $NOTE
     The minimum and maximum value must be initialised to a very large
@@ -596,8 +599,8 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_find_single_histogram
-$RETURN_TYPE      flag
+$FUNCTION           ds_find_single_histogram
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (CONST char *data, unsigned int elem_type,
 			       unsigned int conv_type, unsigned int num_values,
@@ -606,42 +609,42 @@ $PARAMETER_LIST
 			       unsigned long *histogram_array,
 			       unsigned long *histogram_peak,
 			       unsigned long *histogram_mode)
-$SUMMARY          Find the histogram of a 1D array.
+$SUMMARY            Find the histogram of a 1D array.
 $PURPOSE
     This routine will find the histogram of a single trace (element
     versus a dimension). This routine may be called repeatedly with multiple
     traces in order to build an aggregate histogram of all traces.
-$PARAMETER        data :
+$PARAMETER          data :
     A pointer to the data. Misaligned data will cause bus errors on some
     platforms.
-$PARAMETER        elem_type :
+$PARAMETER          elem_type :
     The type of the element.
-$PARAMETER        conv_type :
+$PARAMETER          conv_type :
     The type of conversion to use for complex numbers.
     Legal value for this include:
     CONV_CtoR_REAL        CONV_CtoR_IMAG
     CONV_CtoR_ABS         CONV_CtoR_SQUARE_ABS
     CONV_CtoR_PHASE       CONV_CtoR_CONT_PHASE
-$PARAMETER        num_values :
+$PARAMETER          num_values :
     The length of the dimension.
-$PARAMETER        offsets :
+$PARAMETER          offsets :
     The address offsets for data along the dimension.
-$PARAMETER        stride :
+$PARAMETER          stride :
     If the value of  offsets  is NULL, this gives the stride (in
     bytes) between consecutive values along the dimension.
-$PARAMETER        min :
+$PARAMETER          min :
     Data values below this will be ignored.
-$PARAMETER        max :
+$PARAMETER          max :
     Data values above this will be ignored.
-$PARAMETER        num_bins :
+$PARAMETER          num_bins :
     The number of histogram bins.
-$PARAMETER        histogram_array :
+$PARAMETER          histogram_array :
     The histogram array. The values in this array are updated
     and hence must be initialised externally.
-$PARAMETER        histogram_peak :
+$PARAMETER          histogram_peak :
     The peak of the histogram is written here. This value is
     updated, and hence must be externally initialised to 0.
-$PARAMETER        histogram_mode :
+$PARAMETER          histogram_mode :
     The mode of the histogram (index value of the peak) will
     be written here. This value is updated, and hence must be externally
     initialised to 0.
@@ -650,53 +653,184 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_complex_to_real_1D
-$RETURN_TYPE      void
+$FUNCTION           ds_complex_to_real_1D
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (double *out, unsigned int out_stride,
 			    double *inp, unsigned int num_values,
 			    unsigned int conv_type)
-$SUMMARY          Convert a 1 dimensional array of complex values to real values.
+$SUMMARY            Convert a 1 dimensional array of complex values to real values.
 $PURPOSE
     Convert a 1 dimensional array of complex values to real values.
-$PARAMETER        out :
+$PARAMETER          out :
     A pointer to the output array.
-$PARAMETER        out_stride :
+$PARAMETER          out_stride :
     The stride (in doubles) of the output array.
-$PARAMETER        inp :
+$PARAMETER          inp :
     The array of input complex values.
-$PARAMETER        num_values :
+$PARAMETER          num_values :
     The number of values to convert.
-$PARAMETER        conv_type :
+$PARAMETER          conv_type :
     The conversion type to apply.
 $MT-LEVEL         Safe.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ds_put_unique_named_value
-$RETURN_TYPE      flag
+$FUNCTION           ds_find_1D_sum
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (CONST char *data, unsigned int elem_type,
+		     unsigned int num_values, CONST uaddr *offsets,
+		     unsigned int stride, double sum[2])
+$SUMMARY            Find the sum of a 1D array.
+$PURPOSE
+    This routine will find the sum of a single trace (element
+    versus a dimension). This routine may be called repeatedly with multiple
+    traces in order to build an aggregate sum of all traces.
+$PARAMETER          data :
+    A pointer to the data. Misaligned data will cause bus errors on some
+    platforms.
+$PARAMETER          elem_type :
+    The type of the element.
+$PARAMETER          num_values :
+    The length of the dimension.
+$PARAMETER          offsets :
+    The address offsets for data along the dimension.
+$PARAMETER          stride :
+    If the value of  offsets  is NULL, this gives the stride (in
+    bytes) between consecutive values along the dimension.
+$PARAMETER          sum :
+    The sum is written here.
+$MT-LEVEL         Safe.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$EXPERIMENTAL_FUNC  ds_find_1D_stats
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (CONST char *data,
+		       unsigned int num_values, uaddr *offsets,
+		       unsigned int elem_type, unsigned int conv_type,
+		       double *min, double *max,
+		       double *mean, double *stddev,
+		       double *sum, double *sumsq, unsigned long *npoints)
+$SUMMARY            Compute simple statistics for a 1D array.
+$PURPOSE
+    This routine will find the minimum, maximum, mean, rms, sum and
+    sum-of-squares of a single trace (element versus a dimension).
+    Blanked values are excluded.
+$PARAMETER          data :
+    A pointer to the data. Misaligned data will cause bus errors on some
+    platforms.
+$PARAMETER          num_values :
+    The number of values to process.
+$PARAMETER          offsets :
+    The address offsets for data along the dimension.
+$PARAMETER          elem_type :
+    The type of the element.
+$PARAMETER          conv_type :
+    The type of conversion to use for complex numbers.
+$PARAMETER          min :
+    The minimum value will be written here.
+$PARAMETER          max :
+    The maximum value will be written here.
+$PARAMETER          mean :
+    The mean value will be written here.
+$PARAMETER          stddev :
+    The standard deviation will be written here.
+$PARAMETER          sum :
+    The total of all values will be written here.
+$PARAMETER          sumsq :
+    The total of the squares of all values will be written here.
+$PARAMETER          npoints :
+    The number of values used to compute statistics will be written
+    here. This may differ from num_values if there are blanked pixels.
+$NOTE
+    The minimum and maximum value must be initialised to a very large
+    positive number and a very large negative number, respectively, outside of
+    the routine. In other words, the routine does not initialise these values
+    prior to testing for the minimum and maximum.
+$MT-LEVEL         Safe.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$EXPERIMENTAL_FUNC  ds_find_2D_stats
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (CONST char *data,
+		       unsigned int length1, uaddr *offsets1,
+		       unsigned int length2, uaddr *offsets2,
+		       unsigned int elem_type, unsigned int conv_type,
+		       double *min, double *max, double *mean,
+		       double *stddev, double *sum, unsigned long *npoints)
+$SUMMARY            Compute simple statistics for a 2D array.
+$PURPOSE
+    This routine will find the minimum, maximum, mean, rms and sum of
+    a single plane (element versus two dimensions).
+$PARAMETER          data :
+    A pointer to the data.
+$PARAMETER          length1 :
+    The number of values to process along one of the dimensions. For
+    efficiency this should be the more significant dimension.
+$PARAMETER          offsets1 :
+    The address offsets for data along the corresponding dimension.
+$PARAMETER          length2 :
+    The number of values to process along the other of the dimensions
+$PARAMETER          offsets2 :
+    The address offsets for data along the corresponding dimension.
+$PARAMETER          elem_type :
+    The type of the element.
+$PARAMETER          conv_type :
+    The type of conversion to use for complex numbers.
+$PARAMETER          min :
+    The minimum value will be written here.
+$PARAMETER          max :
+    The maximum value will be written here.
+$PARAMETER          mean :
+    The mean value will be written here.
+$PARAMETER          stddev :
+    The standard deviation will be written here.
+$PARAMETER          sum :
+    The total of all values will be written here.
+$PARAMETER          npoints :
+    The number of values used to compute statistics will be written
+    here. This will differ from num_values if there are blanked pixels.
+$NOTE
+    The minimum and maximum value must be initialised to a very large
+    positive number and a very large negative number, respectively, outside of
+    the routine. In other words, the routine does not initialise these values
+    prior to testing for the minimum and maximum.
+$MT-LEVEL         Safe.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION           ds_put_unique_named_value
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (packet_desc *pack_desc, char **packet,
 				CONST char *name, unsigned int type,
 				double value[2], flag update)
-$SUMMARY          Add a unique named value to a Karma general data structure.
+$SUMMARY            Add a unique named value to a Karma general data structure.
 $PURPOSE
     Add a unique named value to a Karma general data structure.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The packet descriptor to add the name to. This descriptor will
     be modified.
-$PARAMETER        packet :
+$PARAMETER          packet :
     The pointer to the unique packet. Note that the existing packet
     data is copied to a new packet, and a pointer to this packet is written
     back here.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the element.
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the data which is to be written.
-$PARAMETER        value :
+$PARAMETER          value :
     The value of the data.
-$PARAMETER        update :
+$PARAMETER          update :
     If TRUE, then the routine will allow an existing named value to be
     updated, otherwise the routine will fail if an update (rather than a
     create) is attempted. The <<type>> parameter is ignored for  updates (i.e.
@@ -705,27 +839,27 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_put_unique_named_string
-$RETURN_TYPE      flag
+$FUNCTION           ds_put_unique_named_string
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (packet_desc *pack_desc, char **packet,
 				 CONST char *name, CONST char *string,
 				 flag update)
-$SUMMARY          Add a unique named string to a Karma general data structure.
+$SUMMARY            Add a unique named string to a Karma general data structure.
 $PURPOSE
     Add a unique named string to a Karma general data structure.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The packet descriptor to add the name to. This descriptor will
     be modified.
-$PARAMETER        packet :
+$PARAMETER          packet :
     The pointer to the unique packet. Note that the existing packet
     data is copied to a new packet, and a pointer to this packet is written
     back here.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the element.
-$PARAMETER        string :
+$PARAMETER          string :
     The string value.
-$PARAMETER        update :
+$PARAMETER          update :
     If TRUE, then the routine will allow an existing named string to
     be updated, otherwise the routine will fail if an update (rather than a
     create) is attempted.
@@ -733,57 +867,113 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_get_unique_named_value
-$RETURN_TYPE      flag
+$FUNCTION           ds_get_unique_named_value
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (CONST packet_desc *pack_desc,
 				CONST char *packet,
 				CONST char *name, unsigned int *type,
 				double value[2])
-$SUMMARY          Get a unique named value from a Karma general data structure.
+$SUMMARY            Get a unique named value from a Karma general data structure.
 $PURPOSE
     Get a unique named value from a Karma general data structure.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     A pointer to the packet descriptor.
-$PARAMETER        packet :
+$PARAMETER          packet :
     A pointer to the packet containing the named value.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the value.
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the element found will be written here. If this is NULL,
-    nothing is written here.
-$PARAMETER        value :
+    nothing is written here. On error, the type of the element is written here.
+    The value NONE is written here if the element does not exist.
+$PARAMETER          value :
     The value of the element data will be written here.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_get_unique_named_string
-$RETURN_TYPE      char *
+$FUNCTION           ds_get_unique_named_string
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (CONST packet_desc *pack_desc,
 				  CONST char *packet, CONST char *name)
-$SUMMARY          Get a unique named string from a Karma general data structure.
+$SUMMARY            Get a unique named string from a Karma general data structure.
 $PURPOSE
     Get a unique named string from a Karma general data structure.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The packet descriptor.
-$PARAMETER        packet :
+$PARAMETER          packet :
     The packet containing the named string.
-$PARAMETER        name :
+$PARAMETER          name :
     The element name.
 $RETURNS
     A pointer to a dynamically allocated copy of the string on
     success, else NULL.
 $END
 
-$FUNCTION         ds_cmap_alloc_colourmap
-$RETURN_TYPE      unsigned short *
+$FUNCTION           ds_copy_unique_named_element
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (packet_desc *out_desc, char **out_packet,
+				   CONST packet_desc *in_desc,
+				   CONST char *in_packet, CONST char *name,
+				   flag fail_if_not_found,
+				   flag fail_on_duplicate, flag replace)
+$SUMMARY            Copy a unique named element from one packet to another.
+$PURPOSE
+    Copy a unique named element from one packet to another.
+$PARAMETER          out_desc :
+    The packet descriptor to add the name to. This descriptor will
+    be modified.
+$PARAMETER          out_packet :
+    The pointer to the unique packet. Note that the existing
+    packet data is copied to a new packet, and a pointer to this packet is
+    written back here.
+$PARAMETER          in_desc :
+    The input packet descriptor.
+$PARAMETER          in_packet :
+    The input packet.
+$PARAMETER          name :
+    The name of the element to copy.
+$PARAMETER          fail_if_not_found :
+    If TRUE, the routine will fail if the element does not
+    exist in the input packet.
+$PARAMETER          fail_on_duplicate :
+    If TRUE, the routine will fail if the element already
+    exists in the output packet.
+$PARAMETER          replace :
+    If TRUE and the element already exists in the output packet, it
+    is replaced.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION           ds_get_fits_axis
+$RETURN_TYPE        unsigned int
+$PARAMETER_LIST
+    (CONST packet_desc *top_pack_desc,
+			       CONST char *top_packet, CONST char *dim_name)
+$SUMMARY            Get the FITS axis number of a dimension.
+$PURPOSE
+    Get the FITS axis number of a dimension.
+$PARAMETER          top_pack_desc :
+    The top-level packet descriptor.
+$PARAMETER          top_packet :
+    The top-level packet.
+$PARAMETER          dim_name :
+    The name of the dimension.
+$RETURNS
+    The FITS axis number on success, else 0.
+$END
+
+$FUNCTION           ds_cmap_alloc_colourmap
+$RETURN_TYPE        unsigned short *
 $PARAMETER_LIST
     (unsigned int size,
 					 multi_array **multi_desc,
 					 packet_desc **pack_desc,char **packet)
-$SUMMARY          Allocate a Karma data structure to hold a colourmap.
+$SUMMARY            Allocate a Karma data structure to hold a colourmap.
 $PURPOSE
     This routine will allocate a colourmap which comforms to the
     Karma general data structure format. Note that this does NOT allocate a
@@ -796,18 +986,18 @@ $PURPOSE
     with the names "Red Intensity", "Green Intensity" and "Blue Intensity", in
     that order. For compatibility with the X Window system, it is recommended
     that these values lie in the range 0 to 65535.
-$PARAMETER        size :
+$PARAMETER          size :
     The size (number of colours) of the colourmap to allocate.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The pointer to the multi array header which is allocated will
     be written here. If this is NULL, then no multi array header is allocated
     and nothing is written here.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The pointer to the top level packet descriptor of the general
     data structure which contains the colourmap will be written here. If this
     is NULL, nothing is written here. Note, however, that the top level packet
     descriptor is nevertheless allocated.
-$PARAMETER        packet :
+$PARAMETER          packet :
     The pointer to the top level packet of the general data structure
     which contains the colourmap will be written here. If this is NULL, nothing
     is written here. Note, however, that the top level packet is nevertheless
@@ -816,8 +1006,8 @@ $RETURNS
     A pointer to the allocated colourmap on success, else NULL.
 $END
 
-$FUNCTION         ds_cmap_find_colourmap
-$RETURN_TYPE      unsigned short *
+$FUNCTION           ds_cmap_find_colourmap
+$RETURN_TYPE        unsigned short *
 $PARAMETER_LIST
     (packet_desc *top_pack_desc,
 					char *top_packet, unsigned int *size,
@@ -825,27 +1015,27 @@ $PARAMETER_LIST
 					CONST char *restr_names[],
 					double *restr_values,
 					unsigned int num_restr)
-$SUMMARY          Search a Karma data structure for an instance of a colourmap.
+$SUMMARY            Search a Karma data structure for an instance of a colourmap.
 $PURPOSE
     Search a Karma data structure for an instance of a colourmap.
-$PARAMETER        top_pack_desc :
+$PARAMETER          top_pack_desc :
     The top level packet descriptor.
-$PARAMETER        top_packet :
+$PARAMETER          top_packet :
     The top level packet data.
-$PARAMETER        size :
+$PARAMETER          size :
     The size of the colourmap (number of colours) in the colourmap will
     be here.
-$PARAMETER        reordering_done :
+$PARAMETER          reordering_done :
     The routine is tolerant of incorrect ordering of the
     intensity elements. If they are ordered incorrectly, the data will be
     re-ordered, and the value TRUE will be written here. If the data is not
     re-ordered, the value FALSE is written here. If this is NULL, then nothing
     is written here.
-$PARAMETER        restr_names :
+$PARAMETER          restr_names :
     The array of pointers to restrictions names.
-$PARAMETER        restr_values :
+$PARAMETER          restr_values :
     The array of restriction values.
-$PARAMETER        num_restr :
+$PARAMETER          num_restr :
     The number of restriction values.
 $NOTE
     NULL pointers may be passed for <<restr_names>> and <<restr_values>>
@@ -858,8 +1048,8 @@ $RETURNS
     first a red intensity, then a green and then a blue.
 $END
 
-$FUNCTION         ds_cmap_get_all_colourmaps
-$RETURN_TYPE      unsigned int *
+$FUNCTION           ds_cmap_get_all_colourmaps
+$RETURN_TYPE        unsigned int *
 $PARAMETER_LIST
     (multi_array *multi_desc,
 					  unsigned int *num_found,
@@ -867,25 +1057,25 @@ $PARAMETER_LIST
 					  CONST char *restr_names[],
 					  double *restr_values,
 					  unsigned int num_restr)
-$SUMMARY          Search an array of Karma data structures for colourmaps.
+$SUMMARY            Search an array of Karma data structures for colourmaps.
 $PURPOSE
     This routine will search an array of Karma general data
     structures for instances of a colourmap.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The multi_array descriptor.
-$PARAMETER        num_found :
+$PARAMETER          num_found :
     The number of general data structures which contain a
     colourmap will be written here.
-$PARAMETER        reordering_done :
+$PARAMETER          reordering_done :
     The routine is tolerant of incorrect ordering of the
     intensity elements. If they are ordered incorrectly, the data will be
     re-ordered, and the value TRUE will be written here, else the value FALSE
     will be written here. If this is NULL, nothing is written here.
-$PARAMETER        restr_names :
+$PARAMETER          restr_names :
     The array of pointers to restrictions names.
-$PARAMETER        restr_values :
+$PARAMETER          restr_values :
     The array of restriction values.
-$PARAMETER        num_restr :
+$PARAMETER          num_restr :
     The number of restriction values.
 $NOTE
     NULL pointers may be passed for <<restr_names>> and <<restr_values>>
@@ -898,19 +1088,71 @@ $RETURNS
     freed when no longer needed.
 $END
 
-$FUNCTION         ds_copy_packet
-$RETURN_TYPE      flag
+$EXPERIMENTAL_FUNC  ds_contour
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
-    (packet_desc *pack_desc, char *dest_packet,
-		     char *source_packet)
-$SUMMARY          Copy a packet.
+    (CONST char *image, unsigned int elem_type,
+			 CONST dim_desc *hdim, CONST uaddr *hoffsets,
+			 CONST dim_desc *vdim, CONST uaddr *voffsets,
+			 unsigned int num_contours,
+			 CONST double *contour_levels,
+			 uaddr *buf_size,
+			 double **x0_arr, double **y0_arr,
+			 double **x1_arr, double **y1_arr)
+$SUMMARY            Extract contours from a 2-dimensional array.
+$PURPOSE
+    This routine will extract contours from a 2-dimensional
+    Intelligent Array, producing a list of line segments that approximate the
+    countours. The co-ordinates of the line segments are in linear world
+    co-ordinates.
+$PARAMETER          image :
+    The start of the image slice data.
+$PARAMETER          elem_type :
+    The type of the data.
+$PARAMETER          hdim :
+    The horizontal dimension descriptor.
+$PARAMETER          hoffsets :
+    The address offsets for data along the horizontal dimension.
+$PARAMETER          vdim :
+    The vertical dimension descriptor.
+$PARAMETER          voffsets :
+    The address offsets for data along the vertical dimension.
+$PARAMETER          num_contours :
+    The number of contour levels.
+$PARAMETER          contour_levels :
+    The array of contour levels.
+$PARAMETER          buf_size :
+    A pointer to the size of the co-ordinate arrays. This is
+    modified.
+$PARAMETER          x0_arr :
+    A pointer to a co-ordinate array pointer. The co-ordinate array
+    may be internally reallocated, hence the array pointer may be modified.
+$PARAMETER          y0_arr :
+    A pointer to a co-ordinate array pointer. The co-ordinate array
+    may be internally reallocated, hence the array pointer may be modified.
+$PARAMETER          x1_arr :
+    A pointer to a co-ordinate array pointer. The co-ordinate array
+    may be internally reallocated, hence the array pointer may be modified.
+$PARAMETER          y1_arr :
+    A pointer to a co-ordinate array pointer. The co-ordinate array
+    may be internally reallocated, hence the array pointer may be modified.
+$RETURNS
+    The number of line segments extracted.
+$END
+
+$FUNCTION           ds_copy_packet
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (CONST packet_desc *pack_desc, char *dest_packet,
+		     CONST char *source_packet)
+$SUMMARY            Copy a packet.
 $PURPOSE
     Copy a packet.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The packet descriptor.
-$PARAMETER        dest_packet :
+$PARAMETER          dest_packet :
     The destination packet data will be written here.
-$PARAMETER        source_packet :
+$PARAMETER          source_packet :
     The source packet data.
 $NOTE
     The routine will copy only the data and pointers to arrays and
@@ -920,11 +1162,11 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_copy_desc_until
-$RETURN_TYPE      packet_desc *
+$FUNCTION           ds_copy_desc_until
+$RETURN_TYPE        packet_desc *
 $PARAMETER_LIST
-    (packet_desc *inp_desc, CONST char *name)
-$SUMMARY          Recursively copy a packet descriptor.
+    (CONST packet_desc *inp_desc, CONST char *name)
+$SUMMARY            Recursively copy a packet descriptor.
 $PURPOSE
     This routine will recursively copy a packet descriptor until
     an element with a specified name is found, at which time the copying
@@ -936,53 +1178,54 @@ $PURPOSE
     If an array or linked list pointer is one of the elements, and it is not
     successfully copied, the routine will set the output element type to NONE
     and the descriptor pointer for that element will be NULL.
-$PARAMETER        inp_desc :
+$PARAMETER          inp_desc :
     The input packet descriptor.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the element at which the copying process should stop.
     If this is NULL, then the entire data structure descriptor is copied.
 $RETURNS
     A pointer to the new packet descriptor on success, else NULL.
 $END
 
-$FUNCTION         ds_copy_array_desc_until
-$RETURN_TYPE      array_desc *
+$FUNCTION           ds_copy_array_desc_until
+$RETURN_TYPE        array_desc *
 $PARAMETER_LIST
-    (array_desc *inp_desc, CONST char *name)
-$SUMMARY          Recursively copy an array descriptor.
+    (CONST array_desc *inp_desc,
+				      CONST char *name)
+$SUMMARY            Recursively copy an array descriptor.
 $PURPOSE
     This routine will make a copy of an array descriptor and all
     sub-descriptors until a specified name is encountered. All tiling
     information is copied, but address offset arrays are NOT copied.
-$PARAMETER        inp_desc :
+$PARAMETER          inp_desc :
     The input array descriptor.
-$PARAMETER        name :
+$PARAMETER          name :
     The name specifying where the copying should stop. If this is NULL,
     the entire data structure descriptor is copied.
 $RETURNS
     A pointer to the array descriptor created on success, else NULL.
 $END
 
-$FUNCTION         ds_copy_dim_desc
-$RETURN_TYPE      dim_desc *
+$FUNCTION           ds_copy_dim_desc
+$RETURN_TYPE        dim_desc *
 $PARAMETER_LIST
-    (dim_desc *inp_desc)
-$SUMMARY          Copy a dimension descriptor.
+    (CONST dim_desc *inp_desc)
+$SUMMARY            Copy a dimension descriptor.
 $PURPOSE
     Copy a dimension descriptor.
-$PARAMETER        inp_desc :
+$PARAMETER          inp_desc :
     The input 
 $RETURNS
     A pointer to a freshly allocated dimension descriptor on success,
     else NULL.
 $END
 
-$FUNCTION         ds_copy_data
-$RETURN_TYPE      flag
+$FUNCTION           ds_copy_data
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (packet_desc *inp_desc, char *inp_data,
+    (CONST packet_desc *inp_desc, CONST char *inp_data,
 		   packet_desc *out_desc, char *out_data)
-$SUMMARY          Copy data between Karma data structures.
+$SUMMARY            Copy data between Karma data structures.
 $PURPOSE
     This routine will copy data from one data structure to another,
     provided the two data structures have the same format. If there are any
@@ -996,48 +1239,48 @@ $PURPOSE
     data types. For information on array and linked list copying, see
     The routine recursively copies data in arrays and linked lists.
     <-ds_copy_array-> and <-ds_copy_list->.
-$PARAMETER        inp_desc :
+$PARAMETER          inp_desc :
     The input data structure descriptor.
-$PARAMETER        inp_data :
+$PARAMETER          inp_data :
     The input data.
-$PARAMETER        out_desc :
+$PARAMETER          out_desc :
     The output data structure descriptor.
-$PARAMETER        out_data :
+$PARAMETER          out_data :
     The output data memory allocation.
 $RETURNS
     TRUE if the two packet descriptors are identical, else FALSE.
 $END
 
-$FUNCTION         ds_copy_array
-$RETURN_TYPE      flag
+$FUNCTION           ds_copy_array
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (array_desc *inp_desc, char *inp_data,
+    (CONST array_desc *inp_desc, CONST char *inp_data,
 		    array_desc *out_desc, char *out_data)
-$SUMMARY          Recursively copy array data.
+$SUMMARY            Recursively copy array data.
 $PURPOSE
     This routine will copy data from one array to another. The two
     arrays must be the same, else the copying process will stop.
     The routine recursively copies data in the array packets.
     For information on the copying rules when the two list descriptors differ,
     see the routine <-ds_copy_data->.
-$PARAMETER        inp_desc :
+$PARAMETER          inp_desc :
     The input array descriptor.
-$PARAMETER        inp_data :
+$PARAMETER          inp_data :
     The input array data.
-$PARAMETER        out_desc :
+$PARAMETER          out_desc :
     The output array descriptor.
-$PARAMETER        out_data :
+$PARAMETER          out_data :
     The output data memory allocation.
 $RETURNS
     TRUE if the two array descriptors are identical, else FALSE.
 $END
 
-$FUNCTION         ds_copy_list
-$RETURN_TYPE      flag
+$FUNCTION           ds_copy_list
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (packet_desc *inp_desc, list_header *inp_head,
+    (CONST packet_desc *inp_desc, CONST list_header *inp_head,
 		   packet_desc *out_desc, list_header *out_head)
-$SUMMARY          Recursively copy linked lists.
+$SUMMARY            Recursively copy linked lists.
 $PURPOSE
     This routine will copy a linked list to another.
     The routine will recursively copy sub arrays and linked lists.
@@ -1045,38 +1288,38 @@ $PURPOSE
     will be contiguous in memory.
     For information on the copying rules when the two list descriptors differ,
     see the routine <-ds_copy_data->.
-$PARAMETER        inp_desc :
+$PARAMETER          inp_desc :
     The input data structure descriptor.
-$PARAMETER        inp_head :
+$PARAMETER          inp_head :
     The input linked list header.
-$PARAMETER        out_desc :
+$PARAMETER          out_desc :
     The output data structure descriptor.
-$PARAMETER        out_head :
+$PARAMETER          out_head :
     The output linked list header.
 $RETURNS
     TRUE if the two packet descriptors are identical, else FALSE.
 $END
 
-$FUNCTION         ds_select_arrays
-$RETURN_TYPE      multi_array *
+$FUNCTION           ds_select_arrays
+$RETURN_TYPE        multi_array *
 $PARAMETER_LIST
     (char **array_list, unsigned int num_in_list,
 			       multi_array *multi_desc, flag save_unproc,
 			       unsigned int **index_list)
-$SUMMARY          Select data structures in a multi_array descriptor.
+$SUMMARY            Select data structures in a multi_array descriptor.
 $PURPOSE
     This routine will create a multi array descriptor which contains
     a selected number of array names.
-$PARAMETER        array_list :
+$PARAMETER          array_list :
     The array of array names that are to be copied.
-$PARAMETER        num_in_list :
+$PARAMETER          num_in_list :
     The number of array names in <<array_list>>. If this is 0,
     all array names are copied.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The input data structure.
-$PARAMETER        save_unproc :
+$PARAMETER          save_unproc :
     If TRUE, all array names are copied.
-$PARAMETER        index_list :
+$PARAMETER          index_list :
     An array of unsigned ints will be allocated by the routine and
     the pointer written here. The length of this array is equal to the number
     of arrays in the input multi_array descriptor. This array contains the
@@ -1089,11 +1332,11 @@ $RETURNS
     else NULL.
 $END
 
-$FUNCTION         ds_dealloc_multi
-$RETURN_TYPE      void
+$FUNCTION           ds_dealloc_multi
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (multi_array *multi_desc)
-$SUMMARY          Deallocate a multi_array data structure.
+$SUMMARY            Deallocate a multi_array data structure.
 $PURPOSE
     This routine will deallocate all memory associated with a
     multi_array header. This includes all the descriptors and data arrays and
@@ -1101,91 +1344,91 @@ $PURPOSE
     structure when it's attachment count is zero, else it decrements the
     attachment count and returns. The routine is quite robust, deallocating in
     the correct order and cleanly bypassing missing sections in the hierarchy.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The descriptor.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ds_dealloc_packet
-$RETURN_TYPE      void
+$FUNCTION           ds_dealloc_packet
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (packet_desc *pack_desc, char *data)
-$SUMMARY          Recursively deallocate a packet.
+$SUMMARY            Recursively deallocate a packet.
 $PURPOSE
     This routine will deallocate all memory associated with a data
     packet. This includes all the descriptors and data arrays and lists
     associated with the packet.
     The routine is quite robust, deallocating in the correct order and cleanly
     bypassing missing sections in the hierarchy.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The descriptor for the packet.
-$PARAMETER        data :
+$PARAMETER          data :
     The data for the packet.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ds_dealloc_data
-$RETURN_TYPE      void
+$FUNCTION           ds_dealloc_data
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (packet_desc *pack_desc, char *packet)
-$SUMMARY          Recursively deallocate packet data.
+$SUMMARY            Recursively deallocate packet data.
 $PURPOSE
     This routine will deallocate all memory associated with the
     storage of data in a packet. Any sub-arrays or linked lists are recursively
     deallocated.
     The routine is quite robust, deallocating in the correct order and cleanly
     bypassing missing sections in the hierarchy.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The descriptor for the packet.
-$PARAMETER        data :
+$PARAMETER          data :
     The data for the packet.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ds_dealloc_packet_subdata
-$RETURN_TYPE      void
+$FUNCTION           ds_dealloc_packet_subdata
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (CONST packet_desc *pack_desc, char *packet)
-$SUMMARY          Recursively deallocate packet data.
+$SUMMARY            Recursively deallocate packet data.
 $PURPOSE
     This routine will recursively deallocate all memory associated
     with the storage of sub-arrays or linked lists. The packet itself is not
     deallocated.
     The routine is quite robust, deallocating in the correct order and cleanly
     bypassing missing sections in the hierarchy.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The descriptor for the packet.
-$PARAMETER        data :
+$PARAMETER          data :
     The data for the packet.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ds_dealloc_array_desc
-$RETURN_TYPE      void
+$FUNCTION           ds_dealloc_array_desc
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (array_desc *arr_desc)
-$SUMMARY          Recursively deallocate an array.
+$SUMMARY            Recursively deallocate an array.
 $PURPOSE
     This routine will deallocate all descriptor information
     associated with a tiled array. This includes all descriptors for sub-arrays
     and linked lists.
     The routine is quite robust, deallocating in the correct order and cleanly
     bypassing missing sections in the hierarchy.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ds_dealloc_list
-$RETURN_TYPE      void
+$FUNCTION           ds_dealloc_list
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (packet_desc *list_desc, list_header *list_head)
-$SUMMARY          Recursively deallocate a linked list.
+$SUMMARY            Recursively deallocate a linked list.
 $PURPOSE
     This routine will deallocate all memory associated with the
     storage of data in a linked list.
@@ -1193,20 +1436,20 @@ $PURPOSE
     The routine is quite robust, deallocating in the correct order and cleanly
     bypassing missing sections in the hierarchy.
     The list header is also deallocated.
-$PARAMETER        list_desc :
+$PARAMETER          list_desc :
     The descriptor for the list.
-$PARAMETER        list_head :
+$PARAMETER          list_head :
     The linked list header.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ds_dealloc_list_entries
-$RETURN_TYPE      void
+$FUNCTION           ds_dealloc_list_entries
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (CONST packet_desc *list_desc,
 			      list_header *list_head)
-$SUMMARY          Recursively deallocate list entries.
+$SUMMARY            Recursively deallocate list entries.
 $PURPOSE
     This routine will deallocate all memory associated with the
     storage of data in a linked list.
@@ -1214,51 +1457,51 @@ $PURPOSE
     The routine is quite robust, deallocating in the correct order and cleanly
     bypassing missing sections in the hierarchy.
     The list header is NOT deallocated.
-$PARAMETER        list_desc :
+$PARAMETER          list_desc :
     The descriptor for the list.
-$PARAMETER        list_head :
+$PARAMETER          list_head :
     The linked list header.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ds_dealloc2_list
-$RETURN_TYPE      void
+$FUNCTION           ds_dealloc2_list
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (list_header *list_head)
-$SUMMARY          Deallocate linked list entries.
+$SUMMARY            Deallocate linked list entries.
 $PURPOSE
     This routine will deallocate the data and the list entries in a
     linked list. This routine does not recursively deallocate sub-arrays or
     linked lists: it will only remove the list. The list header is NOT
     deallocated.
-$PARAMETER        list_head :
+$PARAMETER          list_head :
     The list header.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ds_dealloc_array
-$RETURN_TYPE      void
+$FUNCTION           ds_dealloc_array
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (array_desc *arr_desc, char *arr_element)
-$SUMMARY          Recursively deallocate array.
+$SUMMARY            Recursively deallocate array.
 $PURPOSE
     This routine will deallocate all memory associated with the
     storage of data for an array.
     Any sub-arrays or linked lists are recursively deallocated.
     The routine is quite robust, deallocating in the correct order and cleanly
     bypassing missing sections in the hierarchy.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
-$PARAMETER        arr_element :
+$PARAMETER          arr_element :
     The element containing the array pointer.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ds_draw_ellipse
-$RETURN_TYPE      flag
+$FUNCTION           ds_draw_ellipse
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *array, unsigned int elem_type,
 		      dim_desc *abs_dim_desc, unsigned int abs_stride,
@@ -1266,44 +1509,44 @@ $PARAMETER_LIST
 		      double centre_abs, double centre_ord,
 		      double radius_abs, double radius_ord,
 		      double value[2])
-$SUMMARY          Draw an ellipse into a 2 dimensional Karma array.
+$SUMMARY            Draw an ellipse into a 2 dimensional Karma array.
 $PURPOSE
     Draw an ellipse into a 2 dimensional Karma array.
-$PARAMETER        array :
+$PARAMETER          array :
     The start of the array (plane) data.
-$PARAMETER        elem_type :
+$PARAMETER          elem_type :
     The type of the element to draw.
-$PARAMETER        abs_dim_desc :
+$PARAMETER          abs_dim_desc :
     The abscissa dimension descriptor.
-$PARAMETER        abs_stride :
+$PARAMETER          abs_stride :
     The stride of abscissa co-ordinates in memory (in bytes).
-$PARAMETER        ord_dim_desc :
+$PARAMETER          ord_dim_desc :
     The ordinate dimension descriptor.
-$PARAMETER        ord_stride :
+$PARAMETER          ord_stride :
     The stride of ordinate co-ordinates in memory (in bytes).
-$PARAMETER        centre_abs :
+$PARAMETER          centre_abs :
     The centre of the ellipse in abscissa real-world co-ordinates.
-$PARAMETER        centre_ord :
+$PARAMETER          centre_ord :
     The centre of the ellipse in ordinate real-world co-ordinates.
-$PARAMETER        radius_abs :
+$PARAMETER          radius_abs :
     The abscissa radius. This must be greater than 0.0.
-$PARAMETER        radius_ord :
+$PARAMETER          radius_ord :
     The ordinate radius. This must be greater than 0.0.
-$PARAMETER        value :
+$PARAMETER          value :
     The value to write the ellipse into the array.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_draw_polygon
-$RETURN_TYPE      flag
+$FUNCTION           ds_draw_polygon
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *array, unsigned int elem_type,
 		      dim_desc *abs_dim_desc, unsigned int abs_stride,
 		      dim_desc *ord_dim_desc, unsigned int ord_stride,
 		      edit_coord *coords, unsigned int num_points,
 		      double value[2])
-$SUMMARY          Draw a polygon into a 2 dimensional array.
+$SUMMARY            Draw a polygon into a 2 dimensional array.
 $PURPOSE
     This routine will draw a concave non-simple polygon into a 2
     dimensional Karma array. The polygon can be clockwise or anti-clockwise.
@@ -1311,47 +1554,47 @@ $PURPOSE
     an emanating ray intersects the polygon an odd number of times.
     The algorithm is modified from the  Concave Polygon Scan Conversion
     by Paul Heckbert from "Graphics Gems", Academic Press, 1990.
-$PARAMETER        array :
+$PARAMETER          array :
     The start of the array (plane) data.
-$PARAMETER        elem_type :
+$PARAMETER          elem_type :
     The type of the element to draw.
-$PARAMETER        abs_dim_desc :
+$PARAMETER          abs_dim_desc :
     The abscissa dimension descriptor.
-$PARAMETER        abs_stride :
+$PARAMETER          abs_stride :
     The stride of abscissa co-ordinates in memory (in bytes).
-$PARAMETER        ord_dim_desc :
+$PARAMETER          ord_dim_desc :
     The ordinate dimension descriptor.
-$PARAMETER        ord_stride :
+$PARAMETER          ord_stride :
     The stride of ordinate co-ordinates in memory (in bytes).
-$PARAMETER        coords :
+$PARAMETER          coords :
     The co-ordinate array for the vertices. The co-ordinates must be
     stored in clockwise rotation order (any point to start).
-$PARAMETER        num_points :
+$PARAMETER          num_points :
     The number of vertices.
-$PARAMETER        value :
+$PARAMETER          value :
     The value to write the polygon into the array.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_convert_atomic
-$RETURN_TYPE      double
+$FUNCTION           ds_convert_atomic
+$RETURN_TYPE        double
 $PARAMETER_LIST
     (CONST char *datum, unsigned int datum_type,
 			  double *real_out, double *imag_out)
-$SUMMARY          Convert an atomic datum to a double precision value.
+$SUMMARY            Convert an atomic datum to a double precision value.
 $PURPOSE
     Convert an atomic datum to a double precision value.
-$PARAMETER        datum :
+$PARAMETER          datum :
     The datum to be converted.
-$PARAMETER        datum_type :
+$PARAMETER          datum_type :
     The type of the datum. See <-DS_KARMA_DATA_TYPES-> for a list
     of legal values. The following data types are not convertible, and the
     routine will return the value TOOBIG:  NONE, K_ARRAY, LISTP, MULTI_ARRAY.
-$PARAMETER        real_out :
+$PARAMETER          real_out :
     The real component of the data is written here. If this is NULL,
     nothing is written here. This must lie on a <<double>> boundary.
-$PARAMETER        imag_out :
+$PARAMETER          imag_out :
     The imaginary component of the data is written here. If this is
     NULL, nothing is written here. This must lie on a <<double>> boundary. For
     a real value, 0.0 is written.
@@ -1360,139 +1603,139 @@ $RETURNS
     else TOOBIG.
 $END
 
-$FUNCTION         ds_get_coordinate
-$RETURN_TYPE      double
+$FUNCTION           ds_get_coordinate
+$RETURN_TYPE        double
 $PARAMETER_LIST
-    (dim_desc *dimension, unsigned long coord_num)
-$SUMMARY          Get a co-ordinate along a dimension.
+    (CONST dim_desc *dimension, double coord_num)
+$SUMMARY            Get a co-ordinate along a dimension.
 $PURPOSE
     Get a co-ordinate along a dimension.
-$PARAMETER        dimension :
+$PARAMETER          dimension :
     The dimension descriptor.
-$PARAMETER        coord_num :
+$PARAMETER          coord_num :
     The co-ordinate index.
 $RETURNS
     The co-ordinate on success, else TOOBIG.
 $END
 
-$FUNCTION         ds_get_element_offset
-$RETURN_TYPE      unsigned int
+$FUNCTION           ds_get_element_offset
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (CONST packet_desc *pack_desc,
 				    unsigned int elem_num)
-$SUMMARY          Calculate the offset of the start of a data element in a packet.
+$SUMMARY            Calculate the offset of the start of a data element in a packet.
 $PURPOSE
     Calculate the offset of the start of a data element in a packet.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The descriptor for the data packet.
-$PARAMETER        elem_num :
+$PARAMETER          elem_num :
     The number of the element.
 $RETURNS
     The byte offset of the element in the packet on success, else the
     length of the packet is returned.
 $END
 
-$FUNCTION         ds_get_packet_size
-$RETURN_TYPE      unsigned int
+$FUNCTION           ds_get_packet_size
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (CONST packet_desc *pack_desc)
-$SUMMARY          Calculate size in bytes of a packet.
+$SUMMARY            Calculate size in bytes of a packet.
 $PURPOSE
     Calculate size in bytes of a packet.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The packet descriptor.
 $RETURNS
     The size in bytes.
 $END
 
-$FUNCTION         ds_get_array_size
-$RETURN_TYPE      unsigned long
+$FUNCTION           ds_get_array_size
+$RETURN_TYPE        unsigned long
 $PARAMETER_LIST
     (CONST array_desc *arr_desc)
-$SUMMARY          Calculate the number of co-ordinate points in an array.
+$SUMMARY            Calculate the number of co-ordinate points in an array.
 $PURPOSE
     Calculate the number of co-ordinate points in an array.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
 $RETURNS
     The size of the array (in co-ordinate points).
 $END
 
-$FUNCTION         ds_packet_all_data
-$RETURN_TYPE      flag
+$FUNCTION           ds_packet_all_data
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (CONST packet_desc *pack_desc)
-$SUMMARY          Test if packet contains only atomic data elements.
+$SUMMARY            Test if packet contains only atomic data elements.
 $PURPOSE
     This routine will determine if all the elements in a packet are
     atomic (i.e. no sub-arrays, linked lists or strings). All element types in
     the packet descriptor must be legal, else the routine will print an error
     message and abort processing.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The packet descriptor.
 $RETURNS
     TRUE if the data elements are all atomic, else FALSE.
 $END
 
-$FUNCTION         ds_element_is_atomic
-$RETURN_TYPE      flag
+$FUNCTION           ds_element_is_atomic
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (unsigned int element_type)
-$SUMMARY          Test if an element is atomic.
+$SUMMARY            Test if an element is atomic.
 $PURPOSE
     This routine will determine if an element is atomic (i.e. not a
     sub-array, linked list or string). The element type must be legal, else the
     routine will print an error message and abort processing.
-$PARAMETER        element_type :
+$PARAMETER          element_type :
     The type of the element.
 $RETURNS
     TRUE if the element is atomic, else FALSE.
 $END
 
-$FUNCTION         ds_element_is_named
-$RETURN_TYPE      flag
+$FUNCTION           ds_element_is_named
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (unsigned int element_type)
-$SUMMARY          Test if an element is a named data type.
+$SUMMARY            Test if an element is a named data type.
 $PURPOSE
     This routine will determine if an element is a named data type
     (i.e. not a sub-array or linked list). The element type must be legal, else
     the routine will print an error message and abort processing.
-$PARAMETER        element_type :
+$PARAMETER          element_type :
     The type of the element.
 $RETURNS
     TRUE if the element is a named type, else FALSE.
 $END
 
-$FUNCTION         ds_element_is_legal
-$RETURN_TYPE      flag
+$FUNCTION           ds_element_is_legal
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (unsigned int element_type)
-$SUMMARY          Test if an element is legal.
+$SUMMARY            Test if an element is legal.
 $PURPOSE
     Test if an element is legal.
-$PARAMETER        element_type :
+$PARAMETER          element_type :
     The type of the element.
 $RETURNS
     TRUE if the element type is legal, else FALSE.
 $END
 
-$FUNCTION         ds_identify_name
-$RETURN_TYPE      unsigned int
+$FUNCTION           ds_identify_name
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
-    (multi_array *multi_desc, CONST char *name,
+    (CONST multi_array *multi_desc, CONST char *name,
 			       char **encls_desc, unsigned int *index)
-$SUMMARY          Search a data structure for a name.
+$SUMMARY            Search a data structure for a name.
 $PURPOSE
     Search a data structure for a name.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The multi_array descriptor.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the item to search for.
-$PARAMETER        encls_desc :
+$PARAMETER          encls_desc :
     A pointer to the enclosing descriptor of the item is written
     here. If this is NULL, nothing is written here.
-$PARAMETER        index :
+$PARAMETER          index :
     The index (general data structure number, dimension number or
     element number) of the item in the enclosing structure will be written
     here. If this is NULL, nothing is written here.
@@ -1501,23 +1744,23 @@ $RETURNS
     <-DS_IDENT_TABLE-> for a list of possible values.
 $END
 
-$FUNCTION         ds_f_array_name
-$RETURN_TYPE      unsigned int
+$FUNCTION           ds_f_array_name
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
-    (multi_array *multi_desc, CONST char *name,
+    (CONST multi_array *multi_desc, CONST char *name,
 			      char **encls_desc, unsigned int *index)
-$SUMMARY          Search a the top level of a data structure for a name.
+$SUMMARY            Search a the top level of a data structure for a name.
 $PURPOSE
     This routine will search a multi array general data structure
     header for an occurrence of an array name.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The multi_array data structure.
-$PARAMETER        name :
+$PARAMETER          name :
     The array name.
-$PARAMETER        encls_desc :
+$PARAMETER          encls_desc :
     If the array name is found, the pointer to the multi array
     header will be written here. If this is NULL, nothing is written here.
-$PARAMETER        index :
+$PARAMETER          index :
     The index number of the general data structure with will be written
     here. If this is NULL, nothing is written here.
 $NOTE
@@ -1527,24 +1770,24 @@ $RETURNS
     <-DS_IDENT_TABLE-> for a list of possible values.
 $END
 
-$FUNCTION         ds_f_name_in_packet
-$RETURN_TYPE      unsigned int
+$FUNCTION           ds_f_name_in_packet
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (CONST packet_desc *pack_desc,
 				  CONST char *name,
 				  char **encls_desc, unsigned int *index)
-$SUMMARY          Recursively search for named item under a packet.
+$SUMMARY            Recursively search for named item under a packet.
 $PURPOSE
     Recursively search for named item under a packet.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The packet descriptor.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the item to search form. If NULL, then the routine will
     not find anything.
-$PARAMETER        encls_desc :
+$PARAMETER          encls_desc :
     The pointer to the enclosing structure of the named item will
     be written here. If this is NULL, nothing is written here.
-$PARAMETER        index :
+$PARAMETER          index :
     The index (dimension number or element number) of the item will be
     written here. If this is NULL, nothing is written here.
 $RETURNS
@@ -1552,26 +1795,26 @@ $RETURNS
     <-DS_IDENT_TABLE-> for a list of possible values.
 $END
 
-$FUNCTION         ds_f_name_in_array
-$RETURN_TYPE      unsigned int
+$FUNCTION           ds_f_name_in_array
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
-    (array_desc *arr_desc, CONST char *name,
+    (CONST array_desc *arr_desc, CONST char *name,
 				 char **encls_desc, unsigned int *index)
-$SUMMARY          Recursively search for named item under an array.
+$SUMMARY            Recursively search for named item under an array.
 $PURPOSE
     This routine will search an array descriptor for occurrences of a
     named item. The routine searches both the dimension names and the packet
     associated with the array. The routine recursively searches the array
     packet descriptor.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the item to search form. If NULL, then the routine will
     not find anything.
-$PARAMETER        encls_desc :
+$PARAMETER          encls_desc :
     The pointer to the enclosing structure of the named item will
     be written here. If this is NULL, nothing is written here.
-$PARAMETER        index :
+$PARAMETER          index :
     The index (dimension number or element number) of the item will be
     written here. If this is NULL, nothing is written here.
 $RETURNS
@@ -1579,17 +1822,17 @@ $RETURNS
     <-DS_IDENT_TABLE-> for a list of possible values.
 $END
 
-$FUNCTION         ds_f_elem_in_packet
-$RETURN_TYPE      unsigned int
+$FUNCTION           ds_f_elem_in_packet
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (CONST packet_desc *pack_desc,
 				  CONST char *name)
-$SUMMARY          Search for a named element in a packet, without recursion.
+$SUMMARY            Search for a named element in a packet, without recursion.
 $PURPOSE
     Search for a named element in a packet, without recursion.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The packet descriptor.
-$PARAMETER        name :
+$PARAMETER          name :
     The element name to search for. If this is NULL, then the routine
     will not find anything.
 $NOTE
@@ -1599,21 +1842,21 @@ $RETURNS
     number of elements in the packet.
 $END
 
-$FUNCTION         ds_find_hole
-$RETURN_TYPE      unsigned int
+$FUNCTION           ds_find_hole
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
-    (packet_desc *inp_desc, packet_desc **out_desc,
+    (CONST packet_desc *inp_desc, packet_desc **out_desc,
 			   unsigned int *elem_num)
-$SUMMARY          Recursively search packet for a hole.
+$SUMMARY            Recursively search packet for a hole.
 $PURPOSE
     This routine will recursively search a packet descriptor for a
     hole (element type NONE or element descriptor pointer NULL).
-$PARAMETER        inp_desc :
+$PARAMETER          inp_desc :
     The packet descriptor to search.
-$PARAMETER        out_desc :
+$PARAMETER          out_desc :
     A pointer to the packet descriptor which contains the hole is
     written here. If this is NULL, nothing is written here.
-$PARAMETER        elem_num :
+$PARAMETER          elem_num :
     The element number in that packet which corresponds to the hole
     is written here. If this is NULL, nothing is written here.
 $RETURNS
@@ -1621,69 +1864,69 @@ $RETURNS
     <-DS_IDENT_TABLE-> for a list of possible values.
 $END
 
-$FUNCTION         ds_compare_packet_desc
-$RETURN_TYPE      flag
+$FUNCTION           ds_compare_packet_desc
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (packet_desc *desc1, packet_desc *desc2,
+    (CONST packet_desc *desc1,CONST packet_desc *desc2,
 			     flag recursive)
-$SUMMARY          Recursively compare two packet descriptors.
+$SUMMARY            Recursively compare two packet descriptors.
 $PURPOSE
     Recursively compare two packet descriptors.
-$PARAMETER        desc1 :
+$PARAMETER          desc1 :
     One of the packet descriptors.
-$PARAMETER        desc2 :
+$PARAMETER          desc2 :
     The other packet descriptor.
-$PARAMETER        recursive :
+$PARAMETER          recursive :
     If TRUE the routine will perform a recursive comparison of
     sub-arrays and linked list descriptors.
 $RETURNS
     TRUE if the two packet descriptors are equal, else FALSE.
 $END
 
-$FUNCTION         ds_compare_array_desc
-$RETURN_TYPE      flag
+$FUNCTION           ds_compare_array_desc
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (array_desc *desc1, array_desc *desc2,
+    (CONST array_desc *desc1, CONST array_desc *desc2,
 			    flag recursive)
-$SUMMARY          Recursively compare two array descriptors.
+$SUMMARY            Recursively compare two array descriptors.
 $PURPOSE
     Recursively compare two array descriptors.
-$PARAMETER        desc1 :
+$PARAMETER          desc1 :
     One of the array descriptors.
-$PARAMETER        desc2 :
+$PARAMETER          desc2 :
     The other array descriptor.
-$PARAMETER        recursive :
+$PARAMETER          recursive :
     If TRUE the routine will perform a recursive comparison of the
     array packet descriptors.
 $RETURNS
     TRUE if the two array descriptors are equal, else FALSE.
 $END
 
-$FUNCTION         ds_compare_dim_desc
-$RETURN_TYPE      flag
+$FUNCTION           ds_compare_dim_desc
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (dim_desc *desc1, dim_desc *desc2)
-$SUMMARY          Compare two dimension descriptors.
+    (CONST dim_desc *desc1, CONST dim_desc *desc2)
+$SUMMARY            Compare two dimension descriptors.
 $PURPOSE
     Compare two dimension descriptors.
-$PARAMETER        desc1 :
+$PARAMETER          desc1 :
     One of the dimension descriptors.
-$PARAMETER        desc2 :
+$PARAMETER          desc2 :
     The other dimension descriptor.
 $RETURNS
     TRUE if the two dimension descriptors are equal, else FALSE.
 $END
 
-$FUNCTION         ds_f_dim_in_array
-$RETURN_TYPE      unsigned int
+$FUNCTION           ds_f_dim_in_array
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
-    (array_desc *arr_desc, CONST char *name)
-$SUMMARY          Find dimension in array.
+    (CONST array_desc *arr_desc, CONST char *name)
+$SUMMARY            Find dimension in array.
 $PURPOSE
     Find dimension in array.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the dimension to find. If this is NULL, then the routine
     will not find anything.
 $NOTE
@@ -1693,36 +1936,36 @@ $RETURNS
     the number of dimensions in the array.
 $END
 
-$FUNCTION         ds_get_array_offset
-$RETURN_TYPE      unsigned long
+$FUNCTION           ds_get_array_offset
+$RETURN_TYPE        unsigned long
 $PARAMETER_LIST
-    (array_desc *arr_desc,
-				   unsigned long *coordinates)
-$SUMMARY          Compute offset of a co-ordinate in an array.
+    (CONST array_desc *arr_desc,
+				   CONST unsigned long *coordinates)
+$SUMMARY            Compute offset of a co-ordinate in an array.
 $PURPOSE
     Compute offset of a co-ordinate in an array.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
-$PARAMETER        coordinates :
+$PARAMETER          coordinates :
     The array of dimension co-ordinates which specifies the
     co-ordinate.
 $RETURNS
     The offset of the co-ordinate in packets.
 $END
 
-$FUNCTION         ds_get_coord_num
-$RETURN_TYPE      unsigned long
+$FUNCTION           ds_get_coord_num
+$RETURN_TYPE        unsigned long
 $PARAMETER_LIST
-    (dim_desc *dimension, double coordinate,
+    (CONST dim_desc *dimension, double coordinate,
 				unsigned int bias)
-$SUMMARY          Get index of a co-ordinate along a dimension.
+$SUMMARY            Get index of a co-ordinate along a dimension.
 $PURPOSE
     Get index of a co-ordinate along a dimension.
-$PARAMETER        dimension :
+$PARAMETER          dimension :
     The dimension descriptor.
-$PARAMETER        coordinate :
+$PARAMETER          coordinate :
     The co-ordinate to find.
-$PARAMETER        bias :
+$PARAMETER          bias :
     This specifies which co-ordinate index to pick when the co-ordinate
     lies between two dimension co-ordinates. See <-DS_SEARCH_BIASES-> for legal
     values.
@@ -1730,21 +1973,21 @@ $RETURNS
     The index number of the co-ordinate found.
 $END
 
-$FUNCTION         ds_get_element
-$RETURN_TYPE      flag
+$FUNCTION           ds_get_element
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (CONST char *datum, unsigned int datum_type,
 		     double value[2], flag *complex)
-$SUMMARY          Convert an atomic datum to a double precision complex value.
+$SUMMARY            Convert an atomic datum to a double precision complex value.
 $PURPOSE
     Convert an atomic datum to a double precision complex value.
-$PARAMETER        datum :
+$PARAMETER          datum :
     A pointer to the datum to be converted.
-$PARAMETER        datum_type :
+$PARAMETER          datum_type :
     The type of the datum.
-$PARAMETER        value :
+$PARAMETER          value :
     The data value will be written here.
-$PARAMETER        complex :
+$PARAMETER          complex :
     If the datum is a complex type, then the value of TRUE is written
     here, else the value FALSE is written here. If this is NULL, nothing is
     written here.
@@ -1752,143 +1995,143 @@ $RETURNS
     TRUE if the data was successfully converted, else FALSE.
 $END
 
-$FUNCTION         ds_get_elements
-$RETURN_TYPE      flag
+$FUNCTION           ds_get_elements
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (CONST char *data, unsigned int data_type,
 		      unsigned int data_stride, double *values, flag *complex,
 		      unsigned int num_values)
-$SUMMARY          Convert atomic data values to double precision complex values.
+$SUMMARY            Convert atomic data values to double precision complex values.
 $PURPOSE
     Convert atomic data values to double precision complex values.
-$PARAMETER        data :
+$PARAMETER          data :
     The data to be converted.
-$PARAMETER        data_type :
+$PARAMETER          data_type :
     The type of the data.
-$PARAMETER        data_stride :
+$PARAMETER          data_stride :
     The stride of data elements in memory (in bytes).
-$PARAMETER        values :
+$PARAMETER          values :
     The data values will be written here. This MUST lie on a
     <<double>> boundary.
-$PARAMETER        complex :
+$PARAMETER          complex :
     TRUE is written here if the data are a complex type, else FALSE
     is written here. If this is NULL, nothing is written here.
-$PARAMETER        num_values :
+$PARAMETER          num_values :
     The number of data values to convert.
 $RETURNS
     TRUE if the data was successfully converted, else FALSE.
 $END
 
-$FUNCTION         ds_get_coordinate_array
-$RETURN_TYPE      double *
+$FUNCTION           ds_get_coordinate_array
+$RETURN_TYPE        double *
 $PARAMETER_LIST
-    (dim_desc *dimension)
-$SUMMARY          Get co-ordinate array for a dimension.
+    (CONST dim_desc *dimension)
+$SUMMARY            Get co-ordinate array for a dimension.
 $PURPOSE
     This routine will get a co-ordinate array for a dimension. If the
     dimension is regularly spaced, then the co-ordinate array is computed, else
     if it is irregularly spaced, it is copied from the dimension descriptor.
-$PARAMETER        dimension :
+$PARAMETER          dimension :
     The dimension descriptor.
 $RETURNS
     A pointer to a co-ordinate array on success, else NULL.
 $END
 
-$FUNCTION         ds_element_is_complex
-$RETURN_TYPE      flag
+$FUNCTION           ds_element_is_complex
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (unsigned int element_type)
-$SUMMARY          Test if the type of an element is complex or not.
+$SUMMARY            Test if the type of an element is complex or not.
 $PURPOSE
     Test if the type of an element is complex or not.
-$PARAMETER        element_type :
+$PARAMETER          element_type :
     The element type. If this is not atomic the routine will
     print an error message and abort processing.
 $RETURNS
     TRUE if the element type is complex, else FALSE.
 $END
 
-$FUNCTION         ds_get_scattered_elements
-$RETURN_TYPE      flag
+$FUNCTION           ds_get_scattered_elements
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (CONST char *data, unsigned int data_type,
 				CONST uaddr *offsets, double *values,
 				flag *complex, unsigned int num_values)
-$SUMMARY          Convert scattered atomic data to double precision complex values.
+$SUMMARY            Convert scattered atomic data to double precision complex values.
 $PURPOSE
     This routine will convert many atomic data to an array of double
     precision complex values. The data values may be scattered randomly (an
     offset array is used to index to the actual data).
-$PARAMETER        data :
+$PARAMETER          data :
     The data to be converted. Misaligned data will cause bus errors on
     some platforms.
-$PARAMETER        data_type :
+$PARAMETER          data_type :
     The type of the data.
-$PARAMETER        offsets :
+$PARAMETER          offsets :
     The offset array (in bytes).
-$PARAMETER        values :
+$PARAMETER          values :
     The data values will be written here. Must be a  double  boundary.
-$PARAMETER        complex :
+$PARAMETER          complex :
     If the data are a complex type, then the value of TRUE is
     written here, else the value FALSE is written here. If this is NULL,
     nothing is written here.
-$PARAMETER        num_values :
+$PARAMETER          num_values :
     The number of data values to convert.
 $MT-LEVEL         Safe.
 $RETURNS
     TRUE if the data was successfully converted, else FALSE.
 $END
 
-$FUNCTION         ds_can_transfer_element_as_block
-$RETURN_TYPE      flag
+$FUNCTION           ds_can_transfer_element_as_block
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (unsigned int type)
-$SUMMARY          Test if an element can be transferred in one block.
+$SUMMARY            Test if an element can be transferred in one block.
 $PURPOSE
     This routine will determine if an element can be transferred as a
     single block of data (i.e. no conversion between host and network format is
     needed).
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the element.
 $RETURNS
     TRUE if the element may be transferred as a single block, else
     FALSE.
 $END
 
-$FUNCTION         ds_can_transfer_packet_as_block
-$RETURN_TYPE      flag
+$FUNCTION           ds_can_transfer_packet_as_block
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (CONST packet_desc *pack_desc)
-$SUMMARY          Test if a packet can be transferred in one block.
+$SUMMARY            Test if a packet can be transferred in one block.
 $PURPOSE
     This routine will determine if a packet can be transferred as a
     single block of data (i.e. no conversion between host and network format is
     needed).
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     A pointer to the packet descriptor.
 $RETURNS
     TRUE if the packet may be transferred as a single block, else
     FALSE.
 $END
 
-$FUNCTION         ds_can_swaptransfer_element
-$RETURN_TYPE      flag
+$FUNCTION           ds_can_swaptransfer_element
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (unsigned int type)
-$SUMMARY          Test if an element can be swapped and transferred in one block.
+$SUMMARY            Test if an element can be swapped and transferred in one block.
 $PURPOSE
     This routine will determine if an element can be transferred as a
     single block of data with swapping (i.e. no extra conversion other than
     byte-swapping between host and network format is needed).
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the element.
 $RETURNS
     TRUE if the element may be byteswapped and transferred in a
     single block, else FALSE.
 $END
 
-$FUNCTION         ds_get_handle_in_packet
-$RETURN_TYPE      unsigned int
+$FUNCTION           ds_get_handle_in_packet
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (packet_desc *pack_desc, char *packet,
 				      CONST char *item_name,
@@ -1898,25 +2141,25 @@ $PARAMETER_LIST
 				      char **parent_desc, char **parent,
 				      unsigned int *parent_type,
 				      unsigned int *index)
-$SUMMARY          Find sub-structure in a general data structure.
+$SUMMARY            Find sub-structure in a general data structure.
 $PURPOSE
     This routine will find a unique occurrence of an object
     (sub-structure) within a specified general data structure.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The general data structure packet descriptor.
-$PARAMETER        packet :
+$PARAMETER          packet :
     The general data structure packet.
-$PARAMETER        item_name :
+$PARAMETER          item_name :
     The name of the object that the handle is desired for.
-$PARAMETER        restr_names :
+$PARAMETER          restr_names :
     The array of pointers to restrictions names.
-$PARAMETER        restr_values :
+$PARAMETER          restr_values :
     The array of restriction values.
-$PARAMETER        num_restr :
+$PARAMETER          num_restr :
     The number of restriction values.
-$PARAMETER        parent_desc :
+$PARAMETER          parent_desc :
     A pointer to the item's parent descriptor is written here.
-$PARAMETER        parent :
+$PARAMETER          parent :
     A pointer to the item's parent is written here.
 $NOTE
     The following rules apply to items:
@@ -1924,10 +2167,10 @@ $NOTE
     If the item is a dimension, the parent is an array.
     If the item is an atomic element in a linked list, the parent is a
     list header.
-$PARAMETER        parent_type :
+$PARAMETER          parent_type :
     The type of the parent is written here. See
     <-DS_HANDLE_TYPES-> for a list of possible values.
-$PARAMETER        index :
+$PARAMETER          index :
     The index number of the item in its parent descriptor is written
     here.
 $RETURNS
@@ -1935,8 +2178,8 @@ $RETURNS
     <-DS_IDENT_TABLE-> for a list of possible values.
 $END
 
-$FUNCTION         ds_get_handle_in_array
-$RETURN_TYPE      unsigned int
+$FUNCTION           ds_get_handle_in_array
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (array_desc *arr_desc, char *array,
 				     CONST char *item_name,
@@ -1946,25 +2189,25 @@ $PARAMETER_LIST
 				     char **parent_desc, char **parent,
 				     unsigned int *parent_type,
 				     unsigned int *index)
-$SUMMARY          Find sub-structure in a multi-dimensional array.
+$SUMMARY            Find sub-structure in a multi-dimensional array.
 $PURPOSE
     This routine will find a unique occurrence of an object
     (sub-structure) within a specified multi-dimensional array.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
-$PARAMETER        array :
+$PARAMETER          array :
     The array.
-$PARAMETER        item_name :
+$PARAMETER          item_name :
     The name of the object that the handle is desired for.
-$PARAMETER        restr_names :
+$PARAMETER          restr_names :
     The array of pointers to restrictions names.
-$PARAMETER        restr_values :
+$PARAMETER          restr_values :
     The array of restriction values.
-$PARAMETER        num_restr :
+$PARAMETER          num_restr :
     The number of restriction values.
-$PARAMETER        parent_desc :
+$PARAMETER          parent_desc :
     A pointer to the item's parent descriptor is written here.
-$PARAMETER        parent :
+$PARAMETER          parent :
     A pointer to the item's parent is written here.
 $NOTE
     The following rules apply to items:
@@ -1972,10 +2215,10 @@ $NOTE
     If the item is a dimension, the parent is an array.
     If the item is an atomic element in a linked list, the parent is a
     list header.
-$PARAMETER        parent_type :
+$PARAMETER          parent_type :
     The type of the parent is written here. See
     <-DS_HANDLE_TYPES-> for a list of possible values.
-$PARAMETER        index :
+$PARAMETER          index :
     The index number of the item in its parent descriptor is written
     here.
 $RETURNS
@@ -1983,8 +2226,8 @@ $RETURNS
     <-DS_IDENT_TABLE-> for a list of possible values.
 $END
 
-$FUNCTION         ds_get_handle_in_list
-$RETURN_TYPE      unsigned int
+$FUNCTION           ds_get_handle_in_list
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (packet_desc *list_desc,
 				    list_header *list_head,
@@ -1994,25 +2237,25 @@ $PARAMETER_LIST
 				    unsigned int num_restr, char **parent_desc,
 				    char **parent, unsigned int *parent_type,
 				    unsigned int *index)
-$SUMMARY          Find sub-structure in a linked list.
+$SUMMARY            Find sub-structure in a linked list.
 $PURPOSE
     This routine will find a unique occurrence of an object
     (sub-structure) within a specified linked list.
-$PARAMETER        list_desc :
+$PARAMETER          list_desc :
     The linked list descriptor.
-$PARAMETER        list_head :
+$PARAMETER          list_head :
     The list header.
-$PARAMETER        item_name :
+$PARAMETER          item_name :
     The name of the object that the handle is desired for.
-$PARAMETER        restr_names :
+$PARAMETER          restr_names :
     The array of pointers to restrictions names.
-$PARAMETER        restr_values :
+$PARAMETER          restr_values :
     The array of restriction values.
-$PARAMETER        num_restr :
+$PARAMETER          num_restr :
     The number of restriction values.
-$PARAMETER        parent_desc :
+$PARAMETER          parent_desc :
     A pointer to the item's parent descriptor is written here.
-$PARAMETER        parent :
+$PARAMETER          parent :
     A pointer to the item's parent is written here.
 $NOTE
     The following rules apply to items:
@@ -2020,10 +2263,10 @@ $NOTE
     If the item is a dimension, the parent is an array.
     If the item is an atomic element in a linked list, the parent is a
     list header.
-$PARAMETER        parent_type :
+$PARAMETER          parent_type :
     The type of the parent is written here. See
     <-DS_HANDLE_TYPES-> for a list of possible values.
-$PARAMETER        index :
+$PARAMETER          index :
     The index number of the item in its parent descriptor is written
     here.
 $RETURNS
@@ -2031,19 +2274,54 @@ $RETURNS
     <-DS_IDENT_TABLE-> for a list of possible values.
 $END
 
-$FUNCTION         ds_list_insert
-$RETURN_TYPE      void
+$FUNCTION           ds_history_append_string
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (multi_array *multi_desc, CONST char *string,
+			       flag new_alloc)
+$SUMMARY            Add a history string to a Karma data structure.
+$PURPOSE
+    Add a history string to a Karma data structure.
+$PARAMETER          multi_desc :
+    The multi_array descriptor.
+$PARAMETER          string :
+    The history string to add.
+$PARAMETER          new_alloc :
+    If TRUE, the routine will allocate a new copy of the history
+    string, else it will copy the pointer (in which case the string must never
+    be externally deallocated or changed).
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION           ds_history_copy
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (multi_array *out, CONST multi_array *in)
+$SUMMARY            Copy history information.
+$PURPOSE
+    Copy history information.
+$PARAMETER          out :
+    The output multi_array descriptor to copy the history to.
+$PARAMETER          in :
+    The input multi_array descriptor to copy the history from.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION           ds_list_insert
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (list_header *list_head, list_entry *new_entry,
 		     list_entry *entry)
-$SUMMARY          Insert an entry into the fragmented section of a linked list.
+$SUMMARY            Insert an entry into the fragmented section of a linked list.
 $PURPOSE
     Insert an entry into the fragmented section of a linked list.
-$PARAMETER        list_head :
+$PARAMETER          list_head :
     The list header.
-$PARAMETER        new_entry :
+$PARAMETER          new_entry :
     The entry to be inserted.
-$PARAMETER        entry :
+$PARAMETER          entry :
     The list entry which is to be moved beyond the new entry. If this
     is NULL, the new entry is inserted at the start of the fragmented section
     of the list.
@@ -2054,46 +2332,46 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ds_list_append
-$RETURN_TYPE      void
+$FUNCTION           ds_list_append
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (list_header *list_head, list_entry *entry)
-$SUMMARY          Append an entry to a linked list.
+$SUMMARY            Append an entry to a linked list.
 $PURPOSE
     Append an entry to a linked list.
-$PARAMETER        list_head :
+$PARAMETER          list_head :
     The list header.
-$PARAMETER        entry :
+$PARAMETER          entry :
     The new list entry.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ds_list_delete
-$RETURN_TYPE      void
+$FUNCTION           ds_list_delete
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (packet_desc *list_desc, list_header *list_head,
 		     list_entry *entry)
-$SUMMARY          Delete an entry from the fragmented section of a linked list.
+$SUMMARY            Delete an entry from the fragmented section of a linked list.
 $PURPOSE
     Delete an entry from the fragmented section of a linked list.
-$PARAMETER        list_desc :
+$PARAMETER          list_desc :
     The packet descriptor for the list entry data. If this is not
     NULL, the routine will recursively deallocate the packet data.
-$PARAMETER        list_head :
+$PARAMETER          list_head :
     The list header.
-$PARAMETER        entry :
+$PARAMETER          entry :
     The entry to be deleted. The entry and it's data packet are
     deallocated.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ds_list_unfragment
-$RETURN_TYPE      flag
+$FUNCTION           ds_list_unfragment
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (packet_desc *list_desc, list_header *list_head)
-$SUMMARY          Unfragment a linked list.
+$SUMMARY            Unfragment a linked list.
 $PURPOSE
     This routine will unfragment a linked list (i.e. all the entries
     and data packets in the linked list will be made contiguous in memory).
@@ -2104,9 +2382,9 @@ $PURPOSE
     If the routine is not successful in allocating the required memory, then
     no change is effected (and the  contiguous_length  value in the list header
     is not changed). I.e. data is not lost.
-$PARAMETER        list_desc :
+$PARAMETER          list_desc :
     The packet descriptor for the list.
-$PARAMETER        list_head :
+$PARAMETER          list_head :
     The linked list header.
 $NOTE
     The <<contiguous_length>> value in the linked list header will be
@@ -2115,11 +2393,11 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_list_fragment
-$RETURN_TYPE      flag
+$FUNCTION           ds_list_fragment
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (packet_desc *list_desc, list_header *list_head)
-$SUMMARY          Fragment a linked list.
+$SUMMARY            Fragment a linked list.
 $PURPOSE
     This routine will fragment a linked list (i.e. all the contiguous
     data packets in the linked list will be separately allocated and linked
@@ -2130,9 +2408,9 @@ $PURPOSE
     If the routine is not successful in allocating the required memory, then
     no change is effected (and the <<contiguous_length>> value in the list
     header is not changed). I.e. data is not lost.
-$PARAMETER        list_desc :
+$PARAMETER          list_desc :
     The packet descriptor for the list.
-$PARAMETER        list_head :
+$PARAMETER          list_head :
     The list header.
 $NOTE
     The <<contiguous_length>> value in the linked list header will be
@@ -2141,29 +2419,29 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_remove_dim_desc
-$RETURN_TYPE      flag
+$FUNCTION           ds_remove_dim_desc
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (array_desc *arr_desc, CONST char *dim_name)
-$SUMMARY          Remove dimension from an array.
+$SUMMARY            Remove dimension from an array.
 $PURPOSE
     This routine will remove a dimension descriptor from an array
     descriptor. Tiling information is preserved, however, any address offset
     information is removed. With the exception of the dimension to be removed,
     the order of the dimensions is unaffected.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the dimension to be removed.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_append_dim_desc
-$RETURN_TYPE      flag
+$FUNCTION           ds_append_dim_desc
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (array_desc *arr_desc, dim_desc *dimension)
-$SUMMARY          Append a dimension to an array.
+$SUMMARY            Append a dimension to an array.
 $PURPOSE
     This routine will append a dimension descriptor to the list of
     dimensions attached to an array descriptor. The appended dimension will be
@@ -2171,19 +2449,19 @@ $PURPOSE
     information is preserved, however, any address offset information is
     removed. If the array is NOT tiled, the dimension length will be copied
     into the array of bottom tile lengths.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
-$PARAMETER        dimension :
+$PARAMETER          dimension :
     The dimension descriptor.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_prepend_dim_desc
-$RETURN_TYPE      flag
+$FUNCTION           ds_prepend_dim_desc
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (array_desc *arr_desc, dim_desc *dimension)
-$SUMMARY          Prepend a dimension to an array.
+$SUMMARY            Prepend a dimension to an array.
 $PURPOSE
     This routine will prepend a dimension descriptor to the list of
     dimensions attached to an array descriptor. The prepended dimension will be
@@ -2191,171 +2469,187 @@ $PURPOSE
     Tiling information is preserved, however, any address offset information is
     removed. If the array is NOT tiled, the dimension length will be copied
     into the array of bottom tile lengths.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
-$PARAMETER        dimension :
+$PARAMETER          dimension :
     The dimension descriptor to prepend.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_compute_array_offsets
-$RETURN_TYPE      flag
+$FUNCTION           ds_compute_array_offsets
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (array_desc *arr_desc)
-$SUMMARY          Compute array address offsets for each dimension in an array.
+$SUMMARY            Compute array address offsets for each dimension in an array.
 $PURPOSE
     Compute array address offsets for each dimension in an array.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor. This descriptor is modified.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_remove_tiling_info
-$RETURN_TYPE      void
+$FUNCTION           ds_remove_tiling_info
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (array_desc *arr_desc)
-$SUMMARY          Remove any tiling information from an array descriptor.
+$SUMMARY            Remove any tiling information from an array descriptor.
 $PURPOSE
     This routine will remove any tiling information from an array
     descriptor. The routine will NOT remove (or change) any offset information.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         ds_append_gen_struct
-$RETURN_TYPE      flag
+$FUNCTION           ds_append_gen_struct
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (multi_array *multi_desc, packet_desc *pack_desc,
 			   char *packet, char *existing_arrayname,
 			   char *append_arrayname)
-$SUMMARY          Append a general data structure to a multi_array structure.
+$SUMMARY            Append a general data structure to a multi_array structure.
 $PURPOSE
     This routine will append a general data structure to a
     multi_array general data structure.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The multi-array general data structure to append to.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The top level packet descriptor of the general data structure
     to append.
-$PARAMETER        packet :
+$PARAMETER          packet :
     The corresponding data for the general data structure.
-$PARAMETER        existing_arrayname :
+$PARAMETER          existing_arrayname :
     If the multi-array data structure previously had only
     one general data structure, then this name will become the arrayname for
     that data structure.
-$PARAMETER        append_arrayname :
+$PARAMETER          append_arrayname :
     The name of the appended data structure.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_put_element
-$RETURN_TYPE      char *
+$EXPERIMENTAL_FUNC  ds_autotile_array
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (array_desc *arr_desc, flag allow_truncate)
+$SUMMARY            Choose tiling scheme automatically.
+$PURPOSE
+    This routine will choose an opimum tiling scheme for an array.
+$PARAMETER          arr_desc :
+    The array descriptor. This is modified.
+$PARAMETER          allow_truncate :
+    If TRUE, the routine will shorten the lengths of
+    dimensions to allow tiling.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION           ds_put_element
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (char *output, unsigned int type, double input[2])
-$SUMMARY          Write out an element of data.
+$SUMMARY            Write out an element of data.
 $PURPOSE
     Write out an element of data.
-$PARAMETER        output :
+$PARAMETER          output :
     A pointer to the output storage.
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the element to be written.
-$PARAMETER        input :
+$PARAMETER          input :
     The input data.
 $RETURNS
     The address of the next element on success, else NULL.
 $END
 
-$FUNCTION         ds_put_elements
-$RETURN_TYPE      flag
+$FUNCTION           ds_put_elements
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *data, unsigned int data_type,
 		      unsigned int data_stride, double *values,
 		      unsigned int num_values)
-$SUMMARY          Convert array of double precision complex data to atomic data.
+$SUMMARY            Convert array of double precision complex data to atomic data.
 $PURPOSE
     This routine will convert an array of double precision complex
     values to an array of atomic data.
-$PARAMETER        data :
+$PARAMETER          data :
     The array of output data.
-$PARAMETER        data_type :
+$PARAMETER          data_type :
     The type of the data.
-$PARAMETER        data_stride :
+$PARAMETER          data_stride :
     The stride of data elements in memory (in bytes).
-$PARAMETER        values :
+$PARAMETER          values :
     The data values will be read from here.
-$PARAMETER        num_values :
+$PARAMETER          num_values :
     The number of data values to convert.
 $RETURNS
     TRUE if the data was successfully converted, else FALSE.
 $END
 
-$FUNCTION         ds_put_element_many_times
-$RETURN_TYPE      flag
+$FUNCTION           ds_put_element_many_times
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *data, unsigned int data_type,
 				unsigned int data_stride, double value[2],
 				unsigned int num_elem)
-$SUMMARY          Write a double precision complex value to atomic data many times.
+$SUMMARY            Write a double precision complex value to atomic data many times.
 $PURPOSE
     This routine will convert and write a double precision complex
     value to an array of atomic data elements.
-$PARAMETER        data :
+$PARAMETER          data :
     The array of output data.
-$PARAMETER        data_type :
+$PARAMETER          data_type :
     The type of the data.
-$PARAMETER        data_stride :
+$PARAMETER          data_stride :
     The stride of data elements in memory (in bytes).
-$PARAMETER        value :
+$PARAMETER          value :
     The data value will be read from here.
-$PARAMETER        num_elem :
+$PARAMETER          num_elem :
     The number of data elements to write.
 $RETURNS
     TRUE if the data was successfully converted, else FALSE.
 $END
 
-$FUNCTION         ds_put_named_element
-$RETURN_TYPE      flag
+$FUNCTION           ds_put_named_element
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (packet_desc *pack_desc, char *packet,
+    (CONST packet_desc *pack_desc, char *packet,
 			   CONST char *name, double value[2])
-$SUMMARY          Update a named element in a specified packet.
+$SUMMARY            Update a named element in a specified packet.
 $PURPOSE
     Update a named element in a specified packet.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The packet descriptor.
-$PARAMETER        packet :
+$PARAMETER          packet :
     The packet.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the element to update.
-$PARAMETER        value :
+$PARAMETER          value :
     The value of the data.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_reorder_array
-$RETURN_TYPE      flag
+$FUNCTION           ds_reorder_array
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (array_desc *arr_desc, unsigned int order_list[],
 		       char *array, flag mod_desc)
-$SUMMARY          Re-order a multi-dimensional array.
+$SUMMARY            Re-order a multi-dimensional array.
 $PURPOSE
     Re-order a multi-dimensional array.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
-$PARAMETER        order_list :
+$PARAMETER          order_list :
     This specifies the ordering of the dimensions. The first entry
     in the order list contains the number of the dimension, in the old order,
     which is to become the most significant dimension in the new ordering.
-$PARAMETER        array :
+$PARAMETER          array :
     The array. If this is NULL, only the array descriptor can be
     re-ordered (no data can be re-ordered).
-$PARAMETER        mod_desc :
+$PARAMETER          mod_desc :
     If TRUE the array descriptor will have its dimension descriptors
     re-ordered, else they will not be. This is useful to traverse a data
     structure, re-ordering the data, and then finally re-ordering the array
@@ -2364,22 +2658,22 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         ds_foreach_occurrence
-$RETURN_TYPE      flag
+$FUNCTION           ds_foreach_occurrence
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     ( packet_desc *pack_desc, char *packet,
 			     CONST char *item, flag as_whole,
 			     flag (*func) () )
-$SUMMARY          Recursively traverse a data structure, searching for an item.
+$SUMMARY            Recursively traverse a data structure, searching for an item.
 $PURPOSE
     Recursively traverse a data structure, searching for an item.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The packet descriptor of the structure.
-$PARAMETER        packet :
+$PARAMETER          packet :
     The packet for the structure.
-$PARAMETER        item :
+$PARAMETER          item :
     The name of the item to search for.
-$PARAMETER        as_whole :
+$PARAMETER          as_whole :
     If FALSE:
     If the item pointed to is the name of a dimension, then <<function>>
     will be called for each occurrence of that dimension (ie. the other
@@ -2393,28 +2687,28 @@ $PARAMETER        as_whole :
     occurrence of the entire array.
     If the item pointed to is the name of an element in a linked list, then
     <<function>> will be called once for each occurrence of the linked list
-$PARAMETER        func :
+$PARAMETER          func :
     The function to call for each occurrence. The prototype function is
     <-DS_PROTO_foreach_func->. If this returns FALSE, iterations are stopped.
 $RETURNS
     TRUE if all iterations completed successfully, else FALSE.
 $END
 
-$FUNCTION         ds_foreach_in_array
-$RETURN_TYPE      flag
+$FUNCTION           ds_foreach_in_array
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     ( array_desc *arr_desc, char *array, CONST char *item,
 			   flag as_whole, flag (*func) () )
-$SUMMARY          Recursively traverse an array, searching for an item.
+$SUMMARY            Recursively traverse an array, searching for an item.
 $PURPOSE
     Recursively traverse an array, searching for an item.
-$PARAMETER        arr_desc :
+$PARAMETER          arr_desc :
     The array descriptor.
-$PARAMETER        array :
+$PARAMETER          array :
     The array data.
-$PARAMETER        item :
+$PARAMETER          item :
     The name of the item to search for.
-$PARAMETER        as_whole :
+$PARAMETER          as_whole :
     If FALSE:
     If the item pointed to is the name of a dimension, then <<func>>
     will be called for each occurrence of that dimension (ie. the other
@@ -2428,28 +2722,28 @@ $PARAMETER        as_whole :
     occurrence of the entire array.
     If the item pointed to is the name of an element in a linked list, then
     <<func>> will be called once for each occurrence of the linked list
-$PARAMETER        func :
+$PARAMETER          func :
     The function to call for each occurrence. The prototype function is
     <-DS_PROTO_foreach_func->. If this returns FALSE, iterations are stopped.
 $RETURNS
     TRUE if all iterations completed successfully, else FALSE.
 $END
 
-$FUNCTION         ds_foreach_in_list
-$RETURN_TYPE      flag
+$FUNCTION           ds_foreach_in_list
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     ( packet_desc *list_desc, list_header *list_head,
 			  CONST char *item, flag as_whole, flag (*func) () )
-$SUMMARY          Recursively traverse a linked list, searching for an item.
+$SUMMARY            Recursively traverse a linked list, searching for an item.
 $PURPOSE
     Recursively traverse a linked list, searching for an item.
-$PARAMETER        list_desc :
+$PARAMETER          list_desc :
     The packet descriptor for the linked list.
-$PARAMETER        list_head :
+$PARAMETER          list_head :
     The linked list header.
-$PARAMETER        item :
+$PARAMETER          item :
     The name of the item to search for.
-$PARAMETER        as_whole :
+$PARAMETER          as_whole :
     If FALSE:
     If the item pointed to is the name of a dimension, then <<func>>
     will be called for each occurrence of that dimension (ie. the other
@@ -2463,33 +2757,33 @@ $PARAMETER        as_whole :
     occurrence of the entire array.
     If the item pointed to is the name of an element in a linked list, then
     <<func>> will be called once for each occurrence of the linked list
-$PARAMETER        func :
+$PARAMETER          func :
     The function to call for each occurrence. The prototype function is
     <-DS_PROTO_foreach_func->. If this returns FALSE, iterations are stopped.
 $RETURNS
     TRUE if all iterations completed successfully, else FALSE.
 $END
 
-$FUNCTION         ds_traverse_and_process
-$RETURN_TYPE      flag
+$FUNCTION           ds_traverse_and_process
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     ( packet_desc *desc1, char *data1,
 			       packet_desc *desc2, char *data2,
 			       flag as_whole, flag (*func) () )
-$SUMMARY          Recursively traverse a pair of data structures.
+$SUMMARY            Recursively traverse a pair of data structures.
 $PURPOSE
     This routine will traverse a pair of general data structures and
     will process a sub structure for every occurence wherever there is a
     difference in the two data structures' descriptors.
-$PARAMETER        desc1 :
+$PARAMETER          desc1 :
     One of the structures packet descriptor.
-$PARAMETER        data1 :
+$PARAMETER          data1 :
     One of the structures data.
-$PARAMETER        desc2 :
+$PARAMETER          desc2 :
     The other structures packet descriptor.
-$PARAMETER        data2 :
+$PARAMETER          data2 :
     The other structures data.
-$PARAMETER        as_whole :
+$PARAMETER          as_whole :
     If FALSE:
     If the type or name of any element in the two packet descriptors are
     different, the packets are deemed divergent and they are passed to
@@ -2507,33 +2801,33 @@ $PARAMETER        as_whole :
     If the packet descriptors for linked lists are divergent, then the two
     lists are deemed divergent and their descriptors and headers are passed
     to <<func>>.
-$PARAMETER        func :
+$PARAMETER          func :
     The function to call for each divergence. The prototype function is
     <-DS_PROTO_traverse_func->. If this returns FALSE, iterations are stopped.
 $RETURNS
     TRUE if all iterations completed successfully, else FALSE.
 $END
 
-$FUNCTION         ds_traverse_array
-$RETURN_TYPE      flag
+$FUNCTION           ds_traverse_array
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     ( array_desc *desc1, char *data1,
 			 array_desc *desc2, char *data2, flag as_whole,
 			 flag (*func) () )
-$SUMMARY          Recursively traverse a pair of arrays.
+$SUMMARY            Recursively traverse a pair of arrays.
 $PURPOSE
     This routine will traverse a pair of multi-dimensional arrays
     will process a sub structure for every occurence wherever there is a
     difference in the two data structures' descriptors.
-$PARAMETER        desc1 :
+$PARAMETER          desc1 :
     One of the array descriptors.
-$PARAMETER        data1 :
+$PARAMETER          data1 :
     One of the arrays.
-$PARAMETER        desc2 :
+$PARAMETER          desc2 :
     The other array descriptor.
-$PARAMETER        data2 :
+$PARAMETER          data2 :
     The other array.
-$PARAMETER        as_whole :
+$PARAMETER          as_whole :
     If FALSE:
     If the type or name of any element in the two packet descriptors are
     different, the packets are deemed divergent and they are passed to
@@ -2551,33 +2845,33 @@ $PARAMETER        as_whole :
     If the packet descriptors for linked lists are divergent, then the two
     lists are deemed divergent and their descriptors and headers are passed
     to <<func>>.
-$PARAMETER        func :
+$PARAMETER          func :
     The function to call for each divergence. The prototype function is
     <-DS_PROTO_traverse_func->. If this returns FALSE, iterations are stopped.
 $RETURNS
     TRUE if all iterations completed successfully, else FALSE.
 $END
 
-$FUNCTION         ds_traverse_list
-$RETURN_TYPE      flag
+$FUNCTION           ds_traverse_list
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     ( packet_desc *desc1, list_header *head1,
 			packet_desc *desc2, list_header *head2,
 			flag as_whole, flag (*func) () )
-$SUMMARY          Recursively traverse a pair of linked lists.
+$SUMMARY            Recursively traverse a pair of linked lists.
 $PURPOSE
     This routine will traverse a pair of linked lists and will
     process a sub structure for every occurence wherever there is a difference
     in the two data structures' descriptors.
-$PARAMETER        desc1 :
+$PARAMETER          desc1 :
     One of lists descriptor.
-$PARAMETER        data1 :
+$PARAMETER          data1 :
     One of the lists header.
-$PARAMETER        desc2 :
+$PARAMETER          desc2 :
     The other lists descriptor.
-$PARAMETER        data2 :
+$PARAMETER          data2 :
     The other lists header.
-$PARAMETER        as_whole :
+$PARAMETER          as_whole :
     If FALSE:
     If the type or name of any element in the two packet descriptors are
     different, the packets are deemed divergent and they are passed to
@@ -2595,33 +2889,33 @@ $PARAMETER        as_whole :
     If the packet descriptors for linked lists are divergent, then the two
     lists are deemed divergent and their descriptors and headers are passed
     to <<func>>.
-$PARAMETER        func :
+$PARAMETER          func :
     The function to call for each divergence. The prototype function is
     <-DS_PROTO_traverse_func->. If this returns FALSE, iterations are stopped.
 $RETURNS
     TRUE if all iterations completed successfully, else FALSE.
 $END
 
-$PROTO_FUNC       DS_PROTO_foreach_func
-$RETURN_TYPE      flag
+$PROTO_FUNC         DS_PROTO_foreach_func
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *encls_desc, unsigned int type, char *data,
 			    unsigned int index)
-$SUMMARY          Process an occurrence of an item in a data structure.
+$SUMMARY            Process an occurrence of an item in a data structure.
 $PURPOSE
     Process an occurrence of an item in a data structure.
-$PARAMETER        encls_desc :
+$PARAMETER          encls_desc :
     The enclosing descriptor.
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the enclosing descriptor. See <-DS_PARENT_TYPES-> for a
     list of possible values.
-$PARAMETER        data :
+$PARAMETER          data :
     A pointer to the item data. This is:
     A pointer to the first element (for a packet descriptor)
     A pointer to a portion of the array (for an array or dimension
     descriptor)
     A pointer to the linked list header (for a linked list descriptor)
-$PARAMETER        index :
+$PARAMETER          index :
     The index number of the item in the enclosing descriptor, for the
     cases where the enclosing descriptor is a packet, array or linked list
     descriptor. For the case where the enclosing descriptor is a dimension
@@ -2631,28 +2925,28 @@ $RETURNS
     TRUE on success, else FALSE
 $END
 
-$PROTO_FUNC       DS_PROTO_traverse_function
-$RETURN_TYPE      flag
+$PROTO_FUNC         DS_PROTO_traverse_function
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *desc1, unsigned int type1,
 				 char *data1, char *desc2,
 				 unsigned int type2, char *data2)
-$SUMMARY          Process an occurrence of a divergence between two data structures
+$SUMMARY            Process an occurrence of a divergence between two data structures
 $PURPOSE
     Process an occurrence of a divergence between two data structures
-$PARAMETER        desc1 :
+$PARAMETER          desc1 :
     One of the descriptors where the divergence occurred.
-$PARAMETER        type1 :
+$PARAMETER          type1 :
     The type of the first descriptor. See <-DS_PARENT_TYPES-> for a
     list of possible values. The value IDENT_DIMENSION is not possible.
-$PARAMETER        data :
+$PARAMETER          data :
     The data for the first descriptor.
-$PARAMETER        desc2 :
+$PARAMETER          desc2 :
     The other descriptor where the divergence occurred.
-$PARAMETER        type2 :
+$PARAMETER          type2 :
     The type of the other descriptor. See <-DS_PARENT_TYPES-> for a
     list of possible values. The value IDENT_DIMENSION is not possible.
-$PARAMETER        data2 :
+$PARAMETER          data2 :
     The data for the other descriptor.
 $RETURNS
     TRUE on success, else FALSE.

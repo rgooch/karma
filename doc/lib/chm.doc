@@ -11,25 +11,25 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         chm_manage
-$RETURN_TYPE      flag
+$FUNCTION           chm_manage
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     ( Channel channel, void *info, flag (*input_func) (),
 		  void (*close_func) (), flag (*output_func) (),
 		  flag (*exception_func) () )
-$SUMMARY          Manage a channel for activity by registering callback routines.
+$SUMMARY            Manage a channel for activity by registering callback routines.
 $PURPOSE
     Manage a channel for activity by registering callback routines.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object to manage.
-$PARAMETER        info :
+$PARAMETER          info :
     The arbitrary information pointer associated with the managed
     channel. This pointer may be modified by the callback routines.
-$PARAMETER        input_func :
+$PARAMETER          input_func :
     This routine is called when new input occurs on the channel.
     If this is NULL, no callback routine is installed. The prototype function
     is <-CHM_PROTO_input_func->.
-$PARAMETER        close_func :
+$PARAMETER          close_func :
     This routine is called when the channel closes. If this is
     NULL, no callback routine is installed. The prototype function is
     <-CHM_PROTO_close_func->. The channel object MUST be capable of detecting
@@ -37,11 +37,11 @@ $PARAMETER        close_func :
     for dock channels). Any unread buffered data in the channel will be lost
     upon closure. The call to this function is the last chance to read this
     buffered data.
-$PARAMETER        output_func :
+$PARAMETER          output_func :
     This routine is called when the channel becomes ready for
     output. If this is NULL, no callback routine is installed. The prototype
     function is <-CHM_PROTO_output_func->.
-$PARAMETER        exception_func :
+$PARAMETER          exception_func :
     This routine is called when exceptions occur on the
     channel. If this is NULL, no callback routine is installed. The prototype
     function is <-CHM_PROTO_exception_func->.
@@ -49,14 +49,14 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         chm_unmanage
-$RETURN_TYPE      void
+$FUNCTION           chm_unmanage
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Channel channel)
-$SUMMARY          Terminate the management of a channel for activity.
+$SUMMARY            Terminate the management of a channel for activity.
 $PURPOSE
     Terminate the management of a channel for activity.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object to unmanage.
 $NOTE
     This routine will NOT close the channel (nor does it assume the
@@ -65,14 +65,14 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         chm_poll
-$RETURN_TYPE      void
+$FUNCTION           chm_poll
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (long timeout_ms)
-$SUMMARY          Poll all managed channels for any activity.
+$SUMMARY            Poll all managed channels for any activity.
 $PURPOSE
     Poll all managed channels for any activity.
-$PARAMETER        timeout_ms :
+$PARAMETER          timeout_ms :
     The time (in milliseconds) to poll. If this is less than 0 the
     routine will poll forever (until some activity occurs or a signal is
     caught).
@@ -80,16 +80,16 @@ $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       CHM_PROTO_input_func
-$RETURN_TYPE      flag
+$PROTO_FUNC         CHM_PROTO_input_func
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, void **info)
-$SUMMARY          This routine is called when new input occurs on a channel.
+$SUMMARY            This routine is called when new input occurs on a channel.
 $PURPOSE
     This routine is called when new input occurs on a channel.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        info :
+$PARAMETER          info :
     A pointer to the arbitrary information pointer. This may be modified
 $RETURNS
     TRUE if the channel is to remain managed and open, else FALSE
@@ -100,16 +100,16 @@ $NOTE
     The <<close_func>> will be called if this routine returns FALSE.
 $END
 
-$PROTO_FUNC       CHM_PROTO_close_func
-$RETURN_TYPE      void
+$PROTO_FUNC         CHM_PROTO_close_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Channel channel, void *info)
-$SUMMARY          This routine is called when a channel closes.
+$SUMMARY            This routine is called when a channel closes.
 $PURPOSE
     This routine is called when a channel closes.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object. 
-$PARAMETER        info :
+$PARAMETER          info :
     The arbitrary pointer for the channel.
 $NOTE
     This routine MUST NOT unmanage the channel. The channel will be
@@ -119,16 +119,16 @@ $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       CHM_PROTO_output_func
-$RETURN_TYPE      flag
+$PROTO_FUNC         CHM_PROTO_output_func
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, void **info)
-$SUMMARY          This routine is called when a channel becomes ready for writing.
+$SUMMARY            This routine is called when a channel becomes ready for writing.
 $PURPOSE
     This routine is called when a channel becomes ready for writing.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        info :
+$PARAMETER          info :
     A pointer to the arbitrary information pointer. This may be modified
 $RETURNS
     TRUE if the channel is to remain managed and open, else FALSE
@@ -139,16 +139,16 @@ $NOTE
     The <<close_func>> will be called if this routine returns FALSE.
 $END
 
-$PROTO_FUNC       CHM_PROTO_exception_func
-$RETURN_TYPE      flag
+$PROTO_FUNC         CHM_PROTO_exception_func
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Channel channel, void **info)
-$SUMMARY          This routine is called when an exception occurs on channel.
+$SUMMARY            This routine is called when an exception occurs on channel.
 $PURPOSE
     This routine is called when an exception occurs on channel.
-$PARAMETER        channel :
+$PARAMETER          channel :
     The channel object.
-$PARAMETER        info :
+$PARAMETER          info :
     A pointer to the arbitrary information pointer. This may be modified
 $RETURNS
     TRUE if the channel is to remain managed and open, else FALSE

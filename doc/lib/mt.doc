@@ -7,14 +7,14 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         mt_create_pool
-$RETURN_TYPE      KThreadPool
+$FUNCTION           mt_create_pool
+$RETURN_TYPE        KThreadPool
 $PARAMETER_LIST
     (void *pool_info)
-$SUMMARY          Create a pool of threads which may have jobs launched onto it.
+$SUMMARY            Create a pool of threads which may have jobs launched onto it.
 $PURPOSE
     Create a pool of threads which may have jobs launched onto it.
-$PARAMETER        pool_info :
+$PARAMETER          pool_info :
     An arbitrary pointer passed to work functions.
 $NOTE
     The environment variable MT_MAX_THEADS may be used to limit the
@@ -24,11 +24,11 @@ $RETURNS
     A KThreadPool object on success, else NULL.
 $END
 
-$FUNCTION         mt_get_shared_pool
-$RETURN_TYPE      KThreadPool
+$FUNCTION           mt_get_shared_pool
+$RETURN_TYPE        KThreadPool
 $PARAMETER_LIST
     ()
-$SUMMARY          Create or get the shared thread pool.
+$SUMMARY            Create or get the shared thread pool.
 $PURPOSE
     This routine will get a pool of threads which may be shared
     between several services within a process. This shared pool may be used to
@@ -40,23 +40,23 @@ $NOTE
     number of threads used.
 $NOTE
     This shared pool cannot be used with the <-mt_new_thread_info-> and
-    <-my_get_thread_info-> routines.
+    <-mt_get_thread_info-> routines.
 $MT-LEVEL         Safe under Solaris 2.
 $RETURNS
     The shared KThreadPool object on success. On failure the process
     aborts.
 $END
 
-$FUNCTION         mt_destroy_pool
-$RETURN_TYPE      void
+$FUNCTION           mt_destroy_pool
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KThreadPool pool, flag interrupt)
-$SUMMARY          This routine will destroy a thread pool.
+$SUMMARY            This routine will destroy a thread pool.
 $PURPOSE
     This routine will destroy a thread pool.
-$PARAMETER        pool :
+$PARAMETER          pool :
     The thread pool.
-$PARAMETER        interrupt :
+$PARAMETER          interrupt :
     If TRUE, any jobs not yet completed will be killed, else the
     function will wait for uncompleted jobs to finish prior to destroying the
     pool.
@@ -65,14 +65,14 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         mt_destroy_all_pools
-$RETURN_TYPE      void
+$FUNCTION           mt_destroy_all_pools
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (flag interrupt)
-$SUMMARY          This routine will destroy all thread pools.
+$SUMMARY            This routine will destroy all thread pools.
 $PURPOSE
     This routine will destroy all thread pools.
-$PARAMETER        interrupt :
+$PARAMETER          interrupt :
     If TRUE, any jobs not yet completed will be killed, else the
     function will wait for uncompleted jobs to finish prior to destroying the
     pools.
@@ -81,23 +81,23 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         mt_num_threads
-$RETURN_TYPE      unsigned int
+$FUNCTION           mt_num_threads
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (KThreadPool pool)
-$SUMMARY          Get the number of threads in a thread pool.
+$SUMMARY            Get the number of threads in a thread pool.
 $PURPOSE
     This function will determine the number of threads that may be
     run concurrently in a thread pool.
-$PARAMETER        pool :
+$PARAMETER          pool :
     The thread pool.
 $MT-LEVEL         Safe.
 $RETURNS
     The number of concurrent threads.
 $END
 
-$FUNCTION         mt_launch_job
-$RETURN_TYPE      void
+$FUNCTION           mt_launch_job
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KThreadPool pool,
 		    void (*func) (void *pool_info,
@@ -106,21 +106,21 @@ $PARAMETER_LIST
 				  void *thread_info),
 		    void *call_info1, void *call_info2,
 		    void *call_info3, void *call_info4)
-$SUMMARY          Launch a job onto a thread pool.
+$SUMMARY            Launch a job onto a thread pool.
 $PURPOSE
     This function will launch a job to a pool of threads, running the
     job on the first available thread.
-$PARAMETER        pool :
+$PARAMETER          pool :
     The thread pool.
-$PARAMETER        func :
+$PARAMETER          func :
     The function to execute. The prototype function is <-MT_PROTO_func->
-$PARAMETER        call_info1 :
+$PARAMETER          call_info1 :
     An arbitrary argument to <<func>>.
-$PARAMETER        call_info2 :
+$PARAMETER          call_info2 :
     An arbitrary argument to <<func>>.
-$PARAMETER        call_info3 :
+$PARAMETER          call_info3 :
     An arbitrary argument to <<func>>.
-$PARAMETER        call_info4 :
+$PARAMETER          call_info4 :
     An arbitrary argument to <<func>>.
 $NOTE
     Jobs must not modify any signal actions or masks.
@@ -129,19 +129,19 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         mt_setlock
-$RETURN_TYPE      void
+$FUNCTION           mt_setlock
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KThreadPool pool, flag lock)
-$SUMMARY          Set a lock on a thread pool.
+$SUMMARY            Set a lock on a thread pool.
 $PURPOSE
     This function will lock a thread pool such that no other thread
     can lock the pool at the same time. This does not prevent other threads
     from running, nor new jobs from being launched, it merely prevents them
     from aquiring the lock.
-$PARAMETER        pool :
+$PARAMETER          pool :
     The thread pool to lock.
-$PARAMETER        lock :
+$PARAMETER          lock :
     If TRUE the pool is locked. If FALSE the pool is unlocked and any
     other threads wishing to lock the pool may do so (one at a time of course).
 $MT-LEVEL         Safe.
@@ -149,19 +149,19 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         mt_new_thread_info
-$RETURN_TYPE      void
+$FUNCTION           mt_new_thread_info
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KThreadPool pool, void *info, uaddr size)
-$SUMMARY          Register new thread information for the threads in a pool.
+$SUMMARY            Register new thread information for the threads in a pool.
 $PURPOSE
     Register new thread information for the threads in a pool.
-$PARAMETER        pool :
+$PARAMETER          pool :
     The thread pool.
-$PARAMETER        info :
+$PARAMETER          info :
     A pointer to the thread information array. If NULL and <<size>> is
     not 0 then the routine will allocate an array of sufficient size.
-$PARAMETER        size :
+$PARAMETER          size :
     The size (per thread) in bytes of the thread information. When
     threads are executing each is guaranteed to have a private working space of
     this size.
@@ -170,53 +170,53 @@ $RETURNS
     Nothing. On failure the process aborts.
 $END
 
-$FUNCTION         mt_get_thread_info
-$RETURN_TYPE      void *
+$FUNCTION           mt_get_thread_info
+$RETURN_TYPE        void *
 $PARAMETER_LIST
     (KThreadPool pool)
-$SUMMARY          Get the thread information pointer for a pool of threads.
+$SUMMARY            Get the thread information pointer for a pool of threads.
 $PURPOSE
     Get the thread information pointer for a pool of threads.
-$PARAMETER        pool :
+$PARAMETER          pool :
     The thread pool.
 $MT-LEVEL         Safe.
 $RETURNS
     A pointer to the thread information array.
 $END
 
-$FUNCTION         mt_wait_for_all_jobs
-$RETURN_TYPE      void
+$FUNCTION           mt_wait_for_all_jobs
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KThreadPool pool)
-$SUMMARY          Wait for all previously launched jobs to complete.
+$SUMMARY            Wait for all previously launched jobs to complete.
 $PURPOSE
     Wait for all previously launched jobs to complete.
-$PARAMETER        pool :
+$PARAMETER          pool :
     The thread pool.
 $MT-LEVEL         Safe.
 $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       MT_PROTO_func
-$RETURN_TYPE      void
+$PROTO_FUNC         MT_PROTO_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (void *pool_info, void *call_info1, void *call_info2,
 		    void *call_info3, void *call_info4, void *thread_info)
-$SUMMARY          Perform a job.
+$SUMMARY            Perform a job.
 $PURPOSE
     Perform a job.
-$PARAMETER        pool_info :
+$PARAMETER          pool_info :
     The arbitrary pool information pointer.
-$PARAMETER        call_info1 :
+$PARAMETER          call_info1 :
     The first arbitrary call information pointer.
-$PARAMETER        call_info2 :
+$PARAMETER          call_info2 :
     The second arbitrary call information pointer.
-$PARAMETER        call_info3 :
+$PARAMETER          call_info3 :
     The third arbitrary call information pointer.
-$PARAMETER        call_info4 :
+$PARAMETER          call_info4 :
     The fourth arbitrary call information pointer.
-$PARAMETER        thread_info :
+$PARAMETER          thread_info :
     A pointer to arbitrary, per thread, information. This
     information is private to the thread.
 $RETURNS

@@ -46,8 +46,11 @@
     Updated by      Richard Gooch   10-MAR-1995: Added support for "spray"
   protocol.
 
-    Last updated by Richard Gooch   30-MAY-1996: Cleaned code to keep
+    Updated by      Richard Gooch   30-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   22-AUG-1996: Upgraded "spray" protocol to
+  support synchronisation.
 
 
 */
@@ -71,6 +74,7 @@
 #include <karma_dsrw.h>
 #include <karma_arln.h>
 #include <karma_chm.h>
+#include <karma_pio.h>
 #include <karma_ds.h>
 #include <karma_ch.h>
 #include <karma_ex.h>
@@ -82,20 +86,30 @@
 #include <karma_m.h>
 
 
-#define VERSION "1.1"
+#define VERSION "1.2"
 
 #define COMMAND_LINE_LENGTH 4096
 #define WALL_CLOCK_TIME_DETECT 60
 #define CPUTIME_DETECT 2
-#define BUF_SIZE 16384
+
+
+/*  Structure definitions  */
+typedef struct
+{
+    unsigned int bytes_to_read;
+    flag synchronous;
+} spray_info;
 
 STATIC_FUNCTION (flag read_multi_array, (Connection connection, void **info) );
 static flag process_one_line (/* line, decode_func */);
 static flag internal_decode_func (/* line, fp */);
+STATIC_FUNCTION (flag open_spray, (Connection connection, void **info) );
 STATIC_FUNCTION (flag read_spray, (Connection connection, void **info) );
+STATIC_FUNCTION (void close_spray, (Connection connection, void *info) );
 
 
 static char *arrayfile = "";
+static flag synchronous_spray = FALSE;
 
 
 int main (int argc, char **argv)
@@ -105,7 +119,6 @@ int main (int argc, char **argv)
     unsigned int server_port_number;
     char line[COMMAND_LINE_LENGTH];
     char prompt[STRING_LENGTH + 3];
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     extern char module_name[STRING_LENGTH + 1];
     static char function_name[] = "main";
@@ -118,37 +131,35 @@ int main (int argc, char **argv)
 				   ( flag (*) () ) NULL,
 				   read_multi_array,
 				   ( void (*) () ) NULL);
-    conn_register_server_protocol ("spray", 0, 0,
-				   ( flag (*) () ) NULL,
-				   read_spray,
-				   ( void (*) () ) NULL);
+    conn_register_server_protocol ("spray", 1, 0,
+				   open_spray, read_spray, close_spray);
     if ( ( def_port_number = r_get_def_port (module_name, NULL) ) < 0 )
     {
-	(void) fprintf (stderr, "Could not get default port number\n");
+	fprintf (stderr, "Could not get default port number\n");
 	exit (RV_UNDEF_ERROR);
     }
     server_port_number = def_port_number;
     if (conn_become_server (&server_port_number, CONN_MAX_INSTANCES) != TRUE)
     {
-	(void) fprintf (stderr, "Error becoming server\n");
+	fprintf (stderr, "Error becoming server\n");
 	exit (RV_UNDEF_ERROR);
     }
     def_port_number = server_port_number;
-    (void) fprintf (stderr, "Port allocated: %d\n", def_port_number);
+    fprintf (stderr, "Port allocated: %d\n", def_port_number);
     /*  Set up control_c handler  */
     if ( (int) signal (SIGINT, s_int_handler) == -1 )
     {
-	(void) fprintf (stderr, "Error setting control_c handler\t%s%c\n",
+	fprintf (stderr, "Error setting control_c handler\t%s%c\n",
 			sys_errlist[errno], BEL);
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
 #ifdef SIGTERM
     /*  Set up sigTERM handler  */
     if ( (int) signal (SIGTERM, s_term_handler) == -1 )
     {
-	(void) fprintf (stderr, "Error setting sigTERM handler\t%s%c\n",
+	fprintf (stderr, "Error setting sigTERM handler\t%s%c\n",
 			sys_errlist[errno], BEL);
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
 #endif
     /*  Setup user interface  */
@@ -156,15 +167,19 @@ int main (int argc, char **argv)
     {
 	m_abort (function_name, "control panel form");
     }
+    panel_add_item (panel, "synchronous_spray", "flag", PIT_FLAG,
+		    &synchronous_spray,
+		    PIA_END);
     panel_add_item (panel, "arrayfile", "output filename", K_VSTRING,
-		    &arrayfile, PIA_END);
+		    &arrayfile,
+		    PIA_END);
     panel_push_onto_stack (panel);
     /*  Read in defaults  */
     hi_read (module_name, internal_decode_func);
     if (s_check_for_int () == TRUE)
     {
-	(void) fprintf (stderr, "control_c abort\n");
-	(void) exit (RV_CONTROL_C);
+	fprintf (stderr, "control_c abort\n");
+	exit (RV_CONTROL_C);
     }
     if (argc > 1)
     {
@@ -178,8 +193,8 @@ int main (int argc, char **argv)
     /*  Generate prompt. Don't use  sprintf(3)  because it's broken in the
 	C library for the VX/MVX
 	*/
-    (void) strcpy (prompt, module_name);
-    (void) strcat (prompt, "> ");
+    strcpy (prompt, module_name);
+    strcat (prompt, "> ");
     /*  Read lines and processes until eof on input  */
     while ( arln_read_from_stdin (line, COMMAND_LINE_LENGTH, prompt) &&
 	   process_one_line (line, ( flag (*) () ) NULL) );
@@ -203,9 +218,8 @@ flag (*decode_func) ();
     struct rusage start_usage;
     struct rusage stop_usage;
     static struct timezone tz = {0, 0};
-#endif  /*  HAS_GETRUSAGE  */
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
+#endif  /*  HAS_GETRUSAGE  */
 
 #ifdef dummy
     log_input_line (line);
@@ -213,15 +227,15 @@ flag (*decode_func) ();
 #ifdef HAS_GETRUSAGE
     if (gettimeofday (&start_time, &tz) != 0)
     {
-	(void) fprintf (stderr, "Error getting time of day\t%s%c\n",
+	fprintf (stderr, "Error getting time of day\t%s%c\n",
 			sys_errlist[errno], BEL);
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     if (getrusage (RUSAGE_SELF, &start_usage) != 0)
     {
-	(void) fprintf (stderr, "Error getting resource usage\t%s%c\n",
+	fprintf (stderr, "Error getting resource usage\t%s%c\n",
 			sys_errlist[errno], BEL);
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
 #endif  /*  HAS_GETRUSAGE  */
     if (panel_process_command_with_stack (line, decode_func, stderr) != TRUE)
@@ -230,21 +244,21 @@ flag (*decode_func) ();
     }
     if (s_check_for_int () == TRUE)
     {
-	(void) fprintf (stderr, "control_c abort\n");
+	fprintf (stderr, "control_c abort\n");
 	return (TRUE);
     }
 #ifdef HAS_GETRUSAGE
     if (gettimeofday (&stop_time, &tz) != 0)
     {
-	(void) fprintf (stderr, "Error getting time of day\t%s%c\n",
+	fprintf (stderr, "Error getting time of day\t%s%c\n",
 			sys_errlist[errno], BEL);
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     if (getrusage (RUSAGE_SELF, &stop_usage) != 0)
     {
-	(void) fprintf (stderr, "Error getting resource usage\t%s%c\n",
+	fprintf (stderr, "Error getting resource usage\t%s%c\n",
 			sys_errlist[errno], BEL);
-	(void) exit (RV_SYS_ERROR);
+	exit (RV_SYS_ERROR);
     }
     wall_clock_time_taken = stop_time.tv_sec - start_time.tv_sec;
     cputime_taken = (stop_usage.ru_utime.tv_sec -
@@ -252,7 +266,7 @@ flag (*decode_func) ();
     if ( (wall_clock_time_taken >= WALL_CLOCK_TIME_DETECT) &&
 	(cputime_taken >= CPUTIME_DETECT) )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Long operation finished. Time taken: %ld seconds\t%ld cpu seconds%c\n",
 			wall_clock_time_taken, cputime_taken, BEL);
     }
@@ -284,7 +298,7 @@ static flag read_multi_array (Connection connection, void **info)
 	/*  Should write arrayfile  */
 	if (dsxfr_put_multi (arrayfile, multi_desc) != TRUE)
 	{
-	    (void) fprintf (stderr, "Error writing arrayfile\n");
+	    fprintf (stderr, "Error writing arrayfile\n");
 	}
     }
     ds_dealloc_multi (multi_desc);
@@ -299,45 +313,104 @@ FILE *fp;
 					       fp) );
 }
 
+static flag open_spray (Connection connection, void **info)
+/*  [SUMMARY] Connection open event callback.
+    [PURPOSE] This routine is called when a connection opens.
+    <connection> The connection object.
+    <info> A pointer to the arbitrary information pointer. This may be modified
+    [RETURNS] TRUE on successful registration, else FALSE (indicating the
+    connection should be closed).
+    [NOTE] The <<close_func>> will not be called if this routine returns
+    FALSE.
+*/
+{
+    spray_info *sinfo;
+    static char function_name[] = "open_spray";
+
+    if ( ( sinfo = (spray_info *) m_alloc (sizeof *sinfo) ) == NULL )
+    {
+	m_error_notify (function_name, "spray info");
+	return (FALSE);
+    }
+    sinfo->bytes_to_read = 0;
+    sinfo->synchronous = FALSE;
+    *info = sinfo;
+    return (TRUE);
+}   /*  End Function open_spray  */
+
 static flag read_spray (Connection connection, void **info)
-/*  This routine will read in data from the connection given by  connection
-    and will write any appropriate information to the pointer pointed to by
-    info  .
-    The routine returns TRUE on successful reading,
-    else it returns FALSE (indicating the connection should be closed).
-    Note that the  close_func  will be called upon connection closure.
+/*  [SUMMARY] Connection read event callback.
+    [PURPOSE] This routine is called when data is ready to be read from a
+    connection.
+    <connection> The connection object.
+    <info> A pointer to the arbitrary information pointer. This may be modified
+    [RETURNS] TRUE on successful reading, else FALSE (indicating the connection
+    should be closed).
+    [NOTE] The <<close_func>> will not be called if this routine returns
+    FALSE.
 */
 {
     Channel channel;
     int bytes_readable;
     unsigned int bytes_to_read;
-    char buffer[BUF_SIZE];
+    unsigned long value;
+    spray_info *sinfo = (spray_info *) *info;
+    extern flag synchronous_spray;
     extern char *sys_errlist[];
-    static char function_name[] = "read_spray";
+    /*static char function_name[] = "read_spray";*/
 
     channel = conn_get_channel (connection);
-    if ( ( bytes_readable = ch_get_bytes_readable (channel) ) < 0 )
+    if (sinfo->bytes_to_read == 0)
     {
-	(void) exit (RV_SYS_ERROR);
+	/*  New transaction: read number of bytes that will need to be read  */
+	if ( !pio_read32 (channel, &value) ) return (FALSE);
+	sinfo->bytes_to_read = value;
+	if ( !pio_read32 (channel, &value) ) return (FALSE);
+	sinfo->synchronous = value;
     }
-    if (bytes_readable < 1)
+    if (synchronous_spray) bytes_readable = sinfo->bytes_to_read;
+    else if ( ( bytes_readable = ch_get_bytes_readable (channel) ) < 0 )
     {
-	(void) fprintf (stderr,
-			"Connection has: %d bytes readable: should be at least 1\n",
-			bytes_readable);
-	a_prog_bug (function_name);
+	exit (RV_SYS_ERROR);
     }
-    while (bytes_readable > 0)
+    bytes_to_read = (bytes_readable > sinfo->bytes_to_read) ? sinfo->bytes_to_read : bytes_readable;
+    if (ch_drain (channel, bytes_to_read) < bytes_to_read)
     {
-	bytes_to_read = (bytes_readable >BUF_SIZE) ? BUF_SIZE : bytes_readable;
-	if (ch_read (channel, buffer, bytes_to_read) < bytes_to_read)
+	fprintf (stderr, "Error reading: %u bytes\t%s\n",
+		 bytes_to_read, sys_errlist[errno]);
+	return (FALSE);
+    }
+    sinfo->bytes_to_read -= bytes_to_read;
+    if (sinfo->bytes_to_read < 1)
+    {
+	if (sinfo->synchronous)
 	{
-	    (void) fprintf (stderr,
-			    "Error reading: %u bytes from descriptor\t%s\n",
-			    (unsigned int) bytes_readable, sys_errlist[errno]);
-	    return (FALSE);
+	    if (ch_fill (channel, 1, 0) < 1)
+	    {
+		fprintf (stderr, "Error writing synchronisation byte\t%s\n",
+			 sys_errlist[errno]);
+		return (FALSE);
+	    }
+	    if ( !ch_flush (channel) )
+	    {
+		fprintf (stderr, "Error flushing synchronisation byte\t%s\n",
+			 sys_errlist[errno]);
+		return (FALSE);
+	    }
 	}
-	bytes_readable -= bytes_to_read;
     }
     return (TRUE);
 }   /*  End Function read_spray  */
+
+static void close_spray (Connection connection, void *info)
+/*  [SUMMARY] Connection close event callback.
+    [PURPOSE] This routine is called when a connection closed.
+    When this routine is called, this is the last chance to read any
+    buffered data from the channel associated with the connection object.
+    <connection> The connection object.
+    <info> The arbitrary connection information pointer.
+    [RETURNS] Nothing.
+*/
+{
+    m_free (info);
+}   /*  End Function close_spray  */

@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   8-AUG-1994
 
-    Last updated by Richard Gooch   22-APR-1996
+    Last updated by Richard Gooch   23-AUG-1996
 
 */
 
@@ -73,6 +73,7 @@ EXTERN_FUNCTION (flag imw_to8_oi,
 		  unsigned char min_sat_pixel, unsigned char max_sat_pixel,
 		  double i_min, double i_max,
 		  flag (*iscale_func) (), void *iscale_info) );
+EXTERN_FUNCTION (flag imw_test_verbose, (void) );
 
 
 /*  File:  lossy.c  */

@@ -56,7 +56,12 @@
     Updated by      Richard Gooch   13-APR-1996: Changed to new documentation
   format.
 
-    Last updated by Richard Gooch   26-APR-1996: Moved stub functions in.
+    Updated by      Richard Gooch   26-APR-1996: Moved stub functions in.
+
+    Updated by      Richard Gooch   26-JUL-1996: Created <draw_string>.
+
+    Last updated by Richard Gooch   15-SEP-1996: Made use of new <kwin_xutil_*>
+  routines.
 
 
 */
@@ -246,8 +251,6 @@ STATIC_FUNCTION (flag resize,
 STATIC_FUNCTION (void initialise, () );
 STATIC_FUNCTION (void set_pixel_in_gc,
 		 (XglCanvas xglcanvas, unsigned long pixel_value) );
-STATIC_FUNCTION (XVisualInfo *get_visinfo_for_visual,
-		 (Display *dpy, Visual *visual) );
 STATIC_FUNCTION (KPixCanvasImageCache size_cache,
 		 (XglCanvas xglcanvas, KPixCanvasImageCache *cache_ptr,
 		  unsigned int width, unsigned int height) );
@@ -388,7 +391,8 @@ flag kwin_xgl_create_stereo (Display *display, Window window,
     shared_canvas->height = height;
     shared_canvas->xwin_width = window_attributes.width;
     shared_canvas->xwin_height = window_attributes.height;
-    vinfo = get_visinfo_for_visual (display, window_attributes.visual);
+    vinfo = kwin_xutil_get_visinfo_for_visual (display,
+					       window_attributes.visual);
     if (window_attributes.depth != vinfo->depth)
     {
 	(void) fprintf (stderr, "Window depth: %d is not visual depth: %d\n",
@@ -504,6 +508,7 @@ flag kwin_xgl_create_stereo (Display *display, Window window,
 		  KWIN_FUNC_DRAW_CACHED_IMAGE, draw_cached_image,
 		  KWIN_FUNC_FREE_CACHE_DATA, free_cache_data,
 		  KWIN_FUNC_DRAW_LINE, draw_line,
+		  KWIN_FUNC_DRAW_STRING, draw_string,
 		  KWIN_FUNC_GET_COLOUR, get_colour,
 		  KWIN_FUNC_RESIZE, resize,
 		  KWIN_ATT_END) );
@@ -525,6 +530,7 @@ flag kwin_xgl_create_stereo (Display *display, Window window,
 		  KWIN_FUNC_DRAW_CACHED_IMAGE, draw_cached_image,
 		  KWIN_FUNC_FREE_CACHE_DATA, free_cache_data,
 		  KWIN_FUNC_DRAW_LINE, draw_line,
+		  KWIN_FUNC_DRAW_STRING, draw_string,
 		  KWIN_FUNC_GET_COLOUR, get_colour,
 		  KWIN_FUNC_RESIZE, resize,
 		  KWIN_ATT_END) );
@@ -546,6 +552,7 @@ flag kwin_xgl_create_stereo (Display *display, Window window,
 		   KWIN_FUNC_DRAW_CACHED_IMAGE, draw_cached_image,
 		   KWIN_FUNC_FREE_CACHE_DATA, free_cache_data,
 		   KWIN_FUNC_DRAW_LINE, draw_line,
+		   KWIN_FUNC_DRAW_STRING, draw_string,
 		   KWIN_FUNC_GET_COLOUR, get_colour,
 		   KWIN_FUNC_RESIZE, resize,
 		   KWIN_ATT_END) );
@@ -563,6 +570,7 @@ flag kwin_xgl_create_stereo (Display *display, Window window,
 		  KWIN_FUNC_DRAW_CACHED_IMAGE, draw_cached_image,
 		  KWIN_FUNC_FREE_CACHE_DATA, free_cache_data,
 		  KWIN_FUNC_DRAW_LINE, draw_line,
+		  KWIN_FUNC_DRAW_STRING, draw_string,
 		  KWIN_FUNC_GET_COLOUR, get_colour,
 		  KWIN_FUNC_RESIZE, resize,
 		  KWIN_ATT_END) );
@@ -575,6 +583,7 @@ flag kwin_xgl_create_stereo (Display *display, Window window,
 		  KWIN_FUNC_DRAW_CACHED_IMAGE, draw_cached_image,
 		  KWIN_FUNC_FREE_CACHE_DATA, free_cache_data,
 		  KWIN_FUNC_DRAW_LINE, draw_line,
+		  KWIN_FUNC_DRAW_STRING, draw_string,
 		  KWIN_FUNC_GET_COLOUR, get_colour,
 		  KWIN_FUNC_RESIZE, resize,
 		  KWIN_ATT_END) );
@@ -587,6 +596,7 @@ flag kwin_xgl_create_stereo (Display *display, Window window,
 		   KWIN_FUNC_DRAW_CACHED_IMAGE, draw_cached_image,
 		   KWIN_FUNC_FREE_CACHE_DATA, free_cache_data,
 		   KWIN_FUNC_DRAW_LINE, draw_line,
+		   KWIN_FUNC_DRAW_STRING, draw_string,
 		   KWIN_FUNC_GET_COLOUR, get_colour,
 		   KWIN_FUNC_RESIZE, resize,
 		   KWIN_ATT_END) );
@@ -652,6 +662,8 @@ flag kwin_xgl_create_stereo (Display *display, Window window,
 			     XGL_CTX_VDC_MAP, XGL_VDC_MAP_DEVICE,
 			     XGL_CTX_BACKGROUND_COLOR, &colour,
 			     XGL_CTX_NEW_FRAME_ACTION, XGL_CTX_NEW_FRAME_CLEAR,
+			     XGL_CTX_STEXT_CHAR_HEIGHT, 10.0,
+			     XGL_CTX_ATEXT_CHAR_HEIGHT, 10.0,
 			     NULL) ) == NULL )
     {
 	(void) fprintf (stderr, "%s: cannot create XGL_3D_CTX\n",
@@ -1286,6 +1298,46 @@ static flag draw_line (XglCanvas xglcanvas,
     return (TRUE);
 }   /*  End Function draw_line  */
 
+static flag draw_string (XglCanvas xglcanvas, double x, double y,
+			 CONST char *string,
+			 unsigned long pixel_value, flag clear_under)
+/*  [PURPOSE] This routine will draw a NULL terminated string onto an XGL
+    canvas, using the default font for the canvas.
+    <xglcanvas> The XGL canvas.
+    <x> The horizontal offset of the string origin.
+    <y> The vertical offset of the string origin.
+    <string> The string.
+    <pixel_value> The pixel value to use.
+    <clear_under> If TRUE, then the routine will draw both the foreground and
+    background of the characters.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    Xgl_color colour;
+    Xgl_pt_f3d ref, anno;
+    static char function_name[] = "__kwin_xgl_draw_string";
+
+    VERIFY_CANVAS (xglcanvas);
+    FLAG_VERIFY (clear_under);
+    set_active_canvas (xglcanvas);
+    if (clear_under) (void) fprintf (stderr, "%s: clear_under not supported\n",
+				     function_name);
+    /*  Have to set the point colour. Pity XGL has such a cumbersome scheme  */
+    convert_colour (xglcanvas, &colour, pixel_value);
+    xgl_object_set (xglcanvas->shared_canvas->render_context,
+		    XGL_CTX_STEXT_COLOR, &colour,
+		    NULL);
+    ref.x = x;
+    ref.y = y;
+    ref.z = 0;
+    anno.x = 0;
+    anno.y = 0;
+    anno.z = 0;
+    xgl_annotation_text (xglcanvas->shared_canvas->render_context,
+			 (char *) string, &ref, &anno);
+    return (TRUE);
+}   /*  End Function draw_string  */
+
 static flag get_colour (XglCanvas xglcanvas, CONST char *colourname,
 			unsigned long *pixel_value, unsigned short *red,
 			unsigned short *green, unsigned short *blue)
@@ -1418,37 +1470,6 @@ static void initialise ()
 		    XGL_SYS_ST_ERROR_DETECTION, TRUE,
 		    NULL);
 }   /*  End Function initialise  */
-
-static XVisualInfo *get_visinfo_for_visual (Display *dpy, Visual *visual)
-/*  [PURPOSE] This routine will get the visual information structure for a
-    visual.
-    <dpy> The X display.
-    <visual> The visual.
-    [RETURNS] A pointer to an XVisualInfo structure on succes, else NULL. The
-    XVisualInfo structure must be freed by XFree()
-*/
-{
-    int num_vinfos;
-    XVisualInfo vinfo_template;
-    XVisualInfo *vinfos;
-    static char function_name[] = "__kwin_xgl_get_visinfo_for_visual";
-
-    vinfo_template.visualid = XVisualIDFromVisual (visual);
-    vinfos = XGetVisualInfo (dpy, VisualIDMask, &vinfo_template, &num_vinfos);
-    if (num_vinfos < 1)
-    {
-	(void) fprintf (stderr, "Error getting visual info for visual: %p\n",
-			visual);
-	a_prog_bug (function_name);
-    }
-    if (num_vinfos > 1)
-    {
-	(void)fprintf(stderr,
-		      "%s: WARNING: number of visuals for visual: %p is: %d\n",
-		      function_name, visual, num_vinfos);
-    }
-    return (vinfos);
-}   /*  End Function get_visinfo_for_visual  */
 
 static KPixCanvasImageCache size_cache (XglCanvas xglcanvas,
 					KPixCanvasImageCache *cache_ptr,

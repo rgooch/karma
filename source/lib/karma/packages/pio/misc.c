@@ -69,8 +69,12 @@
     Updated by      Richard Gooch   22-AUG-1995: Extended NaN list to include
   all 1s filled.
 
-    Last updated by Richard Gooch   12-APR-1996: Changed to new documentation
+    Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
   format.
+
+    Updated by      Richard Gooch   5-SEP-1996: Created <pio_read_floats>.
+
+    Last updated by Richard Gooch   7-SEP-1996: Created <pio_read_doubles>.
 
 
 */
@@ -79,29 +83,15 @@
 #include <errno.h>
 #include <karma.h>
 #include <karma_pio.h>
+#include <karma_ds.h>
 #include <karma_ch.h>
 #include <karma_m.h>
 #include <karma_p.h>
 #include <karma_a.h>
 #include <os.h>
 
-#define NUM_NANS 3
 
-/*  float NaNs  */
-static unsigned char fnans[NUM_NANS][NET_FLOAT_SIZE] =
-{
-    {0x7f, 0x80, 0x0f, 0},    /*  Signal NaN  */
-    {0x7f, 0xc0, 0, 0},       /*  Quiet NaN. It is also indefinite(?)  */
-    {0xff, 0xff, 0xff, 0xff}
-};
-
-/*  double NaNs  */
-static unsigned char dnans[NUM_NANS][NET_DOUBLE_SIZE] =
-{
-    {0x7f, 0xf0, 0, 0, 0, 0x0f, 0, 0},  /*  Signal NaN  */
-    {0x7f, 0xf8, 0, 0, 0, 0, 0, 0}, /*  Quiet NaN, It is also indefinite(?)  */
-    {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
-};
+#define BUF_SIZE 65536
 
 
 /*  Public routines follow  */
@@ -124,8 +114,8 @@ flag pio_write64 (Channel channel, unsigned long data)
     }
     if (ch_write (channel, buffer, 8) < 8)
     {
-	(void) fprintf (stderr, "Error writing 8 bytes of data\t%s\n",
-			sys_errlist[errno]);
+	fprintf (stderr, "Error writing 8 bytes of data\t%s\n",
+		 sys_errlist[errno]);
 	return (FALSE);
     }
     return (TRUE);
@@ -145,8 +135,8 @@ flag pio_read64 (Channel channel, unsigned long *data)
 
     if (ch_read (channel, buffer, 8) < 8)
     {
-	(void) fprintf (stderr, "Error reading 8 bytes of data\t%s\n",
-			sys_errlist[errno]);
+	fprintf (stderr, "Error reading 8 bytes of data\t%s\n",
+		 sys_errlist[errno]);
 	return (FALSE);
     }
     return ( p_read_buf64 (buffer, data) );
@@ -170,8 +160,8 @@ flag pio_write32 (Channel channel, unsigned long data)
     }
     if (ch_write (channel, buffer, 4) < 4)
     {
-	(void) fprintf (stderr, "Error writing 4 bytes of data\t%s\n",
-			sys_errlist[errno]);
+	fprintf (stderr, "Error writing 4 bytes of data\t%s\n",
+		 sys_errlist[errno]);
 	return (FALSE);
     }
     return (TRUE);
@@ -191,8 +181,8 @@ flag pio_read32 (Channel channel, unsigned long *data)
 
     if (ch_read (channel, buffer, 4) < 4)
     {
-	(void) fprintf (stderr, "Error reading 4 bytes of data\t%s\n",
-			sys_errlist[errno]);
+	fprintf (stderr, "Error reading 4 bytes of data\t%s\n",
+		 sys_errlist[errno]);
 	return (FALSE);
     }
     return ( p_read_buf32 (buffer, data) );
@@ -216,8 +206,8 @@ flag pio_write16 (Channel channel, unsigned long data)
     }
     if (ch_write (channel, buffer, 2) < 2)
     {
-	(void) fprintf (stderr, "Error writing 2 bytes of data\t%s\n",
-			sys_errlist[errno]);
+	fprintf (stderr, "Error writing 2 bytes of data\t%s\n",
+		 sys_errlist[errno]);
 	return (FALSE);
     }
     return (TRUE);
@@ -237,8 +227,8 @@ flag pio_read16 (Channel channel, unsigned long *data)
 
     if (ch_read (channel, buffer, 2) < 2)
     {
-	(void) fprintf (stderr, "Error reading 2 bytes of data\t%s\n",
-			sys_errlist[errno]);
+	fprintf (stderr, "Error reading 2 bytes of data\t%s\n",
+		 sys_errlist[errno]);
 	return (FALSE);
     }
     return ( p_read_buf16 (buffer, data) );
@@ -259,8 +249,8 @@ flag pio_write_float (Channel channel, float data)
     if ( !p_write_buf_float (buffer, data) ) return (FALSE);
     if (ch_write (channel, buffer, NET_FLOAT_SIZE) < NET_FLOAT_SIZE)
     {
-	(void) fprintf (stderr, "Error writing %d bytes of data\t%s\n",
-			NET_FLOAT_SIZE, sys_errlist[errno]);
+	fprintf (stderr, "Error writing %d bytes of data\t%s\n",
+		 NET_FLOAT_SIZE, sys_errlist[errno]);
 	return (FALSE);
     }
     return (TRUE);
@@ -281,8 +271,8 @@ flag pio_read_float (Channel channel, float *data)
 
     if (ch_read (channel, buffer, NET_FLOAT_SIZE) < NET_FLOAT_SIZE)
     {
-	(void) fprintf (stderr, "Error reading: %d bytes of data\t%s\n",
-			NET_FLOAT_SIZE, sys_errlist[errno]);
+	fprintf (stderr, "Error reading: %d bytes of data\t%s\n",
+		 NET_FLOAT_SIZE, sys_errlist[errno]);
 	return (FALSE);
     }
     return ( p_read_buf_float (buffer, data) );
@@ -302,33 +292,103 @@ flag pio_read_float_nantrap (Channel channel, float *data, flag *was_nan)
     [RETURNS] TRUE on success, else FALSE.
 */
 {
-    flag foundnan = FALSE;
-    flag equal;
-    int nan_count, byte_count;
+    uaddr num_nan;
     char buffer[NET_FLOAT_SIZE];
-    unsigned char *ptr = (unsigned char *) buffer;
-    extern unsigned char fnans[NUM_NANS][NET_FLOAT_SIZE];
     extern char *sys_errlist[];
 
     if (ch_read (channel, buffer, NET_FLOAT_SIZE) < NET_FLOAT_SIZE)
     {
-	(void) fprintf (stderr, "Error reading: %d bytes of data\t%s\n",
-			NET_FLOAT_SIZE, sys_errlist[errno]);
+	fprintf (stderr, "Error reading: %d bytes of data\t%s\n",
+		 NET_FLOAT_SIZE, sys_errlist[errno]);
 	return (FALSE);
     }
-    for (nan_count = 0; nan_count < NUM_NANS; ++nan_count)
-    {
-	for (byte_count = 0, equal = TRUE;
-	     equal && (byte_count < NET_FLOAT_SIZE);
-	     ++byte_count)
-	{
-	    if (ptr[byte_count] != fnans[nan_count][byte_count]) equal = FALSE;
-	}
-	if (equal) foundnan = TRUE;
-    }
-    *was_nan = foundnan;
-    return ( p_read_buf_float (buffer, data) );
+    if ( !p_read_buf_floats (buffer, 1, data, &num_nan) ) return (FALSE);
+    *was_nan = (num_nan > 0) ? TRUE : FALSE;
+    return (TRUE);
 }   /*  End Function pio_read_float_nantrap  */
+
+/*EXPERIMENTAL_FUNCTION*/
+uaddr pio_read_floats (Channel channel, uaddr num_values, float *data,
+		       uaddr *num_nan)
+/*  [SUMMARY] Read floating point data from a channel object, trapping NaNs.
+    [PURPOSE] This routine will read many floating point numbers from a channel
+    object and will optionally trap IEEE Not-A-Number (NaN) values. Trapped
+    NaNs are converted to the TOOBIG value.
+    <channel> The channel object.
+    <num_values> The number of values to read.
+    <data> The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+    <num_nan> The number of NaN values found will be written here. If this is
+    NULL then NaN values are not trapped.
+    [RETURNS] The number of values read and converted.
+*/
+{
+    flag block_transfer, swap_transfer;
+    uaddr values_converted, block_length;
+    uaddr num_nan_local = 0;
+    char buffer[BUF_SIZE * NET_FLOAT_SIZE];
+    extern char *sys_errlist[];
+    static char function_name[] = "pio_read_floats";
+
+    if ( (channel == NULL) || (data == NULL) )
+    {
+	fprintf (stderr, "NULL pointer(s) passed\n");
+	a_prog_bug (function_name);
+    }
+    block_transfer = ds_can_transfer_element_as_block (K_FLOAT);
+    swap_transfer = ds_can_swaptransfer_element (K_FLOAT);
+    if (num_nan == NULL)
+    {
+	/*  No NaN trap: try to speed things up  */
+	if (block_transfer)
+	{
+	    if (ch_read (channel, (char *) data, num_values * NET_FLOAT_SIZE) <
+		num_values * NET_FLOAT_SIZE)
+	    {
+		fprintf (stderr, "%s: error reading data\t%s\n",
+			 function_name, sys_errlist[errno]);
+		return (0);
+	    }
+	    return (num_values);
+	}
+	if (swap_transfer)
+	{
+	    if (ch_read_and_swap_blocks (channel, (char *) data, num_values,
+					 NET_FLOAT_SIZE)
+		< num_values * NET_FLOAT_SIZE)
+	    {
+		fprintf (stderr, "%s: error reading data\t%s\n",
+			 function_name, sys_errlist[errno]);
+		return (0);
+	    }
+	    return (num_values);
+	}
+    }
+    /*  Must trap for NaNs or sizes are different  */
+    for (values_converted = 0; values_converted < num_values;
+	 values_converted += block_length, data += block_length)
+    {
+	block_length = num_values - values_converted;
+	if (block_length > BUF_SIZE) block_length = BUF_SIZE;
+	/*  Read a block of data  */
+	if (ch_read (channel, buffer, block_length * NET_FLOAT_SIZE) <
+	    block_length * NET_FLOAT_SIZE)
+	{
+	    fprintf (stderr, "%s: error reading data\t%s\n",
+		     function_name, sys_errlist[errno]);
+	    return (values_converted);
+	}
+	/*  Convert and possibly NaN trap  */
+	if ( !p_read_buf_floats (buffer, block_length, data, num_nan) )
+	{
+	    return (values_converted);
+	}
+	if (num_nan != NULL) num_nan_local += *num_nan;
+    }
+    if (num_nan != NULL) *num_nan = num_nan_local;
+    return (values_converted);
+}   /*  End Function pio_read_floats  */
 
 /*PUBLIC_FUNCTION*/
 flag pio_write_double (Channel channel, double data)
@@ -345,8 +405,8 @@ flag pio_write_double (Channel channel, double data)
     if ( !p_write_buf_double (buffer, data) ) return (FALSE);
     if (ch_write (channel, buffer, NET_DOUBLE_SIZE) < NET_DOUBLE_SIZE)
     {
-	(void) fprintf (stderr, "Error writing %d bytes of data\t%s\n",
-			NET_DOUBLE_SIZE, sys_errlist[errno]);
+	fprintf (stderr, "Error writing %d bytes of data\t%s\n",
+		 NET_DOUBLE_SIZE, sys_errlist[errno]);
 	return (FALSE);
     }
     return (TRUE);
@@ -367,8 +427,8 @@ flag pio_read_double (Channel channel, double *data)
 
     if (ch_read (channel, buffer, NET_DOUBLE_SIZE) < NET_DOUBLE_SIZE)
     {
-	(void) fprintf (stderr, "Error reading: %d bytes of data\t%s\n",
-			NET_DOUBLE_SIZE, sys_errlist[errno]);
+	fprintf (stderr, "Error reading: %d bytes of data\t%s\n",
+		 NET_DOUBLE_SIZE, sys_errlist[errno]);
 	return (FALSE);
     }
     return ( p_read_buf_double (buffer, data) );
@@ -388,33 +448,103 @@ flag pio_read_double_nantrap (Channel channel, double *data, flag *was_nan)
     [RETURNS] TRUE on success, else FALSE.
 */
 {
-    flag foundnan = FALSE;
-    flag equal;
-    int nan_count, byte_count;
+    uaddr num_nan;
     char buffer[NET_DOUBLE_SIZE];
-    unsigned char *ptr = (unsigned char *) buffer;
-    extern unsigned char dnans[NUM_NANS][NET_DOUBLE_SIZE];
     extern char *sys_errlist[];
 
     if (ch_read (channel, buffer, NET_DOUBLE_SIZE) < NET_DOUBLE_SIZE)
     {
-	(void) fprintf (stderr, "Error reading: %d bytes of data\t%s\n",
-			NET_DOUBLE_SIZE, sys_errlist[errno]);
+	fprintf (stderr, "Error reading: %d bytes of data\t%s\n",
+		 NET_DOUBLE_SIZE, sys_errlist[errno]);
 	return (FALSE);
     }
-    for (nan_count = 0; nan_count < NUM_NANS; ++nan_count)
-    {
-	for (byte_count = 0, equal = TRUE;
-	     equal && (byte_count < NET_DOUBLE_SIZE);
-	     ++byte_count)
-	{
-	    if (ptr[byte_count] != dnans[nan_count][byte_count]) equal = FALSE;
-	}
-	if (equal) foundnan = TRUE;
-    }
-    *was_nan = foundnan;
-    return ( p_read_buf_double (buffer, data) );
+    if ( !p_read_buf_doubles (buffer, 1, data, &num_nan) ) return (FALSE);
+    *was_nan = (num_nan > 0) ? TRUE : FALSE;
+    return (TRUE);
 }   /*  End Function pio_read_double_nantrap  */
+
+/*EXPERIMENTAL_FUNCTION*/
+uaddr pio_read_doubles (Channel channel, uaddr num_values, double *data,
+			uaddr *num_nan)
+/*  [SUMMARY] Read double float data from a channel object, trapping NaNs.
+    [PURPOSE] This routine will read many double precision floating point
+    numbers from a channel object and will optionally trap IEEE Not-A-Number
+    (NaN) values. Trapped NaNs are converted to the TOOBIG value.
+    <channel> The channel object.
+    <num_values> The number of values to read.
+    <data> The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+    <num_nan> The number of NaN values found will be written here. If this is
+    NULL then NaN values are not trapped.
+    [RETURNS] The number of values read and converted.
+*/
+{
+    flag block_transfer, swap_transfer;
+    uaddr values_converted, block_length;
+    uaddr num_nan_local = 0;
+    char buffer[BUF_SIZE * NET_DOUBLE_SIZE];
+    extern char *sys_errlist[];
+    static char function_name[] = "pio_read_doubles";
+
+    if ( (channel == NULL) || (data == NULL) )
+    {
+	fprintf (stderr, "NULL pointer(s) passed\n");
+	a_prog_bug (function_name);
+    }
+    block_transfer = ds_can_transfer_element_as_block (K_DOUBLE);
+    swap_transfer = ds_can_swaptransfer_element (K_DOUBLE);
+    if (num_nan == NULL)
+    {
+	/*  No NaN trap: try to speed things up  */
+	if (block_transfer)
+	{
+	    if (ch_read (channel, (char *) data, num_values * NET_DOUBLE_SIZE)
+		< num_values * NET_DOUBLE_SIZE)
+	    {
+		fprintf (stderr, "%s: error reading data\t%s\n",
+			 function_name, sys_errlist[errno]);
+		return (0);
+	    }
+	    return (num_values);
+	}
+	if (swap_transfer)
+	{
+	    if (ch_read_and_swap_blocks (channel, (char *) data, num_values,
+					 NET_DOUBLE_SIZE)
+		< num_values * NET_DOUBLE_SIZE)
+	    {
+		fprintf (stderr, "%s: error reading data\t%s\n",
+			 function_name, sys_errlist[errno]);
+		return (0);
+	    }
+	    return (num_values);
+	}
+    }
+    /*  Must trap for NaNs or sizes are different  */
+    for (values_converted = 0; values_converted < num_values;
+	 values_converted += block_length, data += block_length)
+    {
+	block_length = num_values - values_converted;
+	if (block_length > BUF_SIZE) block_length = BUF_SIZE;
+	/*  Read a block of data  */
+	if (ch_read (channel, buffer, block_length * NET_DOUBLE_SIZE) <
+	    block_length * NET_DOUBLE_SIZE)
+	{
+	    fprintf (stderr, "%s: error reading data\t%s\n",
+		     function_name, sys_errlist[errno]);
+	    return (values_converted);
+	}
+	/*  Convert and possibly NaN trap  */
+	if ( !p_read_buf_doubles (buffer, block_length, data, num_nan) )
+	{
+	    return (values_converted);
+	}
+	if (num_nan != NULL) num_nan_local += *num_nan;
+    }
+    if (num_nan != NULL) *num_nan = num_nan_local;
+    return (values_converted);
+}   /*  End Function pio_read_doubles  */
 
 /*PUBLIC_FUNCTION*/
 flag pio_write32s (Channel channel, long data)
@@ -437,8 +567,8 @@ flag pio_write32s (Channel channel, long data)
     }
     if (ch_write (channel, buffer, 4) < 4)
     {
-	(void) fprintf (stderr, "Error writing 4 bytes of data\t%s\n",
-			sys_errlist[errno]);
+	fprintf (stderr, "Error writing 4 bytes of data\t%s\n",
+		 sys_errlist[errno]);
 	return (FALSE);
     }
     return (TRUE);
@@ -461,8 +591,8 @@ flag pio_read32s (Channel channel, long *data)
 
     if (ch_read (channel, buffer, 4) < 4)
     {
-	(void) fprintf (stderr, "Error reading 4 bytes of data\t%s\n",
-			sys_errlist[errno]);
+	fprintf (stderr, "Error reading 4 bytes of data\t%s\n",
+		 sys_errlist[errno]);
 	return (FALSE);
     }
     return ( p_read_buf32s (buffer, data) );
@@ -489,8 +619,8 @@ flag pio_write16s (Channel channel, long data)
     }
     if (ch_write (channel, buffer, 2) < 2)
     {
-	(void) fprintf (stderr, "Error writing 2 bytes of data\t%s\n",
-			sys_errlist[errno]);
+	fprintf (stderr, "Error writing 2 bytes of data\t%s\n",
+		 sys_errlist[errno]);
 	return (FALSE);
     }
     return (TRUE);
@@ -513,8 +643,8 @@ flag pio_read16s (Channel channel, long *data)
 
     if (ch_read (channel, buffer, 2) < 2)
     {
-	(void) fprintf (stderr, "Error reading 2 bytes of data\t%s\n",
-			sys_errlist[errno]);
+	fprintf (stderr, "Error reading 2 bytes of data\t%s\n",
+		 sys_errlist[errno]);
 	return (FALSE);
     }
     return ( p_read_buf16s (buffer, data) );
@@ -559,8 +689,8 @@ flag pio_write_swap (Channel channel, CONST char *data, unsigned int length)
     /*  Write buffer  */
     if (ch_write (channel, buffer, length) < length)
     {
-	(void) fprintf (stderr, "Error writing: %u bytes of data\t%s\n",
-			length, sys_errlist[errno]);
+	fprintf (stderr, "Error writing: %u bytes of data\t%s\n",
+		 length, sys_errlist[errno]);
 	return (FALSE);
     }
     return (TRUE);
@@ -600,8 +730,8 @@ flag pio_read_swap (Channel channel, char *data, unsigned int length)
     /*  Read buffer  */
     if (ch_read (channel, buffer, length) < length)
     {
-	(void) fprintf (stderr, "Error reading: %u bytes of data\t%s\n",
-			length, sys_errlist[errno]);
+	fprintf (stderr, "Error reading: %u bytes of data\t%s\n",
+		 length, sys_errlist[errno]);
 	return (FALSE);
     }
     /*  Copy and swap bytes  */
@@ -675,8 +805,8 @@ char *pio_read_string (Channel channel, unsigned int *length)
     /*  Read string  */
     if (ch_read (channel, string, (unsigned int) len) < len)
     {
-	(void) fprintf (stderr, "Error reading: %u bytes\t%s\n",
-			(unsigned int) len, sys_errlist[errno]);
+	fprintf (stderr, "Error reading: %u bytes\t%s\n",
+		 (unsigned int) len, sys_errlist[errno]);
 	a_func_abort (function_name, "could not read string");
 	m_free (string);
 	return (NULL);

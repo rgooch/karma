@@ -65,8 +65,10 @@
     Updated by      Richard Gooch   28-JUN-1996: Created XkwNautoIncrement
   resource.
 
-    Last updated by Richard Gooch   1-JUL-1996: Switched to <psw_va_create> and
+    Updated by      Richard Gooch   1-JUL-1996: Switched to <psw_va_create> and
   <psw_close> routines.
+
+    Last updated by Richard Gooch   30-OCT-1996: Added #include <sys/types.h>
 
 
 */
@@ -89,6 +91,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>

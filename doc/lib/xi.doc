@@ -9,37 +9,37 @@ $LIBRARY          karmaX11
 $LINKWITH         -lkarmaX11
 $END
 
-$FUNCTION         xi_check_shared_images_available
-$RETURN_TYPE      flag
+$FUNCTION           xi_check_shared_images_available
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Display *display)
-$SUMMARY          Test if shared memory XImages may be use with an X server.
+$SUMMARY            Test if shared memory XImages may be use with an X server.
 $PURPOSE
     Test if shared memory XImages may be use with an X server.
-$PARAMETER        display :
+$PARAMETER          display :
     The X server.
 $RETURNS
     TRUE if shared images are available, else FALSE.
 $END
 
-$FUNCTION         xi_create_image
-$RETURN_TYPE      XImage *
+$FUNCTION           xi_create_image
+$RETURN_TYPE        XImage *
 $PARAMETER_LIST
     (Display *display, Window window,
 			 unsigned int image_width, unsigned int image_height,
 			 flag *share)
-$SUMMARY          Create an XImage structure for a window.
+$SUMMARY            Create an XImage structure for a window.
 $PURPOSE
     Create an XImage structure for a window.
-$PARAMETER        display :
+$PARAMETER          display :
     The X display.
-$PARAMETER        window :
+$PARAMETER          window :
     The X window ID.
-$PARAMETER        image_width :
+$PARAMETER          image_width :
     The width of the desired image in pixels.
-$PARAMETER        image_height :
+$PARAMETER          image_height :
     The height of the desired image in pixels.
-$PARAMETER        share :
+$PARAMETER          share :
     If this points to the value TRUE, the routine will attempt to use
     a shared memory segment for the image data (as per the MIT-Shared Memory
     Extension to the X Protocol). If the routine did in fact
@@ -52,86 +52,86 @@ $RETURNS
     A pointer to the image structure on success, else NULL.
 $END
 
-$FUNCTION         xi_create_shm_image
-$RETURN_TYPE      XImage *
+$FUNCTION           xi_create_shm_image
+$RETURN_TYPE        XImage *
 $PARAMETER_LIST
     (Display *display, Visual *visual, int depth,
 			     unsigned int width, unsigned int height,
 			     flag quiet)
-$SUMMARY          Create a shared-memory XImage structure.
+$SUMMARY            Create a shared-memory XImage structure.
 $PURPOSE
     Create a shared-memory XImage structure.
-$PARAMETER        display :
+$PARAMETER          display :
     The X11 display handle.
-$PARAMETER        visual :
+$PARAMETER          visual :
     The Visual pointer.
-$PARAMETER        depth :
+$PARAMETER          depth :
     The depth.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the image.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the image.
-$PARAMETER        quiet :
+$PARAMETER          quiet :
     If TRUE, no error messages are displayed if no shared memory XImage
     could be created.
 $RETURNS
     An XImage pointer on success, else NULL.
 $END
 
-$FUNCTION         xi_destroy_image
-$RETURN_TYPE      void
+$FUNCTION           xi_destroy_image
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Display *display, XImage *ximage, flag shared_memory)
-$SUMMARY          Destroy all the memory allocated for an XImage structure.
+$SUMMARY            Destroy all the memory allocated for an XImage structure.
 $PURPOSE
     Destroy all the memory allocated for an XImage structure.
-$PARAMETER        display :
+$PARAMETER          display :
     The X display.
-$PARAMETER        ximage :
+$PARAMETER          ximage :
     A pointer to the XImage structure.
-$PARAMETER        shared_memory :
+$PARAMETER          shared_memory :
     If TRUE, then the routine assumes the XImage data is a
     shared memory segment, and will attempt to remove it.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         xi_put_image
-$RETURN_TYPE      void
+$FUNCTION           xi_put_image
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (Display *display, Drawable drawable, GC gc, XImage *ximage,
 		   int src_x, int src_y, int dest_x, int dest_y,
 		   unsigned int width, unsigned int height, flag shared_memory,
 		   flag wait)
-$SUMMARY          Write an XImage structure to a drawable.
+$SUMMARY            Write an XImage structure to a drawable.
 $PURPOSE
     Write an XImage structure to a drawable.
-$PARAMETER        display :
+$PARAMETER          display :
     The X display.
-$PARAMETER        drawable :
+$PARAMETER          drawable :
     The ID of the drawable.
-$PARAMETER        gc :
+$PARAMETER          gc :
     The graphics context.
-$PARAMETER        ximage :
+$PARAMETER          ximage :
     The image structure.
-$PARAMETER        src_x :
+$PARAMETER          src_x :
     The horizontal position of the upper left corner of the subimage.
-$PARAMETER        src_y :
+$PARAMETER          src_y :
     The vertical position of the upper left corner of the subimage.
-$PARAMETER        dest_x :
+$PARAMETER          dest_x :
     The horizontal position in the drawable where the upper left
     corner will be drawn.
-$PARAMETER        dest_y :
+$PARAMETER          dest_y :
     The vertical position in the drawable where the upper left
     corner will be drawn.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the subimage.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the subimage.
-$PARAMETER        shared_memory :
+$PARAMETER          shared_memory :
     If TRUE the routine assmumes the XImage structure resides
     in a shared memory segment.
-$PARAMETER        wait :
+$PARAMETER          wait :
     If TRUE and the XImage structure resides in a shared memory segment
     the routine will wait for the X server to copy the contents from the
     segment.

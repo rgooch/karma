@@ -31,3 +31,12 @@ void VRENDER_PROTO_cache_notify_func (KVolumeRenderContext context,
     masks.
     [RETURNS] Nothing.
 */
+
+/*PROTOTYPE_FUNCTION*/  /*
+void VRENDER_PROTO_view_notify_func (KVolumeRenderContext context, void **info)
+    [SUMMARY] View changed callback.
+    [PURPOSE] This routine is called when the view is changed.
+    <context> The volume render context.
+    <info> A pointer to the arbitrary information pointer.
+    [RETURNS] Nothing.
+*/

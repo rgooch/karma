@@ -60,9 +60,9 @@
 #include "kftp.h"
 
 
-#define VERSION "1.0"
+#define VERSION "1.1"
 
-#define BUF_SIZE 4096
+#define BUF_SIZE 1048576
 
 STATIC_FUNCTION (flag process_request, (Connection connection, void **info) );
 STATIC_FUNCTION (flag copy_channels, (Channel dest, Channel source,

@@ -63,6 +63,7 @@
  x		     Position		Position	0
  y		     Position		Position	0
  visual              Visual             Pointer         CopyFromParent
+ colormap            Colormap           Colormap        dynamic
  stereoMode          StereoMode         Int             XkwSTEREO_MODE_MONO
  verticalSplit       VerticalSplit      Bool            False
  splitSeparation     SplitSeparation    Int             0

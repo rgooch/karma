@@ -7,45 +7,45 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         dsproc_object
-$RETURN_TYPE      void
+$FUNCTION           dsproc_object
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (char *object, char *array_names[], unsigned int num_arrays,
 		    flag save_unproc_data, flag (*pre_process) (),
 		    flag (*process_array) (), flag (*post_process) (),
 		    unsigned int mmap_option)
-$SUMMARY          Process a Karma file.
+$SUMMARY            Process a Karma file.
 $PURPOSE
     Process a Karma file.
-$PARAMETER        object :
+$PARAMETER          object :
     The name of the Karma file to process. This is passed directly to
     <-dsxfr_get_multi->. If this name is "connection" or is of the form:
     "connection[#]" then the routine will attempt to find data sent from a
     network connection using the "multi_array" protocol and will also send the
     resultant information down any network connections.
-$PARAMETER        array_names :
+$PARAMETER          array_names :
     The array names (general data structures) which are to be
     processed.
-$PARAMETER        num_arrays :
+$PARAMETER          num_arrays :
     The number of array names supplied. If this is 0, all array
     names are processed.
-$PARAMETER        save_unproc_data :
+$PARAMETER          save_unproc_data :
     If TRUE, then arrays with names which do not match are
     copied, rather than ignored.
-$PARAMETER        pre_process :
+$PARAMETER          pre_process :
     The function which will process the input file prior to any
     general data structures being processed. The prototype function is
     <-DSPROC_PROTO_pre_process->. If this returns FALSE further processing is
     aborted.
-$PARAMETER        process_array :
+$PARAMETER          process_array :
     The function which is called to process each general data
     structure. The prototype function is <-DSPROC_PROTO_process_array->.
-$PARAMETER        post_process :
+$PARAMETER          post_process :
     The function which is called to process the multi_array
     descriptors prior to the output being saved/transmitted. The prototype
     function is <-DSPROC_PROTO_post_process->. This routine will usually add
     history information and copy over history information from the input array.
-$PARAMETER        mmap_option :
+$PARAMETER          mmap_option :
     This is passed directly to the <-dsxfr_get_multi-> routine.
     If the input data structure is likely to be modified, this value must be
     K_CH_MAP_NEVER, otherwise the data may be read-only memory mapped and
@@ -56,49 +56,51 @@ $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       DSPROC_PROTO_pre_process
-$RETURN_TYPE      flag
+$PROTO_FUNC         DSPROC_PROTO_pre_process
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (multi_array *multi_desc)
-$SUMMARY          Perform pre-processing on a multi_array data structure.
+    (CONST multi_array *multi_desc)
+$SUMMARY            Perform pre-processing on a multi_array data structure.
 $PURPOSE
     Perform pre-processing on a multi_array data structure.
-$PARAMETER        multi_desc :
+$PARAMETER          multi_desc :
     The data structure.
 $RETURNS
     TRUE if processing is to continue, else FALSE.
 $END
 
-$PROTO_FUNC       DSPROC_PROTO_process_array
-$RETURN_TYPE      flag
+$PROTO_FUNC         DSPROC_PROTO_process_array
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (packet_desc *inp_desc, char *inp_data,
+    (CONST packet_desc *inp_desc,
+				 CONST char *inp_data,
 				 packet_desc **out_desc, char **out_data)
-$SUMMARY          Process a general data structure into an output structure.
+$SUMMARY            Process a general data structure into an output structure.
 $PURPOSE
     Process a general data structure into an output structure.
-$PARAMETER        inp_desc :
+$PARAMETER          inp_desc :
     The input descriptor.
-$PARAMETER        inp_data :
+$PARAMETER          inp_data :
     The input data.
-$PARAMETER        out_desc :
+$PARAMETER          out_desc :
     The output descriptor should be written here.
-$PARAMETER        out_data :
+$PARAMETER          out_data :
     The output data pointer should be written here.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$PROTO_FUNC       DSPROC_PROTO_post_process
-$RETURN_TYPE      flag
+$PROTO_FUNC         DSPROC_PROTO_post_process
+$RETURN_TYPE        flag
 $PARAMETER_LIST
-    (multi_array *inp_desc, multi_array *out_desc)
-$SUMMARY          Perform post-processing on a multi_array data structure.
+    (CONST multi_array *inp_desc,
+				multi_array *out_desc)
+$SUMMARY            Perform post-processing on a multi_array data structure.
 $PURPOSE
     Perform post-processing on a multi_array data structure.
-$PARAMETER        inp_desc :
+$PARAMETER          inp_desc :
     The input multi_array descriptor.
-$PARAMETER        out_desc :
+$PARAMETER          out_desc :
     The output multi_array_descriptor.
 $RETURNS
     TRUE if the array is to be saved/transmitted, else FALSE.

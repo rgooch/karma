@@ -31,11 +31,11 @@
 </td></tr>
 <tr><td><a href=canvas.html#canvas_convert_to_canvas_coords>canvas_convert_to_canvas_coords</a></td><td>Convert pixel co-ordinates to world co-ordinates.
 </td></tr>
-<tr><td><a href=canvas.html#canvas_convert_from_canvas_coord>canvas_convert_from_canvas_coord</a></td><td>Convert non-linear world co-ordinates to pixel co-ordinates
+<tr><td><a href=canvas.html#canvas_convert_from_canvas_coords>canvas_convert_from_canvas_coords</a></td><td>Convert world co-ordinates to pixel co-ordinates.
 </td></tr>
-<tr><td><a href=canvas.html#canvas_register_d_convert_func>canvas_register_d_convert_func</a></td><td>Register co-ordinate conversion function.
+<tr><td><a href=canvas.html#canvas_register_coords_convert_func>canvas_register_coords_convert_func</a></td><td>Register co-ordinate conversion function.
 </td></tr>
-<tr><td><a href=canvas.html#canvas_coord_transform>canvas_coord_transform</a></td><td>Transform world co-ordinates.
+<tr><td><a href=canvas.html#canvas_coords_transform>canvas_coords_transform</a></td><td>Transform world co-ordinates.
 </td></tr>
 <tr><td><a href=canvas.html#canvas_register_transforms_func>canvas_register_transforms_func</a></td><td>Register non-linear co-ordinate transformation function.
 </td></tr>
@@ -85,9 +85,15 @@
 </td></tr>
 <tr><td><a href=canvas.html#canvas_draw_lines_p>canvas_draw_lines_p</a></td><td>Draw multiple connected lines onto a world canvas.
 </td></tr>
+<tr><td><a href=canvas.html#canvas_draw_segments>canvas_draw_segments</a></td><td>Draw multiple disjoint lines onto a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_draw_segments_p>canvas_draw_segments_p</a></td><td>Draw multiple disjoint lines onto a world canvas.
+</td></tr>
 <tr><td><a href=canvas.html#canvas_init_win_scale>canvas_init_win_scale</a></td><td>Initialise win_scale structure.
 </td></tr>
 <tr><td><a href=canvas.html#canvas_use_log_scale>canvas_use_log_scale</a></td><td>Enable logarithmic scaling for a world canvas.
+</td></tr>
+<tr><td><a href=canvas.html#canvas_use_astro_transform>canvas_use_astro_transform</a></td><td>Use astronomical sky projections for a canvas.
 </td></tr>
 <tr><td><a href=canvas.html#canvas_create_stroke_instruction>canvas_create_stroke_instruction</a></td><td>Create an image editing stroke instruction.
 </td></tr>
@@ -101,7 +107,7 @@
 </td></tr>
 <tr><td><a href=canvas.html#CANVAS_PROTO_coord_transform_func>CANVAS_PROTO_coord_transform_func</a></td><td>Co-ordinate transformation callback.
 </td></tr>
-</table><h4>Tables</h4><table><tr><td><a href=canvas.html#KWIN_ATTRIBUTES>KWIN_ATTRIBUTES</a></td><td>List of attributes for KWorldCanvas objects
+</table><h4>Tables</h4><table><tr><td><a href=canvas.html#CANVAS_ATTRIBUTES>CANVAS_ATTRIBUTES</a></td><td>List of attributes for KWorldCanvas objects
 </td></tr>
 </table><p><hr><center><h2>Functions</h2></center><hr> <a name=canvas_draw_edit_list></a> flag
  <b>canvas_draw_edit_list</b><i>    (KWorldCanvas canvas, KImageEditList ilist)
@@ -133,7 +139,8 @@
     and drawing geometric primitives using data values.
 <br><li><i>win_scale :</i> 
     The window scaling information. The <em>x_offset</em> <em>x_pixels</em>
-    <em>y_offset</em> and <em>y_pixels</em> fields are determined internally.
+    <em>y_offset</em> and <em>y_pixels</em> fields are determined internally. If this is
+    NULL a default scale is choosen.
 <br></ul><b>Returns:</b>     A world canvas object on success, else NULL.
 <br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     Resize events on the colourmap will cause the canvas to be
     refreshed.
@@ -305,26 +312,36 @@
     The array of output vertical non-linear world co-ordinates are
     written here. If this is NULL, nothing is written here.
 <br></ul><b>Returns:</b>     Nothing.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_convert_from_canvas_coord></a> flag
- <b>canvas_convert_from_canvas_coord</b><i>    (KWorldCanvas canvas,
-				       double xin, double yin,
-				       int *xout, int *yout)
-</i><br><p>    Convert non-linear world co-ordinates to pixel co-ordinates
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_convert_from_canvas_coords></a> void
+ <b>canvas_convert_from_canvas_coords</b><i>    (KWorldCanvas canvas,
+					flag clip, flag linear,
+					unsigned int num_coords,
+					CONST double *xin, CONST double *yin,
+					double *xout, double *yout)
+</i><br><p>    Convert world co-ordinates to pixel co-ordinates.
 <p><b>Parameters:</b><ul><li><i>canvas :</i> 
     The world canvas object.
+<br><li><i>clip :</i> 
+    If TRUE, world co-ordinates are first clipped to the canvas
+    boundaries prior to conversion.
+<br><li><i>linear :</i> 
+    If TRUE, the input world co-ordinates are assumed to be linear,
+    hence no non-linear to linear co-ordinate transformation is applied.
+<br><li><i>num_coords :</i> 
+    The number of co-ordinates to convert.
 <br><li><i>xin :</i> 
-    The horizontal world co-ordinate.
+    The array of input horizontal world co-ordinates.
 <br><li><i>yin :</i> 
-    The vertical world co-ordinate.
+    The array of input vertical world co-ordinates.
 <br><li><i>xout :</i> 
-    The lower level horizontal canvas co-ordinate will be written here.
+    The array of output horizontal pixel co-ordinates are written here.
 <br><li><i>yout :</i> 
-    The lower level vertical canvas co-ordinate will be written here.
-<br></ul><b>Returns:</b>     TRUE if the co-ordinate lies within the canvas boundaries,
-    else FALSE (although a conversion is still performed).
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_register_d_convert_func></a> void
- <b>canvas_register_d_convert_func</b><i>    (KWorldCanvas canvas,
-				     flag (*coord_convert_func) (), void *info)
+    The array of output vertical pixel co-ordinates are written here.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_register_coords_convert_func></a> void
+ <b>canvas_register_coords_convert_func</b><i>    (KWorldCanvas canvas,
+					  flag (*coord_convert_func) (),
+					  void *info)
 </i><br><p>    This routine will register the co-ordinate conversion function
     for a world canvas. This function will be called whenever conversions
     between world co-ordinates and pixel co-ordinates are performed. Only one
@@ -338,24 +355,28 @@
 <br><li><i>info :</i> 
     The initial arbitrary canvas information pointer.
 <br></ul><b>Returns:</b>     Nothing.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_coord_transform></a> flag
- <b>canvas_coord_transform</b><i>    (KWorldCanvas canvas, double *x, double *y,
-			     flag to_linear)
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_coords_transform></a> void
+ <b>canvas_coords_transform</b><i>    (KWorldCanvas canvas, unsigned int num_coords,
+			      double *x, flag x_to_linear,
+			      double *y, flag y_to_linear)
 </i><br><p>    This routine will transform co-ordinates in a world canvas using
     the registered co-ordinate transform function (see
     <a href=canvas.html#canvas_register_transforms_func>canvas_register_transforms_func</a>).
 <p><b>Parameters:</b><ul><li><i>canvas :</i> 
     The world canvas object.
+<br><li><i>num_coords :</i> 
+    The number of co-ordinates to transform.
 <br><li><i>x :</i> 
-    A pointer to the horizontal world co-ordinate. This is modified.
+    The array of horizontal world co-ordinates. These are modified.
+<br><li><i>x_to_linear :</i> 
+    If TRUE, then the horizontal co-ordinates are converted from
+    non-linear to linear, else they are converted from linear to non-linear.
 <br><li><i>y :</i> 
-    A pointer to the vertical world co-ordinate. This is modified.
-<br><li><i>to_linear :</i> 
-    If TRUE then the routine will transform (possibly) non-linear
-    world co-ordinates to linear world co-ordinates, else the transform is from
-    linear to non-linear co-ordinates.
-<br></ul><b>Returns:</b>     TRUE if the linear world co-ordinate lies within the canvas
-    boundaries, else FALSE (although a conversion is still performed).
+    The array of vertical world co-ordinates. These are modified.
+<br><li><i>y_to_linear :</i> 
+    If TRUE, then the vertical co-ordinates are converted from
+    non-linear to linear, else they are converted from linear to non-linear.
+<br></ul><b>Returns:</b>     Nothing.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_register_transforms_func></a> void
  <b>canvas_register_transforms_func</b><i>    (KWorldCanvas canvas,
 				      void (*coord_transform_func) (),
@@ -381,7 +402,7 @@
     The world canvas object.
 <br></ul><b>Returns:</b>     The KPixCanvas object.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_get_colour></a> flag
- <b>canvas_get_colour</b><i>    (KWorldCanvas canvas, char *colourname,
+ <b>canvas_get_colour</b><i>    (KWorldCanvas canvas, CONST char *colourname,
 			unsigned long *pixel_value, unsigned short *red,
 			unsigned short *green, unsigned short *blue)
 </i><br><p>    Get (possibly allocating) a colourcell for a canvas.
@@ -727,7 +748,8 @@
     The pixel value to use.
 <br></ul><b>Returns:</b>     Nothing.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_draw_lines></a> void
- <b>canvas_draw_lines</b><i>    (KWorldCanvas canvas, double *x_array, double *y_array,
+ <b>canvas_draw_lines</b><i>    (KWorldCanvas canvas,
+			CONST double *x_array, CONST double *y_array,
 			int num_points, double value[2])
 </i><br><p>    Draw multiple connected lines onto a world canvas.
 <p><b>Parameters:</b><ul><li><i>canvas :</i> 
@@ -748,8 +770,8 @@
 <br></ul><b>Returns:</b>     Nothing.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_draw_lines_p></a> void
  <b>canvas_draw_lines_p</b><i>    (KWorldCanvas canvas,
-			  double *x_array, double *y_array, int num_points,
-			  unsigned long pixel_value)
+			  CONST double *x_array, CONST double *y_array,
+			  int num_points, unsigned long pixel_value)
 </i><br><p>    Draw multiple connected lines onto a world canvas.
 <p><b>Parameters:</b><ul><li><i>canvas :</i> 
     The world canvas object.
@@ -764,6 +786,48 @@
 <br><li><i>num_points :</i> 
     The number of points. The number of lines drawn is 1 less than
     this value.
+<br><li><i>pixel_value :</i> 
+    The pixel value to use.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_draw_segments></a> void
+ <b>canvas_draw_segments</b><i>    (KWorldCanvas canvas,
+			   CONST double *x0, CONST double *y0,
+			   CONST double *x1, CONST double *y1,
+			   int num_segments, double value[2])
+</i><br><p>    Draw multiple disjoint lines onto a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>x0 :</i> 
+    The horizontal start co-ordinates of the segments.
+<br><li><i>y0 :</i> 
+    The vetical start co-ordinates of the segments.
+<br><li><i>x1 :</i> 
+    The horizontal end co-ordinates of the segments.
+<br><li><i>y1 :</i> 
+    The vetical end co-ordinates of the segments.
+<br><li><i>num_segments :</i> 
+    The number of segments.
+<br><li><i>value :</i> 
+    The data value to use. This is of type K_DCOMPLEX.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_draw_segments_p></a> void
+ <b>canvas_draw_segments_p</b><i>    (KWorldCanvas canvas,
+			     CONST double *x0, CONST double *y0,
+			     CONST double *x1, CONST double *y1,
+			     int num_segments, unsigned long pixel_value)
+</i><br><p>    Draw multiple disjoint lines onto a world canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>x0 :</i> 
+    The horizontal start co-ordinates of the segments.
+<br><li><i>y0 :</i> 
+    The vetical start co-ordinates of the segments.
+<br><li><i>x1 :</i> 
+    The horizontal end co-ordinates of the segments.
+<br><li><i>y1 :</i> 
+    The vetical end co-ordinates of the segments.
+<br><li><i>num_segments :</i> 
+    The number of segments.
 <br><li><i>pixel_value :</i> 
     The pixel value to use.
 <br></ul><b>Returns:</b>     Nothing.
@@ -789,6 +853,15 @@
 <br><li><i>y_log :</i> 
     If TRUE the vertical co-ordinates should be scaled logarithmically,
     else they will be scaled linearly.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_use_astro_transform></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>void
+ <b>canvas_use_astro_transform</b><i>    (KWorldCanvas canvas, KwcsAstro *ap)
+</i><br><p>    Use astronomical sky projections for a canvas.
+<p><b>Parameters:</b><ul><li><i>canvas :</i> 
+    The world canvas object.
+<br><li><i>ap :</i> 
+    A pointer to the storage for a KwcsAstro object. The storage may
+    contain a NULL object.
 <br></ul><b>Returns:</b>     Nothing.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=canvas_create_stroke_instruction></a> flag
  <b>canvas_create_stroke_instruction</b><i>    (KWorldCanvas canvas,
@@ -910,24 +983,28 @@
     function being called.
 <br></ul><b>Returns:</b>     TRUE if the event was consumed, else FALSE indicating that
     the event is still to be processed.
-<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     These values will have been transformed by the registered
-    transform function (see <a href=canvas.html#canvas_register_transform_func>canvas_register_transform_func</a>).
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The world co-ordinate values will have been transformed by the
+    registered transform function (see <a href=canvas.html#canvas_register_transform_func>canvas_register_transform_func</a>).
 </ul><p><hr> <a name=CANVAS_PROTO_coord_convert_func></a> flag
  <b>CANVAS_PROTO_coord_convert_func</b><i>    (KWorldCanvas canvas,
-				      struct win_scale_type *win_scale,
-				      double *x, double *y,
+				      unsigned int num_coords,
+				      CONST double *xin, CONST double *yin,
+				      double *xout, double *yout,
 				      flag to_world, void **info)
 </i><br><p>    This routine will convert between world co-ordinates and pixel
     co-ordinates for a world canvas.
 <p><b>Parameters:</b><ul><li><i>canvas :</i> 
     The canvas.
-<br><li><i>win_scale :</i> 
-    A pointer to the window scaling information. The data
-    herein may be modified.
-<br><li><i>x :</i> 
-    A pointer to the horizontal co-ordinate storage. This is updated.
-<br><li><i>y :</i> 
-    A pointer to the vertical co-ordinate storage. This is updated.
+<br><li><i>num_coords :</i> 
+    The number of co-ordinates to transform.
+<br><li><i>xin :</i> 
+    The array of input horizontal co-ordinates.
+<br><li><i>yin :</i> 
+    The array of input vertical co-ordinates.
+<br><li><i>xout :</i> 
+    The array of output horizontal co-ordinates are written here.
+<br><li><i>yout :</i> 
+    The array of output vertical co-ordinates are written here.
 <br><li><i>to_world :</i> 
     If TRUE, then a pixel to world co-ordinate transform is
     required, else a world to pixel co-ordinate transform is required.
@@ -962,7 +1039,7 @@
 <br><li><i>info :</i> 
     A pointer to the arbitrary transform information pointer.
 <br></ul><b>Returns:</b>     Nothing.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Tables</h2></center><hr> <a name=KWIN_ATTRIBUTES><b>KWIN_ATTRIBUTES</b></a><p> <table><tr><td>Name                         </td><td>Get Type       </td><td>Set Type       </td><td>Meaning
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Tables</h2></center><hr> <a name=CANVAS_ATTRIBUTES><b>CANVAS_ATTRIBUTES</b></a><p> <table><tr><td>Name                         </td><td>Get Type       </td><td>Set Type       </td><td>Meaning
 </td></tr><tr><td>
 </td></tr><tr><td>CANVAS_ATT_END               </td><td>               </td><td>              </td><td>End of varargs list             
 </td></tr><tr><td>CANVAS_ATT_X_OFFSET          </td><td>int *          </td><td>int           </td><td>X offset (pixels)
@@ -983,4 +1060,6 @@
 </td></tr><tr><td>CANVAS_ATT_ISCALE_INFO       </td><td>void **        </td><td>void          </td><td>iscale info
 </td></tr><tr><td>CANVAS_ATT_AUTO_MIN_SAT      </td><td>flag *         </td><td>flag          </td><td>Auto min-sat
 </td></tr><tr><td>CANVAS_ATT_AUTO_MAX_SAT      </td><td>flag *         </td><td>flag          </td><td>Auto max-sat
-</table><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>
+</table><p>
+<hr><a href="../index.html">Back to Karma Home Page</a>
+<hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.ariel.com.au/">Ariel Internet Services</a></address></center></body></html>

@@ -10,91 +10,91 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         arln_read_float
-$RETURN_TYPE      float
+$FUNCTION           arln_read_float
+$RETURN_TYPE        float
 $PARAMETER_LIST
     (CONST char *prompt, float default_value)
-$SUMMARY          Read a floating point value from the user.
+$SUMMARY            Read a floating point value from the user.
 $PURPOSE
     This routine will prompt the user for a single floating point
     number. If no input is given, the routine returns a default value.
-$PARAMETER        prompt :
+$PARAMETER          prompt :
     The prompt.
-$PARAMETER        default_value :
+$PARAMETER          default_value :
     The default value.
 $RETURNS
     The point value.
 $END
 
-$FUNCTION         arln_read_int
-$RETURN_TYPE      int
+$FUNCTION           arln_read_int
+$RETURN_TYPE        int
 $PARAMETER_LIST
     (CONST char *prompt, int default_value)
-$SUMMARY          Read an integer value from the user.
+$SUMMARY            Read an integer value from the user.
 $PURPOSE
     This routine will prompt the user for a single integer number.
     If no input is given, the routine returns a default value.
-$PARAMETER        prompt :
+$PARAMETER          prompt :
     The prompt.
-$PARAMETER        default_value :
+$PARAMETER          default_value :
     The default value.
 $RETURNS
     The value.
 $END
 
-$FUNCTION         arln_read_flag
-$RETURN_TYPE      flag
+$FUNCTION           arln_read_flag
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (CONST char *prompt, flag default_value)
-$SUMMARY          Read a boolean value from the user.
+$SUMMARY            Read a boolean value from the user.
 $PURPOSE
     This routine will prompt the user for a single boolean value.
     If no input is given, the routine returns a default value.
-$PARAMETER        prompt :
+$PARAMETER          prompt :
     The prompt.
-$PARAMETER        default_value :
+$PARAMETER          default_value :
     The default value.
 $RETURNS
     TRUE if "yes" was typed in, else FALSE.
 $END
 
-$FUNCTION         arln_read_line
-$RETURN_TYPE      flag
+$FUNCTION           arln_read_line
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *buffer, unsigned int length, CONST char *prompt)
-$SUMMARY          Read a string from the user.
+$SUMMARY            Read a string from the user.
 $PURPOSE
     This routine will read a line from a the standard input,
     stripping all comments, leading and trailing whitespace. The comment
     character is '#'.
-$PARAMETER        buffer :
+$PARAMETER          buffer :
     The NULL terminated string will be written here. The routine will
     NOT copy the '\n' newline character into the buffer.
-$PARAMETER        length :
+$PARAMETER          length :
     The length of the buffer.
-$PARAMETER        prompt :
+$PARAMETER          prompt :
     The prompt which is to be displayed. The prompt is only displayed
     if the standard input is NOT a disc file.
 $RETURNS
     TRUE on successful reading, else FALSE (indicating End-Of-File).
 $END
 
-$FUNCTION         arln_read_from_stdin
-$RETURN_TYPE      flag
+$FUNCTION           arln_read_from_stdin
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (char *buffer, unsigned int length,
 			   CONST char *prompt)
-$SUMMARY          Read a line from the user.
+$SUMMARY            Read a line from the user.
 $PURPOSE
     This routine will read a line from the standard input without
     preventing event processing. The standard input channel is internally
     allocated.
-$PARAMETER        buffer :
+$PARAMETER          buffer :
     The NULL terminated string will be written here. The routine will
     NOT copy the '\n' newline character into the buffer.
-$PARAMETER        length :
+$PARAMETER          length :
     The length of the buffer.
-$PARAMETER        prompt :
+$PARAMETER          prompt :
     The prompt which is to be displayed. Note that the prompt is only
     displayed if the standard input is NOT a disc file.
 $RETURNS

@@ -42,8 +42,11 @@
     Updated by      Richard Gooch   14-APR-1996: Changed to new documentation
   format.
 
-    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+    Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   21-JUL-1996: Changed to
+  <canvas_convert_from_canvas_coords>.
 
 
 */
@@ -84,7 +87,7 @@ flag canvas_create_stroke_instruction (KWorldCanvas canvas,
 */
 {
     edit_coord brushradius;
-    int ix, iy;
+    double px, py;
     double vector_x;
     double vector_y;
     double factor;
@@ -98,12 +101,14 @@ flag canvas_create_stroke_instruction (KWorldCanvas canvas,
 	return (FALSE);
     }
     /*  Get pixel co-ordinates  */
-    (void) canvas_convert_from_canvas_coord (canvas, x1, y1, &ix, &iy);
+    canvas_convert_from_canvas_coords (canvas, FALSE, FALSE, 1,
+				       &x1, &y1, &px, &py);
     /*  Add brush width and convert back to world co-ordinates  */
-    (void) canvas_convert_to_canvas_coord (canvas,
-					   ix + brush_width, iy - brush_width,
-					   &brushradius.abscissa,
-					   &brushradius.ordinate);
+    px += brush_width;
+    py -= brush_width;
+    canvas_convert_to_canvas_coords (canvas, FALSE, 1, &px, &py, NULL, NULL,
+				     &brushradius.abscissa,
+				     &brushradius.ordinate);
     brushradius.abscissa = (brushradius.abscissa - x1) / 2.0;
     brushradius.ordinate = (brushradius.ordinate - y1) / 2.0;
     if ( ( coords = iedit_alloc_edit_coords (4) ) == NULL )

@@ -268,7 +268,7 @@ flag c_call_callbacks (KCallbackList list, void *call_data)
 	    {
 		(void) fprintf (stderr, "Illegal return flag value: %d\n",
 				quench);
-		a_prog_bug (function_name);
+		prog_bug (function_name);
 	    }
 	    if (quench) return (TRUE);
 	}

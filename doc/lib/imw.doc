@@ -9,8 +9,8 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         imw_to8_lossy
-$RETURN_TYPE      flag
+$FUNCTION           imw_to8_lossy
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (unsigned char *out_image,
 		    iaddr out_hstride, iaddr out_vstride,
@@ -23,66 +23,66 @@ $PARAMETER_LIST
 		    unsigned char max_sat_pixel,
 		    double i_min, double i_max,
 		    flag (*iscale_func) (), void *iscale_info)
-$SUMMARY          Convert generic image to 8 bit image, with resizing.
+$SUMMARY            Convert generic image to 8 bit image, with resizing.
 $PURPOSE
     This routine will convert an image from one format to an 8 bit
     image of pixels, permitting the input and output sizes to differ. If the
     input image is effectively shrunk, the input data is subsampled. The output
     image is flipped vertically relative to the input image.
-$PARAMETER        out_image :
+$PARAMETER          out_image :
     The output image will be written here.
-$PARAMETER        out_hstride :
+$PARAMETER          out_hstride :
     The stride between successive horizontal pixels (in bytes).
-$PARAMETER        out_vstride :
+$PARAMETER          out_vstride :
     The stride between successive vertical pixels (in bytes).
-$PARAMETER        out_width :
+$PARAMETER          out_width :
     The width of the output image.
-$PARAMETER        out_height :
+$PARAMETER          out_height :
     The height of the output image.
-$PARAMETER        inp_image :
+$PARAMETER          inp_image :
     The input image data.
-$PARAMETER        inp_hoffsets :
+$PARAMETER          inp_hoffsets :
     The array of horizontal byte offsets.
-$PARAMETER        inp_voffsets :
+$PARAMETER          inp_voffsets :
     The array of vertical byte offsets.
-$PARAMETER        inp_width :
+$PARAMETER          inp_width :
     The width of the input image.
-$PARAMETER        inp_height :
+$PARAMETER          inp_height :
     The height of the input image.
-$PARAMETER        inp_type :
+$PARAMETER          inp_type :
     The type of the input data.
-$PARAMETER        conv_type :
+$PARAMETER          conv_type :
     The input conversion type (when the input is complex).
-$PARAMETER        num_pixels :
+$PARAMETER          num_pixels :
     The number of pixels in the pixel array.
-$PARAMETER        pixel_values :
+$PARAMETER          pixel_values :
     The array of pixel values.
-$PARAMETER        blank_pixel :
+$PARAMETER          blank_pixel :
     The pixel value to be used when the intensity value is an
     undefined value.
-$PARAMETER        min_sat_pixel :
+$PARAMETER          min_sat_pixel :
     The pixel value to be used when the intensity value is
     below the minimum value.
-$PARAMETER        max_sat_pixel :
+$PARAMETER          max_sat_pixel :
     The pixel value to be used when the intensity value is
     above the maximum value.
-$PARAMETER        i_min :
+$PARAMETER          i_min :
     The minimum intensity value.
-$PARAMETER        i_max :
+$PARAMETER          i_max :
     The maximum intensity value.
-$PARAMETER        iscale_func :
+$PARAMETER          iscale_func :
     The function to be called when non-linear intensity scaling
     is required. If NULL, linear intensity scaling is used. The prototype
     function is <-IMW_PROTO_iscale_func->.
-$PARAMETER        iscale_info :
+$PARAMETER          iscale_info :
     A pointer to arbitrary information for <<iscale_func>>.
 $MT-LEVEL         Unsafe.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         imw_to8_oi
-$RETURN_TYPE      flag
+$FUNCTION           imw_to8_oi
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (unsigned char *out_image,
 		 iaddr out_hstride, iaddr out_vstride,
@@ -94,86 +94,203 @@ $PARAMETER_LIST
 		 unsigned char min_sat_pixel, unsigned char max_sat_pixel,
 		 double i_min, double i_max,
 		 flag (*iscale_func) (), void *iscale_info)
-$SUMMARY          Convert generic image to 8 bit image, preserving size.
+$SUMMARY            Convert generic image to 8 bit image, preserving size.
 $PURPOSE
     This routine will convert an image from one format to an 8 bit
     image of pixels, maintaining the original image size. The output image is
     flipped vertically relative to the input image.
-$PARAMETER        out_image :
+$PARAMETER          out_image :
     The output image will be written here.
-$PARAMETER        out_hstride :
+$PARAMETER          out_hstride :
     The stride between successive horizontal pixels (in bytes).
-$PARAMETER        out_vstride :
+$PARAMETER          out_vstride :
     The stride between successive vertical pixels (in bytes).
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the image.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the image.
-$PARAMETER        inp_image :
+$PARAMETER          inp_image :
     The input image data.
-$PARAMETER        inp_hoffsets :
+$PARAMETER          inp_hoffsets :
     The array of horizontal byte offsets.
-$PARAMETER        inp_voffsets :
+$PARAMETER          inp_voffsets :
     The array of vertical byte offsets.
-$PARAMETER        inp_type :
+$PARAMETER          inp_type :
     The type of the input data.
-$PARAMETER        conv_type :
+$PARAMETER          conv_type :
     The input conversion type (when the input is complex).
-$PARAMETER        num_pixels :
+$PARAMETER          num_pixels :
     The number of pixels in the pixel array.
-$PARAMETER        pixel_values :
+$PARAMETER          pixel_values :
     The array of pixel values.
-$PARAMETER        blank_pixel :
+$PARAMETER          blank_pixel :
     The pixel value to be used when the intensity value is an
     undefined value.
-$PARAMETER        min_sat_pixel :
+$PARAMETER          min_sat_pixel :
     The pixel value to be used when the intensity value is
     below the minimum value.
-$PARAMETER        max_sat_pixel :
+$PARAMETER          max_sat_pixel :
     The pixel value to be used when the intensity value is
     above the maximum value.
-$PARAMETER        i_min :
+$PARAMETER          i_min :
     The minimum intensity value.
-$PARAMETER        i_max :
+$PARAMETER          i_max :
     The maximum intensity value.
-$PARAMETER        iscale_func :
+$PARAMETER          iscale_func :
     The function to be called when non-linear intensity scaling
     is required. If NULL, linear intensity scaling is used. The prototype
     function is <-IMW_PROTO_iscale_func->.
-$PARAMETER        iscale_info :
+$PARAMETER          iscale_info :
     A pointer to arbitrary information for <<iscale_func>>.
 $MT-LEVEL         Unsafe.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$PROTO_FUNC       IMW_PROTO_iscale_func
-$RETURN_TYPE      flag
+$EXPERIMENTAL_FUNC  imw_scmap_16to24_lossy
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (unsigned char *out_red_image,
+			     unsigned char *out_green_image,
+			     unsigned char *out_blue_image, flag preserve_pad,
+			     iaddr out_hstride, iaddr out_vstride,
+			     int out_width, int out_height,
+			     CONST unsigned short *inp_image,
+			     int inp_width, int inp_height,
+			     CONST iaddr *inp_hoffsets,
+			     CONST iaddr *inp_voffsets,
+			     CONST unsigned char *cmap_red,
+			     CONST unsigned char *cmap_green,
+			     CONST unsigned char *cmap_blue, iaddr cmap_stride)
+$SUMMARY            Write 16bit image to a 24bit image using a software colourmap.
+$PURPOSE
+    This routine will write a 16bit PseudoColour image into a 24bit
+    TrueColour image using a software colourmap to convert 16bit values to
+    24bit RGB values. The input and output sizes may be different. The output
+    image is flipped vertically relative to the input image.
+$PARAMETER          out_red_image :
+    The output red image components will be written here.
+$PARAMETER          out_green_image :
+    The output green image components will be written here.
+$PARAMETER          out_blue_image :
+    The output blue image components will be written here.
+$PARAMETER          preserve_pad :
+    If TRUE, padding bytes between output pixels will be
+    preserved, else they may be overwritten for efficiency.
+$PARAMETER          out_hstride :
+    The horizontal stride in bytes between output pixels.
+$PARAMETER          out_vstride :
+    The vertical stride in bytes between output lines.
+$PARAMETER          out_width :
+    The width of the output image.
+$PARAMETER          out_height :
+    The height of the output image.
+$PARAMETER          inp_image :
+    The input 16bit PseudoColour image.
+$PARAMETER          inp_hoffsets :
+    The array of horizontal input byte offsets.
+$PARAMETER          inp_voffsets :
+    The array of vertical input byte offsets.
+$PARAMETER          inp_width :
+    The width of the input image.
+$PARAMETER          inp_height :
+    The height of the input image.
+$PARAMETER          cmap_red :
+    The red component virtual colourmap.
+$PARAMETER          cmap_green :
+    The green component virtual colourmap.
+$PARAMETER          cmap_blue :
+    The blue component virtual colourmap.
+$PARAMETER          cmap_stride :
+    The stride in bytes between colourmap entries. The number of
+    entries must be 65536 (16bit addressing).
+$MT-LEVEL         Unsafe.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$EXPERIMENTAL_FUNC  imw_scmap_16to24_o
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (unsigned char *out_red_image,
+			 unsigned char *out_green_image,
+			 unsigned char *out_blue_image, flag preserve_pad,
+			 iaddr out_hstride, iaddr out_vstride,
+			 int width, int height,CONST unsigned short *inp_image,
+			 CONST iaddr *inp_hoffsets, CONST iaddr *inp_voffsets,
+			 CONST unsigned char *cmap_red,
+			 CONST unsigned char *cmap_green,
+			 CONST unsigned char *cmap_blue, iaddr cmap_stride)
+$SUMMARY            Write 16bit image to a 24bit image using a software colourmap.
+$PURPOSE
+    This routine will write a 16bit PseudoColour image into a 24bit
+    TrueColour image using a software colourmap to convert 16bit values to
+    24bit RGB values. The image size (in pixels) is preserved. The output
+    image is flipped vertically relative to the input image.
+$PARAMETER          out_red_image :
+    The output red image components will be written here.
+$PARAMETER          out_green_image :
+    The output green image components will be written here.
+$PARAMETER          out_blue_image :
+    The output blue image components will be written here.
+$PARAMETER          preserve_pad :
+    If TRUE, padding bytes between output pixels will be
+    preserved, else they may be overwritten for efficiency.
+$PARAMETER          out_hstride :
+    The horizontal stride in bytes between output pixels.
+$PARAMETER          out_vstride :
+    The vertical stride in bytes between output lines.
+$PARAMETER          width :
+    The width of the image.
+$PARAMETER          height :
+    The height of the image.
+$PARAMETER          inp_image :
+    The input 16bit PseudoColour image.
+$PARAMETER          inp_hoffsets :
+    The array of horizontal input byte offsets.
+$PARAMETER          inp_voffsets :
+    The array of vertical input byte offsets.
+$PARAMETER          cmap_red :
+    The red component virtual colourmap.
+$PARAMETER          cmap_green :
+    The green component virtual colourmap.
+$PARAMETER          cmap_blue :
+    The blue component virtual colourmap.
+$PARAMETER          cmap_stride :
+    The stride in bytes between colourmap entries. The number of
+    entries must be 65536 (16bit addressing).
+$MT-LEVEL         Safe.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$PROTO_FUNC         IMW_PROTO_iscale_func
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (double *out, unsigned int out_stride,
-			    double *inp, unsigned int inp_stride,
+			    CONST double *inp, unsigned int inp_stride,
 			    unsigned int num_values,
 			    double i_min, double i_max, void *info)
-$SUMMARY          Intensity scaling callback.
+$SUMMARY            Intensity scaling callback.
 $PURPOSE
     This routine will perform an arbitrary intensity scaling on
     an array of values. This routine may be called many times to scale an
     image.
-$PARAMETER        out :
+$PARAMETER          out :
     The output array.
-$PARAMETER        out_stride :
+$PARAMETER          out_stride :
     The stride (in doubles) of the output array.
-$PARAMETER        inp :
+$PARAMETER          inp :
     The input array.
-$PARAMETER        inp_stride :
+$PARAMETER          inp_stride :
     The stride (in doubles) of the input array.
-$PARAMETER        num_values :
+$PARAMETER          num_values :
     The number of values to scale.
-$PARAMETER        i_min :
+$PARAMETER          i_min :
     The minimum intensity value.
-$PARAMETER        i_max :
+$PARAMETER          i_max :
     The maximum intensity value.
-$PARAMETER        info :
+$PARAMETER          info :
     A pointer to arbitrary information.
 $RETURNS
     TRUE on success, else FALSE.

@@ -6,22 +6,22 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         en_idea_init
-$RETURN_TYPE      idea_status
+$FUNCTION           en_idea_init
+$RETURN_TYPE        idea_status
 $PARAMETER_LIST
     (char key[EN_IDEA_KEY_SIZE], flag decrypt,
 			  char init_vector[EN_IDEA_BLOCK_SIZE], flag clear)
-$SUMMARY          Create stream for IDEA encryption.
+$SUMMARY            Create stream for IDEA encryption.
 $PURPOSE
     This routine will initialise the IDEA cipher in Cipher Feed Back
     mode for a stream of data. The stream is uni-directional.
-$PARAMETER        key :
+$PARAMETER          key :
     The 16 byte IDEA key.
-$PARAMETER        decrypt :
+$PARAMETER          decrypt :
     If TRUE the stream is to be decrypted.
-$PARAMETER        init_vector :
+$PARAMETER          init_vector :
     The 8 byte initialisation vector.
-$PARAMETER        clear :
+$PARAMETER          clear :
     If TRUE the key and initialisation vector will be cleared after use
     (highly recommended if they will not be needed again).
 $RETURNS
@@ -29,33 +29,33 @@ $RETURNS
     <-en_idea_cfb-> on success, else NULL.
 $END
 
-$FUNCTION         en_idea_cfb
-$RETURN_TYPE      void
+$FUNCTION           en_idea_cfb
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (idea_status status, char *buffer, unsigned int length)
-$SUMMARY          Encrypt bytes using the IDEA cipher.
+$SUMMARY            Encrypt bytes using the IDEA cipher.
 $PURPOSE
     This routine will encrypt (or decrypt) a sequence of bytes using
     the IDEA cipher in Cipher Feed Back mode.
-$PARAMETER        status :
+$PARAMETER          status :
     The IDEA cipher status.
-$PARAMETER        buffer :
+$PARAMETER          buffer :
     The data to encrypt. This is modified.
-$PARAMETER        length :
+$PARAMETER          length :
     The number of bytes to encrypt (or decrypt).
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         en_idea_close
-$RETURN_TYPE      void
+$FUNCTION           en_idea_close
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (idea_status status)
-$SUMMARY          Close a cipher stream.
+$SUMMARY            Close a cipher stream.
 $PURPOSE
     This routine will clean up an IDEA cipher status, removing
     sensitive key information.
-$PARAMETER        status :
+$PARAMETER          status :
     The IDEA cipher status.
 $RETURNS
     Nothing.

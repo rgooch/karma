@@ -45,7 +45,10 @@
     Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
   format.
 
-    Last updated by Richard Gooch   21-JUN-1996: Added support for GIPSY format
+    Updated by      Richard Gooch   21-JUN-1996: Added support for GIPSY format
+
+    Last updated by Richard Gooch   12-OCT-1996: Created
+  <foreign_read_and_setup> routine.
 
 
 */
@@ -60,7 +63,10 @@
 #include <stdarg.h>
 #include <karma.h>
 #include <karma_foreign.h>
+#include <karma_iarray.h>
 #include <karma_dsxfr.h>
+#include <karma_wcs.h>
+#include <karma_ds.h>
 #include <karma_ch.h>
 #include <karma_a.h>
 
@@ -106,7 +112,7 @@ multi_array *foreign_guess_and_read (CONST char *filename,
 	    FLAG_VERIFY (fits_convert_to_float);
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Unknown attribute key: %u\n", att_key);
+	    fprintf (stderr, "Unknown attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	    break;
 	}
@@ -123,7 +129,7 @@ multi_array *foreign_guess_and_read (CONST char *filename,
 					     mmap_option, writeable) )
 	    == NULL )
 	{
-	    (void) fprintf (stderr, "Error getting arrayfile: \"%s\"\n",
+	    fprintf (stderr, "Error getting arrayfile: \"%s\"\n",
 			    filename);
 	    return (NULL);
 	}
@@ -132,7 +138,7 @@ multi_array *foreign_guess_and_read (CONST char *filename,
 	/*  Read PPM file  */
 	if ( ( inp = ch_open_file (filename, "r") ) == NULL )
 	{
-	    (void) fprintf (stderr, "Error opening file: \"%s\"\t%s\n",
+	    fprintf (stderr, "Error opening file: \"%s\"\t%s\n",
 			    filename, sys_errlist[errno]);
 	    return (NULL);
 	}
@@ -140,17 +146,17 @@ multi_array *foreign_guess_and_read (CONST char *filename,
 					      FA_PPM_READ_END) )
 	    == NULL )
 	{
-	    (void) fprintf (stderr, "Error reading PPM file\n");
-	    (void) ch_close (inp);
+	    fprintf (stderr, "Error reading PPM file\n");
+	    ch_close (inp);
 	    return (NULL);
 	}
-	(void) ch_close (inp);
+	ch_close (inp);
 	break;
       case FOREIGN_FILE_FORMAT_FITS:
 	/*  Read FITS file  */
 	if ( ( inp = ch_open_file (filename, "r") ) == NULL )
 	{
-	    (void) fprintf (stderr, "Error opening file: \"%s\"\t%s\n",
+	    fprintf (stderr, "Error opening file: \"%s\"\t%s\n",
 			    filename, sys_errlist[errno]);
 	    return (NULL);
 	}
@@ -160,24 +166,24 @@ multi_array *foreign_guess_and_read (CONST char *filename,
 						     FA_FITS_READ_HEADER_END) )
 	    == NULL )
 	{
-	    (void) fprintf (stderr, "Error reading FITS file header\n");
-	    (void) ch_close (inp);
+	    fprintf (stderr, "Error reading FITS file header\n");
+	    ch_close (inp);
 	    return (NULL);
 	}
 	if ( !foreign_fits_read_data (inp, multi_desc, NULL, 0,
 				      FA_FITS_READ_DATA_END) )
 	{
-	    (void) fprintf (stderr, "Error reading FITS file data\n");
-	    (void) ch_close (inp);
+	    fprintf (stderr, "Error reading FITS file data\n");
+	    ch_close (inp);
 	    return (NULL);
 	}
-	(void) ch_close (inp);
+	ch_close (inp);
 	break;
       case FOREIGN_FILE_FORMAT_SUNRAS:
 	/*  Read Sun rasterfile  */
 	if ( ( inp = ch_open_file (filename, "r") ) == NULL )
 	{
-	    (void) fprintf (stderr, "Error opening file: \"%s\"\t%s\n",
+	    fprintf (stderr, "Error opening file: \"%s\"\t%s\n",
 			    filename, sys_errlist[errno]);
 	    return (NULL);
 	}
@@ -185,18 +191,18 @@ multi_array *foreign_guess_and_read (CONST char *filename,
 						 FA_SUNRAS_READ_END) )
 	    == NULL )
 	{
-	    (void) fprintf (stderr, "Error reading Sun rasterfile\n");
-	    (void) ch_close (inp);
+	    fprintf (stderr, "Error reading Sun rasterfile\n");
+	    ch_close (inp);
 	    return (NULL);
 	}
-	(void) ch_close (inp);
+	ch_close (inp);
 	break;
       case FOREIGN_FILE_FORMAT_MIRIAD:
 	if ( ( multi_desc = foreign_miriad_read (filename, TRUE,
 						 FA_MIRIAD_READ_END) )
 	    == NULL )
 	{
-	    (void) fprintf (stderr, "Error reading Miriad Image file\n");
+	    fprintf (stderr, "Error reading Miriad Image file\n");
 	    return (NULL);
 	}
 	break;
@@ -205,14 +211,123 @@ multi_array *foreign_guess_and_read (CONST char *filename,
 						FA_GIPSY_READ_END) )
 	    == NULL )
 	{
-	    (void) fprintf (stderr, "Error reading GIPSY file\n");
+	    fprintf (stderr, "Error reading GIPSY file\n");
 	    return (NULL);
 	}
 	break;
       default:
-	(void) fprintf (stderr, "Illegal filetype: %u\n", *ftype);
+	fprintf (stderr, "Illegal filetype: %u\n", *ftype);
 	a_prog_bug (function_name);
 	break;
     }
     return (multi_desc);
 }   /*  End Function foreign_guess_and_read  */
+
+/*EXPERIMENTAL_FUNCTION*/
+flag foreign_read_and_setup (CONST char *filename, unsigned int mmap_option,
+			     flag writeable, unsigned int *ftype, flag inform,
+			     unsigned int num_dim,
+			     unsigned int preferred_type, flag force_type,
+			     iarray *array, double *min, double *max,
+			     flag discard_zero_range,
+			     KwcsAstro *ap)
+/*  [SUMMARY] Read a file and perform some setup.
+    [PURPOSE] This routine will attempt to guess the filetype of a file and
+    in the file, converting to an Intelligent Array if possible. The routine
+    then performs some simple checks and some other convenience functions.
+    <filename> The name of the file to read.
+    <mmap_option> This has the same meaning as for the <dsxfr_get_multi>
+    routine.
+    <writeable> This has the same meaning as for the <dsxfr_get_multi> routine.
+    <ftype> The type of the file that was read in is written here.
+    <inform> If TRUE, the routine displays some informative messages.
+    <num_dim> The number of dimensions required. If this is 0, any number of
+    dimensions is allowed.
+    <preferred_type> The preferred data type. If this is NONE, then no type is
+    preferred.
+    <force_type> If TRUE, the routine fails if the preferred data type was not
+    available.
+    <array> The Intelligent Array is written here. An existing array pointed to
+    by this is deallocated.
+    <min> The minimum data value in the array is written here. If this is NULL
+    nothing is written here.
+    <max> The maximum data value in the array is written here. If this is NULL
+    nothing is written here.
+    <discard_zero_range> If TRUE, and the range of the data is zero, the
+    routine fails.
+    <ap> The KwcsAstro object for the array is written here. The KwcsAstro
+    object may be NULL (indicating no astronomical projection is available). An
+    existing object is deallocated. If this is NULL, nothing is written here.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    flag convert_to_float = FALSE;
+    iarray arr;
+    double min_val, max_val;
+    multi_array *multi_desc;
+    /*static char function_name[] = "foreign_read_and_setup";*/
+
+    /*  Check if floating point data is preferred  */
+    if (preferred_type == K_FLOAT) convert_to_float = TRUE;
+    if ( ( multi_desc =
+	   foreign_guess_and_read(filename, mmap_option, writeable, ftype,
+				  FA_GUESS_READ_FITS_TO_FLOAT,convert_to_float,
+				  FA_GUESS_READ_END) ) == NULL )
+    {
+	fprintf (stderr, "Error reading file: \"%s\"\n", filename);
+	return (FALSE);
+    }
+    /*  Try to get array  */
+    if ( ( arr = iarray_get_from_multi_array (multi_desc, NULL, num_dim,
+					       NULL, NULL) )
+	 == NULL )
+    {
+	fprintf (stderr, "Could not find array\n");
+	ds_dealloc_multi (multi_desc);
+	return (FALSE);
+    }
+    ds_dealloc_multi (multi_desc);  /*  Not needed anymore  */
+    if ( force_type && (iarray_type (arr) != preferred_type) )
+    {
+	fprintf (stderr, "Data type: %u not found\n", preferred_type);
+	iarray_dealloc (arr);
+	return (FALSE);
+    }
+    if (inform)
+    {
+	if (iarray_num_dim (arr) == 2)
+	{
+	    fprintf ( stderr, "Loaded image of %lu * %lu\n",
+		      iarray_dim_length (arr, 1), iarray_dim_length (arr, 0) );
+	}
+	else if (iarray_num_dim (arr) == 3)
+	{
+	    fprintf ( stderr, "Loaded cube of %lu * %lu * %lu\n",
+		      iarray_dim_length (arr, 2), iarray_dim_length (arr, 1),
+		      iarray_dim_length (arr, 0) );
+	}
+    }
+    /*  Compute the minimum and maximum  */
+    if ( discard_zero_range || (min != NULL) || (max != NULL) )
+    {
+	iarray_min_max (arr, CONV_CtoR_REAL, &min_val, &max_val);
+	if (min != NULL) *min = min_val;
+	if (max != NULL) *max = max_val;
+	if ( discard_zero_range && (min_val == max_val) )
+	{
+	    fprintf (stderr, "min: %e is same as max: pointless!\n", min_val);
+	    iarray_dealloc (arr);
+	    return (FALSE);
+	}
+    }
+    if (inform) fprintf (stderr, "Data minimum: %e  maximum: %e\n",
+			 min_val, max_val);
+    if (*array != NULL) iarray_dealloc (*array);
+    *array = arr;
+    if (ap != NULL)
+    {
+	if (*ap != NULL) wcs_astro_destroy (*ap);
+	*ap = wcs_astro_setup (arr->top_pack_desc, *arr->top_packet);
+    }
+    return (TRUE);
+}   /*  End Function foreign_read_and_setup  */

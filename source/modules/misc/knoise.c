@@ -202,7 +202,6 @@ static void generate_file (char *arrayname, unsigned int elem_type)
     extern double maxima[MAX_DIMENSIONS];
     extern char *names[MAX_DIMENSIONS];
     extern char *elem_name;
-    extern char *sys_errlist[];
     static char function_name[] = "generate_file";
 
     /*  Determine array size (in co-ordinates)  */

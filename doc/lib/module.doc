@@ -7,55 +7,55 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         module_run
-$RETURN_TYPE      void
+$FUNCTION           module_run
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (int argc, char **argv, char *name_string,
 		 char *version_string, flag (*decode_func) (),
 		 int max_incoming, int max_outgoing, flag server)
-$SUMMARY          Initialise and then run a generic module.
+$SUMMARY            Initialise and then run a generic module.
 $PURPOSE
     Initialise and then run a generic module.
-$PARAMETER        argc :
+$PARAMETER          argc :
     The number of command line arguments.
-$PARAMETER        argv :
+$PARAMETER          argv :
     The command line arguments.
-$PARAMETER        name_string :
+$PARAMETER          name_string :
     The name of the module.
-$PARAMETER        version_string :
+$PARAMETER          version_string :
     The version date of the module.
-$PARAMETER        decode_func :
+$PARAMETER          decode_func :
     The command line decode function. The prototype function is
     <-PANEL_PROTO_decode_func->.
-$PARAMETER        max_incoming :
+$PARAMETER          max_incoming :
     The maximum number of incoming "multi_array" protocol
     connections. If this is less than 0, no connections are permitted. If this
     is 0, an unlimited number of connections is permitted.
-$PARAMETER        max_outgoing :
+$PARAMETER          max_outgoing :
     The maximum number of outgoing "multi_array" protocol
     connections. If this is less than 0, no connections are permitted. If this
     is 0, an unlimited number of connections is permitted.
-$PARAMETER        server :
+$PARAMETER          server :
     If TRUE, the module can operate as a server (for at least one
     protocol).
 $RETURNS
     Nothing. Upon return from the function, the module should exit.
 $END
 
-$FUNCTION         module_process_argvs
-$RETURN_TYPE      void
+$FUNCTION           module_process_argvs
+$RETURN_TYPE        void
 $PARAMETER_LIST
     ( int argc, char **argv, flag (*unknown_func) () )
-$SUMMARY          Process a shell command line.
+$SUMMARY            Process a shell command line.
 $PURPOSE
     This routine will process a shell command line, using the
     <-panel_process_command_with_stack-> routine.
-$PARAMETER        argc :
+$PARAMETER          argc :
     The number of command line arguments.
-$PARAMETER        argv :
+$PARAMETER          argv :
     The command line arguments. These do not include command used to
     execute the process ( cf. main() ).
-$PARAMETER        unknown_func :
+$PARAMETER          unknown_func :
     The function which is called when the command is not
     understood. The prototype function is <-PANEL_PROTO_decode_func->.
 $RETURNS

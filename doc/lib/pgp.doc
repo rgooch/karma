@@ -6,44 +6,44 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         pgp_decrypt
-$RETURN_TYPE      char *
+$FUNCTION           pgp_decrypt
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (CONST char *ciphertext, unsigned int ciphertext_length,
 		   unsigned int *plaintext_length)
-$SUMMARY          Decrypt a block of data using PGP and PGPdaemon.
+$SUMMARY            Decrypt a block of data using PGP and PGPdaemon.
 $PURPOSE
     Decrypt a block of data using PGP and PGPdaemon.
-$PARAMETER        ciphertext :
+$PARAMETER          ciphertext :
     The input ciphertext data.
-$PARAMETER        ciphertext_length :
+$PARAMETER          ciphertext_length :
     The length of the input ciphertext data.
-$PARAMETER        plaintext_length :
+$PARAMETER          plaintext_length :
     The length of the decrypted data is written here.
 $RETURNS
     A pointer to the plaintext data on success, else NULL.
 $END
 
-$FUNCTION         pgp_encrypt
-$RETURN_TYPE      char *
+$FUNCTION           pgp_encrypt
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (CONST char *plaintext, unsigned int plaintext_length,
 		   CONST char **recipients, unsigned int num_recipients,
 		   unsigned int *ciphertext_length, flag ascii_armour)
-$SUMMARY          Encrypt a block of data using PGP.
+$SUMMARY            Encrypt a block of data using PGP.
 $PURPOSE
     Encrypt a block of data using PGP.
-$PARAMETER        plaintext :
+$PARAMETER          plaintext :
     The input plaintext data.
-$PARAMETER        plaintext_length :
+$PARAMETER          plaintext_length :
     The length of the input plaintext data.
-$PARAMETER        recipients :
+$PARAMETER          recipients :
     The list of recipients to encrypt for.
-$PARAMETER        num_recipients :
+$PARAMETER          num_recipients :
     The number of recipients in the recipient list.
-$PARAMETER        ciphertext_length :
+$PARAMETER          ciphertext_length :
     The length of the encrypted data is written here.
-$PARAMETER        ascii_armour :
+$PARAMETER          ascii_armour :
     If TRUE, the ciphertext is ASCII armoured, suitable for
     transmitting through Email.
 $RETURNS

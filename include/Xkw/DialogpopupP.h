@@ -11,9 +11,14 @@ typedef struct _DialogpopupPart
 {
     /*  Public resources  */
     XtCallbackList callback;
+    String defaultName;
+    String extension;
     char *label;
+    Bool showAutoIncrement;
     /*  Private resources  */
     Widget dialog;
+    Widget extension_label;
+    Bool auto_increment;
 } DialogpopupPart, *DialogpopupPartPtr;
 
 typedef struct _DialogpopupRec

@@ -11,14 +11,14 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         vrender_create_context
-$RETURN_TYPE      KVolumeRenderContext
+$FUNCTION           vrender_create_context
+$RETURN_TYPE        KVolumeRenderContext
 $PARAMETER_LIST
     (void *info, ...)
-$SUMMARY          Create a context for volume rendering.
+$SUMMARY            Create a context for volume rendering.
 $PURPOSE
     Create a context for volume rendering.
-$PARAMETER        info :
+$PARAMETER          info :
     An arbitrary information pointer associated with the context.
 $PARAMETER        ... :
     The optional list of parameter attribute-key attribute-value
@@ -29,14 +29,14 @@ $RETURNS
     A KVolumeRenderContext on success, else NULL.
 $END
 
-$FUNCTION         vrender_set_context_attributes
-$RETURN_TYPE      flag
+$FUNCTION           vrender_set_context_attributes
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KVolumeRenderContext context, ...)
-$SUMMARY          Set the attributes for a volume rendering context.
+$SUMMARY            Set the attributes for a volume rendering context.
 $PURPOSE
     Set the attributes for a volume rendering context.
-$PARAMETER        context :
+$PARAMETER          context :
     The volume rendering context.
 $PARAMETER        ... :
     The optional list of parameter attribute-key attribute-value
@@ -47,14 +47,14 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         vrender_get_context_attributes
-$RETURN_TYPE      flag
+$FUNCTION           vrender_get_context_attributes
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KVolumeRenderContext context, ...)
-$SUMMARY          Get the attributes for a volume rendering context.
+$SUMMARY            Get the attributes for a volume rendering context.
 $PURPOSE
     Get the attributes for a volume rendering context.
-$PARAMETER        context :
+$PARAMETER          context :
     The volume rendering context.
 $PARAMETER        ... :
     The optional list of parameter attribute-key attribute-value-ptr
@@ -65,62 +65,62 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         vrender_register_shader
-$RETURN_TYPE      void
+$FUNCTION           vrender_register_shader
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (void (*slow_func) (), void (*fast_func) (),
 			      CONST char *name,
 			      packet_desc *pack_desc, CONST char *blank_packet,
 			      void *info, flag front)
-$SUMMARY          Register a shader function.
+$SUMMARY            Register a shader function.
 $PURPOSE
     Register a shader function.
-$PARAMETER        slow_func :
+$PARAMETER          slow_func :
     The slow shader function.
-$PARAMETER        fast_func :
+$PARAMETER          fast_func :
     The fast shader function. If this is NULL the slow function
     will always be used.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the shader function.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The packet descriptor describing the output image pixels. A
     copy is made, hence the original may be deallocated.
-$PARAMETER        blank_packet :
+$PARAMETER          blank_packet :
     A pointer to a sample packet containing blank data.
-$PARAMETER        info :
+$PARAMETER          info :
     An arbitrary information pointer associated with the shader.
-$PARAMETER        front :
+$PARAMETER          front :
     If TRUE, the new shader is placed at the front of the list, else
     it is placed at the back of the list.
 $RETURNS
     Nothing. The process aborts on error.
 $END
 
-$FUNCTION         vrender_change_shader_blank_packet
-$RETURN_TYPE      void
+$FUNCTION           vrender_change_shader_blank_packet
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (CONST char *name,
 					 CONST char *blank_packet)
-$SUMMARY          Change blank value for a particular shader.
+$SUMMARY            Change blank value for a particular shader.
 $PURPOSE
     This routine will change the data used to write blank values for
     a particular shader.
-$PARAMETER        name :
+$PARAMETER          name :
     The name of the shader.
-$PARAMETER        blank_packet :
+$PARAMETER          blank_packet :
     A pointer to a sample packet containing blank data.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         vrender_get_shaders
-$RETURN_TYPE      CONST char **
+$FUNCTION           vrender_get_shaders
+$RETURN_TYPE        CONST char **
 $PARAMETER_LIST
     (unsigned int *num_shaders)
-$SUMMARY          Get the names of all registered shaders.
+$SUMMARY            Get the names of all registered shaders.
 $PURPOSE
     Get the names of all registered shaders.
-$PARAMETER        num_shaders :
+$PARAMETER          num_shaders :
     The number of registered shaders is written here.
 $RETURNS
     An array of shader names on success, else NULL. This array must
@@ -128,70 +128,74 @@ $RETURNS
     deallocated.
 $END
 
-$FUNCTION         vrender_to_buffer
-$RETURN_TYPE      flag
+$FUNCTION           vrender_to_buffer
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KVolumeRenderContext context, char *left_buffer,
 			char *right_buffer, double *min, double *max,
 			void (*notify_func) (void *info), void *info)
-$SUMMARY          Render a scene in a volume rendering context to a buffer.
+$SUMMARY            Render a scene in a volume rendering context to a buffer.
 $PURPOSE
     Render a scene in a volume rendering context to a buffer.
-$PARAMETER        context :
+$PARAMETER          context :
     The volume rendering context.
-$PARAMETER        left_buffer :
+$PARAMETER          left_buffer :
     The left eye buffer to render into. This must be correctly
     allocated.
-$PARAMETER        right_buffer :
+$PARAMETER          right_buffer :
     The right eye buffer to render into. If this is NULL no
     right eye view is rendered and a monoscopic image is rendered into the left
     eye buffer.
-$PARAMETER        min :
+$PARAMETER          min :
     The minimum value in the rendered images(s) is written here.
-$PARAMETER        max :
+$PARAMETER          max :
     The maximum value in the rendered images(s) is written here.
-$PARAMETER        notify_func :
+$PARAMETER          notify_func :
     The function that is called when the rendering is completed.
     If this is NULL this routine blocks. Note that even if this function is
     specified, the routine may still block until the render completes if the
     operating system does not have thread support. The prototype function is
     <-VRENDER_PROTO_render_notify_func->.
-$PARAMETER        info :
+$PARAMETER          info :
     The arbitrary information pointer.
 $MT-LEVEL         Unsafe per context.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         vrender_collect_ray
-$RETURN_TYPE      CONST signed char *
+$FUNCTION           vrender_collect_ray
+$RETURN_TYPE        CONST signed char *
 $PARAMETER_LIST
     (KVolumeRenderContext context,
 					unsigned int eye_view,
 					Kcoord_2d pos_2d, Kcoord_3d *ray_start,
-					Kcoord_3d *direction, float *t_enter,
+					Kcoord_3d *direction,
+					float *t_enter, float *t_leave,
 					unsigned int *ray_length)
-$SUMMARY          Collect a ray projected from an image plane into a volume.
+$SUMMARY            Collect a ray projected from an image plane into a volume.
 $PURPOSE
     Collect a ray projected from an image plane into a volume.
-$PARAMETER        context :
+$PARAMETER          context :
     The volume rendering context. This specifies the volume and view
     information.
-$PARAMETER        eye_view :
+$PARAMETER          eye_view :
     The eye which sees the ray. See <-VRENDER_EYES-> for a list of
     legal values.
-$PARAMETER        pos_2d :
+$PARAMETER          pos_2d :
     The 2-dimensional position in the image plane to project from.
-$PARAMETER        ray_start :
+$PARAMETER          ray_start :
     The 3-dimensional position of the starting point of the ray is
     written here. This point lies on the raster plane.
-$PARAMETER        direction :
+$PARAMETER          direction :
     The 3-dimensional direction vector of the ray is written here.
     This is not normalised.
-$PARAMETER        t_enter :
+$PARAMETER          t_enter :
     The distance down the ray corresponding to the first voxel is
     written here.
-$PARAMETER        ray_length :
+$PARAMETER          t_leave :
+    The distance down the ray corresponding to the last voxel is
+    written here.
+$PARAMETER          ray_length :
     The length of the ray through the volume is written here. If
     the ray does not intersect the volume, 0 is written here.
 $MT-LEVEL         Unsafe per context.
@@ -200,144 +204,205 @@ $RETURNS
     array per context which is updated on each call. On error NULL is returned.
 $END
 
-$FUNCTION         vrender_project_3d
-$RETURN_TYPE      flag
+$FUNCTION           vrender_project_3d
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KVolumeRenderContext context, unsigned int eye_view,
 			 Kcoord_3d point_3d, Kcoord_2d *point_2d,
 			 flag test_visible)
-$SUMMARY          Project a point in 3-dimensional space onto a view plane.
+$SUMMARY            Project a point in 3-dimensional space onto a view plane.
 $PURPOSE
     Project a point in 3-dimensional space onto a view plane.
-$PARAMETER        context :
+$PARAMETER          context :
     The volume render context which determines the view information.
-$PARAMETER        eye_view :
+$PARAMETER          eye_view :
     The eye which will see the point. See <-VRENDER_EYES-> for a
     list of legal values.
-$PARAMETER        point_3d :
+$PARAMETER          point_3d :
     The 3 dimensional point to be projected.
-$PARAMETER        point_2d :
+$PARAMETER          point_2d :
     The projected 2 dimensional point will be written here.
-$PARAMETER        test_visible :
+$PARAMETER          test_visible :
     If TRUE, the point is tested for visibility.
 $RETURNS
     TRUE if the point is visible, else FALSE if it would be obscured
     by the volume or <<test_visible>> is FALSE.
 $END
 
-$FUNCTION         vrender_compute_caches
-$RETURN_TYPE      void
+$FUNCTION           vrender_compute_caches
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KVolumeRenderContext context, unsigned int eyes,
 			     flag notify)
-$SUMMARY          Compute cache for volume rendering context.
+$SUMMARY            Compute cache for volume rendering context.
 $PURPOSE
     This routine will compute the caches for the specified eyes. This
     speeds up subsequent rendering several times. Nothing is done if the
     cache(s) are already computed.
-$PARAMETER        context :
+$PARAMETER          context :
     The volume render context.
-$PARAMETER        eyes :
+$PARAMETER          eyes :
     A bitmask specifying which eye views to compute. The bitmask may be
     constructed by ORing some values. See <-VRENDER_EYE_MASKS-> for a list of
     masks.
-$PARAMETER        notify :
+$PARAMETER          notify :
     If TRUE any functions registered with
     <-vrender_cache_notify_func-> will be called.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         vrender_image_desc_notify_func
-$RETURN_TYPE      KCallbackFunc
+$FUNCTION           vrender_image_desc_notify_func
+$RETURN_TYPE        KCallbackFunc
 $PARAMETER_LIST
     (KVolumeRenderContext context,
      void (*func) (KVolumeRenderContext context, void **info),
      void *info)
-$SUMMARY          Register image descriptor change callback.
+$SUMMARY            Register image descriptor change callback.
 $PURPOSE
     This routine will register a function which should be called
     whenever the output image descriptor is changed.
-$PARAMETER        context :
+$PARAMETER          context :
     The volume render context.
-$PARAMETER        func :
+$PARAMETER          func :
     The routine to be called. The prototype function is
     <-VRENDER_PROTO_image_desc_notify_func->
-$PARAMETER        info :
+$PARAMETER          info :
     The initial arbitrary information pointer.
 $RETURNS
     A KCallbackFunc object on success. On failure, the process aborts
 $END
 
-$FUNCTION         vrender_cache_notify_func
-$RETURN_TYPE      KCallbackFunc
+$FUNCTION           vrender_cache_notify_func
+$RETURN_TYPE        KCallbackFunc
 $PARAMETER_LIST
     (KVolumeRenderContext context,
      void (*func) (KVolumeRenderContext context, void **info, uaddr eyes),
      void *info)
-$SUMMARY          Register cache computed callback.
+$SUMMARY            Register cache computed callback.
 $PURPOSE
     This routine will register a function which should be called
     whenever the cache for one or more eye views is computed.
-$PARAMETER        context :
+$PARAMETER          context :
     The volume render context.
-$PARAMETER        func :
-    The routine to be called. The The prototype function is
+$PARAMETER          func :
+    The routine to be called. The prototype function is
     <-VRENDER_PROTO_cache_notify_func->
-$PARAMETER        info :
+$PARAMETER          info :
     The initial arbitrary information pointer.
 $RETURNS
     A KCallbackFunc object on success. On failure, the process aborts
 $END
 
-$PROTO_FUNC       VRENDER_PROTO_render_notify_func
-$RETURN_TYPE      void
+$FUNCTION           vrender_view_notify_func
+$RETURN_TYPE        KCallbackFunc
+$PARAMETER_LIST
+    (KVolumeRenderContext context,
+     void (*func) (KVolumeRenderContext context, void **info),
+     void *info)
+$SUMMARY            Register view changed computed callback.
+$PURPOSE
+    This routine will register a function which should be called
+    whenever the view for a context is changed.
+$PARAMETER          context :
+    The volume render context.
+$PARAMETER          func :
+    The routine to be called. The prototype function is
+    <-VRENDER_PROTO_view_notify_func->. This is called after view information
+    has been computed, but before any cache information is computed.
+$PARAMETER          info :
+    The initial arbitrary information pointer.
+$RETURNS
+    A KCallbackFunc object on success. On failure, the process aborts
+$END
+
+$FUNCTION           vrender_get_eye_info
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (KVolumeRenderContext context, unsigned int eye_view,
+			   Kcoord_3d *ras_centre, Kcoord_3d *direction,
+			   Kcoord_3d *horizontal)
+$SUMMARY            Get eye information.
+$PURPOSE
+    Get eye information.
+$PARAMETER          context :
+    The volume render context which determines the view information.
+$PARAMETER          eye_view :
+    The eye which will see the point. See <-VRENDER_EYES-> for a
+    list of legal values.
+$PARAMETER          ras_centre :
+    The centre of the raster plane is written here.
+$PARAMETER          direction :
+    The direction towards infinity is written here.
+$PARAMETER          horizontal :
+    The horizontal direction vector is written here.
+$RETURNS
+    Nothing.
+$END
+
+$PROTO_FUNC         VRENDER_PROTO_render_notify_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (void *info)
-$SUMMARY          Volume rendering completed callback.
+$SUMMARY            Volume rendering completed callback.
 $PURPOSE
     This routine registers the completion of a volume render
     request.
-$PARAMETER        info :
+$PARAMETER          info :
     The arbitrary information pointer.
 $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       VRENDER_PROTO_image_desc_notify_func
-$RETURN_TYPE      void
+$PROTO_FUNC         VRENDER_PROTO_image_desc_notify_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KVolumeRenderContext context,
 					   void **info)
-$SUMMARY          Image descriptor changed callback.
+$SUMMARY            Image descriptor changed callback.
 $PURPOSE
     This routine is called when the output image descriptor is
     changed.
-$PARAMETER        context :
+$PARAMETER          context :
     The volume render context.
-$PARAMETER        info :
+$PARAMETER          info :
     A pointer to the arbitrary information pointer.
 $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       VRENDER_PROTO_cache_notify_func
-$RETURN_TYPE      void
+$PROTO_FUNC         VRENDER_PROTO_cache_notify_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KVolumeRenderContext context,
 				      void **info, uaddr eyes)
-$SUMMARY          Cache computed callback.
+$SUMMARY            Cache computed callback.
 $PURPOSE
     This routine is called when the cache for one or more eye
     views is computed.
-$PARAMETER        context :
+$PARAMETER          context :
     The volume render context.
-$PARAMETER        info :
+$PARAMETER          info :
     A pointer to the arbitrary information pointer.
-$PARAMETER        eyes :
+$PARAMETER          eyes :
     A bitmask specifying which eye views to compute. The bitmask may be
     constructed by ORing some values. See <-VRENDER_EYE_MASKS-> for a list of
     masks.
+$RETURNS
+    Nothing.
+$END
+
+$PROTO_FUNC         VRENDER_PROTO_view_notify_func
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (KVolumeRenderContext context, void **info)
+$SUMMARY            View changed callback.
+$PURPOSE
+    This routine is called when the view is changed.
+$PARAMETER          context :
+    The volume render context.
+$PARAMETER          info :
+    A pointer to the arbitrary information pointer.
 $RETURNS
     Nothing.
 $END

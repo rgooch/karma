@@ -34,9 +34,11 @@
 
     Updated by      Richard Gooch   23-JUN-1996
 
-    Last updated by Richard Gooch   24-JUN-1996: Only display debugging
+    Updated by      Richard Gooch   24-JUN-1996: Only display debugging
   information when "FOREIGN_GIPSY_DEBUG" environment variable exists. Fixed a
   few bugs.
+
+    Last updated by Richard Gooch   7-AUG-1996: Minor debugging improvements.
 
 
 */
@@ -53,7 +55,6 @@
 #include <sys/stat.h>
 #include <karma.h>
 #include <karma_foreign.h>
-#include <karma_dsrw.h>
 #include <karma_pio.h>
 #include <karma_dmp.h>
 #include <karma_ch.h>
@@ -197,10 +198,8 @@ STATIC_FUNCTION (void copy_32bits,
 STATIC_FUNCTION (flag read_and_swap_blocks,
 		 (Channel channel, char *buffer, unsigned int num_blocks,
 		  unsigned int block_size, flag swap) );
-STATIC_FUNCTION (flag drain_to_boundary, (Channel channel,unsigned int size) );
 STATIC_FUNCTION (flag read_key_record,
 		 (Channel channel, keyrec record, flag swap) );
-STATIC_FUNCTION (flag fill_fits_line, (Channel channel) );
 
 
 /*  Public functions follow  */
@@ -425,8 +424,9 @@ multi_array *foreign_gipsy_read_header (Channel channel, flag data_alloc,
 	(void) fprintf (stderr, "number of axes: %u\n", header.naxis );
 	for (count = 0; count < header.naxis; ++count)
 	{
-	    (void) fprintf (stderr, "Axis[%u] length: %u\n",
-			    count, header.ax_size[count]);
+	    fprintf (stderr, "Axis[%u] origin: %e  size: %u  factor: %u\n",
+		     count, header.ax_origin[count], header.ax_size[count],
+		     header.ax_factor[count]);
 	}
     }
     /*  Read number of items  */
@@ -437,7 +437,8 @@ multi_array *foreign_gipsy_read_header (Channel channel, flag data_alloc,
 			sys_errlist[errno]);
 	return (NULL);
     }
-    if (verbose) fprintf (stderr, "number of items: %u\n", header.nitems );
+    if (verbose) fprintf (stderr, "number of items: %u  (record size: %u)\n",
+			  header.nitems, REC_SIZ);
     /*  Read past reserved bits  */
     if (ch_drain (channel, 8) < 8)
     {
@@ -472,6 +473,8 @@ multi_array *foreign_gipsy_read_header (Channel channel, flag data_alloc,
 			sys_errlist[errno]);
 	return (NULL);
     }
+    if (verbose) fprintf (stderr, "Current maximum number of records: %u\n",
+			  header.maxrec);
     /*  Read size of hash table  */
     if ( !read_and_swap_blocks (channel, (char *) &header.n_buck, 1, 4,
 				header.swap) )
@@ -480,6 +483,7 @@ multi_array *foreign_gipsy_read_header (Channel channel, flag data_alloc,
 			sys_errlist[errno]);
 	return (NULL);
     }
+    if (verbose) fprintf (stderr, "Hash table size: %u\n", header.n_buck);
     /*  Read past spares  */
     if (ch_drain (channel, 8 * 4) < 8 * 4)
     {
@@ -495,6 +499,7 @@ multi_array *foreign_gipsy_read_header (Channel channel, flag data_alloc,
 			sys_errlist[errno]);
 	return (NULL);
     }
+    if (verbose) fprintf (stderr, "Free list pointer: %u\n", header.free);
     /*  Read hash table  */
     if ( !read_and_swap_blocks (channel, (char *) header.hash_tab, 1, 4,
 				header.swap) )
@@ -503,9 +508,11 @@ multi_array *foreign_gipsy_read_header (Channel channel, flag data_alloc,
 			sys_errlist[errno]);
 	return (NULL);
     }
-    drain_to_boundary (channel, REC_SIZ);
-    /*  Skip to first data record. The header is counted as one record even
-	though it takes more than one regular record size  */
+    if (verbose) fprintf (stderr, "First hash table entry: %u\n",
+			  header.hash_tab[1]);
+    ch_drain_to_boundary (channel, REC_SIZ);
+    /*  Skip to first data record. The header is counted as two records, and
+	lies at records 0 and 1  */
     for (count = 2; count < header.rec_start; ++count)
     {
 	if (ch_drain (channel, REC_SIZ) < REC_SIZ)
@@ -528,7 +535,7 @@ multi_array *foreign_gipsy_read_header (Channel channel, flag data_alloc,
 	return (NULL);
     }
     if ( !ch_puts (fits_ch, "SIMPLE  = T", FALSE) ||
-	 !fill_fits_line (fits_ch) )
+	 !ch_fill_to_boundary (fits_ch, FITS_CARD_WIDTH, ' ') )
     {
 	(void) fprintf (stderr, "Error writing to FITS channel\t%s\n",
 			sys_errlist[errno]);
@@ -536,7 +543,7 @@ multi_array *foreign_gipsy_read_header (Channel channel, flag data_alloc,
 	return (NULL);
     }
     if ( !ch_puts (fits_ch, "BITPIX  = -32", FALSE) ||
-	 !fill_fits_line (fits_ch) )
+	 !ch_fill_to_boundary (fits_ch, FITS_CARD_WIDTH, ' ') )
     {
 	(void) fprintf (stderr, "Error writing to FITS channel\t%s\n",
 			sys_errlist[errno]);
@@ -544,7 +551,7 @@ multi_array *foreign_gipsy_read_header (Channel channel, flag data_alloc,
 	return (NULL);
     }
     if ( !ch_puts (fits_ch, "BZERO   = 0.0", FALSE) ||
-	 !fill_fits_line (fits_ch) )
+	 !ch_fill_to_boundary (fits_ch, FITS_CARD_WIDTH, ' ') )
     {
 	(void) fprintf (stderr, "Error writing to FITS channel\t%s\n",
 			sys_errlist[errno]);
@@ -552,7 +559,7 @@ multi_array *foreign_gipsy_read_header (Channel channel, flag data_alloc,
 	return (NULL);
     }
     if ( !ch_puts (fits_ch, "BSCALE  = 1.0", FALSE) ||
-	 !fill_fits_line (fits_ch) )
+	 !ch_fill_to_boundary (fits_ch, FITS_CARD_WIDTH, ' ') )
     {
 	(void) fprintf (stderr, "Error writing to FITS channel\t%s\n",
 			sys_errlist[errno]);
@@ -560,7 +567,7 @@ multi_array *foreign_gipsy_read_header (Channel channel, flag data_alloc,
 	return (NULL);
     }
     if ( !ch_printf (fits_ch, "KGIPSY  = %u", float_control) ||
-	 !fill_fits_line (fits_ch) )
+	 !ch_fill_to_boundary (fits_ch, FITS_CARD_WIDTH, ' ') )
     {
 	(void) fprintf (stderr, "Error writing to FITS channel\t%s\n",
 			sys_errlist[errno]);
@@ -571,7 +578,7 @@ multi_array *foreign_gipsy_read_header (Channel channel, flag data_alloc,
 	might define a "?????n" keyword before the "NAXIS" keyword. Later on
 	have to trap the "NAXIS" keyword when generating the FITS header.  */
     if ( !ch_printf (fits_ch, "NAXIS   = %u", header.naxis) ||
-	 !fill_fits_line (fits_ch) )
+	 !ch_fill_to_boundary (fits_ch, FITS_CARD_WIDTH, ' ') )
     {
 	(void) fprintf (stderr, "Error writing to FITS channel\t%s\n",
 			sys_errlist[errno]);
@@ -580,7 +587,7 @@ multi_array *foreign_gipsy_read_header (Channel channel, flag data_alloc,
     }
     /*  Start processing descriptors and building a fake FITS header  */
     for ( item_count = 0; count < header.n_alloc;
-	  ++count, drain_to_boundary (channel, REC_SIZ) )
+	  ++count, ch_drain_to_boundary (channel, REC_SIZ) )
     {
 	if (verbose) fprintf (stderr, "Reading record: %u...\n", count);
 	if ( !read_and_swap_blocks (channel, (char *) &rec_type, 1, 4,
@@ -654,12 +661,9 @@ multi_array *foreign_gipsy_read_header (Channel channel, flag data_alloc,
 		ch_close (fits_ch);
 		return (NULL);
 	    }
-	    /*  Checks OK: skip writing, else it will be there twice  */
-	    continue;
 	}
-	/*  Write to FITS channel  */
-	if ( !ch_printf (fits_ch, "%-8s= %s", item_name, fits_data) ||
-	     !fill_fits_line (fits_ch) )
+	else if ( !ch_printf (fits_ch, "%-8s= %s", item_name, fits_data) ||
+		  !ch_fill_to_boundary (fits_ch, FITS_CARD_WIDTH, ' ') )
 	{
 	    (void) fprintf (stderr, "Error writing to FITS channel\t%s\n",
 			    sys_errlist[errno]);
@@ -668,7 +672,8 @@ multi_array *foreign_gipsy_read_header (Channel channel, flag data_alloc,
 	}
 	if (verbose) fprintf (stderr, "%-8s= %s\n", item_name, fits_data);
     }
-    if ( !ch_puts (fits_ch, "END", FALSE) || !fill_fits_line (fits_ch) )
+    if ( !ch_puts (fits_ch, "END", FALSE) ||
+	 !ch_fill_to_boundary (fits_ch, FITS_CARD_WIDTH, ' ') )
     {
 	(void) fprintf (stderr, "Error writing to FITS channel\t%s\n",
 			sys_errlist[errno]);
@@ -955,32 +960,6 @@ static flag read_and_swap_blocks (Channel channel, char *buffer,
     return (TRUE);
 }   /*  End Function read_and_swap_blocks  */
 
-static flag drain_to_boundary (Channel channel, unsigned int size)
-/*  [SUMMARY] Drain a channel up to the nearest boundary.
-    <channel> The Channel object to read from.
-    <size> The boundary size.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-{
-    unsigned long read_pos, write_pos;
-    extern char *sys_errlist[];
-
-    if ( !ch_tell (channel, &read_pos, &write_pos) )
-    {
-	(void) fprintf (stderr, "Error getting position\t%s\n",
-			sys_errlist[errno]);
-	return (FALSE);
-    }
-    if (read_pos % size == 0) return (TRUE);
-    size = size - read_pos % size;
-    if (ch_drain (channel, size) < size)
-    {
-	(void) fprintf (stderr, "Error draining\t%s\n", sys_errlist[errno]);
-	return (FALSE);
-    }
-    return (TRUE);
-}   /*  End Function drain_to_boundary  */
-
 static flag read_key_record (Channel channel, keyrec record, flag swap)
 /*  [SUMMARY] Read in a key record.
     <channel> The Channel object to read from.
@@ -1013,7 +992,7 @@ static flag read_key_record (Channel channel, keyrec record, flag swap)
 			function_name, sys_errlist[errno]);
 	return (FALSE);
     }
-    if ( !drain_to_boundary (channel, 4) )
+    if ( !ch_drain_to_boundary (channel, 4) )
     {
 	(void) fprintf (stderr, "%s: error draining\t%s\n",
 			function_name, sys_errlist[errno]);
@@ -1033,33 +1012,11 @@ static flag read_key_record (Channel channel, keyrec record, flag swap)
 			function_name, sys_errlist[errno]);
 	return (FALSE);
     }
+#ifdef dummy
+    fprintf (stderr,
+	     "length: %u  readpos: %u  next_key: %u  next_ext: %u  last_ext: %u  curr_ext: %u\n",
+	     record->h.length, record->h.readpos, record->h.next_key,
+	     record->h.next_ext, record->h.last_ext, record->h.curr_ext);
+#endif
     return (TRUE);
 }   /*  End Function read_key_record  */
-
-static flag fill_fits_line (Channel channel)
-/*  [SUMMARY] Fill FITS line.
-    <channel> The Channel to write to.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-{
-    unsigned int size;
-    unsigned long read_pos, write_pos;
-
-    if ( !ch_tell (channel, &read_pos, &write_pos) )
-    {
-	(void) fprintf (stderr, "Error getting position\n");
-	return (FALSE);
-    }
-    size = write_pos % FITS_CARD_WIDTH;
-    if (size == 0) return (TRUE);
-    while (size < FITS_CARD_WIDTH)
-    {
-	if (ch_write (channel, " ", 1) < 1)
-	{
-	    (void) fprintf (stderr, "Error filling FITS line\n");
-	    return (FALSE);
-	}
-	++size;
-    }
-    return (TRUE);
-}   /*  End Function fill_fits_line  */

@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   17-NOV-1992
 
-    Last updated by Richard Gooch   19-JUN-1996
+    Last updated by Richard Gooch   17-OCT-1996
 
 */
 
@@ -163,14 +163,12 @@ EXTERN_FUNCTION (flag iarray_put_named_value,
 		 (iarray array, CONST char *name, unsigned int type,
 		  double value[2]) );
 EXTERN_FUNCTION (flag iarray_put_named_string,
-		 (iarray array, CONST char *name, char *string) );
+		 (iarray array, CONST char *name, CONST char *string) );
 EXTERN_FUNCTION (flag iarray_get_named_value,
 		 (iarray array, CONST char *name, unsigned int *type,
 		  double value[2]) );
 EXTERN_FUNCTION (char *iarray_get_named_string,
 		 (iarray array, CONST char *name) );
-EXTERN_FUNCTION (flag iarray_copy_data,
-		 (iarray output, iarray input, flag magnitude) );
 EXTERN_FUNCTION (char *iarray_get_element_1D, (iarray array,
 					       unsigned int type,
 					       int x) );
@@ -191,10 +189,24 @@ EXTERN_FUNCTION (iarray iarray_get_sub_array_2D,
 EXTERN_FUNCTION (iarray iarray_get_2D_slice_from_3D,
 		 (iarray cube, unsigned int ydim, unsigned int xdim,
 		  unsigned int slice_pos) );
+EXTERN_FUNCTION (void iarray_remap_torus, (iarray array,
+					   unsigned int boundary_width) );
 EXTERN_FUNCTION (unsigned long iarray_dim_length, (iarray array,
 						   unsigned int index) );
+EXTERN_FUNCTION (CONST char *iarray_dim_name,
+		 (iarray array, unsigned int index) );
+EXTERN_FUNCTION (void iarray_set_world_coords,
+		 (iarray array, unsigned int index,
+		  double first, double last) );
+EXTERN_FUNCTION (void iarray_get_world_coords,
+		 (iarray array, unsigned int index,
+		  double *first, double *last) );
+EXTERN_FUNCTION (dim_desc *iarray_get_dim_desc, (iarray array,
+						 unsigned int index) );
 EXTERN_FUNCTION (unsigned int iarray_get_restrictions,
 		 (iarray array, char ***restr_names, double **restr_values) );
+EXTERN_FUNCTION (flag iarray_copy_data,
+		 (iarray output, iarray input, flag magnitude) );
 EXTERN_FUNCTION (flag iarray_fill, (iarray array, double value[2]) );
 EXTERN_FUNCTION (flag iarray_min_max, (iarray array, unsigned int conv_type,
 				       double *min, double *max) );
@@ -211,32 +223,13 @@ EXTERN_FUNCTION (flag iarray_add_and_scale, (iarray out,
 EXTERN_FUNCTION (flag iarray_sub_and_scale, (iarray out,
 					     iarray inp1, iarray inp2,
 					     double *scale, flag magnitude) );
-EXTERN_FUNCTION (flag iarray_mul_and_offset, (iarray out,
-					      iarray inp1, iarray inp2,
-					      double *inp1_offset,
-					      flag magnitude) );
-EXTERN_FUNCTION (flag iarray_div_and_offset, (iarray out,
-					      iarray inp1, iarray inp2,
-					      double *inp1_offset,
-					      flag magnitude) );
-EXTERN_FUNCTION (void iarray_remap_torus, (iarray array,
-					   unsigned int boundary_width) );
-EXTERN_FUNCTION (CONST char *iarray_dim_name,
-		 (iarray array, unsigned int index) );
-EXTERN_FUNCTION (void iarray_set_world_coords,
-		 (iarray array, unsigned int index,
-		  double first, double last) );
-EXTERN_FUNCTION (void iarray_get_world_coords,
-		 (iarray array, unsigned int index,
-		  double *first, double *last) );
-EXTERN_FUNCTION (dim_desc *iarray_get_dim_desc, (iarray array,
-						 unsigned int index) );
 EXTERN_FUNCTION (flag iarray_compute_histogram,
 		 (iarray array, unsigned int conv_type,
 		  double min, double max, unsigned long num_bins,
 		  unsigned long *histogram_array,
 		  unsigned long *histogram_peak,
 		  unsigned long *histogram_mode) );
+EXTERN_FUNCTION (flag iarray_sum, (iarray array, double sum[2]) );
 
 
 /*  File:  wrappers.c  */
@@ -305,6 +298,32 @@ EXTERN_FUNCTION (flag iarray_set_data_scaling,
 EXTERN_FUNCTION (void iarray_format_value,
 		 (iarray array, char string[STRING_LENGTH], double value,
 		  double scale, double offset) );
+EXTERN_FUNCTION (iarray iarray_create_from_template,
+		 (iarray template_arr, unsigned int elem_type,
+		  flag copy_world_coords, flag copy_names,
+		  flag copy_aux_info) );
+EXTERN_FUNCTION (double iarray_get_coordinate,
+		 (iarray array, unsigned int dim_index, double coord_index) );
+EXTERN_FUNCTION (void iarray_set_dim_name,
+		 (iarray array, unsigned int index, CONST char *name,
+		  flag new_alloc) );
+EXTERN_FUNCTION (flag iarray_append_history_string,
+		 (iarray array, CONST char *string, flag new_alloc) );
+EXTERN_FUNCTION (flag iarray_copy_named_element,
+		 (iarray out, iarray in, CONST char *name,
+		  flag fail_if_not_found, flag fail_on_duplicate,
+		  flag replace) );
+EXTERN_FUNCTION (unsigned int iarray_get_fits_axis,
+		 (iarray array, unsigned int index) );
+
+
+/*  File: contour.c  */
+EXTERN_FUNCTION (unsigned int iarray_contour,
+		 (iarray array, unsigned int num_contours,
+		  CONST double *contour_levels,
+		  uaddr *buf_size,
+		  double **x0_arr, double **y0_arr,
+		  double **x1_arr, double **y1_arr) );
 
 
 #endif /*  KARMA_IARRAY_H  */

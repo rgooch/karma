@@ -160,8 +160,10 @@
     Updated by      Richard Gooch   3-JUN-1996: Took account of new fields in
   dimension descriptor for first and last co-ordinate.
 
-    Last updated by Richard Gooch   14-JUN-1996: Changed more pointers to
+    Updated by      Richard Gooch   14-JUN-1996: Changed more pointers to
   CONST.
+
+    Last updated by Richard Gooch   27-JUL-1996: Created <iarray_sum>.
 
 
 */
@@ -237,6 +239,10 @@ STATIC_FUNCTION (flag histogram_scatter_job_func,
 		 (KThreadPool pool, iarray array, char *data,
 		  uaddr *lengths, uaddr **offsets,
 		  unsigned int num_dim, void *f_info, void *thread_info) );
+STATIC_FUNCTION (flag sum_scatter_job_func,
+		 (KThreadPool pool, iarray array, char *data,
+		  uaddr *lengths, uaddr **offsets,
+		  unsigned int num_dim, void *f_info, void *thread_info) );
 /*  Threaded functions requiring contiguous data  */
 STATIC_FUNCTION (flag contiguous_process,
 		 (iarray array,
@@ -253,6 +259,9 @@ STATIC_FUNCTION (flag min_max_contiguous_job_func,
 STATIC_FUNCTION (flag histogram_contiguous_job_func,
 		 (KThreadPool pool, iarray array, char *data, uaddr stride,
 		  unsigned int num_values, void *f_info, void *thread_info) );
+STATIC_FUNCTION (flag sum_contiguous_job_func,
+		 (KThreadPool pool, iarray array, char *data, uaddr stride,
+		  unsigned int num_values, void *f_info, void *thread_info) );
 /*  Other functions  */
 STATIC_FUNCTION (flag ds_find_2D_histogram,
 		 (CONST char *data, unsigned int elem_type,
@@ -263,6 +272,11 @@ STATIC_FUNCTION (flag ds_find_2D_histogram,
 		  unsigned long *histogram_array,
 		  unsigned long *histogram_peak,
 		  unsigned long *histogram_mode) );
+STATIC_FUNCTION (flag ds_find_2D_sum,
+		 (CONST char *data, unsigned int elem_type,
+		  unsigned int length1, CONST uaddr *offsets1,
+		  unsigned int length2, CONST uaddr *offsets2,
+		  double sum[2]) );
 
 
 /*  Private data  */
@@ -270,6 +284,9 @@ KThreadPool pool = NULL;
 
 
 /*  Public functions follow  */
+
+
+/*  I/O functions follow  */
 
 /*PUBLIC_FUNCTION*/
 iarray iarray_read_nD (CONST char *object, flag cache, CONST char *arrayname,
@@ -360,6 +377,9 @@ flag iarray_write (iarray array, CONST char *arrayfile)
     }
     return (TRUE);
 }   /*  End Function iarray_write  */
+
+
+/*  Create/destroy functions follow  */
 
 /*PUBLIC_FUNCTION*/
 iarray iarray_create (unsigned int type, unsigned int num_dim,
@@ -967,6 +987,9 @@ void iarray_dealloc (iarray array)
     m_free ( (char *) array );
 }   /*  End Function iarray_dealloc  */
 
+
+/*  Attachment functions follow  */
+
 /*PUBLIC_FUNCTION*/
 flag iarray_put_named_value (iarray array, CONST char *name, unsigned int type,
 			     double value[2])
@@ -989,7 +1012,8 @@ flag iarray_put_named_value (iarray array, CONST char *name, unsigned int type,
 }   /*  End Function iarray_put_named_value  */
 
 /*PUBLIC_FUNCTION*/
-flag iarray_put_named_string (iarray array, CONST char *name, char *string)
+flag iarray_put_named_string (iarray array, CONST char *name,
+			      CONST char *string)
 /*  [SUMMARY] Attach a string to an Intelligent Array.
     [PURPOSE] This routine will add a unique named string to the underlying
     Karma general data structure of an "Intelligent Array".
@@ -1047,188 +1071,8 @@ char *iarray_get_named_string (iarray array, CONST char *name)
 	    (array->top_pack_desc, *array->top_packet, name) );
 }   /*  End Function iarray_get_named_string  */
 
-/*PUBLIC_FUNCTION*/
-flag iarray_copy_data (iarray output, iarray input, flag magnitude)
-/*  [SUMMARY] Copy data between Intelligent Arrays.
-    [PURPOSE] This routine will copy data from one "Intelligent Array" to
-    another. The sizes of the two arrays must be identical.
-    The routine can deal with the types of the two arrays being different
-    <output> The output Intelligent Array.
-    <input> The input Intelligent Array.
-    <magnitude> If TRUE then when converting from a complex array to a real
-    array, the magnitude of the complex data is taken, else the real component
-    is copied.
-    [NOTE] When converting from a real array to a complex data array, the
-    imaginary components are set to zero.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-{
-    flag contiguous = TRUE;
-    flag inp_complex;
-    unsigned int elem_count;
-    unsigned int inp_elem_size;
-    unsigned int inp_stride;
-    unsigned int out_stride;
-    unsigned int dim_count;
-    unsigned int num_dim;
-    double data[2];
-    char *inp_data;
-    char *out_data;
-    unsigned long *coordinates;
-    double *buffer = NULL;
-    double *ptr;
-    extern char host_type_sizes[NUMTYPES];
-    static char function_name[] = "iarray_copy_data";
 
-    VERIFY_IARRAY (output);
-    VERIFY_IARRAY (input);
-    /*  Test array sizes  */
-    if ( ( num_dim = iarray_num_dim (input) ) != iarray_num_dim (output) )
-    {
-	(void) fprintf ( stderr,
-			"Input array has: %u dimensions whilst output array has: %u\n",
-			iarray_num_dim (input), iarray_num_dim (output) );
-	return (FALSE);
-    }
-    for (dim_count = 0; dim_count < num_dim; ++dim_count)
-    {
-	if (input->lengths[dim_count] != output->lengths[dim_count])
-	{
-	    (void) fprintf (stderr, "Input dimension: %u has length: %lu\n",
-			    dim_count, input->lengths[dim_count]);
-	    (void) fprintf (stderr, "Output dimension: %u has length: %lu\n",
-			    dim_count, output->lengths[dim_count]);
-	    (void) fprintf (stderr, "Must be the same\n");
-	    return (FALSE);
-	}
-    }
-    inp_stride = input->offsets[num_dim - 1][1];
-    inp_stride -= input->offsets[num_dim - 1][0];
-    out_stride = output->offsets[num_dim - 1][1];
-    out_stride -= output->offsets[num_dim - 1][0];
-    inp_elem_size = host_type_sizes[iarray_type (input)];
-    /*  Check if lower dimensions are contiguous  */
-    if (!input->contiguous[num_dim - 1])
-    {
-	/*  Input array not contiguous  */
-	contiguous = FALSE;
-    }
-    if (!output->contiguous[num_dim - 1])
-    {
-	/*  Output array not contiguous  */
-	contiguous = FALSE;
-    }
-    /*  Set up co-ordinate counters  */
-    if ( ( coordinates = (unsigned long *) m_alloc (sizeof *coordinates *
-						    num_dim) )
-	== NULL )
-    {
-	m_error_notify (function_name, "array of co-ordinate counters");
-	return (FALSE);
-    }
-    m_clear ( (char *) coordinates, sizeof *coordinates * num_dim);
-    if (contiguous)
-    {
-	/*  Lower dimensions are contiguous  */
-	/*  Test to see if arrays have the same type  */
-	if ( iarray_type (input) != iarray_type (output) )
-	{
-	    /*  Allocate conversion copy buffer  */
-	    if ( ( buffer = (double *)
-		  m_alloc (sizeof *buffer * 2 * input->lengths[num_dim -1]) )
-		== NULL )
-	    {
-		m_error_notify (function_name, "conversion copy buffer");
-		m_free ( (char *) coordinates );
-		return (FALSE);
-	    }
-	}
-    }
-    /*  Iterate through the arrays  */
-    inp_data = iarray_get_next_element (input, coordinates, 0);
-    out_data = iarray_get_next_element (output, coordinates, 0);
-    while (inp_data != NULL)
-    {
-	/*  More data to process  */
-	if (contiguous)
-	{
-	    /*  Lower dimensions are contiguous  */
-	    /*  Test to see if arrays have the same type  */
-	    if ( iarray_type (input) == iarray_type (output) )
-	    {
-		/*  Do a fast copy  */
-		m_copy_blocks (out_data, inp_data,
-			       out_stride, inp_stride,
-			       inp_elem_size,
-			       input->lengths[num_dim - 1] -
-			       coordinates[num_dim - 1]);
-	    }
-	    else
-	    {
-		/*  Have to convert data  */
-		if ( !ds_get_elements (inp_data, iarray_type (input),
-				       inp_stride, buffer, &inp_complex,
-				       input->lengths[num_dim - 1]) )
-		{
-		    m_free ( (char *) coordinates );
-		    m_free ( (char *) buffer );
-		    return (FALSE);
-		}
-		if (!ds_element_is_complex ( iarray_type (output) )
-		    && inp_complex && magnitude)
-		{
-		    /*  Complex to real conversion  */
-		    for (elem_count = 0, ptr = buffer;
-			 elem_count < input->lengths[num_dim - 1];
-			 ++elem_count, ptr += 2)
-		    {
-			*ptr = sqrt (ptr[0] * ptr[0] + ptr[1] * ptr[1]);
-		    }
-		}
-		if ( !ds_put_elements (out_data, iarray_type (output),
-				       out_stride, buffer,
-				       input->lengths[num_dim - 1]) )
-		{
-		    m_free ( (char *) coordinates );
-		    m_free ( (char *) buffer );
-		    return (FALSE);
-		}
-	    }
-	    inp_data = iarray_get_next_element (input, coordinates,
-						input->lengths[num_dim - 1]);
-	    out_data = iarray_get_next_element (output, coordinates, 0);
-	}
-	else
-	{
-	    /*  Data is not contiguous: copy one element at a time  */
-	    if ( !ds_get_element (inp_data, iarray_type (input), data,
-				  &inp_complex) )
-	    {
-		m_free ( (char *) coordinates );
-		return (FALSE);
-	    }
-	    if (!ds_element_is_complex ( iarray_type (output) )
-		&& inp_complex && magnitude)
-	    {
-		/*  Complex to real conversion  */
-		data[0] = sqrt (data[0] * data[0] + data[1] * data[1]);
-	    }
-	    if (ds_put_element (out_data, iarray_type (output), data) == NULL)
-	    {
-		m_free ( (char *) coordinates );
-		return (FALSE);
-	    }
-	    inp_data = iarray_get_next_element (input, coordinates, 1);
-	    out_data = iarray_get_next_element (output, coordinates, 0);
-	}
-    }
-    m_free ( (char *) coordinates );
-    if (buffer != NULL)
-    {
-	m_free ( (char *) buffer );
-    }
-    return (TRUE);
-}   /*  End Function iarray_copy_data  */
+/*  Bounds-checking access functions follow  */
 
 /*UNPUBLISHED_FUNCTION*/
 char *iarray_get_element_1D (iarray array, unsigned int type, int x)
@@ -1508,6 +1352,9 @@ char *iarray_get_element_4D (iarray array, unsigned int type, int z, int y,
 	    array->offsets[2][x] + array->offsets[3][w]);
 }   /*  End Function iarray_get_element_4D  */
 
+
+/*  Aliasing functions follow  */
+
 /*PUBLIC_FUNCTION*/
 iarray iarray_get_sub_array_2D (iarray array, int starty, int startx,
 				unsigned int ylen, unsigned int xlen)
@@ -1775,6 +1622,76 @@ iarray iarray_get_2D_slice_from_3D (iarray cube, unsigned int ydim,
 }   /*  End Function iarray_get_2D_slice_from_3D  */
 
 /*PUBLIC_FUNCTION*/
+void iarray_remap_torus (iarray array, unsigned int boundary_width)
+/*  [SUMMARY] Remap Intelligent Array into a torus.
+    [PURPOSE] This routine will remap an N-dimensional "Intelligent Array" to a
+    pseudo-toroidal array.
+    <array> The Intelligent Array.
+    <boundary_width> The width of the array boundary within which the array
+    appears to be toroidal.
+    [RETURNS] Nothing.
+*/
+{
+    unsigned int dim_count;
+    unsigned long *offsets;
+    uaddr **off_ptr;
+    static char function_name[] = "iarray_remap_torus";
+
+    VERIFY_IARRAY (array);
+    if (array->offsets == array->arr_desc->offsets)
+    {
+	/*  Need a new array of pointers  */
+	if ( ( off_ptr = (uaddr **) m_alloc ( sizeof *off_ptr *
+					     iarray_num_dim (array) ) )
+	    == NULL )
+	{
+	    m_abort (function_name, "array of address offset array pointers");
+	}
+	m_copy ( (char *) off_ptr, (char *) array->offsets,
+		sizeof *off_ptr * iarray_num_dim (array) );
+	array->offsets = off_ptr;
+    }
+    for (dim_count = 0; dim_count < iarray_num_dim (array); ++dim_count)
+    {
+	if (array->offsets[dim_count] == NULL)
+	{
+	    (void) fprintf (stderr, "No address offsets for dimension: %u\n",
+			    dim_count);
+	    a_prog_bug (function_name);
+	}
+	if ( ( offsets = (unsigned long *)
+	      m_alloc ( sizeof *offsets *
+		       (array->lengths[dim_count] + 2 * boundary_width) ) )
+	    == NULL )
+	{
+	    m_abort (function_name, "address offset array");
+	}
+	/*  Copy old offsets  */
+	m_copy ( (char *) (offsets + boundary_width),
+		(char *) array->offsets[dim_count],
+		sizeof *offsets * array->lengths[dim_count] );
+	/*  Copy old end to new beginning  */
+	m_copy ( (char *) offsets,
+		(char *) (array->offsets[dim_count] +
+			  array->lengths[dim_count] - boundary_width),
+		sizeof *offsets * boundary_width );
+	/*  Copy old beginning to new end  */
+	m_copy ( (char *) (offsets + array->lengths[dim_count] +
+			   boundary_width),
+		(char *) array->offsets[dim_count],
+		sizeof *offsets * boundary_width );
+	m_free ( (char *) (array->offsets[dim_count] -
+			   array->boundary_width) );
+	array->offsets[dim_count] = offsets + boundary_width;
+	array->contiguous[dim_count] = FALSE;
+    }
+    array->boundary_width = boundary_width;
+}   /*  End Function iarray_remap_torus  */
+
+
+/*  Structure query functions follow  */
+
+/*PUBLIC_FUNCTION*/
 unsigned long iarray_dim_length (iarray array, unsigned int index)
 /*  [SUMMARY] Get length of a dimension in an Intelligent Array.
     <array> The Intelligent Array.
@@ -1794,6 +1711,126 @@ unsigned long iarray_dim_length (iarray array, unsigned int index)
     }
     return (array->lengths[index]);
 }   /*  End Function iarray_dim_length  */
+
+/*PUBLIC_FUNCTION*/
+CONST char *iarray_dim_name (iarray array, unsigned int index)
+/*  [SUMMARY] Get dimension name in an Intelligent Array.
+    [PURPOSE] This routine will get the name of a specified dimension in a
+    simple, n-dimensional array.
+    <array> The Intelligent Array.
+    <index> The index of the dimension.
+    [RETURNS] A pointer to the name of the specified dimension.
+*/
+{
+    array_desc *arr_desc;
+    static char function_name[] = "iarray_dim_name";
+
+    VERIFY_IARRAY (array);
+    arr_desc = array->arr_desc;
+    if ( index >= iarray_num_dim (array) )
+    {
+	(void) fprintf ( stderr,
+			"Dimension index: %u is not less than number of dimensions: %u\n",
+			index, iarray_num_dim (array) );
+	a_prog_bug (function_name);
+    }
+    return (arr_desc->dimensions[array->orig_dim_indices[index]]->name);
+}   /*  End Function iarray_dim_name  */
+
+/*PUBLIC_FUNCTION*/
+void iarray_set_world_coords (iarray array, unsigned int index, double first,
+			      double last)
+/*  [SUMMARY] Set the world co-ordinates of an Intelligent Array dimension.
+    <array> The Intelligent Array.
+    <index> The index of the dimension.
+    <first> The first real world co-ordinate.
+    <last> The last real world co-ordinate.
+    [RETURNS] Nothing.
+*/
+{
+    array_desc *arr_desc;
+    static char function_name[] = "iarray_set_world_coords";
+
+    VERIFY_IARRAY (array);
+    arr_desc = array->arr_desc;
+    if ( index >= iarray_num_dim (array) )
+    {
+	(void) fprintf ( stderr,
+			"Dimension index: %u is not less than number of dimensions: %u\n",
+			index, iarray_num_dim (array) );
+	a_prog_bug (function_name);
+    }
+    index = array->orig_dim_indices[index];
+    arr_desc->dimensions[index]->first_coord = first;
+    arr_desc->dimensions[index]->last_coord = last;
+    if (first < last)
+    {
+	arr_desc->dimensions[index]->minimum = first;
+	arr_desc->dimensions[index]->maximum = last;
+    }
+    else
+    {
+	arr_desc->dimensions[index]->minimum = last;
+	arr_desc->dimensions[index]->maximum = first;
+    }
+}   /*  End Function iarray_set_world_coords  */
+
+/*PUBLIC_FUNCTION*/
+void iarray_get_world_coords (iarray array, unsigned int index,
+			      double *first, double *last)
+/*  [SUMMARY] Get the world co-ordinates of an Intelligent Array dimension.
+    <array> The Intelligent Array.
+    <index> The index of the dimension.
+    <first> The first real world co-ordinate is written here.
+    <last> The last real world co-ordinate is written here.
+    [RETURNS] Nothing.
+*/
+{
+    array_desc *arr_desc;
+    static char function_name[] = "iarray_get_world_coords";
+
+    VERIFY_IARRAY (array);
+    arr_desc = array->arr_desc;
+    if ( index >= iarray_num_dim (array) )
+    {
+	(void) fprintf ( stderr,
+			"Dimension index: %u is not less than number of dimensions: %u\n",
+			index, iarray_num_dim (array) );
+	a_prog_bug (function_name);
+    }
+    if ( (first == NULL) || (last == NULL) )
+    {
+	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	a_prog_bug (function_name);
+    }
+    index = array->orig_dim_indices[index];
+    *first = arr_desc->dimensions[index]->first_coord;
+    *last = arr_desc->dimensions[index]->last_coord;
+}   /*  End Function iarray_get_world_coords  */
+
+/*PUBLIC_FUNCTION*/
+dim_desc *iarray_get_dim_desc (iarray array, unsigned int index)
+/*  [SUMMARY] Get a dimension descriptor from an Intelligent Array.
+    <array> The Intelligent Array.
+    <index> The index of the dimension.
+    [RETURNS] A pointer to the dimension descriptor.
+*/
+{
+    array_desc *arr_desc;
+    static char function_name[] = "iarray_get_dim_desc";
+
+    VERIFY_IARRAY (array);
+    arr_desc = array->arr_desc;
+    if ( index >= iarray_num_dim (array) )
+    {
+	(void) fprintf ( stderr,
+			"Dimension index: %u is not less than number of dimensions: %u\n",
+			index, iarray_num_dim (array) );
+	a_prog_bug (function_name);
+    }
+    index = array->orig_dim_indices[index];
+    return (arr_desc->dimensions[index]);
+}   /*  End Function iarray_get_dim_desc  */
 
 /*PUBLIC_FUNCTION*/
 unsigned int iarray_get_restrictions (iarray array, char ***restr_names,
@@ -1844,6 +1881,192 @@ unsigned int iarray_get_restrictions (iarray array, char ***restr_names,
     *restr_values = values;
     return (num_restr);
 }   /*  End Function iarray_get_restrictions  */
+
+
+/*  Data manipulation/computation functions follow  */
+
+/*PUBLIC_FUNCTION*/
+flag iarray_copy_data (iarray output, iarray input, flag magnitude)
+/*  [SUMMARY] Copy data between Intelligent Arrays.
+    [PURPOSE] This routine will copy data from one "Intelligent Array" to
+    another. The sizes of the two arrays must be identical.
+    The routine can deal with the types of the two arrays being different
+    <output> The output Intelligent Array.
+    <input> The input Intelligent Array.
+    <magnitude> If TRUE then when converting from a complex array to a real
+    array, the magnitude of the complex data is taken, else the real component
+    is copied.
+    [NOTE] When converting from a real array to a complex data array, the
+    imaginary components are set to zero.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    flag contiguous = TRUE;
+    flag inp_complex;
+    unsigned int elem_count;
+    unsigned int inp_elem_size;
+    unsigned int inp_stride;
+    unsigned int out_stride;
+    unsigned int dim_count;
+    unsigned int num_dim;
+    double data[2];
+    char *inp_data;
+    char *out_data;
+    unsigned long *coordinates;
+    double *buffer = NULL;
+    double *ptr;
+    extern char host_type_sizes[NUMTYPES];
+    static char function_name[] = "iarray_copy_data";
+
+    VERIFY_IARRAY (output);
+    VERIFY_IARRAY (input);
+    /*  Test array sizes  */
+    if ( ( num_dim = iarray_num_dim (input) ) != iarray_num_dim (output) )
+    {
+	(void) fprintf ( stderr,
+			"Input array has: %u dimensions whilst output array has: %u\n",
+			iarray_num_dim (input), iarray_num_dim (output) );
+	return (FALSE);
+    }
+    for (dim_count = 0; dim_count < num_dim; ++dim_count)
+    {
+	if (input->lengths[dim_count] != output->lengths[dim_count])
+	{
+	    (void) fprintf (stderr, "Input dimension: %u has length: %lu\n",
+			    dim_count, input->lengths[dim_count]);
+	    (void) fprintf (stderr, "Output dimension: %u has length: %lu\n",
+			    dim_count, output->lengths[dim_count]);
+	    (void) fprintf (stderr, "Must be the same\n");
+	    return (FALSE);
+	}
+    }
+    inp_stride = input->offsets[num_dim - 1][1];
+    inp_stride -= input->offsets[num_dim - 1][0];
+    out_stride = output->offsets[num_dim - 1][1];
+    out_stride -= output->offsets[num_dim - 1][0];
+    inp_elem_size = host_type_sizes[iarray_type (input)];
+    /*  Check if lower dimensions are contiguous  */
+    if (!input->contiguous[num_dim - 1])
+    {
+	/*  Input array not contiguous  */
+	contiguous = FALSE;
+    }
+    if (!output->contiguous[num_dim - 1])
+    {
+	/*  Output array not contiguous  */
+	contiguous = FALSE;
+    }
+    /*  Set up co-ordinate counters  */
+    if ( ( coordinates = (unsigned long *) m_alloc (sizeof *coordinates *
+						    num_dim) )
+	== NULL )
+    {
+	m_error_notify (function_name, "array of co-ordinate counters");
+	return (FALSE);
+    }
+    m_clear ( (char *) coordinates, sizeof *coordinates * num_dim);
+    if (contiguous)
+    {
+	/*  Lower dimensions are contiguous  */
+	/*  Test to see if arrays have the same type  */
+	if ( iarray_type (input) != iarray_type (output) )
+	{
+	    /*  Allocate conversion copy buffer  */
+	    if ( ( buffer = (double *)
+		  m_alloc (sizeof *buffer * 2 * input->lengths[num_dim -1]) )
+		== NULL )
+	    {
+		m_error_notify (function_name, "conversion copy buffer");
+		m_free ( (char *) coordinates );
+		return (FALSE);
+	    }
+	}
+    }
+    /*  Iterate through the arrays  */
+    inp_data = iarray_get_next_element (input, coordinates, 0);
+    out_data = iarray_get_next_element (output, coordinates, 0);
+    while (inp_data != NULL)
+    {
+	/*  More data to process  */
+	if (contiguous)
+	{
+	    /*  Lower dimensions are contiguous  */
+	    /*  Test to see if arrays have the same type  */
+	    if ( iarray_type (input) == iarray_type (output) )
+	    {
+		/*  Do a fast copy  */
+		m_copy_blocks (out_data, inp_data,
+			       out_stride, inp_stride,
+			       inp_elem_size,
+			       input->lengths[num_dim - 1] -
+			       coordinates[num_dim - 1]);
+	    }
+	    else
+	    {
+		/*  Have to convert data  */
+		if ( !ds_get_elements (inp_data, iarray_type (input),
+				       inp_stride, buffer, &inp_complex,
+				       input->lengths[num_dim - 1]) )
+		{
+		    m_free ( (char *) coordinates );
+		    m_free ( (char *) buffer );
+		    return (FALSE);
+		}
+		if (!ds_element_is_complex ( iarray_type (output) )
+		    && inp_complex && magnitude)
+		{
+		    /*  Complex to real conversion  */
+		    for (elem_count = 0, ptr = buffer;
+			 elem_count < input->lengths[num_dim - 1];
+			 ++elem_count, ptr += 2)
+		    {
+			*ptr = sqrt (ptr[0] * ptr[0] + ptr[1] * ptr[1]);
+		    }
+		}
+		if ( !ds_put_elements (out_data, iarray_type (output),
+				       out_stride, buffer,
+				       input->lengths[num_dim - 1]) )
+		{
+		    m_free ( (char *) coordinates );
+		    m_free ( (char *) buffer );
+		    return (FALSE);
+		}
+	    }
+	    inp_data = iarray_get_next_element (input, coordinates,
+						input->lengths[num_dim - 1]);
+	    out_data = iarray_get_next_element (output, coordinates, 0);
+	}
+	else
+	{
+	    /*  Data is not contiguous: copy one element at a time  */
+	    if ( !ds_get_element (inp_data, iarray_type (input), data,
+				  &inp_complex) )
+	    {
+		m_free ( (char *) coordinates );
+		return (FALSE);
+	    }
+	    if (!ds_element_is_complex ( iarray_type (output) )
+		&& inp_complex && magnitude)
+	    {
+		/*  Complex to real conversion  */
+		data[0] = sqrt (data[0] * data[0] + data[1] * data[1]);
+	    }
+	    if (ds_put_element (out_data, iarray_type (output), data) == NULL)
+	    {
+		m_free ( (char *) coordinates );
+		return (FALSE);
+	    }
+	    inp_data = iarray_get_next_element (input, coordinates, 1);
+	    out_data = iarray_get_next_element (output, coordinates, 0);
+	}
+    }
+    m_free ( (char *) coordinates );
+    if (buffer != NULL)
+    {
+	m_free ( (char *) buffer );
+    }
+    return (TRUE);
+}   /*  End Function iarray_copy_data  */
 
 /*PUBLIC_FUNCTION*/
 flag iarray_fill (iarray array, double value[2])
@@ -2896,193 +3119,6 @@ flag iarray_sub_and_scale (iarray out, iarray inp1, iarray inp2,
 }   /*  End Function iarray_sub_and_scale  */
 
 /*PUBLIC_FUNCTION*/
-CONST char *iarray_dim_name (iarray array, unsigned int index)
-/*  [SUMMARY] Get dimension name in an Intelligent Array.
-    [PURPOSE] This routine will get the name of a specified dimension in a
-    simple, n-dimensional array.
-    <array> The Intelligent Array.
-    <index> The index of the dimension.
-    [RETURNS] A pointer to the name of the specified dimension.
-*/
-{
-    array_desc *arr_desc;
-    static char function_name[] = "iarray_dim_name";
-
-    VERIFY_IARRAY (array);
-    arr_desc = array->arr_desc;
-    if ( index >= iarray_num_dim (array) )
-    {
-	(void) fprintf ( stderr,
-			"Dimension index: %u is not less than number of dimensions: %u\n",
-			index, iarray_num_dim (array) );
-	a_prog_bug (function_name);
-    }
-    return (arr_desc->dimensions[array->orig_dim_indices[index]]->name);
-}   /*  End Function iarray_dim_name  */
-
-/*PUBLIC_FUNCTION*/
-void iarray_remap_torus (iarray array, unsigned int boundary_width)
-/*  [SUMMARY] Remap Intelligent Array into a torus.
-    [PURPOSE] This routine will remap an N-dimensional "Intelligent Array" to a
-    pseudo-toroidal array.
-    <array> The Intelligent Array.
-    <boundary_width> The width of the array boundary within which the array
-    appears to be toroidal.
-    [RETURNS] Nothing.
-*/
-{
-    unsigned int dim_count;
-    unsigned long *offsets;
-    uaddr **off_ptr;
-    static char function_name[] = "iarray_remap_torus";
-
-    VERIFY_IARRAY (array);
-    if (array->offsets == array->arr_desc->offsets)
-    {
-	/*  Need a new array of pointers  */
-	if ( ( off_ptr = (uaddr **) m_alloc ( sizeof *off_ptr *
-					     iarray_num_dim (array) ) )
-	    == NULL )
-	{
-	    m_abort (function_name, "array of address offset array pointers");
-	}
-	m_copy ( (char *) off_ptr, (char *) array->offsets,
-		sizeof *off_ptr * iarray_num_dim (array) );
-	array->offsets = off_ptr;
-    }
-    for (dim_count = 0; dim_count < iarray_num_dim (array); ++dim_count)
-    {
-	if (array->offsets[dim_count] == NULL)
-	{
-	    (void) fprintf (stderr, "No address offsets for dimension: %u\n",
-			    dim_count);
-	    a_prog_bug (function_name);
-	}
-	if ( ( offsets = (unsigned long *)
-	      m_alloc ( sizeof *offsets *
-		       (array->lengths[dim_count] + 2 * boundary_width) ) )
-	    == NULL )
-	{
-	    m_abort (function_name, "address offset array");
-	}
-	/*  Copy old offsets  */
-	m_copy ( (char *) (offsets + boundary_width),
-		(char *) array->offsets[dim_count],
-		sizeof *offsets * array->lengths[dim_count] );
-	/*  Copy old end to new beginning  */
-	m_copy ( (char *) offsets,
-		(char *) (array->offsets[dim_count] +
-			  array->lengths[dim_count] - boundary_width),
-		sizeof *offsets * boundary_width );
-	/*  Copy old beginning to new end  */
-	m_copy ( (char *) (offsets + array->lengths[dim_count] +
-			   boundary_width),
-		(char *) array->offsets[dim_count],
-		sizeof *offsets * boundary_width );
-	m_free ( (char *) (array->offsets[dim_count] -
-			   array->boundary_width) );
-	array->offsets[dim_count] = offsets + boundary_width;
-	array->contiguous[dim_count] = FALSE;
-    }
-    array->boundary_width = boundary_width;
-}   /*  End Function iarray_remap_torus  */
-
-/*PUBLIC_FUNCTION*/
-void iarray_set_world_coords (iarray array, unsigned int index, double first,
-			      double last)
-/*  [SUMMARY] Set the world co-ordinates of an Intelligent Array dimension.
-    <array> The Intelligent Array.
-    <index> The index of the dimension.
-    <first> The first real world co-ordinate.
-    <last> The last real world co-ordinate.
-    [RETURNS] Nothing.
-*/
-{
-    array_desc *arr_desc;
-    static char function_name[] = "iarray_set_world_coords";
-
-    VERIFY_IARRAY (array);
-    arr_desc = array->arr_desc;
-    if ( index >= iarray_num_dim (array) )
-    {
-	(void) fprintf ( stderr,
-			"Dimension index: %u is not less than number of dimensions: %u\n",
-			index, iarray_num_dim (array) );
-	a_prog_bug (function_name);
-    }
-    index = array->orig_dim_indices[index];
-    arr_desc->dimensions[index]->first_coord = first;
-    arr_desc->dimensions[index]->last_coord = last;
-    if (first < last)
-    {
-	arr_desc->dimensions[index]->minimum = first;
-	arr_desc->dimensions[index]->maximum = last;
-    }
-    else
-    {
-	arr_desc->dimensions[index]->minimum = last;
-	arr_desc->dimensions[index]->maximum = first;
-    }
-}   /*  End Function iarray_set_world_coords  */
-
-/*PUBLIC_FUNCTION*/
-void iarray_get_world_coords (iarray array, unsigned int index,
-			      double *first, double *last)
-/*  [SUMMARY] Get the world co-ordinates of an Intelligent Array dimension.
-    <array> The Intelligent Array.
-    <index> The index of the dimension.
-    <first> The first real world co-ordinate is written here.
-    <last> The last real world co-ordinate is written here.
-    [RETURNS] Nothing.
-*/
-{
-    array_desc *arr_desc;
-    static char function_name[] = "iarray_get_world_coords";
-
-    VERIFY_IARRAY (array);
-    arr_desc = array->arr_desc;
-    if ( index >= iarray_num_dim (array) )
-    {
-	(void) fprintf ( stderr,
-			"Dimension index: %u is not less than number of dimensions: %u\n",
-			index, iarray_num_dim (array) );
-	a_prog_bug (function_name);
-    }
-    if ( (first == NULL) || (last == NULL) )
-    {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
-	a_prog_bug (function_name);
-    }
-    index = array->orig_dim_indices[index];
-    *first = arr_desc->dimensions[index]->first_coord;
-    *last = arr_desc->dimensions[index]->last_coord;
-}   /*  End Function iarray_get_world_coords  */
-
-/*PUBLIC_FUNCTION*/
-dim_desc *iarray_get_dim_desc (iarray array, unsigned int index)
-/*  [SUMMARY] Get a dimension descriptor from an Intelligent Array.
-    <array> The Intelligent Array.
-    <index> The index of the dimension.
-    [RETURNS] A pointer to the dimension descriptor.
-*/
-{
-    array_desc *arr_desc;
-    static char function_name[] = "iarray_get_dim_desc";
-
-    VERIFY_IARRAY (array);
-    arr_desc = array->arr_desc;
-    if ( index >= iarray_num_dim (array) )
-    {
-	(void) fprintf ( stderr,
-			"Dimension index: %u is not less than number of dimensions: %u\n",
-			index, iarray_num_dim (array) );
-	a_prog_bug (function_name);
-    }
-    index = array->orig_dim_indices[index];
-    return (arr_desc->dimensions[index]);
-}   /*  End Function iarray_get_dim_desc  */
-
-/*PUBLIC_FUNCTION*/
 flag iarray_compute_histogram (iarray array, unsigned int conv_type,
 			       double min, double max, unsigned long num_bins,
 			       unsigned long *histogram_array,
@@ -3205,6 +3241,86 @@ flag iarray_compute_histogram (iarray array, unsigned int conv_type,
     *histogram_mode = hmode;
     return (TRUE);
 }   /*  End Function iarray_compute_histogram  */
+
+/*PUBLIC_FUNCTION*/
+flag iarray_sum (iarray array, double sum[2])
+/*  [SUMMARY] Determine the sum of an Intelligent Array.
+    <array> The Intelligent Array.
+    <sum> The routine will write the sum here.
+    [MT-LEVEL] Unsafe.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    flag full_array;
+    unsigned int num_dim;
+    unsigned int num_threads, thread_count;
+    array_desc *arr_desc;
+    double *sum_arr;
+    extern KThreadPool pool;
+    static char function_name[] = "iarray_sum";
+
+    VERIFY_IARRAY (array);
+    if (sum == NULL)
+    {
+	(void) fprintf (stderr, "NULL pointer passed\n");
+	a_prog_bug (function_name);
+    }
+    num_dim = iarray_num_dim (array);
+    full_array = iarray_is_full_array (array);
+    initialise_thread_pool ();
+    num_threads = mt_num_threads (pool);
+    if ( full_array && (num_threads < 2) )
+    {
+	/*  Can do this in one contiguous block  */
+	arr_desc = array->arr_desc;
+	return ( ds_find_1D_sum
+		 (array->data, iarray_type (array),
+		  ds_get_array_size (arr_desc), NULL,
+		  ds_get_packet_size (arr_desc->packet), sum) );
+    }
+    if ( !full_array && (num_dim == 1) )
+    {
+	/*  Simple 1-dimensional process  */
+	return ( ds_find_1D_sum (array->data, iarray_type (array),
+				 array->lengths[0], array->offsets[0],
+				 0, sum) );
+    }
+    if ( !full_array && (num_dim == 2) && (num_threads < 2) )
+    {
+	/*  Simple unthreaded 2-dimensional process  */
+	return ( ds_find_2D_sum (array->data, iarray_type (array),
+				 array->lengths[0], array->offsets[0],
+				 array->lengths[1], array->offsets[1],
+				 sum) );
+    }
+    /*  Initialise thread info  */
+    mt_new_thread_info (pool, NULL, sizeof *sum_arr * 2);
+    sum_arr = mt_get_thread_info (pool);
+    for (thread_count = 0; thread_count < num_threads; ++thread_count)
+    {
+	sum_arr[thread_count * 2] = 0.0;
+	sum_arr[thread_count * 2 + 1] = 0.0;
+    }
+    if (full_array)
+    {
+	if ( !contiguous_process (array, sum_contiguous_job_func, NULL) )
+	    return (FALSE);
+    }
+    else
+    {
+	if ( !scatter_process (array, sum_scatter_job_func, 2, NULL) )
+	    return (FALSE);
+    }
+    /*  Collect data from threads' private data  */
+    sum[0] = 0.0;
+    sum[1] = 0.0;
+    for (thread_count = 0; thread_count < num_threads; ++thread_count)
+    {
+	sum[0] += sum_arr[thread_count * 2];
+	sum[1] += sum_arr[thread_count * 2 + 1];
+    }
+    return (TRUE);
+}   /*  End Function iarray_sum  */
 
 
 /*  Private functions follow  */
@@ -3791,6 +3907,43 @@ static flag histogram_scatter_job_func (KThreadPool pool, iarray array,
     return (FALSE);
 }   /*  End Function histogram_scatter_job_func  */
 
+static flag sum_scatter_job_func (KThreadPool pool, iarray array,
+				      char *data, uaddr *lengths,
+				      uaddr **offsets, unsigned int num_dim,
+				      void *f_info, void *thread_info)
+/*  [PURPOSE] This routine will do some work to compute the minimum and maximum
+    of an array.
+    <pool> The thread pool the job is running in. If NULL the job is running
+    single-threaded.
+    <array> The array.
+    <data> The section of data to process.
+    <lengths> An array of dimension lengths.
+    <offsets> An array of address offset array pointers.
+    <num_dim> The number of dimensions to process.
+    <f_info> The arbitrary function information pointer.
+    <thread_info> The arbitrary thread information pointer.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    double *sum_arr = (double *) thread_info;
+    static char function_name[] = "__iarray_sum_scatter_job_func";
+
+    if (num_dim == 1)
+    {
+	return ( ds_find_1D_sum (data, iarray_type (array),
+				 lengths[0], offsets[0], 0, sum_arr) );
+    }
+    if (num_dim == 2)
+    {
+	return ( ds_find_2D_sum (data, iarray_type (array),
+				 lengths[0], offsets[0],
+				 lengths[1], offsets[1], sum_arr) );
+    }
+    (void) fprintf (stderr, "num_dim: %u illegal\n", num_dim);
+    a_prog_bug (function_name);
+    return (FALSE);
+}   /*  End Function sum_scatter_job_func  */
+
 
 /*  Threaded support for contiguous data  */
 
@@ -3902,8 +4055,8 @@ static void contiguous_job_func (void *pool_info,
     }
 }   /*  End Function contiguous_job_func  */
 
-/*  Private functions to perform some job in parallel with contiguous data  */
 
+/*  Private functions to perform some job in parallel with contiguous data  */
 
 static flag min_max_contiguous_job_func (KThreadPool pool, iarray array,
 					 char *data, uaddr stride,
@@ -3922,9 +4075,7 @@ static flag min_max_contiguous_job_func (KThreadPool pool, iarray array,
 */
 {
     min_max_thread_info *info = (min_max_thread_info *) thread_info;
-    array_desc *arr_desc;
 
-    arr_desc = array->arr_desc;
     return ( ds_find_contiguous_extremes
 	     (data, num_values, stride, iarray_type (array),
 	      info->conv_type, &info->min, &info->max) );
@@ -3950,9 +4101,7 @@ static flag histogram_contiguous_job_func (KThreadPool pool, iarray array,
     unsigned long hmode = 0;
     histogram_finfo *info = (histogram_finfo *) f_info;
     unsigned long *histogram_array = (unsigned long *) thread_info;
-    array_desc *arr_desc;
 
-    arr_desc = array->arr_desc;
     return ( ds_find_single_histogram (data, iarray_type (array),
 				       info->conv_type, num_values,
 				       NULL, stride,
@@ -3960,8 +4109,31 @@ static flag histogram_contiguous_job_func (KThreadPool pool, iarray array,
 				       histogram_array, &hpeak, &hmode) );
 }   /*  End Function histogram_contiguous_job_func  */
 
+static flag sum_contiguous_job_func (KThreadPool pool, iarray array,
+					 char *data, uaddr stride,
+					 unsigned int num_values,
+					 void *f_info, void *thread_info)
+/*  [PURPOSE] This routine performs a processing task.
+    <pool> The thread pool the job is running in. If NULL the job is
+    running single-threaded.
+    <array> The array.
+    <data> A pointer to the section of data to process.
+    <stride> The stride in bytes between consecutive data values.
+    <num_values> The number of values to process.
+    <f_info> The arbitrary function information pointer.
+    <thread_info> The arbitrary thread information pointer.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    double *sum_arr = (double *) thread_info;
 
-/*  Miscellaneuous support routines  */
+    return ( ds_find_1D_sum
+	     (data, iarray_type (array), num_values, NULL, stride,
+	      sum_arr) );
+}   /*  End Function sum_contiguous_job_func  */
+
+
+/*  Miscellaneous support routines  */
 
 static flag ds_find_2D_histogram (CONST char *data, unsigned int elem_type,
 				  unsigned int conv_type,
@@ -4014,3 +4186,40 @@ static flag ds_find_2D_histogram (CONST char *data, unsigned int elem_type,
     }
     return (TRUE);
 }   /*  End Function ds_find_2D_histogram  */
+
+static flag ds_find_2D_sum (CONST char *data, unsigned int elem_type,
+			    unsigned int length1, CONST uaddr *offsets1,
+			    unsigned int length2, CONST uaddr *offsets2,
+			    double sum[2])
+/*  [PURPOSE] This routine will find the sum of a single plane (element
+    versus two dimensions). This routine may be called repeatedly with multiple
+    planes in order to build an aggregate sum of all planes.
+    <data> A pointer to the data. Misaligned data will cause bus errors on some
+    platforms.
+    <elem_type> The type of the element.
+    <length1> The length of one of the dimensions.
+    <offsets1> The address offsets for data along the dimension.
+    <length2> The length of the other the dimension.
+    <offsets2> The address offsets for data along the dimension.
+    <min> Data values below this will be ignored.
+    <max> Data values above this will be ignored.
+    <num_bins> The number of histogram bins.
+    <sum> The sum is written here.
+    [MT-LEVEL] Unsafe.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    unsigned int count;
+    double sum_1D[2];
+
+    sum[0] = 0.0;
+    sum[1] = 0.0;
+    for (count = 0; count < length1; ++count)
+    {
+	if ( !ds_find_1D_sum (data + offsets1[count], elem_type,
+			      length2, offsets2, 0, sum_1D) ) return (FALSE);
+	sum[0] += sum_1D[0];
+	sum[1] += sum_1D[1];
+    }
+    return (TRUE);
+}   /*  End Function ds_find_2D_sum  */

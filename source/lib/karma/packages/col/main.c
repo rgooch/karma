@@ -36,8 +36,11 @@
 
     Updated by      Richard Gooch   1-MAY-1996: Threaded code.
 
-    Last updated by Richard Gooch   3-JUN-1996: Cleaned code to keep
+   Uupdated by      Richard Gooch   3-JUN-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   17-SEP-1996: Fixed bug where colours were
+  computed using ints, rather than unsigned longs (problem with 64bit machines)
 
 
 */
@@ -203,10 +206,9 @@ static void job_func (void *pool_info,
 {
     int index1, end_row, index2;
     int pixel;
-    int colour;
     int i_hue, i_brightness;
-    int red, green, blue;
     int p, q, t;
+    unsigned long red, green, blue, colour;
     float hue;
     float brightness;
     float f;

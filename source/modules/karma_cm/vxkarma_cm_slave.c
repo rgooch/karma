@@ -374,7 +374,6 @@ void **info;
     char *keyword;
     char txt[STRING_LENGTH];
     char my_hostname[STRING_LENGTH + 4];
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
 
     /*  Get the fully qualified hostname  */
@@ -418,7 +417,6 @@ void **info;
     extern unsigned int cm_port_number;
     extern unsigned long cm_host_addr;
     extern vxchild children[MAX_VXNODES];
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
 
     channel = conn_get_channel (connection);
@@ -563,7 +561,6 @@ static void poll_connections ()
     pseudo_connection *next_con;
     extern pseudo_connection *connections;
     extern pseudo_connection *pseudo_docks;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
 
     /*  Poll "real" connections (ie. data transfer connections)  */
@@ -1170,7 +1167,6 @@ void **info;
     pseudo_connection *con;
     void *msg;
     char buffer[BUFFER_SIZE];
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "con_input_func";
 
@@ -1232,7 +1228,6 @@ void *info;
 {
     pseudo_connection *con;
     extern pseudo_connection *connections;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "con_close_func";
 
@@ -1268,7 +1263,6 @@ void **info;
     vxchild *child;
     void *msg;
     extern pseudo_connection *connections;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "dock_input_func";
 
@@ -1370,7 +1364,6 @@ unsigned int *num_docks;
     unsigned int dock_count;
     int *docks;
     Channel *ch_docks;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "alloc_ch_port";
 
@@ -1452,7 +1445,6 @@ unsigned int *num_docks;
     int *docks = NULL;
     struct servent *service_entry;
     extern int tcp_port_offset;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "alloc_raw_port";
 
@@ -1694,7 +1686,6 @@ flag *local;
     /*  General info  */
     int fd;
     extern int docks[NUM_DOCKS];
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "accept_on_dock";
 
@@ -1788,7 +1779,6 @@ unsigned int port_number;
     struct sockaddr_in in_addr;
     struct servent *service_entry;
     extern int tcp_port_offset;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "open_connection";
 

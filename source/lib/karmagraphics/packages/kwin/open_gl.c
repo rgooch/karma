@@ -31,9 +31,12 @@
 
     Written by      Richard Gooch   9-MAY-1996
 
-    Last updated by Richard Gooch   9-MAY-1996
+    Updated by      Richard Gooch   9-MAY-1996
 
-    Last updated by Richard Gooch   26-MAY-1996: Moved stub functions in.
+    Updated by      Richard Gooch   26-MAY-1996: Moved stub functions in.
+
+    Last updated by Richard Gooch   15-SEP-1996: Made use of new <kwin_xutil_*>
+  routines.
 
 
 */
@@ -226,8 +229,6 @@ STATIC_FUNCTION (flag resize,
 STATIC_FUNCTION (void initialise, () );
 STATIC_FUNCTION (void set_pixel_in_gc,
 		 (OpenGLCanvas opengl_canvas, unsigned long pixel_value) );
-STATIC_FUNCTION (XVisualInfo *get_visinfo_for_visual,
-		 (Display *dpy, Visual *visual) );
 STATIC_FUNCTION (KPixCanvasImageCache size_cache,
 		 (OpenGLCanvas opengl_canvas, KPixCanvasImageCache *cache_ptr,
 		  unsigned int width, unsigned int height) );
@@ -328,7 +329,7 @@ flag kwin_open_gl_test_stereo (Display *display, XVisualInfo *visinfo)
     return (TRUE);
 }   /*  End Function kwin_open_gl_test_stereo  */
 
-/*EXPERIMENTAL_FUNCTION*/
+/*INCOMPLETE_FUNCTION*/
 flag kwin_open_gl_create_stereo (Display *display, Window window,
 				 int xoff, int yoff, int width, int height,
 				 KPixCanvas *left, KPixCanvas *right)
@@ -378,7 +379,8 @@ flag kwin_open_gl_create_stereo (Display *display, Window window,
     shared_canvas->xwin_width = window_attributes.width;
     shared_canvas->xwin_height = window_attributes.height;
     /*  Process the window's visual information  */
-    vinfo = get_visinfo_for_visual (display, window_attributes.visual);
+    vinfo = kwin_xutil_get_visinfo_for_visual (display,
+					       window_attributes.visual);
     if (window_attributes.depth != vinfo->depth)
     {
 	(void) fprintf (stderr, "Window depth: %d is not visual depth: %d\n",
@@ -756,37 +758,6 @@ static void set_active_canvas (OpenGLCanvas opengl_canvas)
     }
     shared_canvas->gl_active = opengl_canvas;
 }   /*  End Function set_active_canvas  */
-
-static XVisualInfo *get_visinfo_for_visual (Display *dpy, Visual *visual)
-/*  [PURPOSE] This routine will get the visual information structure for a
-    visual.
-    <dpy> The X display.
-    <visual> The visual.
-    [RETURNS] A pointer to an XVisualInfo structure on succes, else NULL. The
-    XVisualInfo structure must be freed by XFree()
-*/
-{
-    int num_vinfos;
-    XVisualInfo vinfo_template;
-    XVisualInfo *vinfos;
-    static char function_name[] = "__kwin_open_gl_get_visinfo_for_visual";
-
-    vinfo_template.visualid = XVisualIDFromVisual (visual);
-    vinfos = XGetVisualInfo (dpy, VisualIDMask, &vinfo_template, &num_vinfos);
-    if (num_vinfos < 1)
-    {
-	(void) fprintf (stderr, "Error getting visual info for visual: %p\n",
-			visual);
-	a_prog_bug (function_name);
-    }
-    if (num_vinfos > 1)
-    {
-	(void)fprintf(stderr,
-		      "%s: WARNING: number of visuals for visual: %p is: %d\n",
-		      function_name, visual, num_vinfos);
-    }
-    return (vinfos);
-}   /*  End Function get_visinfo_for_visual  */
 
 static void set_pixel (OpenGLCanvas opengl_canvas, unsigned long pixel_value)
 /*  [PURPOSE] This routine set the current pixel value.

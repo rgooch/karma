@@ -53,8 +53,10 @@
   since  panel_  package did not faithfully maintain the value (besides, the
   parameter was not that useful anyway).
 
-    Last updated by Richard Gooch   30-MAY-1996: Cleaned code to keep
+    Updated by      Richard Gooch   30-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   28-SEP-1996: Copy and append new history.
 
 
 */
@@ -68,11 +70,12 @@
 #include <karma_ds.h>
 #include <karma_st.h>
 #include <karma_ex.h>
+#include <karma_im.h>
 #include <karma_a.h>
 #include <karma_m.h>
 
 
-#define VERSION "1.1"
+#define VERSION "1.2"
 
 #define DEFAULT_LOG_CYCLES 8
 #define NUMARRAYS 100
@@ -80,7 +83,8 @@
 
 flag pre_process ();
 flag process_array ();
-flag post_process ();
+STATIC_FUNCTION (flag post_process,
+		 (CONST multi_array *inp_desc, multi_array *out_desc) );
 packet_desc *generate_desc ();
 flag process_occurrence ();
 flag find_scale ();
@@ -106,14 +110,15 @@ static char *complex_alternatives[] =
 };
 static int complex_option = K_COMPLEX_REAL;
 
-#define SCALE_FACTOR (unsigned int) 0
-#define SCALE_NORMALISE (unsigned int) 1
-#define SCALE_RANGE (unsigned int) 2
-#define SCALE_SATURATE (unsigned int) 3
-#define SCALE_LIMIT_LOG_CYCLES (unsigned int) 4
-#define SCALE_SUBTRACT_AVERAGE (unsigned int) 5
-#define SCALE_RECIPROCATE (unsigned int) 6
-#define NUM_SCALE_OPTIONS (unsigned int) 7
+#define SCALE_FACTOR 0
+#define SCALE_NORMALISE 1
+#define SCALE_RANGE 2
+#define SCALE_SATURATE 3
+#define SCALE_LIMIT_LOG_CYCLES 4
+#define SCALE_SUBTRACT_AVERAGE 5
+#define SCALE_RECIPROCATE 6
+#define SCALE_LOGARITHM 7
+#define NUM_SCALE_OPTIONS 8
 
 EXTERN_FUNCTION (flag convert, (char *command, FILE *fp) );
 
@@ -125,7 +130,8 @@ static char *scale_alternatives[NUM_SCALE_OPTIONS] =
     "saturate",
     "limit_log_cycles",
     "subtract_average",
-    "reciprocate"
+    "reciprocate",
+    "logarithm",
 };
 static int scale_option = SCALE_FACTOR;
 
@@ -133,7 +139,7 @@ static int save_unproc = TRUE;
 
 static char *array_names[NUMARRAYS];
 static unsigned int num_arrays = 0;
-static int type = K_FLOAT;
+static unsigned int type = K_FLOAT;
 
 static double factor = 1.0;
 static double offset = 0.0;
@@ -152,6 +158,7 @@ int main (int argc, char **argv)
     extern char *data_type_names[NUMTYPES];
     static char function_name[] = "main";
 
+    im_register_lib_version (KARMA_VERSION);
     if ( ( panel = panel_create (FALSE) ) == NULL )
     {
 	m_abort (function_name, "control panel");
@@ -207,8 +214,8 @@ flag convert (char *p, FILE *fp)
     double tmp;
     char *arrayfile;
     extern int scale_option;
-    extern int type;
     extern int save_unproc;
+    extern unsigned int type;
     extern unsigned int num_arrays;
     extern double norm;
     extern double low_range;
@@ -223,15 +230,15 @@ flag convert (char *p, FILE *fp)
 
     if ( (type == NONE) || (type == MULTI_ARRAY) )
     {
-	(void) fprintf (fp,
+	fprintf (fp,
 			"type: \"%s\" not allowed: defaulting to K_FLOAT\n",
 			data_type_names[type] );
 	type = K_FLOAT;
 	return (TRUE);
     }
-    if (ds_element_is_atomic ( (unsigned int) type ) == FALSE)
+    if (ds_element_is_atomic ( type ) == FALSE)
     {
-	(void) fprintf (fp, "type must be atomic: defaulting to K_FLOAT\n");
+	fprintf (fp, "type must be atomic: defaulting to K_FLOAT\n");
 	type = K_FLOAT;
 	return (TRUE);
     }
@@ -242,13 +249,13 @@ flag convert (char *p, FILE *fp)
       case SCALE_NORMALISE:
 	if (norm < 0.0)
 	{
-	    (void) fprintf (fp,
+	    fprintf (fp,
 			    "Normalise parameter must be positive: taking abs\n");
 	    norm = fabs (norm);
 	}
 	if (norm == 0.0)
 	{
-	    (void) fprintf (fp,
+	    fprintf (fp,
 			    "Can't normalize to zero: I'll clean up after you\n");
 	    norm = 1.0;
 	}
@@ -256,9 +263,9 @@ flag convert (char *p, FILE *fp)
       case SCALE_RANGE:
 	if (low_range > up_range)
 	{
-	    (void) fprintf (fp,
+	    fprintf (fp,
 			    "Lower range must be less than upper range\n");
-	    (void) fprintf (fp,
+	    fprintf (fp,
 			    "Since I'm smarter than you, I'll swap them\n");
 	    tmp = low_range;
 	    low_range = up_range;
@@ -266,7 +273,7 @@ flag convert (char *p, FILE *fp)
 	}
 	if (low_range == up_range)
 	{
-	    (void) fprintf (fp,
+	    fprintf (fp,
 			    "Can't have zero size range: I'll move them apart 0.5 each way\n");
 	    low_range -= 0.5;
 	    up_range += 0.5;
@@ -275,9 +282,9 @@ flag convert (char *p, FILE *fp)
       case SCALE_SATURATE:
 	if (saturate_min > saturate_max)
 	{
-	    (void) fprintf (fp,
+	    fprintf (fp,
 			    "Lower saturation point must be less than upper saturation point\n");
-	    (void) fprintf (fp,
+	    fprintf (fp,
 			    "Since I'm smarter than you, I'll swap them\n");
 	    tmp = saturate_min;
 	    saturate_min = saturate_max;
@@ -285,7 +292,7 @@ flag convert (char *p, FILE *fp)
 	}
 	if (saturate_min == saturate_max)
 	{
-	    (void) fprintf (fp,
+	    fprintf (fp,
 			    "Can't have equal saturation points: using: %g and %g\n",
 			    1.0 / TOOBIG, TOOBIG);
 	    saturate_min = 1.0 / TOOBIG;
@@ -295,9 +302,10 @@ flag convert (char *p, FILE *fp)
       case SCALE_LIMIT_LOG_CYCLES:
       case SCALE_SUBTRACT_AVERAGE:
       case SCALE_RECIPROCATE:
+      case SCALE_LOGARITHM:
 	break;
       default:
-	(void) fprintf (fp, "Bad scale_option value: %d\n", scale_option);
+	fprintf (fp, "Bad scale_option value: %d\n", scale_option);
 	a_prog_bug (function_name);
 	break;
     }
@@ -305,12 +313,12 @@ flag convert (char *p, FILE *fp)
     {
 	if ( ( arrayfile = ex_str (p, &p) ) == NULL )
 	{
-	    (void) fprintf (fp, "Error extracting arrayfile name\n");
+	    fprintf (fp, "Error extracting arrayfile name\n");
 	    return (TRUE);
 	}
 	if ( ( element_name = ex_str (p, &p) ) == NULL )
 	{
-	    (void) fprintf (fp,
+	    fprintf (fp,
 			    "Must specify element name to change type of\n");
 	    m_free (arrayfile);
 	    return (TRUE);
@@ -345,7 +353,7 @@ multi_array *multi_desc;
 			 (unsigned int *) NULL)
         != IDENT_NOT_FOUND)
     {
-	(void) sprintf (txt, "array name must not be: \"%s\"", element_name);
+	sprintf (txt, "array name must not be: \"%s\"", element_name);
         a_func_abort (function_name, txt);
         return (FALSE);
     }
@@ -380,17 +388,17 @@ char **out_data;
 
     if ( (inp_desc == NULL) || (out_desc == NULL) )
     {
-	(void) fprintf (stderr, "NULL descriptor pointer(s)\n");
+	fprintf (stderr, "NULL descriptor pointer(s)\n");
         a_prog_bug (function_name);
     }
     if ( (inp_data == NULL) || (out_data == NULL) )
     {
-	(void) fprintf (stderr, "NULL data pointer(s)\n");
+	fprintf (stderr, "NULL data pointer(s)\n");
 	a_prog_bug (function_name);
     }
     if (element_name == NULL)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"NULL external variable element name pointer\n");
 	a_prog_bug (function_name);
     }
@@ -406,7 +414,7 @@ char **out_data;
 	a_func_abort (function_name, "could not allocate output data");
         return (FALSE);
     }
-    (void) ds_copy_data (inp_desc, inp_data, *out_desc, *out_data);
+    ds_copy_data (inp_desc, inp_data, *out_desc, *out_data);
     switch (scale_option)
     {
       case SCALE_FACTOR:
@@ -416,11 +424,12 @@ char **out_data;
       case SCALE_NORMALISE:
       case SCALE_RANGE:
       case SCALE_LIMIT_LOG_CYCLES:
+      case SCALE_LOGARITHM:
 	/*  Need to determine minimum and maximum values of the element  */
 	if (ds_foreach_occurrence (inp_desc, inp_data, element_name, FALSE,
 				   find_scale) == FALSE)
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Error getting minimum and maximum of input\n");
 	    a_prog_bug (function_name);
 	}
@@ -433,12 +442,12 @@ char **out_data;
 	if (ds_foreach_occurrence (inp_desc, inp_data, element_name, FALSE,
 				   find_average) == FALSE)
 	{
-	    (void) fprintf (stderr, "Error getting average of input\n");
+	    fprintf (stderr, "Error getting average of input\n");
 	    a_prog_bug (function_name);
 	}
 	break;
       default:
-	(void) fprintf (stderr, "Bad scale_option value: %d\n", scale_option);
+	fprintf (stderr, "Bad scale_option value: %d\n", scale_option);
 	a_prog_bug (function_name);
 	break;
     }
@@ -450,7 +459,7 @@ char **out_data;
     }
     if (toobig_count > 0)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Converted: %u occurrences of TOOBIG values\n",
 			toobig_count);
     }
@@ -476,7 +485,7 @@ packet_desc *inp_desc;
     unsigned int elem_num;
     packet_desc *return_value;
     packet_desc *enclosing_packet;
-    extern int type;
+    extern unsigned int type;
     extern unsigned int elem_index;
     extern char *element_name;
     extern char *new_element_name;
@@ -487,33 +496,33 @@ packet_desc *inp_desc;
 				  (char **) &enclosing_packet, &elem_index) )
     {
       case IDENT_NOT_FOUND:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Atomic element: \"%s\" not found\n", element_name);
 	return (NULL);
 	break;
       case IDENT_ELEMENT:
 	break;
       case IDENT_MULTIPLE:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Item \"%s\" found more than once\n", element_name);
 	return (NULL);
 	break;
       case IDENT_DIMENSION:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Item: \"%s\" must be an element, not a dimension name\n",
 			element_name);
 	return (NULL);
 	break;
       case IDENT_GEN_STRUCT:
       default:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Bad return value from function: ds_f_name_in_packet\n");
 	a_prog_bug (function_name);
 	break;
     }
-    if ( (*enclosing_packet).element_types[elem_index] == (unsigned int) type )
+    if ( (*enclosing_packet).element_types[elem_index] == type )
     {
-	(void) fprintf (stderr, "Input and output types are the same\n");
+	fprintf (stderr, "Input and output types are the same\n");
 	return (NULL);
     }
     /*  Copy data structure descriptor  */
@@ -528,7 +537,7 @@ packet_desc *inp_desc;
 				  (char **) &enclosing_packet, &elem_num) )
     {
       case IDENT_NOT_FOUND:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Output atomic element: \"%s\" not found\n",
 			element_name);
 	a_prog_bug (function_name);
@@ -536,32 +545,32 @@ packet_desc *inp_desc;
       case IDENT_ELEMENT:
 	break;
       case IDENT_MULTIPLE:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Output item \"%s\" found more than once\n",
 			element_name);
 	a_prog_bug (function_name);
 	break;
       case IDENT_DIMENSION:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Output item: \"%s\" must be an element, not a dimension name\n",
 			element_name);
 	a_prog_bug (function_name);
 	break;
       case IDENT_GEN_STRUCT:
       default:
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Bad return value from function: ds_f_name_in_packet\n");
 	a_prog_bug (function_name);
 	break;
     }
     if (elem_num != elem_index)
     {
-	(void) fprintf (stderr, "Element index has changed from: %u to: %u\n",
+	fprintf (stderr, "Element index has changed from: %u to: %u\n",
 			elem_index, elem_num);
 	a_prog_bug (function_name);
     }
     /*  Change type of output element  */
-    (*enclosing_packet).element_types[elem_num] = (unsigned int) type;
+    (*enclosing_packet).element_types[elem_num] = type;
     if (new_element_name != NULL)
     {
 	/*  Change name of output element  */
@@ -577,31 +586,23 @@ packet_desc *inp_desc;
     return (return_value);
 }   /*  End Function generate_desc  */
 
-flag post_process (/* inp_array, out_array */)
-/*  This routine will perform post processing on the composite array pointed
-    to by  out_array  .
-    The routine will copy over history information from the input composite
-    array pointed to by  inp_array  .
-    The routine returns TRUE if the array is to be saved, else it
-    returns FALSE.
-*/
-/*
-struct composite_array *inp_array;
-struct composite_array *out_array;
+static flag post_process (CONST multi_array *inp_desc, multi_array *out_desc)
+/*  [SUMMARY] Perform post-processing on a multi_array data structure.
+    <inp_desc> The input multi_array descriptor.
+    <out_desc> The output multi_array_descriptor.
+    [RETURNS] TRUE if the array is to be saved/transmitted, else FALSE.
 */
 {
-#ifdef dummy
     char txt[STRING_LENGTH];
     extern char *element_name;
-    extern struct variable_description vble[];
-    static char function_name[] = "post_process";
+    extern char module_name[STRING_LENGTH + 1];
+    /*static char function_name[] = "post_process";*/
 
-    ez_description (out_array, vble);
-    (void) sprintf (txt, "Name of converted element: \"%s\"", element_name);
-    composite_descr (txt, out_array);
-    ds_copy_composite_descr (inp_array, out_array);
-#endif
-    return (TRUE);
+    if ( !ds_history_copy (out_desc, inp_desc) ) return (FALSE);
+    if ( !panel_put_history_with_stack (out_desc, TRUE) ) return (FALSE);
+    sprintf (txt, "%s: Name of converted element: \"%s\"",
+	     module_name, element_name);
+    return ds_history_append_string (out_desc, txt, TRUE);
 }   /*  End Function post_process   */
 
 static double element_min = TOOBIG;
@@ -639,20 +640,20 @@ char *out_data;
     packet_desc *pack_desc_inp = NULL; /* Initialised to keep compiler happy */
     packet_desc *pack_desc_out = NULL; /* Initialised to keep compiler happy */
     extern unsigned int elem_index;
-    extern int type;
+    extern unsigned int type;
     extern char *data_type_names[NUMTYPES];
     static char function_name[] = "process_occurrence";
 
     if ( (inp_desc == NULL) || (inp_data == NULL)
 	|| (out_desc == NULL) || (out_data == NULL) )
     {
-	(void) fprintf (stderr, "NULL descriptor(s) passed\n");
+	fprintf (stderr, "NULL descriptor(s) passed\n");
 	a_prog_bug (function_name);
     }
     if (inp_type != out_type)
     {
 	/*  Descriptors are of the same type  */
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Descriptors: input: %s output: %s are not of the same type\n",
 			data_type_names[inp_type], data_type_names[out_type]);
 	a_prog_bug (function_name);
@@ -666,7 +667,7 @@ char *out_data;
 	array_size = ds_get_array_size ( (array_desc *) inp_desc );
 	if ( array_size != ds_get_array_size ( (array_desc *) out_desc ) )
 	{
-	    (void) fprintf (stderr, "Array sizes have changed\n");
+	    fprintf (stderr, "Array sizes have changed\n");
 	    a_prog_bug (function_name);
 	}
 	break;
@@ -674,20 +675,20 @@ char *out_data;
 	list_head_inp = (list_header *) inp_data;
 	if ( (*list_head_inp).magic != MAGIC_LIST_HEADER )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Input list header has bad magic number\n");
 	    a_prog_bug (function_name);
 	}
 	list_head_out = (list_header *) out_data;
 	if ( (*list_head_out).magic != MAGIC_LIST_HEADER )
 	{
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Output list header has bad magic number\n");
 	    a_prog_bug (function_name);
 	}
 	if ( (*list_head_inp).length != (*list_head_out).length )
 	{
-	    (void) fprintf (stderr, "List sizes have changed\n");
+	    fprintf (stderr, "List sizes have changed\n");
 	    a_prog_bug (function_name);
 	}
       case NONE:
@@ -699,15 +700,15 @@ char *out_data;
     /*  Do a quick check on the packet descriptors  */
     if ( (*pack_desc_inp).num_elements != (*pack_desc_out).num_elements )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Packet descriptors have different num. of elements: %u %u\n",
 			(*pack_desc_inp).num_elements,
 			(*pack_desc_out).num_elements);
 	a_prog_bug (function_name);
     }
-    if ( (*pack_desc_out).element_types[elem_index] != (unsigned int) type )
+    if ( (*pack_desc_out).element_types[elem_index] != type )
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Output element descriptor type has changed to: \"%s\"\n",
 			data_type_names[ (*pack_desc_out).element_types[elem_index] ]);
 	a_prog_bug (function_name);
@@ -749,10 +750,10 @@ char *out_data;
 	    /*  Process this entry  */
 	    if (convert_values ( (*list_entry_inp).data + inp_offset,
 				(*pack_desc_inp).element_types[elem_index],
-				(unsigned int) 1,
+				1,
 				out_ptr,
 				(*pack_desc_out).element_types[elem_index],
-				(unsigned int) 1, (unsigned int) 1 ) != TRUE)
+				1, 1 ) != TRUE)
 	    {
 		return (FALSE);
 	    }
@@ -765,7 +766,7 @@ char *out_data;
 				 ds_get_packet_size (pack_desc_inp),
 				 out_data + out_offset,
 				 (*pack_desc_out).element_types[elem_index],
-				 out_pack_size, (unsigned int) 1) );
+				 out_pack_size, 1) );
 	break;
     }
     return (TRUE);
@@ -795,18 +796,18 @@ unsigned int index;
 
     if ( (encls_desc == NULL) || (data == NULL) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     if (type != NONE)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Enclosing desciptor must be a packet descriptor\n");
 	a_prog_bug (function_name);
     }
     if (index != elem_index)
     {
-	(void) fprintf (stderr, "Element index has changed from: %u to: %u\n",
+	fprintf (stderr, "Element index has changed from: %u to: %u\n",
 			elem_index, index);
 	a_prog_bug (function_name);
     }
@@ -862,7 +863,7 @@ unsigned int operation;
 
     if (input == NULL)
     {
-	(void) fprintf (stderr, "NULL pointer passed\n");
+	fprintf (stderr, "NULL pointer passed\n");
 	a_prog_bug (function_name);
     }
     switch (operation)
@@ -890,11 +891,11 @@ unsigned int operation;
 	return (input[0] * input[0] + input[1] * input[1]);
 	break;
       case K_COMPLEX_CONT_PHASE:
-	(void) fprintf (stderr, "Continuous phase not implemented yet\n");
+	fprintf (stderr, "Continuous phase not implemented yet\n");
 	return (TOOBIG);
 	break;
       default:
-	(void) fprintf (stderr, "Bad operation value: %u\n", operation);
+	fprintf (stderr, "Bad operation value: %u\n", operation);
 	a_prog_bug (function_name);
 	break;
     }
@@ -925,18 +926,18 @@ unsigned int index;
 
     if ( (encls_desc == NULL) || (data == NULL) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     if (type != NONE)
     {
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Enclosing desciptor must be a packet descriptor\n");
 	a_prog_bug (function_name);
     }
     if (index != elem_index)
     {
-	(void) fprintf (stderr, "Element index has changed from: %u to: %u\n",
+	fprintf (stderr, "Element index has changed from: %u to: %u\n",
 			elem_index, index);
 	a_prog_bug (function_name);
     }
@@ -1101,12 +1102,12 @@ unsigned int num_values;
 		}
 		break;
 	      case K_COMPLEX_CONT_PHASE:
-		(void) fprintf (stderr,
+		fprintf (stderr,
 				"Continuous phase not implemented yet\n");
 		return (FALSE);
 		break;
 	      default:
-		(void) fprintf (stderr, "Bad operation value: %u\n",
+		fprintf (stderr, "Bad operation value: %u\n",
 				complex_option);
 		a_prog_bug (function_name);
 		break;
@@ -1280,14 +1281,50 @@ unsigned int num_values;
 		}
 	    }
 	    break;
+	  case SCALE_LOGARITHM:
+	    for (elem_count = 0; elem_count < block_size; ++elem_count)
+	    {
+		if ( (input[elem_count * 2] >= TOOBIG) ||
+		    (input[elem_count * 2 + 1] >= TOOBIG) )
+		{
+		    output[elem_count * 2] = TOOBIG;
+		    output[elem_count * 2 + 1] = TOOBIG;
+		    ++toobig_count;
+		}
+		else
+		{
+		    if (input[elem_count * 2] <
+			element_max / log_cycle_limit_scale)
+		    {
+			output[elem_count * 2] = log (element_max /
+						      log_cycle_limit_scale);
+		    }
+		    else
+		    {
+			output[elem_count * 2] = log (input[elem_count * 2]);
+		    }
+		    if (input[elem_count * 2 + 1] <
+			element_max / log_cycle_limit_scale)
+		    {
+			output[elem_count * 2 + 1] = log (element_max /
+							  log_cycle_limit_scale);
+		    }
+		    else
+		    {
+			output[elem_count * 2 + 1] = log (input[elem_count * 2
+							       + 1]);
+		    }
+		}
+	    }
+	    break;
 	  default:
-	    (void) fprintf (stderr, "Bad scale_option value: %d\n",
+	    fprintf (stderr, "Bad scale_option value: %d\n",
 			    scale_option);
 	    a_prog_bug (function_name);
 	    break;
 	}
 	/*  Write output values  */
-	(void) ds_put_elements (out_data, out_type, out_stride, output,
+	ds_put_elements (out_data, out_type, out_stride, output,
 				block_size);
     }
     return (TRUE);

@@ -8,26 +8,26 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         t_c_to_c_1D_fft_float
-$RETURN_TYPE      unsigned int
+$FUNCTION           t_c_to_c_1D_fft_float
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (float *real, float *imag,
 				    unsigned int length, unsigned int stride,
 				    int direction)
-$SUMMARY          Compute a 1D complex to complex single precision FFT.
+$SUMMARY            Compute a 1D complex to complex single precision FFT.
 $PURPOSE
     This routine will perform a complex to complex 1 dimensional FFT
     on an array of single precision complex data.
     The routine performs the transform in situ.
-$PARAMETER        real :
+$PARAMETER          real :
     The array of real components. This is modified.
-$PARAMETER        imag :
+$PARAMETER          imag :
     The array of imaginary components. This is modified.
-$PARAMETER        length :
+$PARAMETER          length :
     The number of complex values in the array to transform.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in bytes) of successive components.
-$PARAMETER        direction :
+$PARAMETER          direction :
     If the value is KARMA_FFT_FORWARD, the forward transform is
     performed. If the value is KARMA_FFT_INVERSE, the inverse transform is
     performed.
@@ -36,8 +36,8 @@ $RETURNS
     See <-T_FFT_STATUS-> for a list of possible values.
 $END
 
-$FUNCTION         t_c_to_c_many_1D_fft_float
-$RETURN_TYPE      unsigned int
+$FUNCTION           t_c_to_c_many_1D_fft_float
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (float *real, float *imag,
 					 unsigned int length,
@@ -45,24 +45,24 @@ $PARAMETER_LIST
 					 unsigned int number,
 					 unsigned int dim_stride,
 					 int direction)
-$SUMMARY          Compute many 1D complex to complex single precision FFTs.
+$SUMMARY            Compute many 1D complex to complex single precision FFTs.
 $PURPOSE
     This routine will perform a number of complex to complex 1
     dimensional FFTs on an array of single precision complex data.
     The routine performs the transforms in situ.
-$PARAMETER        real :
+$PARAMETER          real :
     The array of real components.
-$PARAMETER        imag :
+$PARAMETER          imag :
     The array of imaginary components.
-$PARAMETER        length :
+$PARAMETER          length :
     The number of complex values in the array to transform.
-$PARAMETER        elem_stride :
+$PARAMETER          elem_stride :
     The stride (in bytes) of successive components.
-$PARAMETER        number :
+$PARAMETER          number :
     The number of 1 dimensional FFTs to perform.
-$PARAMETER        dim_stride :
+$PARAMETER          dim_stride :
     The stride (in bytes) between successive data sets.
-$PARAMETER        direction :
+$PARAMETER          direction :
     If the value is KARMA_FFT_FORWARD, the forward transform is
     performed. If the value is KARMA_FFT_INVERSE, the inverse transform is
     performed.
@@ -71,42 +71,42 @@ $RETURNS
     See <-T_FFT_STATUS-> for a list of possible values.
 $END
 
-$FUNCTION         t_check_power_of_2
-$RETURN_TYPE      flag
+$FUNCTION           t_check_power_of_2
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (unsigned int number)
-$SUMMARY          Check if a number is a power of 2.
+$SUMMARY            Check if a number is a power of 2.
 $PURPOSE
     Check if a number is a power of 2.
-$PARAMETER        number :
+$PARAMETER          number :
     The number.
 $RETURNS
     TRUE if the number is a power of 2, else FALSE.
 $END
 
-$FUNCTION         t_r_to_c_many_1D_fft_float
-$RETURN_TYPE      unsigned int
+$FUNCTION           t_r_to_c_many_1D_fft_float
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (float *a, unsigned int length,
 					 unsigned int elem_stride,
 					 unsigned int number,
 					 unsigned int dim_stride,
 					 int direction)
-$SUMMARY          Compute many 1D real to complex single precision FFTs.
+$SUMMARY            Compute many 1D real to complex single precision FFTs.
 $PURPOSE
     This routine will perform a real to complex or complex to real
     FFT.
-$PARAMETER        a :
+$PARAMETER          a :
     The array.
-$PARAMETER        n :
+$PARAMETER          n :
     The number of elements to transform.
-$PARAMETER        elem_stride :
+$PARAMETER          elem_stride :
     The stride (in floats) of sucessive data elements.
-$PARAMETER        number :
+$PARAMETER          number :
     The number of transforms to perform.
-$PARAMETER        dim_stride :
+$PARAMETER          dim_stride :
     The stride (in floats) between sucessive data sets.
-$PARAMETER        direction :
+$PARAMETER          direction :
     If the value is KARMA_FFT_FORWARD, the forward, real to complex
     transform is performed. If the value is KARMA_FFT_INVERSE, the inverse,
     complex to real transform is performed.

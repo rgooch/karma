@@ -46,12 +46,17 @@
 /* 
    MODIFICATIONS 
 
-   19may96	use viewable images to create and manage the colour wedge
-   06jun96	use viewable images to create and manage the image canvas
+   19may96 SM   use viewable images to create and manage the colour wedge
+   06jun96 SM   use viewable images to create and manage the image canvas
+   10oct96 REG  added print button
+   11oct96 REG  restored forcing of 1:1 aspect ratio for main canvas
+   11oct96 REG  only create ViewableImage for new 16 bit image
 
 */
 
- 
+/*  TODO
+    Do not create new ViewableImage for every
+*/ 
 
 
 /* This module contains Xt interface code */
@@ -70,6 +75,7 @@
 #include <karma_viewimg.h>
 #include <karma_foreign.h>
 #include <karma_iarray.h>
+#include <karma_xtmisc.h>
 #include <karma_kcmap.h>
 #include <karma_conn.h>
 #include <karma_dir.h>
@@ -83,6 +89,8 @@
 #include <Xkw/MultiCanvas.h>
 #include <Xkw/Value.h>
 #include <Xkw/SimpleSlider.h>
+#include <Xkw/Postscript.h>
+
 
 /* slider initializations */
 #define SLIDER_MIN 0
@@ -119,9 +127,6 @@ STATIC_FUNCTION (flag dirselect_cbk,
                  (Widget w, void *info, CONST char *dirname) );
 
 STATIC_FUNCTION (void process_file, (void) );
-
-STATIC_FUNCTION (void popup_cbk, (Widget w, XtPointer client_data,
-				  XtPointer call_data) );
 
 STATIC_FUNCTION (void whichfilesel_cbk, (Widget w, XtPointer client_data,
 					 XtPointer call_data) );
@@ -178,8 +183,6 @@ String fallback_resources[] =
 
 /* define/declare global widgets */
 static Widget main_shell = NULL;
-static Widget image_canvas = NULL;
-static Widget cwedge_canvas = NULL;
 static Widget start_hue_sld,end_hue_sld,min_int_sld,sat_sld;
 
 
@@ -235,6 +238,9 @@ iarray conv_amp_data, conv_phs_data;
 
 /* 16bit iarray merged from the two 8bit scaled channel/file data iarrays */ 
 iarray merge_16bit;
+
+/*  ViewableImage for the main canvas  */
+static ViewableImage imag_vimage = NULL;
 
 /* selected start hue range value selected */
 int start_hue_val = SLIDER_MIN;
@@ -304,22 +310,20 @@ float start_hue,end_hue,min_int,sat;
 
     
 
-main(argc, argv)
-int argc;
-char **argv;
+int main (int argc, char **argv)
 {
     XtAppContext app_context;
     Display *dpy;
     Screen *screen;
     Widget topform;
     Widget filepopup, file1_btn, file2_btn;
-    Widget reset_btn;
+    Widget reset_btn, print_btn;
     Widget quit_btn;
     Widget image_canvas;
     Widget cwedge_canvas;
     Widget imag_true_cnvs;
     Widget cwedge_true_cnvs;
-    Widget filewin;
+    Widget filewin, pswinpopup;
     Widget rdf_menu_btn;
     int canvas_types;
     int image_cnvs_init_siz = 512;
@@ -350,7 +354,7 @@ char **argv;
 				       XtNhSpace, 0,
 				       XtNborderWidth, 0,
 				       NULL);
-/* Command widgets */
+    /*  Create popups  */
     filepopup = XtVaCreatePopupShell ("filewinPopup", filepopupWidgetClass,
 				      main_shell,
 				      XkwNfilenameTester, accept_file,
@@ -361,9 +365,15 @@ char **argv;
 				      NULL);
     XtAddCallback (filepopup, XkwNfileSelectCallback, fileselect_cbk,NULL);
     filewin = XtNameToWidget (filepopup, "form.selector");
-    (void) XkwFilewinRegisterDirCbk (filewin,dirselect_cbk,(Widget) filepopup);
+    XkwFilewinRegisterDirCbk (filewin,dirselect_cbk,(Widget) filepopup);
+    /*  Create PostScript control widget  */
+    pswinpopup = XtVaCreatePopupShell ("postscriptwinpopup",
+				       postscriptWidgetClass, main_shell,
+				       XtNtitle, "Postscript Window",
+				       XkwNautoIncrement, TRUE,
+				       NULL);
 
-
+/* Command widgets */
     file1_btn = XtVaCreateManagedWidget ("button", commandWidgetClass,
 					 topform, 
 					 XtNlabel, "File1",
@@ -372,7 +382,7 @@ char **argv;
 					 XtNleft, XtChainLeft,
 					 XtNright, XtChainLeft,
 					 NULL);
-    XtAddCallback(file1_btn, XtNcallback, popup_cbk, filepopup);
+    XtAddCallback(file1_btn, XtNcallback, xtmisc_popup_cbk, filepopup);
     XtAddCallback(file1_btn, XtNcallback, whichfilesel_cbk, (XtPointer) FILE1);
 
     file2_btn = XtVaCreateManagedWidget ("button", commandWidgetClass,
@@ -384,7 +394,7 @@ char **argv;
 					 XtNleft, XtChainLeft,
 					 XtNright, XtChainLeft,
 					 NULL);
-    XtAddCallback(file2_btn, XtNcallback, popup_cbk, filepopup);
+    XtAddCallback(file2_btn, XtNcallback, xtmisc_popup_cbk, filepopup);
     XtAddCallback(file2_btn, XtNcallback, whichfilesel_cbk, (XtPointer) FILE2);
 
 
@@ -398,6 +408,18 @@ char **argv;
 					 XtNright, XtChainLeft,
 					 NULL);
     XtAddCallback (reset_btn, XtNcallback, reset_cbk, NULL);
+
+    /*  Create "Print" button and make PostScript control widget pop up when
+	button is pressed  */
+    print_btn = XtVaCreateManagedWidget ("button", commandWidgetClass, topform,
+					 XtNlabel, "Print",
+					 XtNfromHoriz, reset_btn,
+					 XtNtop, XtChainTop,
+					 XtNbottom, XtChainTop,
+					 XtNleft, XtChainLeft,
+					 XtNright, XtChainLeft,
+					 NULL);
+    XtAddCallback (print_btn, XtNcallback, xtmisc_popup_cbk, pswinpopup);
 
     
 /* ExclusiveMenu Widget */
@@ -422,7 +444,7 @@ char **argv;
 /* Command Widget */
     quit_btn = XtVaCreateManagedWidget ("quit", commandWidgetClass, topform,
 					XtNlabel, "Quit",
-					XtNfromHoriz, reset_btn,
+					XtNfromHoriz, print_btn,
 					XtNtop, XtChainTop,
 					XtNbottom, XtChainTop,
 					XtNleft, XtChainLeft,
@@ -582,30 +604,16 @@ char **argv;
 		  NULL);
 
     disp_cwedge_init_imag();
+    /*  Since only one KPixCanvas is worth printing, register it now  */
+    XkwPostscriptRegisterImageAndName (pswinpopup, imag_pix_true_cnvs, NULL);
 
 
     XtAppMainLoop (app_context);
-
-
-}	/*  End Function main */
-
-
+    return (RV_OK);
+}   /*  End Function main  */
 
 
 /*  PRIVATE ROUTINES follow  */
-
-static void popup_cbk (Widget w, XtPointer client_data, XtPointer call_data)
-
-/*  This is the generic popup button callback. */
-
-{
-
-  Widget popup = (Widget) client_data;
-  XtPopup (popup, XtGrabNone);
-
-}   /*  End Function popup_cbk   */
-
-
 
 static void whichfilesel_cbk (Widget w, XtPointer client_data,
 			      XtPointer call_data)
@@ -662,10 +670,10 @@ static void reset_cbk (Widget w, XtPointer client_data, XtPointer call_data)
     if ( (length_data_chan1[0] != length_data_chan2[0]) 
 	 || (length_data_chan1[1] != length_data_chan2[1]) ) {
       
-      (void) fprintf(stderr, "WARNING:\n");
+      fprintf(stderr, "WARNING:\n");
       fprintf(stderr, "Dimensions of values in File1 and File2 are \
 different.\n");
-      (void) fprintf(stderr, "Both files MUST have same dimensions to \
+      fprintf(stderr, "Both files MUST have same dimensions to \
 produce a pixel map.\n\n");
       return;
     }
@@ -715,10 +723,10 @@ static void rdf_cbk (Widget w, XtPointer client_data, XtPointer call_data)
     if ( (length_data_chan1[0] != length_data_chan2[0]) 
 	 || (length_data_chan1[1] != length_data_chan2[1]) ) {
       
-      (void) fprintf(stderr, "WARNING:\n");
+      fprintf(stderr, "WARNING:\n");
       fprintf(stderr, "Dimensions of values in File1 and File2 are \
 different.\n");
-      (void) fprintf(stderr, "Both files MUST have same dimensions to \
+      fprintf(stderr, "Both files MUST have same dimensions to \
 produce a pixel map.\n\n");
       return;
     }
@@ -728,7 +736,7 @@ produce a pixel map.\n\n");
     
   }
   else {
-    (void) fprintf (stderr, "TWO Files of data must be loaded.\n");  
+    fprintf (stderr, "TWO Files of data must be loaded.\n");  
   }
   
 }   /*  End Function rdf_cbk   */
@@ -747,7 +755,7 @@ static void quit_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 
 static void slider_cbk (w, client_data, call_data)
 
-/*  This is the slider subcube callback. */
+/*  This is the slider callback. */
 
      Widget w;
      XtPointer client_data;	/* application data */
@@ -788,10 +796,10 @@ static void slider_cbk (w, client_data, call_data)
     if ( (length_data_chan1[0] != length_data_chan2[0]) 
          || (length_data_chan1[1] != length_data_chan2[1]) ) {
       
-      (void) fprintf(stderr, "WARNING:\n");
+      fprintf(stderr, "WARNING:\n");
       fprintf(stderr, "Dimensions of values in File1 and File2 are \
 different.\n");
-      (void) fprintf(stderr, "Both files MUST have same dimensions to \
+      fprintf(stderr, "Both files MUST have same dimensions to \
 produce a pixel map.\n\n");
       return;
     }
@@ -845,7 +853,7 @@ static flag dirselect_cbk (Widget w, void *info, CONST char *dirname)
   XSync (XtDisplay (w), False);
   
   load_in_iarray (dirname);
-  (void) fprintf (stderr, "Filename: \"%s\"\n", dirname);
+  fprintf (stderr, "Filename: \"%s\"\n", dirname);
   
   process_file();
   
@@ -872,7 +880,7 @@ static void fileselect_cbk (Widget w, XtPointer client_data,
   filename = (char *) call_data;
   
   load_in_iarray (filename);
-  (void) fprintf (stderr, "Filename: \"%s\"\n", filename);
+  fprintf (stderr, "Filename: \"%s\"\n", filename);
 
   process_file();
 
@@ -894,7 +902,6 @@ static void process_file (void)
   (Amplitude,Phase) mapped to (Intensity, Hue) is then plotted.  */
 
 {
-
   /* calculate and store the dimension lengths of chan1/chan2 data for later */
   if (curr_file_selected == 1) {
     length_data_chan1[0] = iarray_dim_length(raw_chan1,0);
@@ -1003,10 +1010,10 @@ static void process_file (void)
     if ( (length_data_chan1[0] != length_data_chan2[0]) 
 	 || (length_data_chan1[1] != length_data_chan2[1]) ) {
       
-      (void) fprintf(stderr, "WARNING:\n");
+      fprintf(stderr, "WARNING:\n");
       fprintf(stderr, "Dimensions of values in File1 and File2 are \
 different.\n");
-      (void) fprintf(stderr, "Both files MUST have same dimensions to \
+      fprintf(stderr, "Both files MUST have same dimensions to \
 produce a pixel map.\n\n");
       f1f2_same_dim = FALSE;
       return;
@@ -1018,7 +1025,7 @@ produce a pixel map.\n\n");
     
   }
   else{
-    (void) fprintf (stderr, "ANOTHER File of data must now be loaded.\n"); 
+    fprintf (stderr, "ANOTHER File of data must now be loaded.\n"); 
   }
   
 } /* End Function process_file */
@@ -1040,7 +1047,7 @@ flag load_in_iarray (CONST char *inp_file)
   if ( ( multi_desc = foreign_guess_and_read (inp_file, K_CH_MAP_LOCAL,
 					      FALSE, &ftype,
 					      FA_GUESS_READ_END) ) == NULL){
-    (void) fprintf (stderr, "Error reading file: \"%s\"\n", inp_file);
+    fprintf (stderr, "Error reading file: \"%s\"\n", inp_file);
     return (FALSE);
   }
   
@@ -1054,11 +1061,11 @@ flag load_in_iarray (CONST char *inp_file)
        iarray_dealloc (raw_chan1);
    }
     
-    (void) fprintf (stderr, "*****    File1    *****\n");
+    fprintf (stderr, "*****    File1    *****\n");
     if ( (raw_chan1 = iarray_get_from_multi_array (multi_desc, NULL, 2,
 						   NULL,
 						   NULL)) == NULL) {
-      (void) fprintf (stderr, "Error extracting file1 2-D \
+      fprintf (stderr, "Error extracting file1 2-D \
 Intelligent Array\n");
       return (FALSE);
     }
@@ -1071,18 +1078,18 @@ Intelligent Array\n");
     if (!done_once && file2_reloaded){
 	iarray_dealloc (raw_chan2);
     }
-    (void) fprintf (stderr, "*****    File2    *****\n");
+    fprintf (stderr, "*****    File2    *****\n");
     if ( (raw_chan2 = iarray_get_from_multi_array (multi_desc, NULL, 2,
 						    NULL,
 						    NULL)) == NULL) {
-      (void) fprintf (stderr, "Error extracting file2 2-D \
+      fprintf (stderr, "Error extracting file2 2-D \
 Intelligent Array\n");
       return (FALSE);
     }
   }
   
   /* LATER: deallocate multi_desc as it is not needed anymore */
-
+  return (TRUE);
 }   /*  End Function load_in_iarray  */
 
 
@@ -1167,6 +1174,7 @@ static void re_im_2_amp_phs (double re, double im, double *amp, double *phs)
 
 static void data_to_16bit (iarray *amp_data, iarray *phs_data)
 {
+    extern ViewableImage imag_vimage;
 
   /* The 16bit array created from: scaling to 8bit arrays the two input
      channel data arrays ; and merging the two.  The upper 8bits (MSByte)
@@ -1207,7 +1215,13 @@ static void data_to_16bit (iarray *amp_data, iarray *phs_data)
       US2(merge_16bit,i,j) =
 	(  ( ((unsigned short int) UB2(amp_8bit,i,j))  ) << 8  ) ^
 	UB2(phs_8bit,i,j);
-  
+
+  /*  Now that a new 16 bit image is available, destroy any existing
+      ViewableImage and create the new one  */
+  if (imag_vimage != NULL) viewimg_destroy (imag_vimage);
+  imag_vimage = viewimg_create_from_iarray (imag_world_cnvs, merge_16bit,
+					    FALSE);
+  viewimg_make_active (imag_vimage);
 
 } /* End Function data_to_16bit */
 
@@ -1220,10 +1234,6 @@ static void plot_huei(void)
    index to the colourmap.  The RBG colour map (PseudoColour type) is
    created based on the range of  hues, intensities, and the saturation
    value, selected by the user */
-
-
-  ViewableImage imag_vimage;
-
 
   /* scale % slider values of hue, intensity and saturation
      for colourmap routine; the sliders allow the user to effectivly
@@ -1244,16 +1254,13 @@ static void plot_huei(void)
 /* Refresh COLOUR-WEDGE and IMAGE pixel canvases.  If merge_16bit contains
    non NULL values for the first time the image viewable image is created. */
 
-  if (file1selected && file2selected){
-    imag_vimage = viewimg_create_from_iarray (imag_world_cnvs, merge_16bit,
-					      FALSE);
-    viewimg_make_active (imag_vimage);
-  }
 
   /* calculate current colourmap subspace */
   col_hsb_slice_to_rgb_array(cmap_rgb_array,red_mask,green_mask,blue_mask,
 			     min_int,max_int,start_hue,end_hue,sat);  
-  
+
+  /*  This is all that is needed to tell the graphics system to redraw the
+      16 bit image with the new colourtable  */
   kcmap_notify_pixels_changed (cmap);
   
 
@@ -1432,12 +1439,11 @@ void disp_cwedge_init_imag(void)
   viewimg_set_canvas_attributes(cwedge_world_cnvs,
 				VIEWIMG_ATT_INT_X, FALSE,
 				VIEWIMG_ATT_INT_Y, FALSE,
-				VIEWIMG_ATT_MAINTAIN_ASPECT, FALSE,
 				VIEWIMG_ATT_END);
   viewimg_set_canvas_attributes(imag_world_cnvs,
                                 VIEWIMG_ATT_INT_X, FALSE,
                                 VIEWIMG_ATT_INT_Y, FALSE,
-                                VIEWIMG_ATT_MAINTAIN_ASPECT, FALSE,
+                                VIEWIMG_ATT_MAINTAIN_ASPECT, TRUE,
 				VIEWIMG_ATT_AUTO_V, FALSE,
                                 VIEWIMG_ATT_END);
   cwedge_vimage = viewimg_create_from_iarray (cwedge_world_cnvs, cwedge,
@@ -1446,9 +1452,3 @@ void disp_cwedge_init_imag(void)
 
   
 }  /* End Function disp_cwedge_init_imag */
-
-
-
-
-
-

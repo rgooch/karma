@@ -20,39 +20,42 @@ convert			Convert scalar data with scaling option
 dos_headers		Convert #include <karma_*> to #include <k_*> in C files
 extract_functions	Extract list of public functions from C files
 fits2karma		Convert FITS to Karma format
-get_prefix		Extract the package prefix from C files
+gipsy2karma		Convert GIPSY to Karma format
 histogram		Compute the histogram of scalar data
+karma2fits		Convert Karma image file to FITS format
+karma2gipsy		Convert Karma image file to GIPSY format
+karma2miriad		Convert Karma image file to Miriad Image format
 karma2ppm		Convert Karma image file to PPM format
 karma2ps		Convert Karma image file to PostScript
+karma2sunras		Convert Karma image file to Sun Rasterfile
 karma_cm_slave		Slave process for Connection Management
+kcolourmap		Standalone colourmap manipulation tool (for X11)
 kdump			Convert Karma file to ASCII-Karma
 kfuncgen		General 1-dimensional function generator
 kgen			Convert ASCII-Karma file to Karma
 kgetslice		Extract 2-dimensional slice from 3-dimensional datafile
+khuei			Hue-Intensity display tool (for X11)
 kminmax			Find the minimum and maximum of an element
 kimage			Display 2-D slice of data as an image (hard to use)
-kmovie			Display a movie (obsolete)
 knoise			Generate n-dimensional array of random data
+kprinthead		Print the "header" in a Karma data file
+kpvslice		Interactive Position-Velocity slice tool (for X11)
+kregrid			Regrid an image/cube to a different astronomical grid
 kslice_3d		Interactive slicing of a 3-dimensional data set
-kview			Display image or movie (easy to use)
-kview_2d		Display an image (easy to use) (obsolete)
+kview			Display image or movie (for X11, easy to use)
 mandel			Compute the Mandlebrot set
 merge_planes		Combine multiple single-valued arrays into one array
+miriad2gipsy		Convert Miriad Image file to GIPSY format
 miriad2karma		Convert Miriad Image files to Karma format
-persp_3d		Volume render with perspective projection (obsolete)
 ppm2karma		Convert a PPM file to Karma format
 raw_grey2karma		Convert raw binary arrays to Karma format
 raw_planes2karma	Convert multiple raw binary arrays to one Karma file
-raycast_3d		Volume render with parallel projection (obsolete)
 rx			Receive data from a connection
 shader2c		Convert shader code to C code
 sort_packages		Sort packages in Karma
 tile1			Tile an n-dimensional array
 tx			Transmit data over a connection
-xpersp_3d		Graphical User Interface for  persp_3d (obsolete)
 xray			Volume rendering tool
-xraycast_3d		Graphical User Interface for  raycast_3d (obsolete)
-xscale			Graphical User Interface for  xiscale
 
 
 Below follows a brief list of connection management scripts:
@@ -60,5 +63,3 @@ Below follows a brief list of connection management scripts:
 Application			Function
 ===============================================================================
 example				An example connection management script
-xiscale				Interactive scaling and conversion to K_UBYTE
-xrender				Volume render with perspective projection

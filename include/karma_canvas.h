@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   17-APR-1993
 
-    Last updated by Richard Gooch   27-JUN-1996
+    Last updated by Richard Gooch   10-AUG-1996
 
 */
 
@@ -146,15 +146,26 @@ EXTERN_FUNCTION (void canvas_convert_to_canvas_coords,
 EXTERN_FUNCTION (flag canvas_convert_to_canvas_coord,
 		 (KWorldCanvas canvas, double xin, double yin,
 		  double *xout, double *yout) );
+EXTERN_FUNCTION (void canvas_convert_from_canvas_coords,
+		 (KWorldCanvas canvas, flag clip, flag linear,
+		  unsigned int num_coords,
+		  CONST double *xin, CONST double *yin,
+		  double *xout, double *yout) );
 EXTERN_FUNCTION (flag canvas_convert_from_canvas_coord,
 		 (KWorldCanvas canvas, double xin, double yin,
 		  int *xout, int *yout) );
+EXTERN_FUNCTION (void canvas_register_coords_convert_func,
+		 (KWorldCanvas canvas, flag (*coord_convert_func) (),
+		  void *info) );
 EXTERN_FUNCTION (void canvas_register_d_convert_func,
 		 (KWorldCanvas canvas, flag (*coord_convert_func) (),
 		  void *info) );
 EXTERN_FUNCTION (void canvas_register_convert_func,
 		 (KWorldCanvas canvas, flag (*coord_convert_func) (),
 		  void *info) );
+EXTERN_FUNCTION (void canvas_coords_transform,
+		 (KWorldCanvas canvas, unsigned int num_coords,
+		  double *x, flag x_to_linear, double *y, flag y_to_linear) );
 EXTERN_FUNCTION (flag canvas_coord_transform,
 		 (KWorldCanvas canvas, double *x, double *y, flag to_linear) );
 EXTERN_FUNCTION (void canvas_register_transforms_func,
@@ -165,7 +176,7 @@ EXTERN_FUNCTION (void canvas_register_transform_func,
 		  void *info) );
 EXTERN_FUNCTION (KPixCanvas canvas_get_pixcanvas, (KWorldCanvas canvas) );
 EXTERN_FUNCTION (flag canvas_get_colour,
-		 (KWorldCanvas canvas, char *colourname,
+		 (KWorldCanvas canvas, CONST char *colourname,
 		  unsigned long *pixel_value, unsigned short *red,
 		  unsigned short *green, unsigned short *blue) );
 EXTERN_FUNCTION (void canvas_set_dressing, (KWorldCanvas canvas, ...) );
@@ -235,13 +246,22 @@ EXTERN_FUNCTION (void canvas_fill_rectangle_p, (KWorldCanvas canvas,
 						double x, double y,
 						double width, double height,
 						unsigned long pixel_value) );
-EXTERN_FUNCTION (void canvas_draw_lines, (KWorldCanvas canvas,
-					  double *x_array, double *y_array,
-					  int num_points, double value[2]) );
-EXTERN_FUNCTION (void canvas_draw_lines_p, (KWorldCanvas canvas,
-					    double *x_array, double *y_array,
-					    int num_points,
-					    unsigned long pixel_value) );
+EXTERN_FUNCTION (void canvas_draw_lines,
+		 (KWorldCanvas canvas,
+		  CONST double *x_array, CONST double *y_array,
+		  int num_points, double value[2]) );
+EXTERN_FUNCTION (void canvas_draw_lines_p,
+		 (KWorldCanvas canvas,
+		  CONST double *x_array, CONST double *y_array,
+		  int num_points, unsigned long pixel_value) );
+EXTERN_FUNCTION (void canvas_draw_segments,
+		 (KWorldCanvas canvas, CONST double *x0, CONST double *y0,
+		  CONST double *x1, CONST double *y1,
+		  int num_segments, double value[2]) );
+EXTERN_FUNCTION (void canvas_draw_segments_p,
+		 (KWorldCanvas canvas, CONST double *x0, CONST double *y0,
+		  CONST double *x1, CONST double *y1,
+		  int num_segments, unsigned long pixel_value) );
 
 
 /*  Image editing related functions  */

@@ -25,7 +25,7 @@
 
 # Written by            Richard Gooch   2-MAY-1996
 
-# Last updated by       Richard Gooch   2-MAY-1996
+# Last updated by       Richard Gooch   22-AUG-1996
 
 
 set unknown = "UNKNOWN_unknown"
@@ -73,8 +73,8 @@ endif
 # SunOS 4.x and Solaris 2.x
 if ("$full_uname[1]" == "SunOS") then
     # Sun, in their arrogance, call Solaris 2 "SunOS 5.x". Nobody is fooled.
-    set os_rev = `echo "$full_uname[3]" | sed -e 's/. //'`
-    switch ("$os_rev")
+    set os_rev = `echo "$full_uname[3]" | sed -e 's/\./ /'`
+    switch ("$os_rev[1]")
       case "4":
 	set OS = "SunOS"
 	if (`echo "$full_uname[5]" | fgrep -c "sun4"` == "0") then
@@ -90,6 +90,10 @@ if ("$full_uname[1]" == "SunOS") then
 	    exit 2
 	endif
 	set MACHINE = "sparc"
+	breaksw
+      default:
+	echo "$unknown"
+	exit 2
 	breaksw
     endsw
     echo "${MACHINE}_${OS}"

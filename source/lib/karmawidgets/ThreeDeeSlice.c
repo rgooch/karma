@@ -80,8 +80,11 @@
     Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
 
-    Last updated by Richard Gooch   4-JUN-1996: Switched to left-right
+    Updated by      Richard Gooch   4-JUN-1996: Switched to left-right
   bottom-top co-ordinate specification instead of min-max x and y.
+
+    Last updated by Richard Gooch   21-JUL-1996: Changed to
+  <canvas_convert_from_canvas_coords>.
 
 
 */
@@ -801,6 +804,7 @@ static void refresh_canvas (KWorldCanvas canvas, double wx, double wy)
 */
 {
     int px, py, xoff, yoff, width, height;
+    double x, y;
     KPixCanvasRefreshArea areas[2];
 
     /*  Compute area  */
@@ -810,7 +814,10 @@ static void refresh_canvas (KWorldCanvas canvas, double wx, double wy)
 			   CANVAS_ATT_X_PIXELS, &width,
 			   CANVAS_ATT_Y_PIXELS, &height,
 			   CANVAS_ATT_END);
-    canvas_convert_from_canvas_coord (canvas, wx, wy, &px, &py);
+    canvas_convert_from_canvas_coords (canvas, FALSE, FALSE, 1,
+				       &wx, &wy, &x, &y);
+    px = x;
+    py = y;
     /*  Area for the horizontal line  */
     areas[0].startx = xoff;
     areas[0].endx = xoff + width - 1;

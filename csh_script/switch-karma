@@ -95,3 +95,12 @@ foreach i ($cdpath)
 end
 set cdpath = ($_cdpath)
 unset _cdpath
+
+# Set version number environment variable
+set _versionfile = $KARMAINCLUDEPATH/k_version.h
+set tmp = `fgrep KARMA_VERSION $_versionfile | tr '"' ' '`
+setenv KARMA_VERSION "$tmp[$#tmp]"
+if ("$KARMA_VERSION" == "") then
+    echo "WARNING: KARMA_VERSION environment variable could not be computed."
+endif
+unset _versionfile

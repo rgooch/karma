@@ -56,8 +56,13 @@
 
     Updated by      Richard Gooch   19-APR-1995: Cleaned some code.
 
-    Last updated by Richard Gooch   9-APR-1996: Changed to new documentation
+    Updated by      Richard Gooch   9-APR-1996: Changed to new documentation
   format.
+
+    Updated by      Richard Gooch   16-AUG-1996: Created <ds_autotile_array>.
+
+    Last updated by Richard Gooch   30-SEP-1996: Fixed bug in
+  <ds_remove_tiling_info> which did not set bottom tile lengths.
 
 
 */
@@ -629,14 +634,14 @@ void ds_remove_tiling_info (array_desc *arr_desc)
     [RETURNS] Nothing.
 */
 {
-    unsigned int dim_count;
+    unsigned int count;
 
     if (arr_desc->num_levels > 0)
     {
-	for (dim_count = 0; dim_count < arr_desc->num_dimensions;
-	     ++dim_count)
+	for (count = 0; count < arr_desc->num_dimensions; ++count)
 	{
-	    m_free ( (char *) arr_desc->tile_lengths[dim_count] );
+	    m_free ( (char *) arr_desc->tile_lengths[count] );
+	    arr_desc->lengths[count] = arr_desc->dimensions[count]->length;
 	}
 	m_free ( (char *) arr_desc->tile_lengths );
 	arr_desc->num_levels = 0;
@@ -750,6 +755,89 @@ flag ds_append_gen_struct (multi_array *multi_desc, packet_desc *pack_desc,
     ++multi_desc->num_arrays;
     return (TRUE);
 }   /*  End Function ds_append_gen_struct  */
+
+/*EXPERIMENTAL_FUNCTION*/
+flag ds_autotile_array (array_desc *arr_desc, flag allow_truncate)
+/*  [SUMMARY] Choose tiling scheme automatically.
+    [PURPOSE] This routine will choose an opimum tiling scheme for an array.
+    <arr_desc> The array descriptor. This is modified.
+    <allow_truncate> If TRUE, the routine will shorten the lengths of
+    dimensions to allow tiling.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    unsigned int dim_count, divisor, trunc;
+    dim_desc *dim;
+    static char function_name[] = "ds_autotile_array";
+
+    if (arr_desc->num_levels > 0)
+    {
+	fprintf (stderr, "Array must not be pre-tiled!\n");
+	a_prog_bug (function_name);
+    }
+    if (arr_desc->offsets != NULL)
+    {
+	fprintf (stderr, "Array must not have offsets already computed\n");
+	a_prog_bug (function_name);
+    }
+    /*  First a quick test on the lengths  */
+    if (!allow_truncate)
+    {
+	for (dim_count = 0; dim_count < arr_desc->num_dimensions; ++dim_count)
+	{
+	    dim = arr_desc->dimensions[dim_count];
+	    if (dim->length % 4 != 0)
+	    {
+		fprintf (stderr,
+			 "%s: dimension: \"%s\" (length = %lu) not divisible by 4\n",
+			 function_name, dim->name, dim->length);
+		return (FALSE);
+	    }
+	}
+    }
+    /*  All dimensions have a favourable length or may be truncated. Allocate
+	tiling space and then fiddle  */
+    if ( !ds_alloc_tiling_info (arr_desc, 1) )
+    {
+	m_error_notify (function_name, "tiling information");
+	return (FALSE);
+    }
+    for (dim_count = 0; dim_count < arr_desc->num_dimensions; ++dim_count)
+    {
+	dim = arr_desc->dimensions[dim_count];
+	/*  Try to find largest divisor  */
+	for (divisor = 20; (divisor > 3) && (dim->length % divisor != 0);
+	     --divisor);
+	if (divisor < 4)
+	{
+	    /*  Need to truncate dimension: first fiddle world co-ordinates  */
+	    trunc = dim->length % 4;
+	    fprintf (stderr,
+		     "Truncating dimension: \"%s\" (length = %lu) by %u\n",
+		     dim->name, dim->length, trunc);
+	    dim->last_coord = ds_get_coordinate (dim, dim->length - trunc - 1);
+	    if (dim->first_coord < dim->last_coord)
+	    {
+		dim->minimum = dim->first_coord;
+		dim->maximum = dim->last_coord;
+	    }
+	    else
+	    {
+		dim->minimum = dim->last_coord;
+		dim->maximum = dim->first_coord;
+	    }
+	    dim->length -= trunc;
+	    /*  Now find divisor again: if we're lucky, it will be some
+		multiple of 4 other than 4  */
+	    for (divisor = 20; (divisor > 3) && (dim->length % divisor != 0);
+		 --divisor);
+	}
+	/*  Dimension length is a multiple of <divisor>  */
+	arr_desc->lengths[dim_count] = divisor;
+	arr_desc->tile_lengths[dim_count][0] = dim->length / divisor;
+    }
+    return (TRUE);
+}   /*  End Function ds_autotile_array  */
 
 
 /*  Private functions follow  */

@@ -13,6 +13,8 @@
 </td></tr>
 <tr><td><a href=iarray.html#iarray_register_destroy_func>iarray_register_destroy_func</a></td><td>Register destroy function for an Intelligent Array
 </td></tr>
+<tr><td><a href=iarray.html#iarray_contour>iarray_contour</a></td><td>Extract contours from a 2-dimensional Intelligent Array.
+</td></tr>
 <tr><td><a href=iarray.html#iarray_get_image_from_multi>iarray_get_image_from_multi</a></td><td>Get an image from a Karma data structure.
 </td></tr>
 <tr><td><a href=iarray.html#iarray_get_movie_from_multi>iarray_get_movie_from_multi</a></td><td>Get a movie from a Karma data structure.
@@ -35,29 +37,15 @@
 </td></tr>
 <tr><td><a href=iarray.html#iarray_get_named_string>iarray_get_named_string</a></td><td>Get attached string from an Intelligent Array.
 </td></tr>
-<tr><td><a href=iarray.html#iarray_copy_data>iarray_copy_data</a></td><td>Copy data between Intelligent Arrays.
-</td></tr>
 <tr><td><a href=iarray.html#iarray_get_sub_array_2D>iarray_get_sub_array_2D</a></td><td>Create a 2-dimensional alias Intelligent Array.
 </td></tr>
 <tr><td><a href=iarray.html#iarray_get_2D_slice_from_3D>iarray_get_2D_slice_from_3D</a></td><td>Create a 2-dimensional Intelligent Array alias from a slice.
 </td></tr>
+<tr><td><a href=iarray.html#iarray_remap_torus>iarray_remap_torus</a></td><td>Remap Intelligent Array into a torus.
+</td></tr>
 <tr><td><a href=iarray.html#iarray_dim_length>iarray_dim_length</a></td><td>Get length of a dimension in an Intelligent Array.
 </td></tr>
-<tr><td><a href=iarray.html#iarray_get_restrictions>iarray_get_restrictions</a></td><td>Get restriction information.
-</td></tr>
-<tr><td><a href=iarray.html#iarray_fill>iarray_fill</a></td><td>Fill an Intelligent Array with a single value.
-</td></tr>
-<tr><td><a href=iarray.html#iarray_min_max>iarray_min_max</a></td><td>Determine the minimum and maximum value of an Intelligent Array.
-</td></tr>
-<tr><td><a href=iarray.html#iarray_scale_and_offset>iarray_scale_and_offset</a></td><td>Scale and offset an Intelligent Array.
-</td></tr>
-<tr><td><a href=iarray.html#iarray_add_and_scale>iarray_add_and_scale</a></td><td>Add Intelligent Arrays and scale.
-</td></tr>
-<tr><td><a href=iarray.html#iarray_sub_and_scale>iarray_sub_and_scale</a></td><td>Subtract Intelligent Arrays and scale.
-</td></tr>
 <tr><td><a href=iarray.html#iarray_dim_name>iarray_dim_name</a></td><td>Get dimension name in an Intelligent Array.
-</td></tr>
-<tr><td><a href=iarray.html#iarray_remap_torus>iarray_remap_torus</a></td><td>Remap Intelligent Array into a torus.
 </td></tr>
 <tr><td><a href=iarray.html#iarray_set_world_coords>iarray_set_world_coords</a></td><td>Set the world co-ordinates of an Intelligent Array dimension.
 </td></tr>
@@ -65,13 +53,45 @@
 </td></tr>
 <tr><td><a href=iarray.html#iarray_get_dim_desc>iarray_get_dim_desc</a></td><td>Get a dimension descriptor from an Intelligent Array.
 </td></tr>
+<tr><td><a href=iarray.html#iarray_get_restrictions>iarray_get_restrictions</a></td><td>Get restriction information.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_copy_data>iarray_copy_data</a></td><td>Copy data between Intelligent Arrays.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_fill>iarray_fill</a></td><td>Fill an Intelligent Array with a single value.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_min_max>iarray_min_max</a></td><td>Determine the minimum and maximum value of an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_scale_and_offset>iarray_scale_and_offset</a></td><td>Scale and offset an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_clip_scale_and_offset>iarray_clip_scale_and_offset</a></td><td>Clip, scale and offset an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_add_and_scale>iarray_add_and_scale</a></td><td>Add Intelligent Arrays and scale.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_sub_and_scale>iarray_sub_and_scale</a></td><td>Subtract Intelligent Arrays and scale.
+</td></tr>
 <tr><td><a href=iarray.html#iarray_compute_histogram>iarray_compute_histogram</a></td><td>Compute a histogram of an "Intelligent Array".
+</td></tr>
+<tr><td><a href=iarray.html#iarray_sum>iarray_sum</a></td><td>Determine the sum of an Intelligent Array.
 </td></tr>
 <tr><td><a href=iarray.html#iarray_dim_index>iarray_dim_index</a></td><td>This routine will find the index of a named dimension.
 </td></tr>
 <tr><td><a href=iarray.html#iarray_get_data_scaling>iarray_get_data_scaling</a></td><td>Get the scale and offset for data in an Intelligent Array.
 </td></tr>
 <tr><td><a href=iarray.html#iarray_set_data_scaling>iarray_set_data_scaling</a></td><td>Set the scale and offset for data in an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_format_value>iarray_format_value</a></td><td>Format a data value into a string.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_create_from_template>iarray_create_from_template</a></td><td>Create an Intelligent Array from a template array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_get_coordinate>iarray_get_coordinate</a></td><td>Get a co-ordinate along a dimension.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_set_dim_name>iarray_set_dim_name</a></td><td>Change the name of a dimension of an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_append_history_string>iarray_append_history_string</a></td><td>Add a history string to an Intelligent Array.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_copy_named_element>iarray_copy_named_element</a></td><td>Copy a named element from one Intelligent Array to another.
+</td></tr>
+<tr><td><a href=iarray.html#iarray_get_fits_axis>iarray_get_fits_axis</a></td><td>Get the FITS axis number of a dimension.
 </td></tr>
 <tr><td><a href=iarray.html#iarray_write_mono_ps>iarray_write_mono_ps</a></td><td>Write an Intelligent Array as monochrome PostScript.
 </td></tr>
@@ -138,6 +158,38 @@
 <br><li><i>info :</i> 
     The arbitrary information pointer.
 <br></ul><b>Returns:</b>     The name of the data in the array.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_contour></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>unsigned int
+ <b>iarray_contour</b><i>    (iarray array, unsigned int num_contours,
+			     CONST double *contour_levels,
+			     uaddr *buf_size,
+			     double **x0_arr, double **y0_arr,
+			     double **x1_arr, double **y1_arr)
+</i><br><p>    This routine will extract contours from a 2-dimensional
+    Intelligent Array, producing a list of line segments that approximate the
+    countours. The co-ordinates of the line segments are in linear world
+    co-ordinates.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The array.
+<br><li><i>num_contours :</i> 
+    The number of contour levels.
+<br><li><i>contour_levels :</i> 
+    The array of contour levels.
+<br><li><i>buf_size :</i> 
+    A pointer to the size of the co-ordinate arrays. This is
+    modified.
+<br><li><i>x0_arr :</i> 
+    A pointer to a co-ordinate array pointer. The co-ordinate array
+    may be internally reallocated, hence the array pointer may be modified.
+<br><li><i>y0_arr :</i> 
+    A pointer to a co-ordinate array pointer. The co-ordinate array
+    may be internally reallocated, hence the array pointer may be modified.
+<br><li><i>x1_arr :</i> 
+    A pointer to a co-ordinate array pointer. The co-ordinate array
+    may be internally reallocated, hence the array pointer may be modified.
+<br><li><i>y1_arr :</i> 
+    A pointer to a co-ordinate array pointer. The co-ordinate array
+    may be internally reallocated, hence the array pointer may be modified.
+<br></ul><b>Returns:</b>     The number of line segments extracted.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_image_from_multi></a> flag
  <b>iarray_get_image_from_multi</b><i>    (multi_array *multi_desc, iarray *pseudo,
 				  iarray *red, iarray *green, iarray *blue,
@@ -343,7 +395,8 @@
     The value of the data.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_put_named_string></a> flag
- <b>iarray_put_named_string</b><i>    (iarray array, CONST char *name, char *string)
+ <b>iarray_put_named_string</b><i>    (iarray array, CONST char *name,
+			      CONST char *string)
 </i><br><p>    This routine will add a unique named string to the underlying
     Karma general data structure of an "Intelligent Array".
 <p><b>Parameters:</b><ul><li><i>array :</i> 
@@ -378,23 +431,7 @@
     The name of the element.
 <br></ul><b>Returns:</b>     A pointer to a dynamically allocated copy of the string on
     success, else NULL.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_copy_data></a> flag
- <b>iarray_copy_data</b><i>    (iarray output, iarray input, flag magnitude)
-</i><br><p>    This routine will copy data from one "Intelligent Array" to
-    another. The sizes of the two arrays must be identical.
-    The routine can deal with the types of the two arrays being different
-<p><b>Parameters:</b><ul><li><i>output :</i> 
-    The output Intelligent Array.
-<br><li><i>input :</i> 
-    The input Intelligent Array.
-<br><li><i>magnitude :</i> 
-    If TRUE then when converting from a complex array to a real
-    array, the magnitude of the complex data is taken, else the real component
-    is copied.
-<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
-<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     When converting from a real array to a complex data array, the
-    imaginary components are set to zero.
-</ul><p><hr> <a name=iarray_get_sub_array_2D></a> iarray
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_sub_array_2D></a> iarray
  <b>iarray_get_sub_array_2D</b><i>    (iarray array, int starty, int startx,
 				unsigned int ylen, unsigned int xlen)
 </i><br><p>    This routine will create an "Intelligent Array" which is an alias
@@ -434,7 +471,17 @@
     dimension in the 3-D array.
 <br></ul><b>Returns:</b>     A dynamically allocated intelligent array on success, else NULL.
 <br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     Alias arrays cannot be saved to disc.
-</ul><p><hr> <a name=iarray_dim_length></a> unsigned long
+</ul><p><hr> <a name=iarray_remap_torus></a> void
+ <b>iarray_remap_torus</b><i>    (iarray array, unsigned int boundary_width)
+</i><br><p>    This routine will remap an N-dimensional "Intelligent Array" to a
+    pseudo-toroidal array.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>boundary_width :</i> 
+    The width of the array boundary within which the array
+    appears to be toroidal.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_dim_length></a> unsigned long
  <b>iarray_dim_length</b><i>    (iarray array, unsigned int index)
 </i><br><p>    Get length of a dimension in an Intelligent Array.
 <p><b>Parameters:</b><ul><li><i>array :</i> 
@@ -442,6 +489,49 @@
 <br><li><i>index :</i> 
     The index of the dimension.
 <br></ul><b>Returns:</b>     The length of the specified dimension.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_dim_name></a> CONST char *
+ <b>iarray_dim_name</b><i>    (iarray array, unsigned int index)
+</i><br><p>    This routine will get the name of a specified dimension in a
+    simple, n-dimensional array.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>index :</i> 
+    The index of the dimension.
+<br></ul><b>Returns:</b>     A pointer to the name of the specified dimension.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_set_world_coords></a> void
+ <b>iarray_set_world_coords</b><i>    (iarray array, unsigned int index, double first,
+			      double last)
+</i><br><p>    Set the world co-ordinates of an Intelligent Array dimension.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>index :</i> 
+    The index of the dimension.
+<br><li><i>first :</i> 
+    The first real world co-ordinate.
+<br><li><i>last :</i> 
+    The last real world co-ordinate.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_world_coords></a> void
+ <b>iarray_get_world_coords</b><i>    (iarray array, unsigned int index,
+			      double *first, double *last)
+</i><br><p>    Get the world co-ordinates of an Intelligent Array dimension.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>index :</i> 
+    The index of the dimension.
+<br><li><i>first :</i> 
+    The first real world co-ordinate is written here.
+<br><li><i>last :</i> 
+    The last real world co-ordinate is written here.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_dim_desc></a> dim_desc *
+ <b>iarray_get_dim_desc</b><i>    (iarray array, unsigned int index)
+</i><br><p>    Get a dimension descriptor from an Intelligent Array.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>index :</i> 
+    The index of the dimension.
+<br></ul><b>Returns:</b>     A pointer to the dimension descriptor.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_restrictions></a> unsigned int
  <b>iarray_get_restrictions</b><i>    (iarray array, char ***restr_names,
 				      double **restr_values)
@@ -456,7 +546,23 @@
 <br><li><i>restr_values :</i> 
     The array of restriction values will be written here.
 <br></ul><b>Returns:</b>     The number of restrictions. This may be 0.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_fill></a> flag
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_copy_data></a> flag
+ <b>iarray_copy_data</b><i>    (iarray output, iarray input, flag magnitude)
+</i><br><p>    This routine will copy data from one "Intelligent Array" to
+    another. The sizes of the two arrays must be identical.
+    The routine can deal with the types of the two arrays being different
+<p><b>Parameters:</b><ul><li><i>output :</i> 
+    The output Intelligent Array.
+<br><li><i>input :</i> 
+    The input Intelligent Array.
+<br><li><i>magnitude :</i> 
+    If TRUE then when converting from a complex array to a real
+    array, the magnitude of the complex data is taken, else the real component
+    is copied.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     When converting from a real array to a complex data array, the
+    imaginary components are set to zero.
+</ul><p><hr> <a name=iarray_fill></a> flag
  <b>iarray_fill</b><i>    (iarray array, double value[2])
 </i><br><p>    Fill an Intelligent Array with a single value.
 <p><b>Parameters:</b><ul><li><i>array :</i> 
@@ -502,6 +608,31 @@
     necessarily the same type).
 <li>     When converting from a real to a complex array, the imaginary
     component of the output array is set to 0.
+</ul><p><hr> <a name=iarray_clip_scale_and_offset></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>flag
+ <b>iarray_clip_scale_and_offset</b><i>    (iarray out, iarray inp, double scale,
+				   double offset,
+				   double lower_clip, double upper_clip,
+				   flag blank)
+</i><br><p>    This routine will perform a clipping operation followed by a
+    scale and offset on every element in  an "Intelligent Array". The operation
+    following the clipping is: (output = input * scale + offset).
+<p><b>Parameters:</b><ul><li><i>out :</i> 
+    The output Intelligent Array.
+<br><li><i>inp :</i> 
+    The input Intelligent Array.
+<br><li><i>scale :</i> 
+    The scale value.
+<br><li><i>offset :</i> 
+    The offset value.
+<br><li><i>lower_clip :</i> 
+    The input data is clipped so that no value is below this.
+<br><li><i>upper_clip :</i> 
+    The input data is clipped so that no value is above this.
+<br><li><i>blank :</i> 
+    If TRUE, clipped values are blanked.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     The input and output arrays MUST be the same size (though not
+    necessarily the same type). Both arrays must be real.
 </ul><p><hr> <a name=iarray_add_and_scale></a> flag
  <b>iarray_add_and_scale</b><i>    (iarray out, iarray inp1, iarray inp2,
 			   double scale[2], flag magnitude)
@@ -548,60 +679,7 @@
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe<br><b>Note:</b><ul> <li>     When converting from a real to a complex data type, the imaginary
     component is set to zero.
-</ul><p><hr> <a name=iarray_dim_name></a> CONST char *
- <b>iarray_dim_name</b><i>    (iarray array, unsigned int index)
-</i><br><p>    This routine will get the name of a specified dimension in a
-    simple, n-dimensional array.
-<p><b>Parameters:</b><ul><li><i>array :</i> 
-    The Intelligent Array.
-<br><li><i>index :</i> 
-    The index of the dimension.
-<br></ul><b>Returns:</b>     A pointer to the name of the specified dimension.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_remap_torus></a> void
- <b>iarray_remap_torus</b><i>    (iarray array, unsigned int boundary_width)
-</i><br><p>    This routine will remap an N-dimensional "Intelligent Array" to a
-    pseudo-toroidal array.
-<p><b>Parameters:</b><ul><li><i>array :</i> 
-    The Intelligent Array.
-<br><li><i>boundary_width :</i> 
-    The width of the array boundary within which the array
-    appears to be toroidal.
-<br></ul><b>Returns:</b>     Nothing.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_set_world_coords></a> void
- <b>iarray_set_world_coords</b><i>    (iarray array, unsigned int index, double first,
-			      double last)
-</i><br><p>    Set the world co-ordinates of an Intelligent Array dimension.
-<p><b>Parameters:</b><ul><li><i>array :</i> 
-    The Intelligent Array.
-<br><li><i>index :</i> 
-    The index of the dimension.
-<br><li><i>first :</i> 
-    The first real world co-ordinate.
-<br><li><i>last :</i> 
-    The last real world co-ordinate.
-<br></ul><b>Returns:</b>     Nothing.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_world_coords></a> void
- <b>iarray_get_world_coords</b><i>    (iarray array, unsigned int index,
-			      double *first, double *last)
-</i><br><p>    Get the world co-ordinates of an Intelligent Array dimension.
-<p><b>Parameters:</b><ul><li><i>array :</i> 
-    The Intelligent Array.
-<br><li><i>index :</i> 
-    The index of the dimension.
-<br><li><i>first :</i> 
-    The first real world co-ordinate is written here.
-<br><li><i>last :</i> 
-    The last real world co-ordinate is written here.
-<br></ul><b>Returns:</b>     Nothing.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_dim_desc></a> dim_desc *
- <b>iarray_get_dim_desc</b><i>    (iarray array, unsigned int index)
-</i><br><p>    Get a dimension descriptor from an Intelligent Array.
-<p><b>Parameters:</b><ul><li><i>array :</i> 
-    The Intelligent Array.
-<br><li><i>index :</i> 
-    The index of the dimension.
-<br></ul><b>Returns:</b>     A pointer to the dimension descriptor.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_compute_histogram></a> flag
+</ul><p><hr> <a name=iarray_compute_histogram></a> flag
  <b>iarray_compute_histogram</b><i>    (iarray array, unsigned int conv_type,
 			       double min, double max, unsigned long num_bins,
 			       unsigned long *histogram_array,
@@ -630,6 +708,15 @@
     The mode of the histogram (index value of the peak) will
     be written here. This value is updated, and hence must be externally
     initialised to 0.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe.
+<br><p><hr> <a name=iarray_sum></a> flag
+ <b>iarray_sum</b><i>    (iarray array, double sum[2])
+</i><br><p>    Determine the sum of an Intelligent Array.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>sum :</i> 
+    The routine will write the sum here.
 <br></ul><b>Returns:</b>     TRUE on success, else FALSE.
 <br><b>Multithreading Level:</b> Unsafe.
 <br><p><hr> <a name=iarray_dim_index></a> unsigned int
@@ -684,6 +771,112 @@
     appending "__OFFSET" to the array value name(see <a href=iarray.html#iarray_get_value_name>iarray_get_value_name</a>)
 <br></ul><b>Returns:</b>     TRUE if the scaling information is different from what was
     already attached to the array, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_format_value></a> <font color="cc0000"><h4>EXPERIMENTAL FUNCTION: subject to change without notice</h4></font>void
+ <b>iarray_format_value</b><i>    (iarray array, char string[STRING_LENGTH],
+			  double value, double scale, double offset)
+</i><br><p>    Format a data value into a string.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array the value is associated with.
+<br><li><i>string :</i> 
+    The string to write to.
+<br><li><i>value :</i> 
+    The value to format.
+<br><li><i>scale :</i> 
+    The scale value to apply to the data. If this is TOOBIG the routine
+    uses the scale and offset attached to the array. See
+    <a href=iarray.html#iarray_set_data_scaling>iarray_set_data_scaling</a> for details.
+<br><li><i>offset :</i> 
+    The offset to apply after scaling the data.
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_create_from_template></a> iarray
+ <b>iarray_create_from_template</b><i>    (iarray template_arr,unsigned int elem_type,
+				    flag copy_world_coords, flag copy_names,
+				    flag copy_aux_info)
+</i><br><p>    This routine will create an Intelligent Array of a specified type
+    using an existing Intelligent Array as the template for the size,
+    dimensionality and other attributes.
+<p><b>Parameters:</b><ul><li><i>template_arr :</i> 
+    The template Intelligent Array.
+<br><li><i>elem_type :</i> 
+    The element type for the new Intelligent Array.
+<br><li><i>copy_world_coords :</i> 
+    If TRUE, the world co-ordinates for each dimension in
+    the template array are copied, otherwise the defaults are used.
+<br><li><i>copy_names :</i> 
+    If TRUE, the dimension names and the value name of the
+    template array are copied, else the defaults are used.
+<br><li><i>copy_aux_info :</i> 
+    If TRUE, auxilary information (attachments) in the template
+    array is copied to the new array.
+<br></ul><b>Returns:</b>     An Intelligent Array on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_coordinate></a> double
+ <b>iarray_get_coordinate</b><i>    (iarray array, unsigned int dim_index,
+			      double coord_index)
+</i><br><p>    Get a co-ordinate along a dimension.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>dim_index :</i> 
+    The dimension index.
+<br><li><i>coord_index :</i> 
+    The co-ordinate index.
+<br></ul><b>Returns:</b>     The co-ordinate on success, else TOOBIG.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_set_dim_name></a> void
+ <b>iarray_set_dim_name</b><i>    (iarray array, unsigned int index, CONST char *name,
+			  flag new_alloc)
+</i><br><p>    Change the name of a dimension of an Intelligent Array.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>index :</i> 
+    The index of the dimension.
+<br><li><i>name :</i> 
+    The new dimension name.
+<br><li><i>new_alloc :</i> 
+    If TRUE, the routine will allocate a new copy of the dimension
+    name, else it will copy the pointer (in which case the name must never be
+    externally deallocated or changed).
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_append_history_string></a> flag
+ <b>iarray_append_history_string</b><i>    (iarray array, CONST char *string,
+				   flag new_alloc)
+</i><br><p>    Add a history string to an Intelligent Array.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>string :</i> 
+    The history string to add.
+<br><li><i>new_alloc :</i> 
+    If TRUE, the routine will allocate a new copy of the history
+    string, else it will copy the pointer (in which case the string must never
+    be externally deallocated or changed).
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_copy_named_element></a> flag
+ <b>iarray_copy_named_element</b><i>    (iarray out, iarray in, CONST char *name,
+				flag fail_if_not_found,
+				flag fail_on_duplicate, flag replace)
+</i><br><p>    Copy a named element from one Intelligent Array to another.
+<p><b>Parameters:</b><ul><li><i>out :</i> 
+    The output Intelligent Array.
+<br><li><i>in :</i> 
+    The input Intelligent Array.
+<br><li><i>name :</i> 
+    The name of the element to copy.
+<br><li><i>fail_if_not_found :</i> 
+    If TRUE, the routine will fail if the element does not
+    exist in the input packet.
+<br><li><i>fail_on_duplicate :</i> 
+    If TRUE, the routine will fail if the element already
+    exists in the output packet.
+<br><li><i>replace :</i> 
+    If TRUE and the element already exists in the output packet, it
+    is replaced.
+<br></ul><b>Returns:</b>     TRUE on success, else FALSE.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_get_fits_axis></a> unsigned int
+ <b>iarray_get_fits_axis</b><i>    (iarray array, unsigned int index)
+</i><br><p>    Get the FITS axis number of a dimension.
+<p><b>Parameters:</b><ul><li><i>array :</i> 
+    The Intelligent Array.
+<br><li><i>index :</i> 
+    The index of the dimension.
+<br></ul><b>Returns:</b>     The FITS axis number on success, else 0.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=iarray_write_mono_ps></a> flag
  <b>iarray_write_mono_ps</b><i>    (iarray image, PostScriptPage pspage,
 			   double xstart, double ystart,
@@ -962,9 +1155,11 @@
 </ul><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=IARRAY_PROTO_destroy_func></a> void
  <b>IARRAY_PROTO_destroy_func</b><i>    (iarray array, void *info)
 </i><br><p>    Register destruction of an Intelligent Array.
-<p><b>Parameters:</b><ul><li><i>array
+<p><b>Parameters:</b><ul><li><i>array :</i> 
     The Intelligent Array.
-:</i> <br><li><i>info
+<br><li><i>info :</i> 
     A pointer to the arbitrary information.
-:</i> <br></ul><b>Returns:</b>     Nothing.
-<br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>
+<br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p>
+<hr><a href="../index.html">Back to Karma Home Page</a>
+<hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.ariel.com.au/">Ariel Internet Services</a></address></center></body></html>

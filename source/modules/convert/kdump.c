@@ -65,6 +65,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+#include <errno.h>
 #include <karma.h>
 #include <karma_module.h>
 #include <karma_dsxfr.h>
@@ -158,7 +159,6 @@ flag comments;
     char *dest_ptr;
     multi_array *multi_desc;
     extern int data_format;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "extract_files";
 

@@ -9,17 +9,19 @@ Purpose:
 While the Karma data format is a very fast and compact way of storing
 data, for some reason not everyone uses this format. Hence a means of
 reading in data in other formats and converting to Karma format is
-required. The <foreign_> package provides routines which will read
+required. The <foreign> package provides routines which will read
 many different formats, including:
 
   + FITS
   + PPM (Portable Pixel Map)
   + Sun Rasterfile
+  + Miriad Image file
+  + GIPSY (Groningen Image Processing SYstem)
 
-The <foreign_> package also provides routines to write a Karma data
+The <foreign> package also provides routines to write a Karma data
 structure to a file in a foreign data format.
 
-Combined with the powerful "Intelligent Array" package (<iarray_>) in
+Combined with the powerful "Intelligent Array" package (<iarray>) in
 the Karma library, easy access to foreign data is possible.
 
 

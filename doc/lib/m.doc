@@ -10,14 +10,14 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         m_alloc
-$RETURN_TYPE      char *
+$FUNCTION           m_alloc
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (uaddr size)
-$SUMMARY          Allocate Virtual Memory.
+$SUMMARY            Allocate Virtual Memory.
 $PURPOSE
     Allocate Virtual Memory.
-$PARAMETER        size :
+$PARAMETER          size :
     The number of bytes to allocate.
 $MT-LEVEL         Safe under Solaris 2.
 $RETURNS
@@ -28,17 +28,20 @@ $NOTE
 $NOTE
     If the environment variable "M_ALLOC_FAST" is set to "TRUE" then NO
     periodic integrity check of memory is performed and no debugging
+$NOTE
+    The "M_ALLOC_MAX_CHECK_INTERVAL" environment variable controls the
+    maximum interval between integrity checks.
     information will be printed.
 $END
 
-$FUNCTION         m_free
-$RETURN_TYPE      void
+$FUNCTION           m_free
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (char *ptr)
-$SUMMARY          Free Virtual Memory.
+$SUMMARY            Free Virtual Memory.
 $PURPOSE
     Free Virtual Memory.
-$PARAMETER        ptr :
+$PARAMETER          ptr :
     The start of a previously allocated block of memory to be freed.
 $MT-LEVEL         Safe.
 $RETURNS
@@ -48,60 +51,60 @@ $NOTE
     the routine will print deallocation debugging information.
 $END
 
-$FUNCTION         m_error_notify
-$RETURN_TYPE      void
+$FUNCTION           m_error_notify
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (char *function_name, char *purpose)
-$SUMMARY          Print memory error notification message.
+$SUMMARY            Print memory error notification message.
 $PURPOSE
     Print memory error notification message.
-$PARAMETER        function_name :
+$PARAMETER          function_name :
     The name of the function requesting the memory.
-$PARAMETER        purpose :
+$PARAMETER          purpose :
     The purpose for the memory allocation.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         m_abort
-$RETURN_TYPE      void
+$FUNCTION           m_abort
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (char *name, char *reason)
-$SUMMARY          Print memory error notification message and abort.
+$SUMMARY            Print memory error notification message and abort.
 $PURPOSE
     Print memory error notification message and abort.
-$PARAMETER        function_name :
+$PARAMETER          function_name :
     The name of the function requesting the memory.
-$PARAMETER        reason :
+$PARAMETER          reason :
     The reason for the memory allocation.
 $RETURNS
     Nothing. The process aborts.
 $END
 
-$FUNCTION         m_verify_memory_integrity
-$RETURN_TYPE      unsigned int
+$FUNCTION           m_verify_memory_integrity
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (flag force)
-$SUMMARY          Periodically verify memory integrity.
+$SUMMARY            Periodically verify memory integrity.
 $PURPOSE
     Periodically verify memory integrity.
-$PARAMETER        force :
+$PARAMETER          force :
     If TRUE, the check is forced, else the check is made periodically.
 $MT-LEVEL         Safe.
 $RETURNS
     The number of corrupted blocks.
 $END
 
-$FUNCTION         m_clear
-$RETURN_TYPE      void
+$FUNCTION           m_clear
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (char *memory, uaddr length)
-$SUMMARY          Clear a block of memory
+$SUMMARY            Clear a block of memory
 $PURPOSE
     Clear a block of memory
-$PARAMETER        memory :
+$PARAMETER          memory :
     The memory block to clear.
-$PARAMETER        length :
+$PARAMETER          length :
     The length of the block (in bytes) to clear.
 $NOTE
     The memory is cleared in long integers and chars.
@@ -109,18 +112,18 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         m_copy
-$RETURN_TYPE      void
+$FUNCTION           m_copy
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (char *dest, CONST char *source, uaddr length)
-$SUMMARY          Copy a block of memory.
+$SUMMARY            Copy a block of memory.
 $PURPOSE
     Copy a block of memory.
-$PARAMETER        dest :
+$PARAMETER          dest :
     The destination block of memory.
-$PARAMETER        source :
+$PARAMETER          source :
     The source block of memory.
-$PARAMETER        length :
+$PARAMETER          length :
     The number of bytes to transfer. If this is zero, it is
     permissable for <<source>> and <<dest>> to be NULL.
 $NOTE
@@ -129,91 +132,91 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         m_copy_blocks
-$RETURN_TYPE      void
+$FUNCTION           m_copy_blocks
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (char *dest, CONST char *source, unsigned int dest_stride,
 		    unsigned int source_stride, unsigned int block_size,
 		    unsigned int num_blocks)
-$SUMMARY          Copy multiple blocks of data.
+$SUMMARY            Copy multiple blocks of data.
 $PURPOSE
     Copy multiple blocks of data.
-$PARAMETER        dest :
+$PARAMETER          dest :
     The destination for the first block copy.
-$PARAMETER        source :
+$PARAMETER          source :
     The source for the first block copy.
-$PARAMETER        dest_stride :
+$PARAMETER          dest_stride :
     The spacing (in bytes) between destintion blocks.
-$PARAMETER        source_stride :
+$PARAMETER          source_stride :
     The spacing (in bytes) between source blocks.
-$PARAMETER        block_size :
+$PARAMETER          block_size :
     The size of each block (in bytes).
-$PARAMETER        num_blocks :
+$PARAMETER          num_blocks :
     The number of blocks to copy.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         m_copy_and_swap_blocks
-$RETURN_TYPE      void
+$FUNCTION           m_copy_and_swap_blocks
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (char *dest, CONST char *source, uaddr dest_stride,
 			     uaddr source_stride, uaddr block_size,
 			     uaddr num_blocks)
-$SUMMARY          Copy and byte-swap multiple blocks of data.
+$SUMMARY            Copy and byte-swap multiple blocks of data.
 $PURPOSE
     Copy and byte-swap multiple blocks of data.
-$PARAMETER        dest :
+$PARAMETER          dest :
     The destination for the first block copy.
-$PARAMETER        source :
+$PARAMETER          source :
     The source for the first block copy. If this is NULL or the same
     as <<dest>> the swap is performed in-situ, and <<source_stride>> is ignored
-$PARAMETER        dest_stride :
+$PARAMETER          dest_stride :
     The spacing (in bytes) between destintion blocks.
-$PARAMETER        source_stride :
+$PARAMETER          source_stride :
     The spacing (in bytes) between source blocks.
-$PARAMETER        block_size :
+$PARAMETER          block_size :
     The size of each block (in bytes).
-$PARAMETER        num_blocks :
+$PARAMETER          num_blocks :
     The number of blocks to copy and swap.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         m_fill
-$RETURN_TYPE      void
+$FUNCTION           m_fill
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (char *dest, uaddr stride, CONST char *source,
 	     uaddr size, unsigned int num)
-$SUMMARY          Fill memory blocks with a specified value.
+$SUMMARY            Fill memory blocks with a specified value.
 $PURPOSE
     Fill memory blocks with a specified value.
-$PARAMETER        dest :
+$PARAMETER          dest :
     The destination.
-$PARAMETER        stride :
+$PARAMETER          stride :
     The stride (in bytes) of destination blocks.
-$PARAMETER        source :
+$PARAMETER          source :
     The fill block.
-$PARAMETER        size :
+$PARAMETER          size :
     The size (in bytes) of the fill value block.
-$PARAMETER        num :
+$PARAMETER          num :
     The number of destination blocks to fill.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         m_cmp
-$RETURN_TYPE      flag
+$FUNCTION           m_cmp
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (CONST char *block1, CONST char *block2, uaddr length)
-$SUMMARY          Compare two blocks of memory.
+$SUMMARY            Compare two blocks of memory.
 $PURPOSE
     Compare two blocks of memory.
-$PARAMETER        block1 :
+$PARAMETER          block1 :
     The first memory block.
-$PARAMETER        block2 :
+$PARAMETER          block2 :
     The second memory block.
-$PARAMETER        length :
+$PARAMETER          length :
     The number of bytes to compare.
 $NOTE
     The routine compares long integers and chars.
@@ -221,34 +224,34 @@ $RETURNS
     TRUE if the blocks are equal, else FALSE.
 $END
 
-$FUNCTION         m_dup
-$RETURN_TYPE      char *
+$FUNCTION           m_dup
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (CONST char *original, uaddr size)
-$SUMMARY          Duplicate a block of memory into a freshly allocated block.
+$SUMMARY            Duplicate a block of memory into a freshly allocated block.
 $PURPOSE
     Duplicate a block of memory into a freshly allocated block.
-$PARAMETER        original :
+$PARAMETER          original :
     The original block of memory.
-$PARAMETER        size :
+$PARAMETER          size :
     The size in bytes of the block.
 $RETURNS
     A pointer to a freshly allocated block which contains identical
     data as the orginal on success, else NULL.
 $END
 
-$FUNCTION         m_alloc_scratch
-$RETURN_TYPE      char *
+$FUNCTION           m_alloc_scratch
+$RETURN_TYPE        char *
 $PARAMETER_LIST
     (uaddr size, char *function_name)
-$SUMMARY          Allocate a block of scratch memory.
+$SUMMARY            Allocate a block of scratch memory.
 $PURPOSE
     This routine will allocate a block of scratch memory, which may
     be re-used by many different routines. The block is reserved until a call
     is made to <-m_free_scratch->.
-$PARAMETER        size :
+$PARAMETER          size :
     The minimum size in bytes of the scratch block.
-$PARAMETER        function_name :
+$PARAMETER          function_name :
     If the memory block is already reserved and this is not
     NULL the string is printed and the process aborts.
     If the memory block is already reserved and this is NULL the routine fails
@@ -258,11 +261,11 @@ $RETURNS
     which is valid until the next call to this routine, else NULL.
 $END
 
-$FUNCTION         m_free_scratch
-$RETURN_TYPE      void
+$FUNCTION           m_free_scratch
+$RETURN_TYPE        void
 $PARAMETER_LIST
     ()
-$SUMMARY          Free the scratch memory.
+$SUMMARY            Free the scratch memory.
 $PURPOSE
     Free the scratch memory.
 $RETURNS

@@ -70,9 +70,15 @@
     Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
 
-    Last updated by Richard Gooch   22-JUN-1996: Made use of
+    Updated by      Richard Gooch   22-JUN-1996: Made use of
   <XkwFilewinStandardFileTester_nD> and <XkwFilewinStandardFileTester_3D>
   routines.
+
+    Updated by      Richard Gooch   15-SEP-1996: Made use of new <kwin_xutil_*>
+  routines.
+
+    Last updated by Richard Gooch   29-OCT-1996: Added hostname and port number
+  to title.
 
 
 */
@@ -93,6 +99,7 @@
 #include <karma_xtmisc.h>
 #include <karma_dsxfr.h>
 #include <karma_kcmap.h>
+#include <karma_kwin.h>
 #include <karma_conn.h>
 #include <karma_chx.h>
 #include <karma_ds.h>
@@ -112,7 +119,7 @@
 #define DEFAULT_COLOURMAP_NAME "Greyscale1"
 #define NUM_COLOURS (unsigned int) 200
 
-#define VERSION "1.4"
+#define VERSION "1.4.1"
 
 
 /*  Private functions  */
@@ -126,9 +133,6 @@ STATIC_FUNCTION (flag dirselect_cbk,
 STATIC_FUNCTION (void setup_comms, (Display *display) );
 STATIC_FUNCTION (void new_data_on_connection, (flag first_time_data) );
 STATIC_FUNCTION (void connection_closed, (flag data_deallocated ));
-STATIC_FUNCTION (Visual *get_visual, () );
-STATIC_FUNCTION (XVisualInfo *get_visinfo_for_visual,
-		 (Display *dpy, Visual *visual) );
 
 
 /*  Private data  */
@@ -157,7 +161,8 @@ static XrmOptionDescRec Options[] =
      (XtPointer) "True"},
 };
 static Widget slicer = NULL;
-iarray cube = NULL;
+static iarray cube = NULL;
+static char title_name[STRING_LENGTH];
 
 
 int main (int argc, char **argv)
@@ -176,7 +181,7 @@ int main (int argc, char **argv)
     Visual *root_visual;
     Screen *screen;
     extern Widget slicer;
-    extern char *sys_errlist[];
+    extern char title_name[STRING_LENGTH];
     static char function_name[] = "main";
 
 #ifdef SIGFPE_ABORT
@@ -198,10 +203,11 @@ int main (int argc, char **argv)
     screen = XtScreen (main_shell);
     /*  Get visual information  */
     root_visual = XDefaultVisualOfScreen (screen);
-    vinfo = get_visinfo_for_visual (dpy, root_visual);
-    if ( ( pseudocolour_visual = get_visual (screen) ) == NULL )
+    vinfo = kwin_xutil_get_visinfo_for_visual (dpy, root_visual);
+    kwin_xutil_get_visuals (screen, &pseudocolour_visual, NULL, NULL);
+    if (pseudocolour_visual == NULL)
     {
-	(void) fprintf (stderr, "No 8 bit PseudoColour visual available\n");
+	fprintf (stderr, "No 8 bit PseudoColour visual available\n");
 	exit (RV_UNDEF_ERROR);
     }
     if ( (vinfo->depth == 8) && (vinfo->class == PseudoColor) &&
@@ -220,18 +226,21 @@ int main (int argc, char **argv)
 					pseudocolour_visual, AllocNone) ) ==
 	    (Colormap) NULL )
 	{
-	    (void) fprintf (stderr, "Could not create colourmap\n");
+	    fprintf (stderr, "Could not create colourmap\n");
 	    exit (1);
 	}
 	XSync (dpy, False);
-	(void) fprintf (stderr,
+	fprintf (stderr,
 			"Created colourmap: 0x%lx for PseudoColour visual\n",
 			xcmap);
     }
     setup_comms (dpy);
+    XtVaSetValues (main_shell,
+		   XtNtitle, title_name,
+		   NULL);
     if ( ( dpy_handle = xc_get_dpy_handle (dpy, xcmap) ) == NULL )
     {
-	(void) fprintf (stderr, "Error getting display handle\n");
+	fprintf (stderr, "Error getting display handle\n");
 	a_prog_bug (function_name);
     }
     /*  Initialise colourmap  */
@@ -243,11 +252,11 @@ int main (int argc, char **argv)
 				    KCMAP_ATT_END) )
 	== NULL )
     {
-	(void) fprintf (stderr, "Error creating main colourmap\n");
+	fprintf (stderr, "Error creating main colourmap\n");
 	a_prog_bug (function_name);
     }
     num_ccels = kcmap_get_pixels (kcmap, &pixel_values);
-    (void) fprintf (stderr, "num colours: %u\n", num_ccels);
+    fprintf (stderr, "num colours: %u\n", num_ccels);
     form = XtVaCreateManagedWidget ("topForm", formWidgetClass, main_shell,
 				    XtNborderWidth, 0,
 				    NULL);
@@ -266,7 +275,7 @@ int main (int argc, char **argv)
     XtAddCallback (filepopup, XkwNfileSelectCallback, fileselect_cbk, NULL);
     /*  Register callback which will process directory selection events  */
     filewin = XtNameToWidget (filepopup, "form.selector");
-    (void) XkwFilewinRegisterDirCbk (filewin, dirselect_cbk,
+    XkwFilewinRegisterDirCbk (filewin, dirselect_cbk,
 				     (Widget) filepopup);
     /*  Now start creating sundry buttons  */
     files_btn = XtVaCreateManagedWidget ("button", commandWidgetClass, form,
@@ -323,25 +332,13 @@ static void load_and_setup (CONST char *filename)
 						FALSE, &ftype,
 						FA_GUESS_READ_END) ) == NULL )
     {
-	(void) fprintf (stderr, "Error reading cube: \"%s\"\n", filename);
+	fprintf (stderr, "Error reading cube: \"%s\"\n", filename);
 	return;
     }
     if (cube != NULL) iarray_dealloc (cube);
-    if ( ( cube = iarray_get_from_multi_array (multi_desc, NULL,
-					       3, NULL, NULL) )
-	== NULL )
-    {
-	ds_dealloc_multi (multi_desc);
-	return;
-    }
+    cube = iarray_get_from_multi_array (multi_desc, NULL, 3, NULL, NULL);
     ds_dealloc_multi (multi_desc);
-#ifdef dummy
-    /*  Set KPixCanvas sizes  */
-    kwin_resize (main_pixcanvas, TRUE, 0, 0, 0, 0);
-/*
-    load_cmap (cube_desc);
-*/
-#endif
+    if (cube == NULL ) return;
     XtVaSetValues (slicer,
 		   XkwNiarray, cube,
 		   NULL);
@@ -398,23 +395,29 @@ static void setup_comms (Display *display)
 {
     int def_port_number;
     unsigned int server_port_number;
+    char hostname[STRING_LENGTH];
     extern char module_name[STRING_LENGTH + 1];
+    extern char module_version_date[STRING_LENGTH + 1];
+    extern char title_name[STRING_LENGTH];
 
     /*  Get default port number  */
     if ( ( def_port_number = r_get_def_port ( module_name,
 					     DisplayString (display) ) ) < 0 )
     {
-	(void) fprintf (stderr, "Could not get default port number\n");
+	fprintf (stderr, "Could not get default port number\n");
 	return;
     }
+    r_gethostname (hostname, STRING_LENGTH);
     server_port_number = def_port_number;
     if (conn_become_server (&server_port_number, CONN_MAX_INSTANCES) != TRUE)
     {
-	(void) fprintf (stderr, "Module not operating as Karma server\n");
+	fprintf (stderr, "Module not operating as Karma server\n");
+	sprintf (title_name, "%s v%s @%s", module_name, module_version_date,
+		 hostname);
     }
     else
     {
-	(void) fprintf (stderr, "Port allocated: %d\n", server_port_number);
+	fprintf (stderr, "Port allocated: %d\n", server_port_number);
 	/*  Register the protocols  */
 /*
 	conn_register_client_protocol ("3D_cursor_position", 0, 1,
@@ -426,6 +429,9 @@ static void setup_comms (Display *display)
 	dsxfr_register_connection_limits (1, -1);
 	dsxfr_register_read_func (new_data_on_connection);
 	dsxfr_register_close_func (connection_closed);
+	sprintf (title_name, "%s v%s @%s:%u",
+		 module_name, module_version_date, hostname,
+		 server_port_number);
     }
 }   /*  End Function setup_comms  */
 
@@ -435,7 +441,7 @@ static void new_data_on_connection (flag first_time_data)
     The routine returns nothing.
 */
 {
-    (void) fprintf (stderr, "new data...\n");
+    fprintf (stderr, "new data...\n");
     load_and_setup ("connection");
 }   /*  End Function new_data_on_connection  */
 
@@ -446,70 +452,8 @@ static void connection_closed (flag data_deallocated)
     The routine returns nothing.
 */
 {
-    (void) fprintf (stderr, "conn close...\n");
+    fprintf (stderr, "conn close...\n");
     /*  Deallocate old ViewableImage objects  */
-/*
-    free_data ();
-*/
-    (void) fprintf (stderr, "Destroyed viewable images...\n");
+    /*free_data ();*/
+    fprintf (stderr, "Destroyed viewable images...\n");
 }   /*  End Function connection_closed  */
-
-static Visual *get_visual (screen)
-/*  This routine will attempt to get a PseudoColour visual.
-    The X Window screen must be given by  screen  .
-    The routine returns a visual.
-*/
-Screen *screen;
-{
-    int num_vinfos;
-    Visual *visual;
-    XVisualInfo vinfo_template, *vinfos;
-
-    vinfo_template.screen = XScreenNumberOfScreen (screen);
-    vinfo_template.colormap_size = 256;
-    vinfo_template.depth = 8;
-    vinfo_template.class = PseudoColor;
-    if ( ( vinfos =
-	  XGetVisualInfo (XDisplayOfScreen (screen),
-			  VisualScreenMask | VisualDepthMask |
-			  VisualClassMask | VisualColormapSizeMask,
-			  &vinfo_template, &num_vinfos) ) == NULL )
-    {
-	return (NULL);
-    }
-    visual = vinfos[0].visual;
-    XFree ( (char *) vinfos );
-    return (visual);
-}   /*  End Function get_visual  */
-
-static XVisualInfo *get_visinfo_for_visual (dpy, visual)
-/*  This routine will get the visual information structure for a visual.
-    The X display must be given by  dpy  .
-    The visual must be given by  visual  .
-    The routine returns a pointer to an XVisualInfo structure on succes, else
-    it returns NULL. The XVisualInfo structure must be freed by XFree()
-*/
-Display *dpy;
-Visual *visual;
-{
-    int num_vinfos;
-    XVisualInfo vinfo_template;
-    XVisualInfo *vinfos;
-    static char function_name[] = "get_visinfo_for_visual";
-
-    vinfo_template.visualid = XVisualIDFromVisual (visual);
-    vinfos = XGetVisualInfo (dpy, VisualIDMask, &vinfo_template, &num_vinfos);
-    if (num_vinfos < 1)
-    {
-	(void) fprintf (stderr, "Error getting visual info for visual: %p\n",
-			visual);
-	a_prog_bug (function_name);
-    }
-    if (num_vinfos > 1)
-    {
-	(void) fprintf (stderr,
-			"WARNING: number of visuals for visual: %p is: %d\n",
-			visual, num_vinfos);
-    }
-    return (vinfos);
-}   /*  End Function get_visinfo_for_visual  */

@@ -62,8 +62,13 @@
     Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
 
-    Last updated by Richard Gooch   10-JUN-1996: Added clipping code to
+    Updated by      Richard Gooch   10-JUN-1996: Added clipping code to
   <draw_cached_image>.
+
+    Updated by      Richard Gooch   15-SEP-1996: Made use of new <kwin_xutil_*>
+  routines.
+
+    Last updated by Richard Gooch   10-OCT-1996: Made colour query in chunks.
 
 
 */
@@ -75,7 +80,6 @@
 #include <karma.h>
 #include <karma_kwin.h>
 #include <karma_kwin_hooks.h>
-#include <karma_drw.h>
 #include <karma_xi.h>
 #include <X11/Xutil.h>
 #include <karma_psw.h>
@@ -164,6 +168,7 @@ static XArc *xarcs = NULL;
 static int num_xsegments_allocated = 0;
 static XSegment *xsegments = NULL;
 
+
 /*  Mandatory functions  */
 STATIC_FUNCTION (flag draw_point, (void *v_canvas, double x, double y,
 				   unsigned long pixel_value) );
@@ -221,7 +226,7 @@ STATIC_FUNCTION (flag draw_rectangle,
 		  double x, double y, double width, double height,
 		  unsigned long pixel_value, flag fill) );
 STATIC_FUNCTION (flag draw_lines,
-		 (X11Canvas x11canvas, double *x_arr, double *y_arr,
+		 (X11Canvas x11canvas, CONST double *x_arr,CONST double *y_arr,
 		  unsigned int num_points, unsigned long pixel_value) );
 STATIC_FUNCTION (flag draw_arcs,
 		 (X11Canvas x11canvas,
@@ -248,8 +253,6 @@ STATIC_FUNCTION (flag query_colourmap,
 /*  Private functions  */
 STATIC_FUNCTION (void set_pixel_in_gc,
 		 (X11Canvas x11canvas, unsigned long pixel_value) );
-STATIC_FUNCTION (XVisualInfo *get_visinfo_for_visual,
-		 (Display *dpy, Visual *visual) );
 STATIC_FUNCTION (KPixCanvasImageCache size_cache,
 		 (X11Canvas x11canvas, KPixCanvasImageCache *cache_ptr,
 		  unsigned int width, unsigned int height) );
@@ -335,7 +338,8 @@ KPixCanvas kwin_create_x (Display *display, Window window, GC gc,
     x11canvas->max_request_size = XMaxRequestSize (display);
     x11canvas->common_ximage = NULL;
     x11canvas->colours = NULL;
-    vinfo = get_visinfo_for_visual (display, window_attributes.visual);
+    vinfo = kwin_xutil_get_visinfo_for_visual (display,
+					       window_attributes.visual);
     if (window_attributes.depth != vinfo->depth)
     {
 	(void) fprintf (stderr, "Window depth: %d is not visual depth: %d\n",
@@ -858,8 +862,8 @@ static flag draw_pc_image (X11Canvas x11canvas, int x_off, int y_off,
 	}
     }
     else if ( (ximage->depth == 24) && (num_pixels == 65536) &&
-	     (type == K_USHORT) && (0 == (int) i_min) &&
-	     (65535 == (int) i_max) )
+	      (type == K_USHORT) && (0 == (int) i_min) &&
+	      (65535 == (int) i_max) )
     {
 	ub_ptr = (unsigned char *) pixel_values;
 	kwin_get_attributes (x11canvas->pixcanvas,
@@ -1356,8 +1360,8 @@ static flag draw_polygon (X11Canvas x11canvas, double *x_arr, double *y_arr,
 			  flag convex, flag fill)
 /*  [PURPOSE] This routine will draw a polygon onto an X11 canvas.
     <x11canvas> The X11 canvas.
-    <point_x> The array of x co-ordinates of vertices of the polygon.
-    <point_y> The array of y co-ordinates of vertices of the polygon.
+    <x_arr> The array of x co-ordinates of vertices of the polygon.
+    <y_arr> The array of y co-ordinates of vertices of the polygon.
     <num_vertices> The number of vertices in the polygon.
     <pixel_value> The pixel value to use.
     <convex> If TRUE, then the points must form a convex polygon.
@@ -1476,7 +1480,8 @@ static flag draw_rectangle (X11Canvas x11canvas,
     return (TRUE);
 }   /*  End Function draw_rectangle  */
 
-static flag draw_lines (X11Canvas x11canvas, double *x_arr, double *y_arr,
+static flag draw_lines (X11Canvas x11canvas,
+			CONST double *x_arr, CONST double *y_arr,
 			unsigned int num_points, unsigned long pixel_value)
 /*  [PURPOSE] This routine will draw multiple connected lines onto an X11
     canvas.
@@ -1789,7 +1794,7 @@ static flag query_colourmap (X11Canvas x11canvas, unsigned long *pixels,
     [RETURNS] TRUE on success, else FALSE.
 */
 {
-    unsigned int count;
+    unsigned int count, query_size;
     XColor *xcolours;
     static char function_name[] = "__kwin_X11_query_colourmap";
 
@@ -1805,8 +1810,15 @@ static flag query_colourmap (X11Canvas x11canvas, unsigned long *pixels,
 	xcolours[count].pixel = pixels[count];
 	xcolours[count].flags = DoRed | DoGreen | DoBlue;  /*  Paranoia  */
     }
-    XQueryColors (x11canvas->display, x11canvas->cmap, xcolours,
-		  (int) num_colours);
+    /*  Break up request into 256-size chunks, since some servers seem to have
+	a problem with large queries (such as 65536:-)  */
+    for (count = 0; count < num_colours; count += query_size)
+    {
+	query_size = num_colours - count;
+	if (query_size > 256) query_size = 256;
+	XQueryColors (x11canvas->display, x11canvas->cmap, xcolours + count,
+		      (int) query_size);
+    }
     for (count = 0; count < num_colours; ++count)
     {
 	reds[count] = xcolours[count].red;
@@ -1856,37 +1868,6 @@ static void set_pixel_in_gc (X11Canvas x11canvas, unsigned long pixel_value)
 		   &x11canvas->gcvalues);
     }
 }   /*  End Function set_pixel_in_gc  */
-
-static XVisualInfo *get_visinfo_for_visual (Display *dpy, Visual *visual)
-/*  [PURPOSE] This routine will get the visual information structure for a
-    visual.
-    <dpy> The X display.
-    <visual> The visual.
-    [RETURNS] A pointer to an XVisualInfo structure on succes, else NULL. The
-    XVisualInfo structure must be freed by XFree()
-*/
-{
-    int num_vinfos;
-    XVisualInfo vinfo_template;
-    XVisualInfo *vinfos;
-    static char function_name[] = "__kwin_X11_get_visinfo_for_visual";
-
-    vinfo_template.visualid = XVisualIDFromVisual (visual);
-    vinfos = XGetVisualInfo (dpy, VisualIDMask, &vinfo_template, &num_vinfos);
-    if (num_vinfos < 1)
-    {
-	(void) fprintf (stderr, "Error getting visual info for visual: %p\n",
-			visual);
-	a_prog_bug (function_name);
-    }
-    if (num_vinfos > 1)
-    {
-	(void)fprintf(stderr,
-		      "%s: WARNING: number of visuals for visual: %p is: %d\n",
-		      function_name, visual, num_vinfos);
-    }
-    return (vinfos);
-}   /*  End Function get_visinfo_for_visual  */
 
 static KPixCanvasImageCache size_cache (X11Canvas x11canvas,
 					KPixCanvasImageCache *cache_ptr,

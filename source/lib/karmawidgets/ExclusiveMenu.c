@@ -40,30 +40,24 @@
 
     Updated by      Richard Gooch   4-JAN-1995: Cosmetic changes.
 
-    Last updated by Richard Gooch   26-MAY-1996: Cleaned code to keep
+    Updated by      Richard Gooch   26-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   31-JUL-1996: Added valuePtr resource.
 
 
 */
 
-/*----------------------------------------------------------------------*/
-/* Include files*/
-/*----------------------------------------------------------------------*/
-
 #include <Xkw/ExclusiveMenuP.h>
-
 #include <X11/Xos.h>
 #include <X11/StringDefs.h>
-
 #include <X11/Xaw/Label.h>
 #include <X11/Xaw/SimpleMenu.h>
 #include <X11/Xaw/SmeBSB.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <varargs.h>
-
 #include <karma.h>
 #include <karma_m.h>
 
@@ -74,22 +68,12 @@ struct item_data_type
 };
 
 
-/*----------------------------------------------------------------------*/
-/* Function prototypes*/
-/*----------------------------------------------------------------------*/
-
-/* Methods*/
-
 STATIC_FUNCTION (void Initialise, (Widget request, Widget new) );
 STATIC_FUNCTION (void Destroy, (Widget w) );
 STATIC_FUNCTION (Boolean SetValues,
 		 (Widget current, Widget request, Widget new) );
 STATIC_FUNCTION (void item_cbk, (Widget w, XtPointer client_data,
 				 XtPointer call_data) );
-
-/*----------------------------------------------------------------------*/
-/* Default Resources*/
-/*----------------------------------------------------------------------*/
 
 #define TheOffset(field) XtOffset(ExclusiveMenuWidget, exclusiveMenu.field)
 
@@ -103,6 +87,8 @@ static XtResource ExclusiveMenuResources[] =
     TheOffset(numItems), XtRImmediate, 0},
   {XkwNselectCallback, XtCCallback, XtRCallback, sizeof (caddr_t),
     TheOffset(selectCallback), XtRCallback, (caddr_t) NULL},
+  {XkwNvaluePtr, XkwCValuePtr, XtRInt, sizeof (XtPointer),
+   TheOffset (valuePtr), XtRImmediate, (XtPointer) NULL},
 };
 
 #undef TheOffset
@@ -166,10 +152,6 @@ ExclusiveMenuClassRec exclusiveMenuClassRec =
 
 WidgetClass exclusiveMenuWidgetClass = (WidgetClass) &exclusiveMenuClassRec;
 
-/*----------------------------------------------------------------------*/
-/* Initialisation method*/
-/*----------------------------------------------------------------------*/
-
 static void Initialise (Widget Request, Widget New)
 {
     int count, width, tmp;
@@ -216,20 +198,12 @@ static void Initialise (Widget Request, Widget New)
 		   NULL);
 }
 
-/*----------------------------------------------------------------------*/
-/* Destroy method*/
-/*----------------------------------------------------------------------*/
-
 static void Destroy (Widget W)
 {
     ExclusiveMenuWidget w = (ExclusiveMenuWidget) W;
 
     m_free ( (char *) w->exclusiveMenu.item_data );
 }   /*  End Function Destroy  */
-
-/*----------------------------------------------------------------------*/
-/* SetVaues method*/
-/*----------------------------------------------------------------------*/
 
 static Boolean SetValues (Widget Current, Widget Request, Widget New)
 {
@@ -240,12 +214,9 @@ static Boolean SetValues (Widget Current, Widget Request, Widget New)
     return True;
 }   /*  End Function SetValues  */
 
-static void item_cbk (w, client_data, call_data)
+static void item_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 /*  This is the item callback.
 */
-Widget w;
-XtPointer client_data;
-XtPointer call_data;
 {
     int val;
     ExclusiveMenuWidget top;
@@ -254,6 +225,10 @@ XtPointer call_data;
     char txt[STRING_LENGTH];
 
     top = (ExclusiveMenuWidget) item_data->me;
+    if (top->exclusiveMenu.valuePtr != NULL)
+    {
+	*top->exclusiveMenu.valuePtr = item_data->index;
+    }
     names = (char **) top->exclusiveMenu.itemStrings;
     (void) sprintf (txt, "%s: %s", top->exclusiveMenu.choiceName,
 		    names[item_data->index]);

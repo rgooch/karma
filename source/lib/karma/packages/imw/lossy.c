@@ -40,8 +40,13 @@
     Updated by      Richard Gooch   10-DEC-1995: Fixed bug in computation of
   horizontal and vertical scale factors.
 
-    Last updated by Richard Gooch   12-APR-1996: Changed to new documentation
+    Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
   format.
+
+    Updated by      Richard Gooch   23-AUG-1996: Used <imw_test_verbose>.
+
+    Last updated by Richard Gooch   28-SEP-1996: Fixed intensity scaling when
+  <<iscale_func>> provided.
 
 
 */
@@ -118,6 +123,7 @@ flag imw_to8_lossy (unsigned char *out_image,
     float tiny_offset = 1e-6;
     double d_mul, d_data;
     double d_toobig = TOOBIG;
+    double scaled_min, scaled_max;
     CONST char *inp_line;
     CONST char *last_inp_line = NULL;
     unsigned char *out_line, *out_pixels;
@@ -126,26 +132,25 @@ flag imw_to8_lossy (unsigned char *out_image,
 
     if ( (inp_hoffsets == NULL) || (inp_voffsets == NULL) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     if (i_min >= i_max)
     {
-	(void) fprintf (stderr, "i_max: %e  is not greater than i_min: %e\n",
-			i_max, i_min);
+	fprintf (stderr, "i_max: %e  is not greater than i_min: %e\n",
+		 i_max, i_min);
 	a_prog_bug (function_name);
     }
     if ( !ds_element_is_atomic (inp_type) )
     {
-	(void) fprintf (stderr, "Input image must be atomic\n");
+	fprintf (stderr, "Input image must be atomic\n");
 	a_prog_bug (function_name);
     }
-    if (getuid () == 465) (void) fprintf (stderr, "%s started...\n",
-					  function_name);
-    if (getuid () == 465)
+    if ( imw_test_verbose () )
     {
-	(void) fprintf (stderr, "out_size: %d %d  inp_size: %d %d\n",
-			out_width, out_height, inp_width, inp_height);
+	 fprintf (stderr, "%s started...\n", function_name);
+	 fprintf (stderr, "out_size: %d %d  inp_size: %d %d\n",
+		  out_width, out_height, inp_width, inp_height);
     }
     /*  Allocate value buffers  */
     if ( ( inp_values = alloc_inp_values_buffer ( (unsigned int) inp_width ) )
@@ -160,7 +165,27 @@ flag imw_to8_lossy (unsigned char *out_image,
     }
     h_factor = (float) inp_width / (float) out_width;
     v_factor = (float) inp_height / (float) out_height;
-    d_mul = (num_pixels - 1) / (i_max - i_min);
+    if (iscale_func == NULL)
+    {
+	scaled_min = i_min;
+	scaled_max = i_max;
+    }
+    else
+    {
+	if ( !(*iscale_func) (&scaled_min, 0, &i_min, 0, 1, i_min, i_max,
+			      iscale_info) )
+	{
+	    fprintf (stderr, "%s: error scaling raw intensity minimum\n",
+		     function_name);
+	}
+	if ( !(*iscale_func) (&scaled_max, 0, &i_max, 0, 1, i_min, i_max,
+			      iscale_info) )
+	{
+	    fprintf (stderr, "%s: error scaling raw intensity minimum\n",
+		     function_name);
+	}
+    }
+    d_mul = (num_pixels - 1) / (scaled_max - scaled_min);
     for (out_y = 0; out_y < out_height; ++out_y)
     {
 	out_line = out_image + (out_height - out_y - 1) * out_vstride;
@@ -179,7 +204,7 @@ flag imw_to8_lossy (unsigned char *out_image,
 					     inp_values, &complex,
 					     (unsigned int) inp_width) )
 	    {
-		(void) fprintf (stderr, "Error converting data\n");
+		fprintf (stderr, "Error converting data\n");
 		return (FALSE);
 	    }
 	    if (complex) ds_complex_to_real_1D (inp_values, 2, inp_values,
@@ -191,8 +216,7 @@ flag imw_to8_lossy (unsigned char *out_image,
 				      (unsigned int) inp_width, i_min, i_max,
 				      iscale_info) )
 		{
-		    (void) fprintf (stderr,
-				    "Error applying intensity scale\n");
+		    fprintf (stderr, "Error applying intensity scale\n");
 		    return (FALSE);
 		}
 	    }
@@ -202,14 +226,15 @@ flag imw_to8_lossy (unsigned char *out_image,
 	    for (out_x = 0; out_x < out_width; ++out_x)
 	    {
 		inp_x = (int) (h_factor * (float) out_x + tiny_offset);
-		if ( (d_data = inp_values[inp_x * 2]) < i_min )
+		if ( (d_data = inp_values[inp_x * 2]) < scaled_min )
 		{
 		    out_pixels[out_x] = min_sat_pixel;
 		}
 		else if (d_data >= d_toobig) out_pixels[out_x] = blank_pixel;
-		else if (d_data > i_max) out_pixels[out_x] = max_sat_pixel;
-		else out_pixels[out_x] = pixel_values[(int) ( (d_data - i_min)
-							     *d_mul +offset )];
+		else if (d_data >scaled_max) out_pixels[out_x] = max_sat_pixel;
+		else out_pixels[out_x] = pixel_values[(int) ( (d_data -
+							       scaled_min)
+							      *d_mul+offset )];
 	    }
 	}
 	last_inp_line = inp_line;

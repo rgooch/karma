@@ -10,79 +10,173 @@ $LIBRARY          karmagraphics
 $LINKWITH         -lkarmagraphics
 $END
 
-$FUNCTION         kwin_create_x
-$RETURN_TYPE      KPixCanvas
+$FUNCTION           kwin_create_x
+$RETURN_TYPE        KPixCanvas
 $PARAMETER_LIST
     (Display *display, Window window, GC gc,
 			  int xoff, int yoff, int width, int height)
-$SUMMARY          Create a pixel canvas from an X window.
+$SUMMARY            Create a pixel canvas from an X window.
 $PURPOSE
     This routine will create a pixel canvas, ready for drawing, from
     an X window. Note that the origin of a KPixCanvas is the upper-left corner.
 $NOTE
     This routine is only available with the X window system.
-$PARAMETER        display :
+$PARAMETER          display :
     The X display.
-$PARAMETER        window :
+$PARAMETER          window :
     The window ID in which the canvas lies.
-$PARAMETER        gc :
+$PARAMETER          gc :
     The graphics context.
-$PARAMETER        xoff :
+$PARAMETER          xoff :
     The horizontal offset of the canvas origin (upper-left corner)
     relative to the parent window.
-$PARAMETER        yoff :
+$PARAMETER          yoff :
     The vertical offset of the canvas origin (upper-left corner)
     relative to the parent window.
-$PARAMETER        width :
+$PARAMETER          width :
     The width (vertical extent) of the canvas.
-$PARAMETER        height :
+$PARAMETER          height :
     The height (horizontal extent) of the canvas.
 $RETURNS
     A pixel canvas on success, else NULL.
 $END
 
-$FUNCTION         kwin_set_gc_x
-$RETURN_TYPE      void
+$FUNCTION           kwin_set_gc_x
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KPixCanvas canvas, GC gc)
-$SUMMARY          Set Graphics Context for an X-based pixel canavas.
+$SUMMARY            Set Graphics Context for an X-based pixel canavas.
 $PURPOSE
     This routine will register a new Graphics Context to be used
     when drawing into the pixel canvas. Subsequent drawing operations will use
     the new Graphics Context.
 $NOTE
     This routine is only available with the X window system.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        gc :
+$PARAMETER          gc :
     The Graphics Context.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         kwin_get_gc_x
-$RETURN_TYPE      GC
+$FUNCTION           kwin_get_gc_x
+$RETURN_TYPE        GC
 $PARAMETER_LIST
     (KPixCanvas canvas)
-$SUMMARY          Get Graphics Context for an X-based pixel canavas.
+$SUMMARY            Get Graphics Context for an X-based pixel canavas.
 $PURPOSE
     This routine will get the Graphics Context used when drawing into
     the pixel canvas. If the Graphics Context is modified, it should be
     registered prior to drawing on the canvas by calling <<kwin_set_gc_x>>.
 $NOTE
     This routine is only available with the X window system.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
 $RETURNS
     The Graphics Context.
 $END
 
-$FUNCTION         kwin_create_child
-$RETURN_TYPE      KPixCanvas
+$EXPERIMENTAL_FUNC  kwin_create_generic
+$RETURN_TYPE        KPixCanvas
+$PARAMETER_LIST
+    (void *info, int xoff, int yoff,
+				int width, int height, unsigned int depth,
+				unsigned int visual, flag visible,
+				KPixFuncDrawPoint draw_point,
+				KPixFuncCreateChild create_child,
+				KPixFuncClearArea clear_area, ...)
+$SUMMARY            Create generic pixel canvas.
+$PURPOSE
+    This routine will create a pixel canvas. The interface to this
+    routine is generic. Note that the origin of a KPixCanvas is the upper-left
+    corner.
+$PARAMETER          info :
+    A pointer to canvas specific data.
+$PARAMETER          xoff :
+    The horizontal offset of the canvas origin (upper-left corner)
+    relative to the parent object.
+$PARAMETER          yoff :
+    The vertical offset of the canvas origin (upper-left corner)
+    relative to the parent object.
+$PARAMETER          width :
+    The width (vertical extent) of the canvas.
+$PARAMETER          height :
+    The height (horizontal extent) of the canvas.
+$PARAMETER          depth :
+    The depth (in bits) of the canvas.
+$PARAMETER          visual :
+    The visual type of the canvas.
+$PARAMETER          visible :
+    TRUE if the canvas is visible, else FALSE.
+$PARAMETER          draw_point :
+    The function that is called when a point is to be drawn to the
+    pixel canvas. The interface to this routine is as follows:
+    <-pre->
+    flag draw_point (void *info, double x, double y, unsigned long pixel_value)
+    *   [PURPOSE] This routine will draw a point onto a pixel canvas.
+$PARAMETER          info :
+    A pointer to the canvas specific data.
+$PARAMETER          x :
+    The horizontal offset of the point.
+$PARAMETER          y :
+    The vertical offset of the point.
+$PARAMETER          pixel_value :
+    The pixel value to use.
+$RETURNS
+    TRUE on success, else FALSE.
+    *
+    <-/pre->
+$PARAMETER          create_child :
+    The function that is called when a child canvas is created.
+    The interface to this routine is as follows:
+    <-pre->
+    void *create_child (void *parent, KPixCanvas child)
+    *   [PURPOSE] This routine will create the graphics system specific child
+    canvas.
+$PARAMETER          parent :
+    A pointer to the parent canvas specific data.
+$PARAMETER          child :
+    The newly created child pixel canvas.
+$RETURNS
+    A pointer to canvas specific data for the child on success,
+    else NULL.
+    *
+    <-/pre->
+$PARAMETER          clear_area :
+    The function that is called when the canvas is to be cleared.
+    The interface to this routine is as follows:
+    <-pre->
+    flag clear_area (void *info, int x, int y, int width, int height)
+    *   [PURPOSE] This routine will clear an area in a canvas.
+$PARAMETER          info :
+    A pointer to the canvas specific data.
+$PARAMETER          x :
+    The horizontal offset of the area.
+$PARAMETER          y :
+    The vertical offset of the area.
+$PARAMETER          width :
+    The width of the area.
+$PARAMETER          height :
+    The height of the area.
+$RETURNS
+    TRUE on success, else FALSE.
+    *
+    <-/pre->
+$PARAMETER        ... :
+    The optinal list of parameter attribute-key attribute-value
+    pairs must follow. See the header file for details on defined attributes.
+    This list must be terminated with the value  KWIN_ATT_END  .
+$RETURNS
+    A pixel canvas on success, else NULL.
+$END
+
+$FUNCTION           kwin_create_child
+$RETURN_TYPE        KPixCanvas
 $PARAMETER_LIST
     (KPixCanvas parent, int xoff, int yoff,
 			      int width, int height, flag absorb_events)
-$SUMMARY          Create a child pixel canvas.
+$SUMMARY            Create a child pixel canvas.
 $PURPOSE
     This routine will create a pixel canvas, ready for drawing,
     within an existing pixel canvas. The new pixel canvas is a child of the
@@ -91,19 +185,19 @@ $PURPOSE
     events lie within the child's boundaries. For X-based graphics, a copy of
     the Graphics Context is made for the child.
     Note that the origin of a KPixCanvas is the upper-left corner.
-$PARAMETER        parent :
+$PARAMETER          parent :
     The parent pixel canvas.
-$PARAMETER        xoff :
+$PARAMETER          xoff :
     The horizontal offset of the canvas origin (upper-left corner)
     relative to the parent window.
-$PARAMETER        yoff :
+$PARAMETER          yoff :
     The vertical offset of the canvas origin (upper-left corner)
     relative to the parent window.
-$PARAMETER        width :
+$PARAMETER          width :
     The width (vertical extent) of the canvas.
-$PARAMETER        height :
+$PARAMETER          height :
     The height (horizontal extent) of the canvas.
-$PARAMETER        absorb_events :
+$PARAMETER          absorb_events :
     If TRUE, any events passed from the parent canvas to the
     child canvas and consumed by the registered event functions for the child
     canvas are consumed from the parent canvas. If FALSE, the child canvas does
@@ -113,137 +207,143 @@ $RETURNS
     A pixel canvas on success, else NULL.
 $END
 
-$FUNCTION         kwin_register_refresh_func
-$RETURN_TYPE      KCallbackFunc
+$FUNCTION           kwin_register_refresh_func
+$RETURN_TYPE        KCallbackFunc
 $PARAMETER_LIST
     (KPixCanvas canvas,
 					  void (*refresh_func) (), void *info)
-$SUMMARY          Register a refresh callback.
+$SUMMARY            Register a refresh callback.
 $PURPOSE
     This routine will register a refresh function for a pixel canvas.
     The refresh function will be called whenever the contents of the canvas
     need to be redrawn. Many refresh functions may be registered per canvas.
     The first function registered is the first function called upon refresh.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The pixel canvas.
-$PARAMETER        func :
+$PARAMETER          func :
     The function that is called when the canvas is to be refreshed. The
     prototype function is <-KWIN_PROTO_refresh_func->.
-$PARAMETER        info :
+$PARAMETER          info :
     The initial arbitrary canvas information pointer.
 $RETURNS
     A KCallbackFunc object.
 $END
 
-$FUNCTION         kwin_register_position_event_func
-$RETURN_TYPE      KCallbackFunc
+$FUNCTION           kwin_register_position_event_func
+$RETURN_TYPE        KCallbackFunc
 $PARAMETER_LIST
     (KPixCanvas canvas,
 						 flag (*func) (), void *f_info)
-$SUMMARY          Register position event callback.
+$SUMMARY            Register position event callback.
 $PURPOSE
     This routine will register a position event function for a pixel
     canvas. The position event function will be called whenever a position
     event on the canvas has not been consumed. Many position event functions
     may be registered per canvas. The first function registered is the first
     function called upon a position event.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The pixel canvas.
-$PARAMETER        func :
+$PARAMETER          func :
     The function that is called when a position event occurs. The
     prototype function is <-KWIN_PROTO_position_func->.
-$PARAMETER        f_info :
+$PARAMETER          f_info :
     The initial arbitrary function information pointer.
 $RETURNS
     A KCallbackFunc object. On failure, the process aborts.
 $END
 
-$FUNCTION         kwin_resize
-$RETURN_TYPE      flag
+$FUNCTION           kwin_resize
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, flag clear, int xoff, int yoff,
 		  int width, int height)
-$SUMMARY          Resize a pixel canvas.
+$SUMMARY            Resize a pixel canvas.
 $PURPOSE
     This routine will register a resize in the pixel canvas size.
     This will cause any refresh routines registered for the canvas to be
     called. This routine is meant to be called by an X event handler for the
     underlying window, however the routine is available for all graphics
     systems.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        clear :
+$PARAMETER          clear :
     If TRUE, the canvas is first cleared.
-$PARAMETER        xoff :
+$PARAMETER          xoff :
     The horizontal offset of the canvas origin (upper-left corner)
     relative to the parent window.
-$PARAMETER        yoff :
+$PARAMETER          yoff :
     The vertical offset of the canvas origin (upper-left corner)
     relative to the parent window.
-$PARAMETER        width :
+$PARAMETER          width :
     The new width (horizontal extent) of the canvas. If this is less
     than 1 canvas is not resized, it is only refreshed.
-$PARAMETER        height :
+$PARAMETER          height :
     The new height (vertical extent) of the canvas. If this is less
     than 1 canvas is not resized, it is only refreshed.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kwin_process_position_event
-$RETURN_TYPE      flag
+$EXPERIMENTAL_FUNC  kwin_partial_refresh
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (KPixCanvas canvas, unsigned int num_areas,
+			   KPixCanvasRefreshArea *areas, flag clear_all)
+$SUMMARY            Perform a partial refresh of a pixel canvas.
+$PURPOSE
+    Perform a partial refresh of a pixel canvas.
+$PARAMETER          canvas :
+    The pixel canvas.
+$PARAMETER          num_areas :
+    The number of areas in the pixel canvas to refresh.
+$PARAMETER          areas :
+    The list of areas to refresh. The values here are updated to ensure
+    all points lie within the boundaries of the pixel canvas.
+$PARAMETER          clear_all :
+    If TRUE, each refreshed region is first cleared, else the
+    <<clear>> field of each area determines whether an area is cleared.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION           kwin_process_position_event
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, int x, int y, flag clip,
 				  unsigned int event_code, void *event_info)
-$SUMMARY          Process position event on a pixel canvas.
+$SUMMARY            Process position event on a pixel canvas.
 $PURPOSE
     This routine will process (inject) a position event on the lower
     level object (parent: i.e. X window) for a pixel canvas. This event is
     processed with all position event consumer routines until one successfully
     consumes the event.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The pixel canvas.
-$PARAMETER        x :
+$PARAMETER          x :
     The horizontal position of the event, relative to the parent window.
-$PARAMETER        y :
+$PARAMETER          y :
     The vertical position of the event, relative to the parent window.
-$PARAMETER        clip :
+$PARAMETER          clip :
     If the event is outside of the canvas boundary and this is TRUE,
     the event co-ordinates are clipped to the nearest boundary and passed on to
     the registered position event consumers. If the event is outside of the
     canvas boundary and this is FALSE, the event is not consumed.
-$PARAMETER        event_code :
+$PARAMETER          event_code :
     The arbitrary event code.
-$PARAMETER        event_info :
+$PARAMETER          event_info :
     The arbitrary event information.
 $RETURNS
     TRUE if the event was consumed, else FALSE.
 $END
 
-$FUNCTION         kwin_write_ps
-$RETURN_TYPE      flag
-$PARAMETER_LIST
-    (KPixCanvas canvas, PostScriptPage pspage)
-$SUMMARY          Refresh a pixel canvas onto a PostScriptPage object.
-$PURPOSE
-    This routine will refresh a pixel canvas, redirecting output to a
-    PostScriptPage object.
-$PARAMETER        canvas :
-    The pixel canvas.
-$PARAMETER        pspage :
-    The PostScriptPage object.
-$RETURNS
-    TRUE on success, else FALSE.
-$END
-
-$FUNCTION         kwin_get_attributes
-$RETURN_TYPE      void
+$FUNCTION           kwin_get_attributes
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KPixCanvas canvas, ...)
-$SUMMARY          Get the attributes for a pixel canvas.
+$SUMMARY            Get the attributes for a pixel canvas.
 $PURPOSE
     Get the attributes for a pixel canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The pixel canvas.
 $PARAMETER        ... :
     The optional list of parameter attribute-key attribute-value-ptr
@@ -253,14 +353,14 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         kwin_set_attributes
-$RETURN_TYPE      void
+$FUNCTION           kwin_set_attributes
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KPixCanvas canvas, ...)
-$SUMMARY          Set the attributes for a pixel canvas.
+$SUMMARY            Set the attributes for a pixel canvas.
 $PURPOSE
     Set the attributes for a pixel canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The pixel canvas.
 $PARAMETER        ... :
     The optional list of parameter attribute-key attribute-value
@@ -270,23 +370,23 @@ $RETURNS
     Nothing.
 $END
 
-$FUNCTION         kwin_clear
-$RETURN_TYPE      flag
+$FUNCTION           kwin_clear
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, int x, int y, int width, int height)
-$SUMMARY          Clear a rectangular portion of a pixel canvas.
+$SUMMARY            Clear a rectangular portion of a pixel canvas.
 $PURPOSE
     Clear a rectangular portion of a pixel canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        x :
+$PARAMETER          x :
     The horizontal offset of the rectangle.
-$PARAMETER        y :
+$PARAMETER          y :
     The vertical offset of the rectangle.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the rectangle. If this is less than 0 the pixel canvas
     is cleared to its right edge.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the rectangle. If this is less than 0 the pixel
     canvas is cleared to its bottom edge.
 $NOTE
@@ -296,8 +396,8 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kwin_draw_pc_image
-$RETURN_TYPE      flag
+$FUNCTION           kwin_draw_pc_image
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, int x_off, int y_off,
 			 int x_pixels, int y_pixels,
@@ -311,60 +411,60 @@ $PARAMETER_LIST
 			 double i_min, double i_max,
 			 flag (*iscale_func) (), void *iscale_info,
 			 KPixCanvasImageCache *cache_ptr)
-$SUMMARY          Draw PseudoColour image to a pixel canvas.
+$SUMMARY            Draw PseudoColour image to a pixel canvas.
 $PURPOSE
     This routine will draw a 2-dimensional slice of a Karma array
     onto a pixel canvas. This slice may be tiled. The slice is a PseudoColour
     image.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The pixel canvas.
-$PARAMETER        x_off :
+$PARAMETER          x_off :
     The horizontal offset, relative to the top-left corner of the
     canvas.
-$PARAMETER        y_off :
+$PARAMETER          y_off :
     The vertical offset, relative to the top-left corner of the canvas.
-$PARAMETER        x_pixels :
+$PARAMETER          x_pixels :
     The number of horizontal pixels to draw.
-$PARAMETER        y_pixels :
+$PARAMETER          y_pixels :
     The number of vertical pixels to draw.
-$PARAMETER        slice :
+$PARAMETER          slice :
     The start of the slice image data.
-$PARAMETER        hoffsets :
+$PARAMETER          hoffsets :
     The array of horizontal byte offsets.
-$PARAMETER        voffsets :
+$PARAMETER          voffsets :
     The array of vertical byte offsets.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the input image (in values).
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the input image (in values).
-$PARAMETER        type :
+$PARAMETER          type :
     The type of the slice image data.
-$PARAMETER        conv_type :
+$PARAMETER          conv_type :
     The input conversion type (when the input is complex).
-$PARAMETER        num_pixels :
+$PARAMETER          num_pixels :
     The number of pixels in the pixel array.
-$PARAMETER        pixel_values :
+$PARAMETER          pixel_values :
     The array of pixel values.
-$PARAMETER        blank_pixel :
+$PARAMETER          blank_pixel :
     The pixel value to be used when the intensity value is an
     undefined value.
-$PARAMETER        min_sat_pixel :
+$PARAMETER          min_sat_pixel :
     The pixel value to be used when the intensity value is
     below the minimum value.
-$PARAMETER        max_sat_pixel :
+$PARAMETER          max_sat_pixel :
     The pixel value to be used when the intensity value is
     above the maximum value.
-$PARAMETER        i_min :
+$PARAMETER          i_min :
     The minimum intensity value.
-$PARAMETER        i_max :
+$PARAMETER          i_max :
     The maximum intensity value.
-$PARAMETER        iscale_func :
+$PARAMETER          iscale_func :
     The function to be called when non-linear intensity scaling
     is required. If NULL, linear intensity scaling is used. The prototype
     function is <-KWIN_PROTO_iscale_func->.
-$PARAMETER        iscale_info :
+$PARAMETER          iscale_info :
     A pointer to arbitrary information for <<iscale_func>>.
-$PARAMETER        cache_ptr :
+$PARAMETER          cache_ptr :
     Cache data is written here. The routine may produce cache data
     which will vastly increase the speed of subsequent operations on this data.
     Prior to process exit, a call MUST be made to <-kwin_free_cache_data->,
@@ -374,8 +474,8 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kwin_draw_rgb_image
-$RETURN_TYPE      flag
+$FUNCTION           kwin_draw_rgb_image
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, int x_off, int y_off,
 			  int x_pixels, int y_pixels,
@@ -385,38 +485,38 @@ $PARAMETER_LIST
 			  CONST uaddr *hoffsets, CONST uaddr *voffsets,
 			  unsigned int width, unsigned int height,
 			  KPixCanvasImageCache *cache_ptr)
-$SUMMARY          Draw TrueColour image to a pixel canvas.
+$SUMMARY            Draw TrueColour image to a pixel canvas.
 $PURPOSE
     This routine will draw a 2-dimensional slice of a Karma array
     onto a pixel canvas. This slice may be tiled. The slice is a RGB image.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The pixel canvas.
-$PARAMETER        x_off :
+$PARAMETER          x_off :
     The horizontal offset, relative to the top-left corner of the
     canvas.
-$PARAMETER        y_off :
+$PARAMETER          y_off :
     The vertical offset, relative to the top-left corner of the canvas.
-$PARAMETER        x_pixels :
+$PARAMETER          x_pixels :
     The number of horizontal pixels to draw.
-$PARAMETER        y_pixels :
+$PARAMETER          y_pixels :
     The number of vertical pixels to draw.
-$PARAMETER        red_slice :
+$PARAMETER          red_slice :
     The start of the red slice data.
-$PARAMETER        green_slice :
+$PARAMETER          green_slice :
     The start of the green slice data.
-$PARAMETER        blue_slice :
+$PARAMETER          blue_slice :
     The start of the blue slice data.
 $NOTE
     The 3 colour components must be of type  K_UBYTE  .
-$PARAMETER        hoffsets :
+$PARAMETER          hoffsets :
     The array of horizontal byte offsets.
-$PARAMETER        voffsets :
+$PARAMETER          voffsets :
     The array of vertical byte offsets.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the input image (in values).
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the input image (in values).
-$PARAMETER        cache_ptr :
+$PARAMETER          cache_ptr :
     Cache data is written here. The routine may produce cache data
     which will vastly increase the speed of subsequent operations on this data.
     Prior to process exit, a call MUST be made to <-kwin_free_cache_data->,
@@ -426,21 +526,21 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kwin_draw_cached_image
-$RETURN_TYPE      flag
+$FUNCTION           kwin_draw_cached_image
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvasImageCache cache, int x_off, int y_off)
-$SUMMARY          Draw cached image to a pixel canvas.
+$SUMMARY            Draw cached image to a pixel canvas.
 $PURPOSE
     This routine will draw a previously computed image cache data
     (computed by <-kwin_draw_pc_image->) onto the canvas on which the original
     image was drawn.
-$PARAMETER        cache :
+$PARAMETER          cache :
     The cache data.
-$PARAMETER        x_off :
+$PARAMETER          x_off :
     The horizontal offset, relative to the top-left corner of the
     canvas.
-$PARAMETER        y_off :
+$PARAMETER          y_off :
     The vertical offset, relative to the top-left corner of the canvas.
 $RETURNS
     TRUE on success if there is valid cache data, else FALSE
@@ -448,458 +548,516 @@ $RETURNS
     <-kwin_draw_pc_image->.
 $END
 
-$FUNCTION         kwin_draw_point
-$RETURN_TYPE      flag
+$EXPERIMENTAL_FUNC  kwin_draw_cached_subimages
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (KPixCanvasImageCache cache,
+				 int x_off, int y_off,
+				 unsigned int num_areas,
+				 KPixCanvasRefreshArea *areas)
+$SUMMARY            Draw previously computed cached subimages.
+$PURPOSE
+    This routine will draw sections of a previously computed image
+    cache data (computed by <<kwin_draw_pc_image>>) onto the canvas on which
+    the original image was drawn.
+$PARAMETER          cache :
+    The cache data.
+$PARAMETER          x_off :
+    The horizontal offset, relative to the top-left corner of the
+    canvas, which corresponds to the image origin.
+$PARAMETER          y_off :
+    The vertical offset, relative to the top-left corner of the canvas,
+    which corresponds to the image origin.
+$PARAMETER          num_areas :
+    The number of image areas to draw.
+$PARAMETER          areas :
+    The list of image areas.
+$RETURNS
+    TRUE on success if there is valid cache data, else FALSE
+    indicating that the image must be recomputed and drawn using
+    <<kwin_draw_pc_image>>.
+$END
+
+$FUNCTION           kwin_draw_point
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, double x, double y,
 		      unsigned long pixel_value)
-$SUMMARY          Draw a single point onto a pixel canvas.
+$SUMMARY            Draw a single point onto a pixel canvas.
 $PURPOSE
     Draw a single point onto a pixel canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        x :
+$PARAMETER          x :
     The horizontal offset of the point.
-$PARAMETER        y :
+$PARAMETER          y :
     The vertical offset of the point.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value to use.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kwin_draw_points
-$RETURN_TYPE      flag
+$FUNCTION           kwin_draw_points
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, double *x_array, double *y_array,
 		       unsigned int num_points, unsigned long pixel_value)
-$SUMMARY          Draw multiple points onto a pixel canvas.
+$SUMMARY            Draw multiple points onto a pixel canvas.
 $PURPOSE
     Draw multiple points onto a pixel canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        x_array :
+$PARAMETER          x_array :
     The horizontal co-ordinates of the points.
-$PARAMETER        y_array :
+$PARAMETER          y_array :
     The vetical co-ordinates of the points.
-$PARAMETER        num_points :
+$PARAMETER          num_points :
     The number of points.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value to use.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kwin_draw_line
-$RETURN_TYPE      flag
+$FUNCTION           kwin_draw_line
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, double x0, double y0,
 		     double x1, double y1, unsigned long pixel_value)
-$SUMMARY          Draw a single line onto a pixel canvas.
+$SUMMARY            Draw a single line onto a pixel canvas.
 $PURPOSE
     Draw a single line onto a pixel canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        x0 :
+$PARAMETER          x0 :
     The horizontal offset of the first point.
-$PARAMETER        y0 :
+$PARAMETER          y0 :
     The vertical offset of the first point.
-$PARAMETER        x1 :
+$PARAMETER          x1 :
     The horizontal offset of the second point.
-$PARAMETER        y1 :
+$PARAMETER          y1 :
     The vertical offset of the second point.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value to use.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kwin_draw_lines
-$RETURN_TYPE      flag
+$FUNCTION           kwin_draw_lines
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, int *x_array, int *y_array,
 		      int num_points, unsigned long pixel_value)
-$SUMMARY          Draw multiple connected lines onto a pixel canvas.
+$SUMMARY            Draw multiple connected lines onto a pixel canvas.
 $PURPOSE
     Draw multiple connected lines onto a pixel canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        x_array :
+$PARAMETER          x_array :
     The horizontal co-ordinates of the points.
-$PARAMETER        y_array :
+$PARAMETER          y_array :
     The vetical co-ordinates of the points.
-$PARAMETER        num_points :
+$PARAMETER          num_points :
     The number of points. The number of lines drawn is 1 less than
     this value.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value to use.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kwin_fill_ellipse
-$RETURN_TYPE      flag
+$FUNCTION           kwin_fill_ellipse
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas,
 			double cx, double cy, double rx, double ry,
 			unsigned long pixel_value)
-$SUMMARY          Draw a filled ellipse onto a pixel canvas.
+$SUMMARY            Draw a filled ellipse onto a pixel canvas.
 $PURPOSE
     Draw a filled ellipse onto a pixel canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        cx :
+$PARAMETER          cx :
     The horizontal co-ordinate of the centre of the ellipse.
-$PARAMETER        cy :
+$PARAMETER          cy :
     The vertical co-ordinate of the centre of the ellipse.
-$PARAMETER        rx :
+$PARAMETER          rx :
     The horizontal radius.
-$PARAMETER        ry :
+$PARAMETER          ry :
     The vertical radius.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value to use.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kwin_fill_polygon
-$RETURN_TYPE      flag
+$FUNCTION           kwin_fill_polygon
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, int *point_x, int *point_y,
 			unsigned int num_vertices, unsigned long pixel_value,
 			flag convex)
-$SUMMARY          Draw a filled polygon onto a pixel canvas.
+$SUMMARY            Draw a filled polygon onto a pixel canvas.
 $PURPOSE
     Draw a filled polygon onto a pixel canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        point_x :
+$PARAMETER          point_x :
     The array of x co-ordinates of vertices of the polygon.
-$PARAMETER        point_y :
+$PARAMETER          point_y :
     The array of y co-ordinates of vertices of the polygon.
-$PARAMETER        num_vertices :
+$PARAMETER          num_vertices :
     The number of vertices in the polygon.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value to use.
-$PARAMETER        convex :
+$PARAMETER          convex :
     If TRUE, then the points must form a convex polygon.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kwin_draw_string
-$RETURN_TYPE      flag
+$FUNCTION           kwin_draw_string
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, double x, double y,
 		       CONST char *string, unsigned long pixel_value,
 		       flag clear_under)
-$SUMMARY          Draw a string onto a pixel canvas.
+$SUMMARY            Draw a string onto a pixel canvas.
 $PURPOSE
     This routine will draw a NULL terminated string onto a pixel
     canvas, using the default font for the canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        x :
+$PARAMETER          x :
     The horizontal offset of the string origin.
-$PARAMETER        y :
+$PARAMETER          y :
     The vertical offset of the string origin.
-$PARAMETER        string :
+$PARAMETER          string :
     The string.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value to use.
-$PARAMETER        clear_under :
+$PARAMETER          clear_under :
     If TRUE, then the routine will draw both the foreground and
     background of the characters.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kwin_draw_rectangle
-$RETURN_TYPE      flag
+$FUNCTION           kwin_draw_rectangle
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, double x, double y,
 			  double width, double height,
 			  unsigned long pixel_value)
-$SUMMARY          Draw a single rectangle onto a pixel canvas.
+$SUMMARY            Draw a single rectangle onto a pixel canvas.
 $PURPOSE
     Draw a single rectangle onto a pixel canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        x :
+$PARAMETER          x :
     The horizontal offset of the rectangle.
-$PARAMETER        y :
+$PARAMETER          y :
     The vertical offset of the rectangle.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the rectangle. The point <<x + width>> is a vertex.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the rectangle. The point <<y + height>> is a vertex.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value to use.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kwin_fill_rectangle
-$RETURN_TYPE      flag
+$FUNCTION           kwin_fill_rectangle
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, double x, double y,
 			  double width, double height,
 			  unsigned long pixel_value)
-$SUMMARY          Draw a single filled rectangle onto a pixel canvas.
+$SUMMARY            Draw a single filled rectangle onto a pixel canvas.
 $PURPOSE
     Draw a single filled rectangle onto a pixel canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        x :
+$PARAMETER          x :
     The horizontal offset of the rectangle.
-$PARAMETER        y :
+$PARAMETER          y :
     The vertical offset of the rectangle.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the rectangle. The point <<x + width>> is a vertex.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the rectangle. The point <<y + height>> is a vertex.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value to use.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kwin_draw_ellipse
-$RETURN_TYPE      flag
+$FUNCTION           kwin_draw_ellipse
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, double cx, double cy,
 			double rx, double ry, unsigned long pixel_value)
-$SUMMARY          Draw an ellipse onto a pixel canvas.
+$SUMMARY            Draw an ellipse onto a pixel canvas.
 $PURPOSE
     Draw an ellipse onto a pixel canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        cx :
+$PARAMETER          cx :
     The horizontal co-ordinate of the centre of the ellipse.
-$PARAMETER        cy :
+$PARAMETER          cy :
     The vertical co-ordinate of the centre of the ellipse.
-$PARAMETER        rx :
+$PARAMETER          rx :
     The horizontal radius.
-$PARAMETER        ry :
+$PARAMETER          ry :
     The vertical radius.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value to use.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kwin_draw_ellipses
-$RETURN_TYPE      flag
+$FUNCTION           kwin_draw_ellipses
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, int *cx, int *cy, int *rx, int *ry,
 			 int num_ellipses, unsigned long pixel_value)
-$SUMMARY          Draw multiple ellipses onto a pixel canvas.
+$SUMMARY            Draw multiple ellipses onto a pixel canvas.
 $PURPOSE
     Draw multiple ellipses onto a pixel canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        cx :
+$PARAMETER          cx :
     The array of horizontal co-ordinate of the centre of the ellipse.
-$PARAMETER        cy :
+$PARAMETER          cy :
     The array of vertical co-ordinate of the centre of the ellipse.
-$PARAMETER        rx :
+$PARAMETER          rx :
     The array of horizontal radii.
-$PARAMETER        ry :
+$PARAMETER          ry :
     The array of vertical radii.
-$PARAMETER        num_ellipses :
+$PARAMETER          num_ellipses :
     The number of ellipses.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value to use.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kwin_fill_ellipses
-$RETURN_TYPE      flag
+$FUNCTION           kwin_fill_ellipses
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, int *cx, int *cy, int *rx, int *ry,
 			 int num_ellipses, unsigned long pixel_value)
-$SUMMARY          Draw multiple filled ellipses onto a pixel canvas.
+$SUMMARY            Draw multiple filled ellipses onto a pixel canvas.
 $PURPOSE
     Draw multiple filled ellipses onto a pixel canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        cx :
+$PARAMETER          cx :
     The array of horizontal co-ordinate of the centre of the ellipse.
-$PARAMETER        cy :
+$PARAMETER          cy :
     The array of vertical co-ordinate of the centre of the ellipse.
-$PARAMETER        rx :
+$PARAMETER          rx :
     The array of horizontal radii.
-$PARAMETER        ry :
+$PARAMETER          ry :
     The array of vertical radii.
-$PARAMETER        num_ellipses :
+$PARAMETER          num_ellipses :
     The number of ellipses.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value to use.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kwin_draw_segments
-$RETURN_TYPE      flag
+$FUNCTION           kwin_draw_segments
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, int *x0, int *y0, int *x1, int *y1,
 			 int num_segments, unsigned long pixel_value)
-$SUMMARY          Draw multiple disjoint lines onto a pixel canvas.
+$SUMMARY            Draw multiple disjoint lines onto a pixel canvas.
 $PURPOSE
     Draw multiple disjoint lines onto a pixel canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        x0 :
+$PARAMETER          x0 :
     The horizontal start co-ordinates of the segments.
-$PARAMETER        y0 :
+$PARAMETER          y0 :
     The vetical start co-ordinates of the segments.
-$PARAMETER        x1 :
+$PARAMETER          x1 :
     The horizontal end co-ordinates of the segments.
-$PARAMETER        y1 :
+$PARAMETER          y1 :
     The vetical end co-ordinates of the segments.
-$PARAMETER        num_segments :
+$PARAMETER          num_segments :
     The number of segments.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value to use.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kwin_get_size
-$RETURN_TYPE      void
+$FUNCTION           kwin_get_size
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KPixCanvas canvas, int *width, int *height)
-$SUMMARY          Get the size of a pixel canvas.
+$SUMMARY            Get the size of a pixel canvas.
 $PURPOSE
     Get the size of a pixel canvas.
-$PARAMETER        width :
+$PARAMETER          width :
     The number of horizontal pixel will be written here.
-$PARAMETER        height :
+$PARAMETER          height :
     The number of vertical pixel will be written here.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         kwin_free_cache_data
-$RETURN_TYPE      void
+$FUNCTION           kwin_free_cache_data
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KPixCanvasImageCache cache)
-$SUMMARY          Free some cache data allocated by [<kwin_draw_pc_image>].
+$SUMMARY            Free some cache data allocated by [<kwin_draw_pc_image>].
 $PURPOSE
     Free some cache data allocated by [<kwin_draw_pc_image>].
-$PARAMETER        cache :
+$PARAMETER          cache :
     The cache data.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         kwin_convert_to_canvas_coord
-$RETURN_TYPE      flag
+$FUNCTION           kwin_convert_to_canvas_coord
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, int xin, int yin,
 				   int *xout, int *yout)
-$SUMMARY          Convert low-level co-ordinates to pixel co-ordinates.
+$SUMMARY            Convert low-level co-ordinates to pixel co-ordinates.
 $PURPOSE
     This routine will convert co-ordinates in a lower level object
     (parent, ie. X window) to co-ordinates in a pixel canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        xin :
+$PARAMETER          xin :
     The lower level horizontal co-ordinate.
-$PARAMETER        yin :
+$PARAMETER          yin :
     The lower level vertical co-ordinate.
-$PARAMETER        xout :
+$PARAMETER          xout :
     The horizontal canvas co-ordinate will be written here.
-$PARAMETER        yout :
+$PARAMETER          yout :
     The vertical canvas co-ordinate will be written here.
 $RETURNS
     TRUE if the co-ordinate lies within the canvas boundaries, else
     FALSE (although a conversion is still performed).
 $END
 
-$FUNCTION         kwin_convert_from_canvas_coord
-$RETURN_TYPE      flag
+$FUNCTION           kwin_convert_from_canvas_coord
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, int xin, int yin,
 				     int *xout, int *yout)
-$SUMMARY          Convert pixel co-ordinates to low-level co-ordinates.
+$SUMMARY            Convert pixel co-ordinates to low-level co-ordinates.
 $PURPOSE
     This routine will convert co-ordinates in a pixel canvas to
     co-ordinates in a lower level object (parent, ie. X window).
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        xin :
+$PARAMETER          xin :
     The horizontal canvas co-ordinate.
-$PARAMETER        yin :
+$PARAMETER          yin :
     The vertical canvas co-ordinate.
-$PARAMETER        xout :
+$PARAMETER          xout :
     The lower level horizontal co-ordinate will be written here.
-$PARAMETER        yout :
+$PARAMETER          yout :
     The lower level vertical co-ordinate will be written here.
 $RETURNS
     TRUE if the co-ordinate lies within the canvas boundaries, else
     FALSE (although a conversion is still performed).
 $END
 
-$FUNCTION         kwin_get_colour
-$RETURN_TYPE      flag
+$FUNCTION           kwin_get_colour
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, CONST char *colourname,
 		      unsigned long *pixel_value, unsigned short *red,
 		      unsigned short *green, unsigned short *blue)
-$SUMMARY          Get (possibly allocate) a colourcell for a canvas.
+$SUMMARY            Get (possibly allocate) a colourcell for a canvas.
 $PURPOSE
     Get (possibly allocate) a colourcell for a canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The canvas.
-$PARAMETER        colourname :
+$PARAMETER          colourname :
     The name of the colour to get.
-$PARAMETER        pixel_value :
+$PARAMETER          pixel_value :
     The pixel value will be written here.
 $NOTE
     The pixel value is valid ONLY for this canvas. ALSO: the pixel value
     becomes invalid EVERY time the canvas is refreshed/ resized. If the canvas
     is refreshed/ resized, this routine MUST be called again.
-$PARAMETER        red :
+$PARAMETER          red :
     The red intensity in the hardware colourmap for the pixel will be
     written here. If this is NULL, nothing is written here.
-$PARAMETER        green :
+$PARAMETER          green :
     The green intensity in the hardware colourmap for the pixel will be
     written here. If this is NULL, nothing is written here.
-$PARAMETER        blue :
+$PARAMETER          blue :
     The blue intensity in the hardware colourmap for the pixel will be
     written here. If this is NULL, nothing is written here.
 $RETURNS
     TRUE if the colourcell was allocated, else FALSE.
 $END
 
-$FUNCTION         kwin_load_font
-$RETURN_TYPE      KPixCanvasFont
+$EXPERIMENTAL_FUNC  kwin_get_pixel_RGB_values
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (KPixCanvas canvas, unsigned long *pixels,
+				unsigned short *reds,
+				unsigned short *greens,
+				unsigned short *blues,
+				unsigned int num_colours)
+$SUMMARY            Get RGB components of pixel values.
+$PURPOSE
+    This routine will determine the RGB components of an array of
+    colourmap entries.
+$PARAMETER          canvas :
+    The pixel canvas.
+$PARAMETER          pixels :
+    The array of colourmap indices.
+$PARAMETER          reds :
+    The red components will be written to this array.
+$PARAMETER          greens :
+    The green components will be written to this array.
+$PARAMETER          blues :
+    The blue components will be written to this array.
+$PARAMETER          num_colours :
+    The number of colours in the arrays.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION           kwin_load_font
+$RETURN_TYPE        KPixCanvasFont
 $PARAMETER_LIST
     (KPixCanvas canvas, CONST char *fontname)
-$SUMMARY          Load a font for later use.
+$SUMMARY            Load a font for later use.
 $PURPOSE
     This routine will load a font which may be then used to draw text
     onto a pixel canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The pixel canvas for which the font is valid.
-$PARAMETER        fontname :
+$PARAMETER          fontname :
     The name of the font.
 $RETURNS
     A pixel font on success, else NULL.
 $END
 
-$FUNCTION         kwin_get_string_size
-$RETURN_TYPE      flag
+$FUNCTION           kwin_get_string_size
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvasFont font, CONST char *string, ...)
-$SUMMARY          Determine the size of a string.
+$SUMMARY            Determine the size of a string.
 $PURPOSE
     Determine the size of a string.
-$PARAMETER        font :
+$PARAMETER          font :
     The font.
-$PARAMETER        string :
+$PARAMETER          string :
     The string.
 $PARAMETER        ... :
     The optional list of parameter attribute-key attribute-value-ptr
@@ -909,87 +1067,234 @@ $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$FUNCTION         kwin_xgl_test_stereo
-$RETURN_TYPE      unsigned int
+$EXPERIMENTAL_FUNC  kwin_hersey_draw_string
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (KPixCanvas canvas, CONST char *string,
+			      double x, double y, double angle,
+			      unsigned long pixel_value,
+			      double *width, double *height)
+$SUMMARY            Draw string using Hershey (stroke) font.
+$PURPOSE
+    Draw string using Hershey (stroke) font.
+$PARAMETER          canvas :
+    The KPixCanvas to draw onto. If this is NULL nothing is drawn.
+$PARAMETER          string :
+    The string to draw.
+$PARAMETER          x :
+    The starting horizontal position of the string.
+$PARAMETER          y :
+    The starting vertical position of the string.
+$PARAMETER          angle :
+    The rotation angle of the string in degrees.
+$PARAMETER          pixel_value :
+    The pixel value to use when drawing the string.
+$PARAMETER          width :
+    The width of the string in pixels is written here.
+$PARAMETER          height :
+    The height of the string in pixels is written here.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$EXPERIMENTAL_FUNC  kwin_open_gl_test_available
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (Display *display)
+$SUMMARY            Test if the GLX extension is supported for a display.
+$PURPOSE
+    Test if the GLX extension is supported for a display.
+$PARAMETER          display :
+    The X11 display handle.
+$RETURNS
+    TRUE if the GLX extension is supported, else FALSE.
+$END
+
+$EXPERIMENTAL_FUNC  kwin_open_gl_test_stereo
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (Display *display, XVisualInfo *visinfo)
+$SUMMARY            Test if a particular visual can display stereo.
+$PURPOSE
+    Test if a particular visual can display stereo.
+$PARAMETER          display :
+    The X11 display handle.
+$PARAMETER          visinfo :
+    The XVisualInfo structure.
+$RETURNS
+    TRUE if stereo is available, else FALSE.
+$END
+
+$FUNCTION           kwin_write_ps
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (KPixCanvas canvas, PostScriptPage pspage)
+$SUMMARY            Refresh a pixel canvas onto a PostScriptPage object.
+$PURPOSE
+    This routine will refresh a pixel canvas, redirecting output to a
+    PostScriptPage object.
+$PARAMETER          canvas :
+    The pixel canvas.
+$PARAMETER          pspage :
+    The PostScriptPage object.
+$RETURNS
+    TRUE on success, else FALSE.
+$END
+
+$FUNCTION           kwin_xgl_test_stereo
+$RETURN_TYPE        unsigned int
 $PARAMETER_LIST
     (Display *display, Window window)
-$SUMMARY          Test if stereo supported using XGL.
+$SUMMARY            Test if stereo supported using XGL.
 $PURPOSE
     This routine will determine if stereoscopic display is supported
     using XGL on a particular display.
 $NOTE
     This routine is only available with the X window system.
-$PARAMETER        display :
+$PARAMETER          display :
     The X display.
-$PARAMETER        window :
+$PARAMETER          window :
     The window ID of a window of the same class as the desired stereo
     window.
 $RETURNS
     A status code. See <-KWIN_XGL_STATUS-> for a list of values.
 $END
 
-$FUNCTION         kwin_xgl_create_stereo
-$RETURN_TYPE      flag
+$FUNCTION           kwin_xgl_create_stereo
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (Display *display, Window window,
 			     int xoff, int yoff, int width, int height,
 			     KPixCanvas *mono,
 			     KPixCanvas *left, KPixCanvas *right)
-$SUMMARY          Create a stereo pixel canvas using XGL.
+$SUMMARY            Create a stereo pixel canvas using XGL.
 $PURPOSE
     This routine will create a stereo pixel canvas, ready for
     drawing, from an X window, using the XGL library. Note that the origin of
     a KPixCanvas is the upper-left corner.
 $NOTE
     This routine is only available with the X window system.
-$PARAMETER        display :
+$PARAMETER          display :
     The X display.
-$PARAMETER        window :
+$PARAMETER          window :
     The window ID in which the canvas lies.
-$PARAMETER        gc :
+$PARAMETER          gc :
     The graphics context.
-$PARAMETER        xoff :
+$PARAMETER          xoff :
     The horizontal offset of the canvas origin (upper-left corner)
     relative to the parent window.
-$PARAMETER        yoff :
+$PARAMETER          yoff :
     The vertical offset of the canvas origin (upper-left corner)
     relative to the parent window.
-$PARAMETER        width :
+$PARAMETER          width :
     The width (vertical extent) of the canvas.
-$PARAMETER        height :
+$PARAMETER          height :
     The height (horizontal extent) of the canvas.
 $RETURNS
     TRUE on success, else FALSE.
 $END
 
-$PROTO_FUNC       KWIN_PROTO_refresh_func
-$RETURN_TYPE      void
+$FUNCTION           kwin_xutil_get_vinfos
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (Screen *screen, XVisualInfo **pseudocolour,
+			    XVisualInfo **truecolour,
+			    XVisualInfo **directcolour)
+$SUMMARY            Get supported visuals available on a screen.
+$PURPOSE
+    Get supported visuals available on a screen.
+$PARAMETER          screen :
+    The X Window screen.
+$PARAMETER          pseudocolour :
+    A PseudoColour XVisualInfo pointer will be written here. If
+    this is NULL, nothing is written here. If no PseudoColour visual is
+    supported, NULL is written here.
+$PARAMETER          truecolour :
+    A TrueColour XVisualInfo pointer will be written here. If this
+    is NULL, nothing is written here. If no TrueColour visual is supported,
+    NULL is written here.
+$PARAMETER          directcolour :
+    A DirectColour XVisualInfo pointer will be written here. If
+    this is NULL, nothing is written here. If no DirectColour visual is
+    supported, NULL is written here.
+$NOTE
+    The XVisualInfo structures returned must be freed by XFree()
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           kwin_xutil_get_visuals
+$RETURN_TYPE        void
+$PARAMETER_LIST
+    (Screen *screen, Visual **pseudocolour,
+			     Visual **truecolour, Visual **directcolour)
+$SUMMARY            Get supported visuals available on a screen.
+$PURPOSE
+    Get supported visuals available on a screen.
+$PARAMETER          screen :
+    The X Window screen.
+$PARAMETER          pseudocolour :
+    A PseudoColour XVisualInfo pointer will be written here. If
+    this is NULL, nothing is written here. If no PseudoColour visual is
+    supported, NULL is written here.
+$PARAMETER          truecolour :
+    A TrueColour XVisualInfo pointer will be written here. If this
+    is NULL, nothing is written here. If no TrueColour visual is supported,
+    NULL is written here.
+$PARAMETER          directcolour :
+    A DirectColour XVisualInfo pointer will be written here. If
+    this is NULL, nothing is written here. If no DirectColour visual is
+    supported, NULL is written here.
+$NOTE
+    The XVisualInfo structures returned must be freed by XFree()
+$RETURNS
+    Nothing.
+$END
+
+$FUNCTION           kwin_xutil_get_visinfo_for_visual
+$RETURN_TYPE        XVisualInfo *
+$PARAMETER_LIST
+    (Display *dpy, Visual *visual)
+$SUMMARY            Get the visual information structure for a visual.
+$PURPOSE
+    Get the visual information structure for a visual.
+$PARAMETER          dpy :
+    The X display.
+$PARAMETER          visual :
+    The visual.
+$RETURNS
+    A pointer to an XVisualInfo structure on succes, else NULL. The
+    XVisualInfo structure must be freed by XFree()
+$END
+
+$PROTO_FUNC         KWIN_PROTO_refresh_func
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KPixCanvas canvas, int width, int height,
 			      void **info, PostScriptPage pspage,
 			      unsigned int num_areas,
 			      KPixCanvasRefreshArea *areas,
 			      flag *honoured_areas)
-$SUMMARY          Process a refresh event for a pixel canvas.
+$SUMMARY            Process a refresh event for a pixel canvas.
 $PURPOSE
     Process a refresh event for a pixel canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The pixel canvas.
-$PARAMETER        width :
+$PARAMETER          width :
     The width of the canvas in pixels.
-$PARAMETER        height :
+$PARAMETER          height :
     The height of the canvas in pixels.
-$PARAMETER        info :
+$PARAMETER          info :
     A pointer to the arbitrary canvas information pointer.
-$PARAMETER        pspage :
+$PARAMETER          pspage :
     If not NULL, the PostScriptPage object the refresh is
     redirected to.
-$PARAMETER        num_areas :
+$PARAMETER          num_areas :
     The number of areas that need to be refreshed. If this is
     0 then the entire pixel canvas needs to be refreshed.
-$PARAMETER        areas :
+$PARAMETER          areas :
     The list of areas that need to be refreshed.
-$PARAMETER        honoured_areas :
+$PARAMETER          honoured_areas :
     If the value TRUE is written here it is assumed the
     routine honoured the list of refresh areas and did not write outside
     these areas and hence the list of areas will be passed to subsequent
@@ -1000,59 +1305,59 @@ $RETURNS
     Nothing.
 $END
 
-$PROTO_FUNC       KWIN_PROTO_position_func
-$RETURN_TYPE      flag
+$PROTO_FUNC         KWIN_PROTO_position_func
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (KPixCanvas canvas, int x, int y,
 			       unsigned int event_code, void *e_info,
 			       void **f_info)
-$SUMMARY          Process a position event on a pixel canvas.
+$SUMMARY            Process a position event on a pixel canvas.
 $PURPOSE
     Process a position event on a pixel canvas.
-$PARAMETER        canvas :
+$PARAMETER          canvas :
     The pixel canvas on which the event occurred.
-$PARAMETER        x :
+$PARAMETER          x :
     The horizontal position of the event, relative to the canvas origin
-$PARAMETER        y :
+$PARAMETER          y :
     The vertical position of the event, relative to the canvas origin.
-$PARAMETER        event_code :
+$PARAMETER          event_code :
     The arbitrary event code.
-$PARAMETER        e_info :
+$PARAMETER          e_info :
     A pointer to arbitrary event information.
-$PARAMETER        f_info :
+$PARAMETER          f_info :
     A pointer to an arbitrary function information pointer.
 $RETURNS
     TRUE if the event was consumed, else FALSE indicating that
     the event is still to be processed.
 $END
 
-$PROTO_FUNC       KWIN_PROTO_iscale_func
-$RETURN_TYPE      flag
+$PROTO_FUNC         KWIN_PROTO_iscale_func
+$RETURN_TYPE        flag
 $PARAMETER_LIST
     (double *out, unsigned int out_stride,
 			     double *inp, unsigned int inp_stride,
 			     unsigned int num_values,
 			     double i_min, double i_max, void *info)
-$SUMMARY          Intensity scale function.
+$SUMMARY            Intensity scale function.
 $PURPOSE
     This routine will perform an arbitrary intensity scaling on
     an array of values. This routine may be called many times to scale an
     image.
-$PARAMETER        out :
+$PARAMETER          out :
     The output array.
-$PARAMETER        out_stride :
+$PARAMETER          out_stride :
     The stride (in doubles) of the output array.
-$PARAMETER        inp :
+$PARAMETER          inp :
     The input array.
-$PARAMETER        inp_stride :
+$PARAMETER          inp_stride :
     The stride (in doubles) of the input array.
-$PARAMETER        num_values :
+$PARAMETER          num_values :
     The number of values to scale.
-$PARAMETER        i_min :
+$PARAMETER          i_min :
     The minimum intensity value.
-$PARAMETER        i_max :
+$PARAMETER          i_max :
     The maximum intensity value.
-$PARAMETER        info :
+$PARAMETER          info :
     A pointer to arbitrary information.
 $RETURNS
     TRUE on success, else FALSE.

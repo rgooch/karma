@@ -31,12 +31,44 @@
 
     Written by      Richard Gooch   12-JUN-1996: Copied from kview module.
 
-    Last updated by Richard Gooch   27-JUN-1996: Removed <coord_transform_func>
+    Updated by      Richard Gooch   27-JUN-1996: Removed <coord_transform_func>
+
+    Updated by      Richard Gooch   9-AUG-1996: Check that data is K_FLOAT.
+
+    Updated by      Richard Gooch   11-AUG-1996: Computed 1st moment map.
+
+    Updated by      Richard Gooch   13-AUG-1996: Computed 0th moment map.
+
+    Updated by      Richard Gooch   14-AUG-1996: Added upper clip parameter to
+  <compute_moments>.
+
+    Updated by      Richard Gooch   15-AUG-1996: Added history information to
+  moment maps.
+
+    Updated by      Richard Gooch   22-AUG-1996: Changed order of cleanups when
+  loading data: if bad file is loaded don't destroy KwcsAstro object.
+
+    Updated by      Richard Gooch   6-SEP-1996: Added median algorithm.
+
+    Updated by      Richard Gooch   14-SEP-1996: Removed moment computation.
+
+    Updated by      Richard Gooch   12-OCT-1996: Used new
+  <foreign_read_and_setup> routine.
+
+    Updated by      Richard Gooch   14-OCT-1996: Copy "OBSRA" and "OBSDEC" from
+  cube to slice image.
+
+    Updated by      Richard Gooch   28-OCT-1996: Added hostname and port number
+  to title.
+
+    Last updated by Richard Gooch   30-OCT-1996: Added warning for no FITS
+  velocity/frequency axis.
 
 
 */
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 #include <errno.h>
 #include <karma.h>
 #include <karma_viewimg.h>
@@ -49,19 +81,7 @@
 #include <karma_a.h>
 #include <karma_m.h>
 #include <karma_r.h>
-
-
-/*  Local functions  */
-EXTERN_FUNCTION (void setup_comms, (Display *display) );
-EXTERN_FUNCTION (iarray load_image,
-		 (CONST char *inp_filename,
-		  KWorldCanvas pseudo_canvas, KWorldCanvas mag_pseudo_canvas,
-		  ViewableImage *image, ViewableImage *magnified_image) );
-EXTERN_FUNCTION (iarray load_cube, (CONST char *inp_filename) );
-
-
-/*  External functions  */
-EXTERN_FUNCTION (void load_and_setup, (CONST char *filename) );
+#include "kpvslice.h"
 
 
 /*  Private functions  */
@@ -71,6 +91,29 @@ STATIC_FUNCTION (void new_data_on_connection, (flag first_time_data) );
 /*
 STATIC_FUNCTION (void connection_closed, (flag data_deallocated) );
 */
+
+
+/*  Private data  */
+static char *keywords[] =
+{
+    "OBJECT",
+    "DATE-OBS",
+    "OBSRA",
+    "OBSDEC",
+    "EPOCH",
+    "BUNIT",
+    "TELESCOP",
+    "INSTRUME",
+    "EQUINOX",
+    "BTYPE",
+    "BMAJ",
+    "BMIN",
+    "BPA",
+    "RESTFREQ",
+    "VELREF",
+    "PBFWHM",
+    NULL
+};
 
 
 /*  Public functions follow  */
@@ -84,37 +127,45 @@ void setup_comms (Display *display)
 {
     int def_port_number;
     unsigned int server_port_number;
+    char hostname[STRING_LENGTH];
     extern char module_name[STRING_LENGTH + 1];
+    extern char module_version_date[STRING_LENGTH + 1];
+    extern char title_name[STRING_LENGTH];
 
     /*  Get default port number  */
     if ( ( def_port_number = r_get_def_port ( module_name,
 					     DisplayString (display) ) ) < 0 )
     {
-	(void) fprintf (stderr, "Could not get default port number\n");
+	fprintf (stderr, "Could not get default port number\n");
 	return;
     }
+    r_gethostname (hostname, STRING_LENGTH);
     server_port_number = def_port_number;
     if ( !conn_become_server (&server_port_number, CONN_MAX_INSTANCES) )
     {
-	(void) fprintf (stderr, "Module not operating as Karma server\n");
+	fprintf (stderr, "Module not operating as Karma server\n");
+	sprintf (title_name, "%s v%s @%s", module_name, module_version_date,
+		 hostname);
     }
     else
     {
-	(void) fprintf (stderr, "Port allocated: %d\n", server_port_number);
+	fprintf (stderr, "Port allocated: %d\n", server_port_number);
 	/*  Register the protocols  */
 	dsxfr_register_connection_limits (1, -1);
 	dsxfr_register_read_func ( ( void (*) () ) new_data_on_connection );
-/*
-	dsxfr_register_close_func (connection_closed);
-*/
+	/*dsxfr_register_close_func (connection_closed);*/
+	sprintf (title_name, "%s v%s @%s:%u",
+		 module_name, module_version_date, hostname,
+		 server_port_number);
     }
 }   /*  End Function setup_comms  */
 
-iarray load_image (CONST char *inp_filename,
-		   KWorldCanvas pseudo_canvas, KWorldCanvas mag_pseudo_canvas,
-		   ViewableImage *image, ViewableImage *magnified_image)
+flag load_image (CONST char *inp_filename, iarray *image_arr,
+		 KWorldCanvas pseudo_canvas, KWorldCanvas mag_pseudo_canvas,
+		 ViewableImage *image, ViewableImage *magnified_image)
 /*  [PURPOSE] This routine will load a file and display it.
     <inp_filename> The name of the file to load.
+    <image_arr> The image array is written here.
     <pseudo_canvas> The PseudoColour canvas.
     <image> If an image is loaded the ViewableImage is written here. If no
     image is loaded, NULL is written here. The value written here must be
@@ -122,65 +173,52 @@ iarray load_image (CONST char *inp_filename,
     <magnified_image> If an image is loaded the magnified ViewableImage is
     written here. If no image is loaded, NULL is written here. The value
     written here must be preserved between calls.
-    [RETURNS] The image array on success, else NULL.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
-    iarray image_pseudo;
     unsigned int ftype;
     double i_min, i_max;
-    multi_array *multi_desc;
-    extern KwcsAstro image_ap;
+    extern KwcsAstro loaded_image_ap, main_ap;
+    extern unsigned int image_mode;
     /*static char function_name[] = "load_image";*/
 
-    if ( ( multi_desc = foreign_guess_and_read (inp_filename, K_CH_MAP_LOCAL,
-						FALSE, &ftype,
-						FA_GUESS_READ_END) ) == NULL )
+    if ( !foreign_read_and_setup (inp_filename, K_CH_MAP_LOCAL, FALSE, &ftype,
+				  TRUE, 2, K_FLOAT, TRUE, image_arr,
+				  &i_min, &i_max, TRUE, &loaded_image_ap) )
     {
-	(void) fprintf (stderr, "Error reading file: \"%s\"\n", inp_filename);
 	return (FALSE);
     }
-    if (image_ap != NULL) wcs_astro_destroy (image_ap);
-    image_ap = wcs_astro_setup (multi_desc->headers[0], multi_desc->data[0]);
-    (void) fprintf (stderr, "image_astro_projection: %p\n", image_ap);
-    /*  Try to get 2-D image  */
-    if ( ( image_pseudo = iarray_get_from_multi_array (multi_desc, NULL, 2,
-						       NULL, NULL) )
-	 == NULL )
-    {
-	(void) fprintf (stderr, "Could not find image\n");
-	ds_dealloc_multi (multi_desc);
-	return (NULL);
-    }
-    ds_dealloc_multi (multi_desc);
+    if (image_mode == IMAGE_MODE_LOADED) main_ap = loaded_image_ap;
     destroy_all_vimages (image, magnified_image);
-    if ( ( *image = viewimg_create_from_iarray (pseudo_canvas, image_pseudo,
+    if ( ( *image = viewimg_create_from_iarray (pseudo_canvas, *image_arr,
 						FALSE) ) == NULL )
     {
-	(void) fprintf (stderr,
-			"Error getting ViewableImage from Iarray\n");
-	iarray_dealloc (image_pseudo);
-	return (NULL);
+	fprintf (stderr, "Error getting ViewableImage from Iarray\n");
+	iarray_dealloc (*image_arr);
+	*image_arr = NULL;
+	if (image_mode == IMAGE_MODE_LOADED) main_ap = NULL;
+	if (loaded_image_ap != NULL)
+	{
+	    wcs_astro_destroy (loaded_image_ap);
+	    loaded_image_ap = NULL;
+	}
+	return (FALSE);
     }
     if ( ( *magnified_image =
-	   viewimg_create_from_iarray (mag_pseudo_canvas, image_pseudo,
+	   viewimg_create_from_iarray (mag_pseudo_canvas, *image_arr,
 				       FALSE) ) == NULL )
     {
-	(void) fprintf (stderr,
-			"Error getting ViewableImage from Iarray\n");
-	iarray_dealloc (image_pseudo);
+	fprintf (stderr, "Error getting ViewableImage from Iarray\n");
+	iarray_dealloc (*image_arr);
+	*image_arr = NULL;
 	destroy_all_vimages (image, magnified_image);
-	return (NULL);
-    }
-    if ( !iarray_min_max (image_pseudo, CONV1_REAL, &i_min, &i_max) )
-    {
-	(void) fprintf (stderr, "Error computing min-max\n");
-    }
-    if (i_min == i_max)
-    {
-	(void) fprintf (stderr, "min: %e is same as max: modifying\n",
-			i_min);
-	--i_min;
-	++i_max;
+	if (image_mode == IMAGE_MODE_LOADED) main_ap = NULL;
+	if (loaded_image_ap != NULL)
+	{
+	    wcs_astro_destroy (loaded_image_ap);
+	    loaded_image_ap = NULL;
+	}
+	return (FALSE);
     }
     canvas_set_attributes (pseudo_canvas,
 			   CANVAS_ATT_VALUE_MIN, i_min,
@@ -190,55 +228,136 @@ iarray load_image (CONST char *inp_filename,
 			   CANVAS_ATT_VALUE_MIN, i_min,
 			   CANVAS_ATT_VALUE_MAX, i_max,
 			   CANVAS_ATT_END);
-    if ( !viewimg_make_active (*image) )
+    if (image_mode == IMAGE_MODE_LOADED)
     {
-	(void) fprintf (stderr, "Error making ViewableImage active\n");
-	iarray_dealloc (image_pseudo);
-	destroy_all_vimages (image, magnified_image);
-	return (NULL);
+	if ( !viewimg_make_active (*image) )
+	{
+	    fprintf (stderr, "Error making ViewableImage active\n");
+	    if (loaded_image_ap != NULL) wcs_astro_destroy (loaded_image_ap);
+	    iarray_dealloc (*image_arr);
+	    *image_arr = NULL;
+	    destroy_all_vimages (image, magnified_image);
+	    main_ap = NULL;
+	    wcs_astro_destroy (loaded_image_ap);
+	    loaded_image_ap = NULL;
+	    return (FALSE);
+	}
+	if ( !viewimg_make_active (*magnified_image) )
+	{
+	    fprintf (stderr, "Error making ViewableImage active\n");
+	    if (loaded_image_ap != NULL) wcs_astro_destroy (loaded_image_ap);
+	    iarray_dealloc (*image_arr);
+	    *image_arr = NULL;
+	    destroy_all_vimages (image, magnified_image);
+	    main_ap = NULL;
+	    wcs_astro_destroy (loaded_image_ap);
+	    loaded_image_ap = NULL;
+	    return (FALSE);
+	}
     }
-    if ( !viewimg_make_active (*magnified_image) )
-    {
-	(void) fprintf (stderr, "Error making ViewableImage active\n");
-	iarray_dealloc (image_pseudo);
-	destroy_all_vimages (image, magnified_image);
-	return (NULL);
-    }
-    return (image_pseudo);
+    return (TRUE);
 }   /*  End Function load_image  */
 
-iarray load_cube (CONST char *inp_filename)
+flag load_cube (CONST char *filename, iarray *cube_arr,
+		double *min, double *max)
 /*  [PURPOSE] This routine will load a cube.
-    <inp_filename> The name of the file to load.
-    [RETURNS] The cube array on success, else NULL.
+    <filename> The name of the file to load.
+    <cube_arr> The cube array is written here.
+    <min> The minimum cube value is written here.
+    <max> The maximum cube value is written here.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
-    iarray cube;
     unsigned int ftype;
-    multi_array *multi_desc;
     extern KwcsAstro cube_ap;
     /*static char function_name[] = "load_cube";*/
 
-    if ( ( multi_desc = foreign_guess_and_read (inp_filename, K_CH_MAP_LOCAL,
-						FALSE, &ftype,
-						FA_GUESS_READ_END) ) == NULL )
+    if ( !foreign_read_and_setup (filename, K_CH_MAP_LOCAL, FALSE, &ftype,
+				  TRUE, 3, K_FLOAT, TRUE, cube_arr, min, max,
+				  TRUE, &cube_ap) ) return (FALSE);
+    if (iarray_get_fits_axis (*cube_arr, 0) == 0)
     {
-	(void) fprintf (stderr, "Error reading file: \"%s\"\n", inp_filename);
-	return (FALSE);
+	fprintf (stderr, "WARNING: No FITS frequency/velocity axis found!\n");
     }
-    if (cube_ap != NULL) wcs_astro_destroy (cube_ap);
-    cube_ap = wcs_astro_setup (multi_desc->headers[0], multi_desc->data[0]);
-    (void) fprintf (stderr, "cube_astro_projection: %p\n", cube_ap);
-    /*  Try to get cube  */
-    if ( ( cube = iarray_get_from_multi_array (multi_desc, NULL, 3,
-					       NULL, NULL) )
-	 == NULL )
-    {
-	(void) fprintf (stderr, "Could not find cube\n");
-	return (NULL);
-    }
-    return (cube);
+    return (TRUE);
 }   /*  End Function load_cube  */
+
+flag copy_header_info (iarray out, iarray in)
+/*  [SUMMARY] Copy some header information from one array to another.
+    <out> The output array.
+    <in> The input array.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    unsigned int count;
+    static char function_name[] = "copy_header_info";
+
+    for (count = 0; keywords[count] != NULL; ++count)
+    {
+	if ( !iarray_copy_named_element (out, in, keywords[count],
+					 FALSE, FALSE, TRUE) )
+	{
+	    fprintf (stderr, "%s: Failed to copy header keyword %s\n",
+		     function_name, keywords[count]);
+	    return (FALSE);
+	}
+    }
+    return (TRUE);
+}   /*  End Function copy_header_info  */
+
+void convert_lin_world_coords (double *xout, double *yout,
+			       KwcsAstro out_ap,
+			       CONST double *xin, CONST double *yin,
+			       KwcsAstro in_ap, unsigned int num_coords)
+/*  [SUMMARY] Convert linear world co-ordinates in two reference frames.
+    [PURPOSE] This routine will convert linear world co-ordinates in one
+    reference frame to linear world co-ordinates in another frame. If
+    necessary, linear to non-linear and non-linear to linear conversions are
+    performed.
+    <xout> The output horizontal co-ordinates are written here.
+    <yout> The output vertical co-ordinates are written here.
+    <out_ap> The output reference frame.
+    <xin> The input horizontal co-ordinates are written here.
+    <yin> The input vertical co-ordinates are written here.
+    <in_ap> The input reference frame.
+    [RETURNS] Nothing.
+*/
+{
+    unsigned int count;
+
+    /*  First copy to the output arrays  */
+    for (count = 0; count < num_coords; ++count)
+    {
+	xout[count] = xin[count];
+	yout[count] = yin[count];
+    }
+    if ( !wcs_astro_test_radec (in_ap) && !wcs_astro_test_radec (out_ap) )
+    {
+	/*  Both reference frames are linear: plain copy  */
+	return;
+    }
+    if ( wcs_astro_test_radec (in_ap) && wcs_astro_test_radec (out_ap) )
+    {
+	/*  Both reference frames are non-linear: convert back and forth  */
+	wcs_astro_transform (in_ap, num_coords,
+			     xout, FALSE, yout, FALSE, NULL, FALSE,
+			     0, NULL, NULL);
+	wcs_astro_transform (out_ap, num_coords,
+			     xout, TRUE, yout, TRUE, NULL, FALSE,
+			     0, NULL, NULL);
+	return;
+    }
+    if ( wcs_astro_test_radec (in_ap) )
+    {
+	/*  Input reference frame is non-linear but output is linear: convert
+	    back to linear  */
+	wcs_astro_transform (in_ap, num_coords,
+			     xout, TRUE, yout, TRUE, NULL, FALSE,
+			     0, NULL, NULL);
+	return;
+    }
+    /*  Output reference frame is non-linear but input is linear: do nothing */
+}   /*  End Function convert_lin_world_coords  */
 
 
 /*  Private functions follow  */

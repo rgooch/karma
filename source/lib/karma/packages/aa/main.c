@@ -39,7 +39,10 @@
     Updated by      Richard Gooch   22-DEC-1995: Added <<front>> parameter to
   <aa_put_pair> routine.
 
-    Last updated by Richard Gooch   31-MAR-1996: Changed documentation style.
+    Updated by      Richard Gooch   31-MAR-1996: Changed documentation style.
+
+    Last updated by Richard Gooch   29-OCT-1996: Tidied up macros to keep
+  Solaris 2 compiler happy.
 
 
 */
@@ -56,17 +59,17 @@
 #define PAIR_MAGIC_NUMBER 2084295498
 
 #define VERIFY_ASSOCARRAY(aa) {if (aa == NULL) \
-{(void) fprintf (stderr, "NULL associative array passed\n"); \
+{fprintf (stderr, "NULL associative array passed\n"); \
  a_prog_bug (function_name); } \
 if (aa->magic_number != AA_MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid associative array object\n"); \
+{fprintf (stderr, "Invalid associative array object\n"); \
  a_prog_bug (function_name); } }
 
-#define VERIFY_PAIR(pair) {if (pair == NULL) \
-{(void) fprintf (stderr, "NULL associative array pair passed\n"); \
+#define VERIFY_PAIR(apair) {if (apair == NULL) \
+{fprintf (stderr, "NULL associative array pair passed\n"); \
  a_prog_bug (function_name); } \
-if (pair->magic_number != PAIR_MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid associative array pair object\n"); \
+if (apair->magic_number != PAIR_MAGIC_NUMBER) \
+{fprintf (stderr, "Invalid associative array pair object\n"); \
  a_prog_bug (function_name); } }
 
 

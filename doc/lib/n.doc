@@ -7,11 +7,11 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         n_gaussian
-$RETURN_TYPE      double
+$FUNCTION           n_gaussian
+$RETURN_TYPE        double
 $PARAMETER_LIST
     ()
-$SUMMARY          Compute a random number with Gaussian distribution.
+$SUMMARY            Compute a random number with Gaussian distribution.
 $PURPOSE
     This routine will compute a random number with a Gaussian
     distribution. The mean is 0.0 and the variance is 1.0
@@ -19,11 +19,11 @@ $RETURNS
     The number.
 $END
 
-$FUNCTION         n_uniform
-$RETURN_TYPE      double
+$FUNCTION           n_uniform
+$RETURN_TYPE        double
 $PARAMETER_LIST
     ()
-$SUMMARY          Compute a random number with Uniform distribution.
+$SUMMARY            Compute a random number with Uniform distribution.
 $PURPOSE
     This routine will compute a random number with a Uniform
     distribution. The range is from 0.0 to 1.0

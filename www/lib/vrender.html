@@ -32,11 +32,17 @@
 </td></tr>
 <tr><td><a href=vrender.html#vrender_cache_notify_func>vrender_cache_notify_func</a></td><td>Register cache computed callback.
 </td></tr>
+<tr><td><a href=vrender.html#vrender_view_notify_func>vrender_view_notify_func</a></td><td>Register view changed computed callback.
+</td></tr>
+<tr><td><a href=vrender.html#vrender_get_eye_info>vrender_get_eye_info</a></td><td>Get eye information.
+</td></tr>
 </table><h4>Prototype Functions</h4><table><tr><td><a href=vrender.html#VRENDER_PROTO_render_notify_func>VRENDER_PROTO_render_notify_func</a></td><td>Volume rendering completed callback.
 </td></tr>
 <tr><td><a href=vrender.html#VRENDER_PROTO_image_desc_notify_func>VRENDER_PROTO_image_desc_notify_func</a></td><td>Image descriptor changed callback.
 </td></tr>
 <tr><td><a href=vrender.html#VRENDER_PROTO_cache_notify_func>VRENDER_PROTO_cache_notify_func</a></td><td>Cache computed callback.
+</td></tr>
+<tr><td><a href=vrender.html#VRENDER_PROTO_view_notify_func>VRENDER_PROTO_view_notify_func</a></td><td>View changed callback.
 </td></tr>
 </table><h4>Tables</h4><table><tr><td><a href=vrender.html#VRENDER_ATTRIBUTES>VRENDER_ATTRIBUTES</a></td><td>List of attributes volume rendering contexts
 </td></tr>
@@ -151,7 +157,8 @@
  <b>vrender_collect_ray</b><i>    (KVolumeRenderContext context,
 					unsigned int eye_view,
 					Kcoord_2d pos_2d, Kcoord_3d *ray_start,
-					Kcoord_3d *direction, float *t_enter,
+					Kcoord_3d *direction,
+					float *t_enter, float *t_leave,
 					unsigned int *ray_length)
 </i><br><p>    Collect a ray projected from an image plane into a volume.
 <p><b>Parameters:</b><ul><li><i>context :</i> 
@@ -170,6 +177,9 @@
     This is not normalised.
 <br><li><i>t_enter :</i> 
     The distance down the ray corresponding to the first voxel is
+    written here.
+<br><li><i>t_leave :</i> 
+    The distance down the ray corresponding to the last voxel is
     written here.
 <br><li><i>ray_length :</i> 
     The length of the ray through the volume is written here. If
@@ -234,11 +244,43 @@
 <p><b>Parameters:</b><ul><li><i>context :</i> 
     The volume render context.
 <br><li><i>func :</i> 
-    The routine to be called. The The prototype function is
+    The routine to be called. The prototype function is
     <a href=vrender.html#VRENDER_PROTO_cache_notify_func>VRENDER_PROTO_cache_notify_func</a>
 <br><li><i>info :</i> 
     The initial arbitrary information pointer.
 <br></ul><b>Returns:</b>     A KCallbackFunc object on success. On failure, the process aborts
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=vrender_view_notify_func></a> KCallbackFunc
+ <b>vrender_view_notify_func</b><i>    (KVolumeRenderContext context,
+     void (*func) (KVolumeRenderContext context, void **info),
+     void *info)
+</i><br><p>    This routine will register a function which should be called
+    whenever the view for a context is changed.
+<p><b>Parameters:</b><ul><li><i>context :</i> 
+    The volume render context.
+<br><li><i>func :</i> 
+    The routine to be called. The prototype function is
+    <a href=vrender.html#VRENDER_PROTO_view_notify_func>VRENDER_PROTO_view_notify_func</a>. This is called after view information
+    has been computed, but before any cache information is computed.
+<br><li><i>info :</i> 
+    The initial arbitrary information pointer.
+<br></ul><b>Returns:</b>     A KCallbackFunc object on success. On failure, the process aborts
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=vrender_get_eye_info></a> void
+ <b>vrender_get_eye_info</b><i>    (KVolumeRenderContext context, unsigned int eye_view,
+			   Kcoord_3d *ras_centre, Kcoord_3d *direction,
+			   Kcoord_3d *horizontal)
+</i><br><p>    Get eye information.
+<p><b>Parameters:</b><ul><li><i>context :</i> 
+    The volume render context which determines the view information.
+<br><li><i>eye_view :</i> 
+    The eye which will see the point. See <a href=vrender.html#VRENDER_EYES>VRENDER_EYES</a> for a
+    list of legal values.
+<br><li><i>ras_centre :</i> 
+    The centre of the raster plane is written here.
+<br><li><i>direction :</i> 
+    The direction towards infinity is written here.
+<br><li><i>horizontal :</i> 
+    The horizontal direction vector is written here.
+<br></ul><b>Returns:</b>     Nothing.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Prototype Functions</h2></center><hr> <a name=VRENDER_PROTO_render_notify_func></a> void
  <b>VRENDER_PROTO_render_notify_func</b><i>    (void *info)
 </i><br><p>    This routine registers the completion of a volume render
@@ -270,6 +312,14 @@
     constructed by ORing some values. See <a href=vrender.html#VRENDER_EYE_MASKS>VRENDER_EYE_MASKS</a> for a list of
     masks.
 <br></ul><b>Returns:</b>     Nothing.
+<br><b>Multithreading Level:</b> Unsafe<br><p><hr> <a name=VRENDER_PROTO_view_notify_func></a> void
+ <b>VRENDER_PROTO_view_notify_func</b><i>    (KVolumeRenderContext context, void **info)
+</i><br><p>    This routine is called when the view is changed.
+<p><b>Parameters:</b><ul><li><i>context :</i> 
+    The volume render context.
+<br><li><i>info :</i> 
+    A pointer to the arbitrary information pointer.
+<br></ul><b>Returns:</b>     Nothing.
 <br><b>Multithreading Level:</b> Unsafe<br><p><hr><center><h2>Tables</h2></center><hr> <a name=VRENDER_ATTRIBUTES><b>VRENDER_ATTRIBUTES</b></a><p> <table><tr><td>Name                                 </td><td>Get Type             </td><td>Set Type             </td><td>Meaning
 </td></tr><tr><td>
 </td></tr><tr><td>VRENDER_CONTEXT_ATT_END              </td><td>                     </td><td>                     </td><td>End of varargs list
@@ -297,4 +347,6 @@
 </td></tr><tr><td>VRENDER_EYE_MASK_CYCLOPS   </td><td>Single eye (monoscopic vision) 
 </td></tr><tr><td>VRENDER_EYE_MASK_LEFT      </td><td>Left eye (stereoscopic vision)
 </td></tr><tr><td>VRENDER_EYE_MASK_RIGHT     </td><td>Right eye (stereoscopic vision)
-</table><p><hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.nectar.com.au/~patrick/ariel.html">Ariel Internet Services</a></address></center></body></html>
+</table><p>
+<hr><a href="../index.html">Back to Karma Home Page</a>
+<hr><center><address>Contact: <a href="mailto:rgooch@atnf.csiro.au">Richard Gooch</a><br>Web Development: <a href="http://www.ariel.com.au/">Ariel Internet Services</a></address></center></body></html>

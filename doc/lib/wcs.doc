@@ -9,36 +9,63 @@ $LIBRARY          karma
 $LINKWITH         -lkarma
 $END
 
-$FUNCTION         wcs_astro_setup
-$RETURN_TYPE      KwcsAstro
+$FUNCTION           wcs_astro_setup
+$RETURN_TYPE        KwcsAstro
 $PARAMETER_LIST
     (CONST packet_desc *pack_desc, CONST char *packet)
-$SUMMARY          Setup for Astronomical Sky Co-ordinate projections.
+$SUMMARY            Setup for Astronomical Sky Co-ordinate projections.
 $PURPOSE
     Setup for Astronomical Sky Co-ordinate projections.
-$PARAMETER        pack_desc :
+$PARAMETER          pack_desc :
     The packet descriptor containing the FITS-style keywords.
-$PARAMETER        packet :
+$PARAMETER          packet :
     The packet data containing the FITS-stype keyword data.
 $RETURNS
     A KwcsAstro object on success, else NULL.
 $END
 
-$FUNCTION         wcs_astro_destroy
-$RETURN_TYPE      void
+$FUNCTION           wcs_astro_destroy
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KwcsAstro ap)
-$SUMMARY          Destroy KwcsAstro object.
+$SUMMARY            Destroy KwcsAstro object.
 $PURPOSE
     Destroy KwcsAstro object.
-$PARAMETER        ap :
+$PARAMETER          ap :
     The KwcsAstro object.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         wcs_astro_transform
-$RETURN_TYPE      void
+$FUNCTION           wcs_astro_test_radec
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (KwcsAstro ap)
+$SUMMARY            Test if a KwcsAstro object has RA and DEC defined.
+$PURPOSE
+    Test if a KwcsAstro object has RA and DEC defined.
+$PARAMETER          ap :
+    The KwcsAstro object. This may be NULL.
+$RETURNS
+    TRUE if the KwcsAstro object has RA and DEC defined, else FALSE.
+$END
+
+$FUNCTION           wcs_astro_test_velocity
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (KwcsAstro ap)
+$SUMMARY            Test if a KwcsAstro object has velocity or frequency defined.
+$PURPOSE
+    Test if a KwcsAstro object has velocity or frequency defined.
+$PARAMETER          ap :
+    The KwcsAstro object. This may be NULL.
+$RETURNS
+    TRUE if the KwcsAstro object has velocity or frequency defined,
+    else FALSE.
+$END
+
+$FUNCTION           wcs_astro_transform
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KwcsAstro ap, unsigned int num_coords,
 			  double *ra, flag ra_to_linear,
@@ -46,40 +73,40 @@ $PARAMETER_LIST
 			  double *vel, flag vel_to_linear,
 			  unsigned int num_restr, CONST char **restr_names,
 			  CONST double *restr_values)
-$SUMMARY          Transform between linear and projected co-ordinates.
+$SUMMARY            Transform between linear and projected co-ordinates.
 $PURPOSE
     Transform between linear and projected co-ordinates.
-$PARAMETER        ap :
+$PARAMETER          ap :
     The KwcsAstro object.
-$PARAMETER        num_coords :
+$PARAMETER          num_coords :
     The number of co-ordinates to transform.
-$PARAMETER        ra :
+$PARAMETER          ra :
     A pointer to the right ascension values. These will be modified.
-$PARAMETER        ra_to_linear :
+$PARAMETER          ra_to_linear :
     If TRUE the right ascension values are transformed to linear
     co-ordinates, else they are transformed to non-linear co-ordinates.
-$PARAMETER        dec :
+$PARAMETER          dec :
     A pointer to the declination values. These will be modified.
-$PARAMETER        dec_to_linear :
+$PARAMETER          dec_to_linear :
     If TRUE the declination values are transformed to linear
     co-ordinates, else they are transformed to non-linear co-ordinates.
-$PARAMETER        vel :
+$PARAMETER          vel :
     A pointer to the velocity values. These will be modified.
-$PARAMETER        vel_to_linear :
+$PARAMETER          vel_to_linear :
     If TRUE the velocity values are transformed to linear
     co-ordinates, else they are transformed to non-linear co-ordinates.
-$PARAMETER        num_restr :
+$PARAMETER          num_restr :
     The number of restrictions.
-$PARAMETER        restr_names :
+$PARAMETER          restr_names :
     The array of restriction names.
-$PARAMETER        restr_values :
+$PARAMETER          restr_values :
     The restriction values.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         wcs_astro_transform3
-$RETURN_TYPE      void
+$FUNCTION           wcs_astro_transform3
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KwcsAstro ap, unsigned int num_coords,
 			   CONST char *name0, double *coords0, flag to_lin0,
@@ -87,166 +114,187 @@ $PARAMETER_LIST
 			   CONST char *name2, double *coords2, flag to_lin2,
 			   unsigned int num_restr, CONST char **restr_names,
 			   CONST double *restr_values)
-$SUMMARY          Transform between linear and projected co-ordinates.
+$SUMMARY            Transform between linear and projected co-ordinates.
 $PURPOSE
     This routine will convert up to three arrays of co-ordinates
     using an astronomical projection system. The co-ordinate arrays are named.
     If a co-ordinate array is not defined the co-ordinates are unchanged.
-$PARAMETER        ap :
+$PARAMETER          ap :
     The KwcsAstro object.
-$PARAMETER        num_coords :
+$PARAMETER          num_coords :
     The number of co-ordinates to transform.
-$PARAMETER        name0 :
+$PARAMETER          name0 :
     The name of co-ordinate array 0.
-$PARAMETER        coords0 :
+$PARAMETER          coords0 :
     Co-ordinate array 0.
-$PARAMETER        to_lin0 :
+$PARAMETER          to_lin0 :
     If TRUE the co-ordinate 0 values are transformed to linear
     co-ordinates, else they are transformed to non-linear co-ordinates.
-$PARAMETER        name1 :
+$PARAMETER          name1 :
     The name of co-ordinate array 1.
-$PARAMETER        coords1 :
+$PARAMETER          coords1 :
     Co-ordinate array 1.
-$PARAMETER        to_lin1 :
+$PARAMETER          to_lin1 :
     If TRUE the co-ordinate 1 values are transformed to linear
     co-ordinates, else they are transformed to non-linear co-ordinates.
-$PARAMETER        name2 :
+$PARAMETER          name2 :
     The name of co-ordinate array 2.
-$PARAMETER        coords2 :
+$PARAMETER          coords2 :
     Co-ordinate array 2.
-$PARAMETER        to_lin2 :
+$PARAMETER          to_lin2 :
     If TRUE the co-ordinate 2 values are transformed to linear
     co-ordinates, else they are transformed to non-linear co-ordinates.
-$PARAMETER        num_restr :
+$PARAMETER          num_restr :
     The number of restrictions.
-$PARAMETER        restr_names :
+$PARAMETER          restr_names :
     The array of restriction names.
-$PARAMETER        restr_values :
+$PARAMETER          restr_values :
     The restriction values.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         wcs_astro_format_ra
-$RETURN_TYPE      void
+$FUNCTION           wcs_astro_format_ra
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (char *string, double ra)
-$SUMMARY          Format a Right Ascension value into a string.
+$SUMMARY            Format a Right Ascension value into a string.
 $PURPOSE
     Format a Right Ascension value into a string.
-$PARAMETER        string :
+$PARAMETER          string :
     The string to write to. Sufficient storage must be available.
-$PARAMETER        ra :
-    The Right Ascension value.
+$PARAMETER          ra :
+    The Right Ascension value in degrees.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         wcs_astro_format_dec
-$RETURN_TYPE      void
+$FUNCTION           wcs_astro_format_dec
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (char *string, double dec)
-$SUMMARY          Format a Declination value into a string.
+$SUMMARY            Format a Declination value into a string.
 $PURPOSE
     Format a Declination value into a string.
-$PARAMETER        string :
+$PARAMETER          string :
     The string to write to. Sufficient storage must be available.
-$PARAMETER        dec :
-    The Declination value.
+$PARAMETER          dec :
+    The Declination value in degrees.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         wcs_astro_format_vel
-$RETURN_TYPE      void
+$FUNCTION           wcs_astro_format_vel
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KwcsAstro ap, char *string, double vel)
-$SUMMARY          Format a velocity value into a string.
+$SUMMARY            Format a velocity value into a string.
 $PURPOSE
     Format a velocity value into a string.
-$PARAMETER        ap :
+$PARAMETER          ap :
     The KwcsAstro object.
-$PARAMETER        string :
+$PARAMETER          string :
     The string to write to. Sufficient storage must be available.
-$PARAMETER        vel :
+$PARAMETER          vel :
     The velocity value.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         wcs_astro_format
-$RETURN_TYPE      void
+$FUNCTION           wcs_astro_format
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KwcsAstro ap, CONST char *dim_name,
 		       char string[STRING_LENGTH], double value)
-$SUMMARY          Format a value.
+$SUMMARY            Format a value. No transformation is applied.
 $PURPOSE
-    Format a value.
-$PARAMETER        ap :
+    Format a value. No transformation is applied.
+$PARAMETER          ap :
     The KwcsAstro object.
-$PARAMETER        dim_name :
+$PARAMETER          dim_name :
     The name of the dimension.
-$PARAMETER        string :
+$PARAMETER          string :
     The string to write to.
-$PARAMETER        value :
+$PARAMETER          value :
     The value.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         wcs_astro_format_extra
-$RETURN_TYPE      void
+$FUNCTION           wcs_astro_format_extra
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KwcsAstro ap, char string[STRING_LENGTH])
-$SUMMARY          Format extra information.
+$SUMMARY            Format extra information.
 $PURPOSE
     Format extra information.
-$PARAMETER        ap :
+$PARAMETER          ap :
     The KwcsAstro object.
-$PARAMETER        string :
+$PARAMETER          string :
     The string to write to.
 $RETURNS
     Nothing.
 $END
 
-$FUNCTION         wcs_format_all
-$RETURN_TYPE      void
+$FUNCTION           wcs_astro_format_all
+$RETURN_TYPE        void
 $PARAMETER_LIST
     (KwcsAstro ap, char coord_string[STRING_LENGTH],
-		     CONST char *name0, double coord0,
-		     CONST char *name1, double coord1,
-		     CONST char *name2, double coord2,
-		     unsigned int num_restr, CONST char **restr_names,
-		     CONST double *restr_values,
-		     char other_string[STRING_LENGTH])
-$SUMMARY          Transform and format all available information.
+			   CONST char *name0, double coord0,
+			   CONST char *name1, double coord1,
+			   CONST char *name2, double coord2,
+			   unsigned int num_restr, CONST char **restr_names,
+			   CONST double *restr_values,
+			   char other_string[STRING_LENGTH])
+$SUMMARY            Transform and format all available information.
 $PURPOSE
     This routine will transform and format all available information.
     The data is transformed from linear to non-linear values.
-$PARAMETER        ap :
+$PARAMETER          ap :
     The KwcsAstro object.
-$PARAMETER        coord_string :
+$PARAMETER          coord_string :
     Formatted co-ordinate information is written here.
-$PARAMETER        name0 :
+$PARAMETER          name0 :
     The name of co-ordinate 0.
-$PARAMETER        coord0 :
+$PARAMETER          coord0 :
     Co-ordinate 0.
-$PARAMETER        name1 :
+$PARAMETER          name1 :
     The name of co-ordinate 1. If this is NULL, it is ignored.
-$PARAMETER        coord1 :
+$PARAMETER          coord1 :
     Co-ordinate 1.
-$PARAMETER        name2 :
+$PARAMETER          name2 :
     The name of co-ordinate 2. If this is NULL, it is ignored.
-$PARAMETER        coord2 :
+$PARAMETER          coord2 :
     Co-ordinate 2.
-$PARAMETER        num_restr :
+$PARAMETER          num_restr :
     The number of restrictions.
-$PARAMETER        restr_names :
+$PARAMETER          restr_names :
     The array of restriction names.
-$PARAMETER        restr_values :
+$PARAMETER          restr_values :
     The restriction values.
-$PARAMETER        other_string :
+$PARAMETER          other_string :
     Formatted extra information is written here.
 $RETURNS
     Nothing.
+$END
+
+$EXPERIMENTAL_FUNC  wcs_astro_get_preferred_units
+$RETURN_TYPE        flag
+$PARAMETER_LIST
+    (char new_units[STRING_LENGTH],
+				    char format_str[STRING_LENGTH],
+				    double *scale, CONST char *old_units)
+$SUMMARY            Get preferred units for data.
+$PURPOSE
+    Get preferred units for data.
+$PARAMETER          new_units :
+    The new units string is written here.
+$PARAMETER          format_str :
+    The format string is written here.
+$PARAMETER          scale :
+    The scale value to convert to the new units will be written here.
+$PARAMETER          old_units :
+    The old units string.
+$RETURNS
+    TRUE if preferred units were found, else FALSE.
 $END

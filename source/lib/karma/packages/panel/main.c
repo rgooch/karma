@@ -76,8 +76,11 @@
     Updated by      Richard Gooch   12-APR-1996: Changed to new documentation
   format.
 
-    Last updated by Richard Gooch   30-MAY-1996: Cleaned code to keep
+    Updated by      Richard Gooch   30-MAY-1996: Cleaned code to keep
   gcc -Wall -pedantic-errors happy.
+
+    Last updated by Richard Gooch   28-SEP-1996: Created incomplete
+  <panel_put_history_with_stack>.
 
 
 */
@@ -100,10 +103,10 @@
 #define PANEL_STACK_SIZE 100
 
 #define VERIFY_CONTROLPANEL(pnl) if (pnl == NULL) \
-{(void) fprintf (stderr, "NULL control panel passed\n"); \
+{fprintf (stderr, "NULL control panel passed\n"); \
  a_prog_bug (function_name); } \
 if (pnl->magic_number != MAGIC_NUMBER) \
-{(void) fprintf (stderr, "Invalid control panel object\n"); \
+{fprintf (stderr, "Invalid control panel object\n"); \
  a_prog_bug (function_name); }
 
 struct controlpanel_type
@@ -163,7 +166,7 @@ STATIC_FUNCTION (void panel_show_items, (KControlPanel panel,
 					 flag verbose) );
 STATIC_FUNCTION (char *decode_datum, (KPanelItem item, void *value_ptr,
 				      char *string, flag *failed) );
-STATIC_FUNCTION (void show_datum, (KPanelItem item, FILE *fp,
+STATIC_FUNCTION (void show_datum, (KPanelItem item, char line[STRING_LENGTH],
 				   void *value_ptr) );
 STATIC_FUNCTION (void abort_func, (char *cmd) );
 STATIC_FUNCTION (void add_conn_func, (char *cmd) );
@@ -198,8 +201,7 @@ KControlPanel panel_create (flag blank)
     FLAG_VERIFY (blank);
     if (FALSE != 0)
     {
-	(void) fprintf (stderr, "Constant FALSE has value: %d  not 0\n",
-			FALSE);
+	fprintf (stderr, "Constant FALSE has value: %d  not 0\n", FALSE);
 	a_prog_bug (function_name);
     }
     if ( ( panel = (KControlPanel) m_alloc (sizeof *panel) ) == NULL )
@@ -293,12 +295,12 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
     VERIFY_CONTROLPANEL (panel);
     if (name == NULL)
     {
-	(void) fprintf (stderr, "NULL name pointer passed\n");
+	fprintf (stderr, "NULL name pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (comment == NULL)
     {
-	(void) fprintf (stderr, "NULL comment pointer passed\n");
+	fprintf (stderr, "NULL comment pointer passed\n");
 	a_prog_bug (function_name);
     }
     /*  Check for valid type  */
@@ -307,8 +309,7 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
       case PIT_CHOICE_INDEX:
 	if (panel->group)
 	{
-	    (void) fprintf (stderr,
-			    "Cannot add type PIT_CHOICE_INDEX to a group\n");
+	    fprintf (stderr, "Cannot add type PIT_CHOICE_INDEX to a group\n");
 	    a_prog_bug (function_name);
 	}
 	/*  Fall through  */
@@ -316,7 +317,7 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
       case PIT_FLAG:
 	if (value_ptr == NULL)
 	{
-	    (void) fprintf (stderr, "NULL value pointer passed\n");
+	    fprintf (stderr, "NULL value pointer passed\n");
 	    a_prog_bug (function_name);
 	}
 	/*  Fall through  */
@@ -326,7 +327,7 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
       case PIT_GROUP:
 	if (panel->group)
 	{
-	    (void) fprintf (stderr, "Cannot add a group to a group\n");
+	    fprintf (stderr, "Cannot add a group to a group\n");
 	    a_prog_bug (function_name);
 	}
 	group = (KControlPanel) value_ptr;
@@ -335,23 +336,23 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
       case K_VSTRING:
 	if (value_ptr == NULL)
 	{
-	    (void) fprintf (stderr, "NULL value pointer passed\n");
+	    fprintf (stderr, "NULL value pointer passed\n");
 	    a_prog_bug (function_name);
 	}
 	break;
       case K_FSTRING:
-	(void) fprintf (stderr, "Fixed string not yet implemented\n");
+	fprintf (stderr, "Fixed string not yet implemented\n");
 	a_prog_bug (function_name);
 	break;
       default:
 	if ( !ds_element_is_named (type) )
 	{
-	    (void) fprintf (stderr, "Illegal panel item type: %u\n", type);
+	    fprintf (stderr, "Illegal panel item type: %u\n", type);
 	    a_prog_bug (function_name);
 	}
 	if (value_ptr == NULL)
 	{
-	    (void) fprintf (stderr, "NULL value pointer passed\n");
+	    fprintf (stderr, "NULL value pointer passed\n");
 	    a_prog_bug (function_name);
 	}
 	break;
@@ -392,15 +393,15 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
 	    if ( ( item->num_choice_strings =
 		  va_arg (argp, unsigned int) ) == 0 )
 	    {
-		(void) fprintf (stderr,
-				"Number of choice strings must be greater than zero\n");
+		fprintf (stderr,
+			 "Number of choice strings must be greater than zero\n");
 		a_prog_bug (function_name);
 	    }
 	    if (type != PIT_CHOICE_INDEX)
 	    {
-		(void) fprintf (stderr,
-				"Cannot specify number of choice strings for type: %u\n",
-				type);
+		fprintf (stderr,
+			 "Cannot specify number of choice strings for type: %u\n",
+			 type);
 		a_prog_bug (function_name);
 	    }
 	    break;
@@ -408,15 +409,14 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
 	    if ( ( item->choice_strings = va_arg (argp, char **) )
 		== NULL )
 	    {
-		(void) fprintf (stderr,
-				"NULL choice string array pointer passed\n");
+		fprintf (stderr, "NULL choice string array pointer passed\n");
 		a_prog_bug (function_name);
 	    }
 	    if (type != PIT_CHOICE_INDEX)
 	    {
-		(void) fprintf (stderr,
-				"Cannot specify choice strings for type: %u\n",
-				type);
+		fprintf (stderr,
+			 "Cannot specify choice strings for type: %u\n",
+			 type);
 		a_prog_bug (function_name);
 	    }
 	    break;
@@ -424,15 +424,14 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
 	    if ( ( item->choice_comments = va_arg (argp, char **) )
 		== NULL )
 	    {
-		(void) fprintf (stderr,
-				"NULL choice comment array pointer passed\n");
+		fprintf (stderr, "NULL choice comment array pointer passed\n");
 		a_prog_bug (function_name);
 	    }
 	    if (type != PIT_CHOICE_INDEX)
 	    {
-		(void) fprintf (stderr,
-				"Cannot specify choice comments for type: %u\n",
-				type);
+		fprintf (stderr,
+			 "Cannot specify choice comments for type: %u\n",
+			 type);
 		a_prog_bug (function_name);
 	    }
 	    break;
@@ -441,8 +440,8 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
 	  case PIA_ARRAY_MAX_LENGTH:
 	    if (panel->group)
 	    {
-		(void) fprintf (stderr,
-				"Cannot specify array length for group item\n");
+		fprintf (stderr,
+			 "Cannot specify array length for group item\n");
 		a_prog_bug (function_name);
 	    }
 	    switch (type)
@@ -450,9 +449,8 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
 	      case PIT_FUNCTION:
 	      case PIT_EXIT_FORM:
 	      case PIT_CHOICE_INDEX:
-		(void) fprintf (stderr,
-				"Cannot specify array length for type: %u\n",
-				type);
+		fprintf (stderr, "Cannot specify array length for type: %u\n",
+			 type);
 		a_prog_bug (function_name);
 		break;
 	      case PIT_FLAG:
@@ -461,9 +459,9 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
 	      default:
 		if ( !ds_element_is_named (type) )
 		{
-		    (void) fprintf (stderr,
-				    "Cannot specify array length for type: %u\n",
-				    type);
+		    fprintf (stderr,
+			     "Cannot specify array length for type: %u\n",
+			     type);
 		    a_prog_bug (function_name);
 		}
 		break;
@@ -485,8 +483,8 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
 	    if ( !ds_element_is_legal (type) || !ds_element_is_atomic (type) ||
 		ds_element_is_complex (type) )
 	    {
-		(void) fprintf (stderr,
-				"Cannot specify minimum value for non-real item\n");
+		fprintf (stderr,
+			 "Cannot specify minimum value for non-real item\n");
 		a_prog_bug (function_name);
 	    }
 	    item->min_value = va_arg (argp, double);
@@ -495,8 +493,8 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
 	    if ( !ds_element_is_legal (type) || !ds_element_is_atomic (type) ||
 		ds_element_is_complex (type) )
 	    {
-		(void) fprintf (stderr,
-				"Cannot specify maximum value for non-real item\n");
+		fprintf (stderr,
+			 "Cannot specify maximum value for non-real item\n");
 		a_prog_bug (function_name);
 	    }
 	    item->max_value = va_arg (argp, double);
@@ -506,8 +504,8 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
 	    FLAG_VERIFY (top_of_panel);
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Unknown panel item attribute key: %u\n",
-			    att_key);
+	    fprintf (stderr, "Unknown panel item attribute key: %u\n",
+		     att_key);
 	    a_prog_bug (function_name);
 	    break;
 	}
@@ -519,21 +517,19 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
       case PIT_CHOICE_INDEX:
 	if (item->num_choice_strings == 0)
 	{
-	    (void) fprintf (stderr, "Zero choice strings for choice type\n");
+	    fprintf (stderr, "Zero choice strings for choice type\n");
 	    a_prog_bug (function_name);
 	}
 	if (item->choice_strings == NULL)
 	{
-	    (void) fprintf (stderr,
-			    "NULL choice string pointer for choice type\n");
+	    fprintf (stderr, "NULL choice string pointer for choice type\n");
 	    a_prog_bug (function_name);
 	}
 	if (*(unsigned int *) value_ptr >= item->num_choice_strings)
 	{
-	    (void) fprintf (stderr,
-			    "Initial choice index: %u not less than num_choices: %u\n",
-			    *(unsigned int *) value_ptr,
-			    item->num_choice_strings);
+	    fprintf (stderr,
+		     "Initial choice index: %u not less than num_choices: %u\n",
+		     *(unsigned int *) value_ptr, item->num_choice_strings);
 	    a_prog_bug (function_name);
 	}
 	break;
@@ -543,18 +539,16 @@ void panel_add_item (KControlPanel panel, char *name, char *comment,
     /*  Check for valid array specifications  */
     if (item->max_array_length < item->min_array_length)
     {
-	(void) fprintf (stderr,
-			"Maximum array length: %u less than minimum: %u\n",
-			item->max_array_length, item->min_array_length);
+	fprintf (stderr, "Maximum array length: %u less than minimum: %u\n",
+		 item->max_array_length, item->min_array_length);
 	a_prog_bug (function_name);
     }
     /*  Check for valid minimum and maximum  */
     if ( (item->min_value > -TOOBIG) && (item->max_value < TOOBIG) &&
 	(item->min_value >= item->max_value) )
     {
-	(void) fprintf (stderr,
-			"Maximum value: %e not greater than minimum: %e\n",
-			item->max_value, item->min_value);
+	fprintf (stderr, "Maximum value: %e not greater than minimum: %e\n",
+		 item->max_value, item->min_value);
 	a_prog_bug (function_name);
     }
     /*  Make sure we don't reference externally defined strings  */
@@ -657,8 +651,7 @@ void panel_push_onto_stack (KControlPanel panel)
     VERIFY_CONTROLPANEL (panel);
     if (panel_stack_index >= PANEL_STACK_SIZE)
     {
-	(void) fprintf (stderr,
-			"Too many control panels already on stack\n");
+	fprintf (stderr, "Too many control panels already on stack\n");
 	a_prog_bug (function_name);
     }
     panel_stack[++panel_stack_index] = panel;
@@ -676,7 +669,7 @@ void panel_pop_from_stack ()
 
     if (panel_stack_index < 0)
     {
-	(void) fprintf (stderr, "No control panels on stack\n");
+	fprintf (stderr, "No control panels on stack\n");
 	a_prog_bug (function_name);
     }
     --panel_stack_index;
@@ -705,7 +698,7 @@ flag panel_process_command_with_stack (char *cmd, flag (*unknown_func) (),
 
     if (cmd == NULL)
     {
-	(void) fprintf (stderr, "NULL command pointer passed\n");
+	fprintf (stderr, "NULL command pointer passed\n");
 	a_prog_bug (function_name);
     }
     if (*cmd == '\0') return (TRUE);
@@ -719,7 +712,7 @@ flag panel_process_command_with_stack (char *cmd, flag (*unknown_func) (),
 	/*  No control panels on stack  */
 	if (unknown_func == NULL)
 	{
-	    (void) fprintf (stderr, "Command: \"%s\" not understood\n", cmd);
+	    fprintf (stderr, "Command: \"%s\" not understood\n", cmd);
 	    m_free (arg1);
 	    return (TRUE);
 	}
@@ -736,8 +729,7 @@ flag panel_process_command_with_stack (char *cmd, flag (*unknown_func) (),
     {
 	if (unknown_func == NULL)
 	{
-	    (void) fprintf (stderr,
-			    "No  unknown_func  to process escaped command\n");
+	    fprintf (stderr, "No  unknown_func  to process escaped command\n");
 	    m_free (arg1);
 	    return (TRUE);
 	}
@@ -755,6 +747,94 @@ flag panel_process_command_with_stack (char *cmd, flag (*unknown_func) (),
     }
     return (FALSE);
 }   /*  End Function panel_process_command_with_stack  */
+
+/*EXPERIMENTAL_FUNCTION*/
+flag panel_put_history_with_stack (multi_array *multi_desc, flag module_header)
+/*  [SUMMARY] Put history into Karma multi_array structure.
+    <multi_desc> The data structure to append history to.
+    <module_header> If TRUE the module name and version are appended before the
+    parameter information.
+    [RETURNS] TRUE on sucess, else FALSE
+*/
+{
+    KControlPanel panel;
+    KPanelItem item;
+    unsigned int index;
+    char **choices;
+    char txt[STRING_LENGTH], line[STRING_LENGTH];
+    extern KControlPanel panel_stack[PANEL_STACK_SIZE];
+    extern int panel_stack_index;
+    extern char module_name[STRING_LENGTH + 1];
+    extern char module_version_date[STRING_LENGTH + 1];
+    extern char module_lib_version[STRING_LENGTH + 1];
+    extern char karma_library_version[STRING_LENGTH + 1];
+    static char function_name[] = "panel_put_history_with_stack";
+
+    if (module_header)
+    {
+	sprintf (txt, "%s: Module version %s  Karma v%s  compiled with v%s",
+		 module_name, module_version_date,
+		 karma_library_version, module_lib_version);
+	if ( !ds_history_append_string (multi_desc, txt, TRUE) ) return FALSE;
+    }
+    if (panel_stack_index < 0)
+    {
+	/*  No control panels on stack  */
+	return (TRUE);
+    }
+    panel = panel_stack[panel_stack_index];
+    for (item = panel->first_item; item != NULL; item = item->next)
+    {
+	/*  Display name and value  */
+	switch (item->type)
+	{
+	  case PIT_FUNCTION:
+	  case PIT_EXIT_FORM:
+	    continue;
+	    /*break;*/
+	  case PIT_GROUP:
+	    /*show_group (item, screen_display, fp, verbose);*/
+	    continue;
+	    /*break;*/
+	  default:
+	    /*  Process other types later  */
+	    break;
+	}
+	/*  No actions or group parameters at this point  */
+	/*  Check if array of values  */
+	if (item->max_array_length > 0)
+	{
+	    /*show_array (item, screen_display, fp, verbose);*/
+	    continue;
+	}
+	/*  Single instance item  */
+	switch (item->type)
+	{
+	  case PIT_FLAG:
+	    sprintf (line, "%s: %-20s%-20s",
+		     module_name,
+		     item->name, (*(flag *) item->value_ptr) ? "on" : "off");
+	    break;
+	  case PIT_CHOICE_INDEX:
+	    choices = (char **) item->choice_strings;
+	    index = *(unsigned int *) item->value_ptr;
+	    sprintf (line, "%s: %-20s%-20s",
+		     module_name, item->name, choices[index]);
+	    break;
+	  default:
+	    if ( !ds_element_is_named (item->type) )
+	    {
+		fprintf (stderr, "Illegal panel item type: %u\n", item->type);
+		a_prog_bug (function_name);
+	    }
+	    sprintf (line, "%s: %-20s", module_name, item->name);
+	    show_datum (item, txt, NULL);
+	    strcat (line, txt);
+	}
+	if ( !ds_history_append_string (multi_desc, line, TRUE) ) return FALSE;
+    }
+    return (TRUE);
+}   /*  End Function panel_put_history_with_stack  */
 
 
 /*  Temporary private functions follow (will probably be made public later)  */
@@ -792,7 +872,7 @@ static flag panel_process_command (KControlPanel panel, char *cmd,
     VERIFY_CONTROLPANEL (panel);
     if (cmd == NULL)
     {
-	(void) fprintf (stderr, "NULL command pointer passed\n");
+	fprintf (stderr, "NULL command pointer passed\n");
 	a_prog_bug (function_name);
     }
     /*  Extract panel item name  */
@@ -842,8 +922,7 @@ static flag panel_process_command (KControlPanel panel, char *cmd,
 	{
 	    if (item != NULL)
 	    {
-		(void) fprintf (stderr, "Ambiguous panel item name: \"%s\"\n",
-				pname);
+		fprintf (stderr, "Ambiguous panel item name: \"%s\"\n", pname);
 		m_free (word1);
 		return (TRUE);
 	    }
@@ -856,7 +935,7 @@ static flag panel_process_command (KControlPanel panel, char *cmd,
 	/*  Panel Item not found  */
 	if (unknown_func == NULL)
 	{
-	    (void) fprintf (stderr, "Command: \"%s\" not understood\n", cmd);
+	    fprintf (stderr, "Command: \"%s\" not understood\n", cmd);
 	    return (TRUE);
 	}
 	return ( (*unknown_func) (cmd, fp) );
@@ -864,9 +943,8 @@ static flag panel_process_command (KControlPanel panel, char *cmd,
     /*  Continue decoding panel item  */
     if ( array_add && (item->max_array_length < 1) )
     {
-	(void) fprintf (stderr,
-			"Item: \"%s\" is not an array: cannot use '+'\n",
-			item->name);
+	fprintf (stderr, "Item: \"%s\" is not an array: cannot use '+'\n",
+		 item->name);
 	return (TRUE);
     }
     switch (item->type)
@@ -875,20 +953,14 @@ static flag panel_process_command (KControlPanel panel, char *cmd,
 	func_ptr = ( void (*) () ) item->value_ptr;
 	(*func_ptr) (cmd_ptr);
 	return (TRUE);
-/*
-	break;
-*/
+	/*break;*/
       case PIT_EXIT_FORM:
 	return (FALSE);
-/*
-	break;
-*/
+	/*break;*/
       case PIT_GROUP:
 	decode_group (item, cmd_ptr, array_add);
 	return (TRUE);
-/*
-	break;
-*/
+	/*break;*/
       default:
 	/*  Process other types later  */
 	break;
@@ -904,24 +976,20 @@ static flag panel_process_command (KControlPanel panel, char *cmd,
     switch (item->type)
     {
       case PIT_FLAG:
-	(void) decode_datum (item, item->value_ptr, cmd_ptr, &dummy);
+	decode_datum (item, item->value_ptr, cmd_ptr, &dummy);
 	return (TRUE);
-/*
-	break;
-*/
+	/*break;*/
       case PIT_CHOICE_INDEX:
 	process_choice_item (item, cmd_ptr);
 	return (TRUE);
-/*
-	break;
-*/
+	/*break;*/
       default:
 	if ( ds_element_is_named (item->type) )
 	{
-	    (void) decode_datum (item, item->value_ptr, cmd_ptr, &dummy);
+	    decode_datum (item, item->value_ptr, cmd_ptr, &dummy);
 	    return (TRUE);
 	}
-	(void) fprintf (stderr, "Illegal panel item type: %u\n", item->type);
+	fprintf (stderr, "Illegal panel item type: %u\n", item->type);
 	a_prog_bug (function_name);
 	break;
     }
@@ -940,11 +1008,12 @@ static void panel_show_items (KControlPanel panel, flag screen_display,
 */
 {
     KPanelItem item;
+    char txt[STRING_LENGTH];
     static char function_name[] = "panel_show_items";
 
     VERIFY_CONTROLPANEL (panel);
     FLAG_VERIFY (screen_display);
-    if (screen_display) (void) fprintf (fp, "\n");
+    if (screen_display) fprintf (fp, "\n");
     for (item = panel->first_item; item != NULL; item = item->next)
     {
 	/*  Display name and value  */
@@ -954,19 +1023,14 @@ static void panel_show_items (KControlPanel panel, flag screen_display,
 	  case PIT_EXIT_FORM:
 	    if (screen_display)
 	    {
-		(void) fprintf (fp, "%-40s#%s\n",
-				item->name, item->comment);
+		fprintf (fp, "%-40s#%s\n", item->name, item->comment);
 	    }
 	    continue;
-/*
-	    break;
-*/
+	    /*break;*/
 	  case PIT_GROUP:
 	    show_group (item, screen_display, fp, verbose);
 	    continue;
-/*
-	    break;
-*/
+	    /*break;*/
 	  default:
 	    /*  Process other types later  */
 	    break;
@@ -982,35 +1046,32 @@ static void panel_show_items (KControlPanel panel, flag screen_display,
 	switch (item->type)
 	{
 	  case PIT_FLAG:
-	    (void) fprintf (fp, "%-20s%-20s", item->name,
-			    (*(flag *) item->value_ptr) ? "on" : "off");
+	    fprintf (fp, "%-20s%-20s", item->name,
+		     (*(flag *) item->value_ptr) ? "on" : "off");
 	    break;
 	  case PIT_CHOICE_INDEX:
 	    show_choice_item (item, fp, screen_display, verbose);
 	    continue;
-
-/*
-	    break;
-*/
+	    /*break;*/
 	  default:
 	    if ( !ds_element_is_named (item->type) )
 	    {
-		(void) fprintf (stderr, "Illegal panel item type: %u\n",
-				item->type);
+		fprintf (stderr, "Illegal panel item type: %u\n", item->type);
 		a_prog_bug (function_name);
 	    }
-	    (void) fprintf (fp, "%-20s", item->name);
-	    show_datum (item, fp, NULL);
+	    fprintf (fp, "%-20s", item->name);
+	    show_datum (item, txt, NULL);
+	    fputs (txt, fp);
 	}
 	/*  This should come last  */
 	if (screen_display)
 	{
 	    /*  Display comment  */
-	    (void) fprintf (fp, "#%s\n", item->comment);
+	    fprintf (fp, "#%s\n", item->comment);
 	}
 	else
 	{
-	    (void) fprintf (fp, "\n");
+	    fprintf (fp, "\n");
 	}
     }
 }   /*  End Function panel_show_items  */
@@ -1041,8 +1102,7 @@ static char *decode_datum (KPanelItem item, void *value_ptr, char *string,
     *failed = TRUE;
     if (string == NULL)
     {
-	(void) fprintf (stderr, "value missing for panel item: \"%s\"\n",
-			name);
+	fprintf (stderr, "value missing for panel item: \"%s\"\n", name);
 	return (NULL);
     }
     switch (type)
@@ -1076,9 +1136,9 @@ static char *decode_datum (KPanelItem item, void *value_ptr, char *string,
 	dvalue[0] = ex_float (string, &string);
 	if (string == NULL)
 	{
-	    (void) fprintf (stderr,
-			    "Imaginary component missing for panel item: \"%s\"\n",
-			    name);
+	    fprintf (stderr,
+		     "Imaginary component missing for panel item: \"%s\"\n",
+		     name);
 	    return (NULL);
 	}
 	dvalue[1] = ex_float (string, &string);
@@ -1089,9 +1149,9 @@ static char *decode_datum (KPanelItem item, void *value_ptr, char *string,
 	dvalue[0] = ex_float (string, &string);
 	if (string == NULL)
 	{
-	    (void) fprintf (stderr,
-			    "Imaginary component missing for panel item: \"%s\"\n",
-			    name);
+	    fprintf (stderr,
+		     "Imaginary component missing for panel item: \"%s\"\n",
+		     name);
 	    return (NULL);
 	}
 	dvalue[1] = ex_float (string, &string);
@@ -1102,9 +1162,9 @@ static char *decode_datum (KPanelItem item, void *value_ptr, char *string,
 	ivalue[0] = ex_int (string, &string);
 	if (string == NULL)
 	{
-	    (void) fprintf (stderr,
-			    "Imaginary component missing for panel item: \"%s\"\n",
-			    name);
+	    fprintf (stderr,
+		     "Imaginary component missing for panel item: \"%s\"\n",
+		     name);
 	    return (NULL);
 	}
 	ivalue[1] = ex_int (string, &string);
@@ -1115,9 +1175,9 @@ static char *decode_datum (KPanelItem item, void *value_ptr, char *string,
 	ivalue[0] = ex_int (string, &string);
 	if (string == NULL)
 	{
-	    (void) fprintf (stderr,
-			    "Imaginary component missing for panel item: \"%s\"\n",
-			    name);
+	    fprintf (stderr,
+		     "Imaginary component missing for panel item: \"%s\"\n",
+		     name);
 	    return (NULL);
 	}
 	ivalue[1] = ex_int (string, &string);
@@ -1128,9 +1188,9 @@ static char *decode_datum (KPanelItem item, void *value_ptr, char *string,
 	ivalue[0] = ex_int (string, &string);
 	if (string == NULL)
 	{
-	    (void) fprintf (stderr,
-			    "Imaginary component missing for panel item: \"%s\"\n",
-			    name);
+	    fprintf (stderr,
+		     "Imaginary component missing for panel item: \"%s\"\n",
+		     name);
 	    return (NULL);
 	}
 	ivalue[1] = ex_int (string, &string);
@@ -1146,9 +1206,9 @@ static char *decode_datum (KPanelItem item, void *value_ptr, char *string,
 	ivalue[0] = ex_int (string, &string);
 	if (string == NULL)
 	{
-	    (void) fprintf (stderr,
-			    "Imaginary component missing for panel item: \"%s\"\n",
-			    name);
+	    fprintf (stderr,
+		     "Imaginary component missing for panel item: \"%s\"\n",
+		     name);
 	    return (NULL);
 	}
 	ivalue[1] = ex_int (string, &string);
@@ -1179,9 +1239,9 @@ static char *decode_datum (KPanelItem item, void *value_ptr, char *string,
 	ivalue[0] = ex_uint (string, &string);
 	if (string == NULL)
 	{
-	    (void) fprintf (stderr,
-			    "Imaginary component missing for panel item: \"%s\"\n",
-			    name);
+	    fprintf (stderr,
+		     "Imaginary component missing for panel item: \"%s\"\n",
+		     name);
 	    return (NULL);
 	}
 	ivalue[1] = ex_uint (string, &string);
@@ -1192,9 +1252,9 @@ static char *decode_datum (KPanelItem item, void *value_ptr, char *string,
 	ivalue[0] = ex_uint (string, &string);
 	if (string == NULL)
 	{
-	    (void) fprintf (stderr,
-			    "Imaginary component missing for panel item: \"%s\"\n",
-			    name);
+	    fprintf (stderr,
+		     "Imaginary component missing for panel item: \"%s\"\n",
+		     name);
 	    return (NULL);
 	}
 	ivalue[1] = ex_uint (string, &string);
@@ -1205,9 +1265,9 @@ static char *decode_datum (KPanelItem item, void *value_ptr, char *string,
 	ivalue[0] = ex_uint (string, &string);
 	if (string == NULL)
 	{
-	    (void) fprintf (stderr,
-			    "Imaginary component missing for panel item: \"%s\"\n",
-			    name);
+	    fprintf (stderr,
+		     "Imaginary component missing for panel item: \"%s\"\n",
+		     name);
 	    return (NULL);
 	}
 	ivalue[1] = ex_uint (string, &string);
@@ -1218,9 +1278,9 @@ static char *decode_datum (KPanelItem item, void *value_ptr, char *string,
 	ivalue[0] = ex_uint (string, &string);
 	if (string == NULL)
 	{
-	    (void) fprintf (stderr,
-			    "Imaginary component missing for panel item: \"%s\"\n",
-			    name);
+	    fprintf (stderr,
+		     "Imaginary component missing for panel item: \"%s\"\n",
+		     name);
 	    return (NULL);
 	}
 	ivalue[1] = ex_uint (string, &string);
@@ -1230,9 +1290,8 @@ static char *decode_datum (KPanelItem item, void *value_ptr, char *string,
       case K_VSTRING:
 	if ( ( new_string = ex_str (string, &string) ) == NULL )
 	{
-	    (void) fprintf (stderr,
-			    "String value missing for panel item: \"%s\"\n",
-			    name);
+	    fprintf (stderr, "String value missing for panel item: \"%s\"\n",
+		     name);
 	    return (NULL);
 	}
 	if (*(char **) value_ptr != NULL)
@@ -1244,27 +1303,25 @@ static char *decode_datum (KPanelItem item, void *value_ptr, char *string,
       case K_FSTRING:
 	if ( ( new_string = ex_str (string, &string) ) == NULL )
 	{
-	    (void) fprintf (stderr,
-			    "String value missing for panel item: \"%s\"\n",
-			    name);
+	    fprintf (stderr, "String value missing for panel item: \"%s\"\n",
+		     name);
 	    return (NULL);
 	}
 	fstring = value_ptr;
 	if (strlen (new_string) > fstring->max_len)
 	{
-	    (void) fprintf (stderr,
-			    "String value for panel item: \"%s\" too long\n",
-			    name);
+	    fprintf (stderr, "String value for panel item: \"%s\" too long\n",
+		     name);
 	    m_free (new_string);
 	    return (NULL);
 	}
-	(void) strncpy (fstring->string, new_string, fstring->max_len);
+	strncpy (fstring->string, new_string, fstring->max_len);
         break;
       case PIT_FLAG:
 	*(flag *) value_ptr = ex_on_or_off (&string);
 	break;
       default:
-	(void) fprintf (stderr, "Illegal panel item type: %u\n", type);
+	fprintf (stderr, "Illegal panel item type: %u\n", type);
 	a_prog_bug (function_name);
 	break;
     }
@@ -1272,10 +1329,11 @@ static char *decode_datum (KPanelItem item, void *value_ptr, char *string,
     return (string);
 }   /*  End Function decode_datum  */
 
-static void show_datum (KPanelItem item, FILE *fp, void *value_ptr)
+static void show_datum (KPanelItem item, char line[STRING_LENGTH],
+			void *value_ptr)
 /*  [PURPOSE] This routine will show a single value (ie. atomic or string).
     <panel> The panel item.
-    <fp> Output messages are directed here.
+    <line> Formatted output is written here.
     <value_ptr> A pointer to the value. If this is NULL, then the value pointer
     registered with the item is used.
     [RETURNS] Nothing.
@@ -1290,78 +1348,78 @@ static void show_datum (KPanelItem item, FILE *fp, void *value_ptr)
     switch (item->type)
     {
       case K_FLOAT:
-	(void) fprintf (fp, "%-20e", *(float *) value_ptr);
+	sprintf (line, "%-20e", *(float *) value_ptr);
 	break;
       case K_DOUBLE:
-	(void) fprintf (fp, "%-20e", *(double *) value_ptr);
+	sprintf (line, "%-20e", *(double *) value_ptr);
 	break;
       case K_BYTE:
-	(void) fprintf (fp, "%-20d", *(char *) value_ptr);
+	sprintf (line, "%-20d", *(char *) value_ptr);
 	break;
       case K_INT:
-	(void) fprintf (fp, "%-20d", *(int *) value_ptr);
+	sprintf (line, "%-20d", *(int *) value_ptr);
 	break;
       case K_SHORT:
-	(void) fprintf (fp, "%-20d", *(short *) value_ptr);
+	sprintf (line, "%-20d", *(short *) value_ptr);
 	break;
       case K_COMPLEX:
-	(void) fprintf ( fp, "%-20e %-20e",
-			*(float *) value_ptr, *( (float *) value_ptr + 1 ) );
+	sprintf ( line, "%-20e %-20e",
+		  *(float *) value_ptr, *( (float *) value_ptr + 1 ) );
 	break;
       case K_DCOMPLEX:
-	(void) fprintf ( fp, "%-20e %-20e",
-			*(double *) value_ptr, *( (double *) value_ptr + 1 ) );
+	sprintf ( line, "%-20e %-20e",
+		  *(double *) value_ptr, *( (double *) value_ptr + 1 ) );
 	break;
       case K_BCOMPLEX:
-	(void) fprintf ( fp, "%-20d %-20d",
-			*(char *) value_ptr, *( (char *) value_ptr + 1 ) );
+	sprintf ( line, "%-20d %-20d",
+		  *(char *) value_ptr, *( (char *) value_ptr + 1 ) );
 	break;
       case K_ICOMPLEX:
-	(void) fprintf ( fp, "%-20d %-20d",
-			*(int *) value_ptr, *( (int *) value_ptr + 1 ) );
+	sprintf ( line, "%-20d %-20d",
+		  *(int *) value_ptr, *( (int *) value_ptr + 1 ) );
 	break;
       case K_SCOMPLEX:
-	(void) fprintf ( fp, "%-20d %-20d",
-			*(short *) value_ptr, *( (short *) value_ptr + 1 ) );
+	sprintf ( line, "%-20d %-20d",
+		  *(short *) value_ptr, *( (short *) value_ptr + 1 ) );
 	break;
       case K_LONG:
-	(void) fprintf (fp, "%-20ld", *(long *) value_ptr);
+	sprintf (line, "%-20ld", *(long *) value_ptr);
 	break;
       case K_LCOMPLEX:
-	(void) fprintf ( fp, "%-20ld %-20ld",
-			*(long *) value_ptr, *( (long *) value_ptr + 1 ) );
+	sprintf ( line, "%-20ld %-20ld",
+		  *(long *) value_ptr, *( (long *) value_ptr + 1 ) );
 	break;
       case K_UBYTE:
-	(void) fprintf (fp, "%-20u", *(unsigned char *) value_ptr);
+	sprintf (line, "%-20u", *(unsigned char *) value_ptr);
 	break;
       case K_UINT:
-	(void) fprintf (fp, "%-20u", *(unsigned int *) value_ptr);
+	sprintf (line, "%-20u", *(unsigned int *) value_ptr);
 	break;
       case K_USHORT:
-	(void) fprintf (fp, "%-20u", *(unsigned short *) value_ptr);
+	sprintf (line, "%-20u", *(unsigned short *) value_ptr);
 	break;
       case K_ULONG:
-	(void) fprintf (fp, "%-20lu", *(unsigned long *) value_ptr);
+	sprintf (line, "%-20lu", *(unsigned long *) value_ptr);
 	break;
       case K_UBCOMPLEX:
-	(void) fprintf ( fp, "%-20u %-20u",
-			*(unsigned char *) value_ptr,
-			*( (unsigned char *) value_ptr + 1 ) );
+	sprintf ( line, "%-20u %-20u",
+		  *(unsigned char *) value_ptr,
+		  *( (unsigned char *) value_ptr + 1 ) );
 	break;
       case K_UICOMPLEX:
-	(void) fprintf ( fp, "%-20u %-20u",
-			*(unsigned int *) value_ptr,
-			*( (unsigned int *) value_ptr + 1 ) );
+	sprintf ( line, "%-20u %-20u",
+		  *(unsigned int *) value_ptr,
+		  *( (unsigned int *) value_ptr + 1 ) );
 	break;
       case K_USCOMPLEX:
-	(void) fprintf ( fp, "%-20u %-20u",
-			*(unsigned short *) value_ptr,
-			*( (unsigned short *) value_ptr + 1 ) );
+	sprintf ( line, "%-20u %-20u",
+		  *(unsigned short *) value_ptr,
+		  *( (unsigned short *) value_ptr + 1 ) );
 	break;
       case K_ULCOMPLEX:
-	(void) fprintf ( fp, "%-20lu %-20lu",
-			*(unsigned long *) value_ptr,
-			*( (unsigned long *) value_ptr + 1 ) );
+	sprintf ( line, "%-20lu %-20lu",
+		  *(unsigned long *) value_ptr,
+		  *( (unsigned long *) value_ptr + 1 ) );
 	break;
       case K_VSTRING:
 	if ( ( pad_len = 18 - strlen (*(char **) value_ptr) ) < 1 )
@@ -1370,7 +1428,7 @@ static void show_datum (KPanelItem item, FILE *fp, void *value_ptr)
 	}
 	padding[pad_len] = '\0';
 	while (pad_len > 0) padding[--pad_len] = ' ';
-	(void) fprintf (fp, "\"%s\"%s", *(char **) value_ptr, padding);
+	sprintf (line, "\"%s\"%s", *(char **) value_ptr, padding);
 	break;
       case K_FSTRING:
 	fstring = value_ptr;
@@ -1380,10 +1438,10 @@ static void show_datum (KPanelItem item, FILE *fp, void *value_ptr)
 	}
 	padding[pad_len] = '\0';
 	while (pad_len > 0) padding[--pad_len] = ' ';
-	(void) fprintf (fp, "\"%s\"%s", fstring->string, padding);
+	sprintf (line, "\"%s\"%s", fstring->string, padding);
 	break;
       default:
-	(void) fprintf (stderr, "Illegal panel item type: %u\n", item->type);
+	fprintf (stderr, "Illegal panel item type: %u\n", item->type);
 	a_prog_bug (function_name);
 	break;
     }
@@ -1410,14 +1468,12 @@ static void add_conn_func (char *cmd)
     /*  User wants to add a connection  */
     if ( ( host = ex_str (cmd, &cmd) ) == NULL )
     {
-	(void) fprintf (stderr,
-			"Must specify hostname, port number and protocol\n");
+	fprintf (stderr, "Must specify hostname, port number and protocol\n");
 	return;
     }
     if ( (cmd == NULL) || (*cmd == '\0') )
     {
-	(void) fprintf (stderr,
-			"Must also specify port number and protocol\n");
+	fprintf (stderr, "Must also specify port number and protocol\n");
 	m_free (host);
 	return;
     }
@@ -1425,14 +1481,13 @@ static void add_conn_func (char *cmd)
     if ( (cmd == NULL) || (*cmd == '\0') ||
 	( ( protocol = ex_str (cmd, &cmd) ) == NULL ) )
     {
-	(void) fprintf (stderr, "Must also specify protocol\n");
+	fprintf (stderr, "Must also specify protocol\n");
 	m_free (host);
 	return;
     }
     if ( !conn_attempt_connection (host, port, protocol) )
     {
-	(void) fprintf (stderr,
-			"Error adding \"%s\" connection\n", protocol);
+	fprintf (stderr, "Error adding \"%s\" connection\n", protocol);
     }
     m_free (host);
     m_free (protocol);
@@ -1451,14 +1506,13 @@ static void process_choice_item (KPanelItem item, char *cmd)
 
     if ( ( choice = ex_str (cmd, &cmd) ) == NULL )
     {
-	(void) fprintf (stderr,
-			"String value missing for panel item: \"%s\"\n",
-			item->name);
+	fprintf (stderr, "String value missing for panel item: \"%s\"\n",
+		 item->name);
 	return;
     }
     if (cmd != NULL)
     {
-	(void) fprintf (stderr, "Too many arguments\n");
+	fprintf (stderr, "Too many arguments\n");
 	m_free (choice);
 	return;
     }
@@ -1471,7 +1525,7 @@ static void process_choice_item (KPanelItem item, char *cmd)
 	{
 	    if (index < item->num_choice_strings)
 	    {
-		(void) fprintf (stderr, "Ambiguous choice: \"%s\"\n", choice);
+		fprintf (stderr, "Ambiguous choice: \"%s\"\n", choice);
 		m_free (choice);
 		return;
 	    }
@@ -1480,8 +1534,8 @@ static void process_choice_item (KPanelItem item, char *cmd)
     }
     if (index >= item->num_choice_strings)
     {
-	(void) fprintf (stderr, "Unknown choice: \"%s\" for item: \"%s\"\n",
-			choice, item->name);
+	fprintf (stderr, "Unknown choice: \"%s\" for item: \"%s\"\n",
+		 choice, item->name);
 	m_free (choice);
 	return;
     }
@@ -1508,26 +1562,26 @@ static void show_choice_item (KPanelItem item, FILE *fp, flag screen_display,
     index = *(unsigned int *) item->value_ptr;
     if (screen_display)
     {
-	(void) fprintf (fp, "%-20s%-20s#%s\n",
-			item->name, choices[index], item->comment);
+	fprintf (fp, "%-20s%-20s#%s\n",
+		 item->name, choices[index], item->comment);
 	if (!verbose) return;
-	(void) fprintf (fp, "  Choices:\n");
+	fprintf (fp, "  Choices:\n");
 	for (count = 0; count < item->num_choice_strings; ++count)
 	{
 	    if ( ( choice_comments != NULL ) &&
 		( choice_comments[count] != NULL ) )
 	    {
-		(void) fprintf (fp, "    %-36s#%s\n",
-				choices[count], choice_comments[count]);
+		fprintf (fp, "    %-36s#%s\n",
+			 choices[count], choice_comments[count]);
 	    }
 	    else
 	    {
-		(void) fprintf (fp, "    %s\n", choices[count]);
+		fprintf (fp, "    %s\n", choices[count]);
 	    }
 	}
 	return;
     }
-    (void) fprintf (fp, "%-20s%-20s\n", item->name, choices[index]);
+    fprintf (fp, "%-20s%-20s\n", item->name, choices[index]);
 }   /*  End Function show_choice_item  */
 
 static void decode_array (KPanelItem item, char *string, flag add)
@@ -1558,9 +1612,9 @@ static void decode_array (KPanelItem item, char *string, flag add)
 	    *item->curr_array_length = array_count;
 	    if (string != NULL)
 	    {
-		(void) fprintf (stderr,
-				"Ignored trailing arguments: \"%s\" for panel item: \"%s\"\n",
-				string, item->name);
+		fprintf (stderr,
+			 "Ignored trailing arguments: \"%s\" for panel item: \"%s\"\n",
+			 string, item->name);
 	    }
 	    return;
 	}
@@ -1573,9 +1627,8 @@ static void decode_array (KPanelItem item, char *string, flag add)
     }
     if (array_count < item->min_array_length)
     {
-	(void) fprintf (stderr,
-			"Not enough values given for array: need: %d\n",
-			(int) item->min_array_length);
+	fprintf (stderr, "Not enough values given for array: need: %d\n",
+		 (int) item->min_array_length);
 	return;
     }
     *item->curr_array_length = array_count;
@@ -1601,19 +1654,19 @@ static void show_array (KPanelItem item, flag screen_display, FILE *fp,
     {
 	if (item->max_array_length == item->min_array_length)
 	{
-	    (void) fprintf (fp, "%s[%d]    ",
-			    item->name, (int) item->min_array_length);
+	    fprintf (fp, "%s[%d]    ",
+		     item->name, (int) item->min_array_length);
 	}
 	else
 	{
-	    (void) fprintf (fp, "%s[%d..%d]    ",
-			    item->name, (int) item->min_array_length,
-			    (int) item->max_array_length);
+	    fprintf (fp, "%s[%d..%d]    ",
+		     item->name, (int) item->min_array_length,
+		     (int) item->max_array_length);
 	}
     }
     else
     {
-	(void) fprintf (fp, "%s    ", item->name);
+	fprintf (fp, "%s    ", item->name);
     }
     value_ptr = item->value_ptr;
     for ( array_count = 0; array_count < *item->curr_array_length;
@@ -1622,100 +1675,99 @@ static void show_array (KPanelItem item, flag screen_display, FILE *fp,
 	switch (item->type)
 	{
 	  case K_FLOAT:
-	    (void) fprintf (fp, "%e  ", *(float *) value_ptr);
+	    fprintf (fp, "%e  ", *(float *) value_ptr);
 	    break;
 	  case K_DOUBLE:
-	    (void) fprintf (fp, "%e  ", *(double *) value_ptr);
+	    fprintf (fp, "%e  ", *(double *) value_ptr);
 	    break;
 	  case K_BYTE:
-	    (void) fprintf (fp, "%d  ", *(char *) value_ptr);
+	    fprintf (fp, "%d  ", *(char *) value_ptr);
 	    break;
 	  case K_INT:
-	    (void) fprintf (fp, "%d  ", *(int *) value_ptr);
+	    fprintf (fp, "%d  ", *(int *) value_ptr);
 	    break;
 	  case K_SHORT:
-	    (void) fprintf (fp, "%d  ", *(short *) value_ptr);
+	    fprintf (fp, "%d  ", *(short *) value_ptr);
 	    break;
 	  case K_COMPLEX:
-	    (void) fprintf ( fp, "%e   %e  ",
-			    *(float *) value_ptr, *( (float *) value_ptr + 1 ) );
+	    fprintf ( fp, "%e   %e  ",
+		      *(float *) value_ptr, *( (float *) value_ptr + 1 ) );
 	    break;
 	  case K_DCOMPLEX:
-	    (void) fprintf ( fp, "%e   %e  ",
-			    *(double *) value_ptr, *( (double *) value_ptr + 1 ) );
+	    fprintf ( fp, "%e   %e  ",
+		      *(double *) value_ptr, *( (double *) value_ptr + 1 ) );
 	    break;
 	  case K_BCOMPLEX:
-	    (void) fprintf ( fp, "%d   %d  ",
-			    *(char *) value_ptr, *( (char *) value_ptr + 1 ) );
+	    fprintf ( fp, "%d   %d  ",
+		      *(char *) value_ptr, *( (char *) value_ptr + 1 ) );
 	    break;
 	  case K_ICOMPLEX:
-	    (void) fprintf ( fp, "%d   %d  ",
-			    *(int *) value_ptr, *( (int *) value_ptr + 1 ) );
+	    fprintf ( fp, "%d   %d  ",
+		      *(int *) value_ptr, *( (int *) value_ptr + 1 ) );
 	    break;
 	  case K_SCOMPLEX:
-	    (void) fprintf ( fp, "%d   %d  ",
-			    *(short *) value_ptr, *( (short *) value_ptr + 1 ) );
+	    fprintf ( fp, "%d   %d  ",
+		      *(short *) value_ptr, *( (short *) value_ptr + 1 ) );
 	    break;
 	  case K_LONG:
-	    (void) fprintf (fp, "%ld  ", *(long *) value_ptr);
+	    fprintf (fp, "%ld  ", *(long *) value_ptr);
 	    break;
 	  case K_LCOMPLEX:
-	    (void) fprintf ( fp, "%ld   %ld  ",
-			    *(long *) value_ptr, *( (long *) value_ptr + 1 ) );
+	    fprintf ( fp, "%ld   %ld  ",
+		      *(long *) value_ptr, *( (long *) value_ptr + 1 ) );
 	    break;
 	  case K_UBYTE:
-	    (void) fprintf (fp, "%u  ", *(unsigned char *) value_ptr);
+	    fprintf (fp, "%u  ", *(unsigned char *) value_ptr);
 	    break;
 	  case K_UINT:
-	    (void) fprintf (fp, "%u  ", *(unsigned int *) value_ptr);
+	    fprintf (fp, "%u  ", *(unsigned int *) value_ptr);
 	    break;
 	  case K_USHORT:
-	    (void) fprintf (fp, "%u  ", *(unsigned short *) value_ptr);
+	    fprintf (fp, "%u  ", *(unsigned short *) value_ptr);
 	    break;
 	  case K_ULONG:
-	    (void) fprintf (fp, "%lu  ", *(unsigned long *) value_ptr);
+	    fprintf (fp, "%lu  ", *(unsigned long *) value_ptr);
 	    break;
 	  case K_UBCOMPLEX:
-	    (void) fprintf ( fp, "%u   %u  ",
-			    *(unsigned char *) value_ptr,
-			    *( (unsigned char *) value_ptr + 1 ) );
+	    fprintf ( fp, "%u   %u  ",
+		      *(unsigned char *) value_ptr,
+		      *( (unsigned char *) value_ptr + 1 ) );
 	    break;
 	  case K_UICOMPLEX:
-	    (void) fprintf ( fp, "%u   %u  ",
-			    *(unsigned int *) value_ptr,
-			    *( (unsigned int *) value_ptr + 1 ) );
+	    fprintf ( fp, "%u   %u  ",
+		      *(unsigned int *) value_ptr,
+		      *( (unsigned int *) value_ptr + 1 ) );
 	    break;
 	  case K_USCOMPLEX:
-	    (void) fprintf ( fp, "%u   %u  ",
-			    *(unsigned short *) value_ptr,
-			    *( (unsigned short *) value_ptr + 1 ) );
+	    fprintf ( fp, "%u   %u  ",
+		      *(unsigned short *) value_ptr,
+		      *( (unsigned short *) value_ptr + 1 ) );
 	    break;
 	  case K_ULCOMPLEX:
-	    (void) fprintf ( fp, "%lu   %lu  ",
-			    *(unsigned long *) value_ptr,
-			    *( (unsigned long *) value_ptr + 1 ) );
+	    fprintf ( fp, "%lu   %lu  ",
+		      *(unsigned long *) value_ptr,
+		      *( (unsigned long *) value_ptr + 1 ) );
 	    break;
 	  case K_VSTRING:
-	    (void) fprintf (fp, "\"%s\"  ", *(char **) value_ptr);
+	    fprintf (fp, "\"%s\"  ", *(char **) value_ptr);
 	    break;
 	  case K_FSTRING:
 	    fstring = (FString *) value_ptr;
-	    (void) fprintf (fp, "\"%s\"  ", fstring->string);
+	    fprintf (fp, "\"%s\"  ", fstring->string);
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Illegal panel item type: %u\n",
-			    item->type);
+	    fprintf (stderr, "Illegal panel item type: %u\n", item->type);
 	    a_prog_bug (function_name);
 	    break;
 	}
     }
     if (screen_display)
     {
-	(void) fprintf (fp, "  #%s\n", item->comment);
+	fprintf (fp, "  #%s\n", item->comment);
     }
     else
     {
-	(void) fprintf (fp, "\n");
+	fprintf (fp, "\n");
     }
 }   /*  End Function show_array  */
 
@@ -1744,7 +1796,7 @@ static unsigned int get_size_of_type (unsigned int type)
       default:
 	if ( !ds_element_is_named (type) )
 	{
-	    (void) fprintf (stderr, "Illegal panel item type: %u\n", type);
+	    fprintf (stderr, "Illegal panel item type: %u\n", type);
 	    a_prog_bug (function_name);
 	}
 	size = host_type_sizes[type];
@@ -1765,13 +1817,13 @@ static flag test_minmax (KPanelItem item, double value)
     {
 	if ( (item->type == K_FLOAT) || (item->type == K_DOUBLE) )
 	{
-	    (void) fprintf (stderr, "Value: %e is less than minimum: %e\n",
-			    value, item->min_value);
+	    fprintf (stderr, "Value: %e is less than minimum: %e\n",
+		     value, item->min_value);
 	}
 	else
 	{
-	    (void) fprintf (stderr, "Value: %ld is less than minimum: %ld\n",
-			    (long) value, (long) item->min_value);
+	    fprintf (stderr, "Value: %ld is less than minimum: %ld\n",
+		     (long) value, (long) item->min_value);
 	}
 	return (TRUE);
     }
@@ -1779,14 +1831,13 @@ static flag test_minmax (KPanelItem item, double value)
     {
 	if ( (item->type == K_FLOAT) || (item->type == K_DOUBLE) )
 	{
-	    (void) fprintf (stderr, "Value: %e is grater than maximum: %e\n",
-			    value, item->max_value);
+	    fprintf (stderr, "Value: %e is grater than maximum: %e\n",
+		     value, item->max_value);
 	}
 	else
 	{
-	    (void) fprintf (stderr,
-			    "Value: %ld is greater than maximum: %ld\n",
-			    (long) value, (long) item->max_value);
+	    fprintf (stderr, "Value: %ld is greater than maximum: %ld\n",
+		     (long) value, (long) item->max_value);
 	}
 	return (TRUE);
     }
@@ -1804,7 +1855,7 @@ static void show_protocols_func (char *cmd)
     if ( ( strings = conn_extract_protocols () ) == NULL ) return;
     for (ptr = strings; *ptr != NULL; ++ptr)
     {
-	(void) fprintf (stderr, "%s\n", *ptr);
+	fprintf (stderr, "%s\n", *ptr);
     }
     for (ptr = strings; *ptr != NULL; ++ptr) m_free (*ptr);
     m_free ( (char *) strings );
@@ -1821,12 +1872,12 @@ static void show_version_func (char *cmd)
     extern char module_lib_version[STRING_LENGTH + 1];
     extern char karma_library_version[STRING_LENGTH + 1];
 
-    (void) fprintf (stderr, "module: \"%s\" version: \"%s\"\n",
-		    module_name, module_version_date);
-    (void) fprintf (stderr, "Module running with Karma library version: %s\n",
-		    karma_library_version);
-    (void) fprintf (stderr, "Module compiled with library version: %s\n",
-		    module_lib_version);
+    fprintf (stderr, "module: \"%s\" version: \"%s\"\n",
+	     module_name, module_version_date);
+    fprintf (stderr, "Module running with Karma library version: %s\n",
+	     karma_library_version);
+    fprintf (stderr, "Module compiled with library version: %s\n",
+	     module_lib_version);
 }   /*  End Function show_version_func  */
 
 static void show_group (KPanelItem item, flag screen_display, FILE *fp,
@@ -1850,43 +1901,43 @@ static void show_group (KPanelItem item, flag screen_display, FILE *fp,
 
     if (item->type != PIT_GROUP)
     {
-	(void) fprintf (stderr, "Item is not of type PIT_GROUP\n");
+	fprintf (stderr, "Item is not of type PIT_GROUP\n");
 	a_prog_bug (function_name);
     }
     group = (KControlPanel) item->value_ptr;
     if (!group->group)
     {
-	(void) fprintf (stderr, "Group KControlPanel is not a group\n");
+	fprintf (stderr, "Group KControlPanel is not a group\n");
 	a_prog_bug (function_name);
     }
     if (screen_display)
     {
 	if (item->max_array_length < 1)
 	{
-	    (void) strcpy (txt, item->name);
+	    strcpy (txt, item->name);
 	}
 	else if (item->max_array_length == item->min_array_length)
 	{
-	    (void) sprintf (txt, "%s[%d]",
-			    item->name, (int) item->min_array_length);
+	    sprintf (txt, "%s[%d]",
+		     item->name, (int) item->min_array_length);
 	}
 	else
 	{
-	    (void) sprintf (txt, "%s[%d..%d]",
-			    item->name, (int) item->min_array_length,
-			    (int) item->max_array_length);
+	    sprintf (txt, "%s[%d..%d]",
+		     item->name, (int) item->min_array_length,
+		     (int) item->max_array_length);
 	}
-	(void) fprintf (fp, "%-40s#%s\n", txt, item->comment);
+	fprintf (fp, "%-40s#%s\n", txt, item->comment);
 	/*  Show group items  */
 	for (gitem = group->first_item; gitem != NULL; gitem = gitem->next)
 	{
-	    (void) fprintf (fp, "  %-9s", gitem->name);
+	    fprintf (fp, "  %-9s", gitem->name);
 	}
-	(void) fprintf (fp, "\n");
+	fprintf (fp, "\n");
     }
     else
     {
-	(void) fprintf (fp, "%s    ", item->name);
+	fprintf (fp, "%s    ", item->name);
     }
     num_groups = (item->max_array_length < 1) ? 1 : *item->curr_array_length;
     /*  Loop through all the instances of group  */
@@ -1900,104 +1951,103 @@ static void show_group (KPanelItem item, flag screen_display, FILE *fp,
 	    switch (gitem->type)
 	    {
 	      case K_FLOAT:
-		(void) fprintf (fp, "  %-9.3e", *(float *) value_ptr);
+		fprintf (fp, "  %-9.3e", *(float *) value_ptr);
 		break;
 	      case K_DOUBLE:
-		(void) fprintf (fp, "  %-9.3e", *(double *) value_ptr);
+		fprintf (fp, "  %-9.3e", *(double *) value_ptr);
 		break;
 	      case K_BYTE:
-		(void) fprintf (fp, "  %-9d", *(char *) value_ptr);
+		fprintf (fp, "  %-9d", *(char *) value_ptr);
 		break;
 	      case K_INT:
-		(void) fprintf (fp, "  %-9d", *(int *) value_ptr);
+		fprintf (fp, "  %-9d", *(int *) value_ptr);
 		break;
 	      case K_SHORT:
-		(void) fprintf (fp, "  %-9d", *(short *) value_ptr);
+		fprintf (fp, "  %-9d", *(short *) value_ptr);
 		break;
 	      case K_COMPLEX:
-		(void) fprintf ( fp, "  %-4e %-4e",
-				*(float *) value_ptr,
-				*( (float *) value_ptr + 1 ) );
+		fprintf ( fp, "  %-4e %-4e",
+			  *(float *) value_ptr,
+			  *( (float *) value_ptr + 1 ) );
 		break;
 	      case K_DCOMPLEX:
-		(void) fprintf ( fp, "  %-4e %-4e",
-				*(double *) value_ptr,
-				*( (double *) value_ptr + 1 ) );
+		fprintf ( fp, "  %-4e %-4e",
+			  *(double *) value_ptr,
+			  *( (double *) value_ptr + 1 ) );
 		break;
 	      case K_BCOMPLEX:
-		(void) fprintf ( fp, "  %-4d %-4d",
-				*(char *) value_ptr,
-				*( (char *) value_ptr + 1 ) );
+		fprintf ( fp, "  %-4d %-4d",
+			  *(char *) value_ptr,
+			  *( (char *) value_ptr + 1 ) );
 		break;
 	      case K_ICOMPLEX:
-		(void) fprintf ( fp, "  %-4d %-4d",
-				*(int *) value_ptr,
-				*( (int *) value_ptr + 1 ) );
+		fprintf ( fp, "  %-4d %-4d",
+			  *(int *) value_ptr,
+			  *( (int *) value_ptr + 1 ) );
 		break;
 	      case K_SCOMPLEX:
-		(void) fprintf ( fp, "  %-4d %-4d",
-				*(short *) value_ptr,
-				*( (short *) value_ptr + 1 ) );
+		fprintf ( fp, "  %-4d %-4d",
+			  *(short *) value_ptr,
+			  *( (short *) value_ptr + 1 ) );
 		break;
 	      case K_LONG:
-		(void) fprintf (fp, "  %-9ld", *(long *) value_ptr);
+		fprintf (fp, "  %-9ld", *(long *) value_ptr);
 		break;
 	      case K_LCOMPLEX:
-		(void) fprintf ( fp, "  %-4ld %-4ld",
-				*(long *) value_ptr,
-				*( (long *) value_ptr + 1 ) );
+		fprintf ( fp, "  %-4ld %-4ld",
+			  *(long *) value_ptr,
+			  *( (long *) value_ptr + 1 ) );
 		break;
 	      case K_UBYTE:
-		(void) fprintf (fp, "  %-9u", *(unsigned char *) value_ptr);
+		fprintf (fp, "  %-9u", *(unsigned char *) value_ptr);
 		break;
 	      case K_UINT:
-		(void) fprintf (fp, "  %-9u", *(unsigned int *) value_ptr);
+		fprintf (fp, "  %-9u", *(unsigned int *) value_ptr);
 		break;
 	      case K_USHORT:
-		(void) fprintf (fp, "  %-9u", *(unsigned short *) value_ptr);
+		fprintf (fp, "  %-9u", *(unsigned short *) value_ptr);
 		break;
 	      case K_ULONG:
-		(void) fprintf (fp, "  %-9lu", *(unsigned long *) value_ptr);
+		fprintf (fp, "  %-9lu", *(unsigned long *) value_ptr);
 		break;
 	      case K_UBCOMPLEX:
-		(void) fprintf ( fp, "  %-4u %-4u",
-				*(unsigned char *) value_ptr,
-				*( (unsigned char *) value_ptr + 1 ) );
+		fprintf ( fp, "  %-4u %-4u",
+			  *(unsigned char *) value_ptr,
+			  *( (unsigned char *) value_ptr + 1 ) );
 		break;
 	      case K_UICOMPLEX:
-		(void) fprintf ( fp, "  %-4u %-4u",
-				*(unsigned int *) value_ptr,
-				*( (unsigned int *) value_ptr + 1 ) );
+		fprintf ( fp, "  %-4u %-4u",
+			  *(unsigned int *) value_ptr,
+			  *( (unsigned int *) value_ptr + 1 ) );
 		break;
 	      case K_USCOMPLEX:
-		(void) fprintf ( fp, "  %-4u %-4u",
-				*(unsigned short *) value_ptr,
-				*( (unsigned short *) value_ptr + 1 ) );
+		fprintf ( fp, "  %-4u %-4u",
+			  *(unsigned short *) value_ptr,
+			  *( (unsigned short *) value_ptr + 1 ) );
 		break;
 	      case K_ULCOMPLEX:
-		(void) fprintf ( fp, "  %-4lu %-4lu",
-				*(unsigned long *) value_ptr,
-				*( (unsigned long *) value_ptr + 1 ) );
+		fprintf ( fp, "  %-4lu %-4lu",
+			  *(unsigned long *) value_ptr,
+			  *( (unsigned long *) value_ptr + 1 ) );
 		break;
 	      case K_VSTRING:
-		(void) sprintf (txt, "\"%s\"", *(char **) value_ptr);
-		(void) fprintf (fp, "  %-9s", txt);
+		sprintf (txt, "\"%s\"", *(char **) value_ptr);
+		fprintf (fp, "  %-9s", txt);
 		break;
 	      case K_FSTRING:
 		fstring = (FString *) value_ptr;
-		(void) sprintf (txt, "\"%s\"", fstring->string);
-		(void) fprintf (fp, "  %-9s", txt);
+		sprintf (txt, "\"%s\"", fstring->string);
+		fprintf (fp, "  %-9s", txt);
 		break;
 	      default:
-		(void) fprintf (stderr, "Illegal panel item type: %u\n",
-				item->type);
+		fprintf (stderr, "Illegal panel item type: %u\n", item->type);
 		a_prog_bug (function_name);
 		break;
 	    }
 	}
-	if (screen_display) (void) fprintf (fp, "\n");
+	if (screen_display) fprintf (fp, "\n");
     }
-    if (!screen_display) (void) fprintf (fp, "\n");
+    if (!screen_display) fprintf (fp, "\n");
 }   /*  End Function show_group  */
 
 static void decode_group (KPanelItem item, char *string, flag add)
@@ -2018,13 +2068,13 @@ static void decode_group (KPanelItem item, char *string, flag add)
 
     if (item->type != PIT_GROUP)
     {
-	(void) fprintf (stderr, "Item is not of type PIT_GROUP\n");
+	fprintf (stderr, "Item is not of type PIT_GROUP\n");
 	a_prog_bug (function_name);
     }
     group = (KControlPanel) item->value_ptr;
     if (!group->group)
     {
-	(void) fprintf (stderr, "Group KControlPanel is not a group\n");
+	fprintf (stderr, "Group KControlPanel is not a group\n");
 	a_prog_bug (function_name);
     }
     if (item->max_array_length < 1)
@@ -2048,9 +2098,9 @@ static void decode_group (KPanelItem item, char *string, flag add)
 	    }
 	    if (string != NULL)
 	    {
-		(void) fprintf (stderr,
-				"Ignored trailing arguments: \"%s\" for panel item: \"%s\"\n",
-				string, item->name);
+		fprintf (stderr,
+			 "Ignored trailing arguments: \"%s\" for panel item: \"%s\"\n",
+			 string, item->name);
 	    }
 	    return;
 	}
@@ -2061,7 +2111,7 @@ static void decode_group (KPanelItem item, char *string, flag add)
 	    value_ptr += array_count * get_size_of_type (gitem->type);
 	    if (string == NULL)
 	    {
-		(void) fprintf (stderr, "Group not completed\n");
+		fprintf (stderr, "Group not completed\n");
 		return;
 	    }
 	    string = decode_datum (gitem, value_ptr, string, &failed);
@@ -2072,9 +2122,8 @@ static void decode_group (KPanelItem item, char *string, flag add)
     if (item->max_array_length < 1) return;
     if (array_count < item->min_array_length)
     {
-	(void) fprintf (stderr,
-			"Not enough values given for array: need: %d\n",
-			(int) item->min_array_length);
+	fprintf (stderr, "Not enough values given for array: need: %d\n",
+		 (int) item->min_array_length);
 	return;
     }
     *item->curr_array_length = array_count;

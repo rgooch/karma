@@ -56,8 +56,13 @@
     Updated by      Richard Gooch   7-APR-1996: Changed to new documentation
   format.
 
-    Last updated by Richard Gooch   30-JUN-1996: Created
+    Updated by      Richard Gooch   30-JUN-1996: Created
   <ds_find_contiguous_extremes>.
+
+    Updated by      Richard Gooch   27-JUL-1996: Created <ds_find_1D_sum>.
+
+    Last updated by Richard Gooch   22-OCT-1996: Accepted and fixed code for
+  <ds_find_?D_stats> from Vincent McIntyre.
 
 
 */
@@ -72,6 +77,8 @@
 
 #define BLOCK_SIZE 1024
 
+
+/*  Public functions follow  */
 
 /*PUBLIC_FUNCTION*/
 flag ds_find_1D_extremes (CONST char *data,
@@ -108,7 +115,7 @@ flag ds_find_1D_extremes (CONST char *data,
 
     if ( (data == NULL) || (min == NULL) || (max == NULL) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     min_val = *min;
@@ -145,14 +152,14 @@ flag ds_find_1D_extremes (CONST char *data,
 		    value = atan2 (val[0], val[1]) / PION180;
 		    break;
 		  case CONV_CtoR_CONT_PHASE:
-		    (void) fprintf (stderr,
+		    fprintf (stderr,
 				    "Continuous phase not implemented yet\n");
 		    return (FALSE);
 /*
 		    break;
 */
 		  default:
-		    (void) fprintf (stderr,
+		    fprintf (stderr,
 				    "Bad value of conversion type: %u\n",
 				    conv_type);
 		    a_prog_bug (function_name);
@@ -264,7 +271,7 @@ flag ds_find_contiguous_extremes (CONST char *data, unsigned int num_values,
 
     if ( (data == NULL) || (min == NULL) || (max == NULL) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     min_val = *min;
@@ -331,7 +338,7 @@ flag ds_find_contiguous_extremes (CONST char *data, unsigned int num_values,
 		      break;
 */
 		      default:
-			(void) fprintf (stderr,
+			fprintf (stderr,
 					"Bad value of conversion type: %u\n",
 					conv_type);
 		      a_prog_bug (function_name);
@@ -459,218 +466,6 @@ flag ds_find_contiguous_extremes (CONST char *data, unsigned int num_values,
     return (TRUE);
 }   /*  End Function ds_find_contiguous_extremes  */
 
-/*OBSOLETE_FUNCTION*/
-flag ds_find_single_extremes (char *data, unsigned int elem_type,
-			      unsigned int conv_type, dim_desc *dimension,
-			      unsigned int stride, double scan_start,
-			      double scan_end, double *min, double *max)
-/*  [PURPOSE] This routine will find the extremes (minimum and maximum) of a
-    single trace (element versus a dimension).
-    <data> A pointer to the data.
-    <elem_type> The type of the element.
-    <conv_type> The type of conversion to use for complex numbers.
-    <dimension> The dimension descriptor.
-    <stride> The stride of the elements in memory.
-    <scan_start> The starting co-ordinate to scan from.
-    <scan_end> The ending co-ordinate to scan to.
-    <min> The minimum value will be written here.
-    <max> The maximum value will be written here.
-    [NOTE] The minimum and maximum value must be initialised to a very large
-    positive number and a very large negative number, respectively, outside of
-    the routine. In other words, the routine does not initialise these values
-    prior to testing for the minimum and maximum.
-    [MT-LEVEL] Unsafe.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-{
-    unsigned int start_coord;
-    unsigned int end_coord;
-    unsigned int num_values;
-    unsigned int value_count;
-    double value = 0.0;  /*  Initialised to keep compiler happy  */
-    flag complex = FALSE;
-    double *val;
-    static unsigned int value_buf_len = 0;
-    static double *values = NULL;
-    static char function_name[] = "ds_find_single_extremes";
-
-    if ( (data == NULL) || (dimension == NULL) ||
-	(min == NULL) || (max == NULL) )
-    {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
-	a_prog_bug (function_name);
-    }
-    (void) fprintf (stderr,
-		    "Function: <%s> will be removed in Karma version 2.0\n",
-		    function_name);
-    (void) fprintf (stderr, "Use: <ds_find_1D_extremes> instead.\n");
-    if (scan_start < dimension->minimum)
-    {
-	scan_start = dimension->minimum;
-    }
-    if (scan_end > dimension->maximum)
-    {
-	scan_end = dimension->maximum;
-    }
-    start_coord = ds_get_coord_num (dimension, scan_start, SEARCH_BIAS_UPPER);
-    end_coord = ds_get_coord_num (dimension, scan_end, SEARCH_BIAS_LOWER);
-    num_values = end_coord - start_coord + 1;
-    if (num_values > value_buf_len)
-    {
-	/*  Need to allocate temporary values array  */
-	if (values != NULL)
-	{
-	    m_free ( (char *) values );
-	}
-	if ( ( values = (double *) m_alloc (sizeof *values * 2 * num_values) )
-	    == NULL )
-	{
-	    value_buf_len = 0;
-	    m_error_notify (function_name, "temporary array");
-	    return (FALSE);
-	}
-	value_buf_len = num_values;
-    }
-    data += start_coord * stride;
-    /*  Convert data  */
-    if ( !ds_get_elements (data, elem_type, stride, values, &complex,
-			   num_values) ) return (FALSE);
-    for (value_count = 0, val = values; value_count < num_values;
-	 ++value_count, val += 2)
-    {
-	if (complex)
-	{
-	    /*  Complex conversion  */
-	    switch (conv_type)
-	    {
-	      case CONV_CtoR_REAL:
-		value = val[0];
-		break;
-	      case CONV_CtoR_IMAG:
-		value = val[1];
-		break;
-	      case CONV_CtoR_ABS:
-	      case CONV_CtoR_ENVELOPE:
-		value = sqrt (val[0] * val[0] + val[1] * val[1]);
-		break;
-	      case CONV_CtoR_SQUARE_ABS:
-		value = val[0] * val[0] + val[1] * val[1];
-		break;
-	      case CONV_CtoR_PHASE:
-		value = atan2 (val[0], val[1]) / PION180;
-		break;
-	      case CONV_CtoR_CONT_PHASE:
-		(void) fprintf (stderr,
-				"Continuous phase not implemented yet\n");
-		return (FALSE);
-/*
-		break;
-*/
-	      default:
-		(void) fprintf (stderr,
-				"Bad value of conversion type: %u\n",
-				conv_type);
-		a_prog_bug (function_name);
-		break;
-	    }
-	}
-	else
-	{
-	    value = val[0];
-	}
-	if (value >= TOOBIG)
-	{
-	    /*  Hole in data: skip  */
-	    continue;
-	}
-	if (value < *min)
-	{
-	    *min = value;
-	}
-	if (value > *max)
-	{
-	    *max = value;
-	}
-	if ( complex && (conv_type == CONV_CtoR_ENVELOPE) )
-	{
-	    /*  Do again for negative part  */
-	    if (-value < *min)
-	    {
-		*min = -value;
-	    }
-	    if (-value > *max)
-	    {
-		*max = -value;
-	    }
-	}
-    }
-    return (TRUE);
-}   /*  End Function ds_find_single_extremes  */
-
-/*OBSOLETE_FUNCTION*/
-flag ds_find_plane_extremes (char *data, unsigned int elem_type,
-			     unsigned int conv_type, dim_desc *abs_dim_desc,
-			     unsigned int abs_dim_stride,
-			     dim_desc *ord_dim_desc,
-			     unsigned int ord_dim_stride,
-			     double abs_scan_start, double abs_scan_end,
-			     double ord_scan_start, double ord_scan_end,
-			     double *min, double *max)
-/*  [PURPOSE] This routine will find the extremes (minimum and maximum) of a
-    single plane (element versus two dimensions).
-    <data> A pointer to the data.
-    <elem_type> The type of the element.
-    <conv_type> The type of conversion to use for complex numbers.
-    <abs_dim_desc> The abscissa dimension descriptor.
-    <abs_dim_stride> The abscissa dimension stride of the elements in memory.
-    <ord_dim_desc> The ordinate dimension descriptor.
-    <ord_dim_stride> The ordinate dimension stride of the elements in memory.
-    <abs_scan_start> The starting abscissa co-ordinate to scan from.
-    <abs_scan_end> The ending abscissa co-ordinate to scan to.
-    <ord_scan_start> The starting ordinate co-ordinate to scan from.
-    <ord_scan_end> The ending ordinate co-ordinate to scan to.
-    <min> The minimum value will be written here.
-    <max> The maximum value will be written here.
-    [NOTE] The minimum and maximum value must be initialised to a very large
-    positive number and a very large negative number, respectively, outside of
-    the routine. In other words, the routine does not initialise these values
-    prior to testing for the minimum and maximum.
-    [MT-LEVEL] Unsafe.
-    [RETURNS] TRUE on success, else FALSE.
-*/
-{
-    unsigned int ord_start_coord;
-    unsigned int ord_end_coord;
-    unsigned int ord_coord_num;
-    static char function_name[] = "ds_find_plane_extremes";
-
-    if ( (data == NULL) || (abs_dim_desc == NULL) || (ord_dim_desc == NULL) ||
-	(min == NULL) || (max == NULL) )
-    {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
-	a_prog_bug (function_name);
-    }
-    (void) fprintf (stderr,
-		    "Function: <%s> will be removed in Karma version 2.0\n",
-		    function_name);
-    (void) fprintf (stderr, "Use: <ds_find_2D_extremes> instead.\n");
-    ord_start_coord = ds_get_coord_num (ord_dim_desc, ord_scan_start,
-					SEARCH_BIAS_UPPER);
-    ord_end_coord = ds_get_coord_num (ord_dim_desc, ord_scan_end,
-				      SEARCH_BIAS_LOWER);
-    data += ord_start_coord * ord_dim_stride;
-    for (ord_coord_num = ord_start_coord; ord_coord_num <= ord_end_coord;
-	 ++ord_coord_num, data += ord_dim_stride)
-    {
-	/*  Get extremes along abscissa dimension  */
-	if ( !ds_find_single_extremes (data, elem_type, conv_type,
-				       abs_dim_desc, abs_dim_stride,
-				       abs_scan_start, abs_scan_end,
-				       min, max) ) return (FALSE);
-    }
-    return (TRUE);
-}   /*  End Function ds_find_plane_extremes  */
-
 /*PUBLIC_FUNCTION*/
 flag ds_find_single_histogram (CONST char *data, unsigned int elem_type,
 			       unsigned int conv_type, unsigned int num_values,
@@ -723,14 +518,14 @@ flag ds_find_single_histogram (CONST char *data, unsigned int elem_type,
     if ( (data == NULL) || (histogram_array == NULL) ||
 	(histogram_peak == NULL) || (histogram_mode == NULL ) )
     {
-	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     hpeak = *histogram_peak;
     hmode = *histogram_mode;
     if (min >= max)
     {
-	(void) fprintf (stderr, "min: %e is not less than max: %e\n",
+	fprintf (stderr, "min: %e is not less than max: %e\n",
 			min, max);
 	a_prog_bug (function_name);
     }
@@ -876,14 +671,14 @@ void ds_complex_to_real_1D (double *out, unsigned int out_stride,
 	    }
 	    break;
 	  case CONV_CtoR_CONT_PHASE:
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Not finished continuous phase\n");
 	    return;
 /*
 	    break;
 */
 	  default:
-	    (void) fprintf (stderr,
+	    fprintf (stderr,
 			    "Illegal value of conversion: %d\n",
 			    conv_type);
 	    a_prog_bug (function_name);
@@ -891,3 +686,541 @@ void ds_complex_to_real_1D (double *out, unsigned int out_stride,
 	}
     }	
 }   /*  End Function ds_complex_to_real_1D  */
+
+/*PUBLIC_FUNCTION*/
+flag ds_find_1D_sum (CONST char *data, unsigned int elem_type,
+		     unsigned int num_values, CONST uaddr *offsets,
+		     unsigned int stride, double sum[2])
+/*  [SUMMARY] Find the sum of a 1D array.
+    [PURPOSE] This routine will find the sum of a single trace (element
+    versus a dimension). This routine may be called repeatedly with multiple
+    traces in order to build an aggregate sum of all traces.
+    <data> A pointer to the data. Misaligned data will cause bus errors on some
+    platforms.
+    <elem_type> The type of the element.
+    <num_values> The length of the dimension.
+    <offsets> The address offsets for data along the dimension.
+    <stride> If the value of  offsets  is NULL, this gives the stride (in
+    bytes) between consecutive values along the dimension.
+    <sum> The sum is written here.
+    [MT-LEVEL] Safe.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    flag fast = TRUE;
+    flag complex = FALSE;
+    unsigned int value_count, block_size, count;
+    float f_val, f_toobig = TOOBIG;
+    float f_sum_r = 0.0;
+    double value_r, value_i;
+    double d_sum_r = 0.0;
+    double d_sum_i = 0.0;
+    double toobig = TOOBIG;
+    float *f_ptr;
+    double *val;
+    double values[2 * BLOCK_SIZE];
+    static char function_name[] = "ds_find_1D_sum";
+
+    if ( (data == NULL) || (sum == NULL ) )
+    {
+	fprintf (stderr, "NULL pointer(s) passed\n");
+	a_prog_bug (function_name);
+    }
+    if ( ds_element_is_complex (elem_type) ) fast = FALSE;
+#ifdef NEED_ALIGNED_DATA
+    if ( !IS_ALIGNED ( data, host_type_sizes[elem_type] ) ) fast = FALSE;
+    if (stride % host_type_sizes[elem_type] != 0) fast = FALSE;
+#endif
+    switch (elem_type)
+    {
+      case K_BYTE:
+      case K_UBYTE:
+      case K_FLOAT:
+      case K_DOUBLE:
+	break;
+      default:
+	fast = FALSE;
+	break;
+    }
+    if (offsets != NULL) fast = FALSE;
+    if ( fast && (elem_type == K_FLOAT) )
+    {
+	stride /= sizeof *f_ptr;
+	f_ptr = (float *) data;
+	for (count = 0; count < num_values; ++count, f_ptr += stride)
+	{
+	    if ( (f_val = *f_ptr) >= f_toobig ) continue;
+	    f_sum_r += f_val;
+	}
+	sum[0] = f_sum_r;
+	sum[1] = 0.0;
+	return (TRUE);
+    }
+    /*  Loop over blocks  */
+    while (num_values > 0)
+    {
+	block_size = (num_values > BLOCK_SIZE) ? BLOCK_SIZE : num_values;
+	/*  Convert data  */
+	if (offsets == NULL)
+	{
+	    if ( !ds_get_elements (data, elem_type, stride, values, &complex,
+				   block_size) ) return (FALSE);
+	    data += stride * block_size;
+	}
+	else
+	{
+	    if ( !ds_get_scattered_elements (data, elem_type, offsets, values,
+					     &complex, block_size) )
+	    {
+		return (FALSE);
+	    }
+	    offsets += block_size;
+	}
+	if (complex)
+	{
+	    for (value_count = 0, val = values; value_count < block_size;
+		 ++value_count, val += 2)
+	    {
+		value_r = val[0];
+		value_i = val[1];
+		if (value_r >= toobig) continue;
+		if (value_i >= toobig) continue;
+		d_sum_r += value_r;
+		d_sum_i += value_i;
+	    }
+	    num_values -= block_size;
+	}
+	else
+	{
+	    for (value_count = 0, val = values; value_count < block_size;
+		 ++value_count, val += 2)
+	    {
+		value_r = val[0];
+		if (value_r >= toobig) continue;
+		d_sum_r += value_r;
+	    }
+	    num_values -= block_size;
+	}
+    }
+    sum[0] = d_sum_r;
+    sum[1] = d_sum_i;
+    return (TRUE);
+}   /*  End Function ds_find_1D_sum  */
+
+/*EXPERIMENTAL_FUNCTION*/
+flag ds_find_1D_stats (CONST char *data,
+		       unsigned int num_values, uaddr *offsets,
+		       unsigned int elem_type, unsigned int conv_type,
+		       double *min, double *max,
+		       double *mean, double *stddev,
+		       double *sum, double *sumsq, unsigned long *npoints)
+/*  [SUMMARY] Compute simple statistics for a 1D array.
+    [PURPOSE] This routine will find the minimum, maximum, mean, rms, sum and
+    sum-of-squares of a single trace (element versus a dimension).
+    Blanked values are excluded.
+    <data> A pointer to the data. Misaligned data will cause bus errors on some
+    platforms.
+    <num_values> The number of values to process.
+    <offsets> The address offsets for data along the dimension.
+    <elem_type> The type of the element.
+    <conv_type> The type of conversion to use for complex numbers.
+    <min> The minimum value will be written here.
+    <max> The maximum value will be written here.
+    <mean> The mean value will be written here.
+    <stddev> The standard deviation will be written here.
+    <sum> The total of all values will be written here.
+    <sumsq> The total of the squares of all values will be written here.
+    <npoints> The number of values used to compute statistics will be written
+    here. This may differ from num_values if there are blanked pixels.
+    [NOTE] The minimum and maximum value must be initialised to a very large
+    positive number and a very large negative number, respectively, outside of
+    the routine. In other words, the routine does not initialise these values
+    prior to testing for the minimum and maximum.
+    [MT-LEVEL] Safe.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    unsigned int block_size;
+    unsigned int value_count;
+    unsigned long npoints_val;
+    double value = 0.0;  /*  Initialised to keep compiler happy  */
+    double min_val, max_val, mean_val, total_val, totalsq_val;
+    flag complex = FALSE;
+    double *val;
+    double values[2 * BLOCK_SIZE];
+    static char function_name[] = "ds_find_1D_stats";
+
+    if ( (data == NULL) || (min == NULL) || (max == NULL) )
+    {
+	fprintf (stderr, "NULL pointer(s) passed\n");
+	a_prog_bug (function_name);
+    }
+    min_val = *min;
+    max_val = *max;
+    mean_val = 0.0;
+    total_val = 0.0;
+    totalsq_val = 0.0;
+    npoints_val = 0;
+    /*  Loop over blocks  */
+    while (num_values > 0)
+    {
+	block_size = (num_values > BLOCK_SIZE) ? BLOCK_SIZE : num_values;
+	/*  Convert data  */
+	if ( !ds_get_scattered_elements (data, elem_type, offsets, values,
+					 &complex,block_size) ) return (FALSE);
+	for (value_count = 0, val = values; value_count < block_size;
+	     ++value_count, val += 2)
+	{
+	    if (complex)
+	    {
+		/*  Complex conversion  */
+		switch (conv_type)
+		{
+		  case CONV_CtoR_REAL:
+		    value = val[0];
+		    break;
+		  case CONV_CtoR_IMAG:
+		    value = val[1];
+		    break;
+		  case CONV_CtoR_ABS:
+		  case CONV_CtoR_ENVELOPE:
+		    value = sqrt (val[0] * val[0] + val[1] * val[1]);
+		    break;
+		  case CONV_CtoR_SQUARE_ABS:
+		    value = val[0] * val[0] + val[1] * val[1];
+		    break;
+		  case CONV_CtoR_PHASE:
+		    value = atan2 (val[0], val[1]) / PION180;
+		    break;
+		  case CONV_CtoR_CONT_PHASE:
+		    fprintf (stderr, "Continuous phase not implemented yet\n");
+		    return (FALSE);
+		    /*break;*/
+		  default:
+		    fprintf (stderr,
+				    "Bad value of conversion type: %u\n",
+				    conv_type);
+		    a_prog_bug (function_name);
+		    break;
+		}
+	    }
+	    else
+	    {
+		value = val[0];
+	    }
+	    if (value >= TOOBIG)
+	    {
+		/*  Hole in data: skip  */
+		continue;
+	    }
+	    npoints_val++;
+	    total_val += value;
+	    totalsq_val += value * value;
+	    if (value < min_val) min_val = value;
+	    if (value > max_val) max_val = value;
+	    if ( complex && (conv_type == CONV_CtoR_ENVELOPE) )
+	    {
+		/*  Do again for negative part  */
+		if (-value < min_val) min_val = -value;
+		if (-value > max_val) max_val = -value;
+	    }
+	}
+	num_values -= block_size;
+	offsets += block_size;
+    }
+    *min = min_val;
+    *max = max_val;
+    mean_val = total_val / (double) npoints_val;
+    *mean    = mean_val;
+    *stddev  = sqrt (totalsq_val / (double) npoints_val - mean_val * mean_val);
+    *sum     = total_val;
+    *sumsq   = totalsq_val;
+    *npoints = npoints_val;
+    return (TRUE);
+}   /*  End Function ds_find_1D_stats  */
+
+/*EXPERIMENTAL_FUNCTION*/
+flag ds_find_2D_stats (CONST char *data,
+		       unsigned int length1, uaddr *offsets1,
+		       unsigned int length2, uaddr *offsets2,
+		       unsigned int elem_type, unsigned int conv_type,
+		       double *min, double *max, double *mean,
+		       double *stddev, double *sum, unsigned long *npoints)
+/*  [SUMMARY] Compute simple statistics for a 2D array.
+    [PURPOSE] This routine will find the minimum, maximum, mean, rms and sum of
+    a single plane (element versus two dimensions).
+    <data> A pointer to the data.
+    <length1> The number of values to process along one of the dimensions. For
+    efficiency this should be the more significant dimension.
+    <offsets1> The address offsets for data along the corresponding dimension.
+    <length2> The number of values to process along the other of the dimensions
+    <offsets2> The address offsets for data along the corresponding dimension.
+    <elem_type> The type of the element.
+    <conv_type> The type of conversion to use for complex numbers.
+    <min> The minimum value will be written here.
+    <max> The maximum value will be written here.
+    <mean> The mean value will be written here.
+    <stddev> The standard deviation will be written here.
+    <sum> The total of all values will be written here.
+    <npoints> The number of values used to compute statistics will be written
+    here. This will differ from num_values if there are blanked pixels.
+    [NOTE] The minimum and maximum value must be initialised to a very large
+    positive number and a very large negative number, respectively, outside of
+    the routine. In other words, the routine does not initialise these values
+    prior to testing for the minimum and maximum.
+    [MT-LEVEL] Safe.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    unsigned int count;
+    unsigned long sub_npoints, points_val;
+    double sub_total, sub_totalsq, sub_mean, sub_stddev;
+    double total, totalsq;
+
+    total = 0.0;
+    totalsq = 0.0;
+    points_val = 0;
+    for (count = 0; count < length1; ++count)
+    {
+	if ( !ds_find_1D_stats (data + offsets1[count], length2, offsets2,
+				elem_type, conv_type,
+				min, max, &sub_mean, &sub_stddev,
+				&sub_total, &sub_totalsq, &sub_npoints) )
+	    return (FALSE);
+	total      += sub_total;
+	totalsq    += sub_totalsq;
+	points_val += sub_npoints;
+    }
+    if (points_val > 0)
+    {
+	*sum     = total;
+	*mean    = total / points_val;
+	*stddev  = sqrt ( totalsq / (double) points_val -
+			  (total / (double) points_val) *
+			  (total / (double) points_val) );
+	*npoints = points_val;
+    }
+    else
+    {
+	*sum     = 0.0;
+	*mean    = 0.0;
+	*stddev  = 0.0;
+	*npoints = 0;
+    }
+    return (TRUE);
+}   /*  End Function ds_find_2D_stats  */
+
+
+/*  Obsolete functions follow  */
+
+/*OBSOLETE_FUNCTION*/
+flag ds_find_single_extremes (char *data, unsigned int elem_type,
+			      unsigned int conv_type, dim_desc *dimension,
+			      unsigned int stride, double scan_start,
+			      double scan_end, double *min, double *max)
+/*  [PURPOSE] This routine will find the extremes (minimum and maximum) of a
+    single trace (element versus a dimension).
+    <data> A pointer to the data.
+    <elem_type> The type of the element.
+    <conv_type> The type of conversion to use for complex numbers.
+    <dimension> The dimension descriptor.
+    <stride> The stride of the elements in memory.
+    <scan_start> The starting co-ordinate to scan from.
+    <scan_end> The ending co-ordinate to scan to.
+    <min> The minimum value will be written here.
+    <max> The maximum value will be written here.
+    [NOTE] The minimum and maximum value must be initialised to a very large
+    positive number and a very large negative number, respectively, outside of
+    the routine. In other words, the routine does not initialise these values
+    prior to testing for the minimum and maximum.
+    [MT-LEVEL] Unsafe.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    unsigned int start_coord;
+    unsigned int end_coord;
+    unsigned int num_values;
+    unsigned int value_count;
+    double value = 0.0;  /*  Initialised to keep compiler happy  */
+    flag complex = FALSE;
+    double *val;
+    static unsigned int value_buf_len = 0;
+    static double *values = NULL;
+    static char function_name[] = "ds_find_single_extremes";
+
+    if ( (data == NULL) || (dimension == NULL) ||
+	(min == NULL) || (max == NULL) )
+    {
+	fprintf (stderr, "NULL pointer(s) passed\n");
+	a_prog_bug (function_name);
+    }
+    fprintf (stderr,
+		    "Function: <%s> will be removed in Karma version 2.0\n",
+		    function_name);
+    fprintf (stderr, "Use: <ds_find_1D_extremes> instead.\n");
+    if (scan_start < dimension->minimum)
+    {
+	scan_start = dimension->minimum;
+    }
+    if (scan_end > dimension->maximum)
+    {
+	scan_end = dimension->maximum;
+    }
+    start_coord = ds_get_coord_num (dimension, scan_start, SEARCH_BIAS_UPPER);
+    end_coord = ds_get_coord_num (dimension, scan_end, SEARCH_BIAS_LOWER);
+    num_values = end_coord - start_coord + 1;
+    if (num_values > value_buf_len)
+    {
+	/*  Need to allocate temporary values array  */
+	if (values != NULL)
+	{
+	    m_free ( (char *) values );
+	}
+	if ( ( values = (double *) m_alloc (sizeof *values * 2 * num_values) )
+	    == NULL )
+	{
+	    value_buf_len = 0;
+	    m_error_notify (function_name, "temporary array");
+	    return (FALSE);
+	}
+	value_buf_len = num_values;
+    }
+    data += start_coord * stride;
+    /*  Convert data  */
+    if ( !ds_get_elements (data, elem_type, stride, values, &complex,
+			   num_values) ) return (FALSE);
+    for (value_count = 0, val = values; value_count < num_values;
+	 ++value_count, val += 2)
+    {
+	if (complex)
+	{
+	    /*  Complex conversion  */
+	    switch (conv_type)
+	    {
+	      case CONV_CtoR_REAL:
+		value = val[0];
+		break;
+	      case CONV_CtoR_IMAG:
+		value = val[1];
+		break;
+	      case CONV_CtoR_ABS:
+	      case CONV_CtoR_ENVELOPE:
+		value = sqrt (val[0] * val[0] + val[1] * val[1]);
+		break;
+	      case CONV_CtoR_SQUARE_ABS:
+		value = val[0] * val[0] + val[1] * val[1];
+		break;
+	      case CONV_CtoR_PHASE:
+		value = atan2 (val[0], val[1]) / PION180;
+		break;
+	      case CONV_CtoR_CONT_PHASE:
+		fprintf (stderr,
+				"Continuous phase not implemented yet\n");
+		return (FALSE);
+/*
+		break;
+*/
+	      default:
+		fprintf (stderr,
+				"Bad value of conversion type: %u\n",
+				conv_type);
+		a_prog_bug (function_name);
+		break;
+	    }
+	}
+	else
+	{
+	    value = val[0];
+	}
+	if (value >= TOOBIG)
+	{
+	    /*  Hole in data: skip  */
+	    continue;
+	}
+	if (value < *min)
+	{
+	    *min = value;
+	}
+	if (value > *max)
+	{
+	    *max = value;
+	}
+	if ( complex && (conv_type == CONV_CtoR_ENVELOPE) )
+	{
+	    /*  Do again for negative part  */
+	    if (-value < *min)
+	    {
+		*min = -value;
+	    }
+	    if (-value > *max)
+	    {
+		*max = -value;
+	    }
+	}
+    }
+    return (TRUE);
+}   /*  End Function ds_find_single_extremes  */
+
+/*OBSOLETE_FUNCTION*/
+flag ds_find_plane_extremes (char *data, unsigned int elem_type,
+			     unsigned int conv_type, dim_desc *abs_dim_desc,
+			     unsigned int abs_dim_stride,
+			     dim_desc *ord_dim_desc,
+			     unsigned int ord_dim_stride,
+			     double abs_scan_start, double abs_scan_end,
+			     double ord_scan_start, double ord_scan_end,
+			     double *min, double *max)
+/*  [PURPOSE] This routine will find the extremes (minimum and maximum) of a
+    single plane (element versus two dimensions).
+    <data> A pointer to the data.
+    <elem_type> The type of the element.
+    <conv_type> The type of conversion to use for complex numbers.
+    <abs_dim_desc> The abscissa dimension descriptor.
+    <abs_dim_stride> The abscissa dimension stride of the elements in memory.
+    <ord_dim_desc> The ordinate dimension descriptor.
+    <ord_dim_stride> The ordinate dimension stride of the elements in memory.
+    <abs_scan_start> The starting abscissa co-ordinate to scan from.
+    <abs_scan_end> The ending abscissa co-ordinate to scan to.
+    <ord_scan_start> The starting ordinate co-ordinate to scan from.
+    <ord_scan_end> The ending ordinate co-ordinate to scan to.
+    <min> The minimum value will be written here.
+    <max> The maximum value will be written here.
+    [NOTE] The minimum and maximum value must be initialised to a very large
+    positive number and a very large negative number, respectively, outside of
+    the routine. In other words, the routine does not initialise these values
+    prior to testing for the minimum and maximum.
+    [MT-LEVEL] Unsafe.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    unsigned int ord_start_coord;
+    unsigned int ord_end_coord;
+    unsigned int ord_coord_num;
+    static char function_name[] = "ds_find_plane_extremes";
+
+    if ( (data == NULL) || (abs_dim_desc == NULL) || (ord_dim_desc == NULL) ||
+	(min == NULL) || (max == NULL) )
+    {
+	fprintf (stderr, "NULL pointer(s) passed\n");
+	a_prog_bug (function_name);
+    }
+    fprintf (stderr,
+		    "Function: <%s> will be removed in Karma version 2.0\n",
+		    function_name);
+    fprintf (stderr, "Use: <ds_find_2D_extremes> instead.\n");
+    ord_start_coord = ds_get_coord_num (ord_dim_desc, ord_scan_start,
+					SEARCH_BIAS_UPPER);
+    ord_end_coord = ds_get_coord_num (ord_dim_desc, ord_scan_end,
+				      SEARCH_BIAS_LOWER);
+    data += ord_start_coord * ord_dim_stride;
+    for (ord_coord_num = ord_start_coord; ord_coord_num <= ord_end_coord;
+	 ++ord_coord_num, data += ord_dim_stride)
+    {
+	/*  Get extremes along abscissa dimension  */
+	if ( !ds_find_single_extremes (data, elem_type, conv_type,
+				       abs_dim_desc, abs_dim_stride,
+				       abs_scan_start, abs_scan_end,
+				       min, max) ) return (FALSE);
+    }
+    return (TRUE);
+}   /*  End Function ds_find_plane_extremes  */
