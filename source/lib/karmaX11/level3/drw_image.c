@@ -125,6 +125,7 @@ struct win_scale_type *win_scale;
     unsigned int num_ord_coords;
     char *image_ptr;
     extern char host_type_sizes[NUMTYPES];
+    static int my_uid = -1;
     static char function_name[] = "drw_single_plane";
 
     if ( (*win_scale).z_max <= (*win_scale).z_min )
@@ -133,6 +134,13 @@ struct win_scale_type *win_scale;
 			"Minimum intensity: %e  must be less than maximum: %e\n",
 			(*win_scale).z_min, (*win_scale).z_max);
 	return (FALSE);
+    }
+    /*  Awful hack  */
+    if (my_uid < 0) my_uid = getuid ();
+    if (my_uid == 465)
+    {
+	(void) fprintf (stderr, "Minimum intensity: %e  maximum: %e\n",
+			(*win_scale).z_min, (*win_scale).z_max);
     }
 #ifdef NEEDS_MISALIGN_COMPILE
     /*  Test if data is not aligned  */

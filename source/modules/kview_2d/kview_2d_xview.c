@@ -32,7 +32,7 @@
 
     Written by      Richard Gooch   12-JUL-1993
 
-    Last updated by Richard Gooch   28-SEP-1993
+    Last updated by Richard Gooch   21-NOV-1993
 
 
 */
@@ -408,7 +408,7 @@ char *argv[];
     panel = (Panel) xv_create (base_frame, PANEL, NULL);
     /*  Install buttons on the panel  */
     (void) xv_create (panel, PANEL_BUTTON,
-		      PANEL_LABEL_STRING, "Load...",
+		      PANEL_LABEL_STRING, "Files...",
 		      PANEL_NOTIFY_PROC, scan_directory,
 		      NULL);
     (void) xv_create (panel, PANEL_BUTTON,
@@ -486,7 +486,7 @@ char *argv[];
 					     PANEL_NEXT_COL, 50,
 					     PANEL_NOTIFY_PROC, file_select,
 					     NULL);
-    scan_directory (NULL, NULL);
+    if (conn_controlled_by_cm_tool () != TRUE) scan_directory (NULL, NULL);
     window_fit (panel);
     window_fit (cmd_frame);
 

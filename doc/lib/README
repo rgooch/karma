@@ -301,12 +301,18 @@ hi_read				    hi_write
 /*  Routines to compute and write RGB colour values into arrays  */
 /*  Link with:    -lkarma  */
 
-cf_greyscale1			    cf_stripchart
-cf_greyscale2			    cf_random_grey
-cf_rainbow1			    cf_random_pseudocolour
-cf_rainbow2			    cf_velocity_compensating_tones
-cf_rainbow3			    cf_compressed_colourmap_3r2g2b
-cf_cyclic1
+cf_greyscale1			    cf_heat
+cf_greyscale2			    cf_isophot
+cf_rainbow1			    cf_mono
+cf_rainbow2			    cf_mousse
+cf_rainbow3			    cf_rainbow
+cf_cyclic1			    cf_random
+cf_stripchart			    cf_rgb
+cf_random_grey			    cf_smooth
+cf_random_pseudocolour		    cf_staircase
+cf_velocity_compensating_tones	    cf_ronekers
+cf_compressed_colourmap_3r2g2b	    cf_mirp
+cf_background
 
 -----------------------------------------------------------------------------
 /*  Routines to manipulate X displays and colourmaps  */
@@ -384,17 +390,17 @@ xt_chm_register_app_context	    xt_chm_unmanage
 xt_chm_manage
 
 -----------------------------------------------------------------------------
-/*  Routines to convert between image formats  */
-/*  Link with:    -lkarma  */
-
-imc_24to8
-
------------------------------------------------------------------------------
 /*  Routines to scan directories.  */
 /*  Link with:    -lkarma  */
 
 dir_open			    dir_close
 dir_read
+
+-----------------------------------------------------------------------------
+/*  Routines to convert between image formats  */
+/*  Link with:    -lkarma  */
+
+imc_24to8
 
 -----------------------------------------------------------------------------
 /*  Routines to manipulate connections  */
@@ -436,14 +442,16 @@ arln_read_int
 /*  Routines to manipulate pixel canvases in a device independent way  */
 /*  Link with:    -lkarmagraphics  */
 
-kwin_create_x			    kwin_draw_cached_image
-kwin_set_gc_x			    kwin_draw_point
-kwin_create_vx			    kwin_draw_line
-kwin_register_refresh_func	    kwin_fill_ellipse
-kwin_register_position_event_func   kwin_fill_polygon
-kwin_resize			    kwin_get_size
-kwin_process_position_event	    kwin_free_cache_data
-kwin_draw_image			    kwin_convert_to_canvas_coord
+kwin_create_x			    kwin_draw_line
+kwin_set_gc_x			    kwin_fill_ellipse
+kwin_create_vx			    kwin_fill_polygon
+kwin_register_refresh_func	    kwin_draw_string
+kwin_register_position_event_func   kwin_draw_rectangle
+kwin_resize			    kwin_fill_rectangle
+kwin_process_position_event	    kwin_get_size
+kwin_draw_image			    kwin_free_cache_data
+kwin_draw_cached_image		    kwin_convert_to_canvas_coord
+kwin_draw_point			    kwin_convert_from_canvas_coord
 
 -----------------------------------------------------------------------------
 /*  Routines to read an ASCII data structure from an open channel  */
@@ -489,10 +497,18 @@ iedit_get_edit_coords		    iedit_make_list_default_master
 iedit_add_instruction		    iedit_make_list_default_slave
 
 -----------------------------------------------------------------------------
+/*  Routines to manipulate control panels (user interface code)  */
+/*  Link with:    -lkarma  */
+
+panel_create			    panel_pop_from_stack
+panel_add_item			    panel_process_command_with_stack
+panel_push_onto_stack
+
+-----------------------------------------------------------------------------
 /*  Routines to initialise and sequence modules  */
 /*  Link with:    -lkarma  */
 
-module_run
+module_run			    module_process_argvs
 
 -----------------------------------------------------------------------------
 /*  Routines to process named objects  */
@@ -528,14 +544,18 @@ iarray_add_and_scale
 /*  Routines to manipulate world canvases in a device independent way  */
 /*  Link with:    -lkarmagraphics  */
 
-canvas_create			    canvas_get_size
-canvas_register_refresh_func	    canvas_convert_to_canvas_coord
-canvas_register_size_control_func   canvas_convert_from_canvas_coord
-canvas_register_position_event_func canvas_fill_ellipse
+canvas_create			    canvas_draw_line
+canvas_register_refresh_func	    canvas_draw_line_p
+canvas_register_size_control_func   canvas_fill_ellipse
+canvas_register_position_event_func canvas_fill_ellipse_p
 canvas_resize			    canvas_fill_polygon
+canvas_get_size			    canvas_draw_rectangle
+canvas_convert_to_canvas_coord	    canvas_draw_rectangle_p
+canvas_convert_from_canvas_coord    canvas_fill_rectangle
+canvas_register_convert_func	    canvas_fill_rectangle_p
 canvas_draw_image		    canvas_draw_edit_list
 canvas_draw_point		    canvas_draw_edit_object
-canvas_draw_line		    canvas_create_stroke_instruction
+canvas_draw_point_p		    canvas_create_stroke_instruction
 
 -----------------------------------------------------------------------------
 /*  Routines to manipulate viewable images in a device independent way  */
@@ -543,7 +563,8 @@ canvas_draw_line		    canvas_create_stroke_instruction
 
 viewimg_create			    viewimg_get_active
 viewimg_create_from_iarray	    viewimg_register_position_event_fun
-viewimg_make_active		    viewimg_fill_ellipse
-viewimg_control_autoscaling	    viewimg_fill_polygon
-viewimg_register_data_change	    viewimg_draw_edit_list
-viewimg_destroy			    viewimg_draw_edit_object
+viewimg_create_sequence		    viewimg_fill_ellipse
+viewimg_make_active		    viewimg_fill_polygon
+viewimg_control_autoscaling	    viewimg_draw_edit_list
+viewimg_register_data_change	    viewimg_draw_edit_object
+viewimg_destroy

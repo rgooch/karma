@@ -87,9 +87,12 @@
     Updated by      Richard Gooch   9-SEP-1993: Added  iarray_set_world_coords
   and  iarray_get_world_coords  routines.
 
-    Last updated by Richard Gooch   19-SEP-1993: Fixed bug in  iarray_copy_data
+    Updated by      Richard Gooch   19-SEP-1993: Fixed bug in  iarray_copy_data
   when copying between two arrays of the same type where one array has multiple
   element packets.
+
+    Last updated by Richard Gooch   10-OCT-1993: Fixed bug in
+  iarray_get_from_multi_array  which printed NULL string on error.
 
 
 */
@@ -548,7 +551,7 @@ char *elem_name;
 	  case IDENT_NOT_FOUND:
 	    (void) fprintf (stderr,
 			    "Could not find general data structure: \"%s\"\n",
-			    arrayname == NULL);
+			    arrayname);
 	    return (NULL);
 /*
 	    break;

@@ -53,12 +53,6 @@ typedef enum {
 #define XkwCKarmaColourmap "KarmaColourmap"
 
 
-EXTERN_FUNCTION (void CvtStringToOrient, (XrmValuePtr args, Cardinal *num_args,
-					  XrmValuePtr fromVal,
-					  XrmValuePtr toVal) );
-
-
-
 typedef struct _PaletteCallbackStruct
 {
   float value;

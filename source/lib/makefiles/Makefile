@@ -1,5 +1,5 @@
 all:
-	remove_oldlibs
+	-remove_oldlibs
 	for i in karma* ;\
 	do \
 		(echo "Making in $$i"; cd $$i; gmake); \

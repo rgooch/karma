@@ -49,12 +49,12 @@ the type of the array being accessed. The syntax is described below.
 
 	- Currently, simple methods are in place for working with
 arrays of one two or three dimensions, comprised of floats, ints,
-bytes (chars) or unsigned bytes. Using other types is a fairly trivial
-matter, requiring only some new macros in karma_iarray.h, but using
-arrays of more dimensions also requires a generic function to be
-written for accessing elements of such arrays. This is still not
-terribly complex, but I hope to remove this requirement at some later
-stage.
+unsigned ints, bytes (chars) or unsigned bytes. Using other types is a
+fairly trivial matter, requiring only some new macros in
+karma_iarray.h, but using arrays of more dimensions also requires a
+generic function to be written for accessing elements of such arrays.
+This is still not terribly complex, but I hope to remove this
+requirement at some later stage.
 
 Syntax:
 -------

@@ -1,6 +1,6 @@
 #include <karma_m.h>
 # 1 "" 
-char *m_alloc (size) 
+char *m_alloc (size)
 unsigned int size ;
 {
     return ( (char *) 0 );

@@ -238,3 +238,135 @@ double x;
 double y;
 void *var_param;
 /*---------------------------------------------------------------------------*/
+
+void cf_background (num_cells, reds, greens, blues, stride, x, y, var_param)
+unsigned int          num_cells;
+unsigned short        *reds;
+unsigned short        *greens;
+unsigned short        *blues;
+unsigned int          stride;
+double                x;
+double                y;
+void                  *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_heat (num_cells, reds, greens, blues, stride, x, y, var_param)
+unsigned int          num_cells;
+unsigned short        *reds;
+unsigned short        *greens;
+unsigned short        *blues;
+unsigned int          stride;
+double                x;
+double                y;
+void                  *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_isophot (num_cells, reds, greens, blues, stride, x, y, var_param)
+unsigned int          num_cells;
+unsigned short        *reds;
+unsigned short        *greens;
+unsigned short        *blues;
+unsigned int          stride;
+double                x;
+double                y;
+void                  *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_mono (num_cells, reds, greens, blues, stride, x, y, var_param)
+unsigned int          num_cells;
+unsigned short        *reds;
+unsigned short        *greens;
+unsigned short        *blues;
+unsigned int          stride;
+double                x;
+double                y;
+void                  *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_mousse (num_cells, reds, greens, blues, stride, x, y, var_param)
+unsigned int          num_cells;
+unsigned short        *reds;
+unsigned short        *greens;
+unsigned short        *blues;
+unsigned int          stride;
+double                x;
+double                y;
+void                  *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_rainbow (num_cells, reds, greens, blues, stride, x, y, var_param)
+unsigned int          num_cells;
+unsigned short        *reds;
+unsigned short        *greens;
+unsigned short        *blues;
+unsigned int          stride;
+double                x;
+double                y;
+void                  *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_random (num_cells, reds, greens, blues, stride, x, y, var_param)
+unsigned int          num_cells;
+unsigned short        *reds;
+unsigned short        *greens;
+unsigned short        *blues;
+unsigned int          stride;
+double                x;
+double                y;
+void                  *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_rgb (num_cells, reds, greens, blues, stride, x, y, var_param)
+unsigned int          num_cells;
+unsigned short        *reds;
+unsigned short        *greens;
+unsigned short        *blues;
+unsigned int          stride;
+double                x;
+double                y;
+void                  *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_smooth (num_cells, reds, greens, blues, stride, x, y, var_param)
+unsigned int          num_cells;
+unsigned short        *reds;
+unsigned short        *greens;
+unsigned short        *blues;
+unsigned int          stride;
+double                x;
+double                y;
+void                  *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_staircase (num_cells, reds, greens, blues, stride, x, y, var_param)
+unsigned int          num_cells;
+unsigned short        *reds;
+unsigned short        *greens;
+unsigned short        *blues;
+unsigned int          stride;
+double                x;
+double                y;
+void                  *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_ronekers (num_cells, reds, greens, blues, stride, x, y, var_param)
+unsigned int          num_cells;
+unsigned short        *reds;
+unsigned short        *greens;
+unsigned short        *blues;
+unsigned int          stride;
+double                x;
+double                y;
+void                  *var_param;
+/*---------------------------------------------------------------------------*/
+
+void cf_mirp (num_cells, reds, greens, blues, stride, x, y, var_param)
+unsigned int          num_cells;
+unsigned short        *reds;
+unsigned short        *greens;
+unsigned short        *blues;
+unsigned int          stride;
+double                x;
+double                y;
+void                  *var_param;
+/*---------------------------------------------------------------------------*/

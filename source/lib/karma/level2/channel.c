@@ -67,8 +67,11 @@
     Updated by      Richard Gooch   20-AUG-1993: Moved  ch_gets  and  ch_puts
   to  ch_misc.c
 
-    Last updated by Richard Gooch   16-SEP-1993: Fixed memory mapping for
+    Updated by      Richard Gooch   16-SEP-1993: Fixed memory mapping for
   Convex.
+
+    Last updated by Richard Gooch   3-OCT-1993: Improved diagnostic messages
+  when reading from closed asynchronous I/O channel.
 
 
 */
@@ -358,8 +361,25 @@ unsigned int length;
     if (bytes_read < bytes_to_read)
     {
 	/*  Only read some bytes  */
-	(void) fprintf (stderr,
-			"Connection channel closed while reading\n");
+	switch ( (*channel).type )
+	{
+	  case CHANNEL_TYPE_CONNECTION:
+	    (void) fprintf (stderr,
+			    "Connection channel closed while reading\n");
+	    break;
+	  case CHANNEL_TYPE_CHARACTER:
+	    (void) fprintf (stderr,
+			    "Character special channel closed while reading\n");
+	    break;
+	  case CHANNEL_TYPE_FIFO:
+	    (void) fprintf (stderr,
+			    "FIFO channel closed while reading\n");
+	    break;
+	  default:
+	    (void) fprintf (stderr, "Bad channel type: %u\n", (*channel).type);
+	    a_prog_bug (function_name);
+	    break;
+	}
 	(void) fprintf (stderr, "Wanted: %d bytes  got: %d bytes\n",
 			bytes_to_read, bytes_read);
 	return (read_pos);
@@ -376,20 +396,32 @@ unsigned int length;
 		     bytes_available : (*channel).read_buf_len );
     if ( ( bytes_read = r_read ( (*channel).fd, (*channel).read_buffer,
 				bytes_to_read ) )
-	< 0 )
-    {
-	(*channel).errno = errno;
-	errno = 0;
-	return (read_pos);
-    }
-    if (bytes_read < bytes_to_read)
+	< bytes_to_read )
     {
 	/*  Only read some bytes  */
-	(void) fprintf (stderr,
-			"Connection channel closed while reading\n");
-	(void) fprintf (stderr, "Wanted: %d bytes  got: %d bytes\n",
-			bytes_to_read, bytes_read);
-	return (read_pos);
+	switch ( (*channel).type )
+	{
+	  case CHANNEL_TYPE_CONNECTION:
+	    (void) fprintf (stderr,
+			    "Connection channel closed while draining\t%s\n",
+			    sys_errlist[errno]);
+	    break;
+	  case CHANNEL_TYPE_CHARACTER:
+	    (void) fprintf (stderr,
+			    "Character special channel closed while draining\t%s\n",
+			    sys_errlist[errno]);
+	    break;
+	  case CHANNEL_TYPE_FIFO:
+	    (void) fprintf (stderr,
+			    "FIFO channel closed while draining\t%s\n",
+			    sys_errlist[errno]);
+	    break;
+	  default:
+	    (void) fprintf (stderr, "Bad channel type: %u\n", (*channel).type);
+	    a_prog_bug (function_name);
+	    break;
+	}
+	exit (RV_SYS_ERROR);
     }
     (*channel).bytes_read = bytes_read;
     errno = 0;

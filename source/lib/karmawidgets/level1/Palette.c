@@ -177,7 +177,7 @@ WidgetClass paletteWidgetClass = (WidgetClass) &paletteClassRec;
 /* resource string conversion routines.*/
 /*----------------------------------------------------------------------*/
 
-void ToLower(char *source,char *dest)
+static void ToLower(char *source,char *dest)
 {
   char ch;
 
@@ -204,8 +204,8 @@ void ToLower(char *source,char *dest)
 /* XkwROrient representation type.*/
 /*----------------------------------------------------------------------*/
 
-void CvtStringToOrient(XrmValuePtr args,Cardinal *num_args,
-		       XrmValuePtr fromVal,XrmValuePtr toVal)
+static void CvtStringToOrient(XrmValuePtr args,Cardinal *num_args,
+			      XrmValuePtr fromVal,XrmValuePtr toVal)
 {
   static XkwOrientation orient;
   char lowerstring[100];

@@ -1,6 +1,6 @@
 #include <karma_ch.h>
 # 1 "" 
-Channel ch_open_disc (filename, type)
+Channel ch_open_file (filename, type)
 char *filename;
 char *type;
 {
@@ -72,20 +72,6 @@ unsigned long position;
 {
     return ( (flag) 0 );
 }
-flag ch_gets (channel, buffer, length)
-Channel channel;
-char *buffer;
-unsigned int length;
-{
-    return ( (flag) 0 );
-}
-flag ch_puts (channel, string, newline)
-Channel channel;
-char *string;
-flag newline;
-{
-    return ( (flag) 0 );
-}
 int ch_get_bytes_readable (channel)
 Channel channel;
 {
@@ -98,6 +84,11 @@ Channel channel;
 }
 void ch_open_stdin ()
 {
+}
+flag ch_test_for_io (channel)
+Channel channel;
+{
+    return ( (flag) 0 );
 }
 flag ch_test_for_asynchronous (channel)
 Channel channel;

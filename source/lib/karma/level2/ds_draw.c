@@ -44,8 +44,11 @@
     Updated by      Patrick Jordan  2-JUN-1993: Added error checking to
   ds_draw_ellipse  .
 
-    Last updated by Richard Gooch  31-AUG-1993: Made  compare_ind  and
+    Updated by      Richard Gooch  31-AUG-1993: Made  compare_ind  and
   compare_active  private.
+
+    Last updated by Richard Gooch  23-NOV-1993: Applied patch submitted by
+  Patrick Jordan to fatten drawn objects.
 
 
 */
@@ -258,8 +261,8 @@ double *value;
 	for (j=0; j<nact; j+=2)
 	{			/* draw horizontal segments */
 	    /* span 'tween j & j+1 is inside, span tween j+1 & j+2 is outside*/
-	    xl = ceil(active[j].x); /* left end of span */
-	    xr = floor(active[j+1].x); /* right end of span */
+	    xl = floor(active[j].x); /* left end of span */
+	    xr = ceil(active[j+1].x); /* right end of span */
 	    if (xl<=xr)
 	    (void) ds_put_element_many_times
 	    (array + ord_stride * y + abs_stride * xl,

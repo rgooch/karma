@@ -4,7 +4,7 @@
 
     This code provides KPixCanvas objects.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1993  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -29,13 +29,26 @@
     canvas (window) independent of the graphics system in use.
 
 
-    Written by      Richard Gooch   15-APR-1992
+    Written by      Richard Gooch   15-APR-1993
 
-    Last updated by Richard Gooch   27-APR-1993
+    Updated by      Richard Gooch   27-APR-1993
+
+    Updated by      Richard Gooch   15-OCT-1993: Added
+  kwin_convert_from_canvas_coord  routine.
+
+    Updated by      Richard Gooch   20-NOV-1993: Added  kwin_draw_string  .
+
+    Updated by      Richard Gooch   21-NOV-1993: Added  kwin_draw_rectangle
+  and  kwin_fill_rectangle  .
+
+    Last updated by Richard Gooch   23-NOV-1993: Fixed bug in
+  kwin_free_cache_data  which passed NULL pointer to  xi_destroy_image  on
+  failure to allocate XImage in  kwin_draw_image  .
 
 
 */
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 #include <karma.h>
 #ifdef X11
@@ -125,7 +138,7 @@ static KPixCanvasImageCache alloc_cache_data_struct (/* canvas */);
 /*PUBLIC_FUNCTION*/
 KPixCanvas kwin_create_x (display, window, gc, xoff, yoff, width, height)
 /*  This routine will create a pixel canvas, ready for drawing, from an X
-    window.
+    window. Note that the origin of a KPixCanvas is the upper-left corner.
     NOTE: this routine is only available with X windows.
     The X display must be pointed to by  display  .
     The window ID of must be given by  window  .
@@ -221,6 +234,7 @@ GC gc;
 /*PUBLIC_FUNCTION*/
 KPixCanvas kwin_create_vx (pseudo_colour, xoff, yoff, width, height)
 /*  This routine will create a pixel canvas, ready for drawing, on a VX screen.
+    Note that the origin of a KPixCanvas is the upper-left corner.
     NOTE: this routine is only available when running on a VX.
     If the value of  pseudo_colour  is TRUE, then the canvas is an 8 bit
     PseudoColour canvas, else it is a 24 bit DirectColour canvas.
@@ -329,7 +343,7 @@ void kwin_register_position_event_func (canvas, position_func, f_info)
 	The arbitrary event code is given by  event_code  .
 	The arbitrary event information is pointed to by  e_info  .
 	The arbitrary function information pointer is pointed to by  f_info  .
-	The routine returns TRUE if the event was consumed, else it return
+	The routine returns TRUE if the event was consumed, else it returns
 	FALSE indicating that the event is still to be processed.
     *
     KPixCanvas canvas;
@@ -521,6 +535,9 @@ void *event_info;
     }
     return (FALSE);
 }   /*  End Function kwin_process_position_event  */
+
+
+/*  Drawing routines follow  */
 
 /*PUBLIC_FUNCTION*/
 flag kwin_draw_image (canvas, arr_desc, slice, hdim, vdim, elem_index,
@@ -768,7 +785,7 @@ unsigned long pixel_value;
 
 /*PUBLIC_FUNCTION*/
 void kwin_draw_line (canvas, x0, y0, x1, y1, pixel_value)
-/*  This routine will draw a single point onto a pixel canvas.
+/*  This routine will draw a single line onto a pixel canvas.
     The canvas must be given by  canvas  .
     The horizontal offset of the first point must be given by  x0  .
     The vertical offset of the first point must be given by  y0  .
@@ -922,6 +939,152 @@ flag convex;
 }   /*  End Function kwin_fill_polygon  */
 
 /*PUBLIC_FUNCTION*/
+void kwin_draw_string (canvas, x, y, string, pixel_value, clear_under)
+/*  This routine will draw a NULL terminated string onto a pixel canvas.
+    The canvas must be given by  canvas  .
+    The horizontal offset of the point must be given by  x  .
+    The vertical offset of the point must be given by  y  .
+    The string must be pointed to by  string  .
+    The pixel value to use must be given by  pixel_value  .
+    If the value of  clear_under  is TRUE, then the routine will both the
+    foreground and background of the characters.
+    The routine returns nothing.
+*/
+KPixCanvas canvas;
+int x;
+int y;
+char *string;
+unsigned long pixel_value;
+flag clear_under;
+{
+#ifdef X11
+    int length;
+#endif
+    static char function_name[] = "kwin_draw_string";
+#ifdef X11
+#endif
+
+    VERIFY_CANVAS (canvas);
+    if (string == NULL)
+    {
+	(void) fprintf (stderr, "NULL string pointer passed\n");
+	a_prog_bug (function_name);
+    }
+#undef FINISHED
+#ifdef X11
+#define FINISHED
+    if (pixel_value != (*canvas).gcvalues.foreground)
+    {
+	(*canvas).gcvalues.foreground = pixel_value;
+	XChangeGC ( (*canvas).display, (*canvas).gc, GCForeground,
+		   &(*canvas).gcvalues );
+    }
+    length = strlen (string);
+    if (clear_under)
+    {
+	XDrawImageString ( (*canvas).display, (*canvas).window, (*canvas).gc,
+			  (*canvas).xoff + x, (*canvas).yoff + y,
+			  string, length );
+    }
+    else
+    {
+	XDrawString ( (*canvas).display, (*canvas).window, (*canvas).gc,
+		     (*canvas).xoff + x, (*canvas).yoff + y, string, length );
+    }
+    return;
+#endif
+
+#ifndef FINISHED
+    (void) fprintf (stderr, "%s: not finished yet\n", function_name);
+#endif
+}   /*  End Function kwin_draw_string  */
+
+/*PUBLIC_FUNCTION*/
+void kwin_draw_rectangle (canvas, x, y, width, height, pixel_value)
+/*  This routine will draw a single rectangle onto a pixel canvas.
+    The canvas must be given by  canvas  .
+    The horizontal offset of the rectangle must be given by  x  .
+    The vertical offset of the rectangle must be given by  y  .
+    The width of the rectangle must be given by  width  .
+    The height of the rectangle must be given by  height  .
+    The pixel value to use must be given by  pixel_value  .
+    The routine returns nothing.
+*/
+KPixCanvas canvas;
+int x;
+int y;
+int width;
+int height;
+unsigned long pixel_value;
+{
+    static char function_name[] = "kwin_draw_rectangle";
+
+    VERIFY_CANVAS (canvas);
+#undef FINISHED
+#ifdef X11
+#define FINISHED
+    if (pixel_value != (*canvas).gcvalues.foreground)
+    {
+	(*canvas).gcvalues.foreground = pixel_value;
+	XChangeGC ( (*canvas).display, (*canvas).gc, GCForeground,
+		   &(*canvas).gcvalues );
+    }
+    XDrawRectangle ( (*canvas).display, (*canvas).window, (*canvas).gc,
+		    (*canvas).xoff + x, (*canvas).yoff + y,
+		    (unsigned int) width, (unsigned int) height );
+    return;
+#endif
+
+#ifndef FINISHED
+    (void) fprintf (stderr, "%s: not finished yet\n", function_name);
+#endif
+}   /*  End Function kwin_draw_rectangle  */
+
+/*PUBLIC_FUNCTION*/
+void kwin_fill_rectangle (canvas, x, y, width, height, pixel_value)
+/*  This routine will fill a single rectangle onto a pixel canvas.
+    The canvas must be given by  canvas  .
+    The horizontal offset of the rectangle must be given by  x  .
+    The vertical offset of the rectangle must be given by  y  .
+    The width of the rectangle must be given by  width  .
+    The height of the rectangle must be given by  height  .
+    The pixel value to use must be given by  pixel_value  .
+    The routine returns nothing.
+*/
+KPixCanvas canvas;
+int x;
+int y;
+int width;
+int height;
+unsigned long pixel_value;
+{
+    static char function_name[] = "kwin_fill_rectangle";
+
+    VERIFY_CANVAS (canvas);
+#undef FINISHED
+#ifdef X11
+#define FINISHED
+    if (pixel_value != (*canvas).gcvalues.foreground)
+    {
+	(*canvas).gcvalues.foreground = pixel_value;
+	XChangeGC ( (*canvas).display, (*canvas).gc, GCForeground,
+		   &(*canvas).gcvalues );
+    }
+    XFillRectangle ( (*canvas).display, (*canvas).window, (*canvas).gc,
+		    (*canvas).xoff + x, (*canvas).yoff + y,
+		    (unsigned int) width + 1, (unsigned int) height + 1 );
+    return;
+#endif
+
+#ifndef FINISHED
+    (void) fprintf (stderr, "%s: not finished yet\n", function_name);
+#endif
+}   /*  End Function kwin_fill_rectangle  */
+
+
+/*  Other public routines follow  */
+
+/*PUBLIC_FUNCTION*/
 void kwin_get_size (canvas, width, height)
 /*  This routine will get the size of a pixel canvas.
     The number of horizontal pixel will be written to the storage pointed to by
@@ -958,7 +1121,10 @@ KPixCanvasImageCache cache;
 	a_prog_bug (function_name);
     }
 #ifdef X11
-    xi_destroy_image ( (*cache).display, (*cache).ximage, (*cache).shared );
+    if ( (*cache).ximage != NULL )
+    {
+	xi_destroy_image ( (*cache).display, (*cache).ximage,(*cache).shared );
+    }
 #endif
     (*cache).magic_number = 0;
     m_free ( (char *) cache );
@@ -1004,6 +1170,37 @@ int *yout;
 	(*yout < 0) || (*yout >= (*canvas).height) ) return (FALSE);
     return (TRUE);
 }   /*  End Function kwin_convert_to_canvas_coord  */
+
+/*PUBLIC_FUNCTION*/
+flag kwin_convert_from_canvas_coord (canvas, xin, yin, xout, yout)
+/*  This routine will convert co-ordinates in a pixel canvas to co-ordinates in
+    a lower level object (parent, ie. X window).
+    The canvas must be given by  canvas  .
+    The horizontal canvas co-ordinate must be given by  xin  .
+    The vertical canvas co-ordinate must be given by  yin  .
+    The lower level horizontal co-ordinate will be written to the storage
+    pointed to by  xout  .
+    The lower level vertical co-ordinate will be written to the storage pointed
+    to by  xout  .
+    The routine returns TRUE if the co-ordinate lies within the canvas
+    boundaries, else it returns FALSE (although a conversion is still
+    performed).
+*/
+KPixCanvas canvas;
+int xin;
+int yin;
+int *xout;
+int *yout;
+{
+    static char function_name[] = "kwin_convert_from_canvas_coord";
+
+    VERIFY_CANVAS (canvas);
+    *xout = xin + (*canvas).xoff;
+    *yout = yin + (*canvas).yoff;
+    if ( (xin < 0) || (xin >= (*canvas).width) ||
+	(yin < 0) || (yin >= (*canvas).height) ) return (FALSE);
+    return (TRUE);
+}   /*  End Function kwin_convert_from_canvas_coord  */
 
 
 /*  Private functions follow  */

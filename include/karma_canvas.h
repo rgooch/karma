@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   17-APR-1993
 
-    Last updated by Richard Gooch   27-AUG-1993
+    Last updated by Richard Gooch   22-NOV-1993
 
 */
 
@@ -52,7 +52,7 @@ typedef void * KWorldCanvas;
 #endif
 
 
-/*  File:   canvas.c   */
+/*  File:  canvas.c  */
 EXTERN_FUNCTION (KWorldCanvas canvas_create,
 		 (KPixCanvas pixcanvas, Kcolourmap cmap,
 		  struct win_scale_type *win_scale) );
@@ -68,18 +68,6 @@ EXTERN_FUNCTION (void canvas_register_position_event_func,
 EXTERN_FUNCTION (flag canvas_resize, (KWorldCanvas canvas,
 				      struct win_scale_type *win_scale,
 				      flag always_clear) );
-EXTERN_FUNCTION (flag canvas_draw_image, (KWorldCanvas canvas,
-					  array_desc *arr_desc, char *slice,
-					  unsigned int hdim, unsigned int vdim,
-					  unsigned int elem_index,
-					  KPixCanvasImageCache *cache_ptr) );
-EXTERN_FUNCTION (void canvas_draw_point, (KWorldCanvas canvas,
-					  double x, double y,
-					  double value[2]) );
-EXTERN_FUNCTION (void canvas_draw_line, (KWorldCanvas canvas,
-					  double x0, double y0,
-					  double x1, double y1,
-					  double value[2]) );
 EXTERN_FUNCTION (void canvas_get_size, (KWorldCanvas canvas,
 					int *width, int *height,
 					struct win_scale_type *win_scale) );
@@ -92,18 +80,67 @@ EXTERN_FUNCTION (flag canvas_convert_from_canvas_coord, (KWorldCanvas canvas,
 							 double yin,
 							 int *xout,
 							 int *yout) );
+EXTERN_FUNCTION (void canvas_register_convert_func,
+		 (KWorldCanvas canvas, flag (*coord_convert_func) (),
+		  void *info) );
+
+/*  Drawing routines  */
+EXTERN_FUNCTION (flag canvas_draw_image, (KWorldCanvas canvas,
+					  array_desc *arr_desc, char *slice,
+					  unsigned int hdim, unsigned int vdim,
+					  unsigned int elem_index,
+					  KPixCanvasImageCache *cache_ptr) );
+EXTERN_FUNCTION (void canvas_draw_point, (KWorldCanvas canvas,
+					  double x, double y,
+					  double value[2]) );
+EXTERN_FUNCTION (void canvas_draw_point_p, (KWorldCanvas canvas,
+					    double x, double y,
+					    unsigned long pixel_value) );
+EXTERN_FUNCTION (void canvas_draw_line, (KWorldCanvas canvas,
+					  double x0, double y0,
+					  double x1, double y1,
+					  double value[2]) );
+EXTERN_FUNCTION (void canvas_draw_line_p, (KWorldCanvas canvas,
+					   double x0, double y0,
+					   double x1, double y1,
+					   unsigned long pixel_value) );
 EXTERN_FUNCTION (void canvas_fill_ellipse, (KWorldCanvas canvas,
 					    double centre_x, double centre_y,
 					    double radius_x, double radius_y,
 					    double value[2]) );
+EXTERN_FUNCTION (void canvas_fill_ellipse_p, (KWorldCanvas canvas,
+					      double centre_x, double centre_y,
+					      double radius_x, double radius_y,
+					      unsigned long pixel_value) );
 EXTERN_FUNCTION (flag canvas_fill_polygon, (KWorldCanvas canvas,
 					    edit_coord *coords,
 					    unsigned int num_vertices,
 					    double value[2], flag convex) );
+EXTERN_FUNCTION (void canvas_draw_rectangle, (KWorldCanvas canvas,
+					      double x, double y,
+					      double width, double height,
+					      double value[2]) );
+EXTERN_FUNCTION (void canvas_draw_rectangle_p, (KWorldCanvas canvas,
+						double x, double y,
+						double width, double height,
+						unsigned long pixel_value) );
+EXTERN_FUNCTION (void canvas_fill_rectangle, (KWorldCanvas canvas,
+					      double x, double y,
+					      double width, double height,
+					      double value[2]) );
+EXTERN_FUNCTION (void canvas_fill_rectangle_p, (KWorldCanvas canvas,
+						double x, double y,
+						double width, double height,
+						unsigned long pixel_value) );
+
+/*  Image editing related functions  */
+/*  File:  canvas_edit.c  */
 EXTERN_FUNCTION (flag canvas_draw_edit_list, (KWorldCanvas canvas,
 					      KImageEditList ilist) );
 EXTERN_FUNCTION (flag canvas_draw_edit_object, (KWorldCanvas canvas,
 						char *object) );
+
+/*  File:  cnv_stroke.c  */
 EXTERN_FUNCTION (flag canvas_create_stroke_instruction,
 		 (KWorldCanvas canvas, double x0, double y0,
 		  double x1, double y1, unsigned int brush_width,

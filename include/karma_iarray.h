@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   17-NOV-1992
 
-    Last updated by Richard Gooch   9-SEP-1993
+    Last updated by Richard Gooch   10-OCT-1993
 
 */
 
@@ -67,16 +67,19 @@ typedef struct
 
 #define F1(a, x) *(float *) iarray_get_element_1D ( (a), K_FLOAT, (x) )
 #define I1(a, x) *(int *) iarray_get_element_1D ( (a), K_INT, (x) )
+#define UI1(a, x) *(unsigned int *) iarray_get_element_1D ( (a), K_INT, (x) )
 #define UB1(a, x) *(unsigned char *) iarray_get_element_1D ( (a), K_UBYTE,(x) )
 #define B1(a, x) *(char *) iarray_get_element_1D ( (a), K_BYTE, (x) )
 
 #define F2(a, y, x) *(float *) iarray_get_element_2D ( (a), K_FLOAT, (y), (x) )
+#define UI2(a, y, x) *(unsigned int *) iarray_get_element_2D ( (a), K_INT, (y), (x) )
 #define I2(a, y, x) *(int *) iarray_get_element_2D ( (a), K_INT, (y), (x) )
 #define UB2(a, y, x) *(unsigned char *) iarray_get_element_2D ( (a), K_UBYTE, (y), (x) )
 #define B2(a, y, x) *(char *) iarray_get_element_2D ( (a), K_BYTE, (y), (x) )
 
 #define F3(a, z, y, x) *(float *) iarray_get_element_3D ( (a), K_FLOAT, (z), (y), (x) )
 #define I3(a, z, y, x) *(int *) iarray_get_element_3D ( (a), K_INT, (z), (y), (x) )
+#define UI3(a, z, y, x) *(unsigned int *) iarray_get_element_3D ( (a), K_INT, (z), (y), (x) )
 #define UB3(a, z, y, x) *(unsigned char *) iarray_get_element_3D ( (a), K_UBYTE, (z), (y), (x) )
 #define B3(a, z, y, x) *(char *) iarray_get_element_3D ( (a), K_BYTE, (z), (y), (x) )
 
@@ -84,16 +87,19 @@ typedef struct
 
 #define F1(a, x) *(float *) ( (*(a)).data + (*(a)).offsets[0][(x)] )
 #define I1(a, x) *(int *) ( (*(a)).data + (*(a)).offsets[0][(x)] )
+#define UI1(a, x) *(unsigned int *) ( (*(a)).data + (*(a)).offsets[0][(x)] )
 #define UB1(a, x) *(unsigned char *) ( (*(a)).data + (*(a)).offsets[0][(x)] )
 #define B1(a, x) *(char *) ( (*(a)).data + (*(a)).offsets[0][(x)] )
 
 #define F2(a, y, x) *(float *) ( (*(a)).data + (*(a)).offsets[0][(y)] + (*(a)).offsets[1][(x)] )
 #define I2(a, y, x) *(int *) ( (*(a)).data + (*(a)).offsets[0][(y)] + (*(a)).offsets[1][(x)] )
+#define UI2(a, y, x) *(unsigned int *) ( (*(a)).data + (*(a)).offsets[0][(y)] + (*(a)).offsets[1][(x)] )
 #define UB2(a, y, x) *(unsigned char *) ( (*(a)).data + (*(a)).offsets[0][(y)] + (*(a)).offsets[1][(x)] )
 #define B2(a, y, x) *(char *) ( (*(a)).data + (*(a)).offsets[0][(y)] + (*(a)).offsets[1][(x)] )
 
 #define F3(a, z, y, x) *(float *) ( (*(a)).data + (*(a)).offsets[0][(z)] + (*(a)).offsets[1][(y)] + (*(a)).offsets[2][(x)] )
 #define I3(a, z, y, x) *(int *) ( (*(a)).data + (*(a)).offsets[0][(z)] + (*(a)).offsets[1][(y)] + (*(a)).offsets[2][(x)] )
+#define UI3(a, z, y, x) *(unsigned int *) ( (*(a)).data + (*(a)).offsets[0][(z)] + (*(a)).offsets[1][(y)] + (*(a)).offsets[2][(x)] )
 #define UB3(a, z, y, x) *(unsigned char *) ( (*(a)).data + (*(a)).offsets[0][(z)] + (*(a)).offsets[1][(y)] + (*(a)).offsets[2][(x)] )
 #define B3(a, z, y, x) *(char *) ( (*(a)).data + (*(a)).offsets[0][(z)] + (*(a)).offsets[1][(y)] + (*(a)).offsets[2][(x)] )
 

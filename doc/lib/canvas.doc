@@ -19,6 +19,7 @@
 KWorldCanvas canvas_create (pixcanvas, cmap, win_scale)
 /*  This routine will create a world canvas, ready for drawing, from a
     KPixCanvas (pixel canvas) object.
+    Note that the origin of a KWorldCanvas is the lower-left corner.
     The pixel canvas must be given by  pixcanvas  .
     The colourmap must be given by  cmap  .
     The window scaling information must be pointed to by  win_scale  .The
@@ -126,7 +127,7 @@ void canvas_register_position_event_func (canvas, position_func, f_info)
 	The arbitrary event code is given by  event_code  .
 	The arbitrary event information is pointed to by  e_info  .
 	The arbitrary function information pointer is pointed to by  f_info  .
-	The routine returns TRUE if the event was consumed, else it return
+	The routine returns TRUE if the event was consumed, else it returns
 	FALSE indicating that the event is still to be processed.
     *
     KWorldCanvas canvas;
@@ -165,69 +166,6 @@ flag canvas_resize (canvas, win_scale, always_clear)
 KWorldCanvas canvas;
 struct win_scale_type *win_scale;
 flag always_clear;
-/*---------------------------------------------------------------------------*/
-
-flag canvas_draw_image (canvas, arr_desc, slice, hdim, vdim, elem_index,
-			cache_ptr)
-/*  This routine will draw a 2-dimensional slice of a Karma array onto a world
-    canvas.
-    This slice may be tiled.
-    The canvas must be given by  canvas  .
-    The array descriptor must be pointed to by  arr_desc  .
-    The start of the slice data must be pointed to by  slice  .
-    The dimension index of the horizontal dimension must be given by  hdim  .
-    The dimension index of the vertical dimension must be given by  vdim  .
-    The element index of the data packets must be given by  elem_index  .
-    The routine may produce cache data which will vastly increase the speed of
-    subsequent operations on this data. The routine will write a pointer to
-    this data to the storage pointed to by  cache_data  .Prior to process
-    exit, a call MUST be made to  kwin_free_cache_data  ,otherwise shared
-    memory segments could remain after the process exits.
-    The colourmap to use when translating the data into pixel values must be
-    given by  cmap  .
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-KWorldCanvas canvas;
-array_desc *arr_desc;
-char *slice;
-unsigned int hdim;
-unsigned int vdim;
-unsigned int elem_index;
-KPixCanvasImageCache *cache_ptr;
-/*---------------------------------------------------------------------------*/
-
-void canvas_draw_point (canvas, x, y, value)
-/*  This routine will draw a single point onto a world canvas.
-    The canvas must be given by  canvas  .
-    The horizontal world co-ordinate of the point must be given by  x  .
-    The vertical world co-ordinate of the point must be given by  y  .
-    The data value to use must be given by  value  .This must be of type
-    K_DCOMPLEX.
-    The routine returns nothing.
-*/
-KWorldCanvas canvas;
-double x;
-double y;
-double value[2];
-/*---------------------------------------------------------------------------*/
-
-void canvas_draw_line (canvas, x0, y0, x1, y1, value)
-/*  This routine will draw a single line onto a world canvas.
-    The canvas must be given by  canvas  .
-    The horizontal world co-ordinate of the first point must be given by  x0  .
-    The vertical world co-ordinate of the first point must be given by  y0  .
-    The horizontal world co-ordinate of the second point must be given by  x0
-    The vertical world co-ordinate of the second point must be given by  y0  .
-    The data value to use must be given by  value  .This must be of type
-    K_DCOMPLEX.
-    The routine returns nothing.
-*/
-KWorldCanvas canvas;
-double x0;
-double y0;
-double x1;
-double y1;
-double value[2];
 /*---------------------------------------------------------------------------*/
 
 void canvas_get_size (canvas, width, height, win_scale)
@@ -288,6 +226,149 @@ int *xout;
 int *yout;
 /*---------------------------------------------------------------------------*/
 
+void canvas_register_convert_func (canvas, coord_convert_func, info)
+/*  This routine will register the co-ordinate conversion function for a world
+    canvas.
+    This function will be called whenever conversions between world
+    co-ordinates and pixel co-ordinates are performed.
+    Only one co-ordinate conversion function is permitted per canvas. This is
+    a means for a higher level object to take control of the world canvas.
+    The canvas must be given by  canvas  .
+    The function that is called when co-ordinates are to be converted must be
+    pointed to by  coord_convert_func  .
+    The interface to this routine is as follows:
+
+    flag coord_convert_func (canvas, win_scale, px, py, wx, wy,
+                             to_world, info)
+    *   This routine will modify the window scaling information for a world
+        canvas.
+        The canvas is given by  canvas  .
+	The window scaling information is pointed to by  win_scale  .The data
+	herein may be modified.
+	The horizontal pixel co-ordinate storage must be pointed to by  px  .
+	The vertical pixel co-ordinate storage must be pointed to by  py  .
+	The horizontal world co-ordinate storage must be pointed to by  wx  .
+	The vertical world co-ordinate storage must be pointed to by  wy  .
+	If the value of  to_world  is TRUE, then a pixel to world co-ordinate
+	transform is required, else a world to pixel co-ordinate transform is
+	required.
+	The arbitrary canvas information pointer is pointed to by  info  .
+	The routine should return TRUE if the conversion was completed,
+	else it returns FALSE indicating that the default conversions should be
+	used.
+    *
+    KWorldCanvas canvas;
+    struct win_scale_type *win_scale;
+    int *px;
+    int *py;
+    double *wx;
+    double *wy;
+    flag to_world;
+    void **info;
+
+    The initial arbitrary canvas information pointer must be given by  info  .
+    The routine returns nothing.
+*/
+KWorldCanvas canvas;
+flag (*coord_convert_func) ();
+void *info;
+/*---------------------------------------------------------------------------*/
+
+flag canvas_draw_image (canvas, arr_desc, slice, hdim, vdim, elem_index,
+			cache_ptr)
+/*  This routine will draw a 2-dimensional slice of a Karma array onto a world
+    canvas.
+    This slice may be tiled.
+    The canvas must be given by  canvas  .
+    The array descriptor must be pointed to by  arr_desc  .
+    The start of the slice data must be pointed to by  slice  .
+    The dimension index of the horizontal dimension must be given by  hdim  .
+    The dimension index of the vertical dimension must be given by  vdim  .
+    The element index of the data packets must be given by  elem_index  .
+    The routine may produce cache data which will vastly increase the speed of
+    subsequent operations on this data. The routine will write a pointer to
+    this data to the storage pointed to by  cache_data  .Prior to process
+    exit, a call MUST be made to  kwin_free_cache_data  ,otherwise shared
+    memory segments could remain after the process exits.
+    The colourmap to use when translating the data into pixel values must be
+    given by  cmap  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+KWorldCanvas canvas;
+array_desc *arr_desc;
+char *slice;
+unsigned int hdim;
+unsigned int vdim;
+unsigned int elem_index;
+KPixCanvasImageCache *cache_ptr;
+/*---------------------------------------------------------------------------*/
+
+void canvas_draw_point (canvas, x, y, value)
+/*  This routine will draw a single point onto a world canvas.
+    The canvas must be given by  canvas  .
+    The horizontal world co-ordinate of the point must be given by  x  .
+    The vertical world co-ordinate of the point must be given by  y  .
+    The data value to use must be given by  value  .This must be of type
+    K_DCOMPLEX.
+    The routine returns nothing.
+*/
+KWorldCanvas canvas;
+double x;
+double y;
+double value[2];
+/*---------------------------------------------------------------------------*/
+
+void canvas_draw_point_p (canvas, x, y, pixel_value)
+/*  This routine will draw a single point onto a world canvas.
+    The canvas must be given by  canvas  .
+    The horizontal world co-ordinate of the point must be given by  x  .
+    The vertical world co-ordinate of the point must be given by  y  .
+    The pixel value to use must be given by  pixel_value  .
+    The routine returns nothing.
+*/
+KWorldCanvas canvas;
+double x;
+double y;
+unsigned long pixel_value;
+/*---------------------------------------------------------------------------*/
+
+void canvas_draw_line (canvas, x0, y0, x1, y1, value)
+/*  This routine will draw a single line onto a world canvas.
+    The canvas must be given by  canvas  .
+    The horizontal world co-ordinate of the first point must be given by  x0  .
+    The vertical world co-ordinate of the first point must be given by  y0  .
+    The horizontal world co-ordinate of the second point must be given by  x0
+    The vertical world co-ordinate of the second point must be given by  y0  .
+    The data value to use must be given by  value  .This must be of type
+    K_DCOMPLEX.
+    The routine returns nothing.
+*/
+KWorldCanvas canvas;
+double x0;
+double y0;
+double x1;
+double y1;
+double value[2];
+/*---------------------------------------------------------------------------*/
+
+void canvas_draw_line_p (canvas, x0, y0, x1, y1, pixel_value)
+/*  This routine will draw a single line onto a world canvas.
+    The canvas must be given by  canvas  .
+    The horizontal world co-ordinate of the first point must be given by  x0  .
+    The vertical world co-ordinate of the first point must be given by  y0  .
+    The horizontal world co-ordinate of the second point must be given by  x0
+    The vertical world co-ordinate of the second point must be given by  y0  .
+    The pixel value to use must be given by  pixel_value  .
+    The routine returns nothing.
+*/
+KWorldCanvas canvas;
+double x0;
+double y0;
+double x1;
+double y1;
+unsigned long pixel_value;
+/*---------------------------------------------------------------------------*/
+
 void canvas_fill_ellipse (canvas, centre_x, centre_y, radius_x, radius_y,value)
 /*  This routine will draw a filled ellipse onto a world canvas.
     The canvas must be given by  canvas  .
@@ -304,6 +385,24 @@ double centre_y;
 double radius_x;
 double radius_y;
 double value[2];
+/*---------------------------------------------------------------------------*/
+
+void canvas_fill_ellipse_p (canvas, centre_x, centre_y, radius_x, radius_y,
+			    pixel_value)
+/*  This routine will draw a filled ellipse onto a world canvas.
+    The canvas must be given by  canvas  .
+    The world co-ordinates of the centre of the ellipse must be given by
+    centre_x  and centre_y  .
+    The radii must be given by  radius_x  and  radius_y  .
+    The pixel value to fill the ellipse with must be given by  pixel_value  .
+    The routine returns nothing.
+*/
+KWorldCanvas canvas;
+double centre_x;
+double centre_y;
+double radius_x;
+double radius_y;
+unsigned long pixel_value;
 /*---------------------------------------------------------------------------*/
 
 flag canvas_fill_polygon (canvas, coords, num_vertices, value, convex)
@@ -323,6 +422,80 @@ edit_coord *coords;
 unsigned int num_vertices;
 double value[2];
 flag convex;
+/*---------------------------------------------------------------------------*/
+
+void canvas_draw_rectangle (canvas, x, y, width, height, value)
+/*  This routine will draw a single rectangle onto a world canvas.
+    The canvas must be given by  canvas  .
+    The horizontal offset of the rectangle must be given by  x  .
+    The vertical offset of the rectangle must be given by  y  .
+    The width of the rectangle must be given by  width  .
+    The height of the rectangle must be given by  height  .
+    The data value to use must be given by  value  .This must be of type
+    K_DCOMPLEX.
+    The routine returns nothing.
+*/
+KWorldCanvas canvas;
+double x;
+double y;
+double width;
+double height;
+double value[2];
+/*---------------------------------------------------------------------------*/
+
+void canvas_draw_rectangle_p (canvas, x, y, width, height, pixel_value)
+/*  This routine will draw a single rectangle onto a world canvas.
+    The canvas must be given by  canvas  .
+    The horizontal offset of the rectangle must be given by  x  .
+    The vertical offset of the rectangle must be given by  y  .
+    The width of the rectangle must be given by  width  .
+    The height of the rectangle must be given by  height  .
+    The pixel value to use must be given by  pixel_value  .
+    The routine returns nothing.
+*/
+KWorldCanvas canvas;
+double x;
+double y;
+double width;
+double height;
+unsigned long pixel_value;
+/*---------------------------------------------------------------------------*/
+
+void canvas_fill_rectangle (canvas, x, y, width, height, value)
+/*  This routine will fill a single rectangle onto a world canvas.
+    The canvas must be given by  canvas  .
+    The horizontal offset of the rectangle must be given by  x  .
+    The vertical offset of the rectangle must be given by  y  .
+    The width of the rectangle must be given by  width  .
+    The height of the rectangle must be given by  height  .
+    The data value to use must be given by  value  .This must be of type
+    K_DCOMPLEX.
+    The routine returns nothing.
+*/
+KWorldCanvas canvas;
+double x;
+double y;
+double width;
+double height;
+double value[2];
+/*---------------------------------------------------------------------------*/
+
+void canvas_fill_rectangle_p (canvas, x, y, width, height, pixel_value)
+/*  This routine will fill a single rectangle onto a world canvas.
+    The canvas must be given by  canvas  .
+    The horizontal offset of the rectangle must be given by  x  .
+    The vertical offset of the rectangle must be given by  y  .
+    The width of the rectangle must be given by  width  .
+    The height of the rectangle must be given by  height  .
+    The pixel value to use must be given by  pixel_value  .
+    The routine returns nothing.
+*/
+KWorldCanvas canvas;
+double x;
+double y;
+double width;
+double height;
+unsigned long pixel_value;
 /*---------------------------------------------------------------------------*/
 
 flag canvas_draw_edit_list (canvas, ilist)

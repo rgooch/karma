@@ -54,8 +54,14 @@
     Updated by      Richard Gooch   24-JUL-1993: Added support for opening
   character special devices and FIFOs by creating  r_open_file  .
 
-    Last updated by Richard Gooch   29-JUL-1993: Added Linux support in
+    Updated by      Richard Gooch   29-JUL-1993: Added Linux support in
   r_setenv  .
+
+    Updated by      Richard Gooch   20-NOV-1993: Made  alloc_port  tolerant of
+  Linux kernels without TCP/IP support.
+
+    Last updated by Richard Gooch   23-NOV-1993: Fixed bug introduced on 20-NOV
+  which failed to call  htons(3)  prior to binding in  bind_inet  .
 
 
 */
@@ -143,6 +149,10 @@ struct descriptor_type
 static void prog_bug ();
 #ifdef COMMUNICATIONS_AVAILABLE
 static int *alloc_port ();
+#  ifdef HAS_SOCKETS
+static flag bind_unix (/* sock, port_number */);
+static flag bind_inet (/* sock, port_number */);
+#  endif
 static void close_dock ();
 static int connect_to_port ();
 static int accept_connection_on_dock ();
@@ -990,10 +1000,7 @@ unsigned int retries;
 unsigned int *num_docks;
 {
     flag bound;
-    int sock_opt = SO_REUSEADDR;
     unsigned int retry_number;
-    struct sockaddr_un un_addr;
-    struct sockaddr_in in_addr;
     struct servent *service_entry;
     extern int tcp_port_offset;
     extern int docks[NUM_DOCKS];
@@ -1026,82 +1033,66 @@ unsigned int *num_docks;
 	    }
 	}
     }
+    /*  Create Unix domain socket  */
+    if ( ( docks[INDEX_UNIX_DOCK] = socket (AF_UNIX, SOCK_STREAM, 0) ) < 0 )
+    {
+	(void) fprintf (stderr, "Error creating Unix socket\t%s\n",
+			sys_errlist[errno]);
+	(void) exit (RV_SYS_ERROR);
+    }
     /*  Create Internet domain socket  */
     if ( ( docks[INDEX_INTERNET_DOCK] = socket (AF_INET, SOCK_STREAM, 0) )
 	< 0 )
     {
-	(void) fprintf (stderr, "Error creating Internet socket\t%s\n",
-			sys_errlist[errno]);
-	(void) exit (RV_SYS_ERROR);
-    }
-    /*  Set socket options  */
-#  ifdef TCP_NODELAY
-    sock_opt |= TCP_NODELAY;
-    (void) fprintf (stderr, "TCP_NODELAY\n");
-#  endif
-    /*  The following code exercises a bug in the Convex OS kernal.
-	This bug causes the system to crash. DO NOT USE until kernal patched.
-    if (setsockopt (docks[INDEX_INTERNET_DOCK], SOL_SOCKET, sock_opt,
-        (caddr_t) 0, 0)
-	!= 0)
-    {
-	(void) fprintf (stderr,
-	                "Error setting Internet socket options\t%s\n",
-			sys_errlist[errno]);
-	(void) exit (RV_SYS_ERROR);
-    }
-    /*  Set close-on-exec flag  */
-    if (fcntl (docks[INDEX_INTERNET_DOCK], F_SETFD, 1) == -1)
-    {
-	(void) fprintf (stderr,
-			"Error setting close-on-exec flag for Internet socket\t%s\n",
-			sys_errlist[errno]);
-	if (close (docks[INDEX_INTERNET_DOCK]) != 0)
+#ifdef ARCH_linux
+	if (errno == EINVAL)
 	{
-	    (void) fprintf (stderr,
-			    "Error closing Internet socket\t%s\n",
+	    (void) fprintf (stderr, "No kernel support for TCP/IP\t%s\n",
 			    sys_errlist[errno]);
+	    (void) fprintf (stderr, "Internet dock not created\n");
+	    docks[INDEX_INTERNET_DOCK] = -1;
 	}
-	(void) exit (RV_SYS_ERROR);
+	else
+#endif
+	{
+	    (void) fprintf (stderr, "Error creating Internet socket\t%s\n",
+			    sys_errlist[errno]);
+	    if (close (docks[INDEX_UNIX_DOCK]) != 0)
+	    {
+		(void) fprintf (stderr, "Error closing Unix socket\t%s\n",
+				sys_errlist[errno]);
+	    }
+	    (void) exit (RV_SYS_ERROR);
+	}    
     }
-    in_addr.sin_family = AF_INET;
-    in_addr.sin_addr.s_addr = INADDR_ANY;
-    /*  Try to bind to Internet/ TCP port  */
+    /*  Try to bind to port  */
     for (retry_number = 0, bound = FALSE, allocated_port_number = *port_number;
-	 (retry_number <= retries) && (bound == FALSE);
+	 (retry_number <= retries) && !bound;
 	 ++retry_number)
     {
-	/*  Try to bind to port number  */
-	in_addr.sin_port = htons (allocated_port_number + tcp_port_offset);
-	if (bind (docks[INDEX_INTERNET_DOCK], (struct sockaddr *) &in_addr,
-		  (int) sizeof in_addr) != 0)
+	/*  Try to bind to another port number  */
+	if (docks[INDEX_INTERNET_DOCK] < 0)
 	{
-	    /*  Could not bind to port number  */
-	    if (errno != EADDRINUSE)
-	    {
-		(void) fprintf (stderr,
-				"Error binding Internet socket\t%s\n",
-				sys_errlist[errno]);
-		if (close (docks[INDEX_INTERNET_DOCK]) != 0)
-		{
-		    (void) fprintf (stderr,
-				    "Error closing Internet socket\t%s\n",
-				    sys_errlist[errno]);
-		}
-		(void) exit (RV_SYS_ERROR);
-	    }
-	    /*  Port already in use: go to next one  */
-	    ++allocated_port_number;
+	    /*  No Internet dock: try Unix dock  */
+	    bound = bind_unix (docks[INDEX_UNIX_DOCK], allocated_port_number);
 	}
 	else
 	{
-	    /*  Managed to bind  */
-	    bound = TRUE;
+	    /*  Have Internet dock: try to bind  */
+	    bound = bind_inet (docks[INDEX_INTERNET_DOCK],
+			       allocated_port_number + tcp_port_offset);
 	}
+	if (!bound) ++allocated_port_number;
     }
-    if (bound != TRUE)
+    if (!bound)
     {
 	/*  All slots occupied  */
+	if (close (docks[INDEX_UNIX_DOCK]) != 0)
+	{
+	    (void) fprintf (stderr, "Error closing Internet socket\t%s\n",
+			    sys_errlist[errno]);
+	    (void) exit (RV_SYS_ERROR);
+	}
 	if (close (docks[INDEX_INTERNET_DOCK]) != 0)
 	{
 	    (void) fprintf (stderr, "Error closing Internet socket\t%s\n",
@@ -1110,98 +1101,175 @@ unsigned int *num_docks;
 	}
 	return (NULL);
     }
-    if (listen (docks[INDEX_INTERNET_DOCK], 2) != 0)
+    if (docks[INDEX_INTERNET_DOCK] > -1)
     {
-	(void) fprintf (stderr, "Error listening to Internet dock\t%s\n",
-			sys_errlist[errno]);
-	if (close (docks[INDEX_INTERNET_DOCK]) != 0)
-	{
-	    (void) fprintf (stderr, "Error closing Internet socket\t%s\n",
-			    sys_errlist[errno]);
-	}
-	(void) exit (RV_SYS_ERROR);
-    }
-    /*  Create Unix domain socket  */
-    if ( ( docks[INDEX_UNIX_DOCK] = socket (AF_UNIX, SOCK_STREAM, 0) ) < 0 )
-    {
-	(void) fprintf (stderr, "Error creating Unix socket\t%s\n",
-			sys_errlist[errno]);
-	if (close (docks[INDEX_INTERNET_DOCK]) != 0)
-	{
-	    (void) fprintf (stderr, "Error closing Internet socket\t%s\n",
-			    sys_errlist[errno]);
-	}
-	(void) exit (RV_SYS_ERROR);
-    }
-    /*  Set close-on-exec flag  */
-    if (fcntl (docks[INDEX_UNIX_DOCK], F_SETFD, 1) == -1)
-    {
-	(void) fprintf (stderr,
-			"Error setting close-on-exec flag for Unix socket\t%s\n",
-			sys_errlist[errno]);
-	if (close (docks[INDEX_UNIX_DOCK]) != 0)
+	/*  Have bound Internet dock: now bind Unix dock  */
+	if (bind_unix (docks[INDEX_UNIX_DOCK], allocated_port_number) != TRUE)
 	{
 	    (void) fprintf (stderr,
-			    "Error closing Unix socket\t%s\n",
-			    sys_errlist[errno]);
+			    "TCP dock bound but could not bind Unix dock\n");
+	    exit (RV_SYS_ERROR);
 	}
-	if (close (docks[INDEX_INTERNET_DOCK]) != 0)
-	{
-	    (void) fprintf (stderr, "Error closing Internet socket\t%s\n",
-			    sys_errlist[errno]);
-	}
-	(void) exit (RV_SYS_ERROR);
     }
+    *port_number = allocated_port_number;
+    if (docks[INDEX_INTERNET_DOCK] < 0)
+    {
+	num_docks_open = NUM_DOCKS - 1;
+    }
+    else
+    {
+	num_docks_open = NUM_DOCKS;
+    }
+    *num_docks = num_docks_open;
+    return (docks);
+}   /*  End Function alloc_port  */
+
+static flag bind_unix (sock, port_number)
+/*  This routine will bind a unix socket to a particular Karma port number.
+    The socket must be given by  sock  .
+    The port number must be given by  port_number  .
+    The routine returns TRUE on success, else it returns FALSE (indicating the
+    address is in use).
+*/
+int sock;
+unsigned int port_number;
+{
+    struct sockaddr_un un_addr;
+    ERRNO_TYPE errno;
+    extern char *sys_errlist[];
+
     un_addr.sun_family = AF_UNIX;
     (void) sprintf (un_addr.sun_path, "%s/%s%d", UNIX_SOCKET_DIR,
-		    UNIX_SOCKET_FILE, allocated_port_number);
+		    UNIX_SOCKET_FILE, port_number);
     (void) mkdir (UNIX_SOCKET_DIR, (mode_t) 0777);
     (void) chmod (UNIX_SOCKET_DIR, (mode_t) 0777);
     (void) unlink (un_addr.sun_path);
     /*  Try to bind to Unix port  */
-    if (bind (docks[INDEX_UNIX_DOCK], (struct sockaddr *) &un_addr,
-	      (int) sizeof un_addr) != 0)
+    if (bind (sock, (struct sockaddr *) &un_addr, (int) sizeof un_addr) != 0)
     {
 	/*  Could not bind to port number  */
-	(void) fprintf (stderr, "Error binding Unix socket\t%s\n",
-			sys_errlist[errno]);
-	if (close (docks[INDEX_INTERNET_DOCK]) != 0)
+	if (errno != EADDRINUSE)
 	{
-	    (void) fprintf (stderr,
-			    "Error closing Internet socket\t%s\n",
+	    (void) fprintf (stderr, "Error binding Unix socket\t%s\n",
 			    sys_errlist[errno]);
+	    if (close (sock) != 0)
+	    {
+		(void) fprintf (stderr, "Error closing Unix socket\t%s\n",
+				sys_errlist[errno]);
+	    }
+	    (void) exit (RV_SYS_ERROR);
 	}
-	if (close (docks[INDEX_UNIX_DOCK]) != 0)
+	/*  Port already in use: say so  */
+	return (FALSE);
+    }
+    /*  Bound  */
+    /*  Set close-on-exec flag  */
+    if (fcntl (sock, F_SETFD, 1) == -1)
+    {
+	(void) fprintf (stderr,
+			"Error setting close-on-exec flag for Unix socket\t%s\n",
+			sys_errlist[errno]);
+	if (close (sock) != 0)
 	{
-	    (void) fprintf (stderr,
-			    "Error closing Unix socket\t%s\n",
+	    (void) fprintf (stderr, "Error closing Unix socket\t%s\n",
 			    sys_errlist[errno]);
 	}
 	(void) exit (RV_SYS_ERROR);
     }
-    if (listen (docks[INDEX_UNIX_DOCK], 2) != 0)
+    if (listen (sock, 2) != 0)
     {
 	(void) fprintf (stderr, "Error listening to Unix dock\t%s\n",
 			sys_errlist[errno]);
-	if (close (docks[INDEX_INTERNET_DOCK]) != 0)
+	if (close (sock) != 0)
+	{
+	    (void) fprintf (stderr, "Error closing Unix socket\t%s\n",
+			    sys_errlist[errno]);
+	}
+	(void) exit (RV_SYS_ERROR);
+    }
+    return (TRUE);
+}   /*  End Function bind_unix  */
+
+static flag bind_inet (sock, port_number)
+/*  This routine will bind an Internet socket to a particular Karma port number
+    The socket must be given by  sock  .
+    The port number must be given by  port_number  .
+    The routine returns TRUE on success, else it returns FALSE (indicating the
+    address is in use).
+*/
+int sock;
+unsigned int port_number;
+{
+    int sock_opt = SO_REUSEADDR;
+    struct sockaddr_in in_addr;
+    ERRNO_TYPE errno;
+    extern char *sys_errlist[];
+
+    in_addr.sin_family = AF_INET;
+    in_addr.sin_addr.s_addr = INADDR_ANY;
+    /*  Try to bind to port number  */
+    in_addr.sin_port = htons (port_number);
+    if (bind (sock, (struct sockaddr *) &in_addr, (int) sizeof in_addr) != 0)
+    {
+	/*  Could not bind to port number  */
+	if (errno != EADDRINUSE)
+	{
+	    (void) fprintf (stderr, "Error binding Internet socket\t%s\n",
+			    sys_errlist[errno]);
+	    if (close (sock) != 0)
+	    {
+		(void) fprintf (stderr, "Error closing Internet socket\t%s\n",
+				sys_errlist[errno]);
+	    }
+	    (void) exit (RV_SYS_ERROR);
+	}
+	/*  Port already in use: say so  */
+	return (FALSE);
+    }
+    /*  Bound  */
+    /*  Set socket options  */
+#  ifdef TCP_NODELAY
+    sock_opt |= TCP_NODELAY;
+    (void) fprintf (stderr, "TCP_NODELAY\n");
+#  endif
+    /*  The following code exercises a bug in the Convex OS kernel.
+	This bug causes the system to crash. DO NOT USE until kernel patched.
+    if (setsockopt (sock, SOL_SOCKET, sock_opt, (caddr_t) 0, 0)
+	!= 0)
+    {
+        (void) fprintf (stderr,
+	                "Error setting Internet socket options\t%s\n",
+			sys_errlist[errno]);
+	(void) exit (RV_SYS_ERROR);
+    }
+*/
+    /*  Set close-on-exec flag  */
+    if (fcntl (sock, F_SETFD, 1) == -1)
+    {
+	(void) fprintf (stderr,
+			"Error setting close-on-exec flag for Internet socket\t%s\n",
+			sys_errlist[errno]);
+	if (close (sock) != 0)
 	{
 	    (void) fprintf (stderr,
 			    "Error closing Internet socket\t%s\n",
 			    sys_errlist[errno]);
 	}
-	if (close (docks[INDEX_UNIX_DOCK]) != 0)
+	(void) exit (RV_SYS_ERROR);
+    }
+    if (listen (sock, 2) != 0)
+    {
+	(void) fprintf (stderr, "Error listening to Internet dock\t%s\n",
+			sys_errlist[errno]);
+	if (close (sock) != 0)
 	{
-	    (void) fprintf (stderr,
-			    "Error closing Unix socket\t%s\n",
+	    (void) fprintf (stderr, "Error closing Internet socket\t%s\n",
 			    sys_errlist[errno]);
 	}
 	(void) exit (RV_SYS_ERROR);
     }
-    *port_number = allocated_port_number;
-    num_docks_open = NUM_DOCKS;
-    *num_docks = NUM_DOCKS;
-    return (docks);
-}   /*  End Function alloc_port  */
+    return (TRUE);
+}   /*  End Function bind_inet  */
 
 static void close_dock (dock_index)
 /*  This routine will close a dock.

@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   16-APR-1993
 
-    Last updated by Richard Gooch   28-MAY-1993
+    Last updated by Richard Gooch   21-NOV-1993
 
 */
 
@@ -46,7 +46,7 @@
 #include <karma_ds_def.h>
 #ifndef KWIN_GENERIC_ONLY
 #  ifdef X11
-#include <X11/Xlib.h>
+#    include <X11/Xlib.h>
 #  endif
 #endif
 
@@ -95,6 +95,8 @@ EXTERN_FUNCTION (flag kwin_process_position_event, (KPixCanvas canvas,
 						    int x, int y, flag clip,
 						    unsigned int event_code,
 						    void *event_info) );
+
+/*  Drawing routines  */
 EXTERN_FUNCTION (flag kwin_draw_image, (KPixCanvas canvas,
 					array_desc *arr_desc, char *slice,
 					unsigned int hdim, unsigned int vdim,
@@ -119,12 +121,27 @@ EXTERN_FUNCTION (flag kwin_fill_polygon, (KPixCanvas canvas,
 					  unsigned int num_vertices,
 					  unsigned long pixel_value,
 					  flag convex) );
+EXTERN_FUNCTION (void kwin_draw_string, (KPixCanvas canvas, int x, int y,
+					 char *string,
+					 unsigned long pixel_value,
+					 flag clear_under) );
+EXTERN_FUNCTION (void kwin_draw_rectangle, (KPixCanvas canvas, int x, int y,
+					    int width, int height,
+					    unsigned long pixel_value) );
+EXTERN_FUNCTION (void kwin_fill_rectangle, (KPixCanvas canvas, int x, int y,
+					    int width, int height,
+					    unsigned long pixel_value) );
+
+/*  Other routines  */
 EXTERN_FUNCTION (void kwin_get_size, (KPixCanvas canvas, int *width,
 				      int *height) );
 EXTERN_FUNCTION (void kwin_free_cache_data, (KPixCanvasImageCache cache) );
 EXTERN_FUNCTION (flag kwin_convert_to_canvas_coord, (KPixCanvas canvas,
 						     int xin, int yin,
 						     int *xout, int *yout) );
+EXTERN_FUNCTION (flag kwin_convert_from_canvas_coord, (KPixCanvas canvas,
+						       int xin, int yin,
+						       int *xout, int *yout) );
 
 
 #endif /*  KARMA_KWIN_H  */

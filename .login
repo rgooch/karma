@@ -4,17 +4,21 @@
 
 # Written by		Richard Gooch	22-SEP-1992
 
-# Last updated by	Richard Gooch	29-SEP-1993
+# Last updated by	Richard Gooch	8-OCT-1993
 
 
 # Define Karma installed base (for ordinary users)
 setenv KARMABASE /usr/local/karma
 
 # Define top of source (for karma programmers)
-if (-r ~rgooch/karma) then
-    setenv KARMAROOT ~rgooch/karma
+if (-d /wyvern/karma) then
+    setenv KARMAROOT /wyvern/karma
 else
-    if (-r /applic/karma) setenv KARMAROOT /applic/karma
+    if (-r ~rgooch/karma) then
+	setenv KARMAROOT ~rgooch/karma
+    else
+	if (-r /applic/karma) setenv KARMAROOT /applic/karma
+    endif
 endif
 
 # Set up Karma executable paths and machine dependent environmental variables

@@ -1,15 +1,13 @@
 #include <karma_canvas.h>
 # 1 "" 
-flag canvas_draw_edit_list (canvas, edit_list_desc, list_head)
+flag canvas_draw_edit_list (canvas, ilist)
 KWorldCanvas canvas;
-packet_desc *edit_list_desc;
-list_header *list_head;
+KImageEditList ilist;
 {
     return ( (flag) 0 );
 }
-flag canvas_draw_edit_object (canvas, edit_list_desc, object)
+flag canvas_draw_edit_object (canvas, object)
 KWorldCanvas canvas;
-packet_desc *edit_list_desc;
 char *object;
 {
     return ( (flag) 0 );

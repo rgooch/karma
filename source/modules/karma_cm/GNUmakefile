@@ -69,11 +69,7 @@ depend:
 
 
 clean:
-	rm -f *.BAK *.log *.sed date.h
-	rm -f .#* *~ *.bak */*.bak
-	rm -f */tmp*
-	rm -f *.o
-	rm -f .*defaults
+	rm -f *.BAK *.log *.sed .#* *~ *.bak */*.bak */tmp* .*defaults
 	-chmod u+rw,go-w * 2> /dev/null
 
 

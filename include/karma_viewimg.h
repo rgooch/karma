@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   18-APR-1993
 
-    Last updated by Richard Gooch   17-JUL-1993
+    Last updated by Richard Gooch   18-NOV-1993
 
 */
 
@@ -61,6 +61,11 @@ EXTERN_FUNCTION (ViewableImage viewimg_create, (KWorldCanvas canvas,
 						unsigned int elem_index) );
 EXTERN_FUNCTION (ViewableImage viewimg_create_from_iarray,
 		 (KWorldCanvas canvas, iarray array, flag swap) );
+EXTERN_FUNCTION (ViewableImage *viewimg_create_sequence,
+		 (KWorldCanvas canvas, multi_array *multi_desc,
+		  array_desc *arr_desc, char *cube,
+		  unsigned int hdim, unsigned int vdim, unsigned int fdim,
+		  unsigned int elem_index) );
 EXTERN_FUNCTION (flag viewimg_make_active, (ViewableImage vimage) );
 EXTERN_FUNCTION (void viewimg_control_autoscaling,
 		 (KWorldCanvas canvas,

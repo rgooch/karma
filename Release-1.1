@@ -1,0 +1,197 @@
+Subject: NEW PACKAGE for command line user interface
+Date: Wed, 6 Oct 93 11:32:40 EST
+
+SUMMARY:
+  A new package (  panel_  ) to permit simple, uniform command line user
+interfaces to be created is now available.
+
+HEADER CREATED:
+  karma_panel.h
+
+DESCRIPTION:
+  The  panel_  package allows a module programmer to quickly and
+easily implement a command line user interface. A user interacts with
+a "panel", which contains a number of "panel items". Each panel item
+may be a conventional parameter (ie. floating point number) or an
+"action". The  panel_  package will process complete command lines and
+will modify parameter values or perform actions as appropriate.
+
+REASON:
+  The previous command line user interface used in many Karma modules
+was implemented by the  ez_decode  function. This is a routine that
+was temporarily borrowed from the SIP package, and had a number of
+limitations. The source code for this routine was not distributed with
+the Karma library, hence almost all of the Karma modules were not
+distributed in source form.
+The  ez_decode  user interface required a preceeding '/' for each
+parameter or function (action). This essentially precluded the
+processing of files with a preceeding '/'. This is a major limitation
+for Unix systems (  ez_decode  was designed for a VMS system: hence
+the problem did not arise there).
+The  panel_  package now supports all the basic Karma data types
+(atomic elements and K_VSTRING and K_FSTRING), as well as an "action"
+type (function). At a later date, new panel item types, such as arrays
+of elements, will be supported, as well as (optional) limits on
+numeric values. These changes will not need to break any existing
+code, as the  panel_  package is using a varargs system to implement
+attribute-value pairs of arguments.
+Karma modules are currently in a transition phase. As time permits,
+each modules is being upgraded to the new user interface. This means
+that for a period of time, there will be some modules which still
+require the preceeding '/' character.
+As of now, the following modules have been upgraded:
+
+fits2karma        merge_planes    collect_frames    conv_24to7
+collect_struct    rx              tx
+-------------------------------------------------------------------------------
+Subject: BUG FIX in  iedit_add_instruction
+Date: Wed, 6 Oct 93 23:43:59 EST
+
+SUMMARY:
+  A bug in the  iedit_add_instruction  routine has been fixed.
+
+DESCRIPTION:
+  When a module added an edit instruction to a slave instruction list
+using the  iedit_add_instruction  routine, the edit instruction was
+deallocated before it was passed to the registered callback. This
+resulted in some spurious results, typically detected as a programme
+bug in  canvas_draw_edit_object  (for most modules).
+This bug did not affect standalone or master edit lists.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  kwin_convert_from_canvas_coord
+Date: Fri, 15 Oct 93 15:07:09 EST
+
+SUMMARY:
+  A new function to convert from KPixCanvas co-ordinates to lower
+level graphics system co-ordinates has been implemented.
+
+HEADER CHANGED:
+  karma_kwin.h
+
+DESCRIPTION:
+  The  kwin_convert_from_canvas_coord  routine will convert a
+KPixCanvas co-ordinate into a co-ordinate in the lower level graphics
+system. In the case where the underlying graphics system is the X
+window system, these co-ordinates will be X window co-ordinates.
+This routine provides the inverse function of the routine:
+kwin_convert_to_canvas_coord
+-------------------------------------------------------------------------------
+Subject: BUGFIX in  ds_cmap_  routines
+Date: Mon, 22 Nov 93 11:14:26 EST
+
+SUMMARY:
+  A bug in the  ds_cmap_  routines has been fixed.
+
+DESCRIPTION:
+  The ordering of colours in the data structure defined by the
+ds_cmap_  routines was incompatible with other packages in the Karma
+library (in particular, the  kcmap_  package). This could result in
+swapped green and blue colour values when reading from disc.
+Old files (written prior to this bugfix) may have incorrect colour
+values. This can be corrected by the use of the  kdump  and  kgen
+modules (and your favourite editor).
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTIONS for  kwin_  package
+Date: Mon, 22 Nov 93 11:21:35 EST
+
+SUMMARY:
+  The following functions have been added to the  kwin_  package:
+kwin_draw_string
+kwin_draw_rectangle
+kwin_fill_rectangle
+
+HEADER CHANGED:
+  karma_kwin.h
+
+DESCRIPTION:
+  The  kwin_draw_string  routine will draw a horizontal text string
+onto a KPixCanvas object.
+  The  kwin_draw_rectangle  routine will draw the outline of a rectangle
+onto a KPixCanvas object.
+  The  kwin_fill_rectangle  routine will draw a filled rectangle onto a
+KPixCanvas object.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTIONS for  canvas_  package
+Date: Mon, 22 Nov 93 11:29:45 EST
+
+SUMMARY:
+  The following functions have been added to the  canvas_  package:
+canvas_draw_point_p
+canvas_draw_line_p
+canvas_fill_ellipse_p
+canvas_draw_rectangle
+canvas_draw_rectangle_p
+canvas_fill_rectangle
+canvas_fill_rectangle_p
+
+HEADER CHANGED:
+  karma_canvas.h
+
+DESCRIPTION:
+  The  canvas_  routines with a trailing  _p  in their functions names
+are similar to the routines without the  _p  except that they take a
+pixel value as a parameter, rather than a K_DCOMPLEX value (which is
+indexed into a Kcolourmap to obtain a pixel value).
+  The  canvas_draw_rectangle  routine will draw the outline of a rectangle
+onto a KWorldCanvas object.
+  The  canvas_fill_rectangle  routine will draw a filled rectangle onto a
+KWorldCanvas object.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  cf_mirp
+Date: Mon, 22 Nov 93 11:42:09 EST
+
+SUMMARY:
+  A new colourmap function  cf_mirp  has been added.
+
+HEADER CHANGED:
+  karma_cf.h
+
+DESCRIPTION:
+  The  cf_mirp  colourmap function is yet another "favorite"
+colourmap, submitted by Jeanne Young.
+-------------------------------------------------------------------------------
+Subject: BUG FIX in  kwin_  package
+Date: Tue, 23 Nov 93 15:52:08 EST
+
+SUMMARY:
+  A bug in the  kwin_  package which could cause the process to abort
+has been fixed.
+
+DESCRIPTION:
+  If allocating an XImage structure within  kwin_draw_image  failed, a
+NULL pointer was passed to  xi_destroy_image  by  kwin_free_cache_data
+This would cause  xi_destroy_image  to abort the process with a
+message. A check for a NULL XImage pointer in  kwin_free_cache  data
+has corrected this problem.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  canvas_register_convert_func
+Date: Tue, 23 Nov 93 15:56:59 EST
+
+SUMMARY:
+  A new function to modify the co-ordinate transformation between
+pixel and world canvas co-ordinates has been created.
+
+HEADER CHANGED:
+  karma_canvas.h
+
+DESCRIPTION:
+  The  canvas_register_convert_func  will register a routine which
+will perform pixel <-> world canvas co-ordinate transformations, in
+place of the default co-ordinate transformation supplied by the
+canvas_  package. This facilitates implementation of non Cartesian
+co-ordinate systems in world canvases.
+-------------------------------------------------------------------------------
+Subject: BUG FIX in  viewimg_  package
+Date: Tue, 23 Nov 93 16:01:01 EST
+
+SUMMARY:
+  Inaccurate conversion between pixel and world canvas co-ordinates
+has been corrected.
+
+DESCRIPTION:
+  When a world canvas has an active viewable image associated with it,
+the default pixel <-> world canvas co-ordinate transformation is no
+longer valid. This problem becomes more noticable when a viewable
+image is zoomed in. Using the  canvas_register_convert_func  a more
+accurate co-ordinate transformation has been implemented.
+-------------------------------------------------------------------------------

@@ -48,6 +48,13 @@
 #include <karma_p.h>
 #include <karma_a.h>
 
+/*  God awful hacks  */
+#ifndef S_ISLNK
+#  define S_ISLNK(m)      (((m)&0170000) == 0120000)
+#endif
+#ifndef S_ISSOCK
+#  define S_ISSOCK(m)     (((m)&0170000) == 014000)
+#endif
 
 /*  Internal definition of KDir object  */
 typedef struct dir_type * KDir;

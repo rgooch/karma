@@ -41,7 +41,10 @@
     Updated by      Richard Gooch   2-MAR-1993: Fixed bug in
   dscmap_alloc_colourmap  .Bottom tile lengths not set.
 
-    Last updated by Richard Gooch   13-APR-1993: Moved to  ds_cmap_
+    Updated by      Richard Gooch   13-APR-1993: Moved to  ds_cmap_
+
+    Last updated by Richard Gooch   21-NOV-1993: Fixed bug in ordering of
+  colours (was red, blue, green): incompatible with  kcmap_  package.
 
 
 */
@@ -56,8 +59,8 @@
 static char *element_names[NUM_ELEMENTS] = 
 {
     "Red Intensity",
-    "Blue Intensity",
-    "Green Intensity"
+    "Green Intensity",
+    "Blue Intensity"
 };
 
 /*PUBLIC_FUNCTION*/
@@ -82,7 +85,7 @@ unsigned short *ds_cmap_alloc_colourmap (size, multi_desc, pack_desc, packet)
     The general data structure that is created will contain a 1 dimensional
     array with dimension name "Colour Number" and length equal to  size  .
     The array will contain packets with 3 elements, each of type  K_USHORT  and
-    with the names "Red Intensity", "Blue Intensity" and "Green Intensity", in
+    with the names "Red Intensity", "Green Intensity" and "Blue Intensity", in
     that order. For compatibility with the X Window system, it is recommended
     that these values lie in the range 0 to 65535.
     The routine returns a pointer to the allocated colourmap on success,

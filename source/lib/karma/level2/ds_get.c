@@ -49,8 +49,11 @@
     Updated by      Richard Gooch   17-MAY-1993: Added support for string data
   types and created  ds_element_is_named  .
 
-    Last updated by Richard Gooch   29-JUN-1993: Added more error trapping to
+    Updated by      Richard Gooch   29-JUN-1993: Added more error trapping to
   ds_get_element  and  ds_get_elements  .
+
+    Last updated by Richard Gooch   16-NOV-1993: Added support for string data
+  types in  ds_f_name_in_packet  by switching to use of  ds_element_is_named  .
 
 
 */
@@ -742,33 +745,9 @@ unsigned int *index;
     }
     for (elem_count = 0; elem_count < (*pack_desc).num_elements; ++elem_count)
     {
-	switch ( (*pack_desc).element_types[elem_count] )
+	if (ds_element_is_named ( (*pack_desc).element_types[elem_count] )
+            == TRUE)
         {
-	  case NONE:
-	    /*  Bad data type   */
-	    (void) fprintf (stderr, "Hole in data structure\n");
-	    a_prog_bug (function_name);
-	    break;
-	  case K_FLOAT:
-	  case K_DOUBLE:
-	  case K_BYTE:
-	  case K_INT:
-	  case K_SHORT:
-	  case K_COMPLEX:
-	  case K_DCOMPLEX:
-	  case K_BCOMPLEX:
-	  case K_ICOMPLEX:
-	  case K_SCOMPLEX:
-	  case K_LONG:
-	  case K_LCOMPLEX:
-	  case K_UBYTE:
-	  case K_UINT:
-	  case K_USHORT:
-	  case K_ULONG:
-	  case K_UBCOMPLEX:
-	  case K_UICOMPLEX:
-	  case K_USCOMPLEX:
-	  case K_ULCOMPLEX:
 	    /*  Atomic data type    */
 	    if (strcmp (name, (*pack_desc).element_desc[elem_count])
 		== 0)
@@ -787,7 +766,11 @@ unsigned int *index;
 		    *index = elem_count;
 		}
 	    }
-	    break;
+	    continue;
+	}
+	/*  Not a named element  */
+	switch ( (*pack_desc).element_types[elem_count] )
+	{
 	  case K_ARRAY:
 	    if ( ( temp_ident =
 		  ds_f_name_in_array ( (array_desc *)
@@ -822,7 +805,7 @@ unsigned int *index;
 			    (*pack_desc).element_types[elem_count]);
 	    a_prog_bug (function_name);
 	    break;
-        }
+	}
     }
     return (return_value);
 }   /*  End Function ds_f_name_in_packet  */

@@ -48,8 +48,13 @@
     Updated by      Richard Gooch   16-AUG-1993: Fixed bug in  aspect_zoom
   which could hang trying to compute an impossible zoom factor.
 
-    Last updated by Richard Gooch   31-AUG-1993: Fixed declaration of
+    Updated by      Richard Gooch   31-AUG-1993: Fixed declaration of
   first_canvas_holder  to be static.
+
+    Updated by      Richard Gooch   18-NOV-1993: Added  viewimg_create_sequence
+
+    Last updated by Richard Gooch   23-NOV-1993: Made use of routine
+  canvas_register_convert_func  .
 
 
 */
@@ -113,6 +118,9 @@ struct viewableimage_type
     int pixcanvas_width;
     int pixcanvas_height;
     KPixCanvasImageCache cache;
+    unsigned int num_restrictions;
+    char **restriction_names;
+    double *restriction_values;
     ViewableImage next;
     ViewableImage prev;
     struct win_scale_type win_scale;
@@ -135,6 +143,8 @@ static flag worldcanvas_position_func (/* canvas, x, y, event_code, e_info,
 					  f_info */);
 static void aspect_zoom (/* hlength, width, hpixels,
 			    vlength, height, vpixels */);
+static flag coord_convert_func (/* canvas, win_scale, px, py, wx, wy,
+				   to_world, info */);
 
 
 /* Public functions follow */
@@ -203,11 +213,21 @@ unsigned int elem_index;
 			hdim, (*arr_desc).num_dimensions);
 	a_prog_bug (function_name);
     }
+    if ( (* (*arr_desc).dimensions[hdim] ).coordinates != NULL )
+    {
+	(void) fprintf (stderr, "hdim: %u not regularly spaced\n", hdim);
+	a_prog_bug (function_name);
+    }
     if (vdim >= (*arr_desc).num_dimensions)
     {
 	(void) fprintf (stderr,
 			"vdim: %u greater than number of dimensions: %u\n",
 			vdim, (*arr_desc).num_dimensions);
+	a_prog_bug (function_name);
+    }
+    if ( (* (*arr_desc).dimensions[vdim] ).coordinates != NULL )
+    {
+	(void) fprintf (stderr, "vdim: %u not regularly spaced\n", vdim);
 	a_prog_bug (function_name);
     }
     if (elem_index >= (* (*arr_desc).packet ).num_elements)
@@ -219,7 +239,7 @@ unsigned int elem_index;
     }
     if ( (*arr_desc).num_levels > 0 )
     {
-	(void) fprintf (stderr, "Tiling not supported yet\n");
+	(void) fprintf (stderr, "Tiling not supported.\n");
 	return (NULL);
     }
     if ( (*arr_desc).offsets == NULL )
@@ -264,6 +284,9 @@ unsigned int elem_index;
     {
 	(*vimage).vstride *= (* (*arr_desc).dimensions[dim_count] ).length;
     }
+    (*vimage).num_restrictions = 0;
+    (*vimage).restriction_names = NULL;
+    (*vimage).restriction_values = NULL;
     (*vimage).prev = NULL;
     /*  Do not make the first viewable image for this canvas viewable, else
 	the  viewimg_make_active  routine will not be able to detect a change
@@ -347,6 +370,107 @@ flag swap;
 				 1, 0, 0) );
     }
 }   /*  End Function viewimg_create_from_iarray  */
+
+/*PUBLIC_FUNCTION*/
+ViewableImage *viewimg_create_sequence (canvas, multi_desc, arr_desc, cube,
+					hdim, vdim, fdim, elem_index)
+/*  This routine will create a sequence of viewable image objects from a
+    3-dimensional cube of a Karma data structure. At a later time, this
+    sequence of viewable images may be made visible in any order.
+    This routine will not cause the canvas to be refreshed.
+    The world canvas onto which the viewable image may be drawn must be given
+    by  canvas  .
+    The  multi_array  descriptor which contains the Karma data structure must
+    be pointed to by  multi_desc  .The routine increments the attachment count
+    on the descriptor on successful completion.
+    The array descriptor must be pointed to by  arr_desc  .
+    The start of the cube data must be pointed to by  cube  .
+    The dimension index of the horizontal dimension must be given by  hdim  .
+    The dimension index of the vertical dimension must be given by  vdim  .
+    The dimension index of the frame dimension (dimension containing the
+    sequence) must be given by  fdim  .The number of sequences is the same as
+    the length of this dimension.
+    The element index of the data packets must be given by  elem_index  .
+    The routine may produce cache data which will vastly increase the speed of
+    subsequent operations on this data. Prior to process exit, a call MUST be
+    made to  viewimg_destroy  ,otherwise shared memory segments could remain
+    after the process exits.
+    An arbitrary number of dimension restrictions
+    The routine returns a pointer to a dynamically allocated array of viewable
+    image objects on success, else it returns NULL.
+*/
+KWorldCanvas canvas;
+multi_array *multi_desc;
+array_desc *arr_desc;
+char *cube;
+unsigned int hdim;
+unsigned int vdim;
+unsigned int fdim;
+unsigned int elem_index;
+{
+    CanvasHolder holder;
+    unsigned int dim_count;
+    unsigned int num_slices;
+    unsigned int slice_count;
+    unsigned int slice_stride;
+    ViewableImage *vimages;
+    static char function_name[] = "viewimg_create_sequence";
+
+    if (arr_desc == NULL)
+    {
+	(void) fprintf (stderr, "NULL array descriptor pointer passed\n");
+	a_prog_bug (function_name);
+    }
+    if (cube == NULL)
+    {
+	(void) fprintf (stderr, "NULL slice pointer passed\n");
+	a_prog_bug (function_name);
+    }
+    /*  Sanity checks  */
+    if (fdim >= (*arr_desc).num_dimensions)
+    {
+	(void) fprintf (stderr,
+			"fdim: %u greater than number of dimensions: %u\n",
+			fdim, (*arr_desc).num_dimensions);
+	a_prog_bug (function_name);
+    }
+    if ( (*arr_desc).num_levels > 0 )
+    {
+	(void) fprintf (stderr, "Tiling not supported.\n");
+	return (NULL);
+    }
+    num_slices = (* (*arr_desc).dimensions[fdim] ).length;
+    if ( ( vimages = (ViewableImage *) m_alloc (sizeof *vimages * num_slices) )
+	== NULL )
+    {
+	m_error_notify (function_name, "array of viewable images");
+	return (NULL);
+    }
+    /*  Compute stride  */
+    slice_stride = ds_get_packet_size ( (*arr_desc).packet );
+    for (dim_count = (*arr_desc).num_dimensions - 1; dim_count > fdim;
+	 --dim_count)
+    {
+	slice_stride *= (* (*arr_desc).dimensions[dim_count] ).length;
+    }
+    for (slice_count = 0; slice_count < num_slices;
+	 ++slice_count, cube += slice_stride)
+    {
+	if ( ( vimages[slice_count] = viewimg_create (canvas, multi_desc,
+						      arr_desc, cube,
+						      hdim, vdim, elem_index) )
+	    == NULL )
+	{
+	    for (; slice_count > 0; --slice_count)
+	    {
+		viewimg_destroy (vimages[slice_count - 1]);
+	    }
+	    m_free ( (char *) vimages );
+	    return (NULL);
+	}
+    }
+    return (vimages);
+}   /*  End Function viewimg_create_sequence  */
 
 /*PUBLIC_FUNCTION*/
 flag viewimg_make_active (vimage)
@@ -556,7 +680,7 @@ void viewimg_register_position_event_func (canvas, position_func, f_info)
 	The arbitrary event code is given by  event_code  .
 	The arbitrary event information is pointed to by  e_info  .
 	The arbitrary function information pointer is pointed to by  f_info  .
-	The routine returns TRUE if the event was consumed, else it return
+	The routine returns TRUE if the event was consumed, else it returns
 	FALSE indicating that the event is still to be processed.
     *
     ViewableImage vimage;
@@ -733,11 +857,11 @@ flag alloc;
     first_canvas_holder = canvas_holder;
     canvas_register_refresh_func (canvas, worldcanvas_refresh_func,
 				  (void *) canvas_holder);
-    
     canvas_register_size_control_func (canvas, worldcanvas_size_control_func,
 				       (void *) canvas_holder);
     canvas_register_position_event_func (canvas, worldcanvas_position_func,
 					 (void *) canvas_holder);
+    canvas_register_convert_func (canvas, coord_convert_func, canvas_holder);
     return (canvas_holder);
 }   /*  End Function get_canvas_holder  */
 
@@ -1130,7 +1254,7 @@ static flag worldcanvas_position_func (canvas, x, y, event_code, e_info,f_info)
     The arbitrary event code is given by  event_code  .
     The arbitrary event information is pointed to by  e_info  .
     The arbitrary function information pointer is pointed to by  f_info  .
-    The routine returns TRUE if the event was consumed, else it return
+    The routine returns TRUE if the event was consumed, else it returns
     FALSE indicating that the event is still to be processed.
 */
 KWorldCanvas canvas;
@@ -1284,3 +1408,154 @@ flag int_y;
     (void) fprintf (stderr, "Non-integral zooming not supported yet\n");
     a_prog_bug (function_name);
 }   /*  End Function aspect_zoom  */
+
+static flag coord_convert_func (canvas, win_scale, px, py, wx, wy, to_world,
+				info)
+/*  This routine will modify the window scaling information for a world
+    canvas.
+    The canvas is given by  canvas  .
+    The window scaling information is pointed to by  win_scale  .The data
+    herein may be modified.
+    The horizontal pixel co-ordinate storage must be pointed to by  px  .
+    The vertical pixel co-ordinate storage must be pointed to by  py  .
+    The horizontal world co-ordinate storage must be pointed to by  wx  .
+    The vertical world co-ordinate storage must be pointed to by  wy  .
+    If the value of  to_world  is TRUE, then a pixel to world co-ordinate
+    transform is required, else a world to pixel co-ordinate transform is
+    required.
+    The arbitrary canvas information pointer is pointed to by  info  .
+    The routine should return TRUE if the conversion was completed,
+    else it returns FALSE indicating that the default conversions should be
+    used.
+*/
+KWorldCanvas canvas;
+struct win_scale_type *win_scale;
+int *px;
+int *py;
+double *wx;
+double *wy;
+flag to_world;
+void **info;
+{
+    CanvasHolder holder;
+    ViewableImage vimage;
+    int x_pix, y_pix;
+    int coord_num0, coord_num1;
+    double coord0, coord1;
+    double world_x, world_y;
+    array_desc *arr_desc;
+    packet_desc *pack_desc;
+    dim_desc *hdim;
+    dim_desc *vdim;
+    static char function_name[] = "coord_convert_func";
+
+    if ( (holder = (CanvasHolder) *info) == NULL )
+    {
+	(void) fprintf (stderr, "NULL canvas holder\n");
+	a_prog_bug (function_name);
+    }
+    if ( (*holder).magic_number != HOLDER_MAGIC_NUMBER )
+    {
+	(void) fprintf (stderr, "Invalid canvas holder object\n");
+	a_prog_bug (function_name);
+    }
+    if (canvas != (*holder).canvas)
+    {
+	(void) fprintf (stderr, "Different canvas in canvas holder object\n");
+	a_prog_bug (function_name);
+    }
+    if ( (vimage = (*holder).active_image) == NULL ) return (FALSE);
+    arr_desc = (*vimage).arr_desc;
+    pack_desc = (*arr_desc).packet;
+    hdim = (*arr_desc).dimensions[(*vimage).hdim];
+    vdim = (*arr_desc).dimensions[(*vimage).vdim];
+    if (to_world)
+    {
+	/*  Convert from pixel to world co-ordinates  */
+	x_pix = *px - (*win_scale).x_offset;
+	y_pix = *py - (*win_scale).y_offset;
+	y_pix = (*win_scale).y_pixels - y_pix - 1;
+	/*  Removed offsets and flipped vertical  */
+	/*  Compute x co-ordinate  */
+	coord_num0 = ds_get_coord_num (hdim, (*win_scale).x_min,
+				       SEARCH_BIAS_CLOSEST);
+	coord0 = ds_get_coordinate (hdim, coord_num0);
+	coord_num1 = ds_get_coord_num (hdim, (*win_scale).x_max,
+				       SEARCH_BIAS_CLOSEST);
+	if (coord_num1 + 1 < (*hdim).length)
+	{
+	    coord1 = ds_get_coordinate (hdim, coord_num1 + 1);
+	}
+	else
+	{
+	    coord1 = ds_get_coordinate (hdim, coord_num1);
+	    coord1 += (coord1 - coord0) / (coord_num1 - coord_num0);
+	}
+	*wx = (coord1 - coord0) * (double) x_pix;
+	*wx /= (double) ( (*win_scale).x_pixels );
+	*wx += coord0;
+	*wx += (coord1 - coord0) / (double) (coord_num1 - coord_num0) / 1000.0;
+	/*  Compute y co-ordinate  */
+	coord_num0 = ds_get_coord_num (vdim, (*win_scale).y_min,
+				       SEARCH_BIAS_CLOSEST);
+	coord0 = ds_get_coordinate (vdim, coord_num0);
+	coord_num1 = ds_get_coord_num (vdim, (*win_scale).y_max,
+				       SEARCH_BIAS_CLOSEST);
+	if (coord_num1 + 1 < (*vdim).length)
+	{
+	    coord1 = ds_get_coordinate (vdim, coord_num1 + 1);
+	}
+	else
+	{
+	    coord1 = ds_get_coordinate (vdim, coord_num1);
+	    coord1 += (coord1 - coord0) / (coord_num1 - coord_num0);
+	}
+	*wy = (coord1 - coord0) * (double) y_pix;
+	*wy /= (double) ( (*win_scale).y_pixels );
+	*wy += (coord1 - coord0) / (double) (coord_num1 - coord_num0) / 1000.0;
+	*wy += coord0;
+	return (TRUE);
+    }
+    /*  Convert from world to pixel co-ordinates  */
+    /*  Compute x co-ordinate  */
+    coord_num0 = ds_get_coord_num (hdim, (*win_scale).x_min,
+				   SEARCH_BIAS_CLOSEST);
+    coord0 = ds_get_coordinate (hdim, coord_num0);
+    coord_num1 = ds_get_coord_num (hdim, (*win_scale).x_max,
+				   SEARCH_BIAS_CLOSEST);
+    if (coord_num1 + 1 < (*hdim).length)
+    {
+	coord1 = ds_get_coordinate (hdim, coord_num1 + 1);
+    }
+    else
+    {
+	coord1 = ds_get_coordinate (hdim, coord_num1);
+	coord1 += (coord1 - coord0) / (coord_num1 - coord_num0);
+    }
+    world_x = (*wx - coord0) * (double) ( (*win_scale).x_pixels );
+    world_x /= coord1 - coord0;
+    world_x += 0.01;
+    *px = (int) world_x + (*win_scale).x_offset;
+    /*  Compute y co-ordinate  */
+    coord_num0 = ds_get_coord_num (vdim, (*win_scale).y_min,
+				   SEARCH_BIAS_CLOSEST);
+    coord0 = ds_get_coordinate (vdim, coord_num0);
+    coord_num1 = ds_get_coord_num (vdim, (*win_scale).y_max,
+				   SEARCH_BIAS_CLOSEST);
+    if (coord_num1 + 1 < (*vdim).length)
+    {
+	coord1 = ds_get_coordinate (vdim, coord_num1 + 1);
+    }
+    else
+    {
+	coord1 = ds_get_coordinate (vdim, coord_num1);
+	coord1 += (coord1 - coord0) / (coord_num1 - coord_num0);
+    }
+    world_y = (*wy - coord0) * (double) ( (*win_scale).y_pixels );
+    world_y /= coord1 - coord0;
+    world_y += 0.01;
+    y_pix = (int) (world_y + 0.01);
+    /*  Flip vertical  */
+    *py = (*win_scale).y_offset + (*win_scale).y_pixels - 1 - y_pix;
+    return (TRUE);
+}   /*  End Function coord_convert_func  */

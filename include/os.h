@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   20-MAY-1992
 
-    Last updated by Richard Gooch   1-SEP-1993
+    Last updated by Richard Gooch   23-NOV-1993
 
 
 */
@@ -272,7 +272,7 @@
 #define HAS_ATEXIT
 #define HAS_INTERNATIONALISATION
 #define HAS_ENVIRON
-#define HAS_MMAP
+/*#define HAS_MMAP  Ultrix mmap(2) does not seem to support regular files!  */
 #endif
 
 /*  IBM PC with 80386 processor running in full, 32 bit 386 mode under

@@ -87,3 +87,7 @@ Connection connection;
 {
     return ( (char *) 0 );
 }
+void conn_register_cm_quiescent_func (func)
+void (*func) ();
+{
+}

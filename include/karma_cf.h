@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   23-FEB-1993
 
-    Last updated by Richard Gooch   2-MAR-1993
+    Last updated by Richard Gooch   22-NOV-1993
 
 */
 
@@ -117,6 +117,66 @@ EXTERN_FUNCTION (void cf_velocity_compensating_tones,
 		  unsigned int stride,
 		  double x, double y, void *var_param) );
 EXTERN_FUNCTION (void cf_compressed_colourmap_3r2g2b,
+		 (unsigned int num_cells, unsigned short *reds,
+		  unsigned short *greens, unsigned short *blues,
+		  unsigned int stride,
+		  double x, double y, void *var_param) );
+EXTERN_FUNCTION (void cf_background,
+		 (unsigned int num_cells, unsigned short *reds,
+		  unsigned short *greens, unsigned short *blues,
+		  unsigned int stride,
+		  double x, double y, void *var_param) );
+EXTERN_FUNCTION (void cf_heat,
+		 (unsigned int num_cells, unsigned short *reds,
+		  unsigned short *greens, unsigned short *blues,
+		  unsigned int stride,
+		  double x, double y, void *var_param) );
+EXTERN_FUNCTION (void cf_isophot,
+		 (unsigned int num_cells, unsigned short *reds,
+		  unsigned short *greens, unsigned short *blues,
+		  unsigned int stride,
+		  double x, double y, void *var_param) );
+EXTERN_FUNCTION (void cf_mono,
+		 (unsigned int num_cells, unsigned short *reds,
+		  unsigned short *greens, unsigned short *blues,
+		  unsigned int stride,
+		  double x, double y, void *var_param) );
+EXTERN_FUNCTION (void cf_mousse,
+		 (unsigned int num_cells, unsigned short *reds,
+		  unsigned short *greens, unsigned short *blues,
+		  unsigned int stride,
+		  double x, double y, void *var_param) );
+EXTERN_FUNCTION (void cf_rainbow,
+		 (unsigned int num_cells, unsigned short *reds,
+		  unsigned short *greens, unsigned short *blues,
+		  unsigned int stride,
+		  double x, double y, void *var_param) );
+EXTERN_FUNCTION (void cf_random,
+		 (unsigned int num_cells, unsigned short *reds,
+		  unsigned short *greens, unsigned short *blues,
+		  unsigned int stride,
+		  double x, double y, void *var_param) );
+EXTERN_FUNCTION (void cf_rgb,
+		 (unsigned int num_cells, unsigned short *reds,
+		  unsigned short *greens, unsigned short *blues,
+		  unsigned int stride,
+		  double x, double y, void *var_param) );
+EXTERN_FUNCTION (void cf_smooth,
+		 (unsigned int num_cells, unsigned short *reds,
+		  unsigned short *greens, unsigned short *blues,
+		  unsigned int stride,
+		  double x, double y, void *var_param) );
+EXTERN_FUNCTION (void cf_staircase,
+		 (unsigned int num_cells, unsigned short *reds,
+		  unsigned short *greens, unsigned short *blues,
+		  unsigned int stride,
+		  double x, double y, void *var_param) );
+EXTERN_FUNCTION (void cf_ronekers,
+		 (unsigned int num_cells, unsigned short *reds,
+		  unsigned short *greens, unsigned short *blues,
+		  unsigned int stride,
+		  double x, double y, void *var_param) );
+EXTERN_FUNCTION (void cf_mirp,
 		 (unsigned int num_cells, unsigned short *reds,
 		  unsigned short *greens, unsigned short *blues,
 		  unsigned int stride,

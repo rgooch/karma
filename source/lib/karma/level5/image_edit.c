@@ -47,8 +47,11 @@
     Updated by      Richard Gooch   27-AUG-1993: Added some howto hints for
   iedit_create_desc  and created  KImageEditList  class.
 
-    Last updated by Richard Gooch   31-AUG-1993: Declared some functions meant
+    Updated by      Richard Gooch   31-AUG-1993: Declared some functions meant
   to be private as such.
+
+    Last updated by Richard Gooch   6-OCT-1993: Fixed bug in
+  iedit_add_instruction  when a slave adds an instruction.
 
 
 */
@@ -482,8 +485,6 @@ double intensity[2];
 	/*  Just send it to the master  */
 	dsrw_write_packet ( (*ilist).master, instruction_desc,
 			   (*instruction).data );
-	ds_dealloc_data (instruction_desc, (*instruction).data);
-	m_free ( (char *) instruction );
 	if ( (instruction_code != EDIT_APPLY_INSTRUCTIONS) &&
 	    (instruction_code != EDIT_UNDO_INSTRUCTIONS) &&
 	    ( (*ilist).process_add != NULL ) )
@@ -491,6 +492,8 @@ double intensity[2];
 	    /*  Call registered callback  */
 	    (* (*ilist).process_add ) (ilist, instruction, &(*ilist).info);
 	}
+	ds_dealloc_data (instruction_desc, (*instruction).data);
+	m_free ( (char *) instruction );
 	return ( ch_flush ( (*ilist).master ) );
     }
     /*  Master or standalone  */

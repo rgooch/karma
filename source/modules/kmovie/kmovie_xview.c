@@ -32,7 +32,10 @@
 
     Written by      Richard Gooch   8-SEP-1993: Copied from  kview_2d_xview.c
 
-    Last updated by Richard Gooch   25-SEP-1993
+    Updated by      Richard Gooch   25-SEP-1993
+
+    Last updated by Richard Gooch   19-NOV-1993: Made use of
+  viewimg_create_sequence  .
 
 
 */
@@ -92,7 +95,6 @@
 #define MAX_ANIMATE_INTERVAL 10000
 #define COLOUR_INTENSITY_RANGE 1000
 #define NUM_COLOURS (unsigned int) 200
-#define MAX_FRAMES (unsigned int) 1024
 
 #define CMAP_CONNECTION_CLIENT (Notify_client) 50
 #define ANIMATE_TIMER_CLIENT (Notify_client) 51
@@ -197,7 +199,7 @@ KWorldCanvas image_worldcanvas = NULL;
 GC image_gc = NULL;
 GC crosshair_gc = NULL;
 static multi_array *cube_desc = NULL;
-static ViewableImage frames[MAX_FRAMES];
+static ViewableImage *frames;
 static unsigned int num_frames = 0;
 static unsigned long special_colours[NUM_SPECIAL_COLOURS];
 
@@ -871,7 +873,7 @@ Event *event;
     unsigned int count;
     extern unsigned int num_frames;
     extern Frame base_frame;
-    extern ViewableImage frames[MAX_FRAMES];
+    extern ViewableImage *frames;
     static char function_name[] = "quit";
 
     (void) fprintf (stderr, "Removing shared memory segments...");
@@ -879,9 +881,9 @@ Event *event;
     for (count = 0; count < num_frames; ++count)
     {
 	viewimg_destroy (frames[count]);
-	frames[count] = NULL;
     }
     num_frames = 0;
+    m_free ( (char *) frames );
     (void) fprintf (stderr, "\tremoved shared memory segments.\n");
     if (xv_destroy_safe (base_frame) != XV_OK)
     {
@@ -1752,10 +1754,7 @@ static flag load (arrayfile)
 char *arrayfile;
 {
     iarray cube;
-    unsigned int count, frame_count;
-    unsigned int num_data_frames;
-    unsigned int frame_bytes;
-    char *plane;
+    unsigned int count;
     multi_array *multi_desc;
     extern unsigned int num_frames;
     extern unsigned int frame_number;
@@ -1763,7 +1762,7 @@ char *arrayfile;
     extern Kcolourmap image_cmap;
     extern struct win_scale_type plotted_scale;
     extern multi_array *cube_desc;
-    extern ViewableImage frames[MAX_FRAMES];
+    extern ViewableImage *frames;
 
     /*  Read data  */
     if ( ( multi_desc = dsxfr_get_multi (arrayfile, FALSE,
@@ -1805,35 +1804,21 @@ char *arrayfile;
     for (count = 0; count < num_frames; ++count)
     {
 	viewimg_destroy (frames[count]);
-	frames[count] = NULL;
     }
     num_frames = 0;
+    m_free ( (char *) frames );
     /*  Create new ViewableImage objects  */
-    num_data_frames = iarray_dim_length (cube, 0);
-    frame_bytes = ds_get_packet_size ( (* (*cube).arr_desc ).packet );
-    frame_bytes *= iarray_dim_length (cube, 1) * iarray_dim_length (cube, 2);
-    plane = (*cube).data;
-    for (frame_count = 0; frame_count < num_data_frames;
-	 ++frame_count, plane += frame_bytes)
+    if ( ( frames = viewimg_create_sequence (image_worldcanvas,
+					     cube_desc,
+					     (*cube).arr_desc, (*cube).data,
+					     2, 1, 0, (*cube).elem_index) )
+	== NULL )
     {
-	if ( ( frames[frame_count] = viewimg_create (image_worldcanvas,
-						     cube_desc,
-						     (*cube).arr_desc, plane,
-						     2, 1,
-						     (*cube).elem_index) )
-	    == NULL )
-	{
-	    (void) fprintf (stderr, "Error creating ViewableImage\n");
-	    /*  Deallocate old ViewableImage objects  */
-	    for (count = 0; count < num_frames; ++count)
-	    {
-		viewimg_destroy (frames[count]);
-		frames[count] = NULL;
-	    }
-	    iarray_dealloc (cube);
-	    return (FALSE);
-	}
+	(void) fprintf (stderr, "Error creating ViewableImage sequence\n");
+	iarray_dealloc (cube);
+	return (FALSE);
     }
+    num_frames = iarray_dim_length (cube, 0);
     /*  Set intensity scale (since autoscaling is not on)  */
     if ( (*multi_desc).num_arrays > 1 )
     {
@@ -1863,7 +1848,6 @@ char *arrayfile;
     frame_number = 0;
     iarray_dealloc (cube);
     load_cmap (cube_desc);
-    num_frames = frame_count;
     return (TRUE);
 }   /*  End Function load  */
 
@@ -1888,7 +1872,7 @@ flag data_deallocated;
 {
     unsigned int count;
     extern unsigned int num_frames;
-    extern ViewableImage frames[MAX_FRAMES];
+    extern ViewableImage *frames;
 
     (void) fprintf (stderr, "conn close...\n");
     /*  Deallocate old ViewableImage objects  */
@@ -1898,6 +1882,7 @@ flag data_deallocated;
 	frames[count] = NULL;
     }
     num_frames = 0;
+    m_free ( (char *) frames );
     (void) fprintf (stderr, "Destroyed viewable images...\n");
 }   /*  End Function connection_closed  */
 
@@ -2003,7 +1988,7 @@ int which;
     char *command;
     extern unsigned int num_frames;
     extern unsigned int frame_number;
-    extern ViewableImage frames[MAX_FRAMES];
+    extern ViewableImage *frames;
     extern multi_array *cube_desc;
     extern Panel_item framegrab_item;
     static char function_name[] = "animate_timer_proc";
@@ -2088,7 +2073,7 @@ Event *event;
     char *command;
     extern unsigned int num_frames;
     extern unsigned int frame_number;
-    extern ViewableImage frames[MAX_FRAMES];
+    extern ViewableImage *frames;
     extern multi_array *cube_desc;
     extern Panel_item framegrab_item;
 
@@ -2123,7 +2108,7 @@ Event *event;
     char *command;
     extern unsigned int num_frames;
     extern unsigned int frame_number;
-    extern ViewableImage frames[MAX_FRAMES];
+    extern ViewableImage *frames;
     extern multi_array *cube_desc;
     extern Panel_item framegrab_item;
 

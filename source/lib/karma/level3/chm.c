@@ -49,8 +49,11 @@
     Updated by      Richard Gooch   24-JAN-1993: Disabled code which sets
   descriptor to send SIGIO, since it was not required.
 
-    Last updated by Richard Gooch   24-JUL-1993: Made use of new
+    Updated by      Richard Gooch   24-JUL-1993: Made use of new
   ch_test_for_io  routine.
+
+    Last updated by Richard Gooch   3-OCT-1993: Improved diagnostics in
+  read_channel  .
 
 
 */
@@ -575,7 +578,7 @@ struct managed_channel_type *entry;
 	if ( (*entry).input_func == NULL )
 	{
 	    (void) fprintf (stderr,
-			    "Input on asynchronous channel not being read\n");
+			    "Input on asynchronous channel but no callback\n");
 	    a_prog_bug (function_name);
 	}
 	return ( (* (*entry).input_func ) ( (*entry).channel,
@@ -584,7 +587,7 @@ struct managed_channel_type *entry;
     /*  Buffered connection  */
     if ( (*entry).input_func == NULL )
     {
-	(void) fprintf (stderr, "Input on channel not being read\n");
+	(void) fprintf (stderr, "Input on channel not being drained\n");
 	a_prog_bug (function_name);
     }
     while (bytes_readable > 0)

@@ -46,8 +46,14 @@
     Updated by      Richard Gooch   24-AUG-1993: Fixed bug  change_cmap_size
   which allocated oversized data structure when not all colours allocated.
 
-    Last updated by Richard Gooch   21-SEP-1993: Improved error message in
+    Updated by      Richard Gooch   21-SEP-1993: Improved error message in
   kcmap_change  when colourmap resize fails.
+
+    Updated by      Richard Gooch   12-NOV-1993: Added colourmap functions
+  submitted by Tom Oosterlo.
+
+    Last updated by Richard Gooch   22-NOV-1993: Added colourmap function
+  submitted by Jeanne Young.
 
 
 */
@@ -56,7 +62,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <strings.h>
+#include <string.h>
 #include <karma.h>
 #include <karma_conn.h>
 #include <karma_dsrw.h>
@@ -264,6 +270,7 @@ void (*location_func) ();
     kcmap_add_RGB_func ("Greyscale2", cf_greyscale2, 0, 0);
     kcmap_add_RGB_func ("Random Grey", cf_random_grey, 0, 0);
     kcmap_add_RGB_func ("Random Pseudocolour", cf_random_pseudocolour, 0, 0);
+    kcmap_add_RGB_func ("mirp", cf_mirp, 0, 0);
     kcmap_add_RGB_func ("Glynn Rogers1", cf_rainbow1, 0, 0);
     kcmap_add_RGB_func ("Glynn Rogers2", cf_rainbow2, 0, 0);
     kcmap_add_RGB_func ("Glynn Rogers3", cf_rainbow3, 0, 0);
@@ -272,6 +279,19 @@ void (*location_func) ();
 			  cf_velocity_compensating_tones, 0, 0);
     kcmap_add_RGB_func ("Compressed Colourmap 3R2G2B",
 			  cf_compressed_colourmap_3r2g2b, 128, 128);
+
+    kcmap_add_RGB_func ("Background", cf_background, 0, 0);
+    kcmap_add_RGB_func ("Heat",       cf_heat,       0, 0);
+    kcmap_add_RGB_func ("Isophot",    cf_isophot,    0, 0);
+    kcmap_add_RGB_func ("Mono",       cf_mono,       0, 0);
+    kcmap_add_RGB_func ("Mousse",     cf_mousse,     0, 0);
+    kcmap_add_RGB_func ("Rainbow",    cf_rainbow,    0, 0);
+    kcmap_add_RGB_func ("Random",     cf_random,     0, 0);
+    kcmap_add_RGB_func ("RGB",        cf_rgb,        0, 0);
+    kcmap_add_RGB_func ("Ronekers",   cf_ronekers,   0, 0);
+    kcmap_add_RGB_func ("Smooth",     cf_smooth,     0, 0);
+    kcmap_add_RGB_func ("Staircase",  cf_staircase,  0, 0);
+
     conn_register_server_protocol ("colourmap_indices", PROTOCOL_VERSION, 0,
 				   register_new_cmap_indices_slave,
 				   ( flag (*) () ) NULL, ( void (*) () ) NULL);

@@ -1,15 +1,13 @@
 #include <karma_viewimg.h>
 # 1 "" 
-flag viewimg_draw_edit_list (vimage, edit_list_desc, list_head)
+flag viewimg_draw_edit_list (vimage, ilist)
 ViewableImage vimage;
-packet_desc *edit_list_desc;
-list_header *list_head;
+KImageEditList ilist;
 {
     return ( (flag) 0 );
 }
-flag viewimg_draw_edit_object (vimage, edit_list_desc, object)
+flag viewimg_draw_edit_object (vimage, object)
 ViewableImage vimage;
-packet_desc *edit_list_desc;
 char *object;
 {
     return ( (flag) 0 );

@@ -36,6 +36,11 @@ members = ${addprefix ${library}(,${addsuffix ),${objects}}}
 .PHONY: all
 all:	$(shared_lib) $(shared_archive) clean
 
+.PHONY: so
+so:	$(shared_lib)
+	@echo "WARNING: shared archive not created"
+
+
 	export JUMP_DIR JUMP_LIB
 
 

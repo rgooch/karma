@@ -33,6 +33,7 @@ setenv KARMALIBPATH $KARMAVXMVXLIBPATH
 setenv KARMAINCLUDEPATH $KARMABASE/include
 setenv KDEPLIB_KARMA $KARMALIBPATH/libkarma.a
 
+setenv KARMA_CC "vxcc"
 setenv CC "vxcc"
 
 setenv OS_LIBS "-ltask"

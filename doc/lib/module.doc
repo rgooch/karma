@@ -55,3 +55,30 @@ int max_incoming;
 int max_outgoing;
 flag server;
 /*---------------------------------------------------------------------------*/
+
+void module_process_argvs (argc, argv, unknown_func)
+/*  This routine will process a shell command line, using the
+    panel_process_command_with_stack  routine.
+    The number of command line arguments must be given by  argc  .
+    The command line arguments must be pointed to by  argv  .These do not
+    include command used to execute the process ( cf. main() ).
+    If the command is not understood, then the command will be passed to the
+    function pointed to by  unknown_func  .
+    The interface to this function is given below:
+
+    flag unknown_func (cmd, fp)
+    *   This routine will process a command.
+        The command must be pointed to by  cmd  .
+	Output messages are directed to  fp  .
+	The routine returns TRUE if more commands should be processed,
+	else it returns FALSE, indicating that the "exit" command was entered.
+    *
+    char *cmd;
+    FILE *fp;
+
+    The routine returns nothing.
+*/
+int argc;
+char **argv;
+flag (*unknown_func) ();
+/*---------------------------------------------------------------------------*/

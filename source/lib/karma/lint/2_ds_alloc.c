@@ -82,6 +82,21 @@ char *data_name;
 {
     return ( (char *) 0 );
 }
+char *ds_easy_alloc_n_element_array (multi_desc, num_dim, lengths,
+				     minima, maxima, names,
+				     num_elements, data_types, data_names)
+multi_array **multi_desc;
+unsigned int num_dim;
+unsigned int *lengths;
+double *minima;
+double *maxima;
+char **names;
+unsigned int num_elements;
+unsigned int *data_types;
+char **data_names;
+{
+    return ( (char *) 0 );
+}
 flag ds_alloc_contiguous_list (list_desc, list_head, length, clear,array_alloc)
 packet_desc *list_desc;
 list_header *list_head;

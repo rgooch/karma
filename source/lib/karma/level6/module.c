@@ -64,8 +64,13 @@
   if controlled by CM Tool and module has a service number to if controlled by
   CM Tool and  server  parameter is TRUE.
 
-    Last updated by Richard Gooch   19-SEP-1993: Added quoting of command line
+    Updated by      Richard Gooch   19-SEP-1993: Added quoting of command line
   parameters which have spaces.
+
+    Updated by      Richard Gooch   5-OCT-1993: Made use of  panel_  package.
+
+    Last updated by Richard Gooch   16-NOV-1993: Also made use of  panel_
+  package for "command_line" connection commands.
 
 
 */
@@ -83,6 +88,7 @@
 #include <karma.h>
 #include <karma_module.h>
 #include <karma_dsxfr.h>
+#include <karma_panel.h>
 #include <karma_conn.h>
 #include <karma_arln.h>
 #include <karma_chm.h>
@@ -95,10 +101,11 @@
 #define WALL_CLOCK_TIME_DETECT 60
 #define CPUTIME_DETECT 2
 
-/*  Local functions  */
+/*  Private functions  */
 static flag process_one_line (/* line, decode_func */);
-static flag read_a_line (/* line, length, prompt */);
 static flag command_read_func (/* connection, info */);
+static flag internal_decode_func (/* line, fp */);
+
 
 /*  Private data  */
 static flag (*decode_function) () = NULL;
@@ -208,7 +215,7 @@ flag server;
     if (conn_controlled_by_cm_tool () != TRUE)
     {
 	/*  Read in defaults  */
-	hi_read (module_name, decode_func);
+	hi_read (module_name, internal_decode_func);
     }
     if (s_check_for_int () == TRUE)
     {
@@ -218,29 +225,9 @@ flag server;
     if (argc > 1)
     {
 	/*  Concatenate command line parameters into a single line  */
-	(void) strcpy (line, argv[1]);
-	for (arg_count = 2; arg_count < argc; ++arg_count)
-	{
-	    if (strchr (argv[arg_count], ' ') == NULL)
-	    {
-		/*  No spaces in parameter: raw copy  */
-		(void) strcat (line, " ");
-		(void) strcat (line, argv[arg_count]);
-	    }
-	    else
-	    {
-		/*  Spaces: add some quotes  */
-		(void) strcat (line, " \"");
-		(void) strcat (line, argv[arg_count]);
-		(void) strcat (line, "\"");
-	    }
-	}
-	if (process_one_line (line, decode_func) != TRUE)
-	{
-	    exit (RV_UNDEF_ERROR);
-	}
+	module_process_argvs (argc - 1, argv + 1, decode_func);
 	/*  Save defaults  */
-	hi_write (module_name, decode_func);
+	hi_write (module_name, internal_decode_func);
 	return;
     }
     /*  Prompt user for commands  */
@@ -250,19 +237,132 @@ flag server;
     (void) strcpy (prompt, module_name);
     (void) strcat (prompt, "> ");
     /*  Read lines and processes until eof on input  */
-    while ( read_a_line (line, COMMAND_LINE_LENGTH, prompt) )
+    while ( arln_read_from_stdin (line, COMMAND_LINE_LENGTH, prompt) &&
+	   process_one_line (line, decode_func) );
+    if (conn_controlled_by_cm_tool () != TRUE)
     {
-	if (process_one_line (line, decode_func) != TRUE)
+	/*  Save defaults  */
+	hi_write (module_name, internal_decode_func);
+    }
+}   /*  End Function module_run   */
+
+/*PUBLIC_FUNCTION*/
+void module_process_argvs (argc, argv, unknown_func)
+/*  This routine will process a shell command line, using the
+    panel_process_command_with_stack  routine.
+    The number of command line arguments must be given by  argc  .
+    The command line arguments must be pointed to by  argv  .These do not
+    include command used to execute the process ( cf. main() ).
+    If the command is not understood, then the command will be passed to the
+    function pointed to by  unknown_func  .
+    The interface to this function is given below:
+
+    flag unknown_func (cmd, fp)
+    *   This routine will process a command.
+        The command must be pointed to by  cmd  .
+	Output messages are directed to  fp  .
+	The routine returns TRUE if more commands should be processed,
+	else it returns FALSE, indicating that the "exit" command was entered.
+    *
+    char *cmd;
+    FILE *fp;
+
+    The routine returns nothing.
+*/
+int argc;
+char **argv;
+flag (*unknown_func) ();
+{
+    int line_length, arg_len;
+    int arg_count;
+    flag more_parameters;
+    char *arg;
+    char line[COMMAND_LINE_LENGTH + 1];
+    static char function_name[] = "module_process_argvs";
+
+    if (argc < 1) return;
+    /*  Concatenate command line parameters into a single line  */
+    line[0] = '\0';
+    line_length = 0;
+    for (arg_count = 0, more_parameters = TRUE; arg_count < argc; ++arg_count)
+    {
+	arg = argv[arg_count];
+	if (strcmp (arg, "-") == 0)
+	{
+	    /*  End of parameters: will need to grab the lot from now on  */
+	    more_parameters = FALSE;
+	    if (line_length > 0)
+	    {
+		/*  Send off the last parameter  */
+		if (process_one_line (line, unknown_func) != TRUE)
+		{
+		    exit (RV_UNDEF_ERROR);
+		}
+		(void) strcpy (line, "- ");
+		line_length = 2;
+	    }
+	    continue;
+	}
+	if ( (arg[0] == '-') && more_parameters )
+	{
+	    /*  Start of a new parameter  */
+	    if (line_length > 0)
+	    {
+		/*  Send off the last parameter  */
+		if (process_one_line (line, unknown_func) != TRUE)
+		{
+		    exit (RV_UNDEF_ERROR);
+		}
+		line[0] = '\0';
+		line_length = 0;
+	    }
+	    ++arg;
+	}
+	else
+	{
+	    /*  Not a parameter  */
+	    if (line_length == 0)
+	    {
+		/*  Virgin line  */
+		(void) strcpy (line, "- ");
+		line_length = 2;
+	    }
+	}
+	arg_len = strlen (arg);
+	if (strchr (argv[arg_count], ' ') == NULL)
+	{
+	    /*  No spaces in parameter: raw copy  */
+	    if (line_length + arg_len + 1 >= COMMAND_LINE_LENGTH)
+	    {
+		(void) fprintf (stderr, "Command line too long\n");
+		return;
+	    }
+	    (void) strcat (line, " ");
+	    (void) strcat (line, arg);
+	    line_length += arg_len + 1;
+	}
+	else
+	{
+	    /*  Spaces: add some quotes  */
+	    if (line_length + arg_len + 3 >= COMMAND_LINE_LENGTH)
+	    {
+		(void) fprintf (stderr, "Command line too long\n");
+		return;
+	    }
+	    (void) strcat (line, " \"");
+	    (void) strcat (line, argv[arg_count]);
+	    (void) strcat (line, "\"");
+	    line_length += arg_len + 3;
+	}
+    }
+    if (line_length > 0)
+    {
+	if (process_one_line (line, unknown_func) != TRUE)
 	{
 	    exit (RV_UNDEF_ERROR);
 	}
     }
-    if (conn_controlled_by_cm_tool () != TRUE)
-    {
-	/*  Save defaults  */
-	hi_write (module_name, decode_func);
-    }
-}   /*  End Function module_run   */
+}   /*  End Function module_process_argvs  */
 
 
 /*  Private functions follow  */
@@ -300,7 +400,10 @@ flag (*decode_func) ();
 	(void) exit (RV_SYS_ERROR);
     }
 #endif  /*  HAS_GETRUSAGE  */
-    (*decode_func) (line, stderr);
+    if (panel_process_command_with_stack (line, decode_func, stderr) != TRUE)
+    {
+	return (FALSE);
+    }
     if (s_check_for_int () == TRUE)
     {
 	(void) fprintf (stderr, "control_c abort\n");
@@ -333,22 +436,6 @@ flag (*decode_func) ();
     return (TRUE);
 }   /*  End Function process_one_line  */
 
-static flag read_a_line (line, length, prompt)
-char *line;
-unsigned int length;
-char *prompt;
-{
-    if (arln_read_from_stdin (line, length, prompt) == FALSE)
-    {
-	return (FALSE);
-    }
-    if (*line == '\0')
-    {
-	return (FALSE);
-    }
-    return (TRUE);
-}   /*  End Function read_a_line  */
-
 static flag command_read_func (connection, info)
 /*  This routine will read in data from the connection given by  connection
     and will write any appropriate information to the pointer pointed to by
@@ -372,5 +459,12 @@ void **info;
 			sys_errlist[errno]);
 	return (FALSE);
     }
-    return ( (*decode_function) (buffer, stderr) );
+    return ( process_one_line (buffer, decode_function) );
 }   /*  End Function command_read_func  */
+
+static flag internal_decode_func (line, fp)
+char *line;
+FILE *fp;
+{
+    return ( panel_process_command_with_stack (line, decode_function, fp) );
+}

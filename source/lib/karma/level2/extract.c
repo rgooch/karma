@@ -543,7 +543,8 @@ char **rest;
     }
     if (quote != '\0')
     {
-	(void) fprintf (stderr, "\nWarning: closing quote not found");
+	(void) fprintf (stderr, "Warning: closing quote not found\n");
+	return (NULL);
     }
     if (rest != NULL)
     {

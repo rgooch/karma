@@ -1,0 +1,344 @@
+This file is intended as a "getting-started" guide to image editing
+in Karma. It should be used in conjuction with the library reference
+documentation, which documents all the functions available for
+communicating.
+
+
+
+Purpose:
+--------
+
+The image editing support is designed to facilitate the development of
+painting and image editing modules (applications). A number of simple
+edit objects (instructions) are already supported (such as filled
+ellipses and filled polygons). As the need arises, more edit
+instructions may be added to the system. Since the image editing
+support is integrated with the image display support, it is relatively
+easy to refresh display windows with lists of edit instructions, or to
+modify 2-dimensional arrays with the same edit instructions.
+Also, because of the integration with the network support, when edit
+instructions are added to a list, they are automatically forwarded to
+communicating modules as well. This can make the implementation of a
+shared canvas (shared paint programme) trivial. No extra code is
+required to take advantage of the networking support.
+An example commercial application developed with the image editing and
+image display support is a shared image editing application. In this
+application, all users are able to view and edit the same image with a
+defined set of brushstrokes, dabs, polygons, etc. All users see the
+same image with the same set of edits. This application has been
+tested over a slow Internet (kBytes/second transfer rates, 100s of
+millisecond delay times) and found to have good interactive
+performance despite the slow network link. This is due to the way edit
+instructions are distributed and displayed.
+The image edit support provided in the Karma library can save
+thousands of lines of messy, intricate code.
+
+
+
+Related documents:
+------------------
+
+The documentation on "Intelligent Arrays", communications support,
+colourmap support and image display support are highly recommended.
+
+
+
+Architecture:
+-------------
+
+The image editing support in Karma is built on a layered approach, in
+a similar way to the communications support. The image editing support
+requires linking of the core Karma library and the Karma graphics
+library.
+The various packages in the Karma library which provide communications
+support are listed below, grouped by layer.
+
+
+  Level 2
+  =======
+
+The starting point for image editing support in Karma is based on the
+generic Karma data structure. This data structure allows one (amongst
+many other things) to build up a heirarchy of linked lists. The image
+editing instructions are implemented as linked lists of co-ordinates
+with an instruction header. This is completely representable by the
+Karma data structure. Using the Karma data structure allows image
+editing instructions to be easily transferred over communication
+links. The Karma data structure is provided by the  ds_  package.
+
+
+  Level 4
+  =======
+
+The network support for image editing utilises the  conn_
+communications package. This means that connection management
+facilities are applicable to the image editing support.
+
+
+  Level 5
+  =======
+
+The basic image editing support is provided by the  iedit_  package.
+This package defines a number of image editing instructions, as well
+as the support for creating instruction lists and adding and removing
+instructions. When an instruction list is created, callback routines
+may be registered for when instructions are added, removed and when
+edit instructions are to be "applied" (ie. when the image data should
+be modified by the instructions, rather than just displayed in a
+window). Routines are supplied to add, remove and apply instructions.
+The  iedit_  package registers support for the comminication
+protocol:  "2D_edit"  for the sharing of image edit instructions.
+When image edit instructions are added, removed or applied to an
+instruction list, as well as being drawn locally, they are transferred
+to the "2D_edit" server (if the module is a "2D_edit" client), or they
+are transferred to all "2D_edit" clients (if the module is a
+"2D_edit" server). The server (or master) acts as a synchronisation
+and redistribution point for instructions.
+
+
+  Level 6
+  =======
+
+The  canvas_  package provides routines to draw image edit
+instructions and lists onto a world canvas. This is the means by which
+edit instructions are displayed.
+
+
+  Level 7
+  =======
+
+The  viewimg_  package provides routines to draw image edit
+instructions and lists onto a viewable image. This is the means by
+which edit instructions are applied to data.
+
+
+
+Tutorial:
+---------
+
+A complete image display and editing application would require too
+much space to show in this document, however, a few extracted code
+samples should suffice to indicate how to manipulate image edit
+instruction lists. The code for creating canvases is not shown here:
+the documentation on image display support should be referred to.
+
+
+/*----------------------------------------------------------*/
+/*  Image edit sample code                                  */
+/*----------------------------------------------------------*/
+
+#include <karma.h>
+#include <karma_viewimg.h>
+#include <k_event_codes.h>
+
+
+/*  Private functions  */
+static void list_add_func (/* ilist, instruction, info */);
+static void list_loss_func (/* ilist, info */);
+static void list_apply_func (/* ilist, info */);
+
+
+/*  External functions  */
+extern unsigned int get_edit_brushwidth ();
+
+
+void initialise_edit_list ()
+/*  This routine will initialise the image editing instruction list.
+    The routine returns nothing.
+*/
+{
+    extern KImageEditList edit_list;
+    extern KWorldCanvas image_worldcanvas;
+    static char function_name[] = "initialise_edit_list";
+
+    if (edit_list == NULL)
+    {
+	edit_list = iedit_create_list (list_add_func, list_loss_func,
+				       list_apply_func,
+				       (void *) image_worldcanvas);
+    }
+}   /*  End Function initialise_edit_list  */
+
+/*  This routine will generate edit instructions from mouse events. The routine
+    implements brushstrokes  */
+
+flag edit_event_consumer (canvas, x, y, event_code, e_info, f_info)
+/*  This routine will register a mouse event for editing. This routine should
+    be registered with a world canvas using the
+    canvas_register_position_event_func  routine.
+    This routine is a position event consumer for a world canvas.
+    The canvas is given by  canvas  .
+    The horizontal world co-ordinate of the event will be given by  x  .
+    The vertical world co-ordinate of the event will be given by  y  .
+    The arbitrary event code is given by  event_code  .
+    The arbitrary event information is pointed to by  e_info  .
+    The arbitrary function information pointer is pointed to by  f_info  .
+    The routine returns TRUE if the event was consumed, else it return
+    FALSE indicating that the event is still to be processed.
+*/
+KWorldCanvas canvas;
+double x;
+double y;
+unsigned int event_code;
+void *e_info;
+void **f_info;
+{
+    edit_coord brushradius;
+    int ix, iy;
+    unsigned int brush_pixels;
+    double intensity[2];
+    edit_coord *coords;
+    extern KImageEditList edit_list;
+    static double prev_x = TOOBIG;
+    static double prev_y = TOOBIG;
+
+    if ( (event_code != K_CANVAS_EVENT_LEFT_MOUSE_CLICK) &&
+	(event_code != K_CANVAS_EVENT_LEFT_MOUSE_DRAG) ) return (FALSE);
+    if ( (x == prev_x) && (y == prev_y) ) return (TRUE);
+    /*  Get brush width (in pixels)  */
+    brush_pixels = get_edit_brushwidth ();
+    if (brush_pixels < 1)
+    {
+	(void) fprintf (stderr, "Brush width must be at least 1 pixel\n");
+	return (TRUE);
+    }
+    coords = iedit_alloc_edit_coords (2);
+    coords[0].abscissa = x;
+    coords[0].ordinate = y;
+    /*  Get pixel co-ordinates  */
+    (void) canvas_convert_from_canvas_coord (canvas, x, y, &ix, &iy);
+    /*  Add brush width and convert back to world co-ordinates  */
+    (void) canvas_convert_to_canvas_coord (canvas,
+					   ix + brush_pixels,
+					   iy - brush_pixels,
+					   &brushradius.abscissa,
+					   &brushradius.ordinate);
+    brushradius.abscissa = (brushradius.abscissa - x) / 2.0;
+    brushradius.ordinate = (brushradius.ordinate - y) / 2.0;
+    coords[1].abscissa = brushradius.abscissa;
+    coords[1].ordinate = brushradius.ordinate;
+    intensity[0] = 50.0;
+    (void) iedit_add_instruction (edit_list, EDIT_INSTRUCTION_DAB,
+				  coords, 2, intensity);
+    if (event_code == K_CANVAS_EVENT_LEFT_MOUSE_DRAG)
+    {
+	/*  Add a Stroke  */
+	(void) canvas_create_stroke_instruction (canvas, prev_x, prev_y,
+						 x, y, brush_pixels,
+						 intensity, edit_list);
+    }
+    prev_x = x;
+    prev_y = y;
+    return (TRUE);
+}   /*  End Function edit_event_consumer  */
+
+void undo_edits (num_to_undo)
+/*  This routine will undo a number of edit objects.
+    The number of edit objects to undo must be given by  num_to_undo  .If this
+    is 0, then the routine will undo all edit objects.
+    The routine returns nothing.
+*/
+unsigned int num_to_undo;
+{
+    extern KImageEditList edit_list;
+
+    iedit_remove_instructions (edit_list, num_to_undo);
+}   /*  End Function undo_edits  */
+
+void apply_edits ()
+/*  This routine will apply the editing instructions to the active viewable
+    image.
+    The routine returns nothing.
+*/
+{
+    extern KImageEditList edit_list;
+
+    (void) iedit_apply_instructions (edit_list);
+}   /*  End Function apply_edits  */
+
+static void list_add_func (ilist, instruction, info)
+/*  This routine will process a single edit instruction which has been
+    added to a managed image edit instruction list.
+    The managed image edit instruction list will be given by  ilist  .
+    The edit instruction must be pointed to by  instruction  .
+    The arbitrary information pointer for the list will be pointed to by
+    info  .
+    The routine returns nothing.
+*/
+KImageEditList ilist;
+list_entry *instruction;
+void **info;
+{
+    KWorldCanvas canvas;
+
+    canvas = (KWorldCanvas) *info;
+    canvas_draw_edit_object (canvas, (*instruction).data);
+}   /*  End Function list_add_func  */
+
+static void list_loss_func (ilist, info)
+/*  This routine will process the loss of an edit instruction from a
+    managed image edit instruction list.
+    The managed image edit instruction list will be given by  ilist  .
+    The arbitrary information pointer for the list will be pointed to by
+    info  .
+    The routine returns nothing.
+*/
+KImageEditList ilist;
+void **info;
+{
+    KWorldCanvas canvas;
+
+    canvas = (KWorldCanvas) *info;
+    canvas_resize (canvas, NULL, FALSE);
+}   /*  End Function list_loss_func  */
+
+static void list_apply_func (ilist, info)
+/*  This routine will apply (commit) an edit list prior to the list being
+    cleared.
+    The managed image edit instruction list will be given by  ilist  .
+    The arbitrary information pointer for the list will be pointed to by
+    info  .
+    The routine returns nothing.
+*/
+KImageEditList ilist;
+void **info;
+{
+    ViewableImage vimage;
+    KWorldCanvas canvas;
+
+    canvas = (KWorldCanvas) *info;
+    if ( ( vimage = viewimg_get_active (canvas) ) == NULL ) return;
+    (void) viewimg_draw_edit_list (vimage, ilist);
+    viewimg_register_data_change (vimage);
+}   /*  End Function list_apply_func  */
+
+/*  This routine will redisplay edit instructions.  */
+
+void refresh_edit_objects (canvas, width, height, win_scale, cmap, cmap_resize,
+			   info)
+/*  This routine is a refresh event consumer for a world canvas. This routine
+    should be registered with a world canvas using the
+    canvas_register_refresh_func  routine.
+    The canvas is given by  canvas  .
+    The width of the canvas in pixels is given by  width  .
+    The height of the canvas in pixels is given by  height  .
+    The window scaling information is pointed to by  win_scale  .
+    The colourmap associated with the canvas is given by  cmap  .
+    If the refresh function was called as a result of a colourmap resize
+    the value of  cmap_resize  will be TRUE.
+    The arbitrary canvas information pointer is pointed to by  info  .
+    The routine returns nothing.
+*/
+KWorldCanvas canvas;
+int width;
+int height;
+struct win_scale_type *win_scale;
+Kcolourmap cmap;
+flag cmap_resize;
+void **info;
+{
+    extern KImageEditList edit_list;
+
+    if (edit_list == NULL) return;
+    canvas_draw_edit_list (canvas, edit_list);
+}   /*  End Function refresh_edit_objects  */

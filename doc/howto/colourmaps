@@ -1,0 +1,182 @@
+This file is intended as a "getting-started" guide to dynamic pseudo
+colourmap control in Karma. It should be used in conjuction with the
+library reference documentation, which documents all the functions
+available for communicating.
+
+
+
+Purpose:
+--------
+
+The dynamic pseudo colourmap control is intended to provide simple,
+elegant and device independent control of colourmaps. Integrated into
+the colourmap support is the ability to "share" colourmaps between
+graphics applications on the same screen and between different
+screens. For same-screen operation, this allows the user to
+dynamically change the colourmap in one window, and have that appear
+in another window at the same time. This is essential for image
+comparison. With different screen operation, two or more users may be
+viewing images on different consoles (perhaps across the planet), and
+yet when one user changes the image colourmap, the other user(s) sees
+this change as well. Any combination of same-screen and
+different-screen operation may be employed. To make use of these
+advanced facilities requires no extra code by the application
+programmer: all this functionality is gained for free. Other features
+of the colourmap support include the ability to register functions
+which are called if a colourmap is resized, simple interfaces to
+change colourmap parameters and colour palettes and the ability to
+read and write colourmaps from/ to disc.
+The colourmap support provided in the Karma library can save several
+hundreds of lines of messy, intricate code.
+
+
+
+Related documents:
+------------------
+
+The documentation on image display and communications support are
+highly recommended.
+
+
+
+Architecture:
+-------------
+
+The colourmap support in Karma is built on a layered approach, as
+with many other sections of the library. The various packages in the
+Karma library which provide colourmap support are listed below,
+grouped by layer.
+
+
+  Level 2
+  =======
+
+The  cf_  package provides a large number of colourmap types (or
+palettes) which support the colourmap selection facility at a higher
+level in the library. These routines have a very simple defined
+interface, hence writing new colourmap functions is trivial.
+
+The  xc_  package provides X11 colourmap support for higher levels of
+the library.
+
+The  vc_  package provides colourmap support for the Vicom VX board (a
+Sun/VME board with an i860 and a 32 bit frame buffer).
+
+
+  Level 4
+  =======
+
+The network support for colourmaps utilises the  conn_  communications
+package. This means that connection management facilities are
+applicable to the colourmap support.
+
+
+  Level 5
+  =======
+
+The actual colourmap support is provided by the  kcmap_  package. This
+package allows the programmer to create and manipulate dynamic pseudo
+colourmaps using a generic interface. If network connections are set
+up (using either the  conn_  package or the Connection Management
+tool), manipulation of colourmaps is automatically transmitted across
+the network. In addition to these features, colourmaps may be copied
+to standard Karma data structures, and hence tranferred from/ to disc.
+New colourmap functions are easily added. A large number of colourmap
+functions are automatically available by default.
+The  kcmap_  package registers support for two comminications
+protocols:
+"colourmap_indices"  for the sharing of colourmaps on the same screen,
+"full_colourmap"  for the sharing of colourmaps on different screens.
+
+
+
+Tutorial:
+---------
+
+Although the simple use of colourmaps is shown in the tutorials for
+the image display support in Karma, it is worthwhile just pointing out
+the ease with which colourmap support may be migrated from an X11
+environment to, say, a VX display.
+
+  Example 1
+  =========
+
+This example shows how to initialise the colourmap system for X11
+support, and then create a colourmap.
+
+
+/*----------------------------------------------------------*/
+/*  Colourmap creation sample programme: X11 interface      */
+/*----------------------------------------------------------*/
+
+#include <karma.h>
+#include <karma_kcmap.h>
+#include <karma_xc.h>
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+
+
+#define DEFAULT_COLOURMAP_NAME "Greyscale1"
+#define MAX_COLOURS (unsigned int) 200
+
+Kcolourmap setup_cmap (dpy, window)
+/*  This routine will create a Kcolourmap object from an X11 display.
+    The X display must be given by  dpy  .
+    The X window must be given by  window  .
+    The routine returns a Kcolourmap object.
+*/
+Display *display;
+Window window;
+{
+    /*  Declare variables  */
+    Kdisplay dpy_handle;
+    XWindowAttributes window_attributes;
+    Kcolourmap cmap;
+
+    /*  Get X colourmap ID  */
+    XGetWindowAttributes (display, win, &window_attributes);
+    /*  Initialise colourmap system  */
+    dpy_handle = xc_get_dpy_handle (display, window_attributes.colormap);
+    kcmap_init (xc_alloc_colours, xc_free_colours, xc_store_colours,
+		xc_get_location);
+    /*  Create Kcolourmap object  */
+    cmap = kcmap_create (DEFAULT_COLOURMAP_NAME, MAX_COLOURS, TRUE,dpy_handle);
+    return (cmap);
+}   /*  End Function setup_cmap  */
+
+  Example 2
+  =========
+
+This example shows how to initialise the colourmap system for a VX
+display, and then create a colourmap.
+
+
+/*----------------------------------------------------------*/
+/*  Colourmap creation sample programme: VX interface       */
+/*----------------------------------------------------------*/
+
+#include <karma.h>
+#include <karma_kcmap.h>
+#include <karma_vc.h>
+
+
+#define DEFAULT_COLOURMAP_NAME "Greyscale1"
+#define MAX_COLOURS (unsigned int) 200
+
+Kcolourmap setup_cmap ()
+/*  This routine will create a Kcolourmap object from a VX display.
+    The routine returns a Kcolourmap object.
+*/
+{
+    /*  Declare variables  */
+    Kdisplay dpy_handle;
+    Kcolourmap cmap;
+
+    /*  Initialise colourmap system  */
+    dpy_handle = vc_get_dpy_handle ();
+    kcmap_init (vc_alloc_colours, vc_free_colours, vc_store_colours,
+		vc_get_location);
+    /*  Create Kcolourmap object  */
+    cmap = kcmap_create (DEFAULT_COLOURMAP_NAME, MAX_COLOURS, TRUE,dpy_handle);
+    return (cmap);
+}   /*  End Function setup_cmap  */

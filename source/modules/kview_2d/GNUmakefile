@@ -39,7 +39,7 @@ KVIEW_2DO =	kview_2d_main.o		kview_2d_xview.o \
 		kview_2d_colour.o \
 		kview_2d_track.o		kview_2d_event.o
 
-$(KARMABINPATH)/kview_2d:	$(KVIEW_2D) $(KVIEW_2DO) \
+$(KARMABINPATH)/kview_2d:	$(KVIEW_2DO) \
 			$(KDEPLIB_KARMAGRAPHICS) $(KDEPLIB_KARMAXVIEW) \
 			$(KDEPLIB_KARMAX11) $(KDEPLIB_KARMA)
 	cd $(MACHINE_ARCH); $(KARMA_CC) $(LDFLAGS) -o tmpkview_2d $(KVIEW_2DO) $(CLIBS)
@@ -53,11 +53,7 @@ depend:
 
 
 clean:
-	rm -f *.BAK *.log *.sed date.h
-	rm -f .#* *~ *.bak */*.bak
-	rm -f */tmp*
-	rm -f *.o
-	rm -f .*defaults
+	rm -f *.BAK *.log *.sed date.h .#* *~ *.bak */*.bak */tmp* .*defaults
 
 
 remove:

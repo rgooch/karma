@@ -38,11 +38,7 @@
 
 	Karma is available on anonymous ftp from:  ftp.atnf.csiro.au
   under the  pub/karma  directory. Both the source code and binary
-  distributions are kept here. The source code is available free of charge,
-  although donations are gratefully accepted (means I can spend more time
-  developing Karma). Donations can be sent to:
-
-	Richard Gooch, c/o ATNF, P. O. Box 76, Epping, N.S.W., 2121, Australia.
+  distributions are kept here. The source code is available free of charge.
 
   You are urged to get the binary distribution if possible, as this will save
   you the effort of building from source.

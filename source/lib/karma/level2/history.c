@@ -35,8 +35,14 @@
 
     Updated by      Richard Gooch   13-DEC-1992
 
-    Last updated by Richard Gooch   6-JAN-1993: Changed from  #include "*.h"
+    Updated by      Richard Gooch   6-JAN-1993: Changed from  #include "*.h"
   to  #include <*.h>
+
+    Updated by      Richard Gooch   4-OCT-1993: Changed from "?!" to "?#" for
+  parameter display command (in accordance with new  param_  package).
+
+    Last updated by Richard Gooch   22-NOV-1993: Removed trailing '\n'
+  character when reading lines from file.
 
 
 */
@@ -118,6 +124,7 @@ flag (*command_decode) ();  /* Function to decode commands in defaults file */
     {
 	if (!fgets(line, sizeof(line), fp))
 	    break;
+	if (line[strlen (line) - 1] == '\n') line[strlen (line) - 1] = '\0';
 	if (line[0] && line[0] != '\n')
 	(void) (*command_decode) (line, stderr);
     }
@@ -146,7 +153,7 @@ flag (*command_decode) ();  /* Function to decode commands in defaults file */
 			file_name, sys_errlist[errno]);
 	exit (RV_CANNOT_OPEN);
     }
-    if ( (*command_decode) ("?!", fp) != TRUE )
+    if ( (*command_decode) ("?#", fp) != TRUE )
     {
 	(void) fprintf (stderr, "Error in writing defaults\n");
     }

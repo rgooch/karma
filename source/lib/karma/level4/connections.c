@@ -78,8 +78,10 @@
     Updated by      Richard Gooch   26-SEP-1993: Created
   conn_register_cm_quiescent_func  function.
 
-    Last updated by Richard Gooch   27-SEP-1993: Improved error message in
+    Updated by      Richard Gooch   27-SEP-1993: Improved error message in
   cm_command_func  .
+
+    Last updated by Richard Gooch   23-NOV-1993: Removed some dead externs.
 
 
 */
@@ -88,7 +90,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <strings.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -1288,7 +1290,9 @@ static void attempt_connection_to_cm ()
     if ( ( cm_channel = ch_open_connection (host_addr, port_number) ) == NULL )
     {
 	(void) fprintf (stderr,
-			"Could not open connection to Connection Management tool");
+			"Could not open connection to Connection Management tool\n");
+	(void) fprintf (stderr, "on host addr: %lu  port: %u\n",
+			host_addr, port_number);
 	exit (RV_UNDEF_ERROR);
     }
     /*  Send protocol info  */
@@ -1698,7 +1702,6 @@ void (*close_func) ();
     struct serv_protocol_list_type *entry;
     struct serv_protocol_list_type *last_entry;
     extern struct serv_protocol_list_type *serv_protocol_list;
-    extern struct protocol_list_type *protocol_list;
     static char function_name[] = "conn_register_server_protocol";
 
     if (strlen (protocol_name) >= PROTOCOL_NAME_LENGTH)
@@ -1841,7 +1844,6 @@ void (*close_func) ();
     struct client_protocol_list_type *entry;
     struct client_protocol_list_type *last_entry;
     extern struct client_protocol_list_type *client_protocol_list;
-    extern struct protocol_list_type *protocol_list;
     static char function_name[] = "conn_register_client_protocol";
 
     if (strlen (protocol_name) >= PROTOCOL_NAME_LENGTH)

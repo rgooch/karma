@@ -67,6 +67,43 @@ iarray array;
 flag swap;
 /*---------------------------------------------------------------------------*/
 
+ViewableImage *viewimg_create_sequence (canvas, multi_desc, arr_desc, cube,
+					hdim, vdim, fdim, elem_index)
+/*  This routine will create a sequence of viewable image objects from a
+    3-dimensional cube of a Karma data structure. At a later time, this
+    sequence of viewable images may be made visible in any order.
+    This routine will not cause the canvas to be refreshed.
+    The world canvas onto which the viewable image may be drawn must be given
+    by  canvas  .
+    The  multi_array  descriptor which contains the Karma data structure must
+    be pointed to by  multi_desc  .The routine increments the attachment count
+    on the descriptor on successful completion.
+    The array descriptor must be pointed to by  arr_desc  .
+    The start of the cube data must be pointed to by  cube  .
+    The dimension index of the horizontal dimension must be given by  hdim  .
+    The dimension index of the vertical dimension must be given by  vdim  .
+    The dimension index of the frame dimension (dimension containing the
+    sequence) must be given by  fdim  .The number of sequences is the same as
+    the length of this dimension.
+    The element index of the data packets must be given by  elem_index  .
+    The routine may produce cache data which will vastly increase the speed of
+    subsequent operations on this data. Prior to process exit, a call MUST be
+    made to  viewimg_destroy  ,otherwise shared memory segments could remain
+    after the process exits.
+    An arbitrary number of dimension restrictions
+    The routine returns a pointer to a dynamically allocated array of viewable
+    image objects on success, else it returns NULL.
+*/
+KWorldCanvas canvas;
+multi_array *multi_desc;
+array_desc *arr_desc;
+char *cube;
+unsigned int hdim;
+unsigned int vdim;
+unsigned int fdim;
+unsigned int elem_index;
+/*---------------------------------------------------------------------------*/
+
 flag viewimg_make_active (vimage)
 /*  This routine will make a viewable image the active image for its associated
     world canvas. The canvas is then refreshed (possibly resized), provided
@@ -167,7 +204,7 @@ void viewimg_register_position_event_func (canvas, position_func, f_info)
 	The arbitrary event code is given by  event_code  .
 	The arbitrary event information is pointed to by  e_info  .
 	The arbitrary function information pointer is pointed to by  f_info  .
-	The routine returns TRUE if the event was consumed, else it return
+	The routine returns TRUE if the event was consumed, else it returns
 	FALSE indicating that the event is still to be processed.
     *
     ViewableImage vimage;

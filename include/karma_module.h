@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   4-OCT-1992
 
-    Last updated by Richard Gooch   14-SEP-1993
+    Last updated by Richard Gooch   4-OCT-1993
 
 */
 
@@ -53,6 +53,8 @@ EXTERN_FUNCTION (void module_run, (int argc, char **argv, char *name_string,
 							FILE *fp),
 				   int max_incoming, int max_outgoing,
 				   flag server) );
+EXTERN_FUNCTION (void module_process_argvs, (int argc, char **argv,
+					     flag (*unknown_func) () ) );
 
 
 #endif /*  KARMA_MODULE_H  */
