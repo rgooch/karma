@@ -37,8 +37,21 @@
     Uupdated by     Richard Gooch   27-DEC-1994: Delay computing histogram
   until widget popped up.
 
-    Last updated by Richard Gooch   6-JAN-1995: Changed from passing flag
+    Updated by      Richard Gooch   6-JAN-1995: Changed from passing flag
   by value to by reference for intensityScaleCallback.
+
+    Updated by      Richard Gooch   9-APR-1995: Added initialisation of
+  conv_type  field in  win_scale  structure.
+
+    Updated by      Richard Gooch   17-APR-1995: Fixed mix of XtRBool and
+  sizeof Boolean in resource fields. Use Bool because it is of int size.
+
+    Updated by      Richard Gooch   21-APR-1995: Added Full Range button.
+
+    Updated by      Richard Gooch   30-JUL-1995: Added destroy callback for
+  Intelligent Array.
+
+    Last updated by Richard Gooch   28-DEC-1995: Added verbose resource.
 
 
 */
@@ -63,7 +76,6 @@
 #include <math.h>
 #include <varargs.h>
 
-#include <Xkw/Value.h>
 #include <Xkw/Canvas.h>
 
 #include <sys/wait.h>
@@ -77,7 +89,7 @@
 /* Function prototypes*/
 /*----------------------------------------------------------------------*/
 
-/* Methods*/
+/*  Methods  */
 
 STATIC_FUNCTION (void Initialise, (Widget request, Widget new) );
 STATIC_FUNCTION (void Destroy, (Widget w) );
@@ -107,6 +119,9 @@ STATIC_FUNCTION (void size_control_func,
 		  void **info, flag *boundary_clear) );
 STATIC_FUNCTION (void pop_cbk, (Widget w, XtPointer client_data,
 				XtPointer call_data) );
+STATIC_FUNCTION (void full_range_cbk, (Widget w, XtPointer client_data,
+				       XtPointer call_data) );
+STATIC_FUNCTION (void iarr_destroy_callback, (iarray arr,DataclipWidget top) );
 
 
 /*----------------------------------------------------------------------*/
@@ -123,12 +138,14 @@ static XtResource DataclipResources[] =
      offset (intensityScaleCallback), XtRCallback, (caddr_t) NULL},
     {XkwNmaxDataRegions, XkwCMaxDataRegions, XtRInt, sizeof (int),
      offset (max_regions), XtRImmediate, (XtPointer) 1},
-    {XkwNshowIscaleButton, XkwCShowIscaleButton, XtRBool, sizeof (Boolean),
+    {XkwNshowIscaleButton, XkwCShowIscaleButton, XtRBool, sizeof (Bool),
      offset (show_intensity_scale_button), XtRImmediate, (XtPointer) False},
     {XkwNregionCallback, XtCCallback, XtRCallback, sizeof (caddr_t),
      offset (regionCallback), XtRCallback, (caddr_t) NULL},
-    {XkwNautoValueScale, XkwCAutoValueScale, XtRBoolean, sizeof (Boolean),
+    {XkwNautoValueScale, XkwCAutoValueScale, XtRBool, sizeof (Bool),
      offset (auto_v), XtRImmediate, (XtPointer) True},
+    {XkwNverbose, XkwCVerbose, XtRBool, sizeof (Bool),
+     offset (verbose), XtRImmediate, False},
 };
 
 #undef TheOffset
@@ -206,42 +223,43 @@ static void Initialise (Widget Request, Widget New)
     DataclipWidget new = (DataclipWidget) New;
     Widget form;
     Widget close_btn, scale_btn, immediate_apply_btn, apply_btn;
+    Widget full_range_btn;
     Widget cnv;
     Widget w;
     char *txt;
     static char function_name[] = "DataclipWidget::Initialise";
 
-    (*new).dataclip.pixcanvas = NULL;
-    (*new).dataclip.worldcanvas = NULL;
-    (*new).dataclip.array = NULL;
-    (*new).dataclip.immediate_apply = FALSE;
-    (*new).dataclip.last_was_left = FALSE;
-    (*new).dataclip.left_pos = TOOBIG;
-    (*new).dataclip.popped_up = FALSE;
+    new->dataclip.pixcanvas = NULL;
+    new->dataclip.worldcanvas = NULL;
+    new->dataclip.iarr_destroy_callback = NULL;
+    new->dataclip.immediate_apply = FALSE;
+    new->dataclip.last_was_left = FALSE;
+    new->dataclip.left_pos = TOOBIG;
+    new->dataclip.popped_up = FALSE;
     XtAddCallback (New, XtNpopupCallback, pop_cbk, (XtPointer) TRUE);
     XtAddCallback (New, XtNpopdownCallback, pop_cbk, (XtPointer) FALSE);
-    if ( (*new).dataclip.max_regions < 1 )
+    if (new->dataclip.max_regions < 1)
     {
 	(void) fprintf (stderr, "maxDataRegions: %u  must be greater than 0\n",
-			(*new).dataclip.max_regions );
+			new->dataclip.max_regions);
 	a_prog_bug (function_name);
     }
-    if ( ( (*new).dataclip.minima = (double *) m_alloc
-	  (sizeof *(*new).dataclip.minima * (*new).dataclip.max_regions) )
+    if ( ( new->dataclip.minima = (double *) m_alloc
+	  (sizeof *new->dataclip.minima * new->dataclip.max_regions) )
 	== NULL )
     {
 	m_abort (function_name, "array of minima");
     }
-    if ( ( (*new).dataclip.maxima = (double *) m_alloc
-	  (sizeof *(*new).dataclip.maxima * (*new).dataclip.max_regions) )
+    if ( ( new->dataclip.maxima = (double *) m_alloc
+	  (sizeof *new->dataclip.maxima * new->dataclip.max_regions) )
 	== NULL )
     {
 	m_abort (function_name, "array of maxima");
     }
-    (*new).dataclip.num_regions = 0;
-    (*new).dataclip.histogram_array = NULL;
-    (*new).dataclip.hist_arr_length = 0;
-    (*new).dataclip.hist_buf_length = 0;
+    new->dataclip.num_regions = 0;
+    new->dataclip.histogram_array = NULL;
+    new->dataclip.hist_arr_length = 0;
+    new->dataclip.hist_buf_length = 0;
     form = XtVaCreateManagedWidget ("form", formWidgetClass, New,
 				    XtNborderWidth, 0,
 				    NULL);
@@ -255,9 +273,9 @@ static void Initialise (Widget Request, Widget New)
 				 NULL);
     close_btn = w;
     XtAddCallback (close_btn, XtNcallback, close_cbk, New);
-    if ( (*new).dataclip.show_intensity_scale_button )
+    if (new->dataclip.show_intensity_scale_button)
     {
-	if ( (*new).dataclip.auto_v )
+	if (new->dataclip.auto_v)
 	{
 	    txt = "Auto Intensity Scale  ";
 	}
@@ -287,7 +305,7 @@ static void Initialise (Widget Request, Widget New)
 				 NULL);
     apply_btn = w;
     XtAddCallback (apply_btn, XtNcallback, apply_cbk, New);
-    if ( (*new).dataclip.max_regions == 1 )
+    if (new->dataclip.max_regions == 1)
     {
 	w = XtVaCreateManagedWidget ("toggle", commandWidgetClass, form,
 				     XtNlabel, "Manual Apply",
@@ -302,6 +320,18 @@ static void Initialise (Widget Request, Widget New)
 	XtAddCallback (immediate_apply_btn, XtNcallback, immediate_apply_cbk,
 		       (XtPointer) New);
     }
+    w = XtVaCreateManagedWidget ("button", commandWidgetClass, form,
+				 XtNlabel, "Full Range",
+				 XtNfromHoriz, w,
+				 XtNfromVert, close_btn,
+				 XtNtop, XtChainTop,
+				 XtNbottom, XtChainTop,
+				 XtNleft, XtChainLeft,
+				 XtNheight, 20,
+				 NULL);
+    full_range_btn = w;
+    XtAddCallback (full_range_btn, XtNcallback, full_range_cbk,
+		   (XtPointer) New);
     w = XtVaCreateManagedWidget ("label", labelWidgetClass, form,
 				 XtNlabel, "Data Minimum:              ",
 				 XtNborderWidth, 0,
@@ -311,7 +341,7 @@ static void Initialise (Widget Request, Widget New)
 				 XtNheight, 20,
 				 XtNresizable, True,
 				 NULL);
-    (*new).dataclip.min_label = w;
+    new->dataclip.min_label = w;
     w = XtVaCreateManagedWidget ("label", labelWidgetClass, form,
 				 XtNlabel, "Data Maximum:              ",
 				 XtNborderWidth, 0,
@@ -321,7 +351,7 @@ static void Initialise (Widget Request, Widget New)
 				 XtNheight, 20,
 				 XtNresizable, True,
 				 NULL);
-    (*new).dataclip.max_label = w;
+    new->dataclip.max_label = w;
     cnv = XtVaCreateManagedWidget ("pseudoColourCanvas", canvasWidgetClass,
 				   form,
 				   XtNfromVert, w,
@@ -334,14 +364,14 @@ static void Initialise (Widget Request, Widget New)
 				   XtNtop, XtChainTop,
 				   XtNbottom, XtChainBottom,
 				   NULL);
-    (*new).dataclip.cnv = cnv;
+    new->dataclip.cnv = cnv;
 }
 
 /*----------------------------------------------------------------------*/
 /* Destroy method                                                       */
 /*----------------------------------------------------------------------*/
 
-static void Destroy(Widget W)
+static void Destroy (Widget W)
 {
   /* Nothing to destroy */
 }
@@ -350,7 +380,7 @@ static void Destroy(Widget W)
 /* SetValues method                                                     */
 /*----------------------------------------------------------------------*/
 
-static Boolean SetValues(Widget Current, Widget Request, Widget New)
+static Boolean SetValues (Widget Current, Widget Request, Widget New)
 {
     KWorldCanvas worldcanvas;
     DataclipWidget current = (DataclipWidget) Current;
@@ -358,35 +388,46 @@ static Boolean SetValues(Widget Current, Widget Request, Widget New)
     DataclipWidget new = (DataclipWidget) New;
     static char function_name[] = "DataclipWidget::SetValues";
 
-    if ( (*new).dataclip.max_regions != (*current).dataclip.max_regions )
+    if (new->dataclip.max_regions != current->dataclip.max_regions)
     {
 	(void) fprintf (stderr, "Cannot change number of regions\n");
 	a_prog_bug (function_name);
     }
-    if ( (*new).dataclip.pixcanvas == NULL )
+    if (new->dataclip.pixcanvas == NULL)
     {
-	XtVaGetValues ( (*new).dataclip.cnv,
-		       XkwNpixCanvas, &(*new).dataclip.pixcanvas,
-		       NULL );
-	if ( (*new).dataclip.pixcanvas == NULL )
+	XtVaGetValues (new->dataclip.cnv,
+		       XkwNmonoPixCanvas, &new->dataclip.pixcanvas,
+		       NULL);
+	if (new->dataclip.pixcanvas == NULL)
 	{
 	    (void) fprintf (stderr, "Canvas not realised yet!\n");
 	    a_prog_bug (function_name);
 	}
-	worldcanvas = setup_canvas ( (*new).dataclip.pixcanvas,
-				    XtDisplay (New), new );
-	(*new).dataclip.worldcanvas = worldcanvas;
+	worldcanvas = setup_canvas (new->dataclip.pixcanvas,
+				    XtDisplay (New), new);
+	new->dataclip.worldcanvas = worldcanvas;
     }
-    if ( ( (*new).dataclip.array != NULL ) &&
-	( (*new).dataclip.array != (*current).dataclip.array ) )
+    if (new->dataclip.array != current->dataclip.array)
     {
-	(*new).dataclip.data_min = TOOBIG;
-	(*new).dataclip.data_max = -TOOBIG;
-	/*  Force computation of histogram  */
-	(*new).dataclip.hist_arr_length = 0;
-	if ( (*new).dataclip.popped_up )
+	/*  Change in array  */
+	if (new->dataclip.iarr_destroy_callback != NULL)
 	{
-	    kwin_resize ( (*new).dataclip.pixcanvas, TRUE, 0, 0, 0, 0 );
+	    c_unregister_callback (new->dataclip.iarr_destroy_callback);
+	}
+	new->dataclip.data_min = TOOBIG;
+	new->dataclip.data_max = -TOOBIG;
+	/*  Force computation of histogram  */
+	new->dataclip.hist_arr_length = 0;
+	if (new->dataclip.popped_up)
+	{
+	    kwin_resize (new->dataclip.pixcanvas, TRUE, 0, 0, 0, 0);
+	}
+	if (new->dataclip.array != NULL)
+	{
+	    /*  New array  */
+	    iarray_register_destroy_func (new->dataclip.array,
+					  ( flag (*)() ) iarr_destroy_callback,
+					  new);
 	}
     }
     return False;
@@ -415,17 +456,17 @@ static void intensity_scale_cbk (Widget w, XtPointer client_data,
     DataclipWidget top = (DataclipWidget) client_data;
     char label[STRING_LENGTH];
 
-    if ( (*top).dataclip.auto_v )
+    if (top->dataclip.auto_v)
     {
 	(void) sprintf (label, "Manual Intensity Scale");
-	(*top).dataclip.auto_v = FALSE;
+	top->dataclip.auto_v = FALSE;
     }
     else
     {
 	(void) sprintf (label, "Auto Intensity Scale");
-	(*top).dataclip.auto_v = TRUE;
+	top->dataclip.auto_v = TRUE;
     }
-    bool = (*top).dataclip.auto_v;
+    bool = top->dataclip.auto_v;
     XtVaSetValues (w, XtNlabel, label, NULL);
     XtCallCallbacks ( (Widget) top, XkwNintensityScaleCallback,
 		     (XtPointer) &bool );
@@ -441,15 +482,15 @@ static void immediate_apply_cbk (Widget w, XtPointer client_data,
     DataclipWidget top = (DataclipWidget) client_data;
     char label[STRING_LENGTH];
 
-    if ( (*top).dataclip.immediate_apply )
+    if (top->dataclip.immediate_apply)
     {
 	(void) sprintf (label, "Manual Apply");
-	(*top).dataclip.immediate_apply = FALSE;
+	top->dataclip.immediate_apply = FALSE;
     }
     else
     {
 	(void) sprintf (label, "Auto Apply");
-	(*top).dataclip.immediate_apply = TRUE;
+	top->dataclip.immediate_apply = TRUE;
     }
     XtVaSetValues (w, XtNlabel, label, NULL);
 }
@@ -463,13 +504,14 @@ static void apply_cbk (Widget w, XtPointer client_data, XtPointer call_data)
     DataclipWidget top = (DataclipWidget) client_data;
     DataclipRegions regions;
 
-    regions.num_regions = (*top).dataclip.num_regions;
-    if ( ( regions.minima = (double *) m_dup ( (char *) (*top).dataclip.minima,
-					      sizeof *(*top).dataclip.minima *
+    if (top->dataclip.array == NULL) return;
+    regions.num_regions = top->dataclip.num_regions;
+    if ( ( regions.minima = (double *) m_dup ( (char *) top->dataclip.minima,
+					      sizeof *top->dataclip.minima *
 					      regions.num_regions ) )
 	== NULL ) return;
-    if ( ( regions.maxima = (double *) m_dup ( (char *) (*top).dataclip.maxima,
-					      sizeof *(*top).dataclip.maxima *
+    if ( ( regions.maxima = (double *) m_dup ( (char *) top->dataclip.maxima,
+					      sizeof *top->dataclip.maxima *
 					      regions.num_regions ) )
 	== NULL )
     {
@@ -509,6 +551,7 @@ static KWorldCanvas setup_canvas (KPixCanvas pixcanvas, Display *display,
     /*  No histogram data yet  */
     win_scale.min_sat_pixel = gcvalues.background;
     win_scale.max_sat_pixel = gcvalues.foreground;
+    win_scale.conv_type = CONV_CtoR_REAL;
     if ( ( histogram_worldcanvas = canvas_create (pixcanvas, NULL,&win_scale) )
 	== NULL )
     {
@@ -552,37 +595,37 @@ void **info;
     double x0, x1;
     static char function_name[] = "histogram_canvas_refresh_func";
 
-    if ( (*w).dataclip.array == NULL ) return;
+    if (w->dataclip.array == NULL) return;
     canvas_draw_lines_p (canvas, (double *) NULL,
-			 (*w).dataclip.histogram_array,
-			 (*w).dataclip.hist_arr_length,
-			 (*win_scale).max_sat_pixel);
-    if (canvas_get_colour (canvas, "yellow4", &pixel_value,
-			   (unsigned short *) NULL, (unsigned short *) NULL,
-			   (unsigned short *) NULL) != TRUE) return;
-    if ( (*w).dataclip.left_pos < TOOBIG )
+			 w->dataclip.histogram_array,
+			 w->dataclip.hist_arr_length,
+			 win_scale->max_sat_pixel);
+    if ( !canvas_get_colour (canvas, "yellow4", &pixel_value,
+			     (unsigned short *) NULL, (unsigned short *) NULL,
+			     (unsigned short *) NULL) ) return;
+    if (w->dataclip.left_pos < TOOBIG)
     {
-	x0 = (*w).dataclip.left_pos;
+	x0 = w->dataclip.left_pos;
 	canvas_draw_line_p (canvas,
-			    x0, (*win_scale).y_min, x0, (*win_scale).y_max,
+			    x0, win_scale->y_min, x0, win_scale->y_max,
 			    pixel_value);
     }
-    if ( (*w).dataclip.num_regions < 1 ) return;
-    for (count = 0; count < (*w).dataclip.num_regions; ++count)
+    if (w->dataclip.num_regions < 1) return;
+    for (count = 0; count < w->dataclip.num_regions; ++count)
     {
-	x0 = (*w).dataclip.minima[count];
-	x1 = (*w).dataclip.maxima[count];
+	x0 = w->dataclip.minima[count];
+	x1 = w->dataclip.maxima[count];
 	canvas_draw_line_p (canvas,
-			    x0, (*win_scale).y_min, x0, (*win_scale).y_max,
+			    x0, win_scale->y_min, x0, win_scale->y_max,
 			    pixel_value);
 	canvas_draw_line_p (canvas,
-			    x1, (*win_scale).y_min, x1, (*win_scale).y_max,
+			    x1, win_scale->y_min, x1, win_scale->y_max,
 			    pixel_value);
 	canvas_draw_line_p (canvas,
-			    x0, (*win_scale).y_min, x1, (*win_scale).y_max,
+			    x0, win_scale->y_min, x1, win_scale->y_max,
 			    pixel_value);
 	canvas_draw_line_p (canvas,
-			    x1, (*win_scale).y_min, x0, (*win_scale).y_max,
+			    x1, win_scale->y_min, x0, win_scale->y_max,
 			    pixel_value);
     }
 }   /*  End Function histogram_canvas_refresh_func  */
@@ -603,80 +646,73 @@ static flag histogram_canvas_position_func (KWorldCanvas canvas,
     FALSE indicating that the event is still to be processed.
 */
 {
+    flag apply = FALSE;
     DataclipWidget w = (DataclipWidget) *f_info;
 
     switch (event_code)
     {
       case K_CANVAS_EVENT_LEFT_MOUSE_CLICK:
-	if ( (*w).dataclip.last_was_left )
+	if (w->dataclip.last_was_left)
 	{
 	    XBell (XtDisplay (w), 100);
 	    return (TRUE);
 	}
-	if ( ( (*w).dataclip.max_regions == 1 ) &&
-	    ( (*w).dataclip.num_regions == 1 ) )
+	if ( (w->dataclip.max_regions == 1) &&
+	    (w->dataclip.num_regions == 1) )
 	{
-	    if (x >= (*w).dataclip.maxima[0])
+	    if (x >= w->dataclip.maxima[0])
 	    {
 		XBell (XtDisplay (w), 100);
 		return (TRUE);
 	    }
-	    (*w).dataclip.minima[0] = x;
-	    if ( (*w).dataclip.immediate_apply )
-	    {
-		/*  This can only happen when  max_regions == 1  */
-		apply_cbk ( (Widget) NULL, (XtPointer) w, NULL );
-	    }
+	    w->dataclip.minima[0] = x;
+	    if (w->dataclip.immediate_apply) apply = TRUE;
 	}
-	else if ( (*w).dataclip.num_regions >= (*w).dataclip.max_regions )
+	else if (w->dataclip.num_regions >= w->dataclip.max_regions)
 	{
 	    XBell (XtDisplay (w), 100);
 	    return (TRUE);
 	}
 	else
 	{
-	    (*w).dataclip.left_pos = x;
-	    (*w).dataclip.last_was_left = TRUE;
+	    w->dataclip.left_pos = x;
+	    w->dataclip.last_was_left = TRUE;
 	}
 	break;
       case K_CANVAS_EVENT_RIGHT_MOUSE_CLICK:
-	if ( ( (*w).dataclip.max_regions == 1 ) &&
-	    ( (*w).dataclip.num_regions == 1 ) )
+	if ( (w->dataclip.max_regions == 1) &&
+	    (w->dataclip.num_regions == 1) )
 	{
-	    if (x <= (*w).dataclip.minima[0])
+	    if (x <= w->dataclip.minima[0])
 	    {
 		XBell (XtDisplay (w), 100);
 		return (TRUE);
 	    }
-	    (*w).dataclip.maxima[0] = x;
+	    w->dataclip.maxima[0] = x;
 	}
-	else if ( !(*w).dataclip.last_was_left )
+	else if (!w->dataclip.last_was_left)
 	{
 	    XBell (XtDisplay (w), 100);
 	    return (TRUE);
 	}
-	else if ( (*w).dataclip.num_regions >= (*w).dataclip.max_regions )
+	else if (w->dataclip.num_regions >= w->dataclip.max_regions)
 	{
 	    XBell (XtDisplay (w), 100);
 	    return (TRUE);
 	}
-	else if (x <= (*w).dataclip.left_pos)
+	else if (x <= w->dataclip.left_pos)
 	{
 	    XBell (XtDisplay (w), 100);
 	    return (TRUE);
 	}
 	else
 	{
-	    (*w).dataclip.minima[(*w).dataclip.num_regions] = (*w).dataclip.left_pos;
-	    (*w).dataclip.maxima[(*w).dataclip.num_regions++] = x;
-	    (*w).dataclip.last_was_left = FALSE;
-	    (*w).dataclip.left_pos = TOOBIG;
+	    w->dataclip.minima[w->dataclip.num_regions] = w->dataclip.left_pos;
+	    w->dataclip.maxima[w->dataclip.num_regions++] = x;
+	    w->dataclip.last_was_left = FALSE;
+	    w->dataclip.left_pos = TOOBIG;
 	}
-	if ( (*w).dataclip.immediate_apply )
-	{
-	    /*  This can only happen when  max_regions == 1  */
-	    apply_cbk ( (Widget) NULL, (XtPointer) w, NULL );
-	}
+	if (w->dataclip.immediate_apply) apply = TRUE;
 	break;
       default:
 	return (FALSE);
@@ -685,6 +721,11 @@ static flag histogram_canvas_position_func (KWorldCanvas canvas,
 */
     }
     (void) canvas_resize (canvas, NULL, TRUE);
+    if (apply)
+    {
+	XSync (XtDisplay (w), False);
+	apply_cbk ( (Widget) NULL, (XtPointer) w, NULL );
+    }
     return (TRUE);
 }   /*  End Function histogram_canvas_position_func  */
 
@@ -710,6 +751,7 @@ static void size_control_func (KWorldCanvas canvas, int width, int height,
     The routine should return nothing.
 */
 {
+    flag verbose;
     int array_len = width / 2;
     unsigned int count;
     unsigned long hpeak, hmode;
@@ -720,32 +762,33 @@ static void size_control_func (KWorldCanvas canvas, int width, int height,
     unsigned long *hist_array;
     static char function_name[] = "DataclipWidget::size_control_func";
 
-    if ( (*w).dataclip.array == NULL ) return;
-    if ( (*w).dataclip.data_min >= TOOBIG )
+    verbose = w->dataclip.verbose;
+    if (w->dataclip.array == NULL) return;
+    if (w->dataclip.data_min >= TOOBIG)
     {
 	/*  Recompute the minimum and maximum  */
-	if ( !iarray_min_max ( (*w).dataclip.array, CONV1_REAL, &min, &max ) )
+	if ( !iarray_min_max (w->dataclip.array, CONV1_REAL, &min, &max) )
 	{
 	    (void) fprintf (stderr, "Error getting image range\n");
 	    return;
 	}
 	if (min >= max)
 	{
-	    (*w).dataclip.array = NULL;
+	    w->dataclip.array = NULL;
 	    return;
 	}
-	(*w).dataclip.data_min = min;
-	(*w).dataclip.data_max = max;
+	w->dataclip.data_min = min;
+	w->dataclip.data_max = max;
 	(void) sprintf (txt, "Data Minimum: %e", min);
-	XtVaSetValues ( (*w).dataclip.min_label,
+	XtVaSetValues (w->dataclip.min_label,
 		       XtNlabel, txt,
-		       NULL );
+		       NULL);
 	(void) sprintf (txt, "Data Maximum: %e", max);
-	XtVaSetValues ( (*w).dataclip.max_label,
+	XtVaSetValues (w->dataclip.max_label,
 		       XtNlabel, txt,
-		       NULL );
+		       NULL);
     }
-    if (array_len == (*w).dataclip.hist_arr_length) return;
+    if (array_len == w->dataclip.hist_arr_length) return;
     if ( ( hist_array = (unsigned long *)
 	  m_alloc_scratch (sizeof *hist_array * array_len, function_name) )
 	== NULL )
@@ -753,56 +796,53 @@ static void size_control_func (KWorldCanvas canvas, int width, int height,
 	m_abort (function_name, "temporary array");
     }
     m_clear ( (char *) hist_array, sizeof *hist_array * array_len );
-    if (array_len > (*w).dataclip.hist_buf_length)
+    if (array_len > w->dataclip.hist_buf_length)
     {
 	/*  Increase histogram array size  */
-	if ( (*w).dataclip.histogram_array != NULL )
+	if (w->dataclip.histogram_array != NULL)
 	{
-	    m_free ( (char *) (*w).dataclip.histogram_array );
-	    (*w).dataclip.hist_buf_length = 0;
+	    m_free ( (char *) w->dataclip.histogram_array );
+	    w->dataclip.hist_buf_length = 0;
 	}
-	if ( ( (*w).dataclip.histogram_array = (double *)
-	      m_alloc (sizeof *(*w).dataclip.histogram_array * array_len) )
+	if ( ( w->dataclip.histogram_array = (double *)
+	      m_alloc (sizeof *w->dataclip.histogram_array * array_len) )
 	    == NULL )
 	{
 	    m_abort (function_name, "histogram array");
 	}
-	(*w).dataclip.hist_buf_length = array_len;
+	w->dataclip.hist_buf_length = array_len;
     }
-    m_clear ( (char *) (*w).dataclip.histogram_array,
-	     sizeof *(*w).dataclip.histogram_array * array_len);
-    (*w).dataclip.hist_arr_length = array_len;
-    (*win_scale).x_min = (*w).dataclip.data_min;
-    (*win_scale).x_max = (*w).dataclip.data_max;
+    m_clear ( (char *) w->dataclip.histogram_array,
+	     sizeof *w->dataclip.histogram_array * array_len);
+    w->dataclip.hist_arr_length = array_len;
+    win_scale->x_min = w->dataclip.data_min;
+    win_scale->x_max = w->dataclip.data_max;
     hpeak = 0;
     hmode = 0;
-    if ( !iarray_compute_histogram ( (*w).dataclip.array,
-				    (*win_scale).conv_type,
-				    (*win_scale).x_min, (*win_scale).x_max,
-				    array_len, hist_array, &hpeak, &hmode ) )
+    if ( !iarray_compute_histogram (w->dataclip.array,
+				    win_scale->conv_type,
+				    win_scale->x_min, win_scale->x_max,
+				    array_len, hist_array, &hpeak, &hmode) )
     {
 	(void) fprintf (stderr, "Error computing histogram\n");
 	a_prog_bug (function_name);
     }
-    if (getuid () == 465)
-    {
-	(void) fprintf (stderr, "histogram peak: %lu\n", hpeak);
-    }
+    if (verbose) (void) fprintf (stderr, "histogram peak: %lu\n", hpeak);
     for (count = 0; count < array_len; ++count)
     {
-	(*w).dataclip.histogram_array[count] = hist_array[count];
+	w->dataclip.histogram_array[count] = hist_array[count];
     }
     m_free_scratch ();
     /*  Have histogram data: setup logarithmic scale  */
-    (*win_scale).y_max = hpeak;
-    frac = log10 ( (*win_scale).y_max );
+    win_scale->y_max = hpeak;
+    frac = log10 (win_scale->y_max);
     if (frac > 6.0) frac = 6.0;
-    (*win_scale).y_min = (*win_scale).y_max / pow (10.0, frac);
-    if ( (*win_scale).y_min < 1.0 ) (*win_scale).y_min = 1.0;
-    (*win_scale).x_offset = 0;
-    (*win_scale).y_offset = 0;
-    (*win_scale).x_pixels = width;
-    (*win_scale).y_pixels = height;
+    win_scale->y_min = win_scale->y_max / pow (10.0, frac);
+    if (win_scale->y_min < 1.0) win_scale->y_min = 1.0;
+    win_scale->x_offset = 0;
+    win_scale->y_offset = 0;
+    win_scale->x_pixels = width;
+    win_scale->y_pixels = height;
 }   /*  End Function size_control_func  */
 
 static void pop_cbk (w, client_data, call_data)
@@ -814,5 +854,35 @@ XtPointer call_data;
 {
     DataclipWidget top = (DataclipWidget) w;
 
-    (*top).dataclip.popped_up = (iaddr) client_data;
+    top->dataclip.popped_up = (iaddr) client_data;
 }   /*  End Function pop_cbk   */
+
+static void full_range_cbk (w, client_data, call_data)
+/*  This is the generic popup/popdown callback.
+*/
+Widget w;
+XtPointer client_data;
+XtPointer call_data;
+{
+    DataclipWidget top = (DataclipWidget) client_data;
+
+    if (top->dataclip.array == NULL) return;
+    top->dataclip.num_regions = 1;
+    top->dataclip.minima[0] = top->dataclip.data_min;
+    top->dataclip.maxima[0] = top->dataclip.data_max;
+    kwin_resize (top->dataclip.pixcanvas, TRUE, 0, 0, 0, 0);
+    XSync (XtDisplay (w), False);
+    apply_cbk ( (Widget) NULL, (XtPointer) top, NULL );
+}   /*  End Function full_range_cbk   */
+
+static void iarr_destroy_callback (iarray arr, DataclipWidget top)
+/*  [PURPOSE] This routine will register the destruction of the Intelligent
+    Array.
+    <arr> The Intelligent Array.
+    <top> The Dataclip widget.
+    [RETURNS] Nothing.
+*/
+{
+    top->dataclip.array = NULL;
+    XtPopdown ( (Widget) top );
+}   /*  End Function iarr_destroy_callback  */

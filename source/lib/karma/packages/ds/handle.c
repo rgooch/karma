@@ -3,7 +3,7 @@
 
     This code provides routines for getting handles to parts of data structures
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -44,7 +44,11 @@
 
     Updated by      Richard Gooch   20-JUL-1994: Added some CONST declarations.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/ds/handle.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/ds/handle.c
+
+    Updated by      Richard Gooch   19-APR-1995: Cleaned some code.
+
+    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
 
 
 */
@@ -406,10 +410,9 @@ unsigned int *parent_type;
 unsigned int *index;
 {
     unsigned int elem_count;
-    unsigned int restr_count;
-    unsigned int best_match_index;
+#ifdef dummy
     unsigned int elem_type;
-    double best_match;
+#endif
     char *elem_desc;
     static char function_name[] = "ds_get_handle_in_list";
 
@@ -431,7 +434,9 @@ unsigned int *index;
     for (elem_count = 0; elem_count < (*list_desc).num_elements; ++elem_count)
     {
 	elem_desc = (*list_desc).element_desc[elem_count];
+#ifdef dummy
 	elem_type = (*list_desc).element_types[elem_count];
+#endif
 	if (strcmp (item_name, elem_desc) == 0)
 	{
 	    /*  Found it  */

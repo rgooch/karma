@@ -3,7 +3,8 @@
 
     This code provides a simple slider widget for Xt.
 
-    Copyright (C) 1994  Patrick Jordan  Incorporated into Karma by permission.
+    Copyright (C) 1994-1996  Patrick Jordan
+    Incorporated into Karma by permission.
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -54,8 +55,17 @@
 
     Updated by      Richard Gooch   12-DEC-1994: Added XtNorientation resource.
 
-    Last updated by Richard Gooch   29-DEC-1994: Changed SetValues to update
+    Updated by      Richard Gooch   29-DEC-1994: Changed SetValues to update
   label when needed and removed empty Destroy method.
+
+    Updated by      Richard Gooch   17-APR-1995: Fixed mix of XtRBool and
+  sizeof Boolean in resource fields. Use Bool because it is of int size.
+
+    Updated by      Richard Gooch   5-DEC-1995: Update valuePtr whenever value
+  changes (or is initialised), not just when a button is pressed.
+
+    Last updated by Richard Gooch   7-JAN-1996: Tested for aligned valuePtr in
+  <SetValues> before calling <modify_value>, rather than after.
 
 
 */
@@ -71,7 +81,11 @@
 
 #include <X11/Xaw/Label.h>
 #include <X11/Xaw/Box.h>
+
+#include <karma.h>
+#include <karma_a.h>
 #include <Xkw/Repeater.h>
+#include <os.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -89,6 +103,7 @@
 
 /* Methods*/
 
+STATIC_FUNCTION (void modify_value, (ValueWidget vw, int multiplier) );
 STATIC_FUNCTION (void Initialise, (Widget request, Widget new) );
 STATIC_FUNCTION (Boolean SetValues,
 		 (Widget current, Widget request, Widget new) );
@@ -104,22 +119,24 @@ static int intZero = 0.0;
 
 static XtResource ValueResources[] = 
 {
-    {XkwNvalueChangeCallback, XtCCallback, XtRCallback, sizeof(caddr_t),
-     TheOffset(valueChangeCallback), XtRCallback, (caddr_t)NULL},
-    {XtNlabel,  XtCLabel, XtRString, sizeof(String),
-     TheOffset(label), XtRString, NULL},
-    {XkwNminimum, XkwCMinimum, XtRInt, sizeof(int),
-     TheOffset(minimum), XtRInt, (XtPointer)&intZero},
-    {XkwNmaximum, XkwCMaximum, XtRInt, sizeof(int),
-     TheOffset(maximum), XtRInt, (XtPointer)&intZero},
-    {XtNvalue, XtCValue, XtRInt, sizeof(int),
-     TheOffset(value), XtRInt, (XtPointer)&intZero},
-    {XkwNmodifier, XkwCModifier, XtRInt, sizeof(int),
-     TheOffset(modifier), XtRInt, (XtPointer)&intZero},
-    {XkwNwrap, XkwCWrap, XtRBool, sizeof(Boolean),
-     TheOffset(wrap), XtRImmediate, False},
-    {XtNorientation, XtCOrientation, XtROrientation, sizeof(XtOrientation),
-     TheOffset(layout), XtRImmediate, (XtPointer) XtorientHorizontal},
+    {XkwNvalueChangeCallback, XtCCallback, XtRCallback, sizeof (XtPointer),
+     TheOffset (valueChangeCallback), XtRCallback, (XtPointer) NULL},
+    {XtNlabel, XtCLabel, XtRString, sizeof (String),
+     TheOffset (label), XtRString, NULL},
+    {XkwNminimum, XkwCMinimum, XtRInt, sizeof (int),
+     TheOffset (minimum), XtRInt, (XtPointer) &intZero},
+    {XkwNmaximum, XkwCMaximum, XtRInt, sizeof (int),
+     TheOffset (maximum), XtRInt, (XtPointer) &intZero},
+    {XtNvalue, XtCValue, XtRInt, sizeof (int),
+     TheOffset (value), XtRInt, (XtPointer) &intZero},
+    {XkwNmodifier, XkwCModifier, XtRInt, sizeof (int),
+     TheOffset (modifier), XtRInt, (XtPointer) &intZero},
+    {XkwNwrap, XkwCWrap, XtRBool, sizeof (Bool),
+     TheOffset (wrap), XtRImmediate, False},
+    {XtNorientation, XtCOrientation, XtROrientation, sizeof (XtOrientation),
+     TheOffset (layout), XtRImmediate, (XtPointer) XtorientHorizontal},
+    {XkwNvaluePtr, XkwCValuePtr, XtRInt, sizeof (XtPointer),
+     TheOffset (valuePtr), XtRImmediate, (XtPointer) NULL},
 };
 
 #undef TheOffset
@@ -193,17 +210,16 @@ WidgetClass valueWidgetClass = (WidgetClass) &valueClassRec;
 /* and the (stored) modifier value*/
 /*----------------------------------------------------------------------*/
 
-static void modify_value (Widget w, int multiplier)
+static void modify_value (ValueWidget vw, int multiplier)
 {
     int val;
-    ValueWidget vw = (ValueWidget) w;
     char label[10];
 
     val = vw->value.value + vw->value.modifier * multiplier;
 
     if (val > vw->value.maximum)
     {
-	if ( (*vw).value.wrap )
+	if (vw->value.wrap)
 	{
 	    val -= vw->value.maximum + 1;
 	    val += vw->value.minimum;
@@ -215,7 +231,7 @@ static void modify_value (Widget w, int multiplier)
     }
     if (val < vw->value.minimum)
     {
-	if ( (*vw).value.wrap )
+	if (vw->value.wrap)
 	{
 	    val -= vw->value.minimum - 1;
 	    val += vw->value.maximum;
@@ -232,6 +248,7 @@ static void modify_value (Widget w, int multiplier)
 		   XtNwidth, 40,
 		   XtNheight, VALUE_HEIGHT,
 		   NULL);
+    if (vw->value.valuePtr != NULL) *vw->value.valuePtr = val;
 }
 
 /*----------------------------------------------------------------------*/
@@ -252,8 +269,8 @@ static void btn_cbk (Widget w, XtPointer client_data, XtPointer call_data)
     p2 = XtParent ( XtParent (w) );
     value_widget = XtParent (p2);
     if ( !XtIsValue (value_widget) ) value_widget = p2;
-    modify_value (value_widget, multiplier);
     vw = (ValueWidget) value_widget;
+    modify_value (vw, multiplier);
     val = vw->value.value;
     XtCallCallbacks (value_widget, XkwNvalueChangeCallback, (XtPointer) &val);
 }
@@ -328,7 +345,7 @@ static void Initialise (Widget Request, Widget New)
 						   NULL);
     upbtn = create_btn (box, "up", 1, ">");
     upfastbtn = create_btn (box, "upfast", 10, ">>");
-    modify_value (New, 0);
+    modify_value (new, 0);
 }   /*  End Function Initialise  */
 
 /*----------------------------------------------------------------------*/
@@ -340,8 +357,19 @@ static Boolean SetValues (Widget Current, Widget Request, Widget New)
     ValueWidget current = (ValueWidget) Current;
     ValueWidget request = (ValueWidget) Request;
     ValueWidget new = (ValueWidget) New;
+    static char function_name[] = "ValueWidget::SetValues";
 
-    modify_value (New, 0);
+    if ( (new->value.valuePtr != current->value.valuePtr) &&
+	(new->value.valuePtr != NULL) )
+    {
+	if ( !IS_ALIGNED (new->value.valuePtr, sizeof *new->value.valuePtr) )
+	{
+	    (void) fprintf (stderr, "valuePtr: %p is not aligned\n",
+			    new->value.valuePtr);
+	    a_prog_bug (function_name);
+	}
+    }
+    modify_value (new, 0);
     if (new->value.label != current->value.label)
     {
 	XtVaSetValues (new->value.labelwidget,
@@ -351,4 +379,4 @@ static Boolean SetValues (Widget Current, Widget Request, Widget New)
 		       NULL);
     }
     return True;
-}
+}   /*  End Function SetValues  */

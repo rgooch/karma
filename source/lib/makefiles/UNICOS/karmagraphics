@@ -1,0 +1,7 @@
+LIB = karmagraphics
+
+CFLAGS = -DX11 -I$(XINCLUDEPATH)
+LDFLAGS =
+DEPENDFLAGS = -DX11 -I$(XINCLUDEPATH)
+
+include $(KARMAROOT)/source/lib/makefiles/$(OS)/GNUmakefile.rules

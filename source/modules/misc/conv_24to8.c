@@ -34,8 +34,10 @@
     Updated by      Richard Gooch   9-OCT-1993: Changed over to  panel_
   package for command line user interface and moved  main  into this file.
 
-    Last updated by Richard Gooch   23-NOV-1993: Changed to use of
+    Updated by      Richard Gooch   23-NOV-1993: Changed to use of
   ex_word_skip  .
+
+    Last updated by Richard Gooch   9-JUN-1995: Added #include <karma_ds.h>.
 
 
 */
@@ -46,6 +48,7 @@
 #include <karma_iarray.h>
 #include <karma_panel.h>
 #include <karma_imc.h>
+#include <karma_ds.h>
 #include <karma_ex.h>
 #include <karma_st.h>
 #include <karma_a.h>

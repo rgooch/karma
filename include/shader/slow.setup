@@ -1,0 +1,50 @@
+(signed char **_sh_planes,
+				uaddr *_sh_dim_offsets1,
+				uaddr *_sh_dim_offsets2,
+				float _sh_ray_start0,
+				float _sh_ray_start1,
+				float _sh_ray_start2,
+				float _sh_ray_direction0,
+				float _sh_ray_direction1,
+				float _sh_ray_direction2,
+				float _sh_one_on_ray_direction0,
+				float _sh_min,
+				float _sh_max,
+				int _sh_cube_end1,
+				int _sh_cube_end2,
+				int front_frame,
+				int back_frame,
+				double *minimum_image_value,
+				double *maximum_image_value,
+				void *pixel_ptr)
+/*  This routine will cast one ray in a cube.
+    The cube data planes must be pointed to by  _sh_planes  .
+    The dimension offset arrays must be pointed to by  _sh_dim_offsets0
+    _sh_dim_offset1  and  _sh_dim_offsets2  .
+    The start of the ray to cast must be given by  _sh_ray_start0
+    _sh_ray_start1  and   _sh_ray_start2  .This point lies on the image plane.
+    The direction of the ray must be given by  _sh_ray_direction0
+    _sh_ray_direction1  and  _sh_ray_direction2  .
+    The minimum and maximum plane co-ordinates must be given by  _sh_min  and
+    _sh_max  ,respectively.
+    The cube end co-ordinates must be given by  _sh_cube_end1  and
+    _sh_cube_end2  .
+    The routine returns the number of voxels written to the array.
+*/
+{
+#undef RAYCAST_TERMINATE
+#ifndef RAYCAST_TERMINATE
+#  define RAYCAST_TERMINATE _sh_plane_pos = _sh_plane_end - _sh_plane_inc
+#endif
+
+    /*  Generic variables  */
+    int _sh_i_x, _sh_i_y;
+    int _sh_plane_inc, _sh_plane_end;
+    float _sh_t;
+    float _sh_z, _sh_z_inc;
+    float _sh_offset = 0.01;
+    extern int skip_factor;
+
+    int plane_pos, voxel;
+
+    /*  Shader specific variables and initialisation  */

@@ -2,7 +2,7 @@
 
     Source file for  kftp  (file transfer module).
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994,1995  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -34,8 +34,10 @@
 
     Updated by      Richard Gooch   27-MAY-1994: Moved completion message.
 
-    Last updated by Richard Gooch   4-SEP-1994: Supported "." as local filename
+    Updated by      Richard Gooch   4-SEP-1994: Supported "." as local filename
   on get and changed printing interval of '.' characters to 1/80th file size.
+
+    Last updated by Richard Gooch   22-NOV-1994: Display transfer rate.
 
 
 */
@@ -174,18 +176,24 @@ void **info;
     unsigned long mtime;
     unsigned int name_len;
     char dummy;
+    float wall_clock_time_taken;
+    float transfer_rate = 0.0;
     struct stat statbuf;
+    struct timeval start_time;
+    struct timeval stop_time;
+    static struct timezone tz = {0, 0};
     char *ptr;
     struct timeval tvp[2];
+    extern flag failure;
     ERRNO_TYPE errno;
     extern char *sys_errlist[];
 
     channel = conn_get_channel (connection);
-    if (pio_write32 (channel, operation) != TRUE) return (FALSE);
+    if ( !pio_write32 (channel, operation) ) return (FALSE);
     switch (operation)
     {
       case KFTP_REQUEST_SEND:
-	if (pio_write_string (channel, remotefile) != TRUE) return (FALSE);
+	if ( !pio_write_string (channel, remotefile) ) return (FALSE);
 	if (stat (localfile, &statbuf) != 0)
 	{
 	    (void) fprintf (stderr,
@@ -200,27 +208,27 @@ void **info;
 			    localfile, sys_errlist[errno]);
 	    return (FALSE);
 	}
-	if (pio_write32 (channel, length) != TRUE)
+	if ( !pio_write32 (channel, length) )
 	{
 	    (void) ch_close (fch);
 	    return (FALSE);
 	}
-	if (pio_write32 (channel, statbuf.st_mode) != TRUE)
+	if ( !pio_write32 (channel, statbuf.st_mode) )
 	{
 	    (void) ch_close (fch);
 	    return (FALSE);
 	}
-	if (pio_write32 (channel, statbuf.st_mtime) != TRUE)
+	if ( !pio_write32 (channel, statbuf.st_mtime) )
 	{
 	    (void) ch_close (fch);
 	    return (FALSE);
 	}
-	if (ch_flush (channel) != TRUE)
+	if ( !ch_flush (channel) )
 	{
 	    (void) ch_close (fch);
 	    return (FALSE);
 	}
-	if (pio_read32 (channel, &response) != TRUE)
+	if ( !pio_read32 (channel, &response) )
 	{
 	    (void) ch_close (fch);
 	    return (FALSE);
@@ -228,12 +236,18 @@ void **info;
 	if (response != KFTP_RESPONSE_OK)
 	{
 	    (void) ch_close (fch);
-	    if (pio_read32 (channel, &rerrno) != TRUE) return (FALSE);
+	    if ( !pio_read32 (channel, &rerrno) ) return (FALSE);
 	    (void) fprintf (stderr, "Remote error: %s\n",
 			    sys_errlist[rerrno]);
 	    return (FALSE);
 	}
-	if (copy_channels (channel, fch, length) != TRUE)
+	if (gettimeofday (&start_time, &tz) != 0)
+	{
+	    (void) fprintf (stderr, "Error getting time of day\t%s%c\n",
+			    sys_errlist[errno], BEL);
+	    (void) exit (RV_SYS_ERROR);
+	}
+	if ( !copy_channels (channel, fch, length) )
 	{
 	    (void) ch_close (fch);
 	    return (FALSE);
@@ -245,22 +259,32 @@ void **info;
 	    (void) ch_close (fch);
 	    return (FALSE);
 	}
+	if (gettimeofday (&stop_time, &tz) != 0)
+	{
+	    (void) fprintf (stderr, "Error getting time of day\t%s%c\n",
+			    sys_errlist[errno], BEL);
+	    (void) exit (RV_SYS_ERROR);
+	}
+	wall_clock_time_taken = (float)(stop_time.tv_usec -start_time.tv_usec);
+	wall_clock_time_taken /= 1e3;
+	wall_clock_time_taken += 1e3 * (stop_time.tv_sec - start_time.tv_sec);
+	transfer_rate = (float) length / wall_clock_time_taken;
 	failure = FALSE;
 	break;
       case KFTP_REQUEST_GET:
-	if (pio_write_string (channel, remotefile) != TRUE) return (FALSE);
-	if (ch_flush (channel) != TRUE) return (FALSE);
-	if (pio_read32 (channel, &response) != TRUE) return (FALSE);
+	if ( !pio_write_string (channel, remotefile) ) return (FALSE);
+	if ( !ch_flush (channel) ) return (FALSE);
+	if ( !pio_read32 (channel, &response) ) return (FALSE);
 	if (response != KFTP_RESPONSE_OK)
 	{
-	    if (pio_read32 (channel, &rerrno) != TRUE) return (FALSE);
+	    if ( !pio_read32 (channel, &rerrno) ) return (FALSE);
 	    (void) fprintf (stderr, "Remote error: %s\n",
 			    sys_errlist[rerrno]);
 	    return (FALSE);
 	}
-	if (pio_read32 (channel, &length) != TRUE) return (FALSE);
-	if (pio_read32 (channel, &mode) != TRUE) return (FALSE);
-	if (pio_read32 (channel, &mtime) != TRUE) return (FALSE);
+	if ( !pio_read32 (channel, &length) ) return (FALSE);
+	if ( !pio_read32 (channel, &mode) ) return (FALSE);
+	if ( !pio_read32 (channel, &mtime) ) return (FALSE);
 	if ( (stat (localfile, &statbuf) == 0) && S_ISDIR (statbuf.st_mode) )
 	{
 	    ptr = strrchr (remotefile, '/');
@@ -279,7 +303,23 @@ void **info;
 	{
 	    return (FALSE);
 	}
-	if (copy_channels (fch, channel, length) != TRUE) return (FALSE);
+	if (gettimeofday (&start_time, &tz) != 0)
+	{
+	    (void) fprintf (stderr, "Error getting time of day\t%s%c\n",
+			    sys_errlist[errno], BEL);
+	    (void) exit (RV_SYS_ERROR);
+	}
+	if ( !copy_channels (fch, channel, length) ) return (FALSE);
+	if (gettimeofday (&stop_time, &tz) != 0)
+	{
+	    (void) fprintf (stderr, "Error getting time of day\t%s%c\n",
+			    sys_errlist[errno], BEL);
+	    (void) exit (RV_SYS_ERROR);
+	}
+	wall_clock_time_taken = (float)(stop_time.tv_usec -start_time.tv_usec);
+	wall_clock_time_taken /= 1e3;
+	wall_clock_time_taken += 1e3 * (stop_time.tv_sec - start_time.tv_sec);
+	transfer_rate = (float) length / wall_clock_time_taken;
 	(void) ch_close (fch);
 	tvp[0].tv_sec = mtime;
 	tvp[0].tv_usec = 0;
@@ -290,16 +330,20 @@ void **info;
 	break;
       default:
 	break;
-    }	
+    }
+    if (!failure)
+    {
+	(void) fprintf (stderr, "%e kBytes/sec transferred\n", transfer_rate);
+    }
     return (FALSE);
 }   /*  End Function open_func  */
 
 static flag copy_channels (dest, source, length)
-/*  This routine will copy bytes from one channel to another.
-    The destination channel must be given by  dest  .
-    The source channel must be given by  source  .
-    The number of bytes to copy must be given by  length  .
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [PURPOSE] This routine will copy bytes from one channel to another.
+    <dest> The destination channel.
+    <source> The source channel.
+    <length> The number of bytes to copy.
+    [RETURNS] TRUE on success, else FALSE.
 */
 Channel dest;
 Channel source;

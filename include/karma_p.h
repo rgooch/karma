@@ -2,7 +2,7 @@
 
     Header for  p_  package.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,30 +31,44 @@
 
     Written by      Richard Gooch   12-SEP-1992
 
-    Last updated by Richard Gooch   29-NOV-1993
+    Last updated by Richard Gooch   31-JUL-1995
 
 */
+
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
+#  include <karma.h>
+#endif
 
 #ifndef KARMA_P_H
 #define KARMA_P_H
 
 
-#ifndef KARMA_H
-#  include <karma.h>
-#endif
 
-
-/*  For the file: portable.c  */
-EXTERN_FUNCTION (flag p_write_buf64, (char *buffer, unsigned long data) );
-EXTERN_FUNCTION (flag p_read_buf64, (char *buffer, unsigned long *data) );
-EXTERN_FUNCTION (flag p_write_buf32, (char *buffer, unsigned long data) );
-EXTERN_FUNCTION (flag p_read_buf32, (char *buffer, unsigned long *data) );
-EXTERN_FUNCTION (flag p_write_buf16, (char *buffer, unsigned long data) );
-EXTERN_FUNCTION (flag p_read_buf16, (char *buffer, unsigned long *data) );
-EXTERN_FUNCTION (flag p_write_buf32s, (char *buffer, long data) );
-EXTERN_FUNCTION (flag p_read_buf32s, (char *buffer, long *data) );
+/*  For the file: s16.c  */
 EXTERN_FUNCTION (flag p_write_buf16s, (char *buffer, long data) );
 EXTERN_FUNCTION (flag p_read_buf16s, (char *buffer, long *data) );
+
+/*  For the file: s32.c  */
+EXTERN_FUNCTION (flag p_write_buf32s, (char *buffer, long data) );
+EXTERN_FUNCTION (flag p_read_buf32s, (char *buffer, long *data) );
+
+/*  For the file: u16.c  */
+EXTERN_FUNCTION (flag p_write_buf16, (char *buffer, unsigned long data) );
+EXTERN_FUNCTION (flag p_read_buf16, (char *buffer, unsigned long *data) );
+
+/*  For the file: u32.c  */
+EXTERN_FUNCTION (flag p_write_buf32, (char *buffer, unsigned long data) );
+EXTERN_FUNCTION (flag p_read_buf32, (char *buffer, unsigned long *data) );
+
+/*  For the file: u64.c  */
+EXTERN_FUNCTION (flag p_write_buf64, (char *buffer, unsigned long data) );
+EXTERN_FUNCTION (flag p_read_buf64, (char *buffer, unsigned long *data) );
+
+/*  For the file: float.c  */
+EXTERN_FUNCTION (flag p_write_buf_float, (char *buffer, float data) );
+EXTERN_FUNCTION (flag p_read_buf_float, (char *buffer, float *data) );
+EXTERN_FUNCTION (flag p_write_buf_double, (char *buffer, double data) );
+EXTERN_FUNCTION (flag p_read_buf_double, (char *buffer, double *data) );
 
 
 #endif /*  KARMA_P_H  */

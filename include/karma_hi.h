@@ -2,7 +2,7 @@
 
     Header for  _  package.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,18 +31,21 @@
 
     Written by      Richard Gooch   3-OCT-1992
 
-    Last updated by Richard Gooch   29-NOV-1993
+    Last updated by Richard Gooch   7-APR-1995
 
 */
+
+#ifndef FILE
+#  include <stdio.h>
+#endif
+
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
+#  include <karma.h>
+#endif
 
 #ifndef KARMA_HI_H
 #define KARMA_HI_H
 
-
-#include <stdio.h>
-#ifndef KARMA_H
-#  include <karma.h>
-#endif
 
 /*  For the file: history.c  */
 EXTERN_FUNCTION (void hi_read, (char *command_name,

@@ -5,12 +5,19 @@
 /*
  Name		       Class		   RepType         Default Value
  ----		       -----		   -------         -------------
- autoPopdown           AutoPopdown         Boolean         False
+ autoPopdown           AutoPopdown         Bool            False
+ fileSelectCallback    Callback            Callback        NULL
+ filenameTester        Callback            Pointer         NULL
 */    
 /*----------------------------------------------------------------------*/
 
 #ifndef FILEPOPUP__H
 #define FILEPOPUP__H
+
+#include <X11/Shell.h>
+#if !defined(KARMA_DIR_H) || defined(MAKEDEPEND)
+#  include <karma_dir.h>
+#endif
 
 extern WidgetClass filepopupWidgetClass;
 typedef struct _FilepopupClassRec *FilepopupWidgetClass;
@@ -26,7 +33,7 @@ typedef struct _FilepopupRec *FilepopupWidget;
 
 /*----------------------------------------------------------------------*/
 /* Functions
-/*----------------------------------------------------------------------*/
+ *----------------------------------------------------------------------*/
 
 void XkwFilepopupRescan(Widget w,XtPointer client_data,XtPointer call_data);
 

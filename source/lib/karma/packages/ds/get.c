@@ -3,7 +3,7 @@
 
     This code provides miscellaneous Karma data structure manipulation routines
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -64,7 +64,36 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/ds/get.c
 
-    Last updated by Richard Gooch   2-JAN-1995: Changed some comments.
+    Updated by      Richard Gooch   2-JAN-1995: Changed some comments.
+
+    Updated by      Richard Gooch   23-FEB-1995: Created
+  <ds_can_transfer_packet_as_block> routine.
+
+    Updated by      Richard Gooch   19-APR-1995: Cleaned some code.
+
+    Updated by      Richard Gooch   24-APR-1995: Added support for integer
+  toobig values for K_BYTE, K_INT, K_SHORT and complex versions thereof.
+
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Updated by      Richard Gooch   2-JUN-1995: Cope with unaligned data in
+  <ds_get_element>.
+
+    Updated by      Richard Gooch   3-JUN-1995: Made <ds_convert_atomic> call
+  <ds_get_element> instead. Made <ds_get_elements> call <ds_get_element> for
+  misaligned data on sensitive machines.
+
+    Updated by      Richard Gooch   9-JUN-1995: Explicitly declared integer
+  data types to be signed: crayPVP does not have compile switch to treat all
+  "char" types as signed.
+
+    Updated by      Richard Gooch   15-JUN-1995: Made use of IS_ALIGNED macro.
+
+    Updated by      Richard Gooch   11-JAN-1995: Minor documentation
+  improvement for <ds_get_element>.
+
+    Last updated by Richard Gooch   21-JAN-1995: Documented that
+  <ds_get_scattered_elements> is MT-Safe.
 
 
 */
@@ -72,29 +101,12 @@
 #include <stdio.h>
 #include <math.h>
 #include <karma.h>
-#include <os.h>
 #include <karma_ds.h>
 #include <karma_a.h>
 #include <karma_m.h>
+#define OS_H_VARIABLES
+#include <os.h>
 
-
-/*  External functions  */
-#ifdef NEEDS_MISALIGN_COMPILE
-EXTERN_FUNCTION (double misalign__ds_convert_atomic, (CONST char *datum,
-						      unsigned int datum_type,
-						      double *real_out,
-						      double *imag_out) );
-EXTERN_FUNCTION (flag misalign__ds_get_element, (CONST char *datum,
-						 unsigned int datum_type,
-						 double *value,
-						 flag *complex) );
-EXTERN_FUNCTION (flag misalign__ds_get_elements, (CONST char *data,
-						  unsigned int data_type,
-						  unsigned int data_stride,
-						  double *values,
-						  flag *complex,
-						  unsigned int num_values) );
-#endif  /*  NEEDS_MISALIGN_COMPILE  */
 
 /*PUBLIC_FUNCTION*/
 double ds_convert_atomic (CONST char *datum, unsigned int datum_type,
@@ -113,147 +125,23 @@ double ds_convert_atomic (CONST char *datum, unsigned int datum_type,
     The routine returns the converted value on success, else it returns TOOBIG.
 */
 {
-    double real;
-    double imag;
+    flag complex;
+    double zero = 0.0;
+    double value[2];
     static char function_name[] = "ds_convert_atomic";
 
-#ifdef NEEDS_MISALIGN_COMPILE
-    extern char host_type_sizes[NUMTYPES];
-
-    if ( (int) datum % host_type_sizes[datum_type] != 0 )
+    if ( !ds_get_element (datum, datum_type, value, &complex) ) return TOOBIG;
+    if (real_out != NULL) *real_out = value[0];
+    if (complex)
     {
-	/*  Data is not aligned  */
-	return ( misalign__ds_convert_atomic (datum, datum_type,
-					      real_out, imag_out) );
+	/*  Complex value   */
+	if (imag_out != NULL) *imag_out = value[1];
+	return ( sqrt (value[0] * value[0] + value[1] * value[1]) );
     }
-#endif  /*  NEEDS_MISALIGN_COMPILE  */
-
-    if (datum == NULL)
-    {
-	/*  No data supplied    */
-	if (real_out != NULL)
-	{
-	    *real_out = TOOBIG;
-	}
-	if (imag_out != NULL)
-	{
-	    *imag_out = TOOBIG;
-	}
-        return (TOOBIG);
-    }
-    imag = 0.0;
-    switch (datum_type)
-    {
-      case NONE:
-      case K_ARRAY:
-      case LISTP:
-      case MULTI_ARRAY:
-	(void) fprintf (stderr, "Bad data type\n");
-	/*  Bad data type   */
-	if (real_out != NULL)
-	{
-	    *real_out = TOOBIG;
-	}
-	if (imag_out != NULL)
-	{
-	    *imag_out = TOOBIG;
-	}
-	return (TOOBIG);
-/*
-	break;
-*/
-      case K_FLOAT:
-        real = *(float *) datum;
-	break;
-      case K_DOUBLE:
-	real = *(double *) datum;
-	break;
-      case K_BYTE:
-	real = *datum;
-	break;
-      case K_INT:
-	real = *(int *) datum;
-	break;
-      case K_SHORT:
-        real = *(short *) datum;
-	break;
-      case K_COMPLEX:
-	real = *(float *) datum;
-	imag = *( (float *) datum + 1 );
-	break;
-      case K_DCOMPLEX:
-	real = *(double *) datum;
-	imag = *( (double *) datum + 1 );
-	break;
-      case K_BCOMPLEX:
-	real = *datum;
-	imag = *(datum + 1);
-	break;
-      case K_ICOMPLEX:
-	real = *(int *) datum;
-	imag = *( (int *) datum + 1 );
-	break;
-      case K_SCOMPLEX:
-	real = *(short *) datum;
-	imag = *( (short *) datum + 1 );
-	break;
-      case K_LONG:
-        real = *(long *) datum;
-	break;
-      case K_LCOMPLEX:
-	real = *(long *) datum;
-	imag = *( (long *) datum + 1 );
-	break;
-      case K_UBYTE:
-	/*  PATCH  */
-	/*  The following  (float)  cast is required for the Sun bundled C
-	    compiler. Otherwise, a segmentation fault can happen. Arrgghhh!  */
-	real = (float) *(unsigned char *) datum;
-	break;
-      case K_UINT:
-	/*  PATCH  */
-	/*  The following  (float)  cast is required for the Sun bundled C
-	    compiler. Otherwise, a segmentation fault can happen. Arrgghhh!  */
-	real = (float) *(unsigned int *) datum;
-	break;
-      case K_USHORT:
-	real = *(unsigned short *) datum;
-	break;
-      case K_ULONG:
-	real = *(unsigned long *) datum;
-	break;
-      case K_UBCOMPLEX:
-	real = *(unsigned char *) datum;
-	imag = *( (unsigned char *) datum + 1 );
-	break;
-      case K_UICOMPLEX:
-	real = *(unsigned int *) datum;
-	imag = *( (unsigned int *) datum + 1 );
-	break;
-      case K_USCOMPLEX:
-	real = *(unsigned short *) datum;
-	imag = *( (unsigned short *) datum + 1 );
-	break;
-      case K_ULCOMPLEX:
-	real = *(unsigned long *) datum;
-	imag = *( (unsigned long *) datum + 1 );
-	break;
-      default:
-	/*  Unknown data type   */
-	(void) fprintf (stderr, "Illegal data type: %u\n", datum_type);
-	a_prog_bug (function_name);
-	break;
-    }
-    if (real_out != NULL)
-    {
-	*real_out = real;
-    }
-    if (imag_out != NULL)
-    {
-	*imag_out = imag;
-    }
-    /*  Complex value   */
-    return ( sqrt (real * real + imag * imag) );
+    /*  Real value  */
+    if (imag_out != NULL) *imag_out = zero;
+    if (value[0] < zero) return (-value[0]);
+    return (value[0]);
 }   /*  End Function ds_convert_atomic  */
 
 /*PUBLIC_FUNCTION*/
@@ -264,32 +152,30 @@ double ds_get_coordinate (dim_desc *dimension, unsigned long coord_num)
     any reason, the value TOOBIG is returned.
 */
 {
-    static char function_name[] = "ds_get_coordinate";
-
     if (dimension == NULL)
     {
 	/*  No dimension supplied   */
         return (TOOBIG);
     }
-    if (coord_num >= (*dimension).length)
+    if (coord_num >= dimension->length)
     {
 	/*  Invalid co-ordinate number  */
         return (TOOBIG);
     }
     if (coord_num == 0)
     {
-	return ( (*dimension).minimum );
+	return ( dimension->minimum );
     }
-    if ( (*dimension).coordinates == NULL )
+    if ( dimension->coordinates == NULL )
     {
 	/*  Co-ordinate list not present: calculate co-ordinate */
-        return ( (*dimension).minimum + (double) coord_num *
-                ( (*dimension).maximum - (*dimension).minimum ) /
-                (double) ( (*dimension).length - 1 ) );
+        return ( dimension->minimum + (double) coord_num *
+                ( dimension->maximum - dimension->minimum ) /
+                (double) ( dimension->length - 1 ) );
     }
     else
     {
-	return ( (*dimension).coordinates[coord_num] );
+	return ( dimension->coordinates[coord_num] );
     }
 }   /*  End Function ds_get_coordinate  */
 
@@ -315,14 +201,14 @@ unsigned int elem_num;
 	(void) fprintf (stderr, "NULL pointer passed\n");
 	a_prog_bug (function_name);
     }
-    if (elem_num >= (*pack_desc).num_elements)
+    if (elem_num >= pack_desc->num_elements)
     {
-	elem_num = (*pack_desc).num_elements;
+	elem_num = pack_desc->num_elements;
     }
     while (elem_count < elem_num)
     {
 	byte_offset +=
-	host_type_sizes[ (*pack_desc).element_types[elem_count++] ];
+	host_type_sizes[ pack_desc->element_types[elem_count++] ];
     }
     return (byte_offset);
 }   /*  End Function ds_get_element_offset  */
@@ -343,7 +229,7 @@ packet_desc *pack_desc;
 	a_prog_bug (function_name);
     }
     return ( ds_get_element_offset (pack_desc,
-				    (*pack_desc).num_elements) );
+				    pack_desc->num_elements) );
 }   /*  End Function ds_get_packet_size  */
 
 /*PUBLIC_FUNCTION*/
@@ -362,9 +248,9 @@ unsigned long ds_get_array_size (array_desc *arr_desc)
 	(void) fprintf (stderr, "NULL pointer passed\n");
 	a_prog_bug (function_name);
     }
-    while (dim_count < (*arr_desc).num_dimensions)
+    while (dim_count < arr_desc->num_dimensions)
     {
-	array_points *= ( *( (*arr_desc).dimensions[dim_count++] ) ).length;
+	array_points *= arr_desc->dimensions[dim_count++]->length;
     }
     return (array_points);
 }   /*  End Function ds_get_array_size  */
@@ -389,9 +275,9 @@ packet_desc *pack_desc;
 	(void) fprintf (stderr, "NULL pointer passed\n");
 	a_prog_bug (function_name);
     }
-    while (elem_count < (*pack_desc).num_elements)
+    while (elem_count < pack_desc->num_elements)
     {
-	if (ds_element_is_atomic ( (*pack_desc).element_types[elem_count] )
+	if (ds_element_is_atomic ( pack_desc->element_types[elem_count] )
             != TRUE)
         {
 	    return (FALSE);
@@ -520,8 +406,6 @@ flag ds_element_is_legal (element_type)
 */
 unsigned int element_type;
 {
-    static char function_name[] = "ds_element_is_legal";
-
     switch (element_type)
     {
       case K_FLOAT:
@@ -588,7 +472,7 @@ unsigned int *index;
     {
 	return (IDENT_NOT_FOUND);
     }
-    if ( (*multi_desc).headers == NULL )
+    if ( multi_desc->headers == NULL )
     {
 	(void) fprintf (stderr,
 			"Multi array descriptor has no list of packet descriptors\n");
@@ -599,11 +483,11 @@ unsigned int *index;
 	return (IDENT_NOT_FOUND);
     }
     return_value = ds_f_array_name (multi_desc, name, encls_desc, index);
-    while (array_count < (*multi_desc).num_arrays)
+    while (array_count < multi_desc->num_arrays)
     {
 	/*  Search one array    */
         if ( ( temp_ident =
-	      ds_f_name_in_packet ( (*multi_desc).headers[array_count],
+	      ds_f_name_in_packet ( multi_desc->headers[array_count],
 				   name, encls_desc, index ) )
             != IDENT_NOT_FOUND )
         {
@@ -646,21 +530,21 @@ unsigned int *index;
     {
 	return (IDENT_NOT_FOUND);
     }
-    if ( (*multi_desc).headers == NULL )
+    if ( multi_desc->headers == NULL )
     {
 	(void) fprintf (stderr,
 			"Multi array descriptor has no list of packet descriptors\n");
         a_prog_bug (function_name);
     }
-    if ( (*multi_desc).num_arrays == 1 )
+    if ( multi_desc->num_arrays == 1 )
     {
 	/*  Only one array  */
-        if ( (*multi_desc).array_names != NULL )
+        if ( multi_desc->array_names != NULL )
         {
 	    /*  Should be a NULL pointer    */
             (void) fprintf (stderr,
 			    "Multi array descriptor has one array with name: \"%s\"\n",
-			    (*multi_desc).array_names[0]);
+			    multi_desc->array_names[0]);
             a_prog_bug (function_name);
         }
         if ( (name == NULL) || (*name == '\0') )
@@ -679,7 +563,7 @@ unsigned int *index;
         return (return_value);
     }
     /*  Many arrays */
-    if ( (*multi_desc).array_names == NULL )
+    if ( multi_desc->array_names == NULL )
     {
 	(void) fprintf (stderr,
 			"Multi array descriptor has many arrays and no list of array names\n");
@@ -690,15 +574,15 @@ unsigned int *index;
 	/*  Return here, else strcmp will bomb out  */
 	return (IDENT_NOT_FOUND);
     }
-    while (array_count < (*multi_desc).num_arrays)
+    while (array_count < multi_desc->num_arrays)
     {
-	if ( (*multi_desc).array_names[array_count] == NULL )
+	if ( multi_desc->array_names[array_count] == NULL )
         {
 	    (void) fprintf (stderr, "Multiple arrays without names given\n");
             a_prog_bug (function_name);
         }
         /*  Compare  name  with name of an array    */
-        if (strcmp (name, (*multi_desc).array_names[array_count]) == 0)
+        if (strcmp (name, multi_desc->array_names[array_count]) == 0)
         {
 	    /*  Array name match    */
             if (return_value != IDENT_NOT_FOUND)
@@ -745,18 +629,18 @@ unsigned int *index;
     unsigned int return_value = IDENT_NOT_FOUND;
     static char function_name[] = "ds_f_name_in_packet";
 
-    if ( (pack_desc == NULL) || ( (*pack_desc).num_elements < 1 )
+    if ( (pack_desc == NULL) || ( pack_desc->num_elements < 1 )
 	|| (name == NULL) )
     {
 	return (IDENT_NOT_FOUND);
     }
-    for (elem_count = 0; elem_count < (*pack_desc).num_elements; ++elem_count)
+    for (elem_count = 0; elem_count < pack_desc->num_elements; ++elem_count)
     {
-	if (ds_element_is_named ( (*pack_desc).element_types[elem_count] )
+	if (ds_element_is_named ( pack_desc->element_types[elem_count] )
             == TRUE)
         {
 	    /*  Atomic data type    */
-	    if (strcmp (name, (*pack_desc).element_desc[elem_count])
+	    if (strcmp (name, pack_desc->element_desc[elem_count])
 		== 0)
 	    {
 		if (return_value != IDENT_NOT_FOUND)
@@ -776,12 +660,12 @@ unsigned int *index;
 	    continue;
 	}
 	/*  Not a named element  */
-	switch ( (*pack_desc).element_types[elem_count] )
+	switch ( pack_desc->element_types[elem_count] )
 	{
 	  case K_ARRAY:
 	    if ( ( temp_ident =
 		  ds_f_name_in_array ( (array_desc *)
-				      (*pack_desc).element_desc[elem_count],
+				      pack_desc->element_desc[elem_count],
 				      name, encls_desc, index) )
 		!= IDENT_NOT_FOUND )
 	    {
@@ -795,7 +679,7 @@ unsigned int *index;
 	  case LISTP:
 	    if ( ( temp_ident =
 		  ds_f_name_in_packet ( (packet_desc *)
-				       (*pack_desc).element_desc[elem_count],
+				       pack_desc->element_desc[elem_count],
 				       name, encls_desc, index) )
 		!= IDENT_NOT_FOUND )
 	    {
@@ -809,7 +693,7 @@ unsigned int *index;
 	  default:
 	    /*  Bad data type   */
 	    (void) fprintf (stderr, "Bad element type value: %u\n",
-			    (*pack_desc).element_types[elem_count]);
+			    pack_desc->element_types[elem_count]);
 	    a_prog_bug (function_name);
 	    break;
 	}
@@ -841,15 +725,14 @@ unsigned int *index;
     unsigned int dim_count = 0;
     unsigned int temp_ident;
     unsigned int return_value = IDENT_NOT_FOUND;
-    static char function_name[] = "ds_f_name_in_array";
 
     if ( (arr_desc == NULL) || (name == NULL) )
     {
 	return (IDENT_NOT_FOUND);
     }
-    while (dim_count < (*arr_desc).num_dimensions)
+    while (dim_count < arr_desc->num_dimensions)
     {
-	if (strcmp (name, (*(*arr_desc).dimensions[dim_count]).name) == 0)
+	if (strcmp (name, arr_desc->dimensions[dim_count]->name) == 0)
         {
 	    if (return_value != IDENT_NOT_FOUND)
             {
@@ -867,11 +750,11 @@ unsigned int *index;
         }
         ++dim_count;
     }
-    if ( (*arr_desc).packet == NULL )
+    if ( arr_desc->packet == NULL )
     {
 	return (return_value);
     }
-    if ( ( temp_ident = ds_f_name_in_packet ( (*arr_desc).packet, name,
+    if ( ( temp_ident = ds_f_name_in_packet ( arr_desc->packet, name,
 					  encls_desc, index ) )
         != IDENT_NOT_FOUND )
     {
@@ -908,21 +791,21 @@ CONST char *name;
 	(void) fprintf (stderr, "NULL  pack_desc  pointer passed\n");
 	a_prog_bug (function_name);
     }
-    if ( ( (*pack_desc).num_elements < 1 ) || (name == NULL) )
+    if ( ( pack_desc->num_elements < 1 ) || (name == NULL) )
     {
-	return ( (*pack_desc).num_elements );
+	return ( pack_desc->num_elements );
     }
-    return_value = (*pack_desc).num_elements;
-    while (elem_count < (*pack_desc).num_elements)
+    return_value = pack_desc->num_elements;
+    while (elem_count < pack_desc->num_elements)
     {
-	if (ds_element_is_named ( (*pack_desc).element_types[elem_count] )
+	if (ds_element_is_named ( pack_desc->element_types[elem_count] )
             == TRUE)
         {
 	    /*  Atomic data type    */
-            if (strcmp (name, (*pack_desc).element_desc[elem_count]) == 0)
+            if (strcmp (name, pack_desc->element_desc[elem_count]) == 0)
             {
 		/*  Found atomic element name   */
-                if (return_value < (*pack_desc).num_elements)
+                if (return_value < pack_desc->num_elements)
                 {
 		    (void) fprintf (stderr,
 				    "Multiple occurrences of: \"%s\"\n",
@@ -957,21 +840,20 @@ unsigned int *elem_num;
     unsigned int return_value = IDENT_NOT_FOUND;
     packet_desc *elem_desc;
     array_desc *arr_desc;
-    static char function_name[] = "ds_find_hole";
 
     if (inp_desc == NULL)
     {
 	return (IDENT_NOT_FOUND);
     }
-    if ( (*inp_desc).num_elements < 1 )
+    if ( inp_desc->num_elements < 1 )
     {
 	return (IDENT_NOT_FOUND);
     }
     /*  Search for occurence of hole in this packet descriptor  */
-    while (elem_count < (*inp_desc).num_elements)
+    while (elem_count < inp_desc->num_elements)
     {
-	elem_desc =(packet_desc *) (*inp_desc).element_desc[elem_count];
-        if ( ( (*inp_desc).element_types[elem_count] == NONE ) ||
+	elem_desc =(packet_desc *) inp_desc->element_desc[elem_count];
+        if ( ( inp_desc->element_types[elem_count] == NONE ) ||
 	    (elem_desc == NULL) )
         {
 	    if (return_value != IDENT_NOT_FOUND)
@@ -982,10 +864,10 @@ unsigned int *elem_num;
             *out_desc = inp_desc;
             *elem_num = elem_count;
         }
-        if ( (*inp_desc).element_types[elem_count] == K_ARRAY )
+        if ( inp_desc->element_types[elem_count] == K_ARRAY )
         {
 	    arr_desc = (array_desc *) elem_desc;
-            if ( ( temp_ident = ds_find_hole ( (*arr_desc).packet, out_desc,
+            if ( ( temp_ident = ds_find_hole ( arr_desc->packet, out_desc,
 					      elem_num ) ) != IDENT_NOT_FOUND )
             {
 		if (return_value != IDENT_NOT_FOUND)
@@ -995,7 +877,7 @@ unsigned int *elem_num;
                 return_value = temp_ident;
             }
         }
-        if ( (*inp_desc).element_types[elem_count] == LISTP )
+        if ( inp_desc->element_types[elem_count] == LISTP )
         {
 	    if ( ( temp_ident = ds_find_hole (elem_desc, out_desc, elem_num) )
                 != IDENT_NOT_FOUND )
@@ -1037,16 +919,16 @@ flag recursive;
 	a_func_abort (function_name, "NULL descriptor pointer(s)");
         return (FALSE);
     }
-    if ( (*desc1).num_elements != (*desc2).num_elements )
+    if ( desc1->num_elements != desc2->num_elements )
     {
 	return (FALSE);
     }
-    while (elem_count < (*desc1).num_elements)
+    while (elem_count < desc1->num_elements)
     {
-	elem_type1 = (*desc1).element_types[elem_count];
-        elem_type2 = (*desc2).element_types[elem_count];
-        elem_name1 = (*desc1).element_desc[elem_count];
-        elem_name2 = (*desc2).element_desc[elem_count];
+	elem_type1 = desc1->element_types[elem_count];
+        elem_type2 = desc2->element_types[elem_count];
+        elem_name1 = desc1->element_desc[elem_count];
+        elem_name2 = desc2->element_desc[elem_count];
         if (elem_type1 == elem_type2)
         {
 	    /*  Element types are the same  */
@@ -1121,20 +1003,20 @@ flag recursive;
 	a_func_abort (function_name, "NULL descriptor pointer(s)");
         return (FALSE);
     }
-    if ( (*desc1).num_dimensions != (*desc2).num_dimensions )
+    if ( desc1->num_dimensions != desc2->num_dimensions )
     {
 	return (FALSE);
     }
-    while (dim_count < (*desc1).num_dimensions)
+    while (dim_count < desc1->num_dimensions)
     {
-	if (ds_compare_dim_desc ( (*desc1).dimensions[dim_count],
-				 (*desc2).dimensions[dim_count] ) != TRUE)
+	if (ds_compare_dim_desc ( desc1->dimensions[dim_count],
+				 desc2->dimensions[dim_count] ) != TRUE)
 	return (FALSE);
         ++dim_count;
     }
     if (recursive == TRUE)
     {
-	if (ds_compare_packet_desc ( (*desc1).packet, (*desc2).packet,
+	if (ds_compare_packet_desc ( desc1->packet, desc2->packet,
 				    recursive )
             != TRUE)
 	return (FALSE);
@@ -1160,32 +1042,32 @@ dim_desc *desc2;
 	a_func_abort (function_name, "NULL descriptor pointer(s)");
         return (FALSE);
     }
-    if ( ( (*desc1).name == NULL ) || ( (*desc2).name == NULL ) )
+    if ( ( desc1->name == NULL ) || ( desc2->name == NULL ) )
     {
 	(void) fprintf (stderr, "Dimension name is a NULL pointer\n");
         a_prog_bug (function_name);
     }
-    if (strcmp ( (*desc1).name, (*desc2).name ) != 0)
+    if (strcmp ( desc1->name, desc2->name ) != 0)
     return (FALSE);
-    if ( (*desc1).length != (*desc2).length )
+    if ( desc1->length != desc2->length )
     return (FALSE);
-    if ( (*desc1).minimum != (*desc2).minimum )
+    if ( desc1->minimum != desc2->minimum )
     return (FALSE);
-    if ( (*desc1).maximum != (*desc2).maximum )
+    if ( desc1->maximum != desc2->maximum )
     return (FALSE);
-    if ( (*desc1).coordinates == NULL )
+    if ( desc1->coordinates == NULL )
     {
-	if ( (*desc2).coordinates != NULL )
+	if ( desc2->coordinates != NULL )
 	return (FALSE);
     }
     else
     {
-	if ( (*desc2).coordinates == NULL )
+	if ( desc2->coordinates == NULL )
 	return (FALSE);
-        while (coord_count < (*desc1).length)
+        while (coord_count < desc1->length)
         {
-	    if ( (*desc1).coordinates[coord_count] !=
-                (*desc2).coordinates[coord_count] )
+	    if ( desc1->coordinates[coord_count] !=
+                desc2->coordinates[coord_count] )
 	    return (FALSE);
             ++coord_count;
         }
@@ -1215,17 +1097,17 @@ CONST char *name;
 	(void) fprintf (stderr, "NULL  arr_desc  pointer passed\n");
 	a_prog_bug (function_name);
     }
-    if ( ( (*arr_desc).num_dimensions < 1 ) || (name == NULL) )
+    if ( ( arr_desc->num_dimensions < 1 ) || (name == NULL) )
     {
-	return ( (*arr_desc).num_dimensions );
+	return ( arr_desc->num_dimensions );
     }
-    return_value = (*arr_desc).num_dimensions;
-    for (dim_count = 0; dim_count < (*arr_desc).num_dimensions; ++dim_count)
+    return_value = arr_desc->num_dimensions;
+    for (dim_count = 0; dim_count < arr_desc->num_dimensions; ++dim_count)
     {
-	if (strcmp (name, (* (*arr_desc).dimensions[dim_count] ).name) == 0)
+	if (strcmp (name, arr_desc->dimensions[dim_count]->name) == 0)
 	{
 	    /*  Found dimension name   */
-	    if (return_value < (*arr_desc).num_dimensions)
+	    if (return_value < arr_desc->num_dimensions)
 	    {
 		(void) fprintf (stderr, "Multiple occurrences of: \"%s\"\n",
 				name);
@@ -1258,13 +1140,13 @@ unsigned long ds_get_array_offset (array_desc *arr_desc,
 	(void) fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
-    for (dim_count = (*arr_desc).num_dimensions; dim_count > 0; --dim_count)
+    for (dim_count = arr_desc->num_dimensions; dim_count > 0; --dim_count)
     {
-	current_length = (* (*arr_desc).dimensions[dim_count - 1] ).length;
+	current_length = arr_desc->dimensions[dim_count - 1]->length;
 	if (coordinates[dim_count - 1] >= current_length)
 	{
 	    (void) fprintf (stderr,
-			    "Coordinate[%u]: %u >= dimension length: %u\n",
+			    "Coordinate[%u]: %lu >= dimension length: %lu\n",
 			    dim_count - 1, coordinates[dim_count - 1],
 			    current_length);
 	    a_prog_bug (function_name);
@@ -1299,26 +1181,26 @@ unsigned long ds_get_coord_num (dim_desc *dimension, double coordinate,
     }
     /*  Check if co-ordinate specified is within range
 	of dimension co-ordinates  */
-    if (coordinate <= (*dimension).minimum)
+    if (coordinate <= dimension->minimum)
     {
 	return (0);
     }
-    if (coordinate >= (*dimension).maximum)
+    if (coordinate >= dimension->maximum)
     {
-	return ( (*dimension).length - 1 );
+	return ( dimension->length - 1 );
     }
-    if ( (*dimension).coordinates == NULL )
+    if ( dimension->coordinates == NULL )
     {
 	/*  Dimension co-ordinates are regularly spaced  */
-	coord_num = ( (coordinate - (*dimension).minimum) /
-		     ( (*dimension).maximum - (*dimension).minimum ) *
-		     (double) ( (*dimension).length - 1 ) );
+	coord_num = ( (coordinate - dimension->minimum) /
+		     ( dimension->maximum - dimension->minimum ) *
+		     (double) ( dimension->length - 1 ) );
     }
     else
     {
 	/*  Search through co-ordinate list  */
 	for (coord_num = 0;
-	     (*dimension).coordinates[coord_num + 1] < coordinate;
+	     dimension->coordinates[coord_num + 1] < coordinate;
 	     ++coord_num);
     }
     tmp_found_coord = ds_get_coordinate (dimension, coord_num);
@@ -1347,7 +1229,9 @@ unsigned long ds_get_coord_num (dim_desc *dimension, double coordinate,
 	    /*  Closest co-ordinate is upper one  */
 	    return (coord_num + 1);
 	}
+/*
 	break;
+*/
       case SEARCH_BIAS_UPPER:
 	return (coord_num + 1);
 /*
@@ -1364,33 +1248,26 @@ unsigned long ds_get_coord_num (dim_desc *dimension, double coordinate,
 
 /*PUBLIC_FUNCTION*/
 flag ds_get_element (CONST char *datum, unsigned int datum_type,
-		     double *value, flag *complex)
-/*  This routine will convert an atomic datum to a double precision complex
-    value.
-    The datum to be converted must be pointed to by  datum  and the data type
-    value must be in  datum_type  .
-    The data value will be written to the storage pointed to by  value  .
-    This storages MUST lie on a  double  boundary.
-    If the datum is a complex type, then the value of TRUE is written to the
-    storage pointed to by  complex  ,else the value FALSE is written here. If
-    this is NULL, nothing is written here.
-    The routine returns TRUE if the data was successfully converted,
-    else it returns FALSE.
+		     double value[2], flag *complex)
+/*  [PURPOSE] This routine will convert an atomic datum to a double precision
+    complex value.
+    <datum> A pointer to the datum to be converted.
+    <datum_type> The type of the datum.
+    <value> The data value will be written here.
+    <complex> If the datum is a complex type, then the value of TRUE is written
+    here, else the value FALSE is written here. If this is NULL, nothing is
+    written here.
+    [RETURNS] TRUE if the data was successfully converted, else FALSE.
 */
 {
     flag tmp_complex = FALSE;
-    static char function_name[] = "ds_get_element";
-
-#ifdef NEEDS_MISALIGN_COMPILE
+#ifdef NEED_ALIGNED_DATA
+    int datum_size, count;
+    char *ptr;
+    double buf[2];
     extern char host_type_sizes[NUMTYPES];
-
-    if ( (int) datum % host_type_sizes[datum_type] != 0 )
-    {
-	/*  Data is not aligned  */
-	return ( misalign__ds_get_element (datum, datum_type, value,
-					   complex) );
-    }
-#endif  /*  NEEDS_MISALIGN_COMPILE  */
+#endif
+    static char function_name[] = "ds_get_element";
 
     if (datum == NULL)
     {
@@ -1402,10 +1279,20 @@ flag ds_get_element (CONST char *datum, unsigned int datum_type,
 	(void) fprintf (stderr, "NULL value storage pointer passed\n");
 	a_prog_bug (function_name);
     }
+#ifdef NEED_ALIGNED_DATA
+    datum_size = host_type_sizes[datum_type];
+    if ( (iaddr) datum % datum_size != 0 )
+    {
+	/*  Data is not aligned  */
+	ptr = (char *) buf;
+	for (count = 0; count < datum_size; ++count) ptr[count] = datum[count];
+	datum = (CONST char *) buf;
+    }
+#endif  /*  NEED_ALIGNED_DATA  */
 #ifdef MACHINE_i386
-    if ( (int) value % 4 != 0 )
+    if ( !IS_ALIGNED ( value, sizeof (float) ) )
 #else
-    if ( (long) value % sizeof (double) != 0 )
+    if ( !IS_ALIGNED ( value, sizeof (double) ) )
 #endif
     {
 	(void) fprintf (stderr,
@@ -1430,13 +1317,13 @@ flag ds_get_element (CONST char *datum, unsigned int datum_type,
 	value[0] = *(double *) datum;
 	break;
       case K_BYTE:
-	if (*datum < -127)
+	if (*(signed char *) datum < -127)
 	{
 	    value[0] = TOOBIG;
 	}
 	else
 	{
-	    value[0] = *datum;
+	    value[0] = *(signed char *) datum;
 	}
 	break;
       case K_INT:
@@ -1456,8 +1343,8 @@ flag ds_get_element (CONST char *datum, unsigned int datum_type,
 	tmp_complex = TRUE;
 	break;
       case K_BCOMPLEX:
-	value[0] = *datum;
-	value[1] = *(datum + 1);
+	value[0] = *(signed char *) datum;
+	value[1] = *( (signed char *) datum + 1 );
 	tmp_complex = TRUE;
 	break;
       case K_ICOMPLEX:
@@ -1550,25 +1437,15 @@ flag ds_get_elements (CONST char *data, unsigned int data_type,
 */
 {
     flag tmp_complex = FALSE;
-    unsigned int data_count;
-    static char function_name[] = "ds_get_elements";
-
-#ifdef NEEDS_MISALIGN_COMPILE
+    double toobig = TOOBIG;
+    unsigned int count;
+    signed char *b_ptr;
+    signed short *s_ptr;
+    signed int *i_ptr;
+#ifdef NEED_ALIGNED_DATA
     extern char host_type_sizes[NUMTYPES];
-
-    if ( (int) data % host_type_sizes[data_type] != 0 )
-    {
-	/*  First datum is not aligned  */
-	return ( misalign__ds_get_elements (data, data_type, data_stride,
-					    values, complex,num_values) );
-    }
-    if ( (int) data_stride % host_type_sizes[data_type] != 0 )
-    {
-	/*  Subsequent data is not aligned  */
-	return ( misalign__ds_get_elements (data, data_type, data_stride,
-					    values, complex,num_values) );
-    }
-#endif  /*  NEEDS_MISALIGN_COMPILE  */
+#endif
+    static char function_name[] = "ds_get_elements";
 
     if (data == NULL)
     {
@@ -1581,9 +1458,9 @@ flag ds_get_elements (CONST char *data, unsigned int data_type,
 	a_prog_bug (function_name);
     }
 #ifdef MACHINE_i386
-    if ( (int) values % 4 != 0 )
+    if ( !IS_ALIGNED ( values, sizeof (float) ) )
 #else
-    if ( (long) values % sizeof (double) != 0 )
+    if ( !IS_ALIGNED ( values, sizeof (double) ) )
 #endif
     {
 	(void) fprintf (stderr,
@@ -1591,6 +1468,20 @@ flag ds_get_elements (CONST char *data, unsigned int data_type,
 			values);
 	a_prog_bug (function_name);
     }
+#ifdef NEED_ALIGNED_DATA
+    if ( ( (iaddr) data % host_type_sizes[data_type] != 0 ) ||
+	( (iaddr) data_stride % host_type_sizes[data_type] != 0 ) )
+    {
+	/*  Not all data is aligned  */
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride, values += 2)
+	{
+	    if ( !ds_get_element (data, data_type, values,
+				  complex) ) return (FALSE);
+	}
+	return (TRUE);
+    }
+#endif  /*  NEED_ALIGNED_DATA  */
     switch (data_type)
     {
       case NONE:
@@ -1601,55 +1492,48 @@ flag ds_get_elements (CONST char *data, unsigned int data_type,
 	a_prog_bug (function_name);
 	break;
       case K_FLOAT:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
 	    *values++ = *(float *) data;
 	    *values++ = 0.0;
 	}
 	break;
       case K_DOUBLE:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
 	    *values++ = *(double *) data;
 	    *values++ = 0.0;
 	}
 	break;
       case K_BYTE:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
-	    if (*(char *) data < -127)
-	    {
-		*values++ = TOOBIG;
-	    }
-	    else
-	    {
-		*values++ = *(char *) data;
-	    }
+	    b_ptr = (signed char *) data;
+	    if (b_ptr[0] < -127) *values++ = toobig;
+	    else *values++ = b_ptr[0];
 	    *values++ = 0.0;
 	}
 	break;
       case K_INT:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
-	    *values++ = *(int *) data;
+	    i_ptr = (signed int *) data;
+	    if (i_ptr[0] == 0x80000000) *values++ = toobig;
+	    else *values++ = i_ptr[0];
 	    *values++ = 0.0;
 	}
 	break;
       case K_SHORT:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
-	    *values++ = *(short *) data;
+	    s_ptr = (signed short *) data;
+	    if (s_ptr[0] == -32768) *values++ = toobig;
+	    else *values++ = s_ptr[0];
 	    *values++ = 0.0;
 	}
 	break;
       case K_COMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
 	    *values++ = *(float *) data;
 	    *values++ = *( (float *) data + 1 );
@@ -1657,8 +1541,7 @@ flag ds_get_elements (CONST char *data, unsigned int data_type,
 	tmp_complex = TRUE;
 	break;
       case K_DCOMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
 	    *values++ = *(double *) data;
 	    *values++ = *( (double *) data + 1 );
@@ -1666,84 +1549,83 @@ flag ds_get_elements (CONST char *data, unsigned int data_type,
 	tmp_complex = TRUE;
 	break;
       case K_BCOMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
-	    *values++ = *(char *) data;
-	    *values++ = *( (char *) data + 1 );
+	    b_ptr = (signed char *) data;
+	    if (b_ptr[0] < -127) *values++ = toobig;
+	    else *values++ = b_ptr[0];
+	    if (b_ptr[1] < -127) *values++ = toobig;
+	    else *values++ = b_ptr[1];
 	}
 	tmp_complex = TRUE;
 	break;
       case K_ICOMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
-	    *values++ = *(int *) data;
-	    *values++ = *( (int *) data + 1 );
+	    i_ptr = (signed int *) data;
+	    if (i_ptr[0] == 0x80000000) *values++ = toobig;
+	    else *values++ = i_ptr[0];
+	    if (i_ptr[1] == 0x80000000) *values++ = toobig;
+	    else *values++ = i_ptr[1];
 	}
 	tmp_complex = TRUE;
 	break;
       case K_SCOMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
-	    *values++ = *(short *) data;
-	    *values++ = *( (short *) data + 1 );
+	    s_ptr = (signed short *) data;
+	    if (s_ptr[0] == -32768) *values++ = toobig;
+	    else *values++ = s_ptr[0];
+	    if (s_ptr[1] == -32768) *values++ = toobig;
+	    else *values++ = s_ptr[1];
 	}
 	tmp_complex = TRUE;
 	break;
       case K_LONG:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
-	    *values++ = *(long *) data;
+	    *values++ = *(signed long *) data;
 	    *values++ = 0.0;
 	}
 	break;
       case K_LCOMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
-	    *values++ = *(long *) data;
-	    *values++ = *( (long *) data + 1 );
+	    *values++ = *(signed long *) data;
+	    *values++ = *( (signed long *) data + 1 );
 	}
 	tmp_complex = TRUE;
 	break;
       case K_UBYTE:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
 	    *values++ = *(unsigned char *) data;
 	    *values++ = 0.0;
 	}
 	break;
       case K_UINT:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
 	    *values++ = *(unsigned int *) data;
 	    *values++ = 0.0;
 	}
 	break;
       case K_USHORT:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
 	    *values++ = *(unsigned short *) data;
 	    *values++ = 0.0;
 	}
 	break;
       case K_ULONG:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
 	    *values++ = *(unsigned long *) data;
 	    *values++ = 0.0;
 	}
 	break;
       case K_UBCOMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
 	    *values++ = *(unsigned char *) data;
 	    *values++ = *( (unsigned char *) data + 1 );
@@ -1751,8 +1633,7 @@ flag ds_get_elements (CONST char *data, unsigned int data_type,
 	tmp_complex = TRUE;
 	break;
       case K_UICOMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
 	    *values++ = *(unsigned int *) data;
 	    *values++ = *( (unsigned int *) data + 1 );
@@ -1760,8 +1641,7 @@ flag ds_get_elements (CONST char *data, unsigned int data_type,
 	tmp_complex = TRUE;
 	break;
       case K_USCOMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
 	    *values++ = *(unsigned short *) data;
 	    *values++ = *( (unsigned short *) data + 1 );
@@ -1769,8 +1649,7 @@ flag ds_get_elements (CONST char *data, unsigned int data_type,
 	tmp_complex = TRUE;
 	break;
       case K_ULCOMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values; ++count, data += data_stride)
 	{
 	    *values++ = *(unsigned long *) data;
 	    *values++ = *( (unsigned long *) data + 1 );
@@ -1811,16 +1690,16 @@ dim_desc *dimension;
 	a_prog_bug (function_name);
     }
     if ( ( return_value = (double *) m_alloc (sizeof *return_value *
-					      (*dimension).length) )
+					      dimension->length) )
 	== NULL )
     {
 	m_error_notify (function_name, "co-ordinate array");
 	return (NULL);
     }
-    if ( (*dimension).coordinates == NULL )
+    if ( dimension->coordinates == NULL )
     {
 	/*  Regularly spaced: compute  */
-	for (coord_count = 0; coord_count < (*dimension).length; ++coord_count)
+	for (coord_count = 0; coord_count < dimension->length; ++coord_count)
 	{
 	    return_value[coord_count] = ds_get_coordinate (dimension,
 							   coord_count);
@@ -1829,9 +1708,9 @@ dim_desc *dimension;
     else
     {
 	/*  Irregularly spaced: copy  */
-	for (coord_count = 0; coord_count < (*dimension).length; ++coord_count)
+	for (coord_count = 0; coord_count < dimension->length; ++coord_count)
 	{
-	    return_value[coord_count] = (*dimension).coordinates[coord_count];
+	    return_value[coord_count] = dimension->coordinates[coord_count];
 	}
     }
     return (return_value);
@@ -1903,12 +1782,17 @@ flag ds_get_scattered_elements (CONST char *data, unsigned int data_type,
     written here, else the value FALSE is written here. If this is NULL,
     nothing is written here.
     <num_values> The number of data values to convert.
+    [MT-LEVEL] Safe.
     [RETURNS] TRUE if the data was successfully converted, else FALSE.
 */
 {
     flag tmp_complex = FALSE;
+    signed char *b_data;
+    signed short *s_data;
+    signed int *i_data;
     unsigned int count;
     double zero = 0.0;
+    double toobig = TOOBIG;
     CONST char *ptr;
     static char function_name[] = "ds_get_scattered_elements";
 
@@ -1923,9 +1807,9 @@ flag ds_get_scattered_elements (CONST char *data, unsigned int data_type,
 	a_prog_bug (function_name);
     }
 #ifdef MACHINE_i386
-    if ( (int) values % 4 != 0 )
+    if ( !IS_ALIGNED ( values, sizeof (float) ) )
 #else
-    if ( (long) values % sizeof (double) != 0 )
+    if ( !IS_ALIGNED ( values, sizeof (double) ) )
 #endif
     {
 	(void) fprintf (stderr,
@@ -1966,31 +1850,27 @@ flag ds_get_scattered_elements (CONST char *data, unsigned int data_type,
       case K_BYTE:
 	for (count = 0; count < num_values; ++count)
 	{
-	    ptr = data + offsets[count];
-	    if (*(char *) ptr < -127)
-	    {
-		*values++ = TOOBIG;
-	    }
-	    else
-	    {
-		*values++ = *(char *) ptr;
-	    }
+	    b_data = (signed char *) (data + offsets[count]);
+	    if (b_data[0] < -127) *values++ = toobig;
+	    else *values++ = b_data[0];
 	    *values++ = zero;
 	}
 	break;
       case K_INT:
 	for (count = 0; count < num_values; ++count)
 	{
-	    ptr = data + offsets[count];
-	    *values++ = *(int *) ptr;
+	    i_data = (signed int *) (data + offsets[count]);
+	    if (i_data[0] == 0x80000000) *values++ = toobig;
+	    else *values++ = i_data[0];
 	    *values++ = zero;
 	}
 	break;
       case K_SHORT:
 	for (count = 0; count < num_values; ++count)
 	{
-	    ptr = data + offsets[count];
-	    *values++ = *(short *) ptr;
+	    s_data = (signed short *) (data + offsets[count]);
+	    if (s_data[0] == -32768) *values++ = toobig;
+	    else *values++ = s_data[0];
 	    *values++ = zero;
 	}
 	break;
@@ -2015,27 +1895,33 @@ flag ds_get_scattered_elements (CONST char *data, unsigned int data_type,
       case K_BCOMPLEX:
 	for (count = 0; count < num_values; ++count)
 	{
-	    ptr = data + offsets[count];
-	    *values++ = *(char *) ptr;
-	    *values++ = *( (char *) ptr + 1 );
+	    b_data = (signed char *) (data + offsets[count]);
+	    if (b_data[0] < -127) *values++ = toobig;
+	    else *values++ = b_data[0];
+	    if (b_data[1] < -127) *values++ = toobig;
+	    else *values++ = b_data[1];
 	}
 	tmp_complex = TRUE;
 	break;
       case K_ICOMPLEX:
 	for (count = 0; count < num_values; ++count)
 	{
-	    ptr = data + offsets[count];
-	    *values++ = *(int *) ptr;
-	    *values++ = *( (int *) ptr + 1 );
+	    i_data = (signed int *) (data + offsets[count]);
+	    if (i_data[0] == 0x80000000) *values++ = toobig;
+	    else *values++ = i_data[0];
+	    if (i_data[1] == 0x80000000) *values++ = toobig;
+	    else *values++ = i_data[1];
 	}
 	tmp_complex = TRUE;
 	break;
       case K_SCOMPLEX:
 	for (count = 0; count < num_values; ++count)
 	{
-	    ptr = data + offsets[count];
-	    *values++ = *(short *) ptr;
-	    *values++ = *( (short *) ptr + 1 );
+	    s_data = (signed short *) (data + offsets[count]);
+	    if (s_data[0] == -32768) *values++ = toobig;
+	    else *values++ = s_data[0];
+	    if (s_data[1] == -32768) *values++ = toobig;
+	    else *values++ = s_data[1];
 	}
 	tmp_complex = TRUE;
 	break;
@@ -2043,7 +1929,7 @@ flag ds_get_scattered_elements (CONST char *data, unsigned int data_type,
 	for (count = 0; count < num_values; ++count)
 	{
 	    ptr = data + offsets[count];
-	    *values++ = *(long *) ptr;
+	    *values++ = *(signed long *) ptr;
 	    *values++ = zero;
 	}
 	break;
@@ -2051,8 +1937,8 @@ flag ds_get_scattered_elements (CONST char *data, unsigned int data_type,
 	for (count = 0; count < num_values; ++count)
 	{
 	    ptr = data + offsets[count];
-	    *values++ = *(long *) ptr;
-	    *values++ = *( (long *) ptr + 1 );
+	    *values++ = *(signed long *) ptr;
+	    *values++ = *( (signed long *) ptr + 1 );
 	}
 	tmp_complex = TRUE;
 	break;
@@ -2137,3 +2023,144 @@ flag ds_get_scattered_elements (CONST char *data, unsigned int data_type,
     }
     return (TRUE);
 }   /*  End Function ds_get_scattered_elements  */
+
+/*PUBLIC_FUNCTION*/
+flag ds_can_transfer_element_as_block (unsigned int type)
+/*  [PURPOSE] This routine will determine if an element can be transferred as a
+    single block of data (i.e. no conversion between host and network format is
+    needed).
+    <type> The type of the element.
+    [RETURNS] TRUE if the element may be transferred as a single block, else
+    FALSE.
+*/
+{
+#ifdef MACHINE_BIG_ENDIAN
+    extern char host_type_sizes[NUMTYPES];
+    extern char network_type_bytes[NUMTYPES];
+#endif
+    static char function_name[] = "ds_can_transfer_element_as_block";
+
+    switch (type)
+    {
+      case K_BYTE:
+      case K_BCOMPLEX:
+      case K_UBYTE:
+      case K_UBCOMPLEX:
+	/*  Byte types are always transferrable  */
+	break;
+      case K_FLOAT:
+      case K_DOUBLE:
+      case K_INT:
+      case K_SHORT:
+      case K_COMPLEX:
+      case K_DCOMPLEX:
+      case K_ICOMPLEX:
+      case K_SCOMPLEX:
+      case K_LONG:
+      case K_LCOMPLEX:
+      case K_UINT:
+      case K_USHORT:
+      case K_ULONG:
+      case K_UICOMPLEX:
+      case K_USCOMPLEX:
+      case K_ULCOMPLEX:
+	/*  Non-byte atomic data types  */
+#ifdef MACHINE_BIG_ENDIAN
+	if (host_type_sizes[type] !=network_type_bytes[type]) return FALSE;
+#else
+	return (FALSE);
+#endif
+	break;
+      case K_VSTRING:
+      case K_FSTRING:
+      case K_ARRAY:
+      case LISTP:
+	/*  Not atomic data type  */
+	return (FALSE);
+/*
+	break;
+*/
+      default:
+	/*  Illegal data type  */
+	(void) fprintf (stderr, "Illegal data type: %u\n", type);
+	a_prog_bug (function_name);
+	break;
+    }
+    return (TRUE);
+}   /*  End Function ds_can_transfer_element_as_block  */
+
+/*PUBLIC_FUNCTION*/
+flag ds_can_transfer_packet_as_block (packet_desc *pack_desc)
+/*  [PURPOSE] This routine will determine if a packet can be transferred as a
+    single block of data (i.e. no conversion between host and network format is
+    needed).
+    <pack_desc> A pointer to the packet descriptor.
+    [RETURNS] TRUE if the packet may be transferred as a single block, else
+    FALSE.
+*/
+{
+    unsigned int elem_count;
+    unsigned int type;
+#ifdef MACHINE_BIG_ENDIAN
+    extern char host_type_sizes[NUMTYPES];
+    extern char network_type_bytes[NUMTYPES];
+#endif
+    static char function_name[] = "ds_can_transfer_packet_as_block";
+
+    if (pack_desc == NULL)
+    {
+	(void) fprintf (stderr, "NULL pointer passed\n");
+	a_prog_bug (function_name);
+    }
+    for (elem_count = 0; elem_count < pack_desc->num_elements; ++elem_count)
+    {
+	type = pack_desc->element_types[elem_count];
+	switch (type)
+	{
+	  case K_BYTE:
+	  case K_BCOMPLEX:
+	  case K_UBYTE:
+	  case K_UBCOMPLEX:
+	    /*  Byte types are always transferrable  */
+	    break;
+	  case K_FLOAT:
+	  case K_DOUBLE:
+	  case K_INT:
+	  case K_SHORT:
+	  case K_COMPLEX:
+	  case K_DCOMPLEX:
+	  case K_ICOMPLEX:
+	  case K_SCOMPLEX:
+	  case K_LONG:
+	  case K_LCOMPLEX:
+	  case K_UINT:
+	  case K_USHORT:
+	  case K_ULONG:
+	  case K_UICOMPLEX:
+	  case K_USCOMPLEX:
+	  case K_ULCOMPLEX:
+	    /*  Non-byte atomic data types  */
+#ifdef MACHINE_BIG_ENDIAN
+	    if (host_type_sizes[type] !=network_type_bytes[type]) return FALSE;
+#else
+	    return (FALSE);
+#endif
+	    break;
+	  case K_VSTRING:
+	  case K_FSTRING:
+	  case K_ARRAY:
+	  case LISTP:
+	    /*  Not atomic data type  */
+	    return (FALSE);
+/*
+	    break;
+*/
+	  default:
+	    /*  Illegal data type  */
+	    (void) fprintf (stderr, "Illegal data type: %u\n", type);
+	    a_prog_bug (function_name);
+	    break;
+	}
+    }
+    return (TRUE);
+}   /*  End Function ds_can_transfer_packet_as_block  */

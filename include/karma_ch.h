@@ -2,7 +2,7 @@
 
     Header for  ch_  package.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,25 +31,24 @@
 
     Written by      Richard Gooch   12-SEP-1992
 
-    Last updated by Richard Gooch   28-NOV-1994
+    Last updated by Richard Gooch   27-SEP-1995
 
 */
 
-#ifndef KARMA_CH_H
-#define KARMA_CH_H
-
-
-#ifndef KARMA_H
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
 #  include <karma.h>
 #endif
 
-#ifndef KARMA_CH_DEF_H
+#if !defined(KARMA_CH_DEF_H) || defined(MAKEDEPEND)
 #  include <karma_ch_def.h>
 #endif
 
-#ifndef KARMA_C_DEF_H
+#if !defined(KARMA_C_DEF_H) || defined(MAKEDEPEND)
 #  include <karma_c_def.h>
 #endif
+
+#ifndef KARMA_CH_H
+#define KARMA_CH_H
 
 
 /*  File:  channel.c  */
@@ -106,6 +105,9 @@ EXTERN_FUNCTION (flag ch_getl, (Channel channel, char *buffer,
 				unsigned int length) );
 EXTERN_FUNCTION (flag ch_puts, (Channel channel, CONST char *string,
 				flag newline) );
+EXTERN_FUNCTION (unsigned int ch_drain,
+		 (Channel channel, unsigned int length) );
+EXTERN_FUNCTION (flag ch_printf, (Channel channel, CONST char *format, ...) );
 
 
 /*  File:  ch_globals.h  */

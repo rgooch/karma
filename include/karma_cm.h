@@ -2,7 +2,7 @@
 
     Header for  cm_  package.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,17 +31,17 @@
 
     Written by      Richard Gooch   10-OCT-1992
 
-    Last updated by Richard Gooch   29-NOV-1992
+    Last updated by Richard Gooch   7-APR-1995
 
 */
+
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
+#  include <karma.h>
+#endif
 
 #ifndef KARMA_CM_H
 #define KARMA_CM_H
 
-
-#ifndef KARMA_H
-#  include <karma.h>
-#endif
 
 /*  File:  cm.c  */
 EXTERN_FUNCTION (flag cm_manage, (int pid, void (*stop_func) (),

@@ -6,6 +6,8 @@
  Name		       Class		   RepType         Default Value
  ----		       -----		   -------         -------------
  canvasTypes           CanvasTypes         Int             0
+ splitStereo           SplitStereo         Bool            False
+ verbose               Verbose             Bool            False
 */    
 /*----------------------------------------------------------------------*/
 
@@ -28,7 +30,11 @@ typedef struct _MultiCanvasRec *MultiCanvasWidget;
 #define XtIsMultiCanvas(w) XtIsSubclass((w), multiCanvasWidgetClass)
 
 #define XkwNcanvasTypes "canvasTypes"
+#define XkwNsplitStereo "splitStereo"
+#define XkwNverbose "verbose"
 
 #define XkwCCanvasTypes "CanvasTypes"
+#define XkwCSplitStereo "SplitStereo"
+#define XkwCVerbose "Verbose"
 
 #endif

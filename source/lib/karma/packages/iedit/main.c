@@ -57,9 +57,11 @@
     Updated by      Richard Gooch   26-AUG-1994: Moved  typedef  of
   KImageEditList class to header.
 
-    Last updated by Richard Gooch   13-JAN-1995: Reordered elements in edit
+    Updated by      Richard Gooch   13-JAN-1995: Reordered elements in edit
   object packet to ensure "Edit Object Value" falls on a double boundary.
   Incremented protocol version.
+
+    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
 
 
 */
@@ -217,8 +219,6 @@ void *info;
     KImageEditList ilist;
     extern KImageEditList masterable_list;
     extern KImageEditList slaveable_list;
-    extern packet_desc *instruction_desc;
-    extern char *str_instruction_desc[];
     static char function_name[] = "iedit_create_list";
 
     initialise_iedit_package ();
@@ -787,10 +787,6 @@ static flag apply_instructions (ilist)
 */
 KImageEditList ilist;
 {
-    Channel channel;
-    Connection conn;
-    unsigned int num_connections;
-    unsigned int conn_count;
     extern packet_desc *instruction_desc;
     static char function_name[] = "apply_instructions";
 
@@ -827,7 +823,9 @@ void **info;
     Channel channel;
     extern KImageEditList masterable_list;
     extern packet_desc *instruction_desc;
+/*
     static char function_name[] = "register_new_edit_slave";
+*/
 
     channel = conn_get_channel (connection);
     if (masterable_list == NULL)
@@ -901,7 +899,9 @@ void **info;
     list_header *list_head;
     extern KImageEditList slaveable_list;
     extern packet_desc *instruction_desc;
+/*
     static char function_name[] = "verify_edit_slave_connection";
+*/
 
     if (slaveable_list == NULL)
     {

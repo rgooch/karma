@@ -3,7 +3,7 @@
 
     This code provides child process management.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -56,8 +56,10 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/cm/main.c
 
-    Last updated by Richard Gooch   7-DEC-1994: Stripped declaration of  errno
+    Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
+
+    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
 
 
 */
@@ -197,7 +199,7 @@ flag cm_manage ( int pid, void (*stop_func) (), void (*term_func) (),
 #ifdef CAN_FORK
     struct child_pid_type *entry;
     struct child_pid_type *new_entry;
-    struct child_pid_type *last_entry;
+    struct child_pid_type *last_entry = NULL; /*Initialised to keep gcc happy*/
     extern struct child_pid_type *child_pid_list;
     extern char *sys_errlist[];
     static char function_name[] = "cm_manage";
@@ -352,10 +354,14 @@ void cm_poll (flag block)
 	(void) fprintf (stderr, "Error in call to wait3(2)\t%s\n",
 			sys_errlist[errno]);
 	return;
+/*
 	break;
+*/
       case 0:
 	return;
+/*
 	break;
+*/
       default:
 	/*  Got a child PID  */
 	break;

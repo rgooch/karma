@@ -3,7 +3,7 @@
 
     This code provides conversion between host and cannonical data formats.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -55,8 +55,14 @@
     Updated by      Richard Gooch   3-NOV-1994: Switched to OS_ and MACHINE_
   macros for machine determination.
 
-    Last updated by Richard Gooch   26-NOV-1994: Split and moved to
+    Updated by      Richard Gooch   26-NOV-1994: Split and moved to
   packages/p/u32.c
+
+    Updated by      Richard Gooch   27-FEB-1994: Improved portability.
+
+    Last updated by Richard Gooch   9-JUN-1995: Changed to NEED_ALIGNED_DATA
+  and removed assumption that all little endian platforms have a 32 bit
+  unsigned integer.
 
 
 */
@@ -67,38 +73,55 @@
 
 #define BYTE_MASK 0xff
 
+#undef ALWAYS_DONE
+
 /*PUBLIC_FUNCTION*/
-flag p_write_buf32 (buffer, data)
-/*  This routine will write 32 bits of data to the buffer pointed to by
-    buffer  .
-    The data must be given by  data  .This must be in host natural byte order.
-    The data will be converted to network byte order prior to writing.
-    The routine returns TRUE on success, else it returns FALSE.
+flag p_write_buf32 (char *buffer, unsigned long data)
+/*  [PURPOSE] This routine will write 32 bits of unsigned data to a buffer,
+    <buffer> A pointer to the buffer. This buffer must be at least 4 bytes long
+    <data> The data. This must be in host natural byte order. The data will be
+    converted to network byte order prior to writing.
+    [RETURNS] TRUE on success, else FALSE.
 */
-char *buffer;
-unsigned long data;
 {
+#if defined(MACHINE_LITTLE_ENDIAN) && defined(Kword32u)
+    Kword32u value;
+    char *data_ptr = (char *) &value;
+#endif
+
     static char function_name[] = "p_write_buf32";
 
-#if defined(BLOCK_TRANSFER) && !defined(NEEDS_MISALIGN_COMPILE)
-    *(unsigned long *) buffer = data;
-    return (TRUE);
-#else
-#  if defined(BLOCK_TRANSFER) && defined(NEEDS_MISALIGN_COMPILE)
-    if ( (int) buffer & 0x3 == 0 )
-    {
-	*(unsigned long *) buffer = data;
-	return (TRUE);
-    }
-#  endif
     if (data > NET_UINT_MAX)
     {
 	(void) fprintf (stderr,
-			"WARNING: %s: data: %lu is outside range for network format: clipping\n",
+			"WARNING: %s: data: %lu is outside network format range: clipping\n",
 			function_name, data);
 	data = NET_UINT_MAX;
     }
-    /*  Convert data to network byte order  */
+#ifdef Kword32u
+#  if defined(MACHINE_BIG_ENDIAN) && !defined(NEED_ALIGNED_DATA)
+#    define ALWAYS_DONE
+    *(Kword32u *) buffer = data;
+    return (TRUE);
+#  endif
+#  if defined(MACHINE_BIG_ENDIAN) && defined(NEED_ALIGNED_DATA)
+    if ( ( (int) buffer & 0x3 ) == 0 )
+    {
+	*(Kword32u *) buffer = data;
+	return (TRUE);
+    }
+#  endif
+#  ifdef MACHINE_LITTLE_ENDIAN
+#    define ALWAYS_DONE
+    value = data;
+    buffer[0] = data_ptr[3];
+    buffer[1] = data_ptr[2];
+    buffer[2] = data_ptr[1];
+    buffer[3] = data_ptr[0];
+    return (TRUE);
+#  endif
+#endif
+#ifndef ALWAYS_DONE
     /*  Have to do this the hard way  */
     /*  Byte 3 (LSB)  */
     *(unsigned char *) (buffer + 3) = data & BYTE_MASK;
@@ -112,29 +135,45 @@ unsigned long data;
 #endif
 }   /*  End Function p_write_buf32  */
 
+#undef ALWAYS_DONE
+
 /*PUBLIC_FUNCTION*/
-flag p_read_buf32 (buffer, data)
-/*  This routine will read 32 bits of data from the buffer pointed to by
-    buffer  .This must be at least 4 bytes long.
-    The data will be written to the storage pointed to by  data  .This will be
-    in host natural byte order.
-    The data will be converted from network byte order after reading.
-    The routine returns TRUE on success, else it returns FALSE.
+flag p_read_buf32 (char *buffer, unsigned long *data)
+/*  [PURPOSE] This routine will read 32 bits of unsigned data from a buffer.
+    <buffer> A pointer to the buffer. This buffer must be at least 4 bytes long
+    <data> The output data will be written here. This will be in host natural
+    byte order. The data will be converted from network byte order after
+    reading.
+    [RETURNS] TRUE on success, else FALSE.
 */
-char *buffer;
-unsigned long *data;
 {
-#if defined(BLOCK_TRANSFER) && !defined(NEEDS_MISALIGN_COMPILE)
-    *data = *(unsigned long *) buffer;
+#ifdef Kword32u
+#  if defined(MACHINE_BIG_ENDIAN) && !defined(NEED_ALIGNED_DATA)
+#    define ALWAYS_DONE
+    *data = *(Kword32u *) buffer;
     return (TRUE);
-#else
-#  if defined(BLOCK_TRANSFER) && defined(NEEDS_MISALIGN_COMPILE)
-    if ( (int) buffer & 0x3 == 0 )
+#  endif
+#  if defined(MACHINE_BIG_ENDIAN) && defined(NEED_ALIGNED_DATA)
+    if ( ( (int) buffer & 0x3 ) == 0 )
     {
-	*data = *(unsigned long *) buffer;
+	*data = *(Kword32u *) buffer;
 	return (TRUE);
     }
 #  endif
+#  ifdef MACHINE_LITTLE_ENDIAN
+#    define ALWAYS_DONE
+    Kword32u value;
+    char *data_ptr = (char *) &value;
+
+    data_ptr[0] = buffer[3];
+    data_ptr[1] = buffer[2];
+    data_ptr[2] = buffer[1];
+    data_ptr[3] = buffer[0];
+    *data = value;
+    return (TRUE);
+#  endif
+#endif
+#ifndef ALWAYS_DONE
     /*  Have to do this the hard way  */
     /*  Byte 0 (MSB)  */
     *data = (unsigned long) *(unsigned char *) buffer << 24;

@@ -31,21 +31,19 @@
 
     Written by      Richard Gooch   16-APR-1993
 
-    Last updated by Richard Gooch   2-JAN-1995
+    Last updated by Richard Gooch   20-OCT-1995
 
 */
 
-#ifndef KARMA_KWIN_H
-#define KARMA_KWIN_H
+#if !defined(K_WIN_SCALE_H) || defined(MAKEDEPEND)
+#  include <k_win_scale.h>
+#endif
 
-
-#include <k_win_scale.h>
-
-#ifndef KARMA_DS_DEF_H
+#if !defined(KARMA_DS_DEF_H) || defined(MAKEDEPEND)
 #  include <karma_ds_def.h>
 #endif
 
-#ifndef KARMA_PSW_DEF_H
+#if !defined(KARMA_PSW_DEF_H) || defined(MAKEDEPEND)
 #  include <karma_psw_def.h>
 #endif
 
@@ -58,9 +56,12 @@
 #  include <karma_vc.h>
 #endif
 
-#ifndef KARMA_C_DEF_H
+#if !defined(KARMA_C_DEF_H) || defined(MAKEDEPEND)
 #  include <karma_c_def.h>
 #endif
+
+#ifndef KARMA_KWIN_H
+#define KARMA_KWIN_H
 
 
 #define KWIN_VISUAL_PSEUDOCOLOUR (unsigned int) 0
@@ -70,11 +71,40 @@
 #define KWIN_VISUAL_STATICCOLOUR (unsigned int) 4
 #define KWIN_VISUAL_STATICGRAY   (unsigned int) 5
 
-#define KWIN_ATT_END     0  /*  End of varargs list                       */
-#define KWIN_ATT_VISUAL  1  /*  G:(unsigned int *)                        */
-#define KWIN_ATT_DEPTH   2  /*  G:(unsigned int *)                        */
-#define KWIN_ATT_VISIBLE 3  /*  G:(flag *)            S:(flag)            */
-#define KWIN_ATT_FONT    4  /*  G:(KPixCanvasFont *)  S:(KPixCanvasFont)  */
+#define KWIN_ATT_END             0  /* End of varargs list                   */
+#define KWIN_ATT_VISUAL          1  /* G:(unsigned int *)                    */
+#define KWIN_ATT_DEPTH           2  /* G:(unsigned int *)                    */
+#define KWIN_ATT_VISIBLE         3  /* G:(flag *)            S:(flag)        */
+#define KWIN_ATT_FONT            4  /*G:(KPixCanvasFont *) S:(KPixCanvasFont)*/
+#define KWIN_ATT_PIX_RED_MASK    5  /* G:(unsigned long *)                   */
+#define KWIN_ATT_PIX_GREEN_MASK  6  /* G:(unsigned long *)                   */
+#define KWIN_ATT_PIX_BLUE_MASK   7  /* G:(unsigned long *)                   */
+#define KWIN_ATT_IM_RED_MASK     8  /* G:(unsigned long *)                   */
+#define KWIN_ATT_IM_GREEN_MASK   9  /* G:(unsigned long *)                   */
+#define KWIN_ATT_IM_BLUE_MASK    10 /* G:(unsigned long *)                   */
+#define KWIN_ATT_IM_RED_OFFSET   11 /* G:(uaddr *)                           */
+#define KWIN_ATT_IM_GREEN_OFFSET 12 /* G:(uaddr *)                           */
+#define KWIN_ATT_IM_BLUE_OFFSET  13 /* G:(uaddr *)                           */
+#define KWIN_ATT_LOWER_HANDLE    14 /* G:(void **)                           */
+
+#define KWIN_FUNC_DRAW_PC_IMAGE     10000
+#define KWIN_FUNC_DRAW_RGB_IMAGE    10001
+#define KWIN_FUNC_DRAW_CACHED_IMAGE 10002
+#define KWIN_FUNC_FREE_CACHE_DATA   10003
+#define KWIN_FUNC_DRAW_LINE         10004
+#define KWIN_FUNC_DRAW_ARC          10005
+#define KWIN_FUNC_DRAW_POLYGON      10006
+#define KWIN_FUNC_DRAW_STRING       10007
+#define KWIN_FUNC_DRAW_RECTANGLE    10008
+#define KWIN_FUNC_DRAW_LINES        10009
+#define KWIN_FUNC_DRAW_ARCS         10010
+#define KWIN_FUNC_DRAW_SEGMENTS     10011
+#define KWIN_FUNC_GET_COLOUR        10012
+#define KWIN_FUNC_LOAD_FONT         10013
+#define KWIN_FUNC_GET_STRING_SIZE   10014
+#define KWIN_FUNC_SET_FONT          10015
+#define KWIN_FUNC_QUERY_COLOURMAP   10016
+#define KWIN_FUNC_RESIZE            10017
 
 #define KWIN_STRING_END       0  /*  End of varargs list                     */
 #define KWIN_STRING_WIDTH     1  /*  (int *)                                 */
@@ -82,6 +112,13 @@
 #define KWIN_STRING_ASCENT    3  /*  (int *)                                 */
 #define KWIN_STRING_DESCENT   4  /*  (int *)                                 */
 
+#define KWIN_XGL_NOT_AVAILABLE          0
+#define KWIN_XGL_STEREO_NOT_AVAILABLE   1
+#define KWIN_XGL_STEREO_AVAILABLE       2
+
+#define KWIN_OpenGL_NOT_AVAILABLE          0
+#define KWIN_OpenGL_STEREO_NOT_AVAILABLE   1
+#define KWIN_OpenGL_STEREO_AVAILABLE       2
 
 
 typedef struct pixcanvas_type * KPixCanvas;
@@ -101,6 +138,20 @@ EXTERN_FUNCTION (KPixCanvas kwin_create_x, (Display *display, Window window,
 					    int width, int height) );
 EXTERN_FUNCTION (void kwin_set_gc_x, (KPixCanvas canvas, GC gc) );
 EXTERN_FUNCTION (GC kwin_get_gc_x, (KPixCanvas canvas) );
+EXTERN_FUNCTION (unsigned int kwin_xgl_test_stereo,
+		 (Display *display, Window window) );
+EXTERN_FUNCTION (flag kwin_xgl_create_stereo,
+		 (Display *display, Window window,
+		  int xoff, int yoff, int width, int height,
+		  KPixCanvas *mono, KPixCanvas *left, KPixCanvas *right) );
+EXTERN_FUNCTION (unsigned int kwin_open_gl_test_stereo,
+		 (Display *display, int screen_number,
+		  unsigned int visual, unsigned int depth) );
+EXTERN_FUNCTION (flag kwin_open_gl_create_stereo,
+		 (Display *display, Window window,
+		  int xoff, int yoff, int width, int height,
+		  KPixCanvas *mono, KPixCanvas *left, KPixCanvas *right) );
+
 #  endif  /*  X11  */
 
 /*  VX specific routines  */
@@ -129,14 +180,12 @@ EXTERN_FUNCTION (flag kwin_process_position_event, (KPixCanvas canvas,
 						    void *event_info) );
 EXTERN_FUNCTION (flag kwin_write_ps, (KPixCanvas canvas,
 				      PostScriptPage pspage) );
-#ifndef KWIN_INTERNAL
 EXTERN_FUNCTION (void kwin_get_attributes, (KPixCanvas canvas, ...) );
 EXTERN_FUNCTION (void kwin_set_attributes, (KPixCanvas canvas, ...) );
-#endif
 
 
 /*  Drawing routines  */
-EXTERN_FUNCTION (void kwin_clear,
+EXTERN_FUNCTION (flag kwin_clear,
 		 (KPixCanvas canvas, int x, int y, int width, int height) );
 EXTERN_FUNCTION (flag kwin_draw_image, (KPixCanvas canvas,
 					array_desc *arr_desc, char *slice,
@@ -146,6 +195,19 @@ EXTERN_FUNCTION (flag kwin_draw_image, (KPixCanvas canvas,
 					unsigned long *pixel_values,
 					struct win_scale_type *win_scale,
 					KPixCanvasImageCache *cache_ptr) );
+EXTERN_FUNCTION (flag kwin_draw_pc_image,
+		 (KPixCanvas canvas, int x_off, int y_off,
+		  int x_pixels, int y_pixels,
+		  CONST char *slice,
+		  CONST uaddr *hoffsets, CONST uaddr *voffsets,
+		  unsigned int width, unsigned int height,
+		  unsigned int type, unsigned int conv_type,
+		  unsigned int num_pixels, unsigned long *pixel_values,
+		  unsigned long blank_pixel,unsigned long min_sat_pixel,
+		  unsigned long max_sat_pixel,
+		  double i_min, double i_max,
+		  flag (*iscale_func) (), void *iscale_info,
+		  KPixCanvasImageCache *cache_ptr) );
 EXTERN_FUNCTION (flag kwin_draw_rgb_image,
 		 (KPixCanvas canvas, int x_off, int y_off,
 		  int x_pixels, int y_pixels,
@@ -157,44 +219,47 @@ EXTERN_FUNCTION (flag kwin_draw_rgb_image,
 		  KPixCanvasImageCache *cache_ptr) );
 EXTERN_FUNCTION (flag kwin_draw_cached_image, (KPixCanvasImageCache cache,
 					       int x_off, int y_off) );
-EXTERN_FUNCTION (void kwin_draw_point, (KPixCanvas canvas,
-					int x, int y,
+EXTERN_FUNCTION (flag kwin_draw_point, (KPixCanvas canvas,
+					double x, double y,
 					unsigned long pixel_value) );
-EXTERN_FUNCTION (void kwin_draw_line, (KPixCanvas canvas,
-					int x0, int y0, int x1, int y1,
-					unsigned long pixel_value) );
-EXTERN_FUNCTION (void kwin_fill_ellipse, (KPixCanvas canvas,
-					  int cx, int cy, int rx, int ry,
-					  unsigned long pixel_value) );
+EXTERN_FUNCTION (flag kwin_draw_line,
+		 (KPixCanvas canvas,
+		  double x0, double y0, double x1, double y1,
+		  unsigned long pixel_value) );
+EXTERN_FUNCTION (flag kwin_fill_ellipse,
+		 (KPixCanvas canvas,double cx, double cy, double rx, double ry,
+		  unsigned long pixel_value) );
 EXTERN_FUNCTION (flag kwin_fill_polygon, (KPixCanvas canvas,
 					  int *point_x, int *point_y,
 					  unsigned int num_vertices,
 					  unsigned long pixel_value,
 					  flag convex) );
-EXTERN_FUNCTION (void kwin_draw_string, (KPixCanvas canvas, int x, int y,
-					 char *string,
+EXTERN_FUNCTION (flag kwin_draw_string, (KPixCanvas canvas, double x, double y,
+					 CONST char *string,
 					 unsigned long pixel_value,
 					 flag clear_under) );
-EXTERN_FUNCTION (void kwin_draw_rectangle, (KPixCanvas canvas, int x, int y,
-					    int width, int height,
-					    unsigned long pixel_value) );
-EXTERN_FUNCTION (void kwin_fill_rectangle, (KPixCanvas canvas, int x, int y,
-					    int width, int height,
-					    unsigned long pixel_value) );
-EXTERN_FUNCTION (void kwin_draw_lines, (KPixCanvas canvas,
+EXTERN_FUNCTION (flag kwin_draw_rectangle,
+		 (KPixCanvas canvas,
+		  double x, double y, double width, double height,
+		  unsigned long pixel_value) );
+EXTERN_FUNCTION (flag kwin_fill_rectangle,
+		 (KPixCanvas canvas,
+		  double x, double y, double width, double height,
+		  unsigned long pixel_value) );
+EXTERN_FUNCTION (flag kwin_draw_lines, (KPixCanvas canvas,
 					int *x_array, int *y_array,
 					int num_points,
 					unsigned long pixel_value) );
-EXTERN_FUNCTION (void kwin_draw_ellipse, (KPixCanvas canvas,
-					  int cx, int cy, int rx, int ry,
-					  unsigned long pixel_value) );
-EXTERN_FUNCTION (void kwin_draw_ellipses, (KPixCanvas canvas, int *cx, int *cy,
+EXTERN_FUNCTION (flag kwin_draw_ellipse,
+		 (KPixCanvas canvas,double cx, double cy, double rx, double ry,
+		  unsigned long pixel_value) );
+EXTERN_FUNCTION (flag kwin_draw_ellipses, (KPixCanvas canvas, int *cx, int *cy,
 					   int *rx, int *ry, int num_ellipses,
 					   unsigned long pixel_value) );
-EXTERN_FUNCTION (void kwin_fill_ellipses, (KPixCanvas canvas, int *cx, int *cy,
+EXTERN_FUNCTION (flag kwin_fill_ellipses, (KPixCanvas canvas, int *cx, int *cy,
 					   int *rx, int *ry, int num_ellipses,
 					   unsigned long pixel_value) );
-EXTERN_FUNCTION (void kwin_draw_segments, (KPixCanvas canvas,
+EXTERN_FUNCTION (flag kwin_draw_segments, (KPixCanvas canvas,
 					   int *x0, int *y0, int *x1, int *y1,
 					   int num_segments,
 					   unsigned long pixel_value) );
@@ -211,11 +276,18 @@ EXTERN_FUNCTION (flag kwin_convert_from_canvas_coord, (KPixCanvas canvas,
 						       int xin, int yin,
 						       int *xout, int *yout) );
 EXTERN_FUNCTION (flag kwin_get_colour,
-		 (KPixCanvas canvas, char *colourname,
+		 (KPixCanvas canvas, CONST char *colourname,
 		  unsigned long *pixel_value, unsigned short *red,
 		  unsigned short *green, unsigned short *blue) );
 EXTERN_FUNCTION (KPixCanvasFont kwin_load_font,
-		 (KPixCanvas canvas, char *fontname) );
+		 (KPixCanvas canvas, CONST char *fontname) );
+
+/*  File: generic.c  */
+EXTERN_FUNCTION (KPixCanvas kwin_create_generic,
+		 (void *info, int xoff, int yoff, int width, int height,
+		  unsigned int depth, unsigned int visual, flag visible,
+		  flag (*draw_point) (), void *(*create_child) (),
+		  flag (*clear_area) (), ...) );
 
 
 #endif /*  KARMA_KWIN_H  */

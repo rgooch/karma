@@ -1,0 +1,81 @@
+#! /bin/echo Must be sourced, not executed
+
+# usage: switch-karma  production|experimental
+
+if ("$#argv" != "1") then
+    echo "switch-karma  production|experimental"
+    exit 1
+endif
+
+if ("$argv[1]" == "production") then
+    if ( ! -d /usr/local/karma ) then
+	echo "Production version of sparc_Solaris Karma not available"
+	exit 2
+    endif
+    switch ("$HOSTNAME")
+	case "phoenix":
+	    set oldroot = /phoenix/karma
+	    set oldbase = ${oldroot}/${MACHINE_OS}
+	    set newroot = /nfs/applic/karma
+	    set newbase = /usr/local/karma
+	    echo "Using production version of sparc_Solaris Karma"
+	    breaksw
+	case "deepthought":
+	    set oldroot = /disk1/karma
+	    set oldbase = ${oldroot}/${MACHINE_OS}
+	    set newroot = /nfs/applic/karma
+	    set newbase = /usr/local/karma
+	    echo "Using production version of sparc_Solaris Karma"
+	    breaksw
+	default:
+	    exit 0
+	    breaksw
+    endsw
+endif
+
+if ("$argv[1]" == "experimental") then
+    switch ("$HOSTNAME")
+	case "phoenix":
+	    set oldroot = /nfs/applic/karma
+	    set oldbase = /usr/local/karma
+	    set newroot = /phoenix/karma
+	    set newbase = ${newroot}/${MACHINE_OS}
+	    if ( ! -d $newbase ) then
+		echo "Experimental version of sparc_Solaris Karma not available"
+		exit 2
+	    endif
+	    echo "Using experimental version of sparc_Solaris Karma"
+	    breaksw
+	case "deepthought":
+	    set oldroot = /nfs/applic/karma
+	    set oldbase = /usr/local/karma
+	    set newroot = /disk1/karma
+	    set newbase = ${newroot}/${MACHINE_OS}
+	    if ( ! -d $newbase ) then
+		echo "Experimental version of sparc_Solaris Karma not available"
+		exit 2
+	    endif
+	    echo "Using experimental version of sparc_Solaris Karma"
+	    breaksw
+	default:
+	    exit 0
+	    breaksw
+    endsw
+endif
+
+setenv KARMABASE $newbase
+setenv KARMABINPATH $KARMABASE/bin
+setenv KARMALIBPATH $KARMABASE/lib
+setenv KARMAINCLUDEPATH $KARMABASE/include
+setenv KARMAROOT $newroot
+setenv PATH `echo "$PATH" | sed -e "s*${oldbase}*${newbase}*g" | sed -e "s*${oldroot}*${newroot}*g"`
+set _cdpath = ()
+foreach i ($cdpath)
+    if ("$i" == "$oldroot") then
+	set _cdpath = ($_cdpath $newroot)
+    else
+	set _cdpath = ($_cdpath $i)
+    endif
+end
+set cdpath = ($_cdpath)
+unset _cdpath

@@ -3,3 +3,4 @@ xc_alloc_colours
 xc_free_colours
 xc_store_colours
 xc_get_location
+xc_get_cmap

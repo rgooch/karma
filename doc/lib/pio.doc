@@ -10,9 +10,9 @@
     instead.
 
 
-    Written by		Richard Gooch	13-Dec-1994
+    Written by		Richard Gooch	22-Aug-1995
 
-    Last updated by	Richard Gooch	13-Dec-1994
+    Last updated by	Richard Gooch	22-Aug-1995
 
 
 */
@@ -75,40 +75,70 @@ flag pio_read16 (Channel channel, unsigned long *data)
 /*---------------------------------------------------------------------------*/
 
 flag pio_write_float (Channel channel, float data)
-/*  This routine will write a floating point number to the channel object
-    given by  channel  .
-    The data must be given by  data  .This must be in host natural format.
-    The data will be converted to IEEE network format prior to writing.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [PURPOSE] This routine will write a floating point number to a channel
+    object.
+    <channel> The channel object.
+    <data> The data. This must be in host natural format. The data will be
+    converted to IEEE network format prior to writing.
+    [RETURNS] TRUE on success, else FALSE.
 */
 /*---------------------------------------------------------------------------*/
 
 flag pio_read_float (Channel channel, float *data)
-/*  This routine will read a floating point number from the channel object
-    given by  channel  .
-    The data will be written to the storage pointed to by  data  .This will be
-    in host natural format.
-    The data will be converted from IEEE network format after reading.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [PURPOSE] This routine will read a floating point number from a channel
+    object.
+    <channel> The channel object.
+    <data> The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag pio_read_float_nantrap (Channel channel, float *data, flag *was_nan)
+/*  [PURPOSE] This routine will read a floating point number from a channel
+    object and will trap IEEE Not-A-Number (NaN) values.
+    <channel> The channel object.
+    <data> The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+    <was_nan> The value TRUE will be written here if the value was NaN, else
+    FALSE is written here.
+    [RETURNS] TRUE on success, else FALSE.
 */
 /*---------------------------------------------------------------------------*/
 
 flag pio_write_double (Channel channel, double data)
-/*  This routine will write a double precision floating point number to the
-    channel object given by  channel  .
-    The data must be given by  data  .This must be in host natural format.
-    The data will be converted to IEEE network format prior to writing.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [PURPOSE] This routine will write a double precision floating point number
+    to a channel object.
+    <channel> The channel object.
+    <data> The data. This must be in host natural format. The data will be
+    converted to IEEE network format prior to writing.
+    [RETURNS] TRUE on success, else FALSE.
 */
 /*---------------------------------------------------------------------------*/
 
 flag pio_read_double (Channel channel, double *data)
-/*  This routine will read a double precision floating point number from the
-    channel object given by  channel  .
-    The data will be written to the storage pointed to by  data  .This will be
-    in host natural format.
-    The data will be converted from IEEE network format after reading.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [PURPOSE] This routine will read a double precision floating point number
+    from a channel object.
+    <channel> The channel object.
+    <data> The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag pio_read_double_nantrap (Channel channel, double *data, flag *was_nan)
+/*  [PURPOSE] This routine will read a double precision floating point number
+    from a channel object and will trap IEEE Not-A-Number (NaN) values.
+    <channel> The channel object.
+    <data> The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+    <was_nan> The value TRUE will be written here if the value was NaN, else
+    FALSE is written here.
+    [RETURNS] TRUE on success, else FALSE.
 */
 /*---------------------------------------------------------------------------*/
 

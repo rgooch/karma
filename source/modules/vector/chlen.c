@@ -2,7 +2,7 @@
 
     Source file for  chlen  (resampling module).
 
-    Copyright (C) 1993,1994  Richard Gooch
+    Copyright (C) 1993,1994,1995  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -54,8 +54,14 @@
     Updated by      Richard Gooch   3-NOV-1994: Fixed some function
   declarations.
 
-    Last updated by Richard Gooch   4-NOV-1994: Quick workaround when
-  interpolating TOOBIG values in  resample_dimension  .
+    Updated by      Richard Gooch   4-NOV-1994: Quick workaround when
+  interpolating TOOBIG values in <resample_dimension>.
+
+    Updated by      Richard Gooch   24-JUN-1995: Improved interpolating TOOBIG
+  values in <resample_dimension>.
+
+    Last updated by Richard Gooch   13-JUL-1995: Fixed bug in <post_process>
+  no value returned.
 
 
 */
@@ -139,7 +145,7 @@ static char *option_comments[NUM_OPTIONS] =
     "oversample to num_coordinates",
     "filter using window"
 };
-static int option = OPTION_MIN_MAX;
+static unsigned int option = OPTION_MIN_MAX;
 
 #define RESAMPLE_OPTION_DATA_COPY 0
 #define RESAMPLE_OPTION_LINEAR_INTERPOLATION 1
@@ -354,7 +360,7 @@ packet_desc *inp_desc;
     dim_desc *inp_dim;
     dim_desc *out_dim;
     extern unsigned int dim_index;
-    extern int option;
+    extern unsigned int option;
     extern unsigned int inp_start_coord;
     extern unsigned int inp_stop_coord;
     extern unsigned int out_start_coord;
@@ -393,31 +399,31 @@ packet_desc *inp_desc;
 	a_prog_bug (function_name);
 	break;
     }
-    if ( (*arr_desc).num_levels > 0 )
+    if (arr_desc->num_levels > 0)
     {
 	(void) fprintf (stderr, "Tiling not supported yet\n");
 	return (NULL);
     }
-    if (ds_packet_all_data ( (*arr_desc).packet ) == FALSE)
+    if ( !ds_packet_all_data (arr_desc->packet) )
     {
 	(void) fprintf (stderr, "Array must have only atomic elements\n");
 	return (NULL);
     }
-    inp_dim = (*arr_desc).dimensions[dim_index];
-    if ( (*inp_dim).coordinates == NULL )
+    inp_dim = arr_desc->dimensions[dim_index];
+    if (inp_dim->coordinates == NULL)
     {
 	/*  Compute dimension spacing  */
-	inp_dim_spacing = ( ( (*inp_dim).maximum - (*inp_dim).minimum ) /
-			   (double) ( (*inp_dim).length - 1 ) );
+	inp_dim_spacing = ( (inp_dim->maximum - inp_dim->minimum) /
+			   (double) (inp_dim->length - 1) );
     }
     /*  Compute output dimension info  */
     switch (option)
     {
       case OPTION_MIN_MAX:
 	/*  Compute new minimum and maximum  */
-	if ( ( (new_min < (*inp_dim).minimum) ||
-	      (new_max > (*inp_dim).maximum) ) &&
-	    ( (*inp_dim).coordinates != NULL ) )
+	if ( ( (new_min < inp_dim->minimum) ||
+	      (new_max > inp_dim->maximum) ) &&
+	    (inp_dim->coordinates != NULL) )
 	{
 	    /*  Dimension extended and co-ordinates not evenly spaced  */
 	    (void) fprintf (stderr,
@@ -425,13 +431,13 @@ packet_desc *inp_desc;
 	    return (NULL);
 	}
 	/*  Compute new minimum  */
-	if (new_min < (*inp_dim).minimum)
+	if (new_min < inp_dim->minimum)
 	{
 	    /*  Outside old dimension bounds: extrapolate  */
 	    inp_start_coord = 0;
-	    out_start_coord = floor ( ( (*inp_dim).minimum - new_min ) /
+	    out_start_coord = floor ( (inp_dim->minimum - new_min) /
 				     inp_dim_spacing );
-	    min = (*inp_dim).minimum;
+	    min = inp_dim->minimum;
 	    min -= (double) out_start_coord * inp_dim_spacing;
 	}
 	else
@@ -443,13 +449,13 @@ packet_desc *inp_desc;
 	    min = ds_get_coordinate (inp_dim, inp_start_coord);
 	}
 	/*  Compute new maximum  */
-	if (new_max > (*inp_dim).maximum)
+	if (new_max > inp_dim->maximum)
 	{
 	    /*  Outside old dimension bounds: extrapolate  */
-	    pad_coords = floor ( (new_max - (*inp_dim).maximum) /
+	    pad_coords = floor ( (new_max - inp_dim->maximum) /
 				inp_dim_spacing );
-	    inp_stop_coord = (*inp_dim).length;
-	    max = (*inp_dim).maximum;
+	    inp_stop_coord = inp_dim->length;
+	    max = inp_dim->maximum;
 	    max += (double) pad_coords * inp_dim_spacing;
 	}
 	else
@@ -466,41 +472,41 @@ packet_desc *inp_desc;
       case OPTION_ZERO_PAD:
 	inp_start_coord = 0;
 	out_start_coord = 0;
-	inp_stop_coord = (*inp_dim).length;
-	min = (*inp_dim).minimum;
-	max = (*inp_dim).maximum + (double) num_coordinates * inp_dim_spacing;
-	new_length = (*inp_dim).length + (unsigned int) num_coordinates;
+	inp_stop_coord = inp_dim->length;
+	min = inp_dim->minimum;
+	max = inp_dim->maximum + (double) num_coordinates * inp_dim_spacing;
+	new_length = inp_dim->length + (unsigned int) num_coordinates;
 	break;
       case OPTION_TRUNCATE:
 	inp_start_coord = 0;
 	out_start_coord = 0;
-	inp_stop_coord = (*inp_dim).length - (unsigned int) num_coordinates;
-	min = (*inp_dim).minimum;
+	inp_stop_coord = inp_dim->length - (unsigned int) num_coordinates;
+	min = inp_dim->minimum;
 	max = ds_get_coordinate (inp_dim, inp_stop_coord - 1);
-	new_length = (*inp_dim).length - (unsigned int) num_coordinates;
+	new_length = inp_dim->length - (unsigned int) num_coordinates;
 	break;
       case OPTION_RESAMPLE:
 	inp_start_coord = 0;
 	out_start_coord = 0;
-	inp_stop_coord = (*inp_dim).length;
-	min = (*inp_dim).minimum;
-	max = (*inp_dim).maximum;
+	inp_stop_coord = inp_dim->length;
+	min = inp_dim->minimum;
+	max = inp_dim->maximum;
 	new_length = (unsigned int) num_coordinates;
 	break;
       case OPTION_FILTER:
 	inp_start_coord = 0;
 	out_start_coord = 0;
-	inp_stop_coord = (*inp_dim).length;
-	min = (*inp_dim).minimum;
-	max = (*inp_dim).maximum;
-	if ( (pad_coords = (*inp_dim).length % filter_step) > 0 )
+	inp_stop_coord = inp_dim->length;
+	min = inp_dim->minimum;
+	max = inp_dim->maximum;
+	if ( (pad_coords = inp_dim->length % filter_step) > 0 )
 	{
 	    pad_coords = filter_step - pad_coords;
 	    (void) fprintf (stderr,
 			    "Input zero-padded by: %u co-ordinates prior to filtering\n",
 			    pad_coords + window_size);
 	}
-	new_length = (pad_coords + (*inp_dim).length) / filter_step;
+	new_length = (pad_coords + inp_dim->length) / filter_step;
 	break;
       default:
 	(void) fprintf (stderr, "Bad option value: %d\n", option);
@@ -551,36 +557,36 @@ packet_desc *inp_desc;
 	a_prog_bug (function_name);
     }
     /*  Change length of output dimension  */
-    out_dim = (*arr_desc).dimensions[dim_num];
-    (*out_dim).length = new_length;
-    (*arr_desc).lengths[dim_num] = (*out_dim).length;
+    out_dim = arr_desc->dimensions[dim_num];
+    out_dim->length = new_length;
+    arr_desc->lengths[dim_num] = out_dim->length;
     /*  Change minimum and maximum co-ordinates of output dimension  */
-    (*out_dim).minimum = min;
-    (*out_dim).maximum = max;
+    out_dim->minimum = min;
+    out_dim->maximum = max;
     switch (option)
     {
       case OPTION_RESAMPLE:
       case OPTION_FILTER:
 	/*  Kill any output dimension co-ordinates: force a regular grid  */
-	if ( (*out_dim).coordinates != NULL )
+	if (out_dim->coordinates != NULL)
 	{
-	    m_free ( (char *) (*out_dim).coordinates );
-	    (*out_dim).coordinates = NULL;
+	    m_free ( (char *) out_dim->coordinates );
+	    out_dim->coordinates = NULL;
 	}
 	break;
       default:
 	break;
     }
-    if ( (*out_dim).coordinates == NULL )
+    if (out_dim->coordinates == NULL)
     {
 	/*  No more work needs to be done  */
 	return (return_value);
     }
     /*  Create new co-ordinate array  */
-    m_free ( (char *) (*out_dim).coordinates );
-    (*out_dim).coordinates = NULL;
-    if ( ( (*out_dim).coordinates = (double *) m_alloc
-	  (sizeof *(*out_dim).coordinates * new_length) ) == NULL )
+    m_free ( (char *) out_dim->coordinates );
+    out_dim->coordinates = NULL;
+    if ( ( out_dim->coordinates = (double *) m_alloc
+	  (sizeof *out_dim->coordinates * new_length) ) == NULL )
     {
 	m_error_notify (function_name, "new co-ordinate array");
 	ds_dealloc_packet (return_value, (char *) NULL);
@@ -589,8 +595,8 @@ packet_desc *inp_desc;
     for (coord_count = inp_start_coord; coord_count < inp_stop_coord;
 	 ++coord_count)
     {
-	(*out_dim).coordinates[coord_count - inp_start_coord] =
-	(*inp_dim).coordinates[coord_count];
+	out_dim->coordinates[coord_count - inp_start_coord] =
+	inp_dim->coordinates[coord_count];
     }
     return (return_value);
 }   /*  End Function generate_desc  */
@@ -612,12 +618,9 @@ multi_array *out_desc;
     static char function_name[] = "post_process";
 
 #ifdef dummy
-    ez_description (out_array, vble);
     (void) sprintf (txt, "Changed length of dimension: \"%s\"", dim_name);
-    composite_descr (txt, out_array);
-    copy_composite_descr (inp_array, out_array);
-    return (TRUE);
 #endif
+    return (TRUE);
 }   /*  End Function post_process   */
 
 static flag process_occurrence (inp_desc, inp_type, inp_data,
@@ -656,7 +659,7 @@ char *out_data;
     array_desc *arr_desc_out;
     dim_desc *inp_dim;
     dim_desc *out_dim;
-    extern int option;
+    extern unsigned int option;
     extern unsigned int resample_option;
     extern unsigned int dim_index;
     extern unsigned int inp_start_coord;
@@ -677,39 +680,39 @@ char *out_data;
     if ( (inp_type != K_ARRAY) || (out_type != K_ARRAY) )
     {
 	/*  Descriptors are not array descriptors  */
-	(void) fprintf ( stderr,
+	(void) fprintf (stderr,
 			"Descriptors: input: %s output: %s are not both K_ARRAY\n",
-			data_type_names[inp_type], data_type_names[out_type] );
+			data_type_names[inp_type], data_type_names[out_type]);
 	a_prog_bug (function_name);
     }
     arr_desc_inp = (array_desc *) inp_desc;
     arr_desc_out = (array_desc *) out_desc;
-    num_dim = (*arr_desc_inp).num_dimensions;
+    num_dim = arr_desc_inp->num_dimensions;
     /*  Do a quick check on the descriptors  */
-    if (num_dim != (*arr_desc_out).num_dimensions)
+    if (num_dim != arr_desc_out->num_dimensions)
     {
 	(void) fprintf (stderr,
 			"Array descriptors have different number of dim.: %u %u\n",
-			(*arr_desc_inp).num_dimensions,
-			(*arr_desc_out).num_dimensions);
+			arr_desc_inp->num_dimensions,
+			arr_desc_out->num_dimensions);
 	a_prog_bug (function_name);
     }
-    inp_dim = (*arr_desc_inp).dimensions[dim_index];
-    out_dim = (*arr_desc_out).dimensions[dim_index];
+    inp_dim = arr_desc_inp->dimensions[dim_index];
+    out_dim = arr_desc_out->dimensions[dim_index];
     /*  Determine stride of dimension co-ordinates  */
-    pack_size = ds_get_packet_size ( (*arr_desc_inp).packet );
+    pack_size = ds_get_packet_size (arr_desc_inp->packet);
     /*  Determine inner loop iteration count  */
     iter_below_num = 1;
     for (dim_count = dim_index + 1; dim_count < num_dim; ++dim_count)
     {
-	iter_below_num *= (* (*arr_desc_inp).dimensions[dim_count] ).length;
+	iter_below_num *= arr_desc_inp->dimensions[dim_count]->length;
     }
     stride = pack_size * iter_below_num;
     /*  Determine outer loop iteration count  */
     iter_above_num = 1;
     for (dim_count = 0; dim_count < dim_index; ++dim_count)
     {
-	iter_above_num *= (* (*arr_desc_inp).dimensions[dim_count] ).length;
+	iter_above_num *= arr_desc_inp->dimensions[dim_count]->length;
     }
     switch (option)
     {
@@ -727,8 +730,8 @@ char *out_data;
     /*  Iterate above dimension to be changed  */
     for (iter_above_count = 0; iter_above_count < iter_above_num;
 	 ++iter_above_count,
-	 inp_data += stride * (*inp_dim).length,
-	 out_data += stride * (*out_dim).length)
+	 inp_data += stride * inp_dim->length,
+	 out_data += stride * out_dim->length)
     {
 	switch (option)
 	{
@@ -742,7 +745,7 @@ char *out_data;
 	    {
 		if (resample_dimension (inp_ptr, stride, inp_dim,
 					out_ptr, stride, out_dim,
-					(*arr_desc_inp).packet,
+					arr_desc_inp->packet,
 					resample_option)
 		    != TRUE)
 		{
@@ -760,7 +763,7 @@ char *out_data;
 	    {
 		if (filter_dimension (inp_ptr, stride, inp_dim,
 				      out_ptr, stride, out_dim,
-				      (*arr_desc_inp).packet,
+				      arr_desc_inp->packet,
 				      filter_step, filter_window, window_size)
 		    != TRUE)
 		{
@@ -817,23 +820,20 @@ unsigned int option;
     double inp_value[2];
     double inp_sec_value[2];
     double out_value[2];
-    double old_inp_value[2];
     char *inp_ptr;
     char *out_ptr;
     extern char host_type_sizes[NUMTYPES];
     static char function_name[] = "resample_dimension";
 
-    old_inp_value[0] = 0.0;
-    old_inp_value[1] = 0.0;
     /*  Loop on elements  */
-    for (elem_count = 0; elem_count < (*pack_desc).num_elements; ++elem_count)
+    for (elem_count = 0; elem_count < pack_desc->num_elements; ++elem_count)
     {
-	elem_type = (*pack_desc).element_types[elem_count];
+	elem_type = pack_desc->element_types[elem_count];
 	elem_size = host_type_sizes[elem_type];
 	/*  Loop around output dimension co-ordinates  */
 	inp_ptr = inp_data;
 	out_ptr = out_data;
-	for (out_coord_count = 0; out_coord_count < (*out_dim_desc).length;
+	for (out_coord_count = 0; out_coord_count < out_dim_desc->length;
 	     ++out_coord_count, out_ptr += out_stride)
 	{
 	    if ( ( out_coord = ds_get_coordinate (out_dim_desc,
@@ -869,17 +869,7 @@ unsigned int option;
 		    (void) fprintf (stderr, "Error converting data\n");
 		    return (FALSE);
 		}
-		if ( (inp_value[0] >= toobig) || (inp_value[1] >= toobig) )
-		{
-		    inp_value[0] = old_inp_value[0];
-		    inp_value[1] = old_inp_value[1];
-		}
-		else
-		{
-		    old_inp_value[0] = inp_value[0];
-		    old_inp_value[1] = inp_value[1];
-		}
-		if (inp_coord_index + 1 < (*inp_dim_desc).length)
+		if (inp_coord_index + 1 < inp_dim_desc->length)
 		{
 		    /*  Not last co-ordinate of input dimension  */
 		    if (ds_get_element (inp_ptr + (inp_coord_index + 1) *
@@ -893,13 +883,18 @@ unsigned int option;
 		    if ( (inp_sec_value[0] >= toobig) ||
 			(inp_sec_value[1] >= toobig) )
 		    {
-			inp_sec_value[0] = old_inp_value[0];
-			inp_sec_value[1] = old_inp_value[1];
+			/*  Second value is blank: use first value. This works
+			    even if first value is blank.  */
+			out_value[0] = inp_value[0];
+			out_value[1] = inp_value[1];
+			break;
 		    }
-		    else
+		    if ( (inp_value[0] >= toobig) || (inp_value[1] >= toobig) )
 		    {
-			old_inp_value[0] = inp_sec_value[0];
-			old_inp_value[1] = inp_sec_value[1];
+			/*  First value is blank: use second value.  */
+			out_value[0] = inp_sec_value[0];
+			out_value[1] = inp_sec_value[1];
+			break;
 		    }
 		    if ( ( inp_coord1 = ds_get_coordinate (inp_dim_desc,
 							   inp_coord_index) )
@@ -1001,26 +996,26 @@ unsigned int window_size;
     static char function_name[] = "filter_dimension";
 
     /*  Loop on elements  */
-    for (elem_count = 0; elem_count < (*pack_desc).num_elements; ++elem_count)
+    for (elem_count = 0; elem_count < pack_desc->num_elements; ++elem_count)
     {
-	elem_type = (*pack_desc).element_types[elem_count];
+	elem_type = pack_desc->element_types[elem_count];
 	elem_size = host_type_sizes[elem_type];
 	/*  Loop around output dimension co-ordinates  */
 	inp_ptr = inp_data;
 	out_ptr = out_data;
 	for (inp_coord_count = 0, out_coord_count = 0;
-	     out_coord_count < (*out_dim_desc).length;
+	     out_coord_count < out_dim_desc->length;
 	     inp_coord_count += filter_step,
 	     inp_ptr += filter_step * inp_stride,
 	     ++out_coord_count, out_ptr += out_stride)
 	{
-	    if (inp_coord_count + window_size <= (*inp_dim_desc).length)
+	    if (inp_coord_count + window_size <= inp_dim_desc->length)
 	    {
 		num_inp = window_size;
 	    }
 	    else
 	    {
-		num_inp = (*inp_dim_desc).length - inp_coord_count;
+		num_inp = inp_dim_desc->length - inp_coord_count;
 		m_clear ( (char *) inp_values,
 			 sizeof *inp_values * 2 * window_size );
 	    }

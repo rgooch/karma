@@ -1,1 +1,0 @@
-../packages/kwin/main.c

@@ -1,8 +1,0 @@
-# THIS IS A HACK! I am forcing the use of  cc  rather than $(KARMA_CC) because
-# if $(KARMA_CC) is  gcc  then  vxkarma_cm_slave  will not exit!
-# I think this is because  gcc  screws around with the entry and exit procedure
-all:
-	$(MAKE) vx CC=cc LD=cc
-
-depend:
-	$(MAKE) depend

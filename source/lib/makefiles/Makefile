@@ -1,9 +1,13 @@
+ifdef PARALLEL
+POPT = -j $(PARALLEL)
+endif
+
 all:
-	-remove_oldlibs
 	for i in karma* ;\
 	do \
-		(echo "Making in $$i"; cd $$i; gmake); \
+		(echo "Making in $$i"; cd $$i; gmake $(POPT)); \
 	done
+	-remove_oldlibs
 
 depend:
 	for i in karma* ;\

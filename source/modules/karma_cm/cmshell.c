@@ -2,7 +2,7 @@
 
     Main file for  cmshell  (Connection Management Shell interpreter).
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -70,8 +70,16 @@
     Updated by      Richard Gooch   2-AUG-1994: Added more diagnostic
   information for child processes.
 
-    Last updated by Richard Gooch   10-OCT-1994: Prevent shell cleanup stage
+    Updated by      Richard Gooch   10-OCT-1994: Prevent shell cleanup stage
   if child process does not exit with 0 status code.
+
+    Updated by      Richard Gooch   1-MAR-1995: Added -manual option support
+  for CM slave hosts.
+
+    Updated by      Richard Gooch   14-JUN-1995: Made use of <ex_uint>.
+
+    Last updated by Richard Gooch   16-JUN-1995: Made use of
+  <r_get_fq_hostname>.
 
 
     Usage:   cm_shell path
@@ -94,14 +102,13 @@
 #include <karma_m.h>
 #include <k_cm_codes.h>
 
-#define PROTOCOL_VERSION (unsigned int) 0
+#define PROTOCOL_VERSION (unsigned int) 1
 
 /*  Structures  */
 typedef struct _hosttype
 {
     char *alias;
     char *public_name;
-    unsigned long addr;
     Connection slave;
     struct _hosttype *next;
     struct _hosttype *prev;
@@ -170,13 +177,14 @@ void module_stdio_lost ();
 static unsigned int hostcount = 0;
 static moduletype *latest_module = NULL;
 static unsigned int connectioncount = 0;
-static char my_hostname[STRING_LENGTH + 1];
+static char my_hostname[STRING_LENGTH];
 static unsigned int my_port;
 static hosttype *hostlist = NULL;
 static moduletype *modulelist = NULL;
 static flag keep_going = TRUE;
 static unsigned int child_count = 0;
 static flag clean_child_exit = TRUE;
+static flag any_manual = FALSE;
 
 
 void main (argc, argv)
@@ -186,10 +194,10 @@ char *argv[];
     flag end;
     int exit_status;
     unsigned int count;
-    unsigned long addr;
     Channel channel;
     int def_port_number;
     hosttype *new_host;
+    char *keyword;
     char buffer[STRING_LENGTH];
     char display[STRING_LENGTH];
     extern flag keep_going;
@@ -197,8 +205,9 @@ char *argv[];
     extern unsigned int my_port;
     extern unsigned int child_count;
     extern hosttype *hostlist;
-    extern char my_hostname[STRING_LENGTH + 1];
+    extern char my_hostname[STRING_LENGTH];
     extern char module_name[STRING_LENGTH + 1];
+    char txt[STRING_LENGTH];
     ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char usage_string[] = "Usage:\tcm_shell path";
@@ -206,29 +215,20 @@ char *argv[];
 
     im_register_module_name ("karma_cm");
     /*  Get my host information  */
-    if (gethostname (my_hostname, STRING_LENGTH) != 0)
-    {
-	(void) fprintf (stderr, "Error getting hostname\t%s\n",
-			sys_errlist[errno]);
-	exit (RV_SYS_ERROR);
-    }
-    my_hostname[STRING_LENGTH] = '\0';
-    if ( ( addr = r_get_inet_addr_from_host (my_hostname, (flag *) NULL) )
-	== 0 )
-    {
-	(void) fprintf (stderr, "Error getting local Internet address\n");
-	exit (RV_UNDEF_ERROR);
-    }
+    if ( !r_get_fq_hostname (my_hostname, STRING_LENGTH) ) exit (RV_SYS_ERROR);
     if ( ( new_host = (hosttype *) m_alloc (sizeof *new_host) ) == NULL )
     {
 	m_abort (function_name, "host entry");
     }
-    (*new_host).alias = "localhost";
-    (*new_host).public_name = my_hostname;
-    (*new_host).addr = addr;
-    (*new_host).slave = NULL;
-    (*new_host).next = NULL;
-    (*new_host).prev = NULL;
+/*
+    (void) strcpy (my_hostname, "130.155.198.47");
+*/
+    (void) fprintf (stderr, "my public name: \"%s\"\n", my_hostname);
+    new_host->alias = "localhost";
+    new_host->public_name = my_hostname;
+    new_host->slave = NULL;
+    new_host->next = NULL;
+    new_host->prev = NULL;
     /*  Add to list  */
     hostlist = new_host;
     if (argc > 2)
@@ -257,8 +257,7 @@ char *argv[];
 	exit (RV_UNDEF_ERROR);
     }
     my_port = def_port_number;
-    if (conn_become_server (&my_port, CONN_MAX_INSTANCES)
-	!= TRUE)
+    if ( !conn_become_server (&my_port, CONN_MAX_INSTANCES) )
     {
 	(void) fprintf (stderr, "Module not operating as Karma server\n");
 	exit (RV_UNDEF_ERROR);
@@ -369,7 +368,7 @@ flag *end;
 
     *end = FALSE;
     buffer[0] = '\0';
-    if (chs_get_line (channel, buffer, length) != TRUE)
+    if ( !chs_get_line (channel, buffer, length) )
     {
 	return (FALSE);
     }
@@ -417,6 +416,7 @@ Channel channel;
 {
     flag end;
     flag local;
+    flag manual;
     int display_num;
     int screen_num;
     int exit_status;
@@ -427,18 +427,19 @@ Channel channel;
     char *host_device;
     char *hostname;
     char *karmabase;
-    char *args;
+    char *args, *p;
     char display[STRING_LENGTH];
     char buffer[STRING_LENGTH];
     char command[STRING_LENGTH];
+    extern flag any_manual;
     extern unsigned int my_port;
     extern unsigned int hostcount;
-    extern char my_hostname[STRING_LENGTH + 1];
+    extern char my_hostname[STRING_LENGTH];
     ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "startup_hosts";
 
-    if (read_line (channel, buffer, STRING_LENGTH, &end) != TRUE)
+    if ( !read_line (channel, buffer, STRING_LENGTH, &end) )
     {
 	(void) fprintf (stderr, "Premature End-Of-File\n");
 	exit (RV_BAD_DATA);
@@ -491,6 +492,8 @@ Channel channel;
     while ( read_line (channel, buffer, STRING_LENGTH, &end) )
     {
 	if (end) return;
+	manual = FALSE;
+	karmabase = NULL;
 	/*  Start parsing line  */
 	if (buffer[0] == '!')
 	{
@@ -523,9 +526,32 @@ Channel channel;
 		args = NULL;
 	    }
 	}
-	if ( ( hostname = ex_str (buffer, &karmabase) ) == NULL )
+	if ( ( hostname = ex_str (buffer, &p) ) == NULL )
 	{
 	    m_abort (function_name, "hostname copy");
+	}
+	if (r_get_inet_addr_from_host (hostname, (flag *) NULL) == 0)
+	{
+	    (void) fprintf (stderr,
+			    "%s: error getting Internet address for remote host: \"%s\"\t%s\n",
+			    function_name, hostname, sys_errlist[errno]);
+	    exit (RV_UNDEF_ERROR);
+	}
+	if (p != NULL)
+	{
+	    if (strncmp (p, "-manual", 7) == 0)
+	    {
+		if ( (karmabase != NULL) &&
+		    ( karmabase != r_get_karmabase () ) )
+		{
+		    (void) fprintf (stderr,
+				    "Cannot specify KARMABASE and -manual\n");
+		    exit (RV_BAD_DATA);
+		}
+		manual = TRUE;
+		any_manual = TRUE;
+	    }
+	    else karmabase = p;
 	}
 	if (karmabase == NULL) karmabase = r_get_karmabase ();
 	if (strcmp (hostname, "local") == 0)
@@ -543,24 +569,42 @@ Channel channel;
 	    /*  Must run on some special device (eg. VX/MVX) on host  */
 	    *host_device++ = '\0';
 	}
-	(void) sprintf (command,
-			"rsh %s %s/csh_script/%skarma_cm_slave.setup %s %u %s",
-			hostname, karmabase, host_device,
-			my_hostname, my_port, display);
-	if (args != NULL)
+	if (manual)
 	{
-	    (void) strcat (command, " ");
-	    (void) strcat (command, args);
+	    (void) fprintf (stderr,
+			    "Waiting for manual CM slave connection from: %s...\n",
+			    hostname);
 	}
-	if (system (command) != 0)
+	else
 	{
-	    (void) fprintf (stderr, "Error executing command: \"%s\"\t%s\n",
-			    command, sys_errlist[errno]);
-	    exit (RV_UNDEF_ERROR);
+	    (void) sprintf (command,
+			    "rsh %s %s/csh_script/%skarma_cm_slave.setup %s %u %s",
+			    hostname, karmabase, host_device,
+			    my_hostname, my_port, display);
+	    if (args != NULL)
+	    {
+		(void) strcat (command, " ");
+		(void) strcat (command, args);
+	    }
+	    if (system (command) != 0)
+	    {
+		(void) fprintf (stderr,
+				"Error executing command: \"%s\"\t%s\n",
+				command, sys_errlist[errno]);
+		exit (RV_UNDEF_ERROR);
+	    }
 	}
 	old_hostcount = hostcount;
-	/*  Wait 20 seconds for connection  */
-	timeleft = 200;
+	if (manual)
+	{
+	    /*  Wait 1200 seconds for connection  */
+	    timeleft = 1200;
+	}
+	else
+	{
+	    /*  Wait 30 seconds for connection  */
+	    timeleft = 300;
+	}
 	while ( (timeleft > 0) && (hostcount != old_hostcount + 1) )
 	{
 	    cm_poll (FALSE);
@@ -603,15 +647,16 @@ Channel channel;
     char *args;
     char buffer[STRING_LENGTH];
     char command[STRING_LENGTH];
+    extern flag any_manual;
     extern unsigned int my_port;
     extern unsigned int child_count;
     extern moduletype *latest_module;
-    extern char my_hostname[STRING_LENGTH + 1];
+    extern char my_hostname[STRING_LENGTH];
     ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "startup_modules";
 
-    if (read_line (channel, buffer, STRING_LENGTH, &end) != TRUE)
+    if ( !read_line (channel, buffer, STRING_LENGTH, &end) )
     {
 	(void) fprintf (stderr, "Premature End-Of-File\n");
 	exit (RV_BAD_DATA);
@@ -642,21 +687,20 @@ Channel channel;
 	    while (!end)
 	    {
 		/*  More defaults to read  */
-		if (read_line (channel, buffer, STRING_LENGTH, &end) != TRUE)
+		if ( !read_line (channel, buffer, STRING_LENGTH, &end) )
 		{
 		    (void) fprintf (stderr, "Premature End-Of-File\n");
 		    exit (RV_BAD_DATA);
 		}
 		if (end) continue;
-		if (ch_puts (conn_get_channel ( (*latest_module).stdio ),
-			     buffer, TRUE) != TRUE)
+		if ( !ch_puts (conn_get_channel (latest_module->stdio),
+			       buffer, TRUE) )
 		{
 		    (void) fprintf (stderr, "Error writing string\t%s\n",
 				    sys_errlist[errno]);
 		    exit (RV_SYS_ERROR);
 		}
-		if (ch_flush ( conn_get_channel ( (*latest_module).stdio ) )
-		    != TRUE)
+		if ( !ch_flush ( conn_get_channel (latest_module->stdio) ) )
 		{
 		    (void) fprintf (stderr, "Error flushing channel\t%s\n",
 				    sys_errlist[errno]);
@@ -706,8 +750,7 @@ Channel channel;
 		exit (RV_UNDEF_ERROR);
 	    }
 	    m_free (module_name);
-	    if (cm_manage (child_pid, stop_func, term_func, exit_func)
-		!= TRUE)
+	    if ( !cm_manage (child_pid, stop_func, term_func, exit_func) )
 	    {
 		(void) fprintf (stderr, "Error managing child PID: %d\n",
 				child_pid);
@@ -726,33 +769,33 @@ Channel channel;
 	    }
 	    m_free (hostname);
 	    /*  Send information to slave  */
-	    slave = conn_get_channel ( (*host).slave );
-	    if (pio_write_string (slave, module_name) != TRUE)
+	    slave = conn_get_channel (host->slave);
+	    if ( !pio_write_string (slave, module_name) )
 	    {
 		(void) fprintf (stderr, "Error writing module name\t%s\n",
 				sys_errlist[errno]);
 		exit (RV_SYS_ERROR);
 	    }
 	    m_free (module_name);
-	    if (pio_write32s (slave, x) != TRUE)
+	    if ( !pio_write32s (slave, x) )
 	    {
 		(void) fprintf (stderr, "Error writing x value\t%s\n",
 				sys_errlist[errno]);
 		exit (RV_SYS_ERROR);
 	    }
-	    if (pio_write32s (slave, y) != TRUE)
+	    if ( !pio_write32s (slave, y) )
 	    {
 		(void) fprintf (stderr, "Error writing y value\t%s\n",
 				sys_errlist[errno]);
 		exit (RV_SYS_ERROR);
 	    }
-	    if (pio_write_string (slave, args) != TRUE)
+	    if ( !pio_write_string (slave, args) )
 	    {
 		(void) fprintf (stderr, "Error writing arguments\t%s\n",
 				sys_errlist[errno]);
 		exit (RV_SYS_ERROR);
 	    }
-	    if (ch_flush (slave) != TRUE)
+	    if ( !ch_flush (slave) )
 	    {
 		(void) fprintf (stderr, "Error flushing channel\t%s\n",
 				sys_errlist[errno]);
@@ -760,8 +803,8 @@ Channel channel;
 	    }
 	}
 	latest_module = NULL;
-	/*  Wait 20 seconds for connection  */
-	timeleft = 200;
+	if (any_manual) timeleft = 1200;
+	else timeleft = 200;
 	while ( (timeleft > 0) && (latest_module == NULL) )
 	{
 	    cm_poll (FALSE);
@@ -775,15 +818,15 @@ Channel channel;
 			    buffer);
 	    exit (RV_UNDEF_ERROR);
 	}
-	/*  Wait 20 seconds for Standard IO connection  */
-	timeleft = 200;
-	while ( (timeleft > 0) && ( (*latest_module).stdio == NULL ) )
+	if (any_manual) timeleft = 1200;
+	else timeleft = 200;
+	while ( (timeleft > 0) && (latest_module->stdio == NULL) )
 	{
 	    cm_poll (FALSE);
 	    chm_poll (100);
 	    --timeleft;
 	}
-	if ( (*latest_module).stdio == NULL )
+	if (latest_module->stdio == NULL)
 	{
 	    (void) fprintf (stderr,
 			    "Did not receive module stdio connection from: %s in time\n",
@@ -805,7 +848,7 @@ static void startup_connections (channel)
 Channel channel;
 {
     flag end;
-    int module_num;
+    unsigned int module_num;
     unsigned int count;
     unsigned int timeleft;
     unsigned int old_connectioncount;
@@ -815,13 +858,14 @@ Channel channel;
     char *p;
     char *protocol_name;
     char buffer[STRING_LENGTH];
+    extern flag any_manual;
     extern unsigned int connectioncount;
     extern moduletype *modulelist;
     ERRNO_TYPE errno;
     extern char *sys_errlist[];
     static char function_name[] = "startup_connections";
 
-    if (read_line (channel, buffer, STRING_LENGTH, &end) != TRUE)
+    if ( !read_line (channel, buffer, STRING_LENGTH, &end) )
     {
 	(void) fprintf (stderr, "Premature End-Of-File\n");
 	exit (RV_BAD_DATA);
@@ -837,33 +881,33 @@ Channel channel;
 	if (end) return;
 	/*  Start parsing line  */
 	p = buffer;
-	if ( ( module_num = ex_int (p, &p) ) < 0 )
+	if ( ( module_num = ex_uint (p, &p) ) < 0 )
 	{
-	    (void) fprintf (stderr, "Illegal client module number: %d\n",
+	    (void) fprintf (stderr, "Illegal client module number: %u\n",
 			    module_num);
 	    exit (RV_BAD_DATA);
 	}
 	for (count = 0, client = modulelist;
 	     (client != NULL) && (count < module_num);
-	     ++count, client = (*client).next);
+	     ++count, client = client->next);
 	if (client == NULL)
 	{
-	    (void) fprintf (stderr, "Illegal client module number: %d\n",
+	    (void) fprintf (stderr, "Illegal client module number: %u\n",
 			    module_num);
 	    exit (RV_BAD_DATA);
 	}
-	if ( ( module_num = ex_int (p, &p) ) < 0 )
+	if ( ( module_num = ex_uint (p, &p) ) < 0 )
 	{
-	    (void) fprintf (stderr, "Illegal server module number: %d\n",
+	    (void) fprintf (stderr, "Illegal server module number: %u\n",
 			    module_num);
 	    exit (RV_BAD_DATA);
 	}
 	for (count = 0, server = modulelist;
 	     (server != NULL) && (count < module_num);
-	     ++count, server = (*server).next);
+	     ++count, server = server->next);
 	if (server == NULL)
 	{
-	    (void) fprintf (stderr, "Illegal server module number: %d\n",
+	    (void) fprintf (stderr, "Illegal server module number: %u\n",
 			    module_num);
 	    exit (RV_BAD_DATA);
 	}
@@ -872,19 +916,20 @@ Channel channel;
 	    (void) fprintf (stderr, "Self connect not permitted\n");
 	    a_print_abort ();
 	}
-	/*  Wait 40 seconds for server to have port  */
-	timeleft = 400;
-	while ( (timeleft > 0) && ( (*server).port_number < 0 ) )
+	/*  Wait for server to have port  */
+	if (any_manual) timeleft = 1200;
+	else timeleft = 400;
+	while ( (timeleft > 0) && (server->port_number < 0) )
 	{
 	    cm_poll (FALSE);
 	    chm_poll (100);
 	    --timeleft;
 	}
-	if ( (*server).port_number < 0 )
+	if (server->port_number < 0)
 	{
 	    (void) fprintf (stderr,
 			    "Cannot connect to module: %s as it has no port\n",
-			    (*server).name);
+			    server->name);
 	    exit (RV_BAD_DATA);
 	}
 	if ( ( protocol_name = ex_str (p, &p) ) == NULL )
@@ -892,42 +937,41 @@ Channel channel;
 	    m_abort (function_name, "protocol name");
 	}
 	/*  Send information to slave  */
-	module = conn_get_channel ( (*client).control );
-	if (pio_write32 (module, CM_TOOL_ATTEMPT_CONNECTION) != TRUE)
+	module = conn_get_channel (client->control);
+	if ( !pio_write32 (module, CM_TOOL_ATTEMPT_CONNECTION) )
 	{
 	    (void) fprintf (stderr, "Error writing command\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_SYS_ERROR);
 	}
-	if (pio_write_string (module, (* (*server).host ).public_name) != TRUE)
+	if ( !pio_write_string (module, server->host->public_name) )
 	{
 	    (void) fprintf (stderr, "Error writing module name\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_SYS_ERROR);
 	}
-	if (pio_write32 (module, (unsigned long) (*server).port_number)
-	    != TRUE)
+	if ( !pio_write32 (module, (unsigned long) server->port_number) )
 	{
 	    (void) fprintf (stderr, "Error writing port number\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_SYS_ERROR);
 	}
-	if (pio_write_string (module, protocol_name) != TRUE)
+	if ( !pio_write_string (module, protocol_name) )
 	{
 	    (void) fprintf (stderr, "Error writing protocol name\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_SYS_ERROR);
 	}
 	m_free (protocol_name);
-	if (ch_flush (module) != TRUE)
+	if ( !ch_flush (module) )
 	{
 	    (void) fprintf (stderr, "Error flushing channel\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_SYS_ERROR);
 	}
 	old_connectioncount = connectioncount;
-	/*  Wait 20 seconds for connection  */
-	timeleft = 200;
+	if (any_manual) timeleft = 1200;
+	else timeleft = 600;
 	while ( (timeleft > 0) && (connectioncount != old_connectioncount +1) )
 	{
 	    cm_poll (FALSE);
@@ -955,8 +999,8 @@ static void process_commands (channel)
 Channel channel;
 {
     flag end;
-    int module_num;
-    int delay;
+    unsigned int module_num;
+    unsigned int delay;
     int exit_status;
     unsigned int count;
     Channel module;
@@ -991,21 +1035,21 @@ Channel channel;
 	    continue;
 	}
 	p = buffer;
-	if ( ( module_num = ex_int (p, &p) ) < 0 )
+	if ( ( module_num = ex_uint (p, &p) ) < 0 )
 	{
-	    (void) fprintf (stderr, "Illegal client module number: %d\n",
+	    (void) fprintf (stderr, "Illegal client module number: %u\n",
 			    module_num);
 	    exit (RV_BAD_DATA);
 	}
-	if ( ( delay = ex_int (p, &p) ) < 0 )
+	if ( ( delay = ex_uint (p, &p) ) < 0 )
 	{
-	    (void) fprintf (stderr, "Illegal delay value: %d\n",
+	    (void) fprintf (stderr, "Illegal delay value: %u\n",
 			    module_num);
 	    exit (RV_BAD_DATA);
 	}
 	for (count = 0, client = modulelist;
 	     (client != NULL) && (count < module_num);
-	     ++count, client = (*client).next);
+	     ++count, client = client->next);
 	if (client == NULL)
 	{
 	    (void) fprintf (stderr, "Illegal client module number: %d\n",
@@ -1013,15 +1057,15 @@ Channel channel;
 	    exit (RV_BAD_DATA);
 	}
 	/*  Send information to slave  */
-	module = conn_get_channel ( (*client).stdio );
+	module = conn_get_channel (client->stdio);
 	(void) fprintf (stderr, "Processing command: \"%s\"\n", p);
-	if (ch_puts (module, p, TRUE) != TRUE)
+	if ( !ch_puts (module, p, TRUE) )
 	{
 	    (void) fprintf (stderr, "Error writing command\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_SYS_ERROR);
 	}
-	if (ch_flush (module) != TRUE)
+	if ( !ch_flush (module) )
 	{
 	    (void) fprintf (stderr, "Error flushing channel\t%s\n",
 			    sys_errlist[errno]);
@@ -1046,7 +1090,6 @@ void **info;
 {
     Channel channel;
     flag local;
-    unsigned long addr;
     char *hostname;
     char *host_device;
     hosttype *new_host;
@@ -1065,9 +1108,16 @@ void **info;
 			sys_errlist[errno]);
 	return (FALSE);
     }
+    if (r_get_inet_addr_from_host (hostname, (flag *) NULL) == 0)
+    {
+	(void) fprintf (stderr,
+			"%s: error getting Internet address for remote host: \"%s\"\n",
+			function_name, hostname);
+	exit (RV_UNDEF_ERROR);
+    }
     if (get_host_info (hostname) != NULL)
     {
-	(void) fprintf (stderr, "Spurious slave connection from: \"%s\"\n",
+	(void) fprintf (stderr, "Duplicate slave connection from: \"%s\"\n",
 			hostname);
 	m_free (hostname);
 	return (FALSE);
@@ -1077,48 +1127,38 @@ void **info;
     {
 	m_abort (function_name, "host entry");
     }
-    (*new_host).alias = hostname;
+    new_host->alias = hostname;
     if ( ( host_device = strchr (hostname, ':') ) != NULL )
     {
 	/*  Special device on host: strip from public name  */
-	if ( ( (*new_host).public_name = m_alloc (host_device - hostname + 1) )
+	if ( ( new_host->public_name = m_alloc (host_device - hostname + 1) )
 	== NULL )
 	{
 	    m_abort (function_name, "stipped host entry");
 	}
-	(void) strncpy ( (*new_host).public_name, hostname,
-			host_device - hostname );
-	(*new_host).public_name[host_device - hostname] = '\0';
+	(void) strncpy (new_host->public_name, hostname,
+			host_device - hostname);
+	new_host->public_name[host_device - hostname] = '\0';
     }
     else
     {
-	(*new_host).public_name = hostname;
+	new_host->public_name = hostname;
     }
-    if ( ( addr = r_get_inet_addr_from_host ( (*new_host).public_name,
-					     &local ) ) == 0 )
-    {
-	(void) fprintf (stderr, "Error getting Internet address of: \"%s\"\n",
-			hostname);
-	m_free (hostname);
-	m_free ( (char *) new_host );
-	return (FALSE);
-    }
-    (*new_host).addr = addr;
-    (*new_host).slave = connection;
-    (*new_host).next = NULL;
+    new_host->slave = connection;
+    new_host->next = NULL;
     /*  Add to list  */
     if (hostlist == NULL)
     {
 	hostlist = new_host;
-	(*new_host).prev = NULL;
+	new_host->prev = NULL;
     }
     else
     {
 	/*  Find end of list  */
-	for (last_host = hostlist; (*last_host).next != NULL;
-	     last_host = (*last_host).next);
-	(*last_host).next = new_host;
-	(*new_host).prev = last_host;
+	for (last_host = hostlist; last_host->next != NULL;
+	     last_host = last_host->next);
+	last_host->next = new_host;
+	new_host->prev = last_host;
     }
     *info = (void *) new_host;
     ++hostcount;
@@ -1142,7 +1182,7 @@ void *info;
     if (keep_going)
     {
 	(void) fprintf (stderr, "Lost connection to slave on host: \"%s\"\n",
-			(*host).alias);
+			host->alias);
     }
     --hostcount;
     keep_going = FALSE;
@@ -1156,18 +1196,28 @@ hosttype *get_host_info (hostname)
 */
 char *hostname;
 {
-    hosttype *host;
+    int namelen;
+    hosttype *host, *foundhost;
     extern hosttype *hostlist;
 
-    for (host = hostlist; host != NULL; host = (*host).next)
+    namelen = strlen (hostname);
+    for (host = hostlist, foundhost = NULL; host != NULL; host = host->next)
     {
-	if (strcmp (hostname, (*host).alias) == 0)
+	if (st_nicmp (hostname, host->alias, namelen) == 0)
 	{
+	    if (foundhost != NULL)
+	    {
+		(void) fprintf (stderr, "Ambiguous hostname: \"%s\" matches\n",
+				hostname);
+		(void) fprintf (stderr, "\"%s\" and \"%s\"\n",
+				foundhost->alias, host->alias);
+		exit (RV_BAD_DATA);
+	    }
 	    /*  Found it  */
-	    return (host);
+	    foundhost = host;
 	}
     }
-    return (NULL);
+    return (foundhost);
 }   /*  End Function get_host_info  */
 
 flag new_module_control (connection, info)
@@ -1212,7 +1262,7 @@ void **info;
 	m_free (module_name);
 	return (FALSE);
     }
-    if (pio_read32s (channel, &x) != TRUE)
+    if ( !pio_read32s (channel, &x) )
     {
 	(void) fprintf (stderr, "Error reading x value from module\t%s\n",
 			sys_errlist[errno]);
@@ -1220,7 +1270,7 @@ void **info;
 	m_free (hostname);
 	return (FALSE);
     }
-    if (pio_read32s (channel, &y) != TRUE)
+    if ( !pio_read32s (channel, &y) )
     {
 	(void) fprintf (stderr, "Error reading y value from module\t%s\n",
 			sys_errlist[errno]);
@@ -1228,7 +1278,7 @@ void **info;
 	m_free (hostname);
 	return (FALSE);
     }
-    if (pio_read32s (channel, &pid) != TRUE)
+    if ( !pio_read32s (channel, &pid) )
     {
 	(void) fprintf (stderr, "Error reading PID from module\t%s\n",
 			sys_errlist[errno]);
@@ -1252,30 +1302,30 @@ void **info;
     {
 	m_abort (function_name, "module entry");
     }
-    (*new_module).name = module_name;
-    (*new_module).host = host;
-    (*new_module).x = x;
-    (*new_module).y = y;
-    (*new_module).pid = pid;
-    (*new_module).control = connection;
-    (*new_module).stdio = NULL;
-    (*new_module).port_number = -1;
-    (*new_module).shut_down = FALSE;
-    (*new_module).first_connection = NULL;
-    (*new_module).next = NULL;
+    new_module->name = module_name;
+    new_module->host = host;
+    new_module->x = x;
+    new_module->y = y;
+    new_module->pid = pid;
+    new_module->control = connection;
+    new_module->stdio = NULL;
+    new_module->port_number = -1;
+    new_module->shut_down = FALSE;
+    new_module->first_connection = NULL;
+    new_module->next = NULL;
     /*  Add to list  */
     if (modulelist == NULL)
     {
 	modulelist = new_module;
-	(*new_module).prev = NULL;
+	new_module->prev = NULL;
     }
     else
     {
 	/*  Find end of list  */
-	for (last_module = modulelist; (*last_module).next != NULL;
-	     last_module = (*last_module).next);
-	(*last_module).next = new_module;
-	(*new_module).prev = last_module;
+	for (last_module = modulelist; last_module->next != NULL;
+	     last_module = last_module->next);
+	last_module->next = new_module;
+	new_module->prev = last_module;
     }
     *info = (void *) new_module;
     if (latest_module != NULL)
@@ -1312,7 +1362,7 @@ void **info;
     module = (moduletype *) *info;
     channel = conn_get_channel (connection);
     /*  Get data from module  */
-    if (pio_read32 (channel, &data) != TRUE)
+    if ( !pio_read32 (channel, &data) )
     {
 	(void) fprintf (stderr, "Error reading data from module\t%s\n",
 			sys_errlist[errno]);
@@ -1322,14 +1372,14 @@ void **info;
     {
       case CM_LIB_PORT_NUMBER:
 	(void) fprintf (stderr, "Port number\n");
-	if (pio_read32 (channel, &port_number) != TRUE)
+	if ( !pio_read32 (channel, &port_number) )
 	{
 	    (void) fprintf (stderr,
 			    "Error reading port number from module\t%s\n",
 			    sys_errlist[errno]);
 	    return (FALSE);
 	}
-	(*module).port_number = port_number;
+	module->port_number = port_number;
 	break;
       case CM_LIB_NEW_CONNECTION:
 	(void) fprintf (stderr, "New connection\n");
@@ -1341,21 +1391,21 @@ void **info;
 			    sys_errlist[errno]);
 	    exit (RV_UNDEF_ERROR);
 	}
-	if (pio_read32 (channel, &host_addr) != TRUE)
+	if ( !pio_read32 (channel, &host_addr) )
 	{
 	    (void) fprintf (stderr,
 			    "Error reading Internet address from module\t%s\n",
 			    sys_errlist[errno]);
 	    return (FALSE);
 	}
-	if (pio_read32 (channel, &port_number) != TRUE)
+	if ( !pio_read32 (channel, &port_number) )
 	{
 	    (void) fprintf (stderr,
 			    "Error reading port number from module\t%s\n",
 			    sys_errlist[errno]);
 	    return (FALSE);
 	}
-	if (pio_read32 (channel, &connection_id) != TRUE)
+	if ( !pio_read32 (channel, &connection_id) )
 	{
 	    (void) fprintf (stderr,
 			    "Error reading Connection ID from module\t%s\n",
@@ -1366,7 +1416,7 @@ void **info;
 	break;
       case CM_LIB_CONNECTION_CLOSED:
 	(void) fprintf (stderr, "Connection closed\n");
-	if (pio_read32 (channel, &connection_id) != TRUE)
+	if ( !pio_read32 (channel, &connection_id) )
 	{
 	    (void) fprintf (stderr,
 			    "Error reading connection ID from module\t%s\n",
@@ -1377,7 +1427,7 @@ void **info;
       default:
 	(void) fprintf (stderr,
 			"Illegal value: %lu sent by module: %s on host: %s\n",
-			data, (*module).name, (* (*module).host ).alias);
+			data, module->name, module->host->alias);
 	return (FALSE);
 /*
         break;
@@ -1403,28 +1453,28 @@ void *info;
     extern char *sys_errlist[];
 
     module = (moduletype *) info;
-    if (!(*module).shut_down)
+    if (!module->shut_down)
     {
 	(void) fprintf (stderr,
 			"Module: \"%s\" on host: \"%s\" PID: %d  died\n",
-			(*module).name, (* (*module).host ).alias,
-			(*module).pid);
+			module->name, module->host->alias,
+			module->pid);
     }
     keep_going = FALSE;
     /*  Remove module from list  */
-    if ( (*module).next != NULL )
+    if (module->next != NULL)
     {
-	(* (*module).next ).prev = (*module).prev;
+	module->next->prev = module->prev;
     }
-    if ( (*module).prev == NULL )
+    if (module->prev == NULL)
     {
-	modulelist = (*module).next;
+	modulelist = module->next;
     }
     else
     {
-	(* (*module).prev ).next = (*module).next;
+	module->prev->next = module->next;
     }
-    m_free ( (*module).name );
+    m_free (module->name);
     m_free ( (char *) module );
 }   /*  End Function module_control_lost  */
 
@@ -1458,7 +1508,7 @@ void **info;
 			sys_errlist[errno]);
 	return (FALSE);
     }
-    if (pio_read32s (channel, &pid) != TRUE)
+    if ( !pio_read32s (channel, &pid) )
     {
 	(void) fprintf (stderr, "Error reading PID from module\t%s\n",
 			sys_errlist[errno]);
@@ -1475,21 +1525,21 @@ void **info;
     }
     m_free (hostname);
     /*  Search for module  */
-    for (module = modulelist; module != NULL; module = (*module).next)
+    for (module = modulelist; module != NULL; module = module->next)
     {
-	if ( (host == (*module).host) && (pid == (*module).pid) )
+	if ( (host == module->host) && (pid == module->pid) )
 	{
 	    /*  Found it!  */
-	    if ( (*module).stdio != NULL )
+	    if (module->stdio != NULL)
 	    {
 		(void) fprintf (stderr,
 				"Repeated \"conn_mngr_stdio\" connection");
 		(void) fprintf (stderr,
 				" from module: \"%s\" on host: \"%s\"\n",
-				(*module).name, (*host).alias);
+				module->name, host->alias);
 		return (FALSE);
 	    }
-	    (*module).stdio = connection;
+	    module->stdio = connection;
 	    *info = (void *) module;
 	    return (TRUE);
 	}
@@ -1497,7 +1547,7 @@ void **info;
     (void) fprintf (stderr,
 		    "\"conn_mngr_stdio\" connection from unknown module");
     (void) fprintf (stderr, " on host: \"%s\" with PID: %ld\n",
-		    (*host).alias, pid);
+		    host->alias, pid);
     return (FALSE);
 }   /*  End Function new_module_stdio  */
 
@@ -1538,8 +1588,8 @@ void **info;
 			sys_errlist[errno]);
 	return (FALSE);
     }
-    (void) fprintf (stderr, "%s!%s: %s", (* (*module).host ).alias,
-		    (*module).name, buffer);
+    (void) fprintf (stderr, "%s!%s: %s", module->host->alias,
+		    module->name, buffer);
     m_free (buffer);
     return (TRUE);
 }   /*  End Function module_stdio_output  */
@@ -1560,14 +1610,14 @@ void *info;
     extern char *sys_errlist[];
 
     module = (moduletype *) info;
-    if (!(*module).shut_down)
+    if (!module->shut_down)
     {
 	(void) fprintf (stderr,
 			"Module: \"%s\" on host: \"%s\" PID: %d closed stdio\n",
-			(*module).name, (* (*module).host ).alias,
-			(*module).pid);
+			module->name, module->host->alias,
+			module->pid);
     }
-    (*module).stdio = NULL;
+    module->stdio = NULL;
 }   /*  End Function module_stdio_lost  */
 
 static void stop_func (pid, sig)
@@ -1720,16 +1770,16 @@ static void notify_quiescent ()
     extern char *sys_errlist[];
     static char function_name[] = "notify_quiescent";
 
-    for (module = modulelist; module != NULL; module = (*module).next)
+    for (module = modulelist; module != NULL; module = module->next)
     {
-	channel = conn_get_channel ( (*module).control );
-	if (pio_write32 (channel, CM_TOOL_NOW_QUIESCENT) != TRUE)
+	channel = conn_get_channel (module->control);
+	if ( !pio_write32 (channel, CM_TOOL_NOW_QUIESCENT) )
 	{
 	    (void) fprintf (stderr, "Error writing command\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_SYS_ERROR);
 	}
-	if (ch_flush (channel) != TRUE)
+	if ( !ch_flush (channel) )
 	{
 	    (void) fprintf (stderr, "Error flushing channel\t%s\n",
 			    sys_errlist[errno]);
@@ -1748,11 +1798,11 @@ static void shutdown_modules ()
 
     for (module = modulelist; module != NULL; module = next)
     {
-	next = (*module).next;
-	if ( (*module).control != NULL )
+	next = module->next;
+	if (module->control != NULL)
 	{
-	    (*module).shut_down = TRUE;
-	    if (conn_close ( (*module).control ) != TRUE)
+	    module->shut_down = TRUE;
+	    if ( !conn_close (module->control) )
 	    {
 		(void) fprintf (stderr, "Error closing control connection\n");
 	    }

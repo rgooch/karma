@@ -3,7 +3,7 @@
 
     This code provides KOverlayList objects.
 
-    Copyright (C) 1993,1994  Richard Gooch
+    Copyright (C) 1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -50,8 +50,17 @@
     Updated by      Richard Gooch   20-NOV-1994: Switched over to use of
   kwin_load_font  .
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to
+    Updated by      Richard Gooch   26-NOV-1994: Moved to
   packages/overlay/main.c
+
+    Updated by      Richard Gooch   25-JUL-1995: Moved object packet elements
+  around to fix bus error on r8000s.
+
+    Updated by      Richard Gooch   21-SEP-1995: Fixed bugs in
+  <overlay_ellipses> and <overlay_vectors>: error condition test inverted.
+
+    Last updated by Richard Gooch   22-DEC-1995: Trap NULL co-ordinate arrays
+  in <overlay_lines> routine.
 
 
 */
@@ -71,16 +80,16 @@
 
 
 #define MAGIC_NUMBER (unsigned int) 528762177
-#define PROTOCOL_VERSION (unsigned int) 2
+#define PROTOCOL_VERSION (unsigned int) 3
 
-#define OBJECT_CODE_INDEX (unsigned int) 0
-#define OBJECT_COORD_INDEX (unsigned int) 1
-#define OBJECT_COLOURNAME_INDEX (unsigned int) 2
-#define OBJECT_X_INDEX (unsigned int) 3
-#define OBJECT_Y_INDEX (unsigned int) 4
-#define OBJECT_RESTRICTION_INDEX (unsigned int) 5
-#define OBJECT_TEXT_STRING_INDEX (unsigned int) 6
-#define OBJECT_TEXT_FONTNAME_INDEX (unsigned int) 7
+#define OBJECT_COORD_INDEX (unsigned int) 0
+#define OBJECT_COLOURNAME_INDEX (unsigned int) 1
+#define OBJECT_X_INDEX (unsigned int) 2
+#define OBJECT_Y_INDEX (unsigned int) 3
+#define OBJECT_RESTRICTION_INDEX (unsigned int) 4
+#define OBJECT_TEXT_STRING_INDEX (unsigned int) 5
+#define OBJECT_TEXT_FONTNAME_INDEX (unsigned int) 6
+#define OBJECT_CODE_INDEX (unsigned int) 7
 #define OBJECT_GP_UINT_INDEX (unsigned int) 8
 #define OBJECT_LISTID_INDEX (unsigned int) 9
 #define OBJECT_OBJECTID_INDEX (unsigned int) 10
@@ -114,7 +123,7 @@
 #define VERIFY_OVERLAYLIST(olist) if (olist == NULL) \
 {(void) fprintf (stderr, "NULL overlay list passed\n"); \
  a_prog_bug (function_name); } \
-if ( (*olist).magic_number != MAGIC_NUMBER ) \
+if (olist->magic_number != MAGIC_NUMBER) \
 {(void) fprintf (stderr, "Invalid overlay list object\n"); \
  a_prog_bug (function_name); }
 
@@ -169,15 +178,13 @@ struct refresh_canvas_type
 static packet_desc *object_desc = NULL;
 static KOverlayList masterable_list = NULL;
 static KOverlayList slaveable_list = NULL;
+/*  NOTE: all pointer types (list, string) come first because int padding is
+    not sufficient on some platforms (r8000).  */
 static char *str_object_desc[] =
 {
     "PACKET",
     "  11",
     "END",
-    "  ELEMENT",
-    "    UINT",
-    "    Overlay Object Code",
-    "  END",
     "  ELEMENT",
     "    LISTP",
     "  END",
@@ -237,6 +244,10 @@ static char *str_object_desc[] =
     "  ELEMENT",
     "    VSTRING",
     "    Overlay Text Fontname",
+    "  END",
+    "  ELEMENT",
+    "    UINT",
+    "    Overlay Object Code",
     "  END",
     "  ELEMENT",
     "    UINT",
@@ -332,7 +343,6 @@ KOverlayList overlay_create_list (void *info)
     extern KOverlayList masterable_list;
     extern KOverlayList slaveable_list;
     extern packet_desc *object_desc;
-    extern char *str_object_desc[];
     static char function_name[] = "overlay_create_list";
 
     initialise_overlay_package ();
@@ -341,39 +351,39 @@ KOverlayList overlay_create_list (void *info)
 	m_error_notify (function_name, "KOverlayList object");
 	return (NULL);
     }
-    (*olist).magic_number = MAGIC_NUMBER;
-    (*olist).specification_canvas = NULL;
-    if ( ( (*olist).list_head = ds_alloc_list_head () ) == NULL )
+    olist->magic_number = MAGIC_NUMBER;
+    olist->specification_canvas = NULL;
+    if ( ( olist->list_head = ds_alloc_list_head () ) == NULL )
     {
 	m_error_notify (function_name, "list header");
 	m_free ( (char *) olist );
 	return (NULL);
     }
-    if ( ( (*olist).buf_list = ds_alloc_list_head () ) == NULL )
+    if ( ( olist->buf_list = ds_alloc_list_head () ) == NULL )
     {
 	m_error_notify (function_name, "buffer list header");
 	m_free ( (char *) olist );
-	ds_dealloc_list (object_desc, (*olist).buf_list);
+	ds_dealloc_list (object_desc, olist->buf_list);
 	return (NULL);
     }
-    (* (*olist).list_head ).sort_type = SORT_RANDOM;
-    (*olist).info = info;
-    (*olist).master = NULL;
-    (*olist).slave_count = 0;
-    (*olist).token_conn = NULL;
-    (*olist).have_token = TRUE;
-    (*olist).requested_token = FALSE;
-    (*olist).first_token_request = NULL;
-    (*olist).last_token_request = NULL;
-    (*olist).next_slave_id = 2;
-    (*olist).my_id = 1;
-    (*olist).last_object_id = 0;
-    (*olist).xlabel = NULL;
-    (*olist).ylabel = NULL;
-    (*olist).num_restrictions = 0;
-    (*olist).restriction_names = NULL;
-    (*olist).restriction_values = NULL;
-    (*olist).refresh_canvases = NULL;
+    olist->list_head->sort_type = SORT_RANDOM;
+    olist->info = info;
+    olist->master = NULL;
+    olist->slave_count = 0;
+    olist->token_conn = NULL;
+    olist->have_token = TRUE;
+    olist->requested_token = FALSE;
+    olist->first_token_request = NULL;
+    olist->last_token_request = NULL;
+    olist->next_slave_id = 2;
+    olist->my_id = 1;
+    olist->last_object_id = 0;
+    olist->xlabel = NULL;
+    olist->ylabel = NULL;
+    olist->num_restrictions = 0;
+    olist->restriction_names = NULL;
+    olist->restriction_values = NULL;
+    olist->refresh_canvases = NULL;
     if (masterable_list == NULL) masterable_list = olist;
     if (slaveable_list == NULL) slaveable_list = olist;
     return (olist);
@@ -402,44 +412,44 @@ void overlay_specify_iarray_2d (KOverlayList olist, iarray array)
     static char function_name[] = "overlay_specify_iarray_2d";
 
     VERIFY_OVERLAYLIST (olist);
-    (*olist).specification_canvas = NULL;
+    olist->specification_canvas = NULL;
     /*  Free old information  */
-    if ( (*olist).xlabel != NULL ) m_free ( (*olist).xlabel );
-    (*olist).xlabel = NULL;
-    if ( (*olist).ylabel != NULL ) m_free ( (*olist).ylabel );
-    (*olist).ylabel = NULL;
-    if ( (*olist).restriction_names != NULL )
+    if (olist->xlabel != NULL) m_free (olist->xlabel);
+    olist->xlabel = NULL;
+    if (olist->ylabel != NULL) m_free (olist->ylabel);
+    olist->ylabel = NULL;
+    if (olist->restriction_names != NULL)
     {
-	for (count = 0; count < (*olist).num_restrictions; ++count)
+	for (count = 0; count < olist->num_restrictions; ++count)
 	{
-	    if ( (*olist).restriction_names[count] != NULL )
+	    if (olist->restriction_names[count] != NULL)
 	    {
-		m_free ( (*olist).restriction_names[count] );
+		m_free (olist->restriction_names[count]);
 	    }
 	}
-	m_free ( (char *) (*olist).restriction_names );
+	m_free ( (char *) olist->restriction_names );
     }
-    if ( (*olist).restriction_values != NULL )
+    if (olist->restriction_values != NULL)
     {
-	m_free ( (char *) (*olist).restriction_values );
+	m_free ( (char *) olist->restriction_values );
     }
-    (*olist).restriction_values = NULL;
+    olist->restriction_values = NULL;
     /*  Copy labels  */
-    dimensions = (* (*array).arr_desc ).dimensions;
-    xdim = (*array).orig_dim_indices[1];
-    ydim = (*array).orig_dim_indices[0];
-    if ( ( (*olist).xlabel = st_dup ( (*dimensions[xdim]).name ) ) == NULL )
+    dimensions = array->arr_desc->dimensions;
+    xdim = array->orig_dim_indices[1];
+    ydim = array->orig_dim_indices[0];
+    if ( ( olist->xlabel = st_dup (dimensions[xdim]->name) ) == NULL )
     {
 	m_abort (function_name, "x label");
     }
-    if ( ( (*olist).ylabel = st_dup ( (*dimensions[ydim]).name ) ) == NULL )
+    if ( ( olist->ylabel = st_dup (dimensions[ydim]->name) ) == NULL )
     {
 	m_abort (function_name, "y label");
     }
     /*  And now... for the restrictions  */
-    num_restr = iarray_get_restrictions (array, &(*olist).restriction_names,
-					 &(*olist).restriction_values);
-    (*olist).num_restrictions = num_restr;
+    num_restr = iarray_get_restrictions (array, &olist->restriction_names,
+					 &olist->restriction_values);
+    olist->num_restrictions = num_restr;
 }   /*  End Function overlay_specify_iarray_2d  */
 
 /*PUBLIC_FUNCTION*/
@@ -456,29 +466,29 @@ void overlay_specify_canvas (KOverlayList olist, KWorldCanvas canvas)
     static char function_name[] = "overlay_specify_canvas";
 
     VERIFY_OVERLAYLIST (olist);
-    (*olist).specification_canvas = canvas;
+    olist->specification_canvas = canvas;
     /*  Free old information  */
-    if ( (*olist).xlabel != NULL ) m_free ( (*olist).xlabel );
-    (*olist).xlabel = NULL;
-    if ( (*olist).ylabel != NULL ) m_free ( (*olist).ylabel );
-    (*olist).ylabel = NULL;
-    if ( (*olist).restriction_names != NULL )
+    if (olist->xlabel != NULL) m_free (olist->xlabel);
+    olist->xlabel = NULL;
+    if (olist->ylabel != NULL) m_free (olist->ylabel);
+    olist->ylabel = NULL;
+    if (olist->restriction_names != NULL)
     {
-	for (count = 0; count < (*olist).num_restrictions; ++count)
+	for (count = 0; count < olist->num_restrictions; ++count)
 	{
-	    if ( (*olist).restriction_names[count] != NULL )
+	    if (olist->restriction_names[count] != NULL)
 	    {
-		m_free ( (*olist).restriction_names[count] );
+		m_free (olist->restriction_names[count]);
 	    }
 	}
-	m_free ( (char *) (*olist).restriction_names );
+	m_free ( (char *) olist->restriction_names );
     }
-    if ( (*olist).restriction_values != NULL )
+    if (olist->restriction_values != NULL)
     {
-	m_free ( (char *) (*olist).restriction_values );
+	m_free ( (char *) olist->restriction_values );
     }
-    (*olist).restriction_values = NULL;
-    (*olist).num_restrictions = 0;
+    olist->restriction_values = NULL;
+    olist->num_restrictions = 0;
 }   /*  End Function overlay_specify_canvas  */
 
 
@@ -501,14 +511,14 @@ flag overlay_associate_display_canvas (KOverlayList olist, KWorldCanvas canvas)
 
     VERIFY_OVERLAYLIST (olist);
     /*  Search through for existing association  */
-    for (cnv = (*olist).refresh_canvases; cnv != NULL; cnv = (*cnv).next)
+    for (cnv = olist->refresh_canvases; cnv != NULL; cnv = cnv->next)
     {
-	if (canvas == (*cnv).canvas)
+	if (canvas == cnv->canvas)
 	{
 	    /*  Canvas already associated: make it active if not already  */
-	    if ( (*cnv).active ) return (TRUE);
-	    (*cnv).active = TRUE;
-	    if ( (* (*olist).list_head ).length < 1 ) return (TRUE);
+	    if (cnv->active) return (TRUE);
+	    cnv->active = TRUE;
+	    if (olist->list_head->length < 1) return (TRUE);
 	    /*  Display  */
 	    if ( !canvas_resize (canvas, (struct win_scale_type *) NULL,
 				 TRUE) )
@@ -525,10 +535,10 @@ flag overlay_associate_display_canvas (KOverlayList olist, KWorldCanvas canvas)
     {
 	m_abort (function_name, "refresh canvas structure");
     }
-    (*cnv).canvas = canvas;
-    (*cnv).next = (*olist).refresh_canvases;
-    (*olist).refresh_canvases = cnv;
-    (*cnv).active = TRUE;
+    cnv->canvas = canvas;
+    cnv->next = olist->refresh_canvases;
+    olist->refresh_canvases = cnv;
+    cnv->active = TRUE;
     canvas_register_refresh_func (canvas,
 				  ( void (*) () ) worldcanvas_refresh_func,
 				  (void *) olist);
@@ -555,15 +565,15 @@ flag overlay_unassociate_display_canvas (KOverlayList olist,
 
     VERIFY_OVERLAYLIST (olist);
     /*  Search through for association  */
-    for (cnv = (*olist).refresh_canvases; cnv != NULL; cnv = (*cnv).next)
+    for (cnv = olist->refresh_canvases; cnv != NULL; cnv = cnv->next)
     {
-	if (canvas == (*cnv).canvas)
+	if (canvas == cnv->canvas)
 	{
 	    /*  Canvas associated: make it inactive if not already  */
-	    if ( (*cnv).active )
+	    if (cnv->active)
 	    {
-		(*cnv).active = FALSE;
-		if ( (* (*olist).list_head ).length < 1 ) return (TRUE);
+		cnv->active = FALSE;
+		if (olist->list_head->length < 1) return (TRUE);
 		/*  Refresh canvas  */
 		(void) canvas_resize (canvas, (struct win_scale_type *) NULL,
 				      TRUE);
@@ -595,21 +605,21 @@ flag overlay_redraw_on_canvas (KOverlayList olist, KWorldCanvas canvas)
     static char function_name[] = "overlay_redraw_on_canvas";
 
     VERIFY_OVERLAYLIST (olist);
-    list_head = (*olist).list_head;
-    if ( (*list_head).length < 1 ) return (TRUE);
+    list_head = olist->list_head;
+    if (list_head->length < 1) return (TRUE);
     /*  Get canvas specification information  */
     canvas_get_specification (canvas, &xlabel, &ylabel,
 			      &num_restr, &restr_names, &restr_values);
-    if ( (*list_head).contiguous_data )
+    if (list_head->contiguous_data)
     {
 	(void) fprintf (stderr, "Overlay list has contiguous section!\n");
 	a_prog_bug (function_name);
     }
     /*  Process fragmented section of list  */
-    for (entry = (*list_head).first_frag_entry; entry != NULL;
-	 entry = (*entry).next)
+    for (entry = list_head->first_frag_entry; entry != NULL;
+	 entry = entry->next)
     {
-	if ( !draw_object (canvas, (*entry).data, xlabel, ylabel,
+	if ( !draw_object (canvas, entry->data, xlabel, ylabel,
 			   num_restr, restr_names,
 			   restr_values) ) return (FALSE);
     }
@@ -685,18 +695,18 @@ unsigned int overlay_line (KOverlayList olist,
 unsigned int overlay_lines (KOverlayList olist, unsigned int num_coords,
 			    unsigned int *types, double *x_arr, double *y_arr,
 			    char *colourname)
-/*  This routine will add a number of connected lines to an overlay object list
-    These lines will form a single object. Using this routine is far more
-    efficient than calling  overlay_line  repeatedly.
-    The overlay list must be given by  olist  .
-    The number of co-ordinates must be given by  num_coords  .The number of
-    lines is one less than this value.
-    The co-ordinate types must be pointed to by  types  .If this is
-    NULL, all co-ordinates are assumed to be world co-ordinates.
-    The horizontal co-ordinate values must be pointed to by  x_arr  .
-    The vertical co-ordinate values must be pointed to by  y_arr  .
-    The colourname must be pointed to by  colourname  .
-    The routine returns the objectID on success, else it returns 0.
+/*  [PURPOSE] This routine will add a number of connected lines to an overlay
+    object list. These lines will form a single object. Using this routine is
+    far more efficient than calling <<overlay_line>> repeatedly.
+    <olist> The overlay list.
+    <num_coords> The number of co-ordinates. The number of lines is one less
+    than this value.
+    <types> An array of co-ordinate types. If this is NULL, all co-ordinates
+    are assumed to be world co-ordinates.
+    <x_arr> The horizontal co-ordinate values.
+    <y_arr> The vertical co-ordinate values.
+    <colourname> The colourname.
+    [RETURNS] The objectID on success, else 0.
 */
 {
     unsigned int count;
@@ -710,6 +720,16 @@ unsigned int overlay_lines (KOverlayList olist, unsigned int num_coords,
     static char function_name[] = "overlay_lines";
 
     VERIFY_OVERLAYLIST (olist);
+    if (x_arr == NULL)
+    {
+	(void) fprintf (stderr, "NULL x_arr passed\n");
+	a_prog_bug (function_name);
+    }
+    if (y_arr == NULL)
+    {
+	(void) fprintf (stderr, "NULL y_arr passed\n");
+	a_prog_bug (function_name);
+    }
     if ( ( object = create_generic (olist, OBJECT_LINES, colourname,
 				    num_coords, &coord_desc, &coords,
 				    &object_id) )
@@ -790,14 +810,14 @@ unsigned int overlay_text (KOverlayList olist, char *string, unsigned int type,
     value[0] = y;
     if ( !ds_put_named_element (coord_desc, coords, "Overlay Coord Ordinate",
 				value) ) return (FALSE);
-    if ( !ds_put_unique_named_string (object_desc, &(*object).data,
+    if ( !ds_put_unique_named_string (object_desc, &object->data,
 				      "Overlay Text String", string,
 				      TRUE) ) return (FALSE);
-    if ( !ds_put_unique_named_string (object_desc, &(*object).data,
+    if ( !ds_put_unique_named_string (object_desc, &object->data,
 				      "Overlay Text Fontname", fontname,
 				      TRUE) ) return (FALSE);
     value[0] = clear_under;
-    if ( !ds_put_named_element (object_desc, (*object).data,
+    if ( !ds_put_named_element (object_desc, object->data,
 				"Overlay GP UInteger", value) ) return (FALSE);
     /*  Now process object entry  */
     if ( !process_app_instruction (olist, object) ) return (0);
@@ -1062,9 +1082,9 @@ unsigned int overlay_ellipses (KOverlayList olist, unsigned int num_ellipses,
 				    "Overlay Coord Type",
 				    value) ) return (FALSE);
 	value[0] = cx[count];
-	if (ds_put_named_element (coord_desc, centre_coords,
-				  "Overlay Coord Abscissa",
-				  value) ) return (FALSE);
+	if ( !ds_put_named_element (coord_desc, centre_coords,
+				    "Overlay Coord Abscissa",
+				    value) ) return (FALSE);
 	value[0] = cy[count];
 	if ( !ds_put_named_element (coord_desc, centre_coords,
 				    "Overlay Coord Ordinate",
@@ -1085,9 +1105,9 @@ unsigned int overlay_ellipses (KOverlayList olist, unsigned int num_ellipses,
 				    "Overlay Coord Abscissa",
 				    value) ) return (FALSE);
 	value[0] = ry[count];
-	if (ds_put_named_element (coord_desc, radii_coords,
-				  "Overlay Coord Ordinate",
-				  value) ) return (FALSE);
+	if ( !ds_put_named_element (coord_desc, radii_coords,
+				    "Overlay Coord Ordinate",
+				    value) ) return (FALSE);
     }
     /*  Now process object entry  */
     if ( !process_app_instruction (olist, object) ) return (0);
@@ -1155,7 +1175,10 @@ unsigned int overlay_segments (KOverlayList olist, unsigned int num_segments,
 	    value[0] = types0[count] + offset;
 	}
 	if ( !ds_put_named_element (coord_desc, start_coords,
-				  "Overlay Coord Type",value) ) return (FALSE);
+				    "Overlay Coord Type", value) )
+	{
+	    return (FALSE);
+	}
 	value[0] = x0[count];
 	if ( !ds_put_named_element (coord_desc, start_coords,
 				    "Overlay Coord Abscissa",
@@ -1249,8 +1272,9 @@ unsigned int overlay_vectors (KOverlayList olist, unsigned int num_vectors,
 	{
 	    value[0] = stypes[count] + offset;
 	}
-	if (ds_put_named_element (coord_desc, start_coords,
-				  "Overlay Coord Type",value) ) return (FALSE);
+	if ( !ds_put_named_element (coord_desc, start_coords,
+				    "Overlay Coord Type",
+				    value) ) return (FALSE);
 	value[0] = sx[count];
 	if ( !ds_put_named_element (coord_desc, start_coords,
 				    "Overlay Coord Abscissa",
@@ -1312,7 +1336,7 @@ flag overlay_remove_objects (KOverlayList olist, unsigned int num_objects)
     }
     value[0] = num_objects;
     value[1] = 0.0;
-    if ( !ds_put_named_element (object_desc, (*object).data,
+    if ( !ds_put_named_element (object_desc, object->data,
 				"Overlay GP UInteger", value) ) return (FALSE);
     return ( process_app_instruction (olist, object) );
 }   /*  End Function overlay_remove_objects  */
@@ -1345,12 +1369,12 @@ flag overlay_remove_object (KOverlayList olist, unsigned int id_in_list,
     }
     value[0] = id_in_list;
     value[1] = 0.0;
-    if ( !ds_put_named_element (object_desc, (*object).data,
+    if ( !ds_put_named_element (object_desc, object->data,
 				"Overlay ObjectID", value) ) return (FALSE);
-    if (list_id == 0) list_id = (*olist).my_id;
+    if (list_id == 0) list_id = olist->my_id;
     value[0] = list_id;
     value[1] = 0.0;
-    if ( !ds_put_named_element (object_desc, (*object).data,
+    if ( !ds_put_named_element (object_desc, object->data,
 				"Overlay ListID", value) ) return (FALSE);
     return ( process_app_instruction (olist, object) );
 }   /*  End Function overlay_remove_object  */
@@ -1385,12 +1409,12 @@ flag overlay_move_object (KOverlayList olist, unsigned int id_in_list,
     }
     value[0] = id_in_list;
     value[1] = 0.0;
-    if ( !ds_put_named_element (object_desc, (*object).data,
+    if ( !ds_put_named_element (object_desc, object->data,
 				"Overlay ObjectID", value) ) return (FALSE);
-    if (list_id == 0) list_id = (*olist).my_id;
+    if (list_id == 0) list_id = olist->my_id;
     value[0] = list_id;
     value[1] = 0.0;
-    if ( !ds_put_named_element (object_desc, (*object).data,
+    if ( !ds_put_named_element (object_desc, object->data,
 				"Overlay ListID", value) ) return (FALSE);
     value[0] = dx;
     if ( !ds_put_named_element (coord_desc, coords, "Overlay Coord Abscissa",
@@ -1467,10 +1491,10 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas, int width,
     olist = (KOverlayList) *info;
     VERIFY_OVERLAYLIST (olist);
     /*  Search through for association  */
-    for (cnv = (*olist).refresh_canvases, no_association = TRUE;
-	 (cnv != NULL) && no_association; cnv = (*cnv).next)
+    for (cnv = olist->refresh_canvases, no_association = TRUE;
+	 (cnv != NULL) && no_association; cnv = cnv->next)
     {
-	if ( (canvas ==(*cnv).canvas) &&(*cnv).active ) no_association = FALSE;
+	if ( (canvas == cnv->canvas) && cnv->active ) no_association = FALSE;
     }
     if (no_association) return;
     (void) overlay_redraw_on_canvas (olist, canvas);
@@ -1509,14 +1533,14 @@ static flag register_new_overlay_slave (Connection connection, void **info)
 	(void) ch_flush (channel);
 	return (FALSE);
     }
-    if ( (*masterable_list).master != NULL )
+    if (masterable_list->master != NULL)
     {
 	(void) fprintf (stderr, "Default masterable list is a slave!\n");
 	dsrw_write_flag (channel, FALSE);
 	(void) ch_flush (channel);
 	return (FALSE);
     }
-    if ( (*masterable_list).next_slave_id == 0 )
+    if (masterable_list->next_slave_id == 0)
     {
 	/*  Wow! There's been a lot of slave connections!  */
 	(void) fprintf (stderr, "Slave ID counter has wrapped around!\n");
@@ -1524,19 +1548,19 @@ static flag register_new_overlay_slave (Connection connection, void **info)
 	(void) ch_flush (channel);
 	return (FALSE);
     }
-    (*masterable_list).my_id = 1;
+    masterable_list->my_id = 1;
     *info = (void *) masterable_list;
     dsrw_write_flag (channel, TRUE);
-    if ( !pio_write32 (channel, (*masterable_list).next_slave_id) )
+    if ( !pio_write32 (channel, masterable_list->next_slave_id) )
     {
 	return (FALSE);
     }
-    ++(*masterable_list).next_slave_id;
+    ++masterable_list->next_slave_id;
     /*  Write whatever is in list and flush  */
-    list_head = (*masterable_list).list_head;
-    if ( write_entries (channel, object_desc, (*list_head).first_frag_entry) )
+    list_head = masterable_list->list_head;
+    if ( write_entries (channel, object_desc, list_head->first_frag_entry) )
     {
-	++(*masterable_list).slave_count;
+	++masterable_list->slave_count;
 	return (TRUE);
     }
     return (FALSE);
@@ -1566,7 +1590,7 @@ static flag read_instruction_from_slave (Connection connection, void **info)
     }
     channel = conn_get_channel (connection);
     if ( !dsrw_read_packet (channel, object_desc,
-			    (*entry).data) ) return (FALSE);
+			    entry->data) ) return (FALSE);
     return ( process_instruction (olist, entry, connection) );
 }   /*  End Function read_instruction_from_slave  */
 
@@ -1584,12 +1608,12 @@ static void register_slave_loss (Connection connection, void *info)
 
     olist = (KOverlayList) info;
     VERIFY_OVERLAYLIST (olist);
-    if (connection == (*olist).token_conn)
+    if (connection == olist->token_conn)
     {
 	/*  Take back the token  */
 	(void) process_token_receive (olist, connection);
     }
-    --(*olist).slave_count;
+    --olist->slave_count;
     remove_token_request (olist, connection);
 }   /*  End Function register_slave_loss  */
 
@@ -1619,14 +1643,14 @@ static flag verify_overlay_slave_connection (void **info)
 			"Connection attempt to 2D_overlay server but we have no list!\n");
 	return (FALSE);
     }
-    if ( (*slaveable_list).master != NULL )
+    if (slaveable_list->master != NULL)
     {
 	(void) fprintf (stderr,
 			"Connection attempt to 2D_overlay server but already a slave!\n");
 	return (FALSE);
     }
-    list_head = (*slaveable_list).list_head;
-    if ( (*list_head).length > 0 )
+    list_head = slaveable_list->list_head;
+    if (list_head->length > 0)
     {
 	(void) fprintf (stderr,
 			"Overlay list must be empty before becomming a slave\n");
@@ -1656,7 +1680,7 @@ static flag register_overlay_slave_connection (Connection connection,
 
     olist = (KOverlayList) *info;
     VERIFY_OVERLAYLIST (olist);
-    if ( (*olist).master != NULL )
+    if (olist->master != NULL)
     {
 	(void) fprintf (stderr,
 			"Connection attempt to 2D_overlay server but suddenly a slave!\n");
@@ -1666,10 +1690,10 @@ static flag register_overlay_slave_connection (Connection connection,
     if ( !dsrw_read_flag (channel, &success) ) return (FALSE);
     if (!success) return (FALSE);
     if ( !pio_read32 (channel, &my_id) ) return (FALSE);
-    (*olist).my_id = my_id;
-    (*olist).master = connection;
-    (*olist).have_token = FALSE;
-    (*olist).requested_token = FALSE;
+    olist->my_id = my_id;
+    olist->master = connection;
+    olist->have_token = FALSE;
+    olist->requested_token = FALSE;
     return (TRUE);
 }   /*  End Function register_overlay_slave_connection  */
 
@@ -1695,14 +1719,14 @@ static flag read_instruction_from_master (Connection connection, void **info)
 	m_error_notify (function_name, "overlay object");
 	return (FALSE);
     }
-    if (connection != (*olist).master)
+    if (connection != olist->master)
     {
 	(void) fprintf (stderr, "Connection missmatch\n");
 	a_prog_bug (function_name);
     }
     channel = conn_get_channel (connection);
     if ( !dsrw_read_packet (channel, object_desc,
-			    (*entry).data) ) return (FALSE);
+			    entry->data) ) return (FALSE);
     return ( process_instruction (olist, entry, connection) );
 }   /*  End Function read_instruction_from_master  */
 
@@ -1720,11 +1744,11 @@ static void register_master_loss (Connection connection, void *info)
 
     olist = (KOverlayList) info;
     VERIFY_OVERLAYLIST (olist);
-    if ( !(*olist).have_token )
+    if (!olist->have_token)
     {
-	(void) process_token_receive (olist, (*olist).master);
+	(void) process_token_receive (olist, olist->master);
     }
-    (*olist).master = NULL;
+    olist->master = NULL;
 }   /*  End Function register_master_loss  */
 
 
@@ -1762,7 +1786,7 @@ static flag transmit_to_slaves (KOverlayList olist, list_entry *object,
 	if (conn == except_conn) continue;
 	if (conn_get_connection_info (conn) != olist) continue;
 	channel = conn_get_channel (conn);
-	dsrw_write_packet (channel, object_desc, (*object).data);
+	dsrw_write_packet (channel, object_desc, object->data);
 	if ( !ch_flush (channel) ) return (FALSE);
     }
     return (TRUE);
@@ -1780,9 +1804,9 @@ static flag write_entries (Channel channel, packet_desc *list_desc,
 {
     list_entry *entry;
 
-    for (entry = first_entry; entry != NULL; entry = (*entry).next)
+    for (entry = first_entry; entry != NULL; entry = entry->next)
     {
-	dsrw_write_packet (channel, list_desc, (*entry).data);
+	dsrw_write_packet (channel, list_desc, entry->data);
     }
     return ( ch_flush (channel) );
 }   /*  End Function write_entries  */
@@ -1817,7 +1841,7 @@ static flag process_instruction (KOverlayList olist, list_entry *instruction,
 
     VERIFY_OVERLAYLIST (olist);
     /*  Get object code  */
-    if ( !ds_get_unique_named_value (object_desc, (*instruction).data,
+    if ( !ds_get_unique_named_value (object_desc, instruction->data,
 				     "Overlay Object Code",
 				     (unsigned int *) NULL, value) )
     {
@@ -1829,28 +1853,28 @@ static flag process_instruction (KOverlayList olist, list_entry *instruction,
     switch (instruction_code)
     {
       case OBJECT_REMOVE_OBJECTS:
-	if ( (*olist).master == NULL )
+	if (olist->master == NULL)
 	{
 	    if ( !transmit_to_slaves (olist, instruction,
 				      conn) ) return (FALSE);
 	}
-	if ( (* (*olist).list_head ).length < 1 ) return (TRUE);
-	if ( !ds_get_unique_named_value (object_desc, (*instruction).data,
+	if (olist->list_head->length < 1) return (TRUE);
+	if ( !ds_get_unique_named_value (object_desc, instruction->data,
 					 "Overlay GP UInteger",
 					 (unsigned int *) NULL, value) )
 	{
 	    (void) fprintf (stderr, "Error getting overlay object UINT\n");
-	    ds_dealloc_data (object_desc, (*instruction).data);
+	    ds_dealloc_data (object_desc, instruction->data);
 	    m_free ( (char *) instruction );
 	    return (FALSE);
 	}
 	/*  Deallocate instruction: can't use it later!  */
-	ds_dealloc_data (object_desc, (*instruction).data);
+	ds_dealloc_data (object_desc, instruction->data);
 	m_free ( (char *) instruction );
 	num_objects = value[0];
-	if ( (num_objects > (* (*olist).list_head ).length) ||
-	    (num_objects == 0) ) num_objects = (* (*olist).list_head ).length;
-	for (curr_entry = (* (*olist).list_head ).last_frag_entry;
+	if ( (num_objects > olist->list_head->length) ||
+	    (num_objects == 0) ) num_objects = olist->list_head->length;
+	for (curr_entry = olist->list_head->last_frag_entry;
 	     num_objects > 0; curr_entry = prev_entry, --num_objects)
 	{
 	    if (curr_entry == NULL)
@@ -1859,25 +1883,25 @@ static flag process_instruction (KOverlayList olist, list_entry *instruction,
 				"Overran list! Possible protocol error\n");
 		a_prog_bug (function_name);
 	    }
-	    ds_dealloc_data (object_desc, (*curr_entry).data);
-	    prev_entry = (*curr_entry).prev;
+	    ds_dealloc_data (object_desc, curr_entry->data);
+	    prev_entry = curr_entry->prev;
 	    m_free ( (char *) curr_entry );
-	    --(* (*olist).list_head ).length;
+	    --olist->list_head->length;
 	}
-	(* (*olist).list_head ).last_frag_entry = prev_entry;
-	if (prev_entry != NULL) (*prev_entry).next = NULL;
-	if ( (* (*olist).list_head ).length < 1 )
+	olist->list_head->last_frag_entry = prev_entry;
+	if (prev_entry != NULL) prev_entry->next = NULL;
+	if (olist->list_head->length < 1)
 	{
-	    (* (*olist).list_head ).first_frag_entry = NULL;
+	    olist->list_head->first_frag_entry = NULL;
 	}
 	/*  Search through for canvas associations  */
-	for (cnv = (*olist).refresh_canvases; cnv != NULL; cnv = (*cnv).next)
+	for (cnv = olist->refresh_canvases; cnv != NULL; cnv = cnv->next)
 	{
-	    if ( !(*cnv).active ) continue;
+	    if (!cnv->active) continue;
 	    /*  Refresh canvas  */
-	    if ( !canvas_resize ( (*cnv).canvas,
+	    if ( !canvas_resize (cnv->canvas,
 				 (struct win_scale_type *) NULL,
-				 FALSE ) ) return (FALSE);
+				 FALSE) ) return (FALSE);
 	}
 	return (TRUE);
 /*
@@ -1885,7 +1909,7 @@ static flag process_instruction (KOverlayList olist, list_entry *instruction,
 */
       case OBJECT_REQUEST_TOKEN:
 	/*  Deallocate instruction: can't use it later!  */
-	ds_dealloc_data (object_desc, (*instruction).data);
+	ds_dealloc_data (object_desc, instruction->data);
 	m_free ( (char *) instruction );
 	return ( process_conn_token_request (olist, conn) );
 /*
@@ -1893,117 +1917,119 @@ static flag process_instruction (KOverlayList olist, list_entry *instruction,
 */
       case OBJECT_GRANT_TOKEN:
 	/*  Deallocate instruction: can't use it later!  */
-	ds_dealloc_data (object_desc, (*instruction).data);
+	ds_dealloc_data (object_desc, instruction->data);
 	m_free ( (char *) instruction );
 	return ( process_token_receive (olist, conn) );
 /*
 	break;
 */
       case OBJECT_REMOVE_OBJECT:
-	if ( (*olist).master == NULL )
+	if (olist->master == NULL)
 	{
 	    if ( !transmit_to_slaves (olist, instruction,
 				      conn) ) return (FALSE);
 	}
-	if ( (* (*olist).list_head ).length < 1 ) return (FALSE);
-	if ( !ds_get_unique_named_value (object_desc, (*instruction).data,
+	if (olist->list_head->length < 1) return (FALSE);
+	if ( !ds_get_unique_named_value (object_desc, instruction->data,
 					 "Overlay ListID",
 					 (unsigned int *) NULL, value) )
 	{
 	    (void) fprintf (stderr, "Error getting overlay object ListID\n");
-	    ds_dealloc_data (object_desc, (*instruction).data);
+	    ds_dealloc_data (object_desc, instruction->data);
 	    m_free ( (char *) instruction );
 	    return (FALSE);
 	}
 	list_id = value[0];
-	if ( !ds_get_unique_named_value (object_desc, (*instruction).data,
+	if ( !ds_get_unique_named_value (object_desc, instruction->data,
 					 "Overlay ObjectID",
 					 (unsigned int *) NULL, value) )
 	{
 	    (void) fprintf (stderr, "Error getting overlay object ObjectID\n");
-	    ds_dealloc_data (object_desc, (*instruction).data);
+	    ds_dealloc_data (object_desc, instruction->data);
 	    m_free ( (char *) instruction );
 	    return (FALSE);
 	}
 	object_id = value[0];
 	/*  Deallocate instruction: can't use it later!  */
-	ds_dealloc_data (object_desc, (*instruction).data);
+	ds_dealloc_data (object_desc, instruction->data);
 	m_free ( (char *) instruction );
 	if ( !remove_object (olist, object_id, list_id) ) return (TRUE);
 	/*  Search through for canvas associations  */
-	for (cnv = (*olist).refresh_canvases; cnv != NULL; cnv = (*cnv).next)
+	for (cnv = olist->refresh_canvases; cnv != NULL; cnv = cnv->next)
 	{
-	    if ( !(*cnv).active ) continue;
+	    if (!cnv->active) continue;
 	    /*  Refresh canvas  */
-	    if ( !canvas_resize ( (*cnv).canvas,
+	    if ( !canvas_resize (cnv->canvas,
 				 (struct win_scale_type *) NULL,
-				 FALSE ) ) return (FALSE);
+				 FALSE) ) return (FALSE);
 	}
 	return (TRUE);
 /*
 	break;
 */
       case OBJECT_MOVE_OBJECT:
-	if ( (*olist).master == NULL )
+	if (olist->master == NULL)
 	{
 	    if ( !transmit_to_slaves (olist, instruction,
 				      conn) ) return (FALSE);
 	}
-	if ( (* (*olist).list_head ).length < 1 ) return (FALSE);
-	if ( !ds_get_unique_named_value (object_desc, (*instruction).data,
+	if (olist->list_head->length < 1) return (FALSE);
+	if ( !ds_get_unique_named_value (object_desc, instruction->data,
 					 "Overlay ListID",
 					 (unsigned int *) NULL, value) )
 	{
 	    (void) fprintf (stderr, "Error getting overlay object ListID\n");
-	    ds_dealloc_data (object_desc, (*instruction).data);
+	    ds_dealloc_data (object_desc, instruction->data);
 	    m_free ( (char *) instruction );
 	    return (FALSE);
 	}
 	list_id = value[0];
-	if ( !ds_get_unique_named_value (object_desc, (*instruction).data,
+	if ( !ds_get_unique_named_value (object_desc, instruction->data,
 					 "Overlay ObjectID",
 					 (unsigned int *) NULL, value) )
 	{
 	    (void) fprintf (stderr, "Error getting overlay object ObjectID\n");
-	    ds_dealloc_data (object_desc, (*instruction).data);
+	    ds_dealloc_data (object_desc, instruction->data);
 	    m_free ( (char *) instruction );
 	    return (FALSE);
 	}
 	object_id = value[0];
-	ptr = (*instruction).data + ds_get_element_offset (object_desc,
+	ptr = instruction->data + ds_get_element_offset (object_desc,
 							   OBJECT_COORD_INDEX);
 	coord_list = *(list_header **) ptr;
-	if ( (*coord_list).length != 1 )
+	if (coord_list->length != 1)
 	{
-	    ds_dealloc_data (object_desc, (*instruction).data);
+	    ds_dealloc_data (object_desc, instruction->data);
 	    m_free ( (char *) instruction );
 	    return (FALSE);
 	}
-	coords = (*coord_list).contiguous_data;
-	coord_desc= (packet_desc *)(*object_desc).element_desc[OBJECT_COORD_INDEX];
+	coords = coord_list->contiguous_data;
+	coord_desc= (packet_desc *)object_desc->element_desc[OBJECT_COORD_INDEX];
 	dx = *(double *) ( coords + ds_get_element_offset (coord_desc,
 							   COORD_X_INDEX) );
 	dy = *(double *) ( coords + ds_get_element_offset (coord_desc,
 							   COORD_Y_INDEX) );
 	/*  Deallocate instruction: can't use it later!  */
-	ds_dealloc_data (object_desc, (*instruction).data);
+	ds_dealloc_data (object_desc, instruction->data);
 	m_free ( (char *) instruction );
 	if ( !move_object (olist, object_id, list_id, dx, dy) ) return (TRUE);
 	/*  Search through for canvas associations  */
-	for (cnv = (*olist).refresh_canvases; cnv != NULL; cnv = (*cnv).next)
+	for (cnv = olist->refresh_canvases; cnv != NULL; cnv = cnv->next)
 	{
-	    if ( !(*cnv).active ) continue;
+	    if (!cnv->active) continue;
 	    /*  Refresh canvas  */
-	    if ( !canvas_resize ( (*cnv).canvas,
+	    if ( !canvas_resize (cnv->canvas,
 				 (struct win_scale_type *) NULL,
-				 FALSE ) ) return (FALSE);
+				 FALSE) ) return (FALSE);
 	}
 	return (TRUE);
+/*
 	break;
+*/
       default:
         break;
     }
-    if ( (*olist).master == NULL )
+    if (olist->master == NULL)
     {
 	if ( !transmit_to_slaves (olist, instruction, conn) ) return (FALSE);
     }
@@ -2030,19 +2056,19 @@ static flag process_local_object (KOverlayList olist, list_entry *object,
 
     VERIFY_OVERLAYLIST (olist);
     /*  Search through for canvas associations  */
-    for (cnv = (*olist).refresh_canvases; cnv != NULL; cnv = (*cnv).next)
+    for (cnv = olist->refresh_canvases; cnv != NULL; cnv = cnv->next)
     {
-	if (!(*cnv).active) continue;
+	if (!cnv->active) continue;
 	/*  Get canvas specification information  */
-	canvas_get_specification ( (*cnv).canvas, &xlabel, &ylabel,
-				  &num_restr, &restr_names, &restr_values );
+	canvas_get_specification (cnv->canvas, &xlabel, &ylabel,
+				  &num_restr, &restr_names, &restr_values);
 	/*  Draw it  */
-	if ( !draw_object ( (*cnv).canvas, (*object).data, xlabel, ylabel,
+	if ( !draw_object (cnv->canvas, object->data, xlabel, ylabel,
 			   num_restr, restr_names,
-			   restr_values ) ) return (FALSE);
+			   restr_values) ) return (FALSE);
     }
     /*  Add it to the list  */
-    if (append) ds_list_append ( (*olist).list_head, object );
+    if (append) ds_list_append (olist->list_head, object);
     return (TRUE);
 }   /*  End Function process_local_object  */
 
@@ -2100,9 +2126,9 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
     object_code = *(unsigned int *) ptr;
     ptr = object + ds_get_element_offset (object_desc, OBJECT_COORD_INDEX);
     coord_list = *(list_header **) ptr;
-    num_coords = (*coord_list).length;
-    coords = (*coord_list).contiguous_data;
-    coord_desc= (packet_desc *)(*object_desc).element_desc[OBJECT_COORD_INDEX];
+    num_coords = coord_list->length;
+    coords = coord_list->contiguous_data;
+    coord_desc= (packet_desc *)object_desc->element_desc[OBJECT_COORD_INDEX];
     coord_pack_size = ds_get_packet_size (coord_desc);
     types = coords + ds_get_element_offset (coord_desc, COORD_TYPE_INDEX);
     x_arr = coords + ds_get_element_offset (coord_desc, COORD_X_INDEX);
@@ -2115,7 +2141,7 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
     y_label = *(char **) ptr;
     ptr = object + ds_get_element_offset(object_desc,OBJECT_RESTRICTION_INDEX);
     restriction_list = *(list_header **) ptr;
-    ptr = (*object_desc).element_desc[OBJECT_RESTRICTION_INDEX];
+    ptr = object_desc->element_desc[OBJECT_RESTRICTION_INDEX];
     restriction_desc = (packet_desc *) ptr;
     ptr = object + ds_get_element_offset(object_desc,OBJECT_TEXT_STRING_INDEX);
     textstring = *(char **) ptr;
@@ -2137,13 +2163,13 @@ static flag draw_object (KWorldCanvas canvas, char *object, char *xlabel,
 	if (strcmp (ylabel, y_label) != 0) return (TRUE);
     }
     /*  Process restrictions  */
-    ptr = (*restriction_list).contiguous_data;
+    ptr = restriction_list->contiguous_data;
     restriction_names = ptr + ds_get_element_offset (restriction_desc,
 						     RESTRICTION_NAME_INDEX);
     restriction_values = ptr + ds_get_element_offset (restriction_desc,
 						      RESTRICTION_VALUE_INDEX);
     restr_pack_size = ds_get_packet_size (restriction_desc);
-    for (count1 = 0; count1 < (*restriction_list).length;
+    for (count1 = 0; count1 < restriction_list->length;
 	 ++count1, restriction_names += restr_pack_size,
 	 restriction_values += restr_pack_size)
     {
@@ -2501,12 +2527,12 @@ static flag send_token_request (KOverlayList olist)
     static char function_name[] = "send_token_request";
 
     VERIFY_OVERLAYLIST (olist);
-    if ( (*olist).have_token )
+    if (olist->have_token)
     {
 	(void) fprintf (stderr, "Already have token\n");
 	a_prog_bug (function_name);
     }
-    if ( (*olist).requested_token ) return (TRUE);
+    if (olist->requested_token) return (TRUE);
     if ( ( instruction = create_generic (olist, OBJECT_REQUEST_TOKEN, NULL,
 					 0, &coord_desc, &coords, NULL) )
 	== NULL )
@@ -2514,25 +2540,25 @@ static flag send_token_request (KOverlayList olist)
 	m_error_notify (function_name, "token request");
 	return (FALSE);
     }
-    if ( (*olist).master == NULL )
+    if (olist->master == NULL)
     {
 	/*  This is master: look at slave connection with token  */
-	if ( (*olist).token_conn == NULL )
+	if (olist->token_conn == NULL)
 	{
 	    (void) fprintf (stderr, "Nowhere to get token from\n");
 	    a_prog_bug (function_name);
 	}
-	channel = conn_get_channel ( (*olist).token_conn );
+	channel = conn_get_channel (olist->token_conn);
     }
     else
     {
-	channel = conn_get_channel ( (*olist).master );
+	channel = conn_get_channel (olist->master);
     }
-    dsrw_write_packet (channel, object_desc, (*instruction).data);
-    ds_dealloc_data (object_desc, (*instruction).data);
+    dsrw_write_packet (channel, object_desc, instruction->data);
+    ds_dealloc_data (object_desc, instruction->data);
     m_free ( (char *) instruction );
     if ( !ch_flush (channel) ) return (FALSE);
-    (*olist).requested_token = TRUE;
+    olist->requested_token = TRUE;
     return (TRUE);
 }   /*  End Function send_token_request  */
 
@@ -2551,12 +2577,12 @@ static flag send_token_grant (KOverlayList olist, Connection conn)
     static char function_name[] = "send_token_grant";
 
     VERIFY_OVERLAYLIST (olist);
-    if ( !(*olist).have_token )
+    if (!olist->have_token)
     {
 	(void) fprintf (stderr, "Do not have token\n");
 	a_prog_bug (function_name);
     }
-    if ( ( (*olist).master != NULL ) && (conn != (*olist).master) )
+    if ( (olist->master != NULL) && (conn != olist->master) )
     {
 	(void) fprintf (stderr, "Slave not sending token to master\n");
 	a_prog_bug (function_name);
@@ -2569,12 +2595,12 @@ static flag send_token_grant (KOverlayList olist, Connection conn)
 	return (FALSE);
     }
     channel = conn_get_channel (conn);
-    dsrw_write_packet (channel, object_desc, (*instruction).data);
-    ds_dealloc_data (object_desc, (*instruction).data);
+    dsrw_write_packet (channel, object_desc, instruction->data);
+    ds_dealloc_data (object_desc, instruction->data);
     m_free ( (char *) instruction );
     if ( !ch_flush (channel) ) return (FALSE);
-    (*olist).have_token = FALSE;
-    if ( (*olist).master == NULL ) (*olist).token_conn = conn;
+    olist->have_token = FALSE;
+    if (olist->master == NULL) olist->token_conn = conn;
     return (TRUE);
 }   /*  End Function send_token_grant  */
 
@@ -2596,21 +2622,21 @@ static flag process_conn_token_request (KOverlayList olist, Connection conn)
 	(void) fprintf (stderr, "Who asked for token?\n");
 	a_prog_bug (function_name);
     }
-    if ( (*olist).master == NULL )
+    if (olist->master == NULL)
     {
 	/*  This is the master: find the token  */
-	if ( (*olist).have_token ) return ( send_token_grant (olist, conn) );
+	if (olist->have_token) return ( send_token_grant (olist, conn) );
 	/*  Do not have the token: must be with a slave  */
-	if ( (*olist).token_conn == NULL )
+	if (olist->token_conn == NULL)
 	{
 	    (void) fprintf (stderr, "MASTER: who has the token?\n");
 	    a_prog_bug (function_name);
 	}
 	/*  Check for existing token request  */
-	for (entry = (*olist).first_token_request; entry != NULL;
-	     entry = (*entry).next)
+	for (entry = olist->first_token_request; entry != NULL;
+	     entry = entry->next)
 	{
-	    if (conn == (*entry).conn)
+	    if (conn == entry->conn)
 	    {
 		(void) fprintf (stderr,
 				"MASTER: slave has already asked for token\n");
@@ -2624,34 +2650,34 @@ static flag process_conn_token_request (KOverlayList olist, Connection conn)
 	    return (FALSE);
 	}
 	/*  Append to list  */
-	(*entry).conn = conn;
-	(*entry).prev = (*olist).last_token_request;
-	(*entry).next = NULL;
-	if ( (*olist).last_token_request != NULL )
+	entry->conn = conn;
+	entry->prev = olist->last_token_request;
+	entry->next = NULL;
+	if (olist->last_token_request != NULL)
 	{
-	    (* (*olist).last_token_request ).next = entry;
+	    olist->last_token_request->next = entry;
 	}
-	(*olist).last_token_request = entry;
-	if ( (*olist).first_token_request == NULL )
+	olist->last_token_request = entry;
+	if (olist->first_token_request == NULL)
 	{
-	    (*olist).first_token_request = entry;
+	    olist->first_token_request = entry;
 	}
 	return ( send_token_request (olist) );
     }
     /*  This is a slave  */
-    if ( !(*olist).have_token )
+    if (!olist->have_token)
     {
 	(void) fprintf(stderr,
 		       "SLAVE: request for token but I don't have it\n");
 	a_prog_bug (function_name);
     }
-    if (conn != (*olist).master)
+    if (conn != olist->master)
     {
 	(void) fprintf (stderr,
 			"SLAVE: request for token not from master\n");
 	a_prog_bug (function_name);
     }
-    return ( send_token_grant (olist, (*olist).master) );
+    return ( send_token_grant (olist, olist->master) );
 }   /*  End Function process_conn_token_request  */
 
 static flag process_token_receive (KOverlayList olist, Connection conn)
@@ -2670,26 +2696,26 @@ static flag process_token_receive (KOverlayList olist, Connection conn)
     static char function_name[] = "process_token_receive";
 
     VERIFY_OVERLAYLIST (olist);
-    if ( (*olist).have_token )
+    if (olist->have_token)
     {
 	(void) fprintf (stderr, "Already have token\n");
 	a_prog_bug (function_name);
     }
-    list_head = (*olist).buf_list;
-    if ( (*olist).master == NULL )
+    list_head = olist->buf_list;
+    if (olist->master == NULL)
     {
 	/*  Master: must have come from slave  */
-	if (conn != (*olist).token_conn)
+	if (conn != olist->token_conn)
 	{
 	    (void)fprintf(stderr,
 			  "MASTER: token received from slave which doesn't have it\n");
 	    a_prog_bug (function_name);
 	}
-	(*olist).token_conn = NULL;
-	(*olist).have_token = TRUE;
-	(*olist).requested_token = FALSE;
-	for (instruction = (*list_head).first_frag_entry; instruction != NULL;
-	     instruction = (*instruction).next)
+	olist->token_conn = NULL;
+	olist->have_token = TRUE;
+	olist->requested_token = FALSE;
+	for (instruction = list_head->first_frag_entry; instruction != NULL;
+	     instruction = instruction->next)
 	{
 	    if ( !transmit_to_slaves (olist, instruction, NULL) )
 	    {
@@ -2701,45 +2727,45 @@ static flag process_token_receive (KOverlayList olist, Connection conn)
 		ds_dealloc_list_entries (object_desc, list_head);
 		return (FALSE);
 	    }
-	    (*list_head).first_frag_entry = (*instruction).next;
-	    --(*list_head).length;
+	    list_head->first_frag_entry = instruction->next;
+	    --list_head->length;
 	}
-	(*list_head).last_frag_entry = NULL;
-	if ( (entry = (*olist).first_token_request) == NULL ) return (TRUE);
-	if ( !send_token_grant (olist, (*entry).conn) ) return (FALSE);
-	remove_token_request (olist, (*entry).conn);
+	list_head->last_frag_entry = NULL;
+	if ( (entry = olist->first_token_request) == NULL ) return (TRUE);
+	if ( !send_token_grant (olist, entry->conn) ) return (FALSE);
+	remove_token_request (olist, entry->conn);
 	/*  If no more token requests: leave token where it is  */
-	if ( (*olist).first_token_request == NULL ) return (TRUE);
+	if (olist->first_token_request == NULL) return (TRUE);
 	return ( send_token_request (olist) );
     }
     /*  Slave: must have come from master  */
-    if (conn != (*olist).master)
+    if (conn != olist->master)
     {
 	(void) fprintf (stderr, "SLAVE: token received but not from master\n");
 	a_prog_bug (function_name);
     }
-    (*olist).have_token = TRUE;
-    (*olist).requested_token = FALSE;
-    channel = conn_get_channel ( (*olist).master );
-    if ( !write_entries (channel, object_desc, (*list_head).first_frag_entry) )
+    olist->have_token = TRUE;
+    olist->requested_token = FALSE;
+    channel = conn_get_channel (olist->master);
+    if ( !write_entries (channel, object_desc, list_head->first_frag_entry) )
     {
 	ds_dealloc_list_entries (object_desc, list_head);
 	return (FALSE);
     }
-    for (instruction = (*list_head).first_frag_entry; instruction != NULL;
+    for (instruction = list_head->first_frag_entry; instruction != NULL;
 	 instruction = next_instruction)
     {
-	next_instruction = (*instruction).next;
+	next_instruction = instruction->next;
 	if ( !process_instruction (olist, instruction, NULL) )
 	{
 	    (void) fprintf (stderr, "Error processing instruction\n");
 	    ds_dealloc_list_entries (object_desc, list_head);
 	    return (FALSE);
 	}
-	(*list_head).first_frag_entry = next_instruction;
-	--(*list_head).length;
+	list_head->first_frag_entry = next_instruction;
+	--list_head->length;
     }
-    (*list_head).last_frag_entry = NULL;
+    list_head->last_frag_entry = NULL;
     return (TRUE);
 }   /*  End Function process_token_receive  */
 
@@ -2756,27 +2782,27 @@ static void remove_token_request (KOverlayList olist, Connection conn)
 
     VERIFY_OVERLAYLIST (olist);
     /*  Terminate any token requests from this slave  */
-    for (entry = (*olist).first_token_request; entry != NULL; entry = next)
+    for (entry = olist->first_token_request; entry != NULL; entry = next)
     {
-	next = (*entry).next;
-	if (conn == (*entry).conn)
+	next = entry->next;
+	if (conn == entry->conn)
 	{
 	    /*  Remove  */
 	    if (next == NULL)
 	    {
-		(*olist).last_token_request = (*entry).prev;
+		olist->last_token_request = entry->prev;
 	    }
 	    else
 	    {
-		(*next).prev = (*entry).prev;
+		next->prev = entry->prev;
 	    }
-	    if ( (*entry).prev == NULL )
+	    if (entry->prev == NULL)
 	    {
-		(*olist).first_token_request = next;
+		olist->first_token_request = next;
 	    }
 	    else
 	    {
-		(* (*entry).prev ).next = next;
+		entry->prev->next = next;
 	    }
 	    m_free ( (char *) entry );
 	    return;
@@ -2802,23 +2828,23 @@ static flag process_app_instruction (KOverlayList olist,
 
     VERIFY_OVERLAYLIST (olist);
     /*  Quick sanity check  */
-    if ( !(*olist).have_token && ( (*olist).master == NULL ) &&
-	( (*olist).slave_count < 1 ) )
+    if ( !olist->have_token && (olist->master == NULL) &&
+	(olist->slave_count < 1) )
     {
 	(void) fprintf (stderr, "Lost token!\n");
 	a_prog_bug (function_name);
     }
-    if ( (*olist).have_token )
+    if (olist->have_token)
     {
 	/*  OK: first transmit if needed  */
-	if ( (*olist).master != NULL )
+	if (olist->master != NULL)
 	{
 	    /*  Send it to the master  */
-	    channel = conn_get_channel ( (*olist).master );
-	    dsrw_write_packet (channel, object_desc, (*instruction).data);
+	    channel = conn_get_channel (olist->master);
+	    dsrw_write_packet (channel, object_desc, instruction->data);
 	    if ( !ch_flush (channel) )
 	    {
-		ds_dealloc_data (object_desc, (*instruction).data);
+		ds_dealloc_data (object_desc, instruction->data);
 		m_free ( (char *) instruction );
 		return (FALSE);
 	    }
@@ -2829,11 +2855,11 @@ static flag process_app_instruction (KOverlayList olist,
     /*  Do not have the token: store the instruction for later  */
     if ( !send_token_request (olist) )
     {
-	ds_dealloc_data (object_desc, (*instruction).data);
+	ds_dealloc_data (object_desc, instruction->data);
 	m_free ( (char *) instruction );
 	return (FALSE);
     }
-    ds_list_append ( (*olist).buf_list, instruction );
+    ds_list_append (olist->buf_list, instruction);
     return (TRUE);
 }   /*  End Function process_app_instruction  */
 
@@ -2879,31 +2905,31 @@ static list_entry *create_generic (KOverlayList olist,
     static char function_name[] = "__overlay_create_generic";
 
     /*  Get specification  */
-    if ( (*olist).specification_canvas == NULL )
+    if (olist->specification_canvas == NULL)
     {
 	/*  Internal to overlay list  */
-	xlabel = (*olist).xlabel;
-	ylabel = (*olist).ylabel;
-	num_restr = (*olist).num_restrictions;
-	restr_names = (*olist).restriction_names;
-	restr_values = (*olist).restriction_values;
+	xlabel = olist->xlabel;
+	ylabel = olist->ylabel;
+	num_restr = olist->num_restrictions;
+	restr_names = olist->restriction_names;
+	restr_values = olist->restriction_values;
     }
     else
     {
 	/*  Get it from the canvas  */
-	canvas_get_specification ( (*olist).specification_canvas,
+	canvas_get_specification (olist->specification_canvas,
 				  &xlabel, &ylabel,
-				  &num_restr, &restr_names, &restr_values );
+				  &num_restr, &restr_names, &restr_values);
     }
     if (object_id != NULL)
     {
-	if (++(*olist).last_object_id == 0)
+	if (++olist->last_object_id == 0)
 	{
 	    (void) fprintf (stderr, "Object ID counter wrapped around!\n");
 	    return (NULL);
 	}
-	*object_id = (*olist).last_object_id;
-	obj_id = (*olist).last_object_id;
+	*object_id = olist->last_object_id;
+	obj_id = olist->last_object_id;
     }
     else
     {
@@ -2914,37 +2940,37 @@ static list_entry *create_generic (KOverlayList olist,
 	m_error_notify (function_name, "object entry");
 	return (NULL);
     }
-    ptr = (*object).data + ds_get_element_offset (object_desc,
-						  OBJECT_LISTID_INDEX);
-    *(unsigned int *) ptr = (*olist).my_id;
-    ptr = (*object).data + ds_get_element_offset (object_desc,
-						  OBJECT_CODE_INDEX);
+    ptr = object->data + ds_get_element_offset (object_desc,
+						OBJECT_LISTID_INDEX);
+    *(unsigned int *) ptr = olist->my_id;
+    ptr = object->data + ds_get_element_offset (object_desc,
+						OBJECT_CODE_INDEX);
     *(unsigned int *) ptr = object_code;
-    ptr = (*object).data + ds_get_element_offset (object_desc,
-						  OBJECT_OBJECTID_INDEX);
+    ptr = object->data + ds_get_element_offset (object_desc,
+						OBJECT_OBJECTID_INDEX);
     *(unsigned int *) ptr = obj_id;
-    ptr = (*object).data + ds_get_element_offset (object_desc,
-						  OBJECT_COORD_INDEX);
+    ptr = object->data + ds_get_element_offset (object_desc,
+						OBJECT_COORD_INDEX);
     coord_list = *(list_header **) ptr;
-    (*coord_list).sort_type = SORT_RANDOM;
-    *coord_desc=(packet_desc *)(*object_desc).element_desc[OBJECT_COORD_INDEX];
+    coord_list->sort_type = SORT_RANDOM;
+    *coord_desc = (packet_desc *)object_desc->element_desc[OBJECT_COORD_INDEX];
     if ( !ds_alloc_contiguous_list (*coord_desc, coord_list, num_coords, TRUE,
 				    TRUE) )
     {
 	m_error_notify (function_name, "co-ordinate list");
-	ds_dealloc_data (object_desc, (*object).data);
+	ds_dealloc_data (object_desc, object->data);
 	m_free ( (char *) object );
 	return (NULL);
     }
-    *coords = (*coord_list).contiguous_data;
-    ptr = (*object).data + ds_get_element_offset (object_desc,
-						  OBJECT_COLOURNAME_INDEX);
+    *coords = coord_list->contiguous_data;
+    ptr = object->data + ds_get_element_offset (object_desc,
+						OBJECT_COLOURNAME_INDEX);
     if (colourname != NULL)
     {
 	if ( ( *(char **) ptr = st_dup (colourname) ) == NULL )
 	{
 	    m_error_notify (function_name, "colour name");
-	    ds_dealloc_data (object_desc, (*object).data);
+	    ds_dealloc_data (object_desc, object->data);
 	    m_free ( (char *) object );
 	    return (NULL);
 	}
@@ -2952,46 +2978,46 @@ static list_entry *create_generic (KOverlayList olist,
     /*  Add labels if needed  */
     if (xlabel != NULL)
     {
-	ptr = (*object).data + ds_get_element_offset (object_desc,
-						      OBJECT_X_INDEX);
+	ptr = object->data + ds_get_element_offset (object_desc,
+						    OBJECT_X_INDEX);
 	if ( ( *(char **) ptr = st_dup (xlabel) ) == NULL )
 	{
 	    m_error_notify (function_name, "x label");
-	    ds_dealloc_data (object_desc, (*object).data);
+	    ds_dealloc_data (object_desc, object->data);
 	    m_free ( (char *) object );
 	    return (NULL);
 	}
     }
     if (ylabel != NULL)
     {
-	ptr = (*object).data + ds_get_element_offset (object_desc,
-						      OBJECT_Y_INDEX);
+	ptr = object->data + ds_get_element_offset (object_desc,
+						    OBJECT_Y_INDEX);
 	if ( ( *(char **) ptr = st_dup (ylabel) ) == NULL )
 	{
 	    m_error_notify (function_name, "y label");
-	    ds_dealloc_data (object_desc, (*object).data);
+	    ds_dealloc_data (object_desc, object->data);
 	    m_free ( (char *) object );
 	    return (NULL);
 	}
     }
-    ptr = (*object).data + ds_get_element_offset (object_desc,
-						  OBJECT_RESTRICTION_INDEX);
+    ptr = object->data + ds_get_element_offset (object_desc,
+						OBJECT_RESTRICTION_INDEX);
     restriction_desc = ( (packet_desc *)
-			(*object_desc).element_desc[OBJECT_RESTRICTION_INDEX]);
+			object_desc->element_desc[OBJECT_RESTRICTION_INDEX]);
     restriction_list = *(list_header **) ptr;
-    (*restriction_list).sort_type = SORT_RANDOM;
+    restriction_list->sort_type = SORT_RANDOM;
     if (num_restr < 1) return (object);
     /*  Add restrictions  */
     if ( !ds_alloc_contiguous_list (restriction_desc, restriction_list,
 				    num_restr, TRUE, TRUE) )
     {
 	m_error_notify (function_name, "restriction list");
-	ds_dealloc_data (object_desc, (*object).data);
+	ds_dealloc_data (object_desc, object->data);
 	m_free ( (char *) object );
 	return (NULL);
     }
     restr_pack_size = ds_get_packet_size (restriction_desc);
-    ptr = (*restriction_list).contiguous_data;
+    ptr = restriction_list->contiguous_data;
     names = ptr + ds_get_element_offset (restriction_desc,
 					 RESTRICTION_NAME_INDEX);
     values = ptr + ds_get_element_offset (restriction_desc,
@@ -3002,7 +3028,7 @@ static list_entry *create_generic (KOverlayList olist,
     {
 	if ( ( *(char **) names = st_dup (restr_names[count]) ) == NULL )
 	{
-	    ds_dealloc_data (object_desc, (*object).data);
+	    ds_dealloc_data (object_desc, object->data);
 	    m_free ( (char *) object );
 	    return (NULL);
 	}
@@ -3010,7 +3036,7 @@ static list_entry *create_generic (KOverlayList olist,
 	if ( !ds_put_named_element (restriction_desc, values,
 				    "Overlay Restriction Value", value) )
 	{
-	    ds_dealloc_data (object_desc, (*object).data);
+	    ds_dealloc_data (object_desc, object->data);
 	    m_free ( (char *) object );
 	    return (NULL);
 	}
@@ -3033,26 +3059,26 @@ static flag remove_object (KOverlayList olist, unsigned int object_id,
 
     if ( ( entry = find_object (olist, object_id, list_id) )
 	== NULL ) return (FALSE);
-    ds_dealloc_data (object_desc, (*entry).data);
-    list_head = (*olist).list_head;
-    if ( (*entry).prev == NULL )
+    ds_dealloc_data (object_desc, entry->data);
+    list_head = olist->list_head;
+    if (entry->prev == NULL)
     {
-	(*list_head).first_frag_entry = (*entry).next;
+	list_head->first_frag_entry = entry->next;
     }
     else
     {
-	(* (*entry).prev ).next = (*entry).next;
+	entry->prev->next = entry->next;
     }
-    if ( (*entry).next == NULL )
+    if (entry->next == NULL)
     {
-	(*list_head).last_frag_entry = (*entry).prev;
+	list_head->last_frag_entry = entry->prev;
     }
     else
     {
-	(* (*entry).next ).prev = (*entry).prev;
+	entry->next->prev = entry->prev;
     }
     m_free ( (char *) entry );
-    --(*list_head).length;
+    --list_head->length;
     return (TRUE);
 }   /*  End Function remove_object  */
 
@@ -3075,14 +3101,14 @@ static list_entry *find_object (KOverlayList olist, unsigned int object_id,
     object_id_offset = ds_get_element_offset (object_desc,
 					      OBJECT_OBJECTID_INDEX);
     list_id_offset = ds_get_element_offset (object_desc, OBJECT_LISTID_INDEX);
-    list_head = (*olist).list_head;
-    for (curr_entry = (*list_head).first_frag_entry;
+    list_head = olist->list_head;
+    for (curr_entry = list_head->first_frag_entry;
 	 (curr_entry != NULL) && (found_entry == NULL);
-	 curr_entry = (*curr_entry).next)
+	 curr_entry = curr_entry->next)
     {
-	if (*(unsigned int *) (object_id_offset + (*curr_entry).data)
+	if (*(unsigned int *) (object_id_offset + curr_entry->data)
 	    != object_id) continue;
-	if (*(unsigned int *) (list_id_offset + (*curr_entry).data)
+	if (*(unsigned int *) (list_id_offset + curr_entry->data)
 	    != list_id) continue;
 	found_entry = curr_entry;
     }
@@ -3112,15 +3138,15 @@ static flag move_object (KOverlayList olist, unsigned int object_id,
 
     if ( ( entry = find_object (olist, object_id, list_id) )
 	== NULL ) return (FALSE);
-    ptr = (*entry).data + ds_get_element_offset (object_desc,
-						 OBJECT_CODE_INDEX);
+    ptr = entry->data + ds_get_element_offset (object_desc,
+					       OBJECT_CODE_INDEX);
     object_code = *(unsigned int *) ptr;
-    ptr = (*entry).data + ds_get_element_offset (object_desc,
-						 OBJECT_COORD_INDEX);
+    ptr = entry->data + ds_get_element_offset (object_desc,
+					       OBJECT_COORD_INDEX);
     coord_list = *(list_header **) ptr;
-    num_coords = (*coord_list).length;
-    coords = (*coord_list).contiguous_data;
-    coord_desc= (packet_desc *)(*object_desc).element_desc[OBJECT_COORD_INDEX];
+    num_coords = coord_list->length;
+    coords = coord_list->contiguous_data;
+    coord_desc= (packet_desc *)object_desc->element_desc[OBJECT_COORD_INDEX];
     coord_pack_size = ds_get_packet_size (coord_desc);
     x_arr = coords + ds_get_element_offset (coord_desc, COORD_X_INDEX);
     y_arr = coords + ds_get_element_offset (coord_desc, COORD_Y_INDEX);

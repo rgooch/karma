@@ -3,7 +3,7 @@
 
     This code provides ViewableImage objects.
 
-    Copyright (C) 1993,1994  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -112,23 +112,49 @@
     Updated by      Richard Gooch   14-DEC-1994: Created  viewimg_set_active
   function.
 
-    Last updated by Richard Gooch   27-DEC-1994: Allow NULL multi_array
+    Updated by      Richard Gooch   27-DEC-1994: Allow NULL multi_array
   pointers to be passed.
+
+    Updated by      Richard Gooch   16-MAR-1995: Generate PostScript directly
+  from TrueColour images if available, rather than compressed PseudoColour.
+
+    Updated by      Richard Gooch   31-MAR-1995: Allow RGB movies on
+  PseudoColour canvas, but print a warning.
+
+    Updated by      Richard Gooch   15-JUN-1995: Made use of IS_ALIGNED macro.
+
+    Updated by      Richard Gooch   13-JUL-1995: Added
+  VIEWIMG_ATT_ALLOW_TRUNCATION attribute.
+
+    Updated by      Richard Gooch   26-JUL-1995: Added support for position
+  events on TrueColour ViewableImages.
+
+    Updated by      Richard Gooch   6-SEP-1995: Eased restrictions on tiled
+  arrays and created <viewimg_get_attributes>.
+
+    Updated by      Richard Gooch   19-SEP-1995: Ensure canvas size is at least
+  3*3 in <worldcanvas_refresh_func> and <worldcanvas_size_control_func>
+
+    Updated by      Richard Gooch   5-JAN-1996: Switched to
+  <canvas_register_d_convert_func> routine.
+
+    Last updated by Richard Gooch   21-JAN-1996: Removed warnings about tiled
+  arrays for PseudoColour and added for TrueColour.
 
 
 */
 #include <stdio.h>
 #include <math.h>
-#include <varargs.h>
+#include <stdarg.h>
 #include <karma.h>
 #define KWIN_GENERIC_ONLY
-#define VIEWIMG_INTERNAL
 #include <karma_viewimg.h>
 #include <karma_ds.h>
 #include <karma_st.h>
 #include <karma_a.h>
 #include <karma_m.h>
 #include <karma_c.h>
+#include <os.h>
 
 
 #define VIMAGE_MAGIC_NUMBER (unsigned int) 229573367
@@ -139,7 +165,7 @@
 #define VERIFY_VIMAGE(vimage) if (vimage == NULL) \
 {(void) fprintf (stderr, "NULL viewable image passed\n"); \
  a_prog_bug (function_name); } \
-if ( (*vimage).magic_number != VIMAGE_MAGIC_NUMBER ) \
+if (vimage->magic_number != VIMAGE_MAGIC_NUMBER) \
 {(void) fprintf (stderr, "Invalid viewable image object\n"); \
  a_prog_bug (function_name); }
 
@@ -161,6 +187,7 @@ struct canvas_holder_type
     flag int_x;
     flag int_y;
     flag maintain_aspect_ratio;
+    flag allow_truncation;
     packet_desc *old_cmap;
 };
 
@@ -217,21 +244,17 @@ struct position_struct
 {
     double x;
     double y;
-    double *value;
+    void *value;
     int event_code;
     void *e_info;
     double x_lin;
     double y_lin;
+    unsigned int type;
 };
 
 
 /*  Private data  */
 static CanvasHolder first_canvas_holder = NULL;
-
-
-/*  Local functions  */
-void viewimg_get_canvas_attributes ();
-void viewimg_set_canvas_attributes ();
 
 
 /*  Private functions  */
@@ -241,7 +264,8 @@ STATIC_FUNCTION (CanvasHolder alloc_canvas_holder, (KWorldCanvas canvas) );
 STATIC_FUNCTION (void worldcanvas_refresh_func,
 		 (KWorldCanvas canvas, int width, int height,
 		  struct win_scale_type *win_scale,
-		  Kcolourmap cmap, flag cmap_resize, void **info) );
+		  Kcolourmap cmap, flag cmap_resize,
+		  void **info, PostScriptPage pspage) );
 STATIC_FUNCTION (void recompute_image,
 		 (CanvasHolder holder, int width, int height,
 		  struct win_scale_type *win_scale, Kcolourmap cmap,
@@ -258,12 +282,15 @@ STATIC_FUNCTION (flag position_event_func,
 		 (void *object, void *client1_data,
 		  void *call_data, void *client2_data) );
 STATIC_FUNCTION (void aspect_zoom,
-		 (int hlength, int width, int *hpixels, flag int_x,
-		  int vlength, int height, int *vpixels, flag int_y) );
+		 (int hlength, int *hpixels, flag int_x,
+		  int vlength, int *vpixels, flag int_y) );
+STATIC_FUNCTION (void trunc_zoom,
+		 (flag maintain_aspect_ratio,
+		  int *hstart, int *hend, int *x_pixels, flag int_x,
+		  int *vstart, int *vend, int *y_pixels, flag int_y) );
 STATIC_FUNCTION (flag coord_convert_func,
 		 (KWorldCanvas canvas, struct win_scale_type *win_scale,
-		  int *px, int *py, double *wx, double *wy,
-		  flag to_world, void **info) );
+		  double *x, double *y, flag to_world, void **info) );
 
 
 /* Public functions follow */
@@ -357,43 +384,38 @@ ViewableImage viewimg_create_restr (KWorldCanvas canvas,
 	a_prog_bug (function_name);
     }
     /*  Sanity checks  */
-    if (hdim >= (*arr_desc).num_dimensions)
+    if (hdim >= arr_desc->num_dimensions)
     {
 	(void) fprintf (stderr,
 			"hdim: %u greater than number of dimensions: %u\n",
-			hdim, (*arr_desc).num_dimensions);
+			hdim, arr_desc->num_dimensions);
 	a_prog_bug (function_name);
     }
-    if ( (* (*arr_desc).dimensions[hdim] ).coordinates != NULL )
+    if (arr_desc->dimensions[hdim]->coordinates != NULL)
     {
 	(void) fprintf (stderr, "hdim: %u not regularly spaced\n", hdim);
 	a_prog_bug (function_name);
     }
-    if (vdim >= (*arr_desc).num_dimensions)
+    if (vdim >= arr_desc->num_dimensions)
     {
 	(void) fprintf (stderr,
 			"vdim: %u greater than number of dimensions: %u\n",
-			vdim, (*arr_desc).num_dimensions);
+			vdim, arr_desc->num_dimensions);
 	a_prog_bug (function_name);
     }
-    if ( (* (*arr_desc).dimensions[vdim] ).coordinates != NULL )
+    if (arr_desc->dimensions[vdim]->coordinates != NULL)
     {
 	(void) fprintf (stderr, "vdim: %u not regularly spaced\n", vdim);
 	a_prog_bug (function_name);
     }
-    if (elem_index >= (* (*arr_desc).packet ).num_elements)
+    if (elem_index >= arr_desc->packet->num_elements)
     {
 	(void) fprintf (stderr,
 			"elem_index: %u greater than number of elements: %u\n",
-			elem_index, (* (*arr_desc).packet ).num_elements);
+			elem_index, arr_desc->packet->num_elements);
 	a_prog_bug (function_name);
     }
-    if ( (*arr_desc).num_levels > 0 )
-    {
-	(void) fprintf (stderr, "Tiling not supported.\n");
-	return (NULL);
-    }
-    if ( (*arr_desc).offsets == NULL )
+    if (arr_desc->offsets == NULL)
     {
 	if ( !ds_compute_array_offsets (arr_desc) )
 	{
@@ -411,56 +433,56 @@ ViewableImage viewimg_create_restr (KWorldCanvas canvas,
 	m_error_notify (function_name, "viewable image");
 	return (NULL);
     }
-    (*vimage).value_min = TOOBIG;
-    (*vimage).value_max = TOOBIG;
-    (*vimage).magic_number = VIMAGE_MAGIC_NUMBER;
-    (*vimage).canvas_holder = holder;
-    (*vimage).pc_multi_desc = multi_desc;
-    (*vimage).pc_arr_desc = arr_desc;
-    (*vimage).pc_slice = slice;
-    (*vimage).pc_hdim = hdim;
-    (*vimage).pc_vdim = vdim;
-    (*vimage).pc_elem_index = elem_index;
-    (*vimage).tc_multi_desc = NULL;
-    (*vimage).tc_arr_desc = NULL;
-    (*vimage).tc_slice = NULL;
-    (*vimage).recompute = TRUE;
-    (*vimage).changed = TRUE;
-    (*vimage).pixcanvas_width = -1;
-    (*vimage).pixcanvas_height = -1;
-    (*vimage).cache = NULL;
+    vimage->value_min = TOOBIG;
+    vimage->value_max = TOOBIG;
+    vimage->magic_number = VIMAGE_MAGIC_NUMBER;
+    vimage->canvas_holder = holder;
+    vimage->pc_multi_desc = multi_desc;
+    vimage->pc_arr_desc = arr_desc;
+    vimage->pc_slice = slice;
+    vimage->pc_hdim = hdim;
+    vimage->pc_vdim = vdim;
+    vimage->pc_elem_index = elem_index;
+    vimage->tc_multi_desc = NULL;
+    vimage->tc_arr_desc = NULL;
+    vimage->tc_slice = NULL;
+    vimage->recompute = TRUE;
+    vimage->changed = TRUE;
+    vimage->pixcanvas_width = -1;
+    vimage->pixcanvas_height = -1;
+    vimage->cache = NULL;
     /*  Compute strides  */
-    (*vimage).pc_hstride = ds_get_packet_size ( (*arr_desc).packet );
-    for (dim_count = (*arr_desc).num_dimensions - 1; dim_count > hdim;
+    vimage->pc_hstride = ds_get_packet_size (arr_desc->packet);
+    for (dim_count = arr_desc->num_dimensions - 1; dim_count > hdim;
 	 --dim_count)
     {
-	(*vimage).pc_hstride *= (* (*arr_desc).dimensions[dim_count] ).length;
+	vimage->pc_hstride *= arr_desc->dimensions[dim_count]->length;
     }
-    (*vimage).pc_vstride = ds_get_packet_size ( (*arr_desc).packet );
-    for (dim_count = (*arr_desc).num_dimensions - 1; dim_count > vdim;
+    vimage->pc_vstride = ds_get_packet_size (arr_desc->packet);
+    for (dim_count = arr_desc->num_dimensions - 1; dim_count > vdim;
 	 --dim_count)
     {
-	(*vimage).pc_vstride *= (* (*arr_desc).dimensions[dim_count] ).length;
+	vimage->pc_vstride *= arr_desc->dimensions[dim_count]->length;
     }
-    (*vimage).sequence = NULL;
-    (*vimage).num_restrictions = num_restr;
-    (*vimage).restriction_names = restr_names;
-    (*vimage).restriction_values = restr_values;
-    (*vimage).prev = NULL;
+    vimage->sequence = NULL;
+    vimage->num_restrictions = num_restr;
+    vimage->restriction_names = restr_names;
+    vimage->restriction_values = restr_values;
+    vimage->prev = NULL;
     /*  Do not make the first viewable image for this canvas viewable, else
 	the  viewimg_make_active  routine will not be able to detect a change
 	in the active viewable image and will do nothing if called with this
 	newly created viewable image.
 	*/
-    if ( (*holder).first_image != NULL )
+    if (holder->first_image != NULL)
     {
 	/*  Insert at beginning of list  */
-	(* (*holder).first_image ).prev = vimage;
+	holder->first_image->prev = vimage;
     }
-    (*vimage).next = (*holder).first_image;
-    (*holder).first_image = vimage;
+    vimage->next = holder->first_image;
+    holder->first_image = vimage;
     /*  Attach  */
-    if (multi_desc != NULL) ++(*multi_desc).attachments;
+    if (multi_desc != NULL) ++multi_desc->attachments;
     return (vimage);
 }   /*  End Function viewimg_create_restr  */
 
@@ -542,13 +564,8 @@ ViewableImage viewimg_create_from_iarray (KWorldCanvas canvas, iarray array,
 			"Intelligent Array must have exactly 2 dimensions\n");
 	return (NULL);
     }
-    if (!(*array).contiguous[0] || !(*array).contiguous[1])
-    {
-	(void) fprintf (stderr, "Intelligent Array must be contiguous\n");
-	return (NULL);
-    }
-    if ( ( (*array).offsets[0] != (* (*array).arr_desc ).offsets[0] ) ||
-	( (*array).offsets[1] != (* (*array).arr_desc ).offsets[1] ) )
+    if ( (array->offsets[0] != array->arr_desc->offsets[0]) ||
+	(array->offsets[1] != array->arr_desc->offsets[1]) )
     {
 	(void) fprintf (stderr, "Intelligent Array must not be a sub-array\n");
 	return (NULL);
@@ -556,20 +573,20 @@ ViewableImage viewimg_create_from_iarray (KWorldCanvas canvas, iarray array,
     num_restr = iarray_get_restrictions (array, &restr_names, &restr_values);
     if (swap)
     {
-	return ( viewimg_create_restr (canvas, (*array).multi_desc,
-				       (*array).arr_desc, (*array).data,
-				       (*array).orig_dim_indices[0],
-				       (*array).orig_dim_indices[1],
-				       (*array).elem_index,
+	return ( viewimg_create_restr (canvas, array->multi_desc,
+				       array->arr_desc, array->data,
+				       array->orig_dim_indices[0],
+				       array->orig_dim_indices[1],
+				       array->elem_index,
 				       num_restr, restr_names, restr_values) );
     }
     else
     {
-	return ( viewimg_create_restr (canvas, (*array).multi_desc,
-				       (*array).arr_desc, (*array).data,
-				       (*array).orig_dim_indices[1],
-				       (*array).orig_dim_indices[0],
-				       (*array).elem_index,
+	return ( viewimg_create_restr (canvas, array->multi_desc,
+				       array->arr_desc, array->data,
+				       array->orig_dim_indices[1],
+				       array->orig_dim_indices[0],
+				       array->elem_index,
 				       num_restr, restr_names, restr_values) );
     }
 }   /*  End Function viewimg_create_from_iarray  */
@@ -628,19 +645,14 @@ ViewableImage *viewimg_create_sequence (KWorldCanvas canvas,
 	a_prog_bug (function_name);
     }
     /*  Sanity checks  */
-    if (fdim >= (*arr_desc).num_dimensions)
+    if (fdim >= arr_desc->num_dimensions)
     {
 	(void) fprintf (stderr,
 			"fdim: %u greater than number of dimensions: %u\n",
-			fdim, (*arr_desc).num_dimensions);
+			fdim, arr_desc->num_dimensions);
 	a_prog_bug (function_name);
     }
-    if ( (*arr_desc).num_levels > 0 )
-    {
-	(void) fprintf (stderr, "Tiling not supported.\n");
-	return (NULL);
-    }
-    if ( (*arr_desc).offsets == NULL )
+    if (arr_desc->offsets == NULL)
     {
 	if ( !ds_compute_array_offsets (arr_desc) )
 	{
@@ -648,8 +660,8 @@ ViewableImage *viewimg_create_sequence (KWorldCanvas canvas,
 	    a_prog_bug (function_name);
 	}
     }
-    foffsets = (*arr_desc).offsets[fdim];
-    num_frames = (* (*arr_desc).dimensions[fdim] ).length;
+    foffsets = arr_desc->offsets[fdim];
+    num_frames = arr_desc->dimensions[fdim]->length;
     if ( ( vimages = (ViewableImage *) m_alloc (sizeof *vimages * num_frames) )
 	== NULL )
     {
@@ -669,10 +681,10 @@ ViewableImage *viewimg_create_sequence (KWorldCanvas canvas,
 	{
 	    m_abort (function_name, "array of restriction values");
 	}
-	restr_values[0] = ds_get_coordinate ( (*arr_desc).dimensions[fdim],
-					     frame_count );
+	restr_values[0] = ds_get_coordinate (arr_desc->dimensions[fdim],
+					     frame_count);
 	if ( ( restr_names[0] =
-	      st_dup ( (* (*arr_desc).dimensions[fdim] ).name ) ) == NULL )
+	      st_dup (arr_desc->dimensions[fdim]->name) ) == NULL )
 	{
 	    m_abort (function_name, "restriction name");
 	}
@@ -753,83 +765,89 @@ ViewableImage viewimg_create_rgb (KWorldCanvas canvas, multi_array *multi_desc,
 	(void) fprintf (stderr, "NULL slice pointer passed\n");
 	a_prog_bug (function_name);
     }
+    if (arr_desc->num_levels > 0)
+    {
+	(void) fprintf (stderr, "%s: Tiled array. May cause problems.\n",
+			function_name);
+    }
     /*  Sanity checks  */
-    if (hdim >= (*arr_desc).num_dimensions)
+    if (hdim >= arr_desc->num_dimensions)
     {
 	(void) fprintf (stderr,
 			"hdim: %u greater than number of dimensions: %u\n",
-			hdim, (*arr_desc).num_dimensions);
+			hdim, arr_desc->num_dimensions);
 	a_prog_bug (function_name);
     }
-    if ( (* (*arr_desc).dimensions[hdim] ).coordinates != NULL )
+    if (arr_desc->dimensions[hdim]->coordinates != NULL)
     {
 	(void) fprintf (stderr, "hdim: %u not regularly spaced\n", hdim);
 	a_prog_bug (function_name);
     }
-    if (vdim >= (*arr_desc).num_dimensions)
+    if (vdim >= arr_desc->num_dimensions)
     {
 	(void) fprintf (stderr,
 			"vdim: %u greater than number of dimensions: %u\n",
-			vdim, (*arr_desc).num_dimensions);
+			vdim, arr_desc->num_dimensions);
 	a_prog_bug (function_name);
     }
-    if ( (* (*arr_desc).dimensions[vdim] ).coordinates != NULL )
+    if (arr_desc->dimensions[vdim]->coordinates != NULL)
     {
 	(void) fprintf (stderr, "vdim: %u not regularly spaced\n", vdim);
 	a_prog_bug (function_name);
     }
-    if (red_index >= (* (*arr_desc).packet ).num_elements)
+    if (red_index >= arr_desc->packet->num_elements)
     {
 	(void) fprintf (stderr,
 			"red_index: %u greater than number of elements: %u\n",
-			red_index, (* (*arr_desc).packet ).num_elements);
+			red_index, arr_desc->packet->num_elements);
 	a_prog_bug (function_name);
     }
-    if ( (* (*arr_desc).packet ).element_types[red_index] != K_UBYTE )
+    if (arr_desc->packet->element_types[red_index] != K_UBYTE)
     {
 	(void) fprintf (stderr,
 			"Red component type: %u is not K_UBYTE\n",
-			(* (*arr_desc).packet ).element_types[red_index]);
+			arr_desc->packet->element_types[red_index]);
 	return (NULL);
     }
-    if (green_index >= (* (*arr_desc).packet ).num_elements)
+    if (green_index >= arr_desc->packet->num_elements)
     {
 	(void) fprintf(stderr,
 		       "green_index: %u greater than number of elements: %u\n",
-		       green_index, (* (*arr_desc).packet ).num_elements);
+		       green_index, arr_desc->packet->num_elements);
 	a_prog_bug (function_name);
     }
-    if ( (* (*arr_desc).packet ).element_types[green_index] != K_UBYTE )
+    if (arr_desc->packet->element_types[green_index] != K_UBYTE)
     {
 	(void) fprintf (stderr,
 			"Green component type: %u is not K_UBYTE\n",
-			(* (*arr_desc).packet ).element_types[green_index]);
+			arr_desc->packet->element_types[green_index]);
 	return (NULL);
     }
-    if (blue_index >= (* (*arr_desc).packet ).num_elements)
+    if (blue_index >= arr_desc->packet->num_elements)
     {
 	(void) fprintf (stderr,
 			"blue_index: %u greater than number of elements: %u\n",
-			blue_index, (* (*arr_desc).packet ).num_elements);
+			blue_index, arr_desc->packet->num_elements);
 	a_prog_bug (function_name);
     }
-    if ( (* (*arr_desc).packet ).element_types[blue_index] != K_UBYTE )
+    if (arr_desc->packet->element_types[blue_index] != K_UBYTE)
     {
 	(void) fprintf (stderr,
 			"Blue component type: %u is not K_UBYTE\n",
-			(* (*arr_desc).packet ).element_types[blue_index]);
+			arr_desc->packet->element_types[blue_index]);
 	return (NULL);
     }
     kwin_get_attributes (canvas_get_pixcanvas (canvas),
 			 KWIN_ATT_DEPTH, &depth,
 			 KWIN_ATT_END);
-    if ( ( (*arr_desc).num_levels > 0 ) && (depth != 24) )
+    if ( (arr_desc->num_levels > 0) && (depth != 24) )
     {
 	(void) fprintf (stderr,
-			"Tiling not supported for non 24 bit canvases.\n");
+			"%s: Tiling not supported for non 24 bit canvases.\n",
+			function_name);
 	return (NULL);
     }
-    if ( (*arr_desc).offsets == NULL )
+    if (arr_desc->offsets == NULL)
     {
 	if ( !ds_compute_array_offsets (arr_desc) )
 	{
@@ -847,58 +865,58 @@ ViewableImage viewimg_create_rgb (KWorldCanvas canvas, multi_array *multi_desc,
 	m_error_notify (function_name, "viewable image");
 	return (NULL);
     }
-    (*vimage).value_min = TOOBIG;
-    (*vimage).value_max = TOOBIG;
-    (*vimage).magic_number = VIMAGE_MAGIC_NUMBER;
-    (*vimage).canvas_holder = holder;
-    (*vimage).pc_multi_desc = NULL;
-    (*vimage).pc_arr_desc = NULL;
-    (*vimage).pc_slice = NULL;
-    (*vimage).tc_multi_desc = multi_desc;
-    (*vimage).tc_arr_desc = arr_desc;
-    (*vimage).tc_slice = slice;
-    (*vimage).tc_hdim = hdim;
-    (*vimage).tc_vdim = vdim;
-    (*vimage).tc_red_index = red_index;
-    (*vimage).tc_green_index = green_index;
-    (*vimage).tc_blue_index = blue_index;
-    (*vimage).recompute = TRUE;
-    (*vimage).changed = TRUE;
-    (*vimage).pixcanvas_width = -1;
-    (*vimage).pixcanvas_height = -1;
-    (*vimage).cache = NULL;
+    vimage->value_min = TOOBIG;
+    vimage->value_max = TOOBIG;
+    vimage->magic_number = VIMAGE_MAGIC_NUMBER;
+    vimage->canvas_holder = holder;
+    vimage->pc_multi_desc = NULL;
+    vimage->pc_arr_desc = NULL;
+    vimage->pc_slice = NULL;
+    vimage->tc_multi_desc = multi_desc;
+    vimage->tc_arr_desc = arr_desc;
+    vimage->tc_slice = slice;
+    vimage->tc_hdim = hdim;
+    vimage->tc_vdim = vdim;
+    vimage->tc_red_index = red_index;
+    vimage->tc_green_index = green_index;
+    vimage->tc_blue_index = blue_index;
+    vimage->recompute = TRUE;
+    vimage->changed = TRUE;
+    vimage->pixcanvas_width = -1;
+    vimage->pixcanvas_height = -1;
+    vimage->cache = NULL;
     /*  Compute strides  */
-    (*vimage).tc_hstride = ds_get_packet_size ( (*arr_desc).packet );
-    for (dim_count = (*arr_desc).num_dimensions - 1; dim_count > hdim;
+    vimage->tc_hstride = ds_get_packet_size (arr_desc->packet);
+    for (dim_count = arr_desc->num_dimensions - 1; dim_count > hdim;
 	 --dim_count)
     {
-	(*vimage).tc_hstride *= (* (*arr_desc).dimensions[dim_count] ).length;
+	vimage->tc_hstride *= arr_desc->dimensions[dim_count]->length;
     }
-    (*vimage).tc_vstride = ds_get_packet_size ( (*arr_desc).packet );
-    for (dim_count = (*arr_desc).num_dimensions - 1; dim_count > vdim;
+    vimage->tc_vstride = ds_get_packet_size (arr_desc->packet);
+    for (dim_count = arr_desc->num_dimensions - 1; dim_count > vdim;
 	 --dim_count)
     {
-	(*vimage).tc_vstride *= (* (*arr_desc).dimensions[dim_count] ).length;
+	vimage->tc_vstride *= arr_desc->dimensions[dim_count]->length;
     }
-    (*vimage).sequence = NULL;
-    (*vimage).num_restrictions = num_restr;
-    (*vimage).restriction_names = restr_names;
-    (*vimage).restriction_values = restr_values;
-    (*vimage).prev = NULL;
+    vimage->sequence = NULL;
+    vimage->num_restrictions = num_restr;
+    vimage->restriction_names = restr_names;
+    vimage->restriction_values = restr_values;
+    vimage->prev = NULL;
     /*  Do not make the first viewable image for this canvas viewable, else
 	the  viewimg_make_active  routine will not be able to detect a change
 	in the active viewable image and will do nothing if called with this
 	newly created viewable image.
 	*/
-    if ( (*holder).first_image != NULL )
+    if (holder->first_image != NULL)
     {
 	/*  Insert at beginning of list  */
-	(* (*holder).first_image ).prev = vimage;
+	holder->first_image->prev = vimage;
     }
-    (*vimage).next = (*holder).first_image;
-    (*holder).first_image = vimage;
+    vimage->next = holder->first_image;
+    holder->first_image = vimage;
     /*  Attach  */
-    if (multi_desc != NULL) ++(*multi_desc).attachments;
+    if (multi_desc != NULL) ++multi_desc->attachments;
     return (vimage);
 }   /*  End Function viewimg_create_rgb  */
 
@@ -974,90 +992,96 @@ ViewableImage *viewimg_create_rgb_sequence (KWorldCanvas canvas,
 	(void) fprintf (stderr, "NULL slice pointer passed\n");
 	a_prog_bug (function_name);
     }
+    if (arr_desc->num_levels > 0)
+    {
+	(void) fprintf (stderr, "%s: Tiled array. May cause problems.\n",
+			function_name);
+    }
     /*  Sanity checks  */
-    if (fdim >= (*arr_desc).num_dimensions)
+    if (fdim >= arr_desc->num_dimensions)
     {
 	(void) fprintf (stderr,
 			"fdim: %u greater than number of dimensions: %u\n",
-			fdim, (*arr_desc).num_dimensions);
+			fdim, arr_desc->num_dimensions);
 	a_prog_bug (function_name);
     }
-    if (hdim >= (*arr_desc).num_dimensions)
+    if (hdim >= arr_desc->num_dimensions)
     {
 	(void) fprintf (stderr,
 			"hdim: %u greater than number of dimensions: %u\n",
-			hdim, (*arr_desc).num_dimensions);
+			hdim, arr_desc->num_dimensions);
 	a_prog_bug (function_name);
     }
-    if ( (* (*arr_desc).dimensions[hdim] ).coordinates != NULL )
+    if (arr_desc->dimensions[hdim]->coordinates != NULL)
     {
 	(void) fprintf (stderr, "hdim: %u not regularly spaced\n", hdim);
 	a_prog_bug (function_name);
     }
-    if (vdim >= (*arr_desc).num_dimensions)
+    if (vdim >= arr_desc->num_dimensions)
     {
 	(void) fprintf (stderr,
 			"vdim: %u greater than number of dimensions: %u\n",
-			vdim, (*arr_desc).num_dimensions);
+			vdim, arr_desc->num_dimensions);
 	a_prog_bug (function_name);
     }
-    if ( (* (*arr_desc).dimensions[vdim] ).coordinates != NULL )
+    if (arr_desc->dimensions[vdim]->coordinates != NULL)
     {
 	(void) fprintf (stderr, "vdim: %u not regularly spaced\n", vdim);
 	a_prog_bug (function_name);
     }
-    if (red_index >= (* (*arr_desc).packet ).num_elements)
+    if (red_index >= arr_desc->packet->num_elements)
     {
 	(void) fprintf (stderr,
 			"red_index: %u greater than number of elements: %u\n",
-			red_index, (* (*arr_desc).packet ).num_elements);
+			red_index, arr_desc->packet->num_elements);
 	a_prog_bug (function_name);
     }
-    if ( (* (*arr_desc).packet ).element_types[red_index] != K_UBYTE )
+    if (arr_desc->packet->element_types[red_index] != K_UBYTE)
     {
 	(void) fprintf (stderr,
 			"Red component type: %u is not K_UBYTE\n",
-			(* (*arr_desc).packet ).element_types[red_index]);
+			arr_desc->packet->element_types[red_index]);
 	return (NULL);
     }
-    if (green_index >= (* (*arr_desc).packet ).num_elements)
+    if (green_index >= arr_desc->packet->num_elements)
     {
 	(void) fprintf(stderr,
 		       "green_index: %u greater than number of elements: %u\n",
-		       green_index, (* (*arr_desc).packet ).num_elements);
+		       green_index, arr_desc->packet->num_elements);
 	a_prog_bug (function_name);
     }
-    if ( (* (*arr_desc).packet ).element_types[green_index] != K_UBYTE )
+    if (arr_desc->packet->element_types[green_index] != K_UBYTE)
     {
 	(void) fprintf (stderr,
 			"Green component type: %u is not K_UBYTE\n",
-			(* (*arr_desc).packet ).element_types[green_index]);
+			arr_desc->packet->element_types[green_index]);
 	return (NULL);
     }
-    if (blue_index >= (* (*arr_desc).packet ).num_elements)
+    if (blue_index >= arr_desc->packet->num_elements)
     {
 	(void) fprintf (stderr,
 			"blue_index: %u greater than number of elements: %u\n",
-			blue_index, (* (*arr_desc).packet ).num_elements);
+			blue_index, arr_desc->packet->num_elements);
 	a_prog_bug (function_name);
     }
-    if ( (* (*arr_desc).packet ).element_types[blue_index] != K_UBYTE )
+    if (arr_desc->packet->element_types[blue_index] != K_UBYTE)
     {
 	(void) fprintf (stderr,
 			"Blue component type: %u is not K_UBYTE\n",
-			(* (*arr_desc).packet ).element_types[blue_index]);
+			arr_desc->packet->element_types[blue_index]);
 	return (NULL);
     }
     kwin_get_attributes (canvas_get_pixcanvas (canvas),
 			 KWIN_ATT_DEPTH, &depth,
 			 KWIN_ATT_END);
-    if ( ( (*arr_desc).num_levels > 0 ) && (depth != 24) )
+    if ( (arr_desc->num_levels > 0) && (depth != 24) )
     {
 	(void) fprintf (stderr,
-			"Tiling not supported for non 24 bit canvases.\n");
+			"%s: Tiling not supported for non 24 bit canvases.\n",
+			function_name);
 	return (NULL);
     }
-    if ( (*arr_desc).offsets == NULL )
+    if (arr_desc->offsets == NULL)
     {
 	if ( !ds_compute_array_offsets (arr_desc) )
 	{
@@ -1065,8 +1089,8 @@ ViewableImage *viewimg_create_rgb_sequence (KWorldCanvas canvas,
 	    a_prog_bug (function_name);
 	}
     }
-    foffsets = (*arr_desc).offsets[fdim];
-    num_frames = (* (*arr_desc).dimensions[fdim] ).length;
+    foffsets = arr_desc->offsets[fdim];
+    num_frames = arr_desc->dimensions[fdim]->length;
     if ( ( vimages = (ViewableImage *) m_alloc (sizeof *vimages * num_frames) )
 	== NULL )
     {
@@ -1079,8 +1103,8 @@ ViewableImage *viewimg_create_rgb_sequence (KWorldCanvas canvas,
 	m_free ( (char *) vimages );
 	return (NULL);
     }
-    (*sequence).attachments = 0;
-    (*sequence).fdim = fdim;
+    sequence->attachments = 0;
+    sequence->fdim = fdim;
     for (frame_count = 0; frame_count < num_frames; ++frame_count)
     {
 	/*  Allocate restrictions  */
@@ -1103,10 +1127,10 @@ ViewableImage *viewimg_create_rgb_sequence (KWorldCanvas canvas,
 	    }
 	    r_values[r_count] = restr_values[r_count];
 	}
-	r_values[num_restr] = ds_get_coordinate ( (*arr_desc).dimensions[fdim],
-						 frame_count );
+	r_values[num_restr] = ds_get_coordinate (arr_desc->dimensions[fdim],
+						 frame_count);
 	if ( ( r_names[num_restr] =
-	      st_dup ( (* (*arr_desc).dimensions[fdim] ).name ) ) == NULL )
+	      st_dup (arr_desc->dimensions[fdim]->name) ) == NULL )
 	{
 	    m_abort (function_name, "restriction name");
 	}
@@ -1126,8 +1150,8 @@ ViewableImage *viewimg_create_rgb_sequence (KWorldCanvas canvas,
 	    m_free ( (char *) sequence );
 	    return (NULL);
 	}
-	(*vimages[frame_count]).sequence = sequence;
-	++(*sequence).attachments;
+	vimages[frame_count]->sequence = sequence;
+	++sequence->attachments;
     }
     return (vimages);
 }   /*  End Function viewimg_create_rgb_sequence  */
@@ -1148,8 +1172,8 @@ flag viewimg_make_active (ViewableImage vimage)
     static char function_name[] = "viewimg_make_active";
 
     VERIFY_VIMAGE (vimage);
-    holder = (*vimage).canvas_holder;
-    if (vimage == (*holder).active_image) return (TRUE);
+    holder = vimage->canvas_holder;
+    if (vimage == holder->active_image) return (TRUE);
     return ( viewimg_set_active (vimage, TRUE) );
 }   /*  End Function viewimg_make_active  */
 
@@ -1171,42 +1195,42 @@ flag viewimg_set_active (ViewableImage vimage, flag refresh)
 
     VERIFY_VIMAGE (vimage);
     FLAG_VERIFY (refresh);
-    holder = (*vimage).canvas_holder;
-    if (vimage == (*holder).active_image)
+    holder = vimage->canvas_holder;
+    if (vimage == holder->active_image)
     {
 	if (refresh)
 	{
-	    return ( canvas_resize ( (*holder).canvas,
-				    (struct win_scale_type *) NULL, FALSE ) );
+	    return ( canvas_resize (holder->canvas,
+				    (struct win_scale_type *) NULL, FALSE) );
 	}
 	return (TRUE);
     }
-    (*holder).active_image = vimage;
-    if ( (*vimage).tc_arr_desc == NULL )
+    holder->active_image = vimage;
+    if (vimage->tc_arr_desc == NULL)
     {
-	dimensions = (* (*vimage).pc_arr_desc ).dimensions;
-	hdim = (*vimage).pc_hdim;
-	vdim = (*vimage).pc_vdim;
+	dimensions = vimage->pc_arr_desc->dimensions;
+	hdim = vimage->pc_hdim;
+	vdim = vimage->pc_vdim;
     }
     else
     {
-	dimensions = (* (*vimage).tc_arr_desc ).dimensions;
-	hdim = (*vimage).tc_hdim;
-	vdim = (*vimage).tc_vdim;
+	dimensions = vimage->tc_arr_desc->dimensions;
+	hdim = vimage->tc_hdim;
+	vdim = vimage->tc_vdim;
     }
-    if ( !canvas_specify ( (*holder).canvas,
-			  (*dimensions[hdim]).name,
-			  (*dimensions[vdim]).name,
-			  (*vimage).num_restrictions,
-			  (*vimage).restriction_names,
-			  (*vimage).restriction_values ) )
+    if ( !canvas_specify (holder->canvas,
+			  dimensions[hdim]->name,
+			  dimensions[vdim]->name,
+			  vimage->num_restrictions,
+			  vimage->restriction_names,
+			  vimage->restriction_values) )
     {
 	return (FALSE);
     }
     if (refresh)
     {
-	return ( canvas_resize ( (*holder).canvas,
-				(struct win_scale_type *) NULL, FALSE ) );
+	return ( canvas_resize (holder->canvas,
+				(struct win_scale_type *) NULL, FALSE) );
     }
     return (TRUE);
 }   /*  End Function viewimg_set_active  */
@@ -1279,16 +1303,16 @@ flag viewimg_register_data_change (ViewableImage vimage)
     static char function_name[] = "viewimg_register_data_change";
 
     VERIFY_VIMAGE (vimage);
-    holder = (*vimage).canvas_holder;
-    (*vimage).recompute = TRUE;
-    (*vimage).changed = TRUE;
-    (*vimage).value_min = TOOBIG;
-    (*vimage).value_max = TOOBIG;
-    if (vimage == (*holder).active_image)
+    holder = vimage->canvas_holder;
+    vimage->recompute = TRUE;
+    vimage->changed = TRUE;
+    vimage->value_min = TOOBIG;
+    vimage->value_max = TOOBIG;
+    if (vimage == holder->active_image)
     {
 	/*  Active image: refresh  */
-	return ( canvas_resize ( (*holder).canvas,
-				(struct win_scale_type *) NULL, FALSE ) );
+	return ( canvas_resize (holder->canvas,
+				(struct win_scale_type *) NULL, FALSE) );
     }
     return (TRUE);
 }   /*  End Function viewimg_register_data_change  */
@@ -1309,15 +1333,15 @@ void viewimg_destroy (ViewableImage vimage)
     static char function_name[] = "viewimg_destroy";
 
     VERIFY_VIMAGE (vimage);
-    holder = (*vimage).canvas_holder;
-    kwin_free_cache_data ( (*vimage).cache );
-    ds_dealloc_multi ( (*vimage).pc_multi_desc );
-    ds_dealloc_multi ( (*vimage).tc_multi_desc );
-    if ( (sequence = (*vimage).sequence) != NULL )
+    holder = vimage->canvas_holder;
+    kwin_free_cache_data (vimage->cache);
+    ds_dealloc_multi (vimage->pc_multi_desc);
+    ds_dealloc_multi (vimage->tc_multi_desc);
+    if ( (sequence = vimage->sequence) != NULL )
     {
-	if ( (*sequence).attachments > 1 )
+	if (sequence->attachments > 1)
 	{
-	    --(*sequence).attachments;
+	    --sequence->attachments;
 	}
 	else
 	{
@@ -1325,40 +1349,40 @@ void viewimg_destroy (ViewableImage vimage)
 	}
     }
     /*  Remove entry  */
-    if ( (*vimage).next != NULL )
+    if (vimage->next != NULL)
     {
 	/*  Forward entry  */
-	(* (*vimage).next ).prev = (*vimage).prev;
+	vimage->next->prev = vimage->prev;
     }
-    if ( (*vimage).prev != NULL )
+    if (vimage->prev != NULL)
     {
-	(* (*vimage).prev ).next = (*vimage).next;
+	vimage->prev->next = vimage->next;
     }
-    if (vimage == (*holder).first_image)
+    if (vimage == holder->first_image)
     {
 	/*  Remove from start of list  */
-	(*holder).first_image = (*vimage).next;
+	holder->first_image = vimage->next;
     }
-    if (vimage == (*holder).active_image)
+    if (vimage == holder->active_image)
     {
-	(*holder).active_image = NULL;
+	holder->active_image = NULL;
     }
-    if ( (*vimage).restriction_names != NULL )
+    if (vimage->restriction_names != NULL)
     {
-	for (count = 0; count < (*vimage).num_restrictions; ++count)
+	for (count = 0; count < vimage->num_restrictions; ++count)
 	{
-	    if ( (*vimage).restriction_names[count] != NULL )
+	    if (vimage->restriction_names[count] != NULL)
 	    {
-		m_free ( (*vimage).restriction_names[count] );
+		m_free (vimage->restriction_names[count]);
 	    }
 	}
-	m_free ( (char *) (*vimage).restriction_names );
+	m_free ( (char *) vimage->restriction_names );
     }
-    if ( (*vimage).restriction_values != NULL )
+    if (vimage->restriction_values != NULL)
     {
-	m_free ( (char *) (*vimage).restriction_values );
+	m_free ( (char *) vimage->restriction_values );
     }
-    (*vimage).magic_number = 0;
+    vimage->magic_number = 0;
     m_free ( (char *) vimage );
 }   /*  End Function viewimg_destroy  */
 
@@ -1387,7 +1411,7 @@ ViewableImage viewimg_get_active (KWorldCanvas canvas)
     {
 	m_abort (function_name, "canvas holder");
     }
-    return ( (*holder).active_image );
+    return (holder->active_image);
 }   /*  End Function viewimg_get_active  */
 
 /*PUBLIC_FUNCTION*/
@@ -1404,8 +1428,8 @@ flag viewimg_test_active (ViewableImage vimage)
     static char function_name[] = "viewimg_test_active";
 
     VERIFY_VIMAGE (vimage);
-    holder = (*vimage).canvas_holder;
-    if (vimage == (*holder).active_image) return (TRUE);
+    holder = vimage->canvas_holder;
+    if (vimage == holder->active_image) return (TRUE);
     return (FALSE);
 }   /*  End Function viewimg_test_active  */
 
@@ -1413,46 +1437,42 @@ flag viewimg_test_active (ViewableImage vimage)
 KCallbackFunc viewimg_register_position_event_func (KWorldCanvas canvas,
 						    flag (*func) (),
 						    void *f_info)
-/*  This routine will register a position event function for a world canvas
-    which has a number of ViewableImage objects associated with it.
+/*  [PURPOSE] This routine will register a position event function for a world
+    canvas which has a number of ViewableImage objects associated with it.
     The position event function will be called whenever a position event on the
     canvas has not been consumed. Many position event functions may be
     registered per canvas. The first function registered is the first function
     called upon a position event.
-    The canvas must be given by  canvas  .
-    The function that is called when a position event occurs must be pointed to
-    by  func  .
-    The interface to this routine is as follows:
-
-    flag func (vimage, x, y, value, event_code, e_info, f_info, x_lin, y_lin)
-    *   This routine is a position event consumer for a world canvas which has
-        a number of ViewableImage objects associated with it.
-        The active viewable image is given by  vimage  .
-	The horizontal world co-ordinate of the event will be given by  x  .
-	The vertical world co-ordinate of the event will be given by  y  .
+    <canvas> The world canvas.
+    <func> The function that is called when a position event occurs. The
+    interface to this routine is as follows:
+    [<pre>]
+    flag func (ViewableImage vimage, double x, double y, void *value,
+               unsigned int event_code, void *e_info, void **f_info,
+	       double x_lin, double y_lin, unsigned int value_type)
+    *   [PURPOSE] This routine is a position event consumer for a world canvas
+        which has a number of ViewableImage objects associated with it.
+	<viewimg> The active viewable image.
+	<x> The horizontal world co-ordinate of the event.
+	<y> The vertical world co-ordinate of the event.
 	These values will have been transformed by the registered transform
 	function (see  canvas_register_transform_func  ) for the associated
 	world canvas.
-	The data value in the viewable image corresponding to the event
-	co-ordinates will be written to the storage pointed to by  value  .
-	This must be of type  K_DOUBLE  .
-	The arbitrary event code is given by  event_code  .
-	The arbitrary event information is pointed to by  e_info  .
-	The arbitrary function information pointer is pointed to by  f_info  .
-	The linear world co-ordinates (the co-ordinates prior to the transform
-	function being called) will be given by  x_lin  and  y_lin  .
-	The routine returns TRUE if the event was consumed, else it returns
-	FALSE indicating that the event is still to be processed.
+	<value> A pointer to the data value in the viewable image corresponding
+	to the event co-ordinates.
+	<event_code> The arbitrary event code.
+	<e_info> The arbitrary event information.
+	<f_info> The arbitrary function information pointer.
+	<x_lin> The linear horizontal world co-ordinate (the co-ordinate prior
+	to the transform function being called).
+	<y_lin> The linear vertical world co-ordinate (the co-ordinate prior
+	to the transform function being called).
+	<value_type> The type of the data value. This may be K_DCOMPLEX or
+	K_UB_RGB.
+	[RETURNS] TRUE if the event was consumed, else FALSE indicating that
+	the event is still to be processed.
     *
-    ViewableImage vimage;
-    double x;
-    double y;
-    double value[2];
-    unsigned int event_code;
-    void *e_info;
-    void **f_info;
-    double x_lin;
-    double y_lin;
+    [</pre>]
 
     The initial arbitrary function information pointer must be given by  f_info
     The routine returns a handle to a KWorldCanvasPositionFunc object.
@@ -1470,7 +1490,7 @@ KCallbackFunc viewimg_register_position_event_func (KWorldCanvas canvas,
     {
 	m_abort (function_name, "canvas holder");
     }
-    return ( c_register_callback (&(*holder).position_list,
+    return ( c_register_callback (&holder->position_list,
 				  position_event_func,
 				  holder, f_info, TRUE, (void *) func, FALSE,
 				  TRUE) );
@@ -1497,9 +1517,9 @@ flag viewimg_fill_ellipse (ViewableImage vimage,
 
     VERIFY_VIMAGE (vimage);
 #ifdef MACHINE_i386
-    if ( (int) value % sizeof (float) != 0 )
+    if ( !IS_ALIGNED ( value, sizeof (float) ) )
 #else
-    if ( (long) value % sizeof (double) != 0 )
+    if ( !IS_ALIGNED ( value, sizeof (double) ) )
 #endif
     {
 	(void) fprintf (stderr,
@@ -1507,20 +1527,20 @@ flag viewimg_fill_ellipse (ViewableImage vimage,
 			value);
 	a_prog_bug (function_name);
     }
-    if ( (*vimage).tc_arr_desc != NULL )
+    if (vimage->tc_arr_desc != NULL)
     {
 	(void) fprintf (stderr, "%s: TrueColour images not supported yet\n",
 			function_name);
 	return (FALSE);
     }
-    arr_desc = (*vimage).pc_arr_desc;
-    pack_desc = (*arr_desc).packet;
+    arr_desc = vimage->pc_arr_desc;
+    pack_desc = arr_desc->packet;
     return ( ds_draw_ellipse
-	    ( (*vimage).pc_slice,
-	     (*pack_desc).element_types[(*vimage).pc_elem_index],
-	     (*arr_desc).dimensions[(*vimage).pc_hdim], (*vimage).pc_hstride,
-	     (*arr_desc).dimensions[(*vimage).pc_vdim], (*vimage).pc_vstride,
-	     centre_x, centre_y, radius_x, radius_y, value ) );
+	    (vimage->pc_slice,
+	     pack_desc->element_types[vimage->pc_elem_index],
+	     arr_desc->dimensions[vimage->pc_hdim], vimage->pc_hstride,
+	     arr_desc->dimensions[vimage->pc_vdim], vimage->pc_vstride,
+	     centre_x, centre_y, radius_x, radius_y, value) );
 }   /*  End Function viewimg_fill_ellipse  */
 
 /*PUBLIC_FUNCTION*/
@@ -1543,9 +1563,9 @@ flag viewimg_fill_polygon (ViewableImage vimage, edit_coord *coords,
 
     VERIFY_VIMAGE (vimage);
 #ifdef MACHINE_i386
-    if ( (int) value % sizeof (float) != 0 )
+    if ( !IS_ALIGNED ( value, sizeof (float) ) )
 #else
-    if ( (long) value % sizeof (double) != 0 )
+    if ( !IS_ALIGNED ( value, sizeof (double) ) )
 #endif
     {
 	(void) fprintf (stderr,
@@ -1553,37 +1573,35 @@ flag viewimg_fill_polygon (ViewableImage vimage, edit_coord *coords,
 			value);
 	a_prog_bug (function_name);
     }
-    if ( (*vimage).tc_arr_desc != NULL )
+    if (vimage->tc_arr_desc != NULL)
     {
 	(void) fprintf (stderr, "%s: TrueColour images not supported yet\n",
 			function_name);
 	return (FALSE);
     }
-    arr_desc = (*vimage).pc_arr_desc;
-    pack_desc = (*arr_desc).packet;
+    arr_desc = vimage->pc_arr_desc;
+    pack_desc = arr_desc->packet;
     return ( ds_draw_polygon
-	    ( (*vimage).pc_slice,
-	     (*pack_desc).element_types[(*vimage).pc_elem_index],
-	     (*arr_desc).dimensions[(*vimage).pc_hdim], (*vimage).pc_hstride,
-	     (*arr_desc).dimensions[(*vimage).pc_vdim], (*vimage).pc_vstride,
-	     coords, num_vertices, value ) );
+	    (vimage->pc_slice,
+	     pack_desc->element_types[vimage->pc_elem_index],
+	     arr_desc->dimensions[vimage->pc_hdim], vimage->pc_hstride,
+	     arr_desc->dimensions[vimage->pc_vdim], vimage->pc_vstride,
+	     coords, num_vertices, value) );
 }   /*  End Function viewimg_fill_polygon  */
 
 /*PUBLIC_FUNCTION*/
-void viewimg_get_canvas_attributes (canvas, va_alist)
-/*  This routine will get the attributes for a world canvas.
-    The world canvas must be given by  canvas  .
-    The list of parameter attribute-key attribute-value pairs must follow.
-    This list must be terminated with the value  VIEWIMG_ATT_END  .
-    See the documentation for the  viewimg_set_canvas_attributes  routine for
+void viewimg_get_canvas_attributes (KWorldCanvas canvas, ...)
+/*  [PURPOSE] This routine will get the attributes for a world canvas.
+    <canvas> The world canvas.
+    [VARARGS] The list of parameter attribute-key attribute-value pairs must
+    follow. This list must be terminated with the value  VIEWIMG_ATT_END  .
+    See the documentation for the <viewimg_set_canvas_attributes> routine for
     legal attributes.
-    The routine returns nothing.
+    [RETURNS] Nothing.
 */
-KWorldCanvas canvas;
-va_dcl
 {
     CanvasHolder holder;
-    va_list arg_pointer;
+    va_list argp;
     unsigned int att_key;
     int width, height;
     struct win_scale_type win_scale;
@@ -1600,46 +1618,49 @@ va_dcl
     {
 	m_abort (function_name, "canvas holder");
     }
-    va_start (arg_pointer);
-    while ( ( att_key = va_arg (arg_pointer, unsigned int) ) !=
-	   VIEWIMG_ATT_END )
+    va_start (argp, canvas);
+    while ( ( att_key = va_arg (argp, unsigned int) ) != VIEWIMG_ATT_END )
     {
 	switch (att_key)
 	{
 	  case VIEWIMG_ATT_AUTO_X:
-	    *( va_arg (arg_pointer, unsigned int *) ) = (*holder).auto_x;
+	    *( va_arg (argp, unsigned int *) ) = holder->auto_x;
 	    break;
 	  case VIEWIMG_ATT_AUTO_Y:
-	    *( va_arg (arg_pointer, unsigned int *) ) = (*holder).auto_y;
+	    *( va_arg (argp, unsigned int *) ) = holder->auto_y;
 	    break;
 	  case VIEWIMG_ATT_AUTO_V:
-	    *( va_arg (arg_pointer, unsigned int *) ) = (*holder).auto_v;
+	    *( va_arg (argp, unsigned int *) ) = holder->auto_v;
 	    break;
 	  case VIEWIMG_ATT_INT_X:
-	    *( va_arg (arg_pointer, unsigned int *) ) = (*holder).int_x;
+	    *( va_arg (argp, unsigned int *) ) = holder->int_x;
 	    break;
 	  case VIEWIMG_ATT_INT_Y:
-	    *( va_arg (arg_pointer, unsigned int *) ) = (*holder).int_y;
+	    *( va_arg (argp, unsigned int *) ) = holder->int_y;
 	    break;
 	  case VIEWIMG_ATT_MAINTAIN_ASPECT:
-	    *( va_arg (arg_pointer, unsigned int *) ) =
-	    (*holder).maintain_aspect_ratio;
+	    *( va_arg (argp, unsigned int *) ) =
+	    holder->maintain_aspect_ratio;
+	    break;
+	  case VIEWIMG_ATT_ALLOW_TRUNCATION:
+	    *( va_arg (argp, unsigned int *) ) =
+	    holder->allow_truncation;
 	    break;
 	  default:
 	    (void) fprintf (stderr, "Illegal attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	}
     }
-    va_end (arg_pointer);
+    va_end (argp);
 }   /*  End Function viewimg_get_canvas_attributes  */
 
 /*PUBLIC_FUNCTION*/
-void viewimg_set_canvas_attributes (canvas, va_alist)
-/*  This routine will control the autoscaling options used when viewable images
-    are displayed on their associated world canvas.
-    The world canvas must be given by  canvas  .
-    The list of parameter attribute-key attribute-value pairs must follow.
-    This list must be terminated with the value  VIEWIMG_ATT_END  .
+void viewimg_set_canvas_attributes (KWorldCanvas canvas, ...)
+/*  [PURPOSE] This routine will control the autoscaling options used when
+    viewable images are displayed on their associated world canvas.
+    <canvas> The world canvas.
+    [VARARGS] The list of parameter attribute-key attribute-value pairs must
+    follow. This list must be terminated with the value  VIEWIMG_ATT_END  .
     Legal attributes are:
   VIEWIMG_ATT_AUTO_X           Enable automatic horizontal scaling
   VIEWIMG_ATT_AUTO_Y           Enable automatic vertical scaling
@@ -1647,15 +1668,14 @@ void viewimg_set_canvas_attributes (canvas, va_alist)
   VIEWIMG_ATT_INT_X            Force integer horizontal zoom-in/zoom-out factor
   VIEWIMG_ATT_INT_Y            Force integer vertical zoom-in/zoom-out factor
   VIEWIMG_ATT_MAINTAIN_ASPECT  Maintain data image aspect ratio
+  VIEWIMG_ATT_ALLOW_TRUNCATION Allow shrunken images to be truncated.
     See the include file  karma_viewimg.h  for matching attribute types.
-    The canvas is not refreshed by this operation.
-    The routine returns nothing.
+    [NOTE] The canvas is not refreshed by this operation.
+    [RETURNS] Nothing.
 */
-KWorldCanvas canvas;
-va_dcl
 {
     CanvasHolder holder;
-    va_list arg_pointer;
+    va_list argp;
     flag bool;
     unsigned int att_key;
     int width, height;
@@ -1673,49 +1693,148 @@ va_dcl
     {
 	m_abort (function_name, "canvas holder");
     }
-    va_start (arg_pointer);
-    while ( ( att_key = va_arg (arg_pointer, unsigned int) ) !=
-	   VIEWIMG_ATT_END )
+    va_start (argp, canvas);
+    while ( ( att_key = va_arg (argp, unsigned int) ) != VIEWIMG_ATT_END )
     {
 	switch (att_key)
 	{
 	  case VIEWIMG_ATT_AUTO_X:
-	    bool = va_arg (arg_pointer, flag);
+	    bool = va_arg (argp, flag);
 	    FLAG_VERIFY (bool);
-	    (*holder).auto_x = bool;
+	    holder->auto_x = bool;
 	    break;
 	  case VIEWIMG_ATT_AUTO_Y:
-	    bool = va_arg (arg_pointer, flag);
+	    bool = va_arg (argp, flag);
 	    FLAG_VERIFY (bool);
-	    (*holder).auto_y = bool;
+	    holder->auto_y = bool;
 	    break;
 	  case VIEWIMG_ATT_AUTO_V:
-	    bool = va_arg (arg_pointer, flag);
+	    bool = va_arg (argp, flag);
 	    FLAG_VERIFY (bool);
-	    (*holder).auto_v = bool;
+	    holder->auto_v = bool;
 	    break;
 	  case VIEWIMG_ATT_INT_X:
-	    bool = va_arg (arg_pointer, flag);
+	    bool = va_arg (argp, flag);
 	    FLAG_VERIFY (bool);
-	    (*holder).int_x = bool;
+	    holder->int_x = bool;
 	    break;
 	  case VIEWIMG_ATT_INT_Y:
-	    bool = va_arg (arg_pointer, flag);
+	    bool = va_arg (argp, flag);
 	    FLAG_VERIFY (bool);
-	    (*holder).int_y = bool;
+	    holder->int_y = bool;
 	    break;
 	  case VIEWIMG_ATT_MAINTAIN_ASPECT:
-	    bool = va_arg (arg_pointer, flag);
+	    bool = va_arg (argp, flag);
 	    FLAG_VERIFY (bool);
-	    (*holder).maintain_aspect_ratio = bool;
+	    holder->maintain_aspect_ratio = bool;
+	    break;
+	  case VIEWIMG_ATT_ALLOW_TRUNCATION:
+	    bool = va_arg (argp, flag);
+	    FLAG_VERIFY (bool);
+	    holder->allow_truncation = bool;
 	    break;
 	  default:
 	    (void) fprintf (stderr, "Illegal attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	}
     }
-    va_end (arg_pointer);
+    va_end (argp);
 }   /*  End Function viewimg_set_canvas_attributes  */
+
+/*PUBLIC_FUNCTION*/
+void viewimg_get_attributes (ViewableImage vimage, ...)
+/*  [PURPOSE] This routine will get the attributes for a viewable image.
+    <vimage> The ViewableImage.
+    [VARARGS] The list of parameter attribute-key attribute-value pairs must
+    follow. This list must be terminated with the value  VIEWIMG_VATT_END  .
+    Legal attributes are:
+  VIEWIMG_VATT_TRUECOLOUR                  Image is TrueColour
+  VIEWIMG_VATT_ARRAY_DESC                  The array descriptor for the image
+  VIEWIMG_VATT_SLICE                       Start of the image data
+  VIEWIMG_VATT_HDIM                        The horizontal dimension
+  VIEWIMG_VATT_VDIM                        The vertical dimension
+  VIEWIMG_VATT_PSEUDO_INDEX                The PseudoColour element index
+  VIEWIMG_VATT_RED_INDEX                   The TrueColour red element index
+  VIEWIMG_VATT_GREEN_INDEX                 The TrueColour green element index
+  VIEWIMG_VATT_BLUE_INDEX                  The TrueColour blue element index
+    [RETURNS] Nothing.
+*/
+{
+    CanvasHolder holder;
+    va_list argp;
+    flag truecolour;
+    unsigned int att_key;
+    unsigned int hdim, vdim;
+    unsigned int elem_index, red_index, green_index, blue_index;
+    char *slice;
+    array_desc *arr_desc;
+    static char function_name[] = "viewimg_get_attributes";
+
+    VERIFY_VIMAGE (vimage);
+    va_start (argp, vimage);
+    truecolour = (vimage->tc_arr_desc == NULL) ? FALSE : TRUE;
+    arr_desc = truecolour ? vimage->tc_arr_desc : vimage->pc_arr_desc;
+    slice = truecolour ? vimage->tc_slice : vimage->pc_slice;
+    hdim = truecolour ? vimage->tc_hdim : vimage->pc_hdim;
+    vdim = truecolour ? vimage->tc_vdim : vimage->pc_vdim;
+    while ( ( att_key = va_arg (argp, unsigned int) ) != VIEWIMG_VATT_END )
+    {
+	switch (att_key)
+	{
+	  case VIEWIMG_VATT_TRUECOLOUR:
+	    *( va_arg (argp, flag *) ) = truecolour;
+	    break;
+	  case VIEWIMG_VATT_ARRAY_DESC:
+	    *( va_arg (argp, array_desc **) ) = arr_desc;
+	    break;
+	  case VIEWIMG_VATT_SLICE:
+	    *( va_arg (argp, char **) ) = slice;
+	    break;
+	  case VIEWIMG_VATT_HDIM:
+	    *( va_arg (argp, unsigned int *) ) = hdim;
+	    break;
+	  case VIEWIMG_VATT_VDIM:
+	    *( va_arg (argp, unsigned int *) ) = vdim;
+	    break;
+	  case VIEWIMG_VATT_PSEUDO_INDEX:
+	    if (truecolour)
+	    {
+		(void) fprintf (stderr, "TrueColour image!\n");
+		a_prog_bug (function_name);
+	    }
+	    *( va_arg (argp, unsigned int *) ) = vimage->pc_elem_index;
+	    break;
+	  case VIEWIMG_VATT_RED_INDEX:
+	    if (!truecolour)
+	    {
+		(void) fprintf (stderr, "PseudoColour image!\n");
+		a_prog_bug (function_name);
+	    }
+	    *( va_arg (argp, unsigned int *) ) = vimage->tc_red_index;
+	    break;
+	  case VIEWIMG_VATT_GREEN_INDEX:
+	    if (!truecolour)
+	    {
+		(void) fprintf (stderr, "PseudoColour image!\n");
+		a_prog_bug (function_name);
+	    }
+	    *( va_arg (argp, unsigned int *) ) = vimage->tc_green_index;
+	    break;
+	  case VIEWIMG_VATT_BLUE_INDEX:
+	    if (!truecolour)
+	    {
+		(void) fprintf (stderr, "PseudoColour image!\n");
+		a_prog_bug (function_name);
+	    }
+	    *( va_arg (argp, unsigned int *) ) = vimage->tc_blue_index;
+	    break;
+	  default:
+	    (void) fprintf (stderr, "Illegal attribute key: %u\n", att_key);
+	    a_prog_bug (function_name);
+	}
+    }
+    va_end (argp);
+}   /*  End Function viewimg_get_attributes  */
 
 
 /*  Private functions follow  */
@@ -1736,9 +1855,9 @@ static CanvasHolder get_canvas_holder (KWorldCanvas canvas, flag alloc,
 
     /*  First search for existing canvas holder  */
     for (canvas_holder = first_canvas_holder; canvas_holder != NULL;
-	 canvas_holder = (*canvas_holder).next)
+	 canvas_holder = canvas_holder->next)
     {
-	if (canvas == (*canvas_holder).canvas) return (canvas_holder);
+	if (canvas == canvas_holder->canvas) return (canvas_holder);
     }
     if (!alloc) return (NULL);
     (void) fprintf (stderr, "**WARNING**:  %s  called before:  viewimg_init\n",
@@ -1768,21 +1887,22 @@ static CanvasHolder alloc_canvas_holder (KWorldCanvas canvas)
 	m_error_notify (function_name, "canvas holder");
 	return (NULL);
     }
-    (*canvas_holder).magic_number = HOLDER_MAGIC_NUMBER;
-    (*canvas_holder).canvas = canvas;
-    (*canvas_holder).first_image = NULL;
-    (*canvas_holder).active_image = NULL;
-    (*canvas_holder).position_list = NULL;
-    (*canvas_holder).info = NULL;
-    (*canvas_holder).auto_x = TRUE;
-    (*canvas_holder).auto_y = TRUE;
-    (*canvas_holder).auto_v = TRUE;
-    (*canvas_holder).int_x = TRUE;
-    (*canvas_holder).int_y = TRUE;
-    (*canvas_holder).maintain_aspect_ratio = FALSE;
-    (*canvas_holder).old_cmap = NULL;
+    canvas_holder->magic_number = HOLDER_MAGIC_NUMBER;
+    canvas_holder->canvas = canvas;
+    canvas_holder->first_image = NULL;
+    canvas_holder->active_image = NULL;
+    canvas_holder->position_list = NULL;
+    canvas_holder->info = NULL;
+    canvas_holder->auto_x = TRUE;
+    canvas_holder->auto_y = TRUE;
+    canvas_holder->auto_v = TRUE;
+    canvas_holder->int_x = TRUE;
+    canvas_holder->int_y = TRUE;
+    canvas_holder->maintain_aspect_ratio = FALSE;
+    canvas_holder->allow_truncation = FALSE;
+    canvas_holder->old_cmap = NULL;
     /*  Insert at beginning of list  */
-    (*canvas_holder).next = first_canvas_holder;
+    canvas_holder->next = first_canvas_holder;
     first_canvas_holder = canvas_holder;
     canvas_register_refresh_func (canvas, worldcanvas_refresh_func,
 				  (void *) canvas_holder);
@@ -1791,7 +1911,7 @@ static CanvasHolder alloc_canvas_holder (KWorldCanvas canvas)
     (void) canvas_register_position_event_func (canvas,
 						worldcanvas_position_func,
 						(void *) canvas_holder);
-    canvas_register_convert_func (canvas, coord_convert_func, canvas_holder);
+    canvas_register_d_convert_func (canvas, coord_convert_func, canvas_holder);
     return (canvas_holder);
 }   /*  End Function alloc_canvas_holder  */
 
@@ -1799,17 +1919,18 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas,
 				      int width, int height,
 				      struct win_scale_type *win_scale,
 				      Kcolourmap cmap, flag cmap_resize,
-				      void **info)
-/*  This routine registers a refresh event for a world canvas.
-    The canvas is given by  canvas  .
-    The width of the canvas in pixels is given by  width  .
-    The height of the canvas in pixels is given by  height  .
-    The window scaling information is pointed to by  win_scale  .
-    The colourmap associated with the canvas is given by  cmap  .
-    If the refresh function was called as a result of a colourmap resize the
-    value of  cmap_resize  will be TRUE.
-    The arbitrary canvas information pointer is pointed to by  info  .
-    The routine returns nothing.
+				      void **info, PostScriptPage pspage)
+/*  [PURPOSE] This routine registers a refresh event for a world canvas.
+    <canvas> The world canvas.
+    <width> The width of the canvas in pixels.
+    <height> The height of the canvas in pixels.
+    <win_scale> A pointer to the window scaling information.
+    <cmap> The canvas colourmap.
+    <cmap_resize> If TRUE, the refresh is due to a colourmap resize.
+    <info> A pointer to the arbitrary information pointer.
+    <pspage> The PostScriptPage object. If this is NULL, the refresh is *not*
+    destined for a PostScript page.
+    [RETURNS] Nothing.
 */
 {
     CanvasHolder holder;
@@ -1821,29 +1942,45 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas,
 	(void) fprintf (stderr, "NULL canvas holder\n");
 	a_prog_bug (function_name);
     }
-    if ( (*holder).magic_number != HOLDER_MAGIC_NUMBER )
+    if (holder->magic_number != HOLDER_MAGIC_NUMBER)
     {
 	(void) fprintf (stderr, "Invalid canvas holder object\n");
 	a_prog_bug (function_name);
     }
-    if (canvas != (*holder).canvas)
+    if (canvas != holder->canvas)
     {
 	(void) fprintf (stderr, "Different canvas in canvas holder object\n");
 	a_prog_bug (function_name);
     }
-    if ( (*holder).active_image == NULL )
+    if (holder->active_image == NULL) return;
+    if ( (width < 3) || (height < 3) ) return;
+    vimage = holder->active_image;
+    if ( (pspage != NULL) && (vimage->tc_arr_desc != NULL) )
     {
-	return;
+	(void) fprintf (stderr,
+			"%s: drawing TrueColour image directly to PostScriptPage\n",
+			function_name, pspage);
+	/*  Drawing TrueColour image to PostScript page  */
+	if ( !canvas_draw_rgb_image (holder->canvas,
+				     vimage->tc_arr_desc, vimage->tc_slice,
+				     vimage->tc_hdim, vimage->tc_vdim,
+				     vimage->tc_red_index,
+				     vimage->tc_green_index,
+				     vimage->tc_blue_index,
+				     (KPixCanvasImageCache *) NULL) )
+	{
+	    (void) fprintf (stderr, "Error drawing image onto world canvas\n");
+	    return;
+	}
     }
-    vimage = (*holder).active_image;
     /*  Do tests on image  */
-    if ( (*vimage).cache == NULL )
+    if (vimage->cache == NULL)
     {
 	/*  No image cache  */
 	recompute_image (holder, width, height, win_scale, cmap, vimage);
 	return;
     }
-    if ( (*vimage).recompute )
+    if (vimage->recompute)
     {
 	/*  Data has changed  */
 	recompute_image (holder, width, height, win_scale, cmap, vimage);
@@ -1858,17 +1995,17 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas,
 #ifdef DEBUG
     (void) fprintf (stderr, "%s win_scale: %e %e  %e %e\n",
 		    function_name,
-		    (*win_scale).x_min, (*win_scale).x_max,
-		    (*win_scale).y_min, (*win_scale).y_max);
+		    win_scale->x_min, win_scale->x_max,
+		    win_scale->y_min, win_scale->y_max);
     (void) fprintf (stderr, "%s vimage.win_scale: %e %e  %e %e\n",
 		    function_name,
-		    (*vimage).win_scale.x_min, (*vimage).win_scale.x_max,
-		    (*vimage).win_scale.y_min, (*vimage).win_scale.y_max);
+		    vimage->win_scale.x_min, vimage->win_scale.x_max,
+		    vimage->win_scale.y_min, vimage->win_scale.y_max);
 #endif
     /*  More tests  */
-    (*vimage).win_scale.x_offset = (*win_scale).x_offset;
-    (*vimage).win_scale.y_offset = (*win_scale).y_offset;
-    if (!m_cmp ( (char *) win_scale, (char *) &(*vimage).win_scale,
+    vimage->win_scale.x_offset = win_scale->x_offset;
+    vimage->win_scale.y_offset = win_scale->y_offset;
+    if (!m_cmp ( (char *) win_scale, (char *) &vimage->win_scale,
 		sizeof *win_scale ) )
     {
 	/*  Window scaling information has changed  */
@@ -1879,9 +2016,9 @@ static void worldcanvas_refresh_func (KWorldCanvas canvas,
 	return;
     }
     /*  No significant changes: use image cache  */
-    if ( kwin_draw_cached_image ( (*vimage).cache,
-				 (*win_scale).x_offset,
-				 (*win_scale).y_offset ) )
+    if ( kwin_draw_cached_image (vimage->cache,
+				 win_scale->x_offset,
+				 win_scale->y_offset) )
     {
 	/*  Cache OK  */
 	return;
@@ -1903,20 +2040,32 @@ static void recompute_image (CanvasHolder holder, int width, int height,
     The viewable image must be given by  vimage  .
 */
 {
-    static char function_name[] = "recompute_image";
+    static char function_name[] = "__viewimg_recompute_image";
 
-    m_copy ( (char *) &(*vimage).win_scale, (char *) win_scale,
+#ifdef DEBUG
+    (void) fprintf (stderr, "%s win_scale: %e %e  %e %e\n",
+		    function_name,
+		    win_scale->x_min, win_scale->x_max,
+		    win_scale->y_min, win_scale->y_max);
+    (void) fprintf (stderr, "%s old vimage.win_scale: %e %e  %e %e\n",
+		    function_name,
+		    vimage->win_scale.x_min, vimage->win_scale.x_max,
+		    vimage->win_scale.y_min, vimage->win_scale.y_max);
+#endif
+    m_copy ( (char *) &vimage->win_scale, (char *) win_scale,
 	    sizeof *win_scale );
-    (*vimage).recompute = TRUE;
-    if ( (*vimage).pc_arr_desc == NULL )
+    vimage->recompute = TRUE;
+    /*  If a PseudoColour array exists, either the image is PseudoColour or the
+	canvas is PseudoColour  */
+    if (vimage->pc_arr_desc != NULL)
     {
-	if ( !canvas_draw_rgb_image ( (*holder).canvas,
-				     (*vimage).tc_arr_desc, (*vimage).tc_slice,
-				     (*vimage).tc_hdim, (*vimage).tc_vdim,
-				     (*vimage).tc_red_index,
-				     (*vimage).tc_green_index,
-				     (*vimage).tc_blue_index,
-				     &(*vimage).cache ) )
+	if ( !canvas_draw_image (holder->canvas,
+				 vimage->pc_arr_desc,
+				 vimage->pc_slice,
+				 vimage->pc_hdim,
+				 vimage->pc_vdim,
+				 vimage->pc_elem_index,
+				 &vimage->cache) )
 	{
 	    (void) fprintf (stderr, "Error drawing image onto world canvas\n");
 	    return;
@@ -1924,19 +2073,19 @@ static void recompute_image (CanvasHolder holder, int width, int height,
     }
     else
     {
-	if ( !canvas_draw_image ( (*holder).canvas,
-				 (*vimage).pc_arr_desc,
-				 (*vimage).pc_slice,
-				 (*vimage).pc_hdim,
-				 (*vimage).pc_vdim,
-				 (*vimage).pc_elem_index,
-				 &(*vimage).cache ) )
+	if ( !canvas_draw_rgb_image (holder->canvas,
+				     vimage->tc_arr_desc, vimage->tc_slice,
+				     vimage->tc_hdim, vimage->tc_vdim,
+				     vimage->tc_red_index,
+				     vimage->tc_green_index,
+				     vimage->tc_blue_index,
+				     &vimage->cache) )
 	{
 	    (void) fprintf (stderr, "Error drawing image onto world canvas\n");
 	    return;
 	}
     }
-    (*vimage).recompute = FALSE;
+    vimage->recompute = FALSE;
 }   /*  End Function recompute_image  */
 
 static void worldcanvas_size_control_func (KWorldCanvas canvas,
@@ -1963,11 +2112,11 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
     ViewableImage vimage;
     Kcolourmap cmap;
     iarray pseudo_arr;
-    int hlength, vlength;
+    int hstart, hend, vstart, vend;  /*  Inclusive co-ordinates  */
     int factor;
-    int coord_num0, coord_num1;
     unsigned int canvas_visual, canvas_depth;
     flag scale_changed = FALSE;
+    uaddr *hoffsets, *voffsets;
     char *cmap_packet;
     array_desc *arr_desc;
     packet_desc *pack_desc;
@@ -1981,188 +2130,181 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
 	(void) fprintf (stderr, "NULL canvas holder\n");
 	a_prog_bug (function_name);
     }
-    if ( (*holder).magic_number != HOLDER_MAGIC_NUMBER )
+    if (holder->magic_number != HOLDER_MAGIC_NUMBER)
     {
 	(void) fprintf (stderr, "Invalid canvas holder object\n");
 	a_prog_bug (function_name);
     }
-    if (canvas != (*holder).canvas)
+    if (canvas != holder->canvas)
     {
 	(void) fprintf (stderr, "Different canvas in canvas holder object\n");
 	a_prog_bug (function_name);
     }
-    if ( (*holder).active_image == NULL )
+    win_scale->x_pixels = width;
+    win_scale->y_pixels = height;
+    if (holder->active_image == NULL)
     {
-	(*win_scale).x_offset = 0;
-	(*win_scale).x_pixels = width;
-	(*win_scale).y_offset = 0;
-	(*win_scale).y_pixels = height;
+	win_scale->x_offset = 0;
+	win_scale->y_offset = 0;
 	return;
     }
+    if ( (width < 3) || (height < 3) ) return;
     *boundary_clear = TRUE;
-    vimage = (*holder).active_image;
+    vimage = holder->active_image;
     /*  Work on changing window scaling if need be  */
-    if ( (*vimage).tc_arr_desc == NULL )
+    if (vimage->tc_arr_desc == NULL)
     {
-	arr_desc = (*vimage).pc_arr_desc;
-	hdim = (*arr_desc).dimensions[(*vimage).pc_hdim];
-	vdim = (*arr_desc).dimensions[(*vimage).pc_vdim];
+	arr_desc = vimage->pc_arr_desc;
+	hdim = arr_desc->dimensions[vimage->pc_hdim];
+	vdim = arr_desc->dimensions[vimage->pc_vdim];
+	hoffsets = arr_desc->offsets[vimage->pc_hdim];
+	voffsets = arr_desc->offsets[vimage->pc_vdim];
     }
     else
     {
-	arr_desc = (*vimage).tc_arr_desc;
-	hdim = (*arr_desc).dimensions[(*vimage).tc_hdim];
-	vdim = (*arr_desc).dimensions[(*vimage).tc_vdim];
+	arr_desc = vimage->tc_arr_desc;
+	hdim = arr_desc->dimensions[vimage->tc_hdim];
+	vdim = arr_desc->dimensions[vimage->tc_vdim];
+	hoffsets = arr_desc->offsets[vimage->tc_hdim];
+	voffsets = arr_desc->offsets[vimage->tc_vdim];
     }
-    pack_desc = (*arr_desc).packet;
+    pack_desc = arr_desc->packet;
 #ifdef DEBUG
     (void) fprintf (stderr, "%s: BEFORE: %e %e  %e %e\n",
 		    function_name,
-		    (*win_scale).x_min, (*win_scale).x_max,
-		    (*win_scale).y_min, (*win_scale).y_max);
+		    win_scale->x_min, win_scale->x_max,
+		    win_scale->y_min, win_scale->y_max);
 #endif
     /*  Determine canvas horizontal world co-ordinates  */
-    if ( (*holder).auto_x )
+    if (holder->auto_x)
     {
-	(*win_scale).x_min = (*hdim).minimum;
-	(*win_scale).x_max = (*hdim).maximum;
-	hlength = (*hdim).length;
+	hstart = 0;
+	hend = hdim->length - 1;
     }
     else
     {
-	coord_num0 = ds_get_coord_num (hdim, (*win_scale).x_min,
-				       SEARCH_BIAS_CLOSEST);
-	coord_num1 = ds_get_coord_num (hdim, (*win_scale).x_max,
-				       SEARCH_BIAS_CLOSEST);
-	if (coord_num1 == coord_num0)
+	hstart = ds_get_coord_num (hdim, win_scale->x_min,SEARCH_BIAS_CLOSEST);
+	hend = ds_get_coord_num (hdim, win_scale->x_max, SEARCH_BIAS_CLOSEST);
+	if (hend == hstart)
 	{
 	    /*  Same dimension co-ordinate: separate  */
-	    --coord_num0;
-	    ++coord_num1;
+	    --hstart;
+	    ++hend;
 	}
-	(*win_scale).x_min = ds_get_coordinate (hdim, coord_num0);
-	(*win_scale).x_max = ds_get_coordinate (hdim, coord_num1);
-	hlength = coord_num1 - coord_num0 + 1;
     }
     /*  Determine canvas vertical world co-ordinates  */
-    if ( (*holder).auto_y )
+    if (holder->auto_y)
     {
-	(*win_scale).y_min = (*vdim).minimum;
-	(*win_scale).y_max = (*vdim).maximum;
-	vlength = (*vdim).length;
+	vstart = 0;
+	vend = vdim->length - 1;
     }
     else
     {
-	coord_num0 = ds_get_coord_num (vdim, (*win_scale).y_min,
-				       SEARCH_BIAS_CLOSEST);
-	coord_num1 = ds_get_coord_num (vdim, (*win_scale).y_max,
-				       SEARCH_BIAS_CLOSEST);
-	if (coord_num1 == coord_num0)
+	vstart = ds_get_coord_num (vdim, win_scale->y_min,SEARCH_BIAS_CLOSEST);
+	vend = ds_get_coord_num (vdim, win_scale->y_max, SEARCH_BIAS_CLOSEST);
+	if (vend == vstart)
 	{
 	    /*  Same dimension co-ordinate: separate  */
-	    --coord_num0;
-	    ++coord_num1;
+	    --vstart;
+	    ++vend;
 	}
-	(*win_scale).y_min = ds_get_coordinate (vdim, coord_num0);
-	(*win_scale).y_max = ds_get_coordinate (vdim, coord_num1);
-	vlength = coord_num1 - coord_num0 + 1;
     }
     /*  Determine number of pixels required  */
-    if ( (*holder).maintain_aspect_ratio )
+    if (holder->allow_truncation)
+    {
+	trunc_zoom (holder->maintain_aspect_ratio,
+		    &hstart, &hend, &win_scale->x_pixels, holder->int_x,
+		    &vstart, &vend, &win_scale->y_pixels, holder->int_y);
+    }
+    else if (holder->maintain_aspect_ratio)
     {
 	/*  Image data aspect ratio must be preserved: think harder  */
-	aspect_zoom (hlength, width, &(*win_scale).x_pixels, (*holder).int_x,
-		     vlength, height, &(*win_scale).y_pixels, (*holder).int_y);
-	(*win_scale).x_offset = (width - (*win_scale).x_pixels) / 2;
-	(*win_scale).y_offset = (height - (*win_scale).y_pixels) / 2;
-#ifdef DEBUG
-	(void) fprintf (stderr, "hlength: %d  width: %d  hpixels: %d\n",
-			hlength, width, (*win_scale).x_pixels);
-	(void) fprintf (stderr, "vlength: %d  height: %d  vpixels: %d\n",
-			vlength, height, (*win_scale).y_pixels);
-#endif
+	aspect_zoom (hend - hstart + 1, &win_scale->x_pixels, holder->int_x,
+		     vend - vstart + 1, &win_scale->y_pixels, holder->int_y);
     }
     else
     {
+	int hlength, vlength;
+
+	hlength = hend - hstart + 1;
+	vlength = vend - vstart + 1;
 	/* Can compute number of horizontal and vertical pixels independently*/
 	/*  Determine number of horizontal pixels required  */
-	if ( (*holder).int_x )
+	if (holder->int_x)
 	{
-	    if (width >= hlength)
+	    if (hlength <= width)
 	    {
-		/*  Zoom in  */
-		(*win_scale).x_pixels = (width / hlength) * hlength;
+		/*  Zoom in or 1:1  */
+		win_scale->x_pixels = (width / hlength) * hlength;
 	    }
 	    else
 	    {
 		/*  Zoom out  */
 		factor = hlength / width + 1;
 		while (hlength % factor != 0) ++factor;
-		(*win_scale).x_pixels = hlength / factor;
+		win_scale->x_pixels = hlength / factor;
 	    }
-	    (*win_scale).x_offset = (width - (*win_scale).x_pixels) / 2;
 	}
 	else
 	{
-	    (*win_scale).x_offset = 0;
-	    (*win_scale).x_pixels = width;
+	    win_scale->x_pixels = width;
 	}
 	/*  Determine number of vertical pixels required  */
-	if ( (*holder).int_y )
+	if (holder->int_y)
 	{
-	    if (height >= vlength)
+	    if (vlength <= height)
 	    {
 		/*  Zoom in  */
-		(*win_scale).y_pixels = (height / vlength) * vlength;
+		win_scale->y_pixels = (height / vlength) * vlength;
 	    }
 	    else
 	    {
-		/*  Zoom out  */
+		/*  Zoom out or 1:1  */
 		factor = vlength / height + 1;
 		while (vlength % factor != 0) ++factor;
-		(*win_scale).y_pixels = vlength / factor;
+		win_scale->y_pixels = vlength / factor;
 	    }
-	    (*win_scale).y_offset = (height - (*win_scale).y_pixels) / 2;
+	    win_scale->y_offset = (height - win_scale->y_pixels) / 2;
 	}
 	else
 	{
-	    (*win_scale).y_offset = 0;
-	    (*win_scale).y_pixels = height;
+	    win_scale->y_pixels = height;
 	}
     }
+    win_scale->x_offset = (width - win_scale->x_pixels) / 2;
+    win_scale->y_offset = (height - win_scale->y_pixels) / 2;
+    win_scale->x_min = ds_get_coordinate (hdim, hstart);
+    win_scale->x_max = ds_get_coordinate (hdim, hend);
+    win_scale->y_min = ds_get_coordinate (vdim, vstart);
+    win_scale->y_max = ds_get_coordinate (vdim, vend);
     /*  Now know the number of horizontal and vertical pixels required  */
-#ifdef DEBUG
-    (void) fprintf (stderr,
-		    "%s: width: %d hlength: %d  height: %d vlength: %d\n",
-		    function_name, width, hlength, height, vlength);
-#endif
     /*  Check if window scaling changed  */
     /*  First check for world co-ordinate change  */
-    if ( (*win_scale).x_min != (*vimage).win_scale.x_min )
+    if (win_scale->x_min != vimage->win_scale.x_min)
     {
 /*
-	(*vimage).win_scale.x_min = (*win_scale).x_min;
+	vimage->win_scale.x_min = win_scale->x_min;
 */
 	scale_changed = TRUE;
     }
-    if ( (*win_scale).x_max != (*vimage).win_scale.x_max )
+    if (win_scale->x_max != vimage->win_scale.x_max)
     {
 /*
-	(*vimage).win_scale.x_max = (*win_scale).x_max;
+	vimage->win_scale.x_max = win_scale->x_max;
 */
 	scale_changed = TRUE;
     }
-    if ( (*win_scale).y_min != (*vimage).win_scale.y_min )
+    if (win_scale->y_min != vimage->win_scale.y_min)
     {
 /*
-	(*vimage).win_scale.y_min = (*win_scale).y_min;
+	vimage->win_scale.y_min = win_scale->y_min;
 */
 	scale_changed = TRUE;
     }
-    if ( (*win_scale).y_max != (*vimage).win_scale.y_max )
+    if (win_scale->y_max != vimage->win_scale.y_max)
     {
 /*
-	(*vimage).win_scale.y_max = (*win_scale).y_max;
+	vimage->win_scale.y_max = win_scale->y_max;
 */
 	scale_changed = TRUE;
     }
@@ -2173,131 +2315,135 @@ static void worldcanvas_size_control_func (KWorldCanvas canvas,
 	    (void) fprintf (stderr, "%s: scale changed\n", function_name);
 	}
 	/*  Precomputed intensity range no longer valid  */
-	(*vimage).value_min = TOOBIG;
-	(*vimage).value_max = TOOBIG;
-	(*vimage).recompute = TRUE;
+	vimage->value_min = TOOBIG;
+	vimage->value_max = TOOBIG;
+	vimage->recompute = TRUE;
     }
 #ifdef DEBUG
     (void) fprintf (stderr, "%s: AFTER: %e %e  %e %e\n",
 		    function_name,
-		    (*win_scale).x_min, (*win_scale).x_max,
-		    (*win_scale).y_min, (*win_scale).y_max);
+		    win_scale->x_min, win_scale->x_max,
+		    win_scale->y_min, win_scale->y_max);
 #endif
-    if ( (*holder).auto_v && ( (*vimage).tc_arr_desc == NULL ) )
+    if ( holder->auto_v && (vimage->tc_arr_desc == NULL) )
     {
-	if ( ( (*vimage).value_min >= TOOBIG ) ||
-	    ( (*vimage).value_max >= TOOBIG ) )
+	if ( (vimage->value_min >= TOOBIG) ||
+	    (vimage->value_max >= TOOBIG) )
 	{
 	    /*  Must compute minimum and maximum values  */
-	    (*vimage).value_min = TOOBIG;
-	    (*vimage).value_max = -TOOBIG;
-	    if ( !ds_find_plane_extremes
-		( (*vimage).pc_slice,
-		 (*pack_desc).element_types[(*vimage).pc_elem_index],
-		 (*win_scale).conv_type,
-		 hdim, (*vimage).pc_hstride, vdim, (*vimage).pc_vstride,
-		 (*win_scale).x_min, (*win_scale).x_max,
-		 (*win_scale).y_min, (*win_scale).y_max,
-		 &(*vimage).value_min, &(*vimage).value_max ) )
+	    vimage->value_min = TOOBIG;
+	    vimage->value_max = -TOOBIG;
+	    if ( !ds_find_2D_extremes (vimage->pc_slice,
+				       vend - vstart + 1, voffsets + vstart,
+				       hend - hstart + 1, hoffsets + hstart,
+				       pack_desc->element_types[vimage->pc_elem_index],
+				       win_scale->conv_type,
+				       &vimage->value_min,&vimage->value_max) )
 	    {
 		(void) fprintf (stderr, "Error getting data range\n");
 		a_prog_bug (function_name);
 	    }
 	    /*Image intensity range has changed: cached image no longer valid*/
-	    (*vimage).recompute = TRUE;
+	    vimage->recompute = TRUE;
 	    /*  Ensure ranges are sensible  */
-	    if ( (*vimage).value_min >= (*vimage).value_max )
+	    if (vimage->value_min >= vimage->value_max)
 	    {
-		if ( (*vimage).value_min < 0.0 )
+		if (vimage->value_min < 0.0)
 		{
-		    (*vimage).value_min *= 2.0;
-		    (*vimage).value_max = 0.0;
+		    vimage->value_min *= 2.0;
+		    vimage->value_max = 0.0;
 		}
-		else if ( (*vimage).value_min > 0.0 )
+		else if (vimage->value_min > 0.0)
 		{
-		    (*vimage).value_min = 0.0;
-		    (*vimage).value_max *= 2.0;
+		    vimage->value_min = 0.0;
+		    vimage->value_max *= 2.0;
 		}
 		else
 		{
-		    (*vimage).value_min = -1.0;
-		    (*vimage).value_max = 1.0;
+		    vimage->value_min = -1.0;
+		    vimage->value_max = 1.0;
 		}
 	    }
 	}
 	/*  World canvas intensity scale has changed  */
-	(*win_scale).z_min = (*vimage).value_min;
-	(*win_scale).z_max = (*vimage).value_max;
+	win_scale->z_min = vimage->value_min;
+	win_scale->z_max = vimage->value_max;
     }
-    if ( (*vimage).changed && ( (*vimage).tc_arr_desc != NULL ) )
+    if ( vimage->changed && (vimage->tc_arr_desc != NULL) )
     {
+	if (vimage->tc_arr_desc->num_levels > 0)
+	{
+	    (void) fprintf (stderr, "%s: Tiling not supported.\n",
+			    function_name);
+	    return;
+	}
 	kwin_get_attributes (canvas_get_pixcanvas (canvas),
 			     KWIN_ATT_VISUAL, &canvas_visual,
 			     KWIN_ATT_DEPTH, &canvas_depth,
 			     KWIN_ATT_END);
 	if ( (canvas_visual == KWIN_VISUAL_PSEUDOCOLOUR) &&
-	    ( (*vimage).sequence != NULL ) )
+	    (vimage->sequence != NULL) )
 	{
 	    (void) fprintf (stderr,
-			    "RGB movies on PseudoColour canvas not implemented yet\n");
-	    return;
+			    "WARNING: RGB movies on PseudoColour canvas");
+	    (void) fprintf (stderr, " might fail and is slow!\n");
 	}
 	if (canvas_visual != KWIN_VISUAL_PSEUDOCOLOUR)
 	{
-	    (*vimage).changed = FALSE;
-	    (*vimage).recompute = TRUE;
+	    vimage->changed = FALSE;
+	    vimage->recompute = TRUE;
 	    return;
 	}
 	/*  If TrueColour image and PseudoColour canvas, recompress image  */
-	(*vimage).recompute = TRUE;
+	vimage->recompute = TRUE;
 	/*  Have RGB component arrays: create PseudoColour array  */
-	ds_dealloc_multi ( (*vimage).pc_multi_desc );
-	if ( ( pseudo_arr = iarray_create_2D ( (*vdim).length, (*hdim).length,
-					      K_UBYTE ) ) == NULL )
+	ds_dealloc_multi (vimage->pc_multi_desc);
+	if ( ( pseudo_arr = iarray_create_2D (vdim->length, hdim->length,
+					      K_UBYTE) ) == NULL )
 	{
 	    m_abort (function_name, "PseudoColour image");
 	}
 	iarray_set_world_coords (pseudo_arr, 1,
-				 (*hdim).minimum, (*hdim).maximum);
+				 hdim->minimum, hdim->maximum);
 	iarray_set_world_coords (pseudo_arr, 0,
-				 (*vdim).minimum, (*vdim).maximum);
-	(*vimage).pc_multi_desc = (*pseudo_arr).multi_desc;
-	(*vimage).pc_arr_desc = (*pseudo_arr).arr_desc;
-	(*vimage).pc_slice = (*pseudo_arr).data;
-	(*vimage).pc_hdim = 1;
-	(*vimage).pc_vdim = 0;
-	(*vimage).pc_elem_index = 0;
-	(*vimage).pc_hstride = 1;
-	(*vimage).pc_vstride = (*hdim).length;
-	++(* (*pseudo_arr).multi_desc ).attachments;
+				 vdim->minimum, vdim->maximum);
+	vimage->pc_multi_desc = pseudo_arr->multi_desc;
+	vimage->pc_arr_desc = pseudo_arr->arr_desc;
+	vimage->pc_slice = pseudo_arr->data;
+	vimage->pc_hdim = 1;
+	vimage->pc_vdim = 0;
+	vimage->pc_elem_index = 0;
+	vimage->pc_hstride = 1;
+	vimage->pc_vstride = hdim->length;
+	++pseudo_arr->multi_desc->attachments;
 	iarray_dealloc (pseudo_arr);
-	if ( !imc_24to8 ( (*vdim).length * (*hdim).length,
-			 (*vimage).tc_slice +
+	if ( !imc_24to8 (vdim->length * hdim->length,
+			 vimage->tc_slice +
 			 ds_get_element_offset (pack_desc,
-						(*vimage).tc_red_index),
-			 (*vimage).tc_slice +
+						vimage->tc_red_index),
+			 vimage->tc_slice +
 			 ds_get_element_offset (pack_desc,
-						(*vimage).tc_green_index),
-			 (*vimage).tc_slice +
+						vimage->tc_green_index),
+			 vimage->tc_slice +
 			 ds_get_element_offset (pack_desc,
-						(*vimage).tc_blue_index),
+						vimage->tc_blue_index),
 			 ds_get_packet_size (pack_desc),
-			 (*vimage).pc_slice, 1, DEFAULT_NUMBER_OF_COLOURS,
+			 vimage->pc_slice, 1, DEFAULT_NUMBER_OF_COLOURS,
 			 0, &cmap_pack_desc, &cmap_packet) )
 	{
 	    (void) fprintf (stderr, "Error compressing image\n");
-	    a_prog_bug (function_name);
+	    return;
 	}
 	cmap = canvas_get_cmap (canvas);
 	if ( !kcmap_copy_from_struct (cmap, cmap_pack_desc, cmap_packet) )
 	{
 	    m_abort (function_name, "Compressed image");
 	}
-	(*win_scale).z_min = 0.0;
-	(*win_scale).z_max = (kcmap_get_pixels (cmap, (unsigned long **) NULL)
-			      - 1);
+	win_scale->z_min = 0.0;
+	win_scale->z_max = (kcmap_get_pixels (cmap, (unsigned long **) NULL)
+			    -1);
 	ds_dealloc_packet (cmap_pack_desc, cmap_packet);
-	(*vimage).changed = FALSE;
+	vimage->changed = FALSE;
     }
 }   /*  End Function worldcanvas_size_control_func  */
 
@@ -2323,9 +2469,11 @@ static flag worldcanvas_position_func (KWorldCanvas canvas, double x, double y,
 {
     CanvasHolder holder;
     ViewableImage vimage;
+    unsigned int hdim_index, vdim_index;
     unsigned long x_coord, y_coord;
     double dx, dy;
     struct position_struct data;
+    unsigned char rgb_value[3];
     double value[2];
     array_desc *arr_desc;
     packet_desc *pack_desc;
@@ -2338,42 +2486,94 @@ static flag worldcanvas_position_func (KWorldCanvas canvas, double x, double y,
 	(void) fprintf (stderr, "NULL canvas holder\n");
 	a_prog_bug (function_name);
     }
-    if ( (*holder).magic_number != HOLDER_MAGIC_NUMBER )
+    if (holder->magic_number != HOLDER_MAGIC_NUMBER)
     {
 	(void) fprintf (stderr, "Invalid canvas holder object\n");
 	a_prog_bug (function_name);
     }
-    if (canvas != (*holder).canvas)
+    if (canvas != holder->canvas)
     {
 	(void) fprintf (stderr, "Different canvas in canvas holder object\n");
 	a_prog_bug (function_name);
     }
-    if ( (*holder).position_list == NULL ) return (FALSE);
-    if ( (*holder).active_image == NULL ) return (FALSE);
-    vimage = (*holder).active_image;
-    if ( (*vimage).tc_arr_desc != NULL )
+    if (holder->position_list == NULL) return (FALSE);
+    if (holder->active_image == NULL) return (FALSE);
+    vimage = holder->active_image;
+    if (vimage->tc_arr_desc == NULL)
     {
-	(void) fprintf (stderr, "%s: TrueColour images not supported yet\n",
-			function_name);
-	return (FALSE);
+	arr_desc = vimage->pc_arr_desc;
+	hdim_index = vimage->pc_hdim;
+	vdim_index = vimage->pc_vdim;
+	data.value = (void *) value;
+	data.type = K_DCOMPLEX;
     }
-    arr_desc = (*vimage).pc_arr_desc;
-    pack_desc = (*arr_desc).packet;
-    hdim = (*arr_desc).dimensions[(*vimage).pc_hdim];
-    vdim = (*arr_desc).dimensions[(*vimage).pc_vdim];
+    else
+    {
+	arr_desc = vimage->tc_arr_desc;
+	hdim_index = vimage->tc_hdim;
+	vdim_index = vimage->tc_vdim;
+	data.value = (void *) rgb_value;
+	data.type = K_UB_RGB;
+    }
+    pack_desc = arr_desc->packet;
+    hdim = arr_desc->dimensions[hdim_index];
+    vdim = arr_desc->dimensions[vdim_index];
     x_coord = ds_get_coord_num (hdim, x_lin, SEARCH_BIAS_LOWER);
     y_coord = ds_get_coord_num (vdim, y_lin, SEARCH_BIAS_LOWER);
     dx = ds_get_coordinate (hdim, x_coord);
     dy = ds_get_coordinate (vdim, y_coord);
-    if ( !ds_get_element
-	( (*vimage).pc_slice +
-	 (*arr_desc).offsets[(*vimage).pc_vdim][y_coord] +
-	 (*arr_desc).offsets[(*vimage).pc_hdim][x_coord],
-	 (*pack_desc).element_types[(*vimage).pc_elem_index],
-	 value, (flag *) NULL ) )
+    if (vimage->tc_arr_desc == NULL)
     {
-	(void) fprintf (stderr, "Error converting data\n");
-	return (FALSE);
+	if ( !ds_get_element (vimage->pc_slice +
+			      ds_get_element_offset (pack_desc,
+						     vimage->pc_elem_index) +
+			      arr_desc->offsets[vdim_index][y_coord] +
+			      arr_desc->offsets[hdim_index][x_coord],
+			      pack_desc->element_types[vimage->pc_elem_index],
+			      value, (flag *) NULL) )
+	{
+	    (void) fprintf (stderr, "Error converting data\n");
+	    return (FALSE);
+	}
+    }
+    else
+    {
+	if ( !ds_get_element (vimage->tc_slice +
+			      ds_get_element_offset (pack_desc,
+						     vimage->tc_red_index) +
+			      arr_desc->offsets[vdim_index][y_coord] +
+			      arr_desc->offsets[hdim_index][x_coord],
+			      pack_desc->element_types[vimage->tc_red_index],
+			      value, (flag *) NULL) )
+	{
+	    (void) fprintf (stderr, "Error converting data\n");
+	    return (FALSE);
+	}
+	rgb_value[0] = 0xff & (int) value[0];
+	if ( !ds_get_element (vimage->tc_slice +
+			      ds_get_element_offset (pack_desc,
+						     vimage->tc_green_index) +
+			      arr_desc->offsets[vdim_index][y_coord] +
+			      arr_desc->offsets[hdim_index][x_coord],
+			      pack_desc->element_types[vimage->tc_green_index],
+			      value, (flag *) NULL) )
+	{
+	    (void) fprintf (stderr, "Error converting data\n");
+	    return (FALSE);
+	}
+	rgb_value[1] = 0xff & (int) value[0];
+	if ( !ds_get_element (vimage->tc_slice +
+			      ds_get_element_offset (pack_desc,
+						     vimage->tc_blue_index) +
+			      arr_desc->offsets[vdim_index][y_coord] +
+			      arr_desc->offsets[hdim_index][x_coord],
+			      pack_desc->element_types[vimage->tc_blue_index],
+			      value, (flag *) NULL) )
+	{
+	    (void) fprintf (stderr, "Error converting data\n");
+	    return (FALSE);
+	}
+	rgb_value[2] = 0xff & (int) value[0];
     }
     x = dx;
     y = dy;
@@ -2381,12 +2581,11 @@ static flag worldcanvas_position_func (KWorldCanvas canvas, double x, double y,
     /*  Call event consumer functions  */
     data.x = x;
     data.y = y;
-    data.value = value;
     data.event_code = event_code;
     data.e_info = e_info;
     data.x_lin = dx;
     data.y_lin = dy;
-    return ( c_call_callbacks ( (*holder).position_list, &data ) );
+    return ( c_call_callbacks (holder->position_list, &data) );
 }   /*  End Function worldcanvas_position_func  */
 
 static flag position_event_func (void *object, void *client1_data,
@@ -2406,48 +2605,47 @@ static flag position_event_func (void *object, void *client1_data,
     static char function_name[] = "position_event_func";
 
     holder = (CanvasHolder) object;
-    vimage = (*holder).active_image;
+    vimage = holder->active_image;
     VERIFY_VIMAGE (vimage);
     data = (struct position_struct *) call_data;
     func = ( flag (*) () ) client2_data;
-    return ( (*func) (vimage, (*data).x, (*data).y, (*data).value,
-		      (*data).event_code, (*data).e_info, client1_data,
-		      (*data).x_lin, (*data).y_lin) );
+    return ( (*func) (vimage, data->x, data->y, data->value,
+		      data->event_code, data->e_info, client1_data,
+		      data->x_lin, data->y_lin, data->type) );
 }   /*  End Function position_event_func  */
 
-static void aspect_zoom (int hlength, int width, int *hpixels, flag int_x,
-			 int vlength, int height, int *vpixels, flag int_y)
-/*  This routine will compute the number of horizontal and vertical pixels to
-    use whilst maintaining the image data aspect ratio.
-    The number of horizontal data values must be given by  hlength  .
-    The number of horizontal pixels available must be given by  width  .
-    The number of horizontal pixels to use will be written to the storage
-    pointed to by  hpixels  .
-    If the horizontal axis must have integral zooming, the value of  int_x
-    must be TRUE.
-    The number of vertical data values must be given by  vlength  .
-    The number of vertical pixels available must be given by  height  .
-    The number of vertical pixels to use will be written to the storage
-    pointed to by  vpixels  .
-    If the vertical axis must have integral zooming, the value of  int_y
-    must be TRUE.
-    The routine returns nothing.
+static void aspect_zoom (int hlength, int *hpixels, flag int_x,
+			 int vlength, int *vpixels, flag int_y)
+/*  [PURPOSE] This routine will compute the number of horizontal and vertical
+    pixels to use whilst maintaining the image data aspect ratio.
+    <hlength> The number of horizontal data values.
+    <hpixels> The number of horizontal pixels available. This should be
+    modified to reflect the number of pixels required.
+    <int_x> If TRUE, the horizontal axis will have integral zooming.
+    <vlength> The number of vertical data values.
+    <vpixels> The number of vertical pixels available. This should be modified
+    to reflect the number of pixels required.
+    <int_y> If TRUE, the vertical axis will have integral zooming.
+    [RETURNS] Nothing.
 */
 {
     int hfactor, vfactor;
     int factor;
     static char function_name[] = "aspect_zoom";
 
+    (void) fprintf (stderr,
+		    "h_values: %d  h_pixels: %d  v_values: %d v_pixels: %d\n",
+		    hlength, *hpixels, vlength, *vpixels);
     /*  NOTE:  a 1:1 zoom ratio is termed a zoom out of factor 1  */
     /*  Zoom in: replicate image data.    Zoom out: shrink image data  */
     if (int_x && int_y)
     {
 	/*  Both axes require integral zoom factors  */
-	if ( (width > hlength) && (height > vlength) )
+	if ( (*hpixels > hlength) && (*vpixels > vlength) )
 	{
 	    /*  Zoom in both axes  */
-	    hfactor = width / hlength;
-	    vfactor = height / vlength;
+	    hfactor = *hpixels / hlength;
+	    vfactor = *vpixels / vlength;
 	    /*  Use smallest zoom in factor  */
 	    factor = (hfactor > vfactor) ? vfactor : hfactor;
 	    *hpixels = factor * hlength;
@@ -2455,20 +2653,20 @@ static void aspect_zoom (int hlength, int width, int *hpixels, flag int_x,
 	    return;
 	}
 	/*  At least one axis must be zoomed out  */
-	if (width < hlength)
+	if (*hpixels < hlength)
 	{
 	    /*  Horizontal axis must be zoomed out  */
-	    hfactor = hlength / width + 1;
+	    hfactor = hlength / *hpixels;
 	}
 	else
 	{
 	    /*  Zoom out 1:1  */
 	    hfactor = 1;
 	}
-	if (height < vlength)
+	if (*vpixels < vlength)
 	{
 	    /*  Vertical axis must be zoomed out  */
-	    vfactor = vlength / height + 1;
+	    vfactor = vlength / *vpixels;
 	}
 	else
 	{
@@ -2484,8 +2682,6 @@ static void aspect_zoom (int hlength, int width, int *hpixels, flag int_x,
 		/*  Too much: fail  */
 		(void) fprintf (stderr,
 				"Cannot maintain aspect ratio without a bigger window\n");
-		*hpixels = width;
-		*vpixels = height;
 		return;
 	    }
 	}
@@ -2497,19 +2693,141 @@ static void aspect_zoom (int hlength, int width, int *hpixels, flag int_x,
     a_prog_bug (function_name);
 }   /*  End Function aspect_zoom  */
 
+static void trunc_zoom (flag maintain_aspect_ratio,
+			int *hstart, int *hend, int *x_pixels, flag int_x,
+			int *vstart, int *vend, int *y_pixels, flag int_y)
+/*  [PURPOSE] This routine will compute the number of horizontal and vertical
+    pixels to use, permitting the input image to be truncated.
+    <maintain_aspect_ratio> If TRUE, the aspect ratio must be preserved.
+    <hstart> The starting horizontal image value co-ordinate. This may be
+    modified inwards.
+    <hend> The end horizontal image value co-ordinate. This may be modified
+    inwards.
+    <x_pixels> The number of horizontal pixels available. This may be modified
+    inwards.
+    <int_x> If TRUE, the horizontal axis must have integral zooming.
+    <vstart> The starting vertical image value co-ordinate. This may be
+    modified inwards.
+    <vend> The end vertical image value co-ordinate. This may be modified
+    inwards.
+    <y_pixels> The number of vertical pixels available. This may be modified
+    inwards.
+    <int_y> If TRUE, the vertical axis must have integral zooming.
+    [RETURNS] Nothing.
+*/
+{
+    flag work;
+    int hlength, vlength;
+    int hfactor, vfactor, factor;
+    static char function_name[] = "trunc_zoom";
+
+    if (!int_x || !int_y)
+    {
+	(void) fprintf (stderr, "Non-integral zooming not supported yet\n");
+	a_prog_bug (function_name);
+    }
+    /*  Integral zooming required  */
+    hlength = *hend - *hstart + 1;
+    vlength = *vend - *vstart + 1;
+    if (maintain_aspect_ratio)
+    {
+	if ( (hlength > *x_pixels) || (vlength > *y_pixels) )
+	{
+	    /*  Must shrink image to fit  */
+	    hfactor = hlength / *x_pixels;
+	    vfactor = vlength / *y_pixels;
+	    factor = (hfactor > vfactor) ? hfactor : vfactor;
+	    work = TRUE;
+	    while (work)
+	    {
+		if ( (hlength / factor > *x_pixels) ||
+		    (vlength / factor > *y_pixels) )
+		{
+		    ++factor;
+		    continue;
+		}
+		work = FALSE;
+	    }
+	    /*  Modify input image co-ordinates  */
+	    *hend = *hstart + (hlength / factor) * factor - 1;
+	    *vend = *vstart + (vlength / factor) * factor - 1;
+	    /*  Modify output pixels  */
+	    *x_pixels = hlength / factor;
+	    *y_pixels = vlength / factor;
+	    return;
+	}
+	/*  No shrinkage, possible expansion  */
+	hfactor = *x_pixels / hlength;
+	vfactor = *y_pixels / vlength;
+	/*  Use smallest zoom in factor  */
+	factor = (hfactor > vfactor) ? vfactor : hfactor;
+	*x_pixels = factor * hlength;
+	*y_pixels = factor * vlength;
+	return;
+    }
+    /*  Scale for each axis is independant  */
+    if (hlength > *x_pixels)
+    {
+	/*  Must shrink horizontally  */
+	hfactor = hlength / *x_pixels;
+	work = TRUE;
+	while (work)
+	{
+	    if (hlength / hfactor > *x_pixels)
+	    {
+		++hfactor;
+		continue;
+	    }
+	    work = FALSE;
+	}
+	/*  Modify input image co-ordinates  */
+	*hend = *hstart + (hlength / hfactor) * hfactor - 1;
+	/*  Modify output pixels  */
+	*x_pixels = hlength / hfactor;
+    }
+    else
+    {
+	/*  Possible horizontal expansion  */
+	*x_pixels = (*x_pixels / hlength) * hlength;
+    }
+    if (vlength > *y_pixels)
+    {
+	/*  Must shrink vertically  */
+	vfactor = vlength / *y_pixels;
+	work = TRUE;
+	while (work)
+	{
+	    if (vlength / vfactor > *y_pixels)
+	    {
+		++vfactor;
+		continue;
+	    }
+	    work = FALSE;
+	}
+	/*  Modify input image co-ordinates  */
+	*vend = *vstart + (vlength / vfactor) * vfactor - 1;
+	/*  Modify output pixels  */
+	*y_pixels = vlength / vfactor;
+    }
+    else
+    {
+	/*  Possible horizontal expansion  */
+	*y_pixels = (*y_pixels / vlength) * vlength;
+    }
+}   /*  End Function trunc_zoom  */
+
+
 static flag coord_convert_func (KWorldCanvas canvas,
 				struct win_scale_type *win_scale,
-				int *px, int *py, double *wx, double *wy,
+				double *x, double *y,
 				flag to_world, void **info)
 /*  This routine will modify the window scaling information for a world
     canvas.
     The canvas is given by  canvas  .
     The window scaling information is pointed to by  win_scale  .The data
     herein may be modified.
-    The horizontal pixel co-ordinate storage must be pointed to by  px  .
-    The vertical pixel co-ordinate storage must be pointed to by  py  .
-    The horizontal world co-ordinate storage must be pointed to by  wx  .
-    The vertical world co-ordinate storage must be pointed to by  wy  .
+    The horizontal co-ordinate storage must be pointed to by  x  .
+    The vertical co-ordinate storage must be pointed to by  y  .
     If the value of  to_world  is TRUE, then a pixel to world co-ordinate
     transform is required, else a world to pixel co-ordinate transform is
     required.
@@ -2521,59 +2839,67 @@ static flag coord_convert_func (KWorldCanvas canvas,
 {
     CanvasHolder holder;
     ViewableImage vimage;
-    int x_pix, y_pix;
     int coord_num0, coord_num1;
     double coord0, coord1;
     double world_x, world_y;
+    double x_pix, y_pix;
     array_desc *arr_desc;
     packet_desc *pack_desc;
     dim_desc *hdim;
     dim_desc *vdim;
-    static char function_name[] = "coord_convert_func";
+    static char function_name[] = "__viewimg_coord_convert_func";
 
     if ( (holder = (CanvasHolder) *info) == NULL )
     {
 	(void) fprintf (stderr, "NULL canvas holder\n");
 	a_prog_bug (function_name);
     }
-    if ( (*holder).magic_number != HOLDER_MAGIC_NUMBER )
+    if (holder->magic_number != HOLDER_MAGIC_NUMBER)
     {
 	(void) fprintf (stderr, "Invalid canvas holder object\n");
 	a_prog_bug (function_name);
     }
-    if (canvas != (*holder).canvas)
+    if (canvas != holder->canvas)
     {
 	(void) fprintf (stderr, "Different canvas in canvas holder object\n");
 	a_prog_bug (function_name);
     }
-    if ( (vimage = (*holder).active_image) == NULL ) return (FALSE);
-    if ( (*vimage).tc_arr_desc == NULL )
+    if ( (vimage = holder->active_image) == NULL) return (FALSE);
+    if (vimage->tc_arr_desc == NULL)
     {
-	arr_desc = (*vimage).pc_arr_desc;
-	hdim = (*arr_desc).dimensions[(*vimage).pc_hdim];
-	vdim = (*arr_desc).dimensions[(*vimage).pc_vdim];
+	arr_desc = vimage->pc_arr_desc;
+	hdim = arr_desc->dimensions[vimage->pc_hdim];
+	vdim = arr_desc->dimensions[vimage->pc_vdim];
     }
     else
     {
-	arr_desc = (*vimage).tc_arr_desc;
-	hdim = (*arr_desc).dimensions[(*vimage).tc_hdim];
-	vdim = (*arr_desc).dimensions[(*vimage).tc_vdim];
+	arr_desc = vimage->tc_arr_desc;
+	hdim = arr_desc->dimensions[vimage->tc_hdim];
+	vdim = arr_desc->dimensions[vimage->tc_vdim];
     }
-    pack_desc = (*arr_desc).packet;
+    pack_desc = arr_desc->packet;
+    /*  These are the correspondences we have to ensure:
+	wx = x_min              <-->    px = x_offset
+	wx = x_max + x_delta    <-->    px = x_offset + x_pixels
+	wy = y_min              <-->    py = y_offset + y_pixels - 1
+	wy = y_max + y_delta    <-->    py = y_offset - 1
+
+	where x_delta and y_delta are the world co-ordinate increments.
+	*/
     if (to_world)
     {
 	/*  Convert from pixel to world co-ordinates  */
-	x_pix = *px - (*win_scale).x_offset;
-	y_pix = *py - (*win_scale).y_offset;
-	y_pix = (*win_scale).y_pixels - y_pix - 1;
+	x_pix = *x - (double) win_scale->x_offset;
+	y_pix = *y - (double) win_scale->y_offset;
+	y_pix = (double) (win_scale->y_pixels - 1) - y_pix;
 	/*  Removed offsets and flipped vertical  */
 	/*  Compute x co-ordinate  */
-	coord_num0 = ds_get_coord_num (hdim, (*win_scale).x_min,
+	coord_num0 = ds_get_coord_num (hdim, win_scale->x_min,
 				       SEARCH_BIAS_CLOSEST);
 	coord0 = ds_get_coordinate (hdim, coord_num0);
-	coord_num1 = ds_get_coord_num (hdim, (*win_scale).x_max,
+	coord_num1 = ds_get_coord_num (hdim, win_scale->x_max,
 				       SEARCH_BIAS_CLOSEST);
-	if (coord_num1 + 1 < (*hdim).length)
+	if (coord_num1 + 1 < hdim->length)
 	{
 	    coord1 = ds_get_coordinate (hdim, coord_num1 + 1);
 	}
@@ -2582,17 +2908,16 @@ static flag coord_convert_func (KWorldCanvas canvas,
 	    coord1 = ds_get_coordinate (hdim, coord_num1);
 	    coord1 += (coord1 - coord0) / (coord_num1 - coord_num0);
 	}
-	*wx = (coord1 - coord0) * (double) x_pix;
-	*wx /= (double) ( (*win_scale).x_pixels );
-	*wx += coord0;
-	*wx += (coord1 - coord0) / (double) (coord_num1 - coord_num0) / 1000.0;
+	*x = (coord1 - coord0) * x_pix / (double) win_scale->x_pixels;
+	*x += coord0;
+	*x += (coord1 - coord0) / (double) (coord_num1 - coord_num0) / 1000.0;
 	/*  Compute y co-ordinate  */
-	coord_num0 = ds_get_coord_num (vdim, (*win_scale).y_min,
+	coord_num0 = ds_get_coord_num (vdim, win_scale->y_min,
 				       SEARCH_BIAS_CLOSEST);
 	coord0 = ds_get_coordinate (vdim, coord_num0);
-	coord_num1 = ds_get_coord_num (vdim, (*win_scale).y_max,
+	coord_num1 = ds_get_coord_num (vdim, win_scale->y_max,
 				       SEARCH_BIAS_CLOSEST);
-	if (coord_num1 + 1 < (*vdim).length)
+	if (coord_num1 + 1 < vdim->length)
 	{
 	    coord1 = ds_get_coordinate (vdim, coord_num1 + 1);
 	}
@@ -2601,20 +2926,19 @@ static flag coord_convert_func (KWorldCanvas canvas,
 	    coord1 = ds_get_coordinate (vdim, coord_num1);
 	    coord1 += (coord1 - coord0) / (coord_num1 - coord_num0);
 	}
-	*wy = (coord1 - coord0) * (double) y_pix;
-	*wy /= (double) ( (*win_scale).y_pixels );
-	*wy += (coord1 - coord0) / (double) (coord_num1 - coord_num0) / 1000.0;
-	*wy += coord0;
+	*y = (coord1 - coord0) * y_pix / (double) win_scale->y_pixels;
+	*y += (coord1 - coord0) / (double) (coord_num1 - coord_num0) / 1000.0;
+	*y += coord0;
 	return (TRUE);
     }
     /*  Convert from world to pixel co-ordinates  */
     /*  Compute x co-ordinate  */
-    coord_num0 = ds_get_coord_num (hdim, (*win_scale).x_min,
+    coord_num0 = ds_get_coord_num (hdim, win_scale->x_min,
 				   SEARCH_BIAS_CLOSEST);
     coord0 = ds_get_coordinate (hdim, coord_num0);
-    coord_num1 = ds_get_coord_num (hdim, (*win_scale).x_max,
+    coord_num1 = ds_get_coord_num (hdim, win_scale->x_max,
 				   SEARCH_BIAS_CLOSEST);
-    if (coord_num1 + 1 < (*hdim).length)
+    if (coord_num1 + 1 < hdim->length)
     {
 	coord1 = ds_get_coordinate (hdim, coord_num1 + 1);
     }
@@ -2623,17 +2947,17 @@ static flag coord_convert_func (KWorldCanvas canvas,
 	coord1 = ds_get_coordinate (hdim, coord_num1);
 	coord1 += (coord1 - coord0) / (coord_num1 - coord_num0);
     }
-    world_x = (*wx - coord0) * (double) ( (*win_scale).x_pixels );
-    world_x /= coord1 - coord0;
-    world_x += 0.01;
-    *px = (int) world_x + (*win_scale).x_offset;
+    x_pix = (*x - coord0) * (double) win_scale->x_pixels / (coord1 - coord0);
+    *x = x_pix + (double) win_scale->x_offset;
     /*  Compute y co-ordinate  */
-    coord_num0 = ds_get_coord_num (vdim, (*win_scale).y_min,
+    coord_num0 = ds_get_coord_num (vdim, win_scale->y_min,
 				   SEARCH_BIAS_CLOSEST);
     coord0 = ds_get_coordinate (vdim, coord_num0);
-    coord_num1 = ds_get_coord_num (vdim, (*win_scale).y_max,
+    /*  Find co-ordinate one data value beyond canvas maximum  */
+    coord_num1 = ds_get_coord_num (vdim, win_scale->y_max,
 				   SEARCH_BIAS_CLOSEST);
-    if (coord_num1 + 1 < (*vdim).length)
+    coord1 = ds_get_coordinate (vdim, coord_num1);
+    if (coord_num1 + 1 < vdim->length)
     {
 	coord1 = ds_get_coordinate (vdim, coord_num1 + 1);
     }
@@ -2642,11 +2966,8 @@ static flag coord_convert_func (KWorldCanvas canvas,
 	coord1 = ds_get_coordinate (vdim, coord_num1);
 	coord1 += (coord1 - coord0) / (coord_num1 - coord_num0);
     }
-    world_y = (*wy - coord0) * (double) ( (*win_scale).y_pixels );
-    world_y /= coord1 - coord0;
-    world_y += 0.01;
-    y_pix = (int) (world_y + 0.01);
+    y_pix = (*y - coord0) * (double) win_scale->y_pixels / (coord1 - coord0);
     /*  Flip vertical  */
-    *py = (*win_scale).y_offset + (*win_scale).y_pixels - 1 - y_pix;
+    *y = (double) (win_scale->y_offset + win_scale->y_pixels - 1) - y_pix;
     return (TRUE);
 }   /*  End Function coord_convert_func  */

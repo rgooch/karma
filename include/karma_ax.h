@@ -2,7 +2,7 @@
 
     Header for  ax_  package.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,19 +31,22 @@
 
     Written by      Richard Gooch   25-SEP-1992
 
-    Last updated by Richard Gooch   29-NOV-1993
+    Last updated by Richard Gooch   7-APR-1995
 
 */
 
-#ifndef KARMA_AX_H
-#define KARMA_AX_H
-
-
-#ifndef KARMA_H
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
 #  include <karma.h>
 #endif
-#include <k_win_scale.h>
+
+#if !defined(K_WIN_SCALE_H) || defined(MAKEDEPEND)
+#  include <k_win_scale.h>
+#endif
+
 #include <X11/Xlib.h>
+
+#ifndef KARMA_AX_H
+#define KARMA_AX_H
 
 
 /*  File:   axes.c   */

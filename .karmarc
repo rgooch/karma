@@ -1,0 +1,51 @@
+#  .karmarc  Bourne shell script. This shell script should be sourced by
+# every  Karma  user. This file created because of a request from a
+# Linux-SLS user. But you really should be using  tcsh  :-)
+
+
+# Written by		Richard Gooch	14-DEC-1993
+
+# Last updated by	Richard Gooch	3-NOV-1994
+
+
+# Define Karma installed base (for ordinary users)
+KARMABASE=/usr/local/karma; export KARMABASE
+
+KARMABINPATH=${KARMABASE}/bin; export KARMABINPATH
+KARMALIBPATH=${KARMABASE}/lib; export KARMALIBPATH
+KARMAINCLUDEPATH=${KARMABASE}/include; export KARMAINCLUDEPATH
+
+# Set version number environment variable
+KARMA_VERSION=`cat $KARMABASE/.version`; export KARMA_VERSION
+
+# Libraries to depend on (for modules)
+if [ "$OS" = "SunOS" ]
+then
+    KARMA_CC="gcc -fpcc-struct-return"; export KARMA_CC
+    KARMA_CPIC="-fPIC"; export KARMA_CPIC
+    KDEPLIB_KARMA=$KARMALIBPATH/libkarma.sa.$KARMA_VERSION;export KDEPLIB_KARMA
+else
+    if [ "$OS" = "Linux" ]
+    then
+	KARMA_CC cc; export KARMA_CC
+	KDEPLIB_KARMA=$KARMALIBPATH/libkarma.sa; export KDEPLIB_KARMA
+	KDEPLIB_KARMAX11=$KARMALIBPATH/libkarmaX11.sa; export KDEPLIB_KARMAX11
+	KDEPLIB_KARMAXT=$KARMALIBPATH/libkarmaXt.sa; export KDEPLIB_KARMAXT
+	KDEPLIB_KARMAXVIEW=$KARMALIBPATH/libkarmaxview.sa
+	export KDEPLIB_KARMAXVIEW
+	KDEPLIB_KARMAGRAPHICS=$KARMALIBPATH/libkarmagraphics.sa
+	export KDEPLIB_KARMAGRAPHICS
+    else
+	KARMA_CC=cc; export KARMA_CC
+	KDEPLIB_KARMA=$KARMALIBPATH/libkarma.a; export KDEPLIB_KARMA
+	KDEPLIB_KARMAX11=$KARMALIBPATH/libkarmaX11.a; export KDEPLIB_KARMAX11
+	KDEPLIB_KARMAXT=$KARMALIBPATH/libkarmaXt.a; export KDEPLIB_KARMAXT
+	KDEPLIB_KARMAXVIEW=$KARMALIBPATH/libkarmaxview.a
+	export KDEPLIB_KARMAXVIEW
+	KDEPLIB_KARMAGRAPHICS=$KARMALIBPATH/libkarmagraphics.a
+	export KDEPLIB_KARMAGRAPHICS
+    fi
+fi
+
+PATH=${KARMABASE}/cm_script:${KARMABASE}/csh_script:$KARMABINPATH:$PATH
+export PATH

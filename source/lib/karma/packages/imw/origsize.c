@@ -45,13 +45,28 @@
     Updated by      Richard Gooch   2-JAN-1995: Changed function interface to
   drop input stride and intensity scaling parameters.
 
-    Last updated by Richard Gooch   23-JAN-1995: Added a cast to keep IRIX
+    Updated by      Richard Gooch   23-JAN-1995: Added a cast to keep IRIX
   compiler happy.
+
+    Updated by      Richard Gooch   9-APR-1995: Made use of
+  <ds_complex_to_real_1D> routine.
+
+    Updated by      Richard Gooch   19-APR-1995: Cleaned some code.
+
+    Updated by      Richard Gooch   20-APR-1995: Fixed bug with multiplying
+  huge (int) values.
+
+    Updated by      Richard Gooch   7-MAY-1995: Placate gcc -Wall
+
+    Last updated by Richard Gooch   29-JUN-1995: Changed
+  <setup_ubyte_lookup_table> and <setup_byte_lookup_table> to use floating
+  point calculations with offset.
 
 
 */
 
 #include <stdio.h>
+#include <unistd.h>
 #include <math.h>
 #include <karma.h>
 #include <karma_imw.h>
@@ -83,7 +98,7 @@ static unsigned char byte_lookup_table[UBYTE_TABLE_LENGTH];
 
 /*  Public routines follow  */
 
-/*PUBLIC_FUNCTION*/
+/*OBSOLETE_FUNCTION*/
 flag imw_to8_o (unsigned char *out_image, iaddr out_hstride, iaddr out_vstride,
 		int width, int height, CONST char *inp_image,
 		CONST iaddr *inp_hoffsets, CONST iaddr *inp_voffsets,
@@ -92,8 +107,31 @@ flag imw_to8_o (unsigned char *out_image, iaddr out_hstride, iaddr out_vstride,
 		unsigned char blank_pixel,
 		unsigned char min_sat_pixel, unsigned char max_sat_pixel,
 		double i_min, double i_max)
+/*  OBSOLETE: use <imw_to8_oi> instead.
+*/
+{
+    return ( imw_to8_oi (out_image, out_hstride, out_vstride, width, height,
+			 inp_image, inp_hoffsets, inp_voffsets, inp_type,
+			 conv_type, num_pixels, pixel_values,
+			 blank_pixel, min_sat_pixel, max_sat_pixel,
+			 i_min,  i_max, ( flag (*) () ) NULL, NULL) );
+}   /*  End Function imw_to8_o  */
+
+
+/*PUBLIC_FUNCTION*/
+flag imw_to8_oi (unsigned char *out_image,
+		 iaddr out_hstride, iaddr out_vstride,
+		 int width, int height, CONST char *inp_image,
+		 CONST iaddr *inp_hoffsets, CONST iaddr *inp_voffsets,
+		 unsigned int inp_type, unsigned int conv_type,
+		 unsigned int num_pixels, CONST unsigned char *pixel_values,
+		 unsigned char blank_pixel,
+		 unsigned char min_sat_pixel, unsigned char max_sat_pixel,
+		 double i_min, double i_max,
+		 flag (*iscale_func) (), void *iscale_info)
 /*  [PURPOSE] This routine will convert an image from one format to an 8 bit
-    image of pixels, maintaining the original image size.
+    image of pixels, maintaining the original image size. The output image is
+    flipped vertically relative to the input image.
     <out_image> The output image will be written here.
     <out_hstride> The stride between successive horizontal pixels (in bytes).
     <out_vstride> The stride between successive vertical pixels (in bytes).
@@ -114,17 +152,43 @@ flag imw_to8_o (unsigned char *out_image, iaddr out_hstride, iaddr out_vstride,
     above the maximum value.
     <i_min> The minimum intensity value.
     <i_max> The maximum intensity value.
+    <iscale_func> The function to be called when non-linear intensity scaling
+    is required. If NULL, linear intensity scaling is used. The interface to
+    this function is as follows:
+    [<pre>]
+    flag iscale_func (double *out, unsigned int out_stride,
+                      double *inp, unsigned int inp_stride,
+		      unsigned int num_values, double i_min, double i_max,
+		      void *info)
+    *   [PURPOSE] This routine will perform an arbitrary intensity scaling on
+        an array of values. This routine may be called many times to scale an
+	image.
+        <out> The output array.
+	<out_stride> The stride (in doubles) of the output array.
+	<inp> The input array.
+	<inp_stride> The stride (in doubles) of the input array.
+	<num_values> The number of values to scale.
+	<i_min> The minimum intensity value.
+	<i_max> The maximum intensity value.
+	<info> A pointer to arbitrary information.
+	[RETURNS] TRUE on success, else FALSE.
+    *
+    [</pre>]
+
+    <iscale_info> A pointer to arbitrary information for <<iscale_func>>.
+    [MT-LEVEL] Unsafe.
     [RETURNS] TRUE on success, else FALSE.
 */
 {
     flag complex;
-    int pixel_count;
+    flag fast_conversion = FALSE;
+    int hcount, vcount;
     long l_mul;
     long l_div;
     long l_data;
-    long l_min;
-    long l_max;
-    long l_blank;
+    long l_min = 1;    /*  Initialised to keep compiler happy  */
+    long l_max = -1;   /*  Initialised to keep compiler happy  */
+    long l_blank = 0;  /*  Initialised to keep compiler happy  */
     float f_mul;
     float f_data;
     float f_min = i_min;
@@ -133,16 +197,13 @@ flag imw_to8_o (unsigned char *out_image, iaddr out_hstride, iaddr out_vstride,
     double d_toobig = TOOBIG;
     double d_mul;
     double d_data;
-    double *values;
-
-
-    int hcount, vcount;
     CONST char *inp_line, *inp_ptr;
     unsigned char *out_line;
     CONST unsigned char *b_table;
+    double *values, *val_ptr;
     extern unsigned char byte_lookup_table[BYTE_TABLE_LENGTH];
     extern unsigned char ubyte_lookup_table[UBYTE_TABLE_LENGTH];
-    static char function_name[] = "imw_to8_o";
+    static char function_name[] = "imw_to8_oi";
 
     if ( (inp_hoffsets == NULL) || (inp_voffsets == NULL) )
     {
@@ -166,8 +227,11 @@ flag imw_to8_o (unsigned char *out_image, iaddr out_hstride, iaddr out_vstride,
     {
       case K_FLOAT:
       case K_DOUBLE:
+	fast_conversion = TRUE;
+	break;
       case K_COMPLEX:
       case K_DCOMPLEX:
+	fast_conversion = FALSE;
 	break;
       case K_UBYTE:
 	l_min = i_min;
@@ -176,6 +240,7 @@ flag imw_to8_o (unsigned char *out_image, iaddr out_hstride, iaddr out_vstride,
 	setup_ubyte_lookup_table ( (long) i_min, (long) i_max,
 				  num_pixels, pixel_values,
 				  min_sat_pixel, max_sat_pixel );
+	fast_conversion = TRUE;
 	break;
       case K_BYTE:
 	l_min = i_min;
@@ -184,18 +249,19 @@ flag imw_to8_o (unsigned char *out_image, iaddr out_hstride, iaddr out_vstride,
 	setup_byte_lookup_table ( (long) i_min, (long) i_max,
 				 num_pixels, pixel_values,
 				 blank_pixel, min_sat_pixel, max_sat_pixel );
+	fast_conversion = TRUE;
 	break;
       case K_SHORT:
 	l_min = i_min;
 	l_max = i_max;
 	l_blank = -32768;
+	fast_conversion = TRUE;
 	break;
       default:
-	l_min = i_min;
-	l_max = i_max;
-	l_blank = -2147483648;
+	fast_conversion = FALSE;
 	break;
     }
+    if (iscale_func != NULL) fast_conversion = FALSE;
     /*  Allocate values buffer  */
     if ( ( values = alloc_values_buffer ( (unsigned int) width ) ) == NULL )
     {
@@ -209,248 +275,162 @@ flag imw_to8_o (unsigned char *out_image, iaddr out_hstride, iaddr out_vstride,
 	inp_line = inp_image + inp_voffsets[vcount];
 	/*  inp_line  may be modified now  */
 	/*  Now have pointers to input and output image lines  */
-	/*  Switch on element type  */
-	switch (inp_type)
+	if (fast_conversion)
 	{
-	  case K_FLOAT:
-	    f_mul = (num_pixels - 1) / (f_max - f_min);
-	    /*  No need to switch on conversion type  */
-	    /*  Loop  */
-	    for (hcount = 0; hcount < width;
-		 ++hcount, out_line += out_hstride)
+	    switch (inp_type)
 	    {
-		inp_ptr = inp_line + inp_hoffsets[hcount];
-		if ( (f_data = *(float *) inp_ptr) < f_min )
+	      case K_FLOAT:
+		f_mul = (num_pixels - 1) / (f_max - f_min);
+		for (hcount = 0; hcount < width;
+		     ++hcount, out_line += out_hstride)
 		{
-		    *out_line = min_sat_pixel;
+		    inp_ptr = inp_line + inp_hoffsets[hcount];
+		    if ( (f_data = *(float *) inp_ptr) < f_min )
+		    {
+			*out_line = min_sat_pixel;
+		    }
+		    else if (f_data >= f_toobig)
+		    {
+			*out_line = blank_pixel;
+		    }
+		    else if (f_data > f_max)
+		    {
+			*out_line = max_sat_pixel;
+		    }
+		    else
+		    {
+			*out_line = pixel_values[(int) ( (f_data - f_min)
+							* f_mul + 0.5 )];
+		    }
 		}
-		else if (f_data >= f_toobig)
+		/*  End  K_FLOAT  */
+		break;
+	      case K_DOUBLE:
+		d_mul = (num_pixels - 1) / (i_max - i_min);
+		for (hcount = 0; hcount < width;
+		     ++hcount, out_line += out_hstride)
 		{
-		    *out_line = blank_pixel;
+		    inp_ptr = inp_line + inp_hoffsets[hcount];
+		    if ( (d_data = *(double *) inp_ptr) < i_min )
+		    {
+			*out_line = min_sat_pixel;
+		    }
+		    else if (d_data >= d_toobig)
+		    {
+			*out_line = blank_pixel;
+		    }
+		    else if (d_data > i_max)
+		    {
+			*out_line = max_sat_pixel;
+		    }
+		    else
+		    {
+			*out_line = pixel_values[(int) ( (d_data - i_min)
+							* d_mul + 0.5 )];
+		    }
 		}
-		else if (f_data > f_max)
+		/*  End  K_DOUBLE  */
+		break;
+	      case K_BYTE:
+		b_table = byte_lookup_table + 128;
+		for (hcount = 0; hcount < width;
+		     ++hcount, out_line += out_hstride)
 		{
-		    *out_line = max_sat_pixel;
+		    inp_ptr = inp_line + inp_hoffsets[hcount];
+		    *out_line = *(b_table + *(char *) inp_ptr);
 		}
-		else
+		/*  End  K_BYTE  */
+		break;
+	      case K_SHORT:
+		l_mul = (num_pixels - 1);
+		l_div = (i_max - i_min);
+		/*  Loop  */
+		for (hcount = 0; hcount < width;
+		     ++hcount, out_line += out_hstride)
 		{
-		    *out_line = pixel_values[(int) ( (f_data - f_min)
-						    * f_mul + 0.5 )];
-		}
-	    }
-	    /*  End  K_FLOAT  */
-	    break;
-	  case K_DOUBLE:
-	    d_mul = (num_pixels - 1) / (i_max - i_min);
-	    /*  No need to switch on conversion type  */
-	    /*  Loop  */
-	    for (hcount = 0; hcount < width;
-		 ++hcount, out_line += out_hstride)
-	    {
-		inp_ptr = inp_line + inp_hoffsets[hcount];
-		if ( (d_data = *(double *) inp_ptr) < i_min )
-		{
-		    *out_line = min_sat_pixel;
-		}
-		else if (d_data >= d_toobig)
-		{
-		    *out_line = blank_pixel;
-		}
-		else if (d_data > i_max)
-		{
-		    *out_line = max_sat_pixel;
-		}
-		else
-		{
-		    *out_line = pixel_values[(int) ( (d_data - i_min)
-						    * d_mul + 0.5 )];
-		}
-	    }
-	    /*  End  K_DOUBLE  */
-	    break;
-	  case K_BYTE:
-	    b_table = byte_lookup_table + 128;
-	    for (hcount = 0; hcount < width;
-		 ++hcount, out_line += out_hstride)
-	    {
-		inp_ptr = inp_line + inp_hoffsets[hcount];
-		*out_line = *(b_table + *(char *) inp_ptr);
-	    }
-	    /*  End  K_BYTE  */
-	    break;
-	  case K_INT:
-	  case K_SHORT:
-	    /*  No need to switch on conversion type  */
-	    l_mul = (num_pixels - 1);
-	    l_div = (i_max - i_min);
-	    /*  Loop  */
-	    for (hcount = 0; hcount < width;
-		 ++hcount, out_line += out_hstride)
-	    {
-		inp_ptr = inp_line + inp_hoffsets[hcount];
-		switch (inp_type)
-		{
-		  case K_INT:
-		    l_data = *(int *) inp_ptr;
-		    break;
-		  case K_SHORT:
+		    inp_ptr = inp_line + inp_hoffsets[hcount];
 		    l_data = *(short *) inp_ptr;
-		    break;
+		    if (l_data == l_blank)
+		    {
+			*out_line = blank_pixel;
+		    }
+		    else if (l_data < l_min)
+		    {
+			*out_line = min_sat_pixel;
+		    }
+		    else if (l_data > l_max)
+		    {
+			*out_line = max_sat_pixel;
+		    }
+		    else
+		    {
+			*out_line = pixel_values[(int) ( (l_data - l_min)
+							* l_mul / l_div )];
+		    }
 		}
-		if (l_data == l_blank)
+		/*  End  K_SHORT  */
+		break;
+	      case K_UBYTE:
+		for (hcount = 0; hcount < width;
+		     ++hcount, out_line += out_hstride)
 		{
-		    *out_line = blank_pixel;
+		    inp_ptr = inp_line + inp_hoffsets[hcount];
+		    *out_line = *(ubyte_lookup_table +
+				  *(unsigned char *) inp_ptr);
 		}
-		else if (l_data < l_min)
-		{
-		    *out_line = min_sat_pixel;
-		}
-		else if (l_data > l_max)
-		{
-		    *out_line = max_sat_pixel;
-		}
-		else
-		{
-		    *out_line = pixel_values[(int) ( (l_data - l_min)
-						    * l_mul / l_div )];
-		}
+		/*  End  K_UBYTE  */
+		break;
+	      default:
+		(void) fprintf (stderr, "Data type: %u not supported\n",
+				inp_type);
+		a_prog_bug (function_name);
+		break;
 	    }
-	    /*  End  K_INT, K_SHORT  */
-	    break;
-	  case K_UBYTE:
-	    for (hcount = 0; hcount < width;
-		 ++hcount, out_line += out_hstride)
-	    {
-		inp_ptr = inp_line + inp_hoffsets[hcount];
-		*out_line = *(ubyte_lookup_table +
-			      *(unsigned char *) inp_ptr);
-	    }
-	    /*  End  K_UBYTE  */
-	    break;
-	  case K_UINT:
-	    f_mul = (num_pixels - 1) / (f_max - f_min);
-	    /*  No need to switch on conversion type  */
-	    /*  Loop  */
-	    for (hcount = 0; hcount < width;
-		 ++hcount, out_line += out_hstride)
-	    {
-		inp_ptr = inp_line + inp_hoffsets[hcount];
-		if ( (f_data = *(unsigned int *) inp_ptr) < f_min )
-		{
-		    *out_line = min_sat_pixel;
-		}
-		else if (f_data > f_max)
-		{
-		    *out_line = max_sat_pixel;
-		}
-		else
-		{
-		    *out_line = pixel_values[(int) ( (f_data - f_min)
-						    * f_mul + 0.5 )];
-		}
-	    }
-	    /*  End  K_UINT  */
-	    break;
-	  case K_COMPLEX:
-	  case K_DCOMPLEX:
+	}
+	else
+	{
+	    /*  Slow conversion needed  */
 	    /*  Convert data to generic data type  */
 	    /*  Note the cast from (iaddr *) to (uaddr *) for the offset
 		arrays. This is dodgy, but it should work.  */
-	    if (ds_get_scattered_elements (inp_line, inp_type,
-					   (uaddr *) inp_hoffsets,
-					   values, &complex,
-					   (unsigned int) width)
-		!= TRUE)
+	    if ( !ds_get_scattered_elements (inp_line, inp_type,
+					     (uaddr *) inp_hoffsets,
+					     values, &complex,
+					     (unsigned int) width) )
 	    {
 		(void) fprintf (stderr, "Error converting data\n");
 		return (FALSE);
 	    }
+	    if (complex) ds_complex_to_real_1D (values, 2, values,
+						(unsigned int) width,
+						conv_type);
+	    if (iscale_func != NULL)
+	    {
+		if ( !(*iscale_func) (values, 2, values, 2,
+				      (unsigned int) width, i_min, i_max,
+				      iscale_info) )
+		{
+		    (void) fprintf (stderr,
+				    "Error applying intensity scale\n");
+		    return (FALSE);
+		}
+	    }
 	    d_mul = (num_pixels - 1) / (i_max - i_min);
 	    /*  Loop for each value  */
-	    for (hcount = 0; hcount < width;
-		 ++hcount, out_line += out_hstride, values += 2)
+	    for (hcount = 0, val_ptr = values; hcount < width;
+		 ++hcount, out_line += out_hstride, val_ptr += 2)
 	    {
-		inp_ptr = inp_line + inp_hoffsets[hcount];
-		if (complex)
-		{
-		    /*  Complex data: convert  */
-		    switch (conv_type)
-		    {
-		      case KIMAGE_COMPLEX_CONV_REAL:
-			d_data = *values;
-			break;
-		      case KIMAGE_COMPLEX_CONV_IMAG:
-			d_data = values[1];
-			break;
-		      case KIMAGE_COMPLEX_CONV_ABS:
-			d_data = sqrt (values[0] * values[0] +
-				       values[1] * values[1]);
-			break;
-		      case KIMAGE_COMPLEX_CONV_SQUARE_ABS:
-			d_data = values[0] * values[0] + values[1] * values[1];
-			break;
-		      case KIMAGE_COMPLEX_CONV_PHASE:
-			if ( (values[0] == 0.0) && (values[1] == 0.0) )
-			{
-			    d_data = 0.0;
-			}
-			else
-			{
-			    d_data = atan2 (values[1], values[0]);
-			}
-			break;
-		      case KIMAGE_COMPLEX_CONV_CONT_PHASE:
-			(void) fprintf (stderr,
-					"Not finished continuous phase\n");
-			return (FALSE);
-			break;
-		      default:
-			(void) fprintf (stderr,
-					"Illegal value of conversion: %d\n",
-					conv_type);
-			a_prog_bug (function_name);
-			break;
-		    }
-		}
-		else
-		{
-		    /*  Real data  */
-		    d_data = values[0];
-		}
-		if (d_data < i_min) *out_line = min_sat_pixel;
+		if ( (d_data  = *val_ptr) < i_min ) *out_line = min_sat_pixel;
 		else if (d_data >= d_toobig) *out_line = blank_pixel;
 		else if (d_data > i_max) *out_line = max_sat_pixel;
 		else *out_line = pixel_values[(int) ( (d_data - i_min)
 						     * d_mul + 0.5 )];
 	    }
-	    break;
-	  default:
-	    (void) fprintf (stderr, "Not finished various data types\n");
-	    return (FALSE);
-/*
-	    break;
-*/
 	}
     }
     return (TRUE);
-}   /*  End Function imw_to8_o  */
+}   /*  End Function imw_to8_oi  */
 
-#ifdef dummy
-/*PUBLIC _ FUNCTION*/
-flag imw_to8_e (unsigned char *out_image, iaddr out_hstride, iaddr out_vstride,
-		int out_width, int out_height, CONST char *inp_image,
-		CONST iaddr *inp_hoffsets, CONST iaddr *inp_voffsets,
-		unsigned int inp_type, unsigned int conv_type,
-		int inp_width, int inp_height, unsigned int num_pixels,
-		unsigned char *pixel_values, unsigned char blank_pixel,
-		unsigned char min_sat_pixel, unsigned char max_sat_pixel,
-		double i_min, double i_max)
-/*  This routine will convert an image from one format to an 8 bit image of
-    pixels, expanding the image pixels (ie. zoom in).
-*/
-{
-}   /*  End Function imw_to8_e  */
-#endif
 
 /*  Private functions follow  */
 
@@ -474,16 +454,13 @@ static void setup_ubyte_lookup_table (int min, int max,
     The routine returns nothing.
 */
 {
-    int l_mul;
-    int l_div;
     int ubyte_val;
-    double d_mul;
+    float mul, val;
+    float offset = 0.1;
     extern unsigned char ubyte_lookup_table[UBYTE_TABLE_LENGTH];
-    static char function_name[] = "setup_ubyte_lookup_table";
 
     /*  Precompute pixel index  */
-    l_mul = (num_pixels - 1);
-    l_div = max - min;
+    mul = (float) (num_pixels - 1) / (float) (max - min);
     /*  Loop through all possible ubyte values  */
     for (ubyte_val = 0; ubyte_val < UBYTE_TABLE_LENGTH; ++ubyte_val)
     {
@@ -497,9 +474,8 @@ static void setup_ubyte_lookup_table (int min, int max,
 	}
 	else
 	{
-	    ubyte_lookup_table[ubyte_val] = pixel_values[(unsigned int)
-							 ( (ubyte_val - min)
-							  * l_mul / l_div )];
+	    val = mul * (float) (ubyte_val - min) + offset;
+	    ubyte_lookup_table[ubyte_val] = pixel_values[(int) val];
 	}
     }
 }   /*  End Function setup_ubyte_lookup_table  */
@@ -527,19 +503,16 @@ static void setup_byte_lookup_table (int min, int max,
     The routine returns nothing.
 */
 {
-    int l_mul;
-    int l_div;
     int byte_val;
-    double d_mul;
+    float mul, val;
+    float offset = 0.1;
     unsigned char *table;
     extern unsigned char byte_lookup_table[BYTE_TABLE_LENGTH];
-    static char function_name[] = "setup_byte_lookup_table";
 
     /*  Precompute pixel index  */
     table = byte_lookup_table + 128;
     *(table - 128) = blank_pixel;
-    l_mul = (num_pixels - 1);
-    l_div = max - min;
+    mul = (float) (num_pixels - 1) / (float) (max - min);
     /*  Loop through all possible byte values  */
     for (byte_val = -127; byte_val < 128; ++byte_val)
     {
@@ -553,9 +526,8 @@ static void setup_byte_lookup_table (int min, int max,
 	}
 	else
 	{
-	    *(table + byte_val) = pixel_values[(unsigned int)
-					       ( (byte_val - min) * l_mul /
-						l_div )];
+	    val = mul * (float) (byte_val - min) + offset;
+	    *(table + byte_val) = pixel_values[(int) val];
 	}
     }
 }   /*  End Function setup_byte_lookup_table  */

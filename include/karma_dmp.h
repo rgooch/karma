@@ -2,7 +2,7 @@
 
     Header for  dmp_  package.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,16 +31,21 @@
 
     Written by      Richard Gooch   3-OCT-1992
 
-    Last updated by Richard Gooch   3-NOV-1994
+    Last updated by Richard Gooch   7-APR-1995
 
 */
+
+#ifndef FILE
+#  include <stdio.h>
+#endif
+
+#if !defined(KARMA_DS_DEF_H) || defined(MAKEDEPEND)
+#  include <karma_ds_def.h>
+#endif
 
 #ifndef KARMA_DMP_H
 #define KARMA_DMP_H
 
-
-#include <stdio.h>
-#include <karma_ds_def.h>
 
 /*  File:   diagnose.c  */
 EXTERN_FUNCTION (void dmp_multi_desc, (FILE *fp,

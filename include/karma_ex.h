@@ -2,7 +2,7 @@
 
     Header for  ex_  package.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,20 +31,21 @@
 
     Written by      Richard Gooch   30-SEP-1992
 
-    Last updated by Richard Gooch   29-NOV-1993
+    Last updated by Richard Gooch   14-JUN-1995
 
 */
+
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
+#  include <karma.h>
+#endif
 
 #ifndef KARMA_EX_H
 #define KARMA_EX_H
 
 
-#ifndef KARMA_H
-#  include <karma.h>
-#endif
-
 /*  File:   extract.c  */
 EXTERN_FUNCTION (int ex_int, (char *str, char **rest ) );
+EXTERN_FUNCTION (unsigned int ex_uint, (char *str, char **rest ) );
 EXTERN_FUNCTION (char *ex_word, (char *str, char **rest ) );
 EXTERN_FUNCTION (char *ex_command, (char *str, char **rest ) );
 EXTERN_FUNCTION (char *ex_word_skip, (char *str) );

@@ -3,7 +3,7 @@
 
     This code provides PGP (Pretty Good Privacy) support.
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -33,8 +33,10 @@
 
     Updated by      Richard Gooch   3-DEC-1994
 
-    Last updated by Richard Gooch   7-DEC-1994: Stripped declaration of  errno
+    Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
+
+    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
 
 
 */
@@ -280,7 +282,9 @@ static int spawn_job (char *path, char *argv[],
 	/*  Error  */
 	(void) fprintf (stderr, "Could not fork\t%s\n", sys_errlist[errno]);
 	return (-1);
+/*
 	break;
+*/
       default:
 	/*  Parent  */
 	break;

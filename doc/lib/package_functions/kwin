@@ -1,7 +1,6 @@
 kwin_create_x
 kwin_set_gc_x
 kwin_get_gc_x
-kwin_create_vx
 kwin_create_child
 kwin_register_refresh_func
 kwin_register_position_event_func
@@ -11,7 +10,7 @@ kwin_write_ps
 kwin_get_attributes
 kwin_set_attributes
 kwin_clear
-kwin_draw_image
+kwin_draw_pc_image
 kwin_draw_rgb_image
 kwin_draw_cached_image
 kwin_draw_point
@@ -33,3 +32,5 @@ kwin_convert_from_canvas_coord
 kwin_get_colour
 kwin_load_font
 kwin_get_string_size
+kwin_xgl_test_stereo
+kwin_xgl_create_stereo

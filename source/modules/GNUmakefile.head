@@ -1,11 +1,6 @@
-CC = $(KARMA_CC)
-LD = $(KARMA_LD)
 machine_dir =	.$(MACHINE_OS)
-# The  -O3  options causes problems, use  -O2  instead
-COPTIMISE = -O
-CFLAGS = $(COPTIMISE) -I$(KARMAINCLUDEPATH) -DOS_$(OS) -DMACHINE_$(MACHINE)
 
-LDFLAGS = $(COPTIMISE)
+LDFLAGS = $(KOPTIMISE)
 
 vpath %.o
 vpath %.o $(machine_dir)
@@ -16,21 +11,22 @@ vpath %.o $(machine_dir)
 $(machine_dir)/%.o : %.c
 	$(CC) $(CFLAGS) -c $*.c -o $(machine_dir)/$*.o
 
-KARMALIBS = -L$(KARMALIBPATH)	-lkarma
-#XLIBS = -L$(XLIBPATH) -lXaw -lXmu -lXt -lXext -lX11
-LIBS =	$(KARMALIBS) $(XLIBS) $(MODULELIBS) -lm $(OS_LIBS)
-
-CLIBS =	$(LIBS) -lm
-FLIBS = $(LIBS) -lc
-
-ifeq ($(OS),Solaris)
-LD = $(KARMA_LD) -R$(KARMALIBPATH)
+ifndef KARMALIBS
+KARMALIBS = -lkarma
 endif
-
-ifeq ($(OS),IRIX5)
-LD = $(KARMA_LD) -rpath $(KARMALIBPATH)
+ifdef XLIBS
+ifdef XLIBPATH
+LIBDIRS = $(XLIBPATH)
 endif
-
-ifeq ($(OS),OSF1)
-LD = $(KARMA_LD) -Wl,-rpath,$(KARMALIBPATH)
+ifdef XINCLUDEPATH
+CFLAGS = -I$(XINCLUDEPATH) -DX11
+else
+CFLAGS = -DX11
 endif
+endif
+LIBS =	$(KARMALIBS) $(XLIBS) $(MODULELIBS) -lm
+
+CLIBS =	$(LIBS) $(OS_LIBS)
+FLIBS = $(LIBS) -lc $(OS_LIBS)
+
+include $(KARMAINCLUDEPATH)/gmakedefs/general.h1

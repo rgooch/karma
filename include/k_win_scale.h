@@ -1,7 +1,7 @@
 /*
     Definition of  win_scale  structure.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -22,27 +22,39 @@
       Richard Gooch, c/o ATNF, P. O. Box 76, Epping, N.S.W., 2121, Australia.
 */
 
-#ifndef K_WIN_SCALE_H
-#define K_WIN_SCALE_H
+/*
 
-#ifndef KARMA_H
+    Written by      Richard Gooch   17-NOV-1992
+
+    Last updated by Richard Gooch   30-APR-1995
+
+*/
+
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
 #  include <karma.h>
 #endif
+
+#if !defined(KARMA_DS_DEF_H) || defined(MAKEDEPEND)
+#  include <karma_ds_def.h>
+#endif
+
+#ifndef K_WIN_SCALE_H
+#define K_WIN_SCALE_H
 
 #define K_INTENSITY_SCALE_LINEAR (unsigned int) 0
 #define K_INTENSITY_SCALE_LOGARITHMIC (unsigned int) 1
 #define K_INTENSITY_SCALE_SQUARE_ROOT (unsigned int) 2
 #define NUM_INTENSITY_SCALE_ALTERNATIVES (unsigned int) 3
 
-#define KIMAGE_COMPLEX_CONV_REAL (unsigned int) 0
-#define KIMAGE_COMPLEX_CONV_IMAG (unsigned int) 1
-#define KIMAGE_COMPLEX_CONV_ABS (unsigned int) 2
-#define KIMAGE_COMPLEX_CONV_SQUARE_ABS (unsigned int) 3
-#define KIMAGE_COMPLEX_CONV_PHASE (unsigned int) 4
-#define KIMAGE_COMPLEX_CONV_CONT_PHASE (unsigned int) 5
+#define KIMAGE_COMPLEX_CONV_REAL       CONV_CtoR_REAL
+#define KIMAGE_COMPLEX_CONV_IMAG       CONV_CtoR_IMAG
+#define KIMAGE_COMPLEX_CONV_ABS        CONV_CtoR_ABS
+#define KIMAGE_COMPLEX_CONV_SQUARE_ABS CONV_CtoR_SQUARE_ABS
+#define KIMAGE_COMPLEX_CONV_PHASE      CONV_CtoR_PHASE
+#define KIMAGE_COMPLEX_CONV_CONT_PHASE CONV_CtoR_CONT_PHASE
 #define KIMAGE_NUM_COMPLEX_CONVERSIONS (unsigned int) 6
 
-#define K_WIN_SCALE_MAGIC_NUMBER (unsigned int) 238943488
+#define K_WIN_SCALE_MAGIC_NUMBER (unsigned int) 238943490
 
 /*  This structure is rather, er, historic. I plan to slowly phase out this
     structure.
@@ -61,11 +73,14 @@ struct win_scale_type
     double x_max;
     double y_min;
     double y_max;
-    flag x_log;                  /* These 2 will be phased out               */
+    flag x_log;                  /* These 2 will be removed in Karma v2.0    */
     flag y_log;
     double z_min;                /* Back to intensity mapping                */
     double z_max;
-    unsigned int z_scale;
+    unsigned int z_scale;        /* This field will be removed in Karma v2.0 */
+    flag (*iscale_func) ();
+    void (*iscale_free_info_func) ();
+    void *iscale_info;
     unsigned int conv_type;
     flag flip_horizontal;       /* These fields are a convenience for the    */
     flag flip_vertical;         /* ViewableImage class to flip the image     */

@@ -101,8 +101,29 @@
 
     Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
 
-    Last updated by Richard Gooch   7-JAN-1995: Advertised <r_open_file>
+    Updated by      Richard Gooch   7-JAN-1995: Advertised <r_open_file>
   routine to documentation generator.
+
+    Updated by      Richard Gooch   24-FEB-1995: Fixed logical test in
+  <r_open_file>.
+
+    Updated by      Richard Gooch   14-MAR-1995: Made <get_inet_addr_from_host>
+  less verbose.
+
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Updated by      Richard Gooch   9-JUN-1995: Removed assumption that
+  Kword32u is defined (problem on crayPVP machines).
+
+    Updated by      Richard Gooch   15-JUN-1995: Made use of IS_ALIGNED macro.
+
+    Updated by      Richard Gooch   16-JUN-1995: Created <r_get_fq_hostname>.
+
+    Updated by      Richard Gooch   16-JUL-1995: Disabled NIS lookup of Karma
+  port number base.
+
+    Last updated by Richard Gooch   10-AUG-1995: Cope with Unix socket not
+  existing in <connect_unix>.
 
 
 */
@@ -115,6 +136,7 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <os.h>
 #ifdef HAS_SOCKETS
 #  include <sys/socket.h>
@@ -225,11 +247,11 @@ STATIC_FUNCTION (unsigned long get_inet_addr_from_host,
 		 (char *host, flag *local) );
 static unsigned long conv_hostname_to_addr ();
 static int open_stdin ();
+#endif
+#ifdef HAS_COMMUNICATIONS_EMULATION
 static int read_from_connection ();
 static int write_to_connection ();
 static int get_hostname ();
-#endif
-#ifdef HAS_COMMUNICATIONS_EMULATION
 static void init_control_connection ();
 static int find_spare_descriptor ();
 #endif
@@ -287,7 +309,7 @@ unsigned int *num_docks;
 	prog_bug (function_name);
     }
     /*  Check alignment of  port_number  */
-    if ( (long) port_number % sizeof (int) != 0 )
+    if ( !IS_ALIGNED (port_number, sizeof *port_number) )
     {
 	(void) fputs ("Pointer to port number storage does not lie on an",
 		      stderr);
@@ -295,7 +317,7 @@ unsigned int *num_docks;
 	prog_bug (function_name);
     }
     /*  Check alignment of  num_docks  */
-    if ( (long) num_docks % sizeof (int) != 0 )
+    if ( !IS_ALIGNED (num_docks, sizeof *num_docks) )
     {
 	(void) fputs ("Pointer to number of docks storage does not lie on",
 		      stderr);
@@ -471,7 +493,9 @@ flag r_close_connection (int connection)
 {
 #ifdef COMMUNICATIONS_AVAILABLE
     extern char *sys_errlist[];
+/*
     static char function_name[] = "r_close_connection";
+*/
 
     return ( close_connection (connection) );
 
@@ -799,15 +823,13 @@ CONST char *env_value;
 }   /*  End Function r_setenv  */
 
 /*PUBLIC_FUNCTION*/
-void r_gethostname (name, namelen)
-/*  This routine will determine the local hostname.
-    The buffer to write the hostname to must be pointed to by  name  .
-    The length of the buffer must be given by  namelen  .
-    The buffer is guaranteed to be null terminated.
-    The routine returns nothing.
+void r_gethostname (char *name, unsigned int namelen)
+/*  [PURPOSE] This routine will determine the local hostname.
+    <name> The hostname will be written here. It is guaranteed to be null
+    terminated.
+    <namelen> The size of the buffer.
+    [RETURNS] Nothing.
 */
-char *name;
-unsigned int namelen;
 {
 #ifdef COMMUNICATIONS_AVAILABLE
     extern char *sys_errlist[];
@@ -825,6 +847,30 @@ unsigned int namelen;
     exit (RV_UNDEF_ERROR);
 #endif
 }   /*  End Function r_gethostname  */
+
+/*PUBLIC_FUNCTION*/
+flag r_get_fq_hostname (char *name, unsigned int namelen)
+/*  [PURPOSE] This routine will get the fully qualified local hostname.
+    <name> The hostname will be written here. It is guaranteed to be null
+    terminated.
+    <namelen> The size of the buffer.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    char host[STRING_LENGTH];
+    struct hostent *host_ptr;
+
+    r_gethostname (host, STRING_LENGTH);
+    /*  Get host info  */
+    if ( ( host_ptr = gethostbyname (host) ) == NULL )
+    {
+	(void) fprintf (stderr, "Host: \"%s\" not in database\n", host);
+	return (FALSE);
+    }
+    (void) strncpy (name, host_ptr->h_name, namelen);
+    name[namelen - 1] = '\0';
+    return (TRUE);
+}   /*  End Function r_get_fq_hostname  */
 
 /*PUBLIC_FUNCTION*/
 int r_getppid ()
@@ -914,7 +960,7 @@ int r_open_file (CONST char *filename, int flags, int mode,
 			    filename);
 	    return (-1);
 	}
-	if ( ( addr = get_inet_addr_from_host (hostname, &local) ) == 0 )
+	if ( ( addr = r_get_inet_addr_from_host (hostname, &local) ) == 0 )
 	{
 	    return (-1);
 	}
@@ -927,7 +973,7 @@ int r_open_file (CONST char *filename, int flags, int mode,
     /*  Get stats on file  */
     if (stat (filename, &statbuf ) != 0)
     {
-	if ( (errno != ENOENT) || (flags & O_CREAT == 0) )
+	if ( (errno != ENOENT) || ( (flags & O_CREAT) == 0 ) )
 	{
 	    (void) fprintf (stderr,
 			    "Error getting file stats for file: \"%s\"\t%s\n",
@@ -1052,7 +1098,9 @@ int *write_fd;
     int retval;
     int fds[2];
 #endif
+/*
     static char function_name[] = "r_create_pipe";
+*/
 
 #ifdef HAS_SOCKETS
     retval = pipe (fds);
@@ -1061,7 +1109,6 @@ int *write_fd;
     return (retval);
 #else
     (void) fprintf (stderr, "No pipe support\n");
-    a_prog_bug (function_name);
     return (-1);
 #endif
 }   /*  End Function r_create_pipe  */
@@ -1105,21 +1152,11 @@ static unsigned long get_inet_addr_from_host (char *host, flag *local)
 	(strcmp (host, "localhost") == 0) )
     {
 	/*  Local machine  */
-	if (local != NULL)
-	{
-	    *local = TRUE;
-	}
+	if (local != NULL) *local = TRUE;
 	return (local_addr);
     }
-    if ( ( addr = conv_hostname_to_addr (host) ) == 0 )
-    {
-	(void) fprintf (stderr, "Error getting host address\n");
-	return (0);
-    }
-    if (local != NULL)
-    {
-	*local = (addr == local_addr) ? TRUE : FALSE;
-    }
+    if ( ( addr = conv_hostname_to_addr (host) ) == 0 ) return (0);
+    if (local != NULL) *local = (addr == local_addr) ? TRUE : FALSE;
     return (addr);
 }   /*  End Function get_inet_addr_from_host  */
 
@@ -1131,8 +1168,10 @@ static unsigned long conv_hostname_to_addr (host)
 */
 char *host;
 {
+    unsigned long addr;
     struct hostent *host_ptr;
     extern char *sys_errlist[];
+    static char function_name[] = "__r_conv_hostname_to_addr";
 
     if ( isascii (host[0]) && isdigit (host[0]) )
     {
@@ -1142,11 +1181,29 @@ char *host;
     /*  Get host info  */
     if ( ( host_ptr = gethostbyname (host) ) == NULL )
     {
-	(void) fprintf (stderr, "Host: \"%s\" not in database\n",
-			host);
+	(void) fprintf (stderr, "Host: \"%s\" not in database\n", host);
 	return (0);
     }
-    return ( ntohl ( *(unsigned long *) (*host_ptr).h_addr_list[0]) );
+    switch (host_ptr->h_length)
+    {
+#ifdef Kword32u
+      case 4:
+	addr = (unsigned long) *(Kword32u *) host_ptr->h_addr_list[0];
+	break;
+#endif
+#ifdef Kword64u
+      case 8:
+	addr = (unsigned long) *(Kword64u *) host_ptr->h_addr_list[0];
+	break;
+#endif
+      default:
+	(void) fprintf (stderr,
+			"Host: \"%s\" address length: %d not supported\n",
+			host, host_ptr->h_length);
+	prog_bug (function_name);
+	break;
+    }
+    return ( ntohl (addr) );
 }   /*  End Function conv_hostname_to_addr  */
 
 static int *alloc_port (unsigned int *port_number, unsigned int retries,
@@ -1181,6 +1238,7 @@ static int *alloc_port (unsigned int *port_number, unsigned int retries,
     extern char *sys_errlist[];
 
     /*  Get Karma port number for tcp/ ip  */
+#ifdef DISABLED
     if (tcp_port_offset < 0)
     {
 	/*  Get tcp port offset  */
@@ -1190,7 +1248,7 @@ static int *alloc_port (unsigned int *port_number, unsigned int retries,
 	}
 	else
 	{
-	    tcp_port_offset = ntohs ( (*service_entry).s_port );
+	    tcp_port_offset = ntohs (service_entry->s_port);
 	    if (TCP_PORT_OFFSET != tcp_port_offset)
 	    {
 		(void) fprintf (stderr,
@@ -1203,6 +1261,9 @@ static int *alloc_port (unsigned int *port_number, unsigned int retries,
 	    }
 	}
     }
+#else
+    tcp_port_offset = TCP_PORT_OFFSET;
+#endif
     /*  Create Unix domain socket  */
     if ( ( docks[INDEX_UNIX_DOCK] = socket (AF_UNIX, SOCK_STREAM, 0) ) < 0 )
     {
@@ -1365,7 +1426,9 @@ static flag bind_inet (int sock, unsigned int port_number)
     address is in use).
 */
 {
+/*
     int sock_opt = SO_REUSEADDR;
+*/
     struct sockaddr_in in_addr;
     extern char *sys_errlist[];
 
@@ -1392,10 +1455,12 @@ static flag bind_inet (int sock, unsigned int port_number)
     }
     /*  Bound  */
     /*  Set socket options  */
+/*
 #  ifdef TCP_NODELAY
     sock_opt |= TCP_NODELAY;
     (void) fprintf (stderr, "TCP_NODELAY\n");
 #  endif
+*/
     /*  The following code exercises a bug in the Convex OS kernel.
 	This bug causes the system to crash. DO NOT USE until kernel patched.
     if (setsockopt (sock, SOL_SOCKET, sock_opt, (caddr_t) 0, 0)
@@ -1476,7 +1541,7 @@ static int connect_unix (CONST char *filename)
     if (connect (fd, (struct sockaddr *) &un_addr, (int) sizeof un_addr) != 0)
     {
 	/*  No connection made  */
-	if (errno != ECONNREFUSED)
+	if ( (errno != ECONNREFUSED) && (errno != ENOENT) )
 	{
 	    (void) fprintf (stderr,
 			    "Error connecting to Unix socket\t%s\n",
@@ -1601,6 +1666,7 @@ static int connect_to_port (unsigned long addr, unsigned int port_number)
     extern char *sys_errlist[];
 
     /*  Get port number for tcp/ ip  */
+#ifdef DISABLED
     if (tcp_port_offset < 0)
     {
 	/*  Get tcp port offset  */
@@ -1610,7 +1676,7 @@ static int connect_to_port (unsigned long addr, unsigned int port_number)
 	}
 	else
 	{
-	    tcp_port_offset = ntohs ( (*service_entry).s_port );
+	    tcp_port_offset = ntohs (service_entry->s_port);
 	    if (TCP_PORT_OFFSET != tcp_port_offset)
 	    {
 		(void) fprintf (stderr,
@@ -1623,6 +1689,9 @@ static int connect_to_port (unsigned long addr, unsigned int port_number)
 	    }
 	}
     }
+#else
+    tcp_port_offset = TCP_PORT_OFFSET;
+#endif
     /*  Try to connect to specified host  */
     if (addr == 0)
     {
@@ -1655,7 +1724,7 @@ static int accept_connection_on_dock (int dock_index, unsigned long *addr,
     int in_addr_len;
     struct sockaddr_in in_addr;
     /*  General info  */
-    int fd;
+    int fd = -1;  /*  Initialised to keep compiler happy  */
     extern int docks[NUM_DOCKS];
     extern char *sys_errlist[];
     static char function_name[] = "accept_connection_on_dock";
@@ -1743,7 +1812,7 @@ static int get_bytes_readable (int connection)
     int bytes_available = 0;
     extern char *sys_errlist[];
 
-    if (ioctl (connection, (int) FIONREAD, (char *) &bytes_available ) != 0)
+    if (ioctl (connection, (int) FIONREAD, (char *) &bytes_available) != 0)
     {
 	/*  The following test/return is needed for Slowaris.
 	    Seeing all the changes I've had to make for Slowaris, doesn't it
@@ -2446,21 +2515,11 @@ static unsigned long get_inet_addr_from_host (char *host, flag *local)
 	(strcmp (host, "localhost") == 0) )
     {
 	/*  Local machine  */
-	if (local != NULL)
-	{
-	    *local = TRUE;
-	}
+	if (local != NULL) *local = TRUE;
 	return (local_addr);
     }
-    if ( ( addr = conv_hostname_to_addr (host) ) == 0 )
-    {
-	(void) fprintf (stderr, "Error getting host address\n");
-	return (0);
-    }
-    if (local != NULL)
-    {
-	*local = (addr == local_addr) ? TRUE : FALSE;
-    }
+    if ( ( addr = conv_hostname_to_addr (host) ) == 0 ) return (0);
+    if (local != NULL) *local = (addr == local_addr) ? TRUE : FALSE;
     return (addr);
 }   /*  End Function get_inet_addr_from_host  */
 

@@ -1,0 +1,102 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the wf_ package of routines in the Karma library.
+
+    These routines are meant to provide support for work functions. Work
+    functions are similar to threads in that they allow background processing
+    to be done, but require no threading support from the Operating System.
+    Work functions are only executed while the application would otherwise be
+    idle.
+    NOTE: THIS PACKAGE IS WORK IN PROGRESS. THE INTERFACE MAY CHANGE IN THE
+    NEXT RELEASE, POSSIBLY WITHOUT NOTICE.
+
+
+    Written by		Richard Gooch	27-Jan-1996
+
+    Last updated by	Richard Gooch	27-Jan-1996
+
+
+*/
+
+flag wf_test_supported ()
+/*  [PURPOSE] This routine will determine if work functions have been supported
+    by the application.
+    [RETURNS] TRUE if work functions are supported, else FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+void wf_register_support ()
+/*  [PURPOSE] This routine will inform the package that the application will
+    support work functions. This routine may only be called once.
+    [RETURNS] Nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+KCallbackFunc wf_register_notify_func (void (*func) (void *info), void *info)
+/*  [PURPOSE] This routine will register a routine which is called whenever a
+    new work function is registered.
+    <func> The function that is called when a new work function is registered.
+    The interface to this routine is as follows:
+    [<pre>]
+    void func (void *info)
+    *   [PURPOSE] This routine is called whenever a new work function is
+        registered.
+	<info> An arbitrary information pointer.
+	[RETURNS] Nothing.
+    *
+    [</pre>]
+    <info> The initial arbitrary information pointer.
+    [RETURNS] A KCallbackFunc object. On failure, the process aborts.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag wf_work_to_be_done ()
+/*  [PURPOSE] This routine will determine if there are any pending work
+    functions waiting to be called.
+    [RETURNS] TRUE if any work functions are pending, else FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag wf_do_work ()
+/*  [PURPOSE] This routine will call any pending work functions. The work
+    function at the top of the list is called once only.
+    [RETURNS] TRUE if more work is left to be done, else FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+KWorkFunc wf_register_func (flag (*func) (void **info), void *info,
+			    unsigned int priority)
+/*  [PURPOSE] This routine will register a work function. The work function at
+    the top of the list is the one that is always called. Only when the work
+    function at the top of the list is unregistered will the next work function
+    be called.
+    <func> The routine to be called. The interface to this routine is as
+    follows:
+    [<pre>]
+    flag func (void **info)
+    *   [PURPOSE] This routine is called to perform some work.
+        <info> A pointer to the arbitrary work function information pointer.
+	[RETURNS] TRUE if the work function should be called again, else FALSE
+	indicating that the work function is to be unregistered.
+    *
+    [</pre>]
+    <info> The initial arbitrary work function information pointer.
+    <priority> The priority level of the work function. Legal values are:
+      KWF_PRIORITY_HIGHEST  Place function at top of list, any work functions
+                            registered while this one is running will be placed
+			    second in the list
+      KWF_PRIORITY_HIGH     Place function at top of list, any work functions
+                            registered while this one is running will be placed
+			    at the top of the list
+      KWF_PRIORITY_LOWEST   Place function at bottom of the list
+    [RETURNS] A KWorkFunc object. On failure, the process aborts.
+*/
+/*---------------------------------------------------------------------------*/
+
+void wf_unregister_func (KWorkFunc wf)
+/*  [PURPOSE] This routine will unregister a work function. The second function
+    in the list will moved to the top of the list. A work function cannot
+    unregister itself in this manner.
+    <wf> The KWorkFunc object.
+    [RETURNS] Nothing.
+*/
+/*---------------------------------------------------------------------------*/

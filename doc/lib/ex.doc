@@ -5,14 +5,19 @@
     values and strings from strings.
 
 
-    Written by		Richard Gooch	30-Nov-1994
+    Written by		Richard Gooch	24-Jun-1995
 
-    Last updated by	Richard Gooch	30-Nov-1994
+    Last updated by	Richard Gooch	24-Jun-1995
 
 
 */
 
 int ex_int (str, rest)
+char *str;
+char **rest;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ex_uint (str, rest)
 char *str;
 char **rest;
 /*---------------------------------------------------------------------------*/

@@ -2,7 +2,7 @@
 /*  main.c
     This code manipulates daemon mode for a process.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -37,12 +37,15 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/d/main.c
 
-    Last updated by Richard Gooch   7-DEC-1994: Stripped declaration of  errno
+    Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
+
+    Last updated by Richard Gooch   6-MAY-1995: Placate gcc -Wall
 
 
 */
 #include <stdio.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <karma.h>

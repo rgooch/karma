@@ -3,7 +3,7 @@
 
     This code provides support for the IDEA cipher.
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994,1995  Richard Gooch
 
     Based on code obtained from Colin Plumb  (colin@nyx10.cs.du.edu)
 
@@ -70,7 +70,12 @@
     Updated by      Richard Gooch   25-NOV-1994: Stripped support for channel
   encryption and renamed to  en_  package.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/en/idea.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/en/idea.c
+
+    Updated by      Richard Gooch   27-FEB-1995: Changed to MACHINE_BIG_ENDIAN
+  macro.
+
+    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
 
 
 */
@@ -103,7 +108,7 @@ if ( (*st).magic_number != MAGIC_NUMBER ) \
 {(void) fprintf (stderr, "Invalid IDEA status object\n"); \
  a_prog_bug (function_name); }
 
-#ifdef BLOCK_TRANSFER
+#ifdef MACHINE_BIG_ENDIAN
 #  define HIGHFIRST
 #endif
 
@@ -227,7 +232,7 @@ static void encrypt_key_idea(word16 *userkey, word16 *Z)
 
     for (i=0; j<KEYLEN; j++)
     {	i++;
-	Z[i+7] = Z[i & 7] << 9 | Z[i+1 & 7] >> 7;
+	Z[i+7] = Z[i & 7] << 9 | Z[(i+1) & 7] >> 7;
 	Z += i & 8;
 	i &= 7;
     }
@@ -459,7 +464,6 @@ void en_idea_cfb (idea_status status, char *buffer, unsigned int length)
 */
 {
     char new_ch;
-    int count;
     static char function_name[] = "en_idea_cfb";
 
     VERIFY_STATUS (status);

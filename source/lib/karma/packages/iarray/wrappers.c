@@ -57,7 +57,7 @@
 {(void) fprintf (stderr, "NULL iarray passed\n"); \
  a_prog_bug (function_name); }
 #ifdef dummy
-if ( (*array).magic_number != MAGIC_NUMBER ) \
+if (array->magic_number != MAGIC_NUMBER) \
 {(void) fprintf (stderr, "Invalid iarray\n"); \
  a_prog_bug (function_name); }
 #endif
@@ -67,19 +67,18 @@ if ( (*array).magic_number != MAGIC_NUMBER ) \
 
 /*PUBLIC_FUNCTION*/
 iarray iarray_create_1D (unsigned long xlen, unsigned int type)
-/*  This routine will create a 1-dimensional "Intelligent Array", using the
-    Karma general data structure format as the underlying data format.
-    The length of the dimension must be given by  xlen  .
-    The name of the dimension will be the default: "Axis 0".
-    The type of the data must be given by  type  .Legal values for this are:
+/*  [PURPOSE] This routine will create a 1-dimensional "Intelligent Array",
+    using the Karma general data structure format as the underlying data format
+    <xlen> The length of the dimension. The name of the dimension will be the
+    default: "Axis 0".
+    <type> The type of the data. Legal values for this are:
         K_FLOAT, K_DOUBLE, K_BYTE, K_INT, K_SHORT, K_COMPLEX, K_DCOMPLEX,
 	K_BCOMPLEX, K_ICOMPLEX,
         K_SCOMPLEX, K_LONG, K_LCOMPLEX, K_UBYTE, K_UINT, K_USHORT, K_ULONG,
 	K_UBCOMPLEX,
         K_UICOMPLEX, K_USCOMPLEX, K_ULCOMPLEX.
     The name of the element will be the default name: "Intensity".
-    The routine returns a dynamically allocated intelligent array on success,
-    else it prints an error message to the standard output and returns NULL.
+    [RETURNS] A dynamically allocated intelligent array on success, else NULL.
 */
 {
     return ( iarray_create (type, 1, (char **) NULL, &xlen, (char *) NULL,
@@ -89,22 +88,21 @@ iarray iarray_create_1D (unsigned long xlen, unsigned int type)
 /*PUBLIC_FUNCTION*/
 iarray iarray_create_2D (unsigned long ylen, unsigned long xlen,
 			 unsigned int type)
-/*  This routine will create a 2-dimensional "Intelligent Array", using the
-    Karma general data structure format as the underlying data format.
-    The length of the most significant dimension (ie. the dimension with the
-    greates stride in memory) must be given by  ylen  .
-    The length of the least significant dimension must be given by  xlen  .
+/*  [PURPOSE] This routine will create a 2-dimensional "Intelligent Array",
+    using the Karma general data structure format as the underlying data format
+    <ylen> The length of the most significant dimension (ie. the dimension with
+    the greatest stride in memory.
+    <xlen> The length of the least significant dimension.
     The names of the dimensions will be the defaults: "Axis 0" and "Axis 1",
     respectively.
-    The type of the data must be given by  type  .Legal values for this are:
+    <type> The type of the data. Legal values for this are:
         K_FLOAT, K_DOUBLE, K_BYTE, K_INT, K_SHORT, K_COMPLEX, K_DCOMPLEX,
 	K_BCOMPLEX, K_ICOMPLEX,
         K_SCOMPLEX, K_LONG, K_LCOMPLEX, K_UBYTE, K_UINT, K_USHORT, K_ULONG,
 	K_UBCOMPLEX,
         K_UICOMPLEX, K_USCOMPLEX, K_ULCOMPLEX.
     The name of the element will be the default name: "Intensity".
-    The routine returns a dynamically allocated intelligent array on success,
-    else it prints an error message to the standard output and returns NULL.
+    [RETURNS] A dynamically allocated intelligent array on success, else NULL.
 */
 {
     unsigned long dim_lengths[2];
@@ -118,24 +116,23 @@ iarray iarray_create_2D (unsigned long ylen, unsigned long xlen,
 /*PUBLIC_FUNCTION*/
 iarray iarray_create_3D (unsigned long zlen, unsigned long ylen,
 			 unsigned long xlen, unsigned int type)
-/*  This routine will create a 3-dimensional "Intelligent Array", using the
-    Karma general data structure format as the underlying data format.
-    The length of the most significant dimension (ie. the dimension with the
-    greates stride in memory) must be given by  zlen  .
-    The length of the middle dimension must be given by  ylen  .
-    The length of the least significant dimension must be given by  xlen  .
+/*  [PURPOSE] This routine will create a 3-dimensional "Intelligent Array",
+    using the Karma general data structure format as the underlying data format
+    <zlen> The length of the most significant dimension (ie. the dimension with
+    the greatest stride in memory).
+    <ylen> The length of the middle dimension.
+    <xlen> The length of the least significant dimension.
     The names of the dimensions will be the defaults: "Axis 0", "Axis 1" and
     "Axis 2",
     respectively.
-    The type of the data must be given by  type  .Legal values for this are:
+    <type> The type of the data. Legal values for this are:
         K_FLOAT, K_DOUBLE, K_BYTE, K_INT, K_SHORT, K_COMPLEX, K_DCOMPLEX,
 	K_BCOMPLEX, K_ICOMPLEX,
         K_SCOMPLEX, K_LONG, K_LCOMPLEX, K_UBYTE, K_UINT, K_USHORT, K_ULONG,
 	K_UBCOMPLEX,
         K_UICOMPLEX, K_USCOMPLEX, K_ULCOMPLEX.
     The name of the element will be the default name: "Intensity".
-    The routine returns a dynamically allocated intelligent array on success,
-    else it prints an error message to the standard output and returns NULL.
+    [RETURNS] A dynamically allocated intelligent array on success, else NULL.
 */
 {
     unsigned long dim_lengths[3];
@@ -146,6 +143,39 @@ iarray iarray_create_3D (unsigned long zlen, unsigned long ylen,
     return ( iarray_create (type, 3, (char **) NULL, dim_lengths,
 			    (char *) NULL, (iarray) NULL) );
 }   /*  End Function iarray_create_3D  */
+
+/*PUBLIC_FUNCTION*/
+iarray iarray_create_4D (unsigned long zlen, unsigned long ylen,
+			 unsigned long xlen, unsigned int wlen,
+			 unsigned int type)
+/*  [PURPOSE] This routine will create a 4-dimensional "Intelligent Array",
+    using the Karma general data structure format as the underlying data format
+    <zlen> The length of the most significant dimension (ie. the dimension with
+    the greatest stride in memory).
+    <ylen> The length of the second most significant dimension.
+    <xlen> The length of the second least significant dimension.
+    <wlen> The length of the least significant dimension.
+    The names of the dimensions will be the defaults: "Axis 0", "Axis 1",
+    "Axis 2" and "Axis 3", respectively.
+    <type> The type of the data. Legal values for this are:
+        K_FLOAT, K_DOUBLE, K_BYTE, K_INT, K_SHORT, K_COMPLEX, K_DCOMPLEX,
+	K_BCOMPLEX, K_ICOMPLEX,
+        K_SCOMPLEX, K_LONG, K_LCOMPLEX, K_UBYTE, K_UINT, K_USHORT, K_ULONG,
+	K_UBCOMPLEX,
+        K_UICOMPLEX, K_USCOMPLEX, K_ULCOMPLEX.
+    The name of the element will be the default name: "Intensity".
+    [RETURNS] A dynamically allocated intelligent array on success, else NULL.
+*/
+{
+    unsigned long dim_lengths[4];
+
+    dim_lengths[0] = zlen;
+    dim_lengths[1] = ylen;
+    dim_lengths[2] = xlen;
+    dim_lengths[3] = wlen;
+    return ( iarray_create (type, 4, (char **) NULL, dim_lengths,
+			    (char *) NULL, (iarray) NULL) );
+}   /*  End Function iarray_create_4D  */
 
 /*PUBLIC_FUNCTION*/
 flag iarray_put_float (iarray array, char *name, float value)

@@ -2,7 +2,7 @@
 
     Header for  kcmap_  package.
 
-    Copyright (C) 1993,1994  Richard Gooch
+    Copyright (C) 1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,25 +31,27 @@
 
     Written by      Richard Gooch   24-FEB-1993
 
-    Last updated by Richard Gooch   29-NOV-1994
+    Last updated by Richard Gooch   28-OCT-1995
 
 */
+
+#if !defined(KARMA_DS_DEF_H) || defined(MAKEDEPEND)
+#  include <karma_ds_def.h>
+#endif
+
+#if !defined(KARMA_C_DEF_H) || defined(MAKEDEPEND)
+#  include <karma_c_def.h>
+#endif
 
 #ifndef KARMA_KCMAP_H
 #define KARMA_KCMAP_H
 
 
-#ifndef KARMA_DS_DEF_H
-#  include <karma_ds_def.h>
-#endif
-
-#ifndef KARMA_C_DEF_H
-#  include <karma_c_def.h>
-#endif
-
-#define KCMAP_ATT_END     0  /*  End of varargs list                 */
-#define KCMAP_ATT_REVERSE 1  /*  G:(flag *)            S:(flag)      */
-#define KCMAP_ATT_INVERT  2  /*  G:(flag *)            S:(flag)      */
+#define KCMAP_ATT_END        0  /*  End of varargs list                 */
+#define KCMAP_ATT_REVERSE    1  /*  G:(flag *)            S:(flag)      */
+#define KCMAP_ATT_INVERT     2  /*  G:(flag *)            S:(flag)      */
+#define KCMAP_ATT_SOFTWARE   3  /*  G:(flag *)            S:illegal     */
+#define KCMAP_ATT_DPY_HANDLE 4  /*  G:(Kdisplay *)        S:illegal     */
 
 
 typedef struct colourmap_type * Kcolourmap;
@@ -62,6 +64,11 @@ typedef struct kdisplay_handle_type * Kdisplay;
 
 
 /*  File:   kcmap.c   */
+EXTERN_FUNCTION (Kcolourmap kcmap_va_create,
+		 (char *name, unsigned int num_cells, flag tolerant,
+		  Kdisplay dpy_handle, unsigned int (*alloc_func) (),
+		  void (*free_func) (), void (*store_func) (),
+		  void (*location_func) (), ...) );
 EXTERN_FUNCTION (void kcmap_init, (unsigned int (*alloc_func) (),
 				   void (*free_func) (),
 				   void (*store_func) (),
@@ -99,10 +106,8 @@ EXTERN_FUNCTION (flag kcmap_copy_from_struct, (Kcolourmap cmap,
 					       char *top_packet) );
 EXTERN_FUNCTION (unsigned short *kcmap_get_rgb_values, (Kcolourmap cmap,
 							unsigned int *size) );
-#ifndef KCMAP_INTERNAL
 EXTERN_FUNCTION (void kcmap_get_attributes, (Kcolourmap cmap, ...) );
 EXTERN_FUNCTION (void kcmap_set_attributes, (Kcolourmap cmap, ...) );
-#endif
 
 
 #endif /*  KARMA_KCMAP_H  */

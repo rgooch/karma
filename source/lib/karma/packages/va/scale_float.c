@@ -41,8 +41,10 @@
     Updated by      Richard Gooch   3-NOV-1994: Switched to OS_ and MACHINE_
   macros for machine determination.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to
+    Updated by      Richard Gooch   26-NOV-1994: Moved to
   packages/va/scale_float.c
+
+    Last updated by Richard Gooch   15-JUN-1995: Made use of IS_ALIGNED macro.
 
 
 */
@@ -51,6 +53,8 @@
 #include <karma.h>
 #include <karma_va.h>
 #include <karma_a.h>
+#include <os.h>
+
 
 #ifdef OS_VXMVX
 EXTERN_FUNCTION (void asm__va_scale_float,
@@ -81,12 +85,12 @@ void va_scale_float (float *out, int out_stride, float *inp, int inp_stride,
 {
     static char function_name[] = "va_scale_float";
 
-    if ( (long) out % sizeof *out != 0 )
+    if ( !IS_ALIGNED (out, sizeof *out) )
     {
 	(void) fprintf (stderr, "Output array not on a float boundary\n");
 	a_prog_bug (function_name);
     }
-    if ( (long) inp % sizeof *inp != 0 )
+    if ( !IS_ALIGNED (inp, sizeof *inp) )
     {
 	(void) fprintf (stderr, "Input array not on a float boundary\n");
 	a_prog_bug (function_name);

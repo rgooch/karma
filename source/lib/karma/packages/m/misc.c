@@ -51,12 +51,17 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/m/misc.c
 
-    Last updated by Richard Gooch   7-JAN-1995: Advertised <m_free_scratch>
+    Updated by      Richard Gooch   7-JAN-1995: Advertised <m_free_scratch>
   routine to documentation generator.
+
+    Updated by      Richard Gooch   7-MAY-1995: Placate gcc -Wall
+
+    Last updated by Richard Gooch   9-JUN-1995: Added #ifdef MACHINE_crayPVP.
 
 
 */
 #include <stdio.h>
+#include <string.h>
 #include <karma.h>
 #include <karma_m.h>
 
@@ -98,6 +103,9 @@ void m_clear (char *memory, uaddr length)
     {
 	return;
     }
+#ifdef MACHINE_crayPVP
+    for (; length > 0; --length) *memory++ = 0;
+#else
     /*  First clear stray bytes at start of block  */
     front_pad = (uaddr) memory % sizeof (unsigned long);
     front_pad = (front_pad > 0) ? (sizeof (unsigned long) - front_pad) : 0;
@@ -112,6 +120,7 @@ void m_clear (char *memory, uaddr length)
     char_ptr = (unsigned char *) long_ptr;
     for (char_count = 0; char_count < num_char; ++char_count)
         *char_ptr++ = (unsigned char) NULL;
+#endif
 }   /*  End Function m_clear  */
 
 /*PUBLIC_FUNCTION*/
@@ -149,6 +158,10 @@ void m_copy (char *dest, CONST char *source, uaddr length)
 	(void) fprintf (stderr, "NULL source pointer passed\n");
 	prog_bug (function_name);
     }
+#ifdef MACHINE_crayPVP
+    for (; length > 0; --length) *dest++ = *source++;
+    return;
+#else
     if ( (uaddr) dest % sizeof (unsigned long) !=
 	(uaddr) source % sizeof (unsigned long) )
     {
@@ -173,6 +186,7 @@ void m_copy (char *dest, CONST char *source, uaddr length)
     dest_char = (unsigned char *) dest_long;
     for (char_count = 0; char_count < num_char; ++char_count)
         *dest_char++ = *source_char++;
+#endif
 }   /*  End Function m_copy   */
 
 /*PUBLIC_FUNCTION*/
@@ -211,6 +225,16 @@ void m_copy_blocks (char *dest, CONST char *source, unsigned int dest_stride,
 	(void) fprintf (stderr, "Strides must be greater than zero\n");
 	prog_bug (function_name);
     }
+#ifdef MACHINE_crayPVP
+    for (block_count = 0; block_count < num_blocks;
+	 ++block_count, dest += dest_stride, source += source_stride)
+    {
+	for (char_count = 0; char_count < block_size; ++char_count)
+	{
+	    dest[char_count] = source[char_count];
+	}
+    }
+#else
     /*  Iterate through the blocks to be copied  */
     for (block_count = 0; block_count < num_blocks;
 	 ++block_count, dest += dest_stride, source += source_stride)
@@ -244,7 +268,8 @@ void m_copy_blocks (char *dest, CONST char *source, unsigned int dest_stride,
 	/*  Copy last section of block using byte copies  */
 	for (char_count = 0; char_count < num_char; char_count++)
 	    *dest_char++ = *source_char++;
-    }  
+    }
+#endif
 }   /*  End Function m_copy_blocks  */
 
 /*PUBLIC_FUNCTION*/
@@ -269,7 +294,8 @@ void m_fill (char *dest, uaddr stride, CONST char *source,
     }
     if (stride < size)
     {
-	(void) fprintf (stderr, "stride: %u must not be less than size: %u\n",
+	(void) fprintf (stderr,
+			"stride: %lu must not be less than size: %lu\n",
 			stride, size);
 	prog_bug (function_name);
     }
@@ -313,6 +339,10 @@ flag m_cmp (CONST char *block1, CONST char *block2, uaddr length)
 	(void) fprintf (stderr, "length  must be greater than zero\n");
 	prog_bug (function_name);
     }
+#ifdef MACHINE_crayPVP
+    if (memcmp (block1, block2, length) == 0) return (TRUE);
+    return (FALSE);
+#else
     if ( (uaddr) block1 % sizeof (unsigned long) !=
 	(uaddr) block2 % sizeof (unsigned long) )
     {
@@ -346,6 +376,7 @@ flag m_cmp (CONST char *block1, CONST char *block2, uaddr length)
 	if (*block1_char++ != *block2_char++) return (FALSE);
     }
     return (TRUE);
+#endif
 }   /*  End Function m_cmp   */
 
 /*PUBLIC_FUNCTION*/

@@ -1,0 +1,54 @@
+/*  Link with:    -lkarmaXt  */
+/*  This file describes the xtmisc_ package of routines in the Karma library.
+
+    These routines are meant to provide miscellaneuos Xt support.
+    NOTE: THIS PACKAGE IS WORK IN PROGRESS. THE INTERFACE MAY CHANGE IN THE
+    NEXT RELEASE, POSSIBLY WITHOUT NOTICE.
+
+
+    Written by		Richard Gooch	27-Jan-1996
+
+    Last updated by	Richard Gooch	27-Jan-1996
+
+
+*/
+
+void xtmisc_popup_cbk (Widget w, XtPointer client_data, XtPointer call_data)
+/*  [PURPOSE] This routine will pop up a popup widget. This routine is a
+    convenience routine to be used as a callback.
+    <w> The widget on which the event occurred. This is ignored.
+    <client_data> The callback client data. This must be the popup widget.
+    <call_data> The callback call data. This is ignored.
+    [RETURNS] Nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+void xtmisc_exclusive_popup_cbk (Widget w, XtPointer client_data,
+				 XtPointer call_data)
+/*  [PURPOSE] This routine will pop up a popup widget. This routine is a
+    convenience routine to be used as a callback. An exclusive grab is
+    performed on the popped up widget.
+    <w> The widget on which the event occurred. This is ignored.
+    <client_data> The callback client data. This must be the popup widget.
+    <call_data> The callback call data. This is ignored.
+    [RETURNS] Nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+void xtmisc_popdown_cbk (Widget w, XtPointer client_data, XtPointer call_data)
+/*  [PURPOSE] This routine will pop down a popup widget. This routine is a
+    convenience routine to be used as a callback.
+    <w> The widget on which the event occurred. This is ignored.
+    <client_data> The callback client data. This must be the popup widget.
+    <call_data> The callback call data. This is ignored.
+    [RETURNS] Nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+void xtmisc_support_work_funcs (XtAppContext app_context)
+/*  [PURPOSE] This routine will register Xt support for work functions using
+    the <<wf_>> package.
+    <app_context> The Xt application context.
+    [RETURNS] Nothing. On failure the process aborts.
+*/
+/*---------------------------------------------------------------------------*/

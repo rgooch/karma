@@ -2,7 +2,7 @@
 
     Header for  t_  package.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,17 +31,17 @@
 
     Written by      Richard Gooch   19-OCT-1992
 
-    Last updated by Richard Gooch   29-NOV-1993
+    Last updated by Richard Gooch   6-MAY-1995
 
 */
+
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
+#  include <karma.h>
+#endif
 
 #ifndef KARMA_T_H
 #define KARMA_T_H
 
-
-#ifndef KARMA_H
-#  include <karma.h>
-#endif
 
 #define KARMA_FFT_OK (unsigned int) 0
 #define KARMA_FFT_BAD_LENGTH (unsigned int) 1
@@ -55,19 +55,18 @@
 #define KARMA_FFT_INVERSE -1
 
 /*  For the file: transform.c  */
-EXTERN_FUNCTION (unsigned int t_c_to_c_1D_fft_float, (float *real, float *imag,
-						      unsigned int length,
-						      unsigned int stride,
-						      unsigned int direction));
+EXTERN_FUNCTION (unsigned int t_c_to_c_1D_fft_float,
+		 (float *real, float *imag, unsigned int length,
+		  unsigned int stride, int direction));
 EXTERN_FUNCTION (unsigned int t_c_to_c_many_1D_fft_float,
 		 (float *real, float *imag, unsigned int length,
 		  unsigned int elem_stride, unsigned int number,
-		  unsigned int dim_stride, unsigned int direction) );
+		  unsigned int dim_stride, int direction) );
 EXTERN_FUNCTION (flag t_check_power_of_2, (unsigned int number) );
 EXTERN_FUNCTION (unsigned int t_r_to_c_many_1D_fft_float,
 		 (float *array, unsigned int length, unsigned int elem_stride,
 		  unsigned int number, unsigned int dim_stride,
-		  unsigned int direction) );
+		  int direction) );
 
 
 #endif /*  KARMA_T_H  */

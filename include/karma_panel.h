@@ -2,7 +2,7 @@
 
     Header for  panel_  package.
 
-    Copyright (C) 1993,1994  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,25 +31,25 @@
 
     Written by      Richard Gooch   1-OCT-1993
 
-    Last updated by Richard Gooch   26-AUG-1994
+    Last updated by Richard Gooch   21-JAN-1996
 
 */
-
-#ifndef KARMA_PANEL_H
-#define KARMA_PANEL_H
-
 
 #ifndef FILE
 #  include <stdio.h>
 #endif
 
-#ifndef KARMA_H
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
 #  include <karma.h>
 #endif
 
-#ifndef KARMA_DS_DEF_H
+#if !defined(KARMA_DS_DEF_H) || defined(MAKEDEPEND)
 #  include <karma_ds_def.h>
 #endif
+
+#ifndef KARMA_PANEL_H
+#define KARMA_PANEL_H
+
 
 
 typedef struct controlpanel_type * KControlPanel;
@@ -66,6 +66,7 @@ typedef struct panelitem_type * KPanelItem;
 #define PIA_CHOICE_COMMENTS    31006  /*  (char **)             */
 #define PIA_MIN_VALUE          31007  /*  (double)              */
 #define PIA_MAX_VALUE          31008  /*  (double)              */
+#define PIA_TOP_OF_PANEL       31009  /*  (flag)                */
 
 /*  Extra panel item type definitions  */
 #define PIT_FUNCTION     30000  /*  value_ptr: ( void (*) (char *) )  */
@@ -80,16 +81,13 @@ typedef struct panelitem_type * KPanelItem;
 /*  File:   panel.c   */
 EXTERN_FUNCTION (KControlPanel panel_create, (flag blank) );
 EXTERN_FUNCTION (KControlPanel panel_create_group, () );
+EXTERN_FUNCTION (void panel_add_item,
+		 (KControlPanel panel, char *name, char *comment,
+		  unsigned int type, void *value_ptr, ...) );
 EXTERN_FUNCTION (void panel_push_onto_stack, (KControlPanel panel) );
 EXTERN_FUNCTION (void panel_pop_from_stack, () );
 EXTERN_FUNCTION (flag panel_process_command_with_stack,
 		 (char *cmd, flag (*unknown_func) (), FILE *fp) );
-
-#ifndef KPANEL_INTERNAL
-EXTERN_FUNCTION (void panel_add_item, (KControlPanel panel, char *name,
-				       char *comment, unsigned int type,
-				       void *value_ptr, ...) );
-#endif
 
 
 #endif /*  KARMA_PANEL_H  */

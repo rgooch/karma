@@ -1,0 +1,38 @@
+
+    /*  Generic raycasting code  */
+    if (_sh_min > _sh_max)
+    {
+	(void) fprintf (stderr, "max: %e  less than min: %e\n", _sh_max, _sh_min);
+	a_prog_bug (function_name);
+    }
+    /*  Find furthest plane  */
+    _sh_plane_end = (int) (_sh_max - _sh_min) % skip_factor;
+    _sh_plane_end = (_sh_plane_end == 0) ? 0 : (skip_factor - _sh_plane_end);
+    if (_sh_ray_direction0 >= 0.0)
+    {
+	_sh_z = _sh_min;
+	_sh_z_inc = skip_factor;
+	plane_pos = _sh_min;
+	_sh_plane_inc = skip_factor;
+	_sh_plane_end += plane_pos + (int) (_sh_max - _sh_min);
+    }
+    else
+    {
+	_sh_z = _sh_max;
+	_sh_z_inc = -skip_factor;
+	plane_pos = _sh_max;
+	_sh_plane_inc = -skip_factor;
+	_sh_plane_end = plane_pos - (int) (_sh_max - _sh_min) - _sh_plane_end;
+    }
+    for (; plane_pos != _sh_plane_end;
+	 _sh_z += _sh_z_inc, plane_pos += _sh_plane_inc)
+    {
+	/*  Have another plane: compute position in plane  */
+	_sh_t = (_sh_z - _sh_ray_start0) * _sh_one_on_ray_direction0;
+	_sh_i_y = (_sh_ray_start1 + _sh_t * _sh_ray_direction1 + _sh_offset);
+	_sh_i_x = (_sh_ray_start2 + _sh_t * _sh_ray_direction2 + _sh_offset);
+	voxel = *(_sh_planes[plane_pos] +
+		  _sh_dim_offsets1[_sh_i_y] + _sh_dim_offsets2[_sh_i_x]);
+	if (voxel < -127) continue;
+
+	/*  START Shader specific computations  */

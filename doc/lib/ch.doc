@@ -7,9 +7,9 @@
     especially when transferring data over connections.
 
 
-    Written by		Richard Gooch	24-Jan-1995
+    Written by		Richard Gooch	29-Sep-1995
 
-    Last updated by	Richard Gooch	24-Jan-1995
+    Last updated by	Richard Gooch	29-Sep-1995
 
 
 */
@@ -579,4 +579,22 @@ flag ch_puts (channel, string, newline)
 Channel channel;
 CONST char *string;
 flag newline;
+/*---------------------------------------------------------------------------*/
+
+unsigned int ch_drain (Channel channel, unsigned int length)
+/*  [PURPOSE] This routine will drain (read) a specified number of bytes from a
+    channel, ignoring the data.
+    <channel> The Channel object.
+    <length> The number of bytes to drain.
+    [RETURNS] The number of bytes drained.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag ch_printf (Channel channel, CONST char *format, ...)
+/*  [PURPOSE] This routine provides writing of formatted output to a channel.
+    <channel> The channel object.
+    <format> The format string. See <<fprintf>>.
+    [VARARGS] The optional parameters. See <<fprintf>>.
+    [RETURNS] TRUE on success, else FALSE.
+*/
 /*---------------------------------------------------------------------------*/

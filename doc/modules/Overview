@@ -22,24 +22,35 @@ extract_functions	Extract list of public functions from C files
 fits2karma		Convert FITS to Karma format
 get_prefix		Extract the package prefix from C files
 histogram		Compute the histogram of scalar data
+karma2ppm		Convert Karma image file to PPM format
+karma2ps		Convert Karma image file to PostScript
 karma_cm_slave		Slave process for Connection Management
 kdump			Convert Karma file to ASCII-Karma
+kfuncgen		General 1-dimensional function generator
 kgen			Convert ASCII-Karma file to Karma
+kminmax			Find the minimum and maximum of an element
 kimage			Display 2-D slice of data as an image (hard to use)
-kmovie			Display a movie
-kview_2d		Display an image (easy to use)
+kmovie			Display a movie (obsolete)
+knoise			Generate n-dimensional array of random data
+kslice_3d		Interactive slicing of a 3-dimensional data set
+kview			Display image or movie (easy to use)
+kview_2d		Display an image (easy to use) (obsolete)
 mandel			Compute the Mandlebrot set
 merge_planes		Combine multiple single-valued arrays into one array
-persp_3d		Volume render a cube with perspective projection
+miriad2karma		Convert Miriad Image files to Karma format
+persp_3d		Volume render with perspective projection (obsolete)
+ppm2karma		Convert a PPM file to Karma format
 raw_grey2karma		Convert raw binary arrays to Karma format
 raw_planes2karma	Convert multiple raw binary arrays to one Karma file
-raycast_3d		Volume render a cube with parallel projection
+raycast_3d		Volume render with parallel projection (obsolete)
 rx			Receive data from a connection
+shader2c		Convert shader code to C code
 sort_packages		Sort packages in Karma
 tile1			Tile an n-dimensional array
 tx			Transmit data over a connection
-xpersp_3d		Graphical User Interface for  persp_3d
-xraycast_3d		Graphical User Interface for  raycast_3d
+xpersp_3d		Graphical User Interface for  persp_3d (obsolete)
+xray			Volume rendering tool
+xraycast_3d		Graphical User Interface for  raycast_3d (obsolete)
 xscale			Graphical User Interface for  xiscale
 
 
@@ -49,8 +60,4 @@ Application			Function
 ===============================================================================
 example				An example connection management script
 xiscale				Interactive scaling and conversion to K_UBYTE
-xray.local			Volume render with parallel projection
-xray.local.hist			As above but with extra histogram display
-xray.mvx			Volume render with parallel projection on MVX
-xray.mvx.hist			As above but with extra histogram display
 xrender				Volume render with perspective projection

@@ -4,7 +4,7 @@
 #   $KARMALIBPATH  directory, needed for the shared library implementations
 #   on some platforms.
 
-#   Copyright (C) 1994  Richard Gooch
+#   Copyright (C) 1994,1995  Richard Gooch
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -47,49 +47,34 @@ endsw
 
 @ karma_version = `echo $KARMA_VERSION | cut -d. -f1`
 
+cd $KARMAROOT/build/$MACHINE_OS/lib
+set libraries = (karma*)
+
 cd $KARMALIBPATH
 
-foreach lib (karma*)
-    if ("$OS" == "Solaris") then
-	rm lib${lib}.so
-	ln -s lib${lib}.so.$KARMA_VERSION lib${lib}.so
-	echo ln -s lib${lib}.so.$KARMA_VERSION lib${lib}.so
-    endif
-end
-
-foreach lib (karma*)
-    if ("$OS" == "Linux") then
-	if ( ! -f lib${lib}.so.$karma_version ) then
-	    rm lib${lib}.so.$karma_version
-	    ln -s lib${lib}.so.$KARMA_VERSION lib${lib}.so.$karma_version
-	    echo ln -s lib${lib}.so.$KARMA_VERSION lib${lib}.so.$karma_version
-	    set mkimage_flags = -f
-	endif
-    endif
-end
-
-if ("$OS" == "Linux") then
-    if ("$?mkimage_flags" == "0") then
-	cp /dev/null mkimage_flags
-    else
-	echo "$mkimage_flags" > mkimage_flags
-    endif
-endif
-
-foreach lib (karma*)
+# First remove all old versions of shared libraries
+foreach lib ($libraries)
     foreach file (lib${lib}.so.*.*)
 	if ("$file" != "lib${lib}.so.$KARMA_VERSION") then
 	    echo "Removing: $file"
 	    rm $file
+	    set _safile = `echo "$file"|sed -e "s/.so./.sa./"`
+	    if (-f $_safile) then
+		echo "Removing: $_safile"
+		rm $_safile
+	    endif
+	    unset _safile
 	endif
     end
-    if ("$OS" == "SunOS") then
-	foreach file (lib${lib}.sa.*.*)
-	    if ("$file" != "lib${lib}.sa.$KARMA_VERSION") then
-		echo "Removing: $file"
-		rm $file
-	    endif
-	end
+end
+
+# Now make sure symbolic link points to the current (only) version
+set soname_extension = ""
+foreach lib ($libraries)
+    if ( ! -r lib${lib}.so${soname_extension} ) then
+	rm -f lib${lib}.so${soname_extension}
+	ln -s lib${lib}.so.$KARMA_VERSION lib${lib}.so${soname_extension}
+	echo ln -s lib${lib}.so.$KARMA_VERSION lib${lib}.so${soname_extension}
     endif
 end
 

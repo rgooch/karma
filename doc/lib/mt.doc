@@ -5,9 +5,9 @@
   may execute concurrently.
 
 
-    Written by		Richard Gooch	24-Jan-1995
+    Written by		Richard Gooch	27-Jan-1996
 
-    Last updated by	Richard Gooch	24-Jan-1995
+    Last updated by	Richard Gooch	27-Jan-1996
 
 
 */
@@ -16,18 +16,30 @@ KThreadPool mt_create_pool (void *pool_info)
 /*  [PURPOSE] This routine will create a pool of threads which may have jobs
     launched onto it.
     <pool_info> An arbitrary pointer passed to work functions.
-    [MT-LEVEL] Safe
+    [NOTE] The environment variable MT_MAX_THEADS may be used to limit the
+    number of threads used.
+    [MT-LEVEL] Safe under Solaris 2.
     [RETURNS] A KThreadPool object on success, else NULL.
 */
 /*---------------------------------------------------------------------------*/
 
 void mt_destroy_pool (KThreadPool pool, flag interrupt)
-/*  [PURPOSE] The function will destroy a thread pool.
+/*  [PURPOSE] This routine will destroy a thread pool.
     <pool) The thread pool.
     <interrupt> If TRUE, any jobs not yet completed will be killed, else the
     function will wait for uncompleted jobs to finish prior to destroying the
     pool.
-    [MT-LEVEL] Safe
+    [MT-LEVEL] Safe.
+    [RETURNS] Nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+void mt_destroy_all_pools (flag interrupt)
+/*  [PURPOSE] This routine will destroy all thread pools.
+    <interrupt> If TRUE, any jobs not yet completed will be killed, else the
+    function will wait for uncompleted jobs to finish prior to destroying the
+    pools.
+    [MT-LEVEL] Safe.
     [RETURNS] Nothing.
 */
 /*---------------------------------------------------------------------------*/
@@ -36,7 +48,7 @@ unsigned int mt_num_threads (KThreadPool pool)
 /*  [PURPOSE] This function will determine the number of threads that may be
     run concurrently in a thread pool.
     <pool> The thread pool.
-    [MT-LEVEL] Safe
+    [MT-LEVEL] Unsafe.
     [RETURNS] The number of concurrent threads.
 */
 /*---------------------------------------------------------------------------*/
@@ -44,18 +56,71 @@ unsigned int mt_num_threads (KThreadPool pool)
 void mt_launch_job (KThreadPool pool,
 		    void (*func) (void *pool_info,
 				  void *call_info1, void *call_info2,
-				  void *call_info3, void *call_info4),
+				  void *call_info3, void *call_info4,
+				  void *thread_info),
 		    void *call_info1, void *call_info2,
 		    void *call_info3, void *call_info4)
-/*  [PURPOSE] This function will launch a job to a pool of threads.
+/*  [PURPOSE] This function will launch a job to a pool of threads, running the
+    job on the first available thread.
     <pool> The thread pool.
-    <func> The function to execute.
+    <func> The function to execute. The interface to this functions is as
+    follows:
+    [<pre>]
+    void func (void *pool_info, void *call_info1, void *call_info2,
+               void *call_info3, void *call_info4, void *thread_info)
+    *   [PURPOSE] This routine will perform a job.
+        <pool_info> The arbitrary pool information pointer.
+	<call_info1> The first arbitrary call information pointer.
+	<call_info2> The second arbitrary call information pointer.
+	<call_info3> The third arbitrary call information pointer.
+	<call_info4> The fourth arbitrary call information pointer.
+	<thread_info> A pointer to arbitrary, per thread, information. This
+	information is private to the thread.
+	[RETURNS] Nothing.
+    *
+    [</pre>]
     <call_info1> An arbitrary argument to <<func>>.
     <call_info2> An arbitrary argument to <<func>>.
     <call_info3> An arbitrary argument to <<func>>.
     <call_info4> An arbitrary argument to <<func>>.
-    [MT-LEVEL] Safe
+    [NOTE] Jobs must not modify any signal actions or masks.
+    [MT-LEVEL] Safe.
     [RETURNS] Nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+void mt_setlock (KThreadPool pool, flag lock)
+/*  [PURPOSE] This function will lock a thread pool such that no other thread
+    can lock the pool at the same time. This does not prevent other threads
+    from running, nor new jobs from being launched, it merely prevents them
+    from aquiring the lock.
+    <pool> The thread pool to lock.
+    <lock> If TRUE the pool is locked. If FALSE the pool is unlocked and any
+    other threads wishing to lock the pool may do so (one at a time of course).
+    [MT-LEVEL] Safe.
+    [RETURNS] Nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+void mt_new_thread_info (KThreadPool pool, void *info, uaddr size)
+/*  [PURPOSE] This routine will register new thread information for the threads
+    in a pool.
+    <pool> The thread pool.
+    <info> A pointer to the thread information array. If NULL and <<size>> is
+    not 0 then the routine will allocate an array of sufficient size.
+    <size> The size (per thread) in bytes of the thread information. When
+    threads are executing each is guaranteed to have a private working space of
+    this size.
+    [MT-LEVEL] Safe.
+    [RETURNS] Nothing. On failure the process aborts.
+*/
+/*---------------------------------------------------------------------------*/
+
+void *mt_get_thread_info (KThreadPool pool)
+/*  [PURPOSE] This routine will get the thread information pointer for a pool
+    of threads.
+    <pool> The thread pool.
+    [RETURNS] A pointer to the thread information array.
 */
 /*---------------------------------------------------------------------------*/
 
@@ -63,7 +128,7 @@ void mt_wait_for_all_jobs (KThreadPool pool)
 /*  [PURPOSE] This function will wait for all previously launched jobs to
     complete.
     <pool> The thread pool.
-    [MT-LEVEL] Safe
+    [MT-LEVEL] Safe.
     [RETURNS] Nothing.
 */
 /*---------------------------------------------------------------------------*/

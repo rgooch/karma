@@ -9,9 +9,9 @@
     dsxfr_ routines.
 
 
-    Written by		Richard Gooch	24-Jan-1995
+    Written by		Richard Gooch	27-Jan-1996
 
-    Last updated by	Richard Gooch	24-Jan-1995
+    Last updated by	Richard Gooch	27-Jan-1996
 
 
 */
@@ -373,59 +373,51 @@ flag clear;
 flag array_alloc;
 /*---------------------------------------------------------------------------*/
 
-flag ds_find_single_extremes (char *data, unsigned int elem_type,
-			      unsigned int conv_type, dim_desc *dimension,
-			      unsigned int stride, double scan_start,
-			      double scan_end, double *min, double *max)
-/*  This routine will find the extremes (minimum and maximum) of a single trace
-    (element versus a dimension).
-    The data must be pointed to by  data  .
-    The type of the element must be in  elem_type  .
-    The type of conversion to use for complex numbers must be in  conv_type  .
-    The dimension descriptor must be pointed to by  dimension  .
-    The stride of the elements in memory must be in  stride  .
-    The starting and ending co-ordinate values to scan between must be in
-    scan_start  and  scan_end  ,respectively.
-    The minimum value will be written to the storage pointed to by  min  .
-    The maximum value will be written to the storage pointed to by  max  .
-    The minimum and maximum value must be initialised to a very large positive
-    number and a very large negative number, respectively, outside of the
-    routine. In other words, the routine does not initialise these values prior
-    to testing for the minimum and maximum.
-    The routine returns TRUE on success, else it returns FALSE.
+flag ds_find_1D_extremes (CONST char *data,
+			  unsigned int num_values, uaddr *offsets,
+			  unsigned int elem_type, unsigned int conv_type,
+			  double *min, double *max)
+/*  [PURPOSE] This routine will find the extremes (minimum and maximum) of a
+    single trace (element versus a dimension).
+    <data> A pointer to the data.
+    <num_values> The number of values to process.
+    <offsets> The address offsets for data along the dimension.
+    <elem_type> The type of the element.
+    <conv_type> The type of conversion to use for complex numbers.
+    <min> The minimum value will be written here.
+    <max> The maximum value will be written here.
+    [NOTE] The minimum and maximum value must be initialised to a very large
+    positive number and a very large negative number, respectively, outside of
+    the routine. In other words, the routine does not initialise these values
+    prior to testing for the minimum and maximum.
+    [MT-LEVEL] Safe.
+    [RETURNS] TRUE on success, else FALSE.
 */
 /*---------------------------------------------------------------------------*/
 
-flag ds_find_plane_extremes (char *data, unsigned int elem_type,
-			     unsigned int conv_type, dim_desc *abs_dim_desc,
-			     unsigned int abs_dim_stride,
-			     dim_desc *ord_dim_desc,
-			     unsigned int ord_dim_stride,
-			     double abs_scan_start, double abs_scan_end,
-			     double ord_scan_start, double ord_scan_end,
-			     double *min, double *max)
-/*  This routine will find the extremes (minimum and maximum) of a single plane
-    (element versus two dimensions).
-    The data must be pointed to by  data  .
-    The type of the element must be in  elem_type  .
-    The type of conversion to use for complex numbers must be in  conv_type  .
-    The abscissa dimension descriptor must be pointed to by  abs_dim_desc  .
-    The abscissa dimension stride of the elements in memory must be in
-    abs_dim_stride  .
-    The ordinate dimension descriptor must be pointed to by  ord_dim_desc  .
-    The ordinate dimension stride of the elements in memory must be in
-    ord_dim_stride  .
-    The starting and ending abscissa co-ordinate values to scan between must be
-    in  abs_scan_start  and  abs_scan_end  ,respectively.
-    The starting and ending ordinate co-ordinate values to scan between must be
-    in  ord_scan_start  and  ord_scan_end  ,respectively.
-    The minimum value will be written to the storage pointed to by  min  .
-    The maximum value will be written to the storage pointed to by  max  .
-    The minimum and maximum value must be initialised to a very large positive
-    number and a very large negative number, respectively, outside of the
-    routine. In other words, the routine does not initialise these values prior
-    to testing for the minimum and maximum.
-    The routine returns TRUE on success, else it returns FALSE.
+flag ds_find_2D_extremes (CONST char *data,
+			  unsigned int length1, uaddr *offsets1,
+			  unsigned int length2, uaddr *offsets2,
+			  unsigned int elem_type, unsigned int conv_type,
+			  double *min, double *max)
+/*  [PURPOSE] This routine will find the extremes (minimum and maximum) of a
+    single plane (element versus two dimensions).
+    <data> A pointer to the data.
+    <length1> The number of values to process along one of the dimensions. For
+    efficiency this should be the more significant dimension.
+    <offsets1> The address offsets for data along the corresponding dimension.
+    <length2> The number of values to process along the other of the dimensions
+    <offsets2> The address offsets for data along the corresponding dimension.
+    <elem_type> The type of the element.
+    <conv_type> The type of conversion to use for complex numbers.
+    <min> The minimum value will be written here.
+    <max> The maximum value will be written here.
+    [NOTE] The minimum and maximum value must be initialised to a very large
+    positive number and a very large negative number, respectively, outside of
+    the routine. In other words, the routine does not initialise these values
+    prior to testing for the minimum and maximum.
+    [MT-LEVEL] Safe.
+    [RETURNS] TRUE on success, else FALSE.
 */
 /*---------------------------------------------------------------------------*/
 
@@ -436,34 +428,48 @@ flag ds_find_single_histogram (char *data, unsigned int elem_type,
 			       unsigned long *histogram_array,
 			       unsigned long *histogram_peak,
 			       unsigned long *histogram_mode)
-/*  This routine will find the histogram of a single trace (element versus a
-    dimension). This routine may be called repeatedly with multiple traces in
-    order to build an aggregate histogram of all traces.
-    The data must be pointed to by  data  .Misaligned data will cause bus
-    errors on some platforms.
-    The type of the element must be in  elem_type  .
-    The type of conversion to use for complex numbers must be in  conv_type  .
+/*  [PURPOSE] This routine will find the histogram of a single trace (element
+    versus a dimension). This routine may be called repeatedly with multiple
+    traces in order to build an aggregate histogram of all traces.
+    <data> A pointer to the data. Misaligned data will cause bus errors on some
+    platforms.
+    <elem_type> The type of the element.
+    <conv_type> The type of conversion to use for complex numbers.
     Legal value for this include:
-        KIMAGE_COMPLEX_CONV_REAL        KIMAGE_COMPLEX_CONV_IMAG
-        KIMAGE_COMPLEX_CONV_ABS         KIMAGE_COMPLEX_CONV_SQUARE_ABS
-	KIMAGE_COMPLEX_CONV_PHASE       KIMAGE_COMPLEX_CONV_CONT_PHASE
-    The length of the dimension must be given by  num_values  .
-    The address offsets for data along the dimension must be pointed to by
-    offsets  .
-    If the value of  offsets  is NULL, the stride (in bytes) between
-    consecutive values along the dimension must be given by  stride  .
-    Data values below the value  min  will be ignored.
-    Data values above the value  max  will be ignored.
-    The number of histogram bins must be given by  num_bins  .
-    The histogram array must be pointed to by  historgram_array  .The values in
-    this array are updated, and hence must be initialised externally.
-    The peak of the histogram is written to the storage pointed to by
-    histogram_peak  .This value is updated, and hence must be externally
+        CONV_CtoR_REAL        CONV_CtoR_IMAG
+        CONV_CtoR_ABS         CONV_CtoR_SQUARE_ABS
+	CONV_CtoR_PHASE       CONV_CtoR_CONT_PHASE
+    <num_values> The length of the dimension.
+    <offsets> The address offsets for data along the dimension.
+    <stride> If the value of  offsets  is NULL, this gives the stride (in
+    bytes) between consecutive values along the dimension.
+    <min> Data values below this will be ignored.
+    <max> Data values above this will be ignored.
+    <num_bins> The number of histogram bins.
+    <histogram_array> The histogram array. The values in this array are updated
+    and hence must be initialised externally.
+    <histogram_peak> The peak of the histogram is written here. This value is
+    updated, and hence must be externally initialised to 0.
+    <histogram_mode> The mode of the histogram (index value of the peak) will
+    be written here. This value is updated, and hence must be externally
     initialised to 0.
-    The mode of the histogram (index value of the peak) will be written to the
-    storage pointed to by  histogram_mode  .This value is updated, and hence
-    must be externally initialised to 0.
-    The routine returns TRUE on success, else it returns FALSE.
+    [MT-LEVEL] Safe.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+void ds_complex_to_real_1D (double *out, unsigned int out_stride,
+			    double *inp, unsigned int num_values,
+			    unsigned int conv_type)
+/*  [PURPOSE] This routine will convert a 1 dimensional array of complex values
+    to real values.
+    <out> A pointer to the output array.
+    <out_stride> The stride (in doubles) of the output array.
+    <inp> The array of input complex values.
+    <num_values> The number of values to convert.
+    <conv_type> The conversion type to apply.
+    [MT-LEVEL] Safe.
+    [RETURNS] Nothing.
 */
 /*---------------------------------------------------------------------------*/
 
@@ -516,38 +522,31 @@ CONST char *string;
 flag update;
 /*---------------------------------------------------------------------------*/
 
-flag ds_get_unique_named_value (pack_desc, packet, name, type, value)
-/*  This routine will get a unique named value from a Karma general data
-    structure.
-    The packet descriptor to get the name from must be pointed to by  pack_desc
-    The unique packet which is described by  pack_desc  must be pointed to by
-    packet  .
-    The name of the element must be pointed to by  name  .
-    The type of the data found will be written to the storage pointed to by
-    type  .If this is NULL, nothing is written here.
-    The value of the data will be written to the storage pointed to by  value
-    The routine returns TRUE on success, else it returns FALSE.
+flag ds_get_unique_named_value (packet_desc *pack_desc, char *packet,
+				CONST char *name, unsigned int *type,
+				double value[2])
+/*  [PURPOSE] This routine will get a unique named value from a Karma general
+    data structure.
+    <pack_desc> A pointer to the packet descriptor.
+    <packet> A pointer to the packet containing the named value.
+    <name> The name of the value.
+    <type> The type of the element found will be written here. If this is NULL,
+    nothing is written here.
+    <value> The value of the element data will be written here.
+    [RETURNS] TRUE on success, else FALSE.
 */
-packet_desc *pack_desc;
-char *packet;
-CONST char *name;
-unsigned int *type;
-double *value;
 /*---------------------------------------------------------------------------*/
 
-char *ds_get_unique_named_string (pack_desc, packet, name)
-/*  This routine will get a unique named string from a Karma general data
-    structure.
-    The packet descriptor to get the name from must be pointed to by  pack_desc
-    The unique packet which is described by  pack_desc  must be pointed to by
-    packet  .
-    The name of the element must be pointed to by  name  .
-    The routine returns a pointer to a dynamically allocated copy of the string
-    on success, else it returns NULL.
+char *ds_get_unique_named_string (packet_desc *pack_desc, char *packet,
+				  CONST char *name)
+/*  [PURPOSE] This routine will get a unique named string from a Karma general
+    data structure.
+    <pack_desc> The packet descriptor.
+    <packet> The packet containing the named string.
+    <name> The element name.
+    [RETURNS] A pointer to a dynamically allocated copy of the string on
+    success, else NULL.
 */
-packet_desc *pack_desc;
-char *packet;
-CONST char *name;
 /*---------------------------------------------------------------------------*/
 
 unsigned short *ds_cmap_alloc_colourmap (size, multi_desc, pack_desc, packet)
@@ -681,17 +680,13 @@ CONST char *name;
 /*---------------------------------------------------------------------------*/
 
 array_desc *ds_copy_array_desc_until (inp_desc, name)
-/*  This routine will copy an array descriptor pointed to by  inp_desc  to
-    an array descriptor which is allocated (by this routine). All tiling
-    information and address offset arrays are also copied.
-    The routine will stop the copying process when an occurence of the name
-    pointed to by  name  is found.
-    If  name  is NULL, then the entire data structure descriptor is copied.
-    The routine recursively searches and copies the array packet descriptor.
-    The routine will return a pointer to the array descriptor created.
-    If there are any errors, the routine returns NULL.
-    If the array packet descriptor cannot be copied, the pointer to the packet
-    descriptor in the array descriptor will be set to NULL.
+/*  [PURPOSE] This routine will make a copy of an array descriptor and all
+    sub-descriptors until a specified name is encountered. All tiling
+    information is copied, but address offset arrays are NOT copied.
+    <inp_desc> The input array descriptor.
+    <name> The name specifying where the copying should stop. If this is NULL,
+    the entire data structure descriptor is copied.
+    [RETURNS] A pointer to the array descriptor created on success, else NULL.
 */
 array_desc *inp_desc;
 CONST char *name;
@@ -1256,18 +1251,16 @@ unsigned long ds_get_coord_num (dim_desc *dimension, double coordinate,
 /*---------------------------------------------------------------------------*/
 
 flag ds_get_element (CONST char *datum, unsigned int datum_type,
-		     double *value, flag *complex)
-/*  This routine will convert an atomic datum to a double precision complex
-    value.
-    The datum to be converted must be pointed to by  datum  and the data type
-    value must be in  datum_type  .
-    The data value will be written to the storage pointed to by  value  .
-    This storages MUST lie on a  double  boundary.
-    If the datum is a complex type, then the value of TRUE is written to the
-    storage pointed to by  complex  ,else the value FALSE is written here. If
-    this is NULL, nothing is written here.
-    The routine returns TRUE if the data was successfully converted,
-    else it returns FALSE.
+		     double value[2], flag *complex)
+/*  [PURPOSE] This routine will convert an atomic datum to a double precision
+    complex value.
+    <datum> A pointer to the datum to be converted.
+    <datum_type> The type of the datum.
+    <value> The data value will be written here.
+    <complex> If the datum is a complex type, then the value of TRUE is written
+    here, else the value FALSE is written here. If this is NULL, nothing is
+    written here.
+    [RETURNS] TRUE if the data was successfully converted, else FALSE.
 */
 /*---------------------------------------------------------------------------*/
 
@@ -1326,7 +1319,28 @@ flag ds_get_scattered_elements (CONST char *data, unsigned int data_type,
     written here, else the value FALSE is written here. If this is NULL,
     nothing is written here.
     <num_values> The number of data values to convert.
+    [MT-LEVEL] Safe.
     [RETURNS] TRUE if the data was successfully converted, else FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag ds_can_transfer_element_as_block (unsigned int type)
+/*  [PURPOSE] This routine will determine if an element can be transferred as a
+    single block of data (i.e. no conversion between host and network format is
+    needed).
+    <type> The type of the element.
+    [RETURNS] TRUE if the element may be transferred as a single block, else
+    FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag ds_can_transfer_packet_as_block (packet_desc *pack_desc)
+/*  [PURPOSE] This routine will determine if a packet can be transferred as a
+    single block of data (i.e. no conversion between host and network format is
+    needed).
+    <pack_desc> A pointer to the packet descriptor.
+    [RETURNS] TRUE if the packet may be transferred as a single block, else
+    FALSE.
 */
 /*---------------------------------------------------------------------------*/
 
@@ -1630,12 +1644,11 @@ char *append_arrayname;
 /*---------------------------------------------------------------------------*/
 
 char *ds_put_element (output, type, input)
-/*  This routine will write out an element of data to the storage pointed to by
-    output  .
-    The type of the element must be in  type  .
-    The input data must be pointed to by  input  .
-    The routine returns the address of the next element on success, else it
-    returns NULL.
+/*  [PURPOSE] This routine will write out an element of data.
+    <output> A pointer to the output storage.
+    <type> The type of the element to be written.
+    <input> The input data.
+    [RETURNS] The address of the next element on success, else NULL.
 */
 char *output;
 unsigned int type;

@@ -7,7 +7,6 @@
 #include <X11/StringDefs.h>
 
 #include <Xkw/ImageDisplay.h>
-#include <karma_canvas.h>
 
 struct crosshair_type
 {
@@ -25,20 +24,31 @@ struct dual_crosshair_type
 typedef struct _ImageDisplayPart
 {
     /*  Public resources  */
-    KWorldCanvas pseudoCanvas;
-    KWorldCanvas directCanvas;
-    KWorldCanvas trueCanvas;
-    KWorldCanvas visibleCanvas;
-    String imageName;
-    Boolean enableAnimation;
-    Boolean showQuitButton;
-    int cmapSize;
+    KWorldCanvas  pseudoCanvas;
+    KWorldCanvas  directCanvas;
+    KWorldCanvas  trueCanvas;
+    KWorldCanvas  pseudoCanvasLeft;
+    KWorldCanvas  pseudoCanvasRight;
+    KWorldCanvas  directCanvasLeft;
+    KWorldCanvas  directCanvasRight;
+    KWorldCanvas  trueCanvasLeft;
+    KWorldCanvas  trueCanvasRight;
+    KWorldCanvas  visibleCanvas;
+    String        imageName;
+    Bool          enableAnimation;
+    Bool          showAnimateButton;
+    Bool          showQuitButton;
+    Bool          fullscreen;
+    int           cmapSize;
+    Bool          verbose;
     /*  Private resources  */
     Widget filepopup;
     Widget trackLabel;
     Widget izoomwinpopup;
     Widget animatepopup;
+    Widget pswinpopup;
     Widget multi_canvas;
+    Widget override_shell;
     GC pseudo_main_gc;
     GC pseudo_crosshair_gc;
     GC direct_main_gc;

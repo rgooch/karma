@@ -31,23 +31,21 @@
 
     Written by      Richard Gooch   13-SEP-1992
 
-    Last updated by Richard Gooch   17-JAN-1995
+    Last updated by Richard Gooch   7-APR-1995
 
 */
+
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
+#  include <karma.h>
+#endif
+
+#if !defined(KARMA_C_DEF_H) || defined(MAKEDEPEND)
+#  include <karma_c_def.h>
+#endif
 
 #ifndef KARMA_DS_DEF_H
 #define KARMA_DS_DEF_H
 
-
-#ifndef KARMA_H
-#  include <karma.h>
-#endif
-
-#ifndef KARMA_C_DEF_H
-#  include <karma_c_def.h>
-#endif
-
-#include <k_win_scale.h>
 
 /*  The following list defines the keyword constants for the various data types
   supported by the general data structure.
@@ -82,6 +80,8 @@
 
 #define NUMTYPES      27
 
+#define K_UB_RGB      27  /*  Not generally supported yet        */
+
 /*  These constants define how array memory was allocated. The constant
     immediately follows the array pointer (within the element which is an
     instance of an array).
@@ -105,14 +105,23 @@
 
 /*  These are the conversion specifier values used in  find_single_extremes
     and other places (such as  kplot  and  kimage  )  */
-#define CONV1_REAL (unsigned int) 0
-#define CONV1_IMAG (unsigned int) 1
-#define CONV1_COMPLEX (unsigned int) 2
-#define CONV1_ABS (unsigned int) 3
-#define CONV1_SQUARE_ABS (unsigned int) 4
-#define CONV1_PHASE (unsigned int) 5
-#define CONV1_CONT_PHASE (unsigned int) 6
-#define CONV1_ENVELOPE (unsigned int) 7
+
+#define CONV_CtoR_REAL       (unsigned int) 10
+#define CONV_CtoR_IMAG       (unsigned int) 11
+#define CONV_CtoR_ABS        (unsigned int) 12
+#define CONV_CtoR_SQUARE_ABS (unsigned int) 13
+#define CONV_CtoR_PHASE      (unsigned int) 14
+#define CONV_CtoR_CONT_PHASE (unsigned int) 15
+#define CONV_CtoR_ENVELOPE   (unsigned int) 16
+
+#define CONV1_REAL       CONV_CtoR_REAL
+#define CONV1_IMAG       CONV_CtoR_IMAG
+#define CONV1_COMPLEX    (unsigned int) 2
+#define CONV1_ABS        CONV_CtoR_ABS
+#define CONV1_SQUARE_ABS CONV_CtoR_SQUARE_ABS
+#define CONV1_PHASE      CONV_CtoR_PHASE
+#define CONV1_CONT_PHASE CONV_CtoR_CONT_PHASE
+#define CONV1_ENVELOPE   CONV_CtoR_ENVELOPE
 #define NUM_CONV1_ALTERNATIVES (unsigned int) 8
 
 

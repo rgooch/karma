@@ -37,7 +37,7 @@
 */
 #include <stdio.h>
 #include <math.h>
-#include "karma.h"
+#include <karma.h>
 #include <karma_a.h>
 #include <karma_n.h>
 #include <karma_ic.h>

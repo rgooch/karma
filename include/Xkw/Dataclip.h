@@ -7,9 +7,10 @@
  iarray                  Iarray           Pointer         NULL
  intensityScaleCallback  Callback         Callback        NULL
  maxDataRegions          MaxDataRegions   int             1
- showIscaleButton        ShowIscaleButton Boolean         False
+ showIscaleButton        ShowIscaleButton Bool            False
  regionCallback          Callback         Callback        NULL
- autoValueScale          AutoValueScale   Boolean         True
+ autoValueScale          AutoValueScale   Bool            True
+ verbose                 Verbose          Bool            False
 ------------------------------------------------------------------------*/
 
 #ifndef DATACLIP__H
@@ -36,10 +37,12 @@ typedef struct
 #define XkwNshowIscaleButton "showIscaleButton"
 #define XkwNregionCallback "regionCallback"
 #define XkwNautoValueScale "autoValueScale"
+#define XkwNverbose "verbose"
 
 #define XkwCIarray "Iarray"
 #define XkwCMaxDataRegions "MaxDataRegions"
 #define XkwCShowIscaleButton "ShowIscaleButton"
 #define XkwCAutoValueScale "AutoValueScale"
+#define XkwCVerbose "Verbose"
 
 #endif

@@ -7,109 +7,106 @@
     and event management.
 
 
-    Written by		Richard Gooch	6-Jan-1995
+    Written by		Richard Gooch	5-Dec-1995
 
     Last updated by	Richard Gooch	13-APR-1993
 
 
 */
 
-void kcmap_init (alloc_func, free_func, store_func, location_func)
-/*  This routine will initialise the high level colourmap package. This must be
-    called before any other  kcmap_  routines.
-    The function which must be called in order to allocate colourcells must be
-    pointed to by  alloc_func  .See the  xc_  routines.
-    The interface to this routine is as follows:
-
-    unsigned int alloc_func (num_cells, pixel_values, min_cells, dpy_handle)
-    *   This routine will allocate a number of colourcells in a low level
-        colourmap (eg. using the Xlib routine XAllocColorCells).
-	The number of colourcells to allocate must be given by  num_cells  .
-	The pixel values allocated will be written to the array pointed to by
-	pixel_values  .
-	The minimum number of colourcells to allocate must be given by
-	min_cells  .The routine will try to allocate at least this number of
-	colourcells.
-	The low level display handle must be given by  dpy_handle  .The meaning
-	of this value depends on the lower level graphics library used.
-	The routine returns the number of colourcells allocated.
+Kcolourmap kcmap_va_create (char *name, unsigned int num_cells, flag tolerant,
+			    Kdisplay dpy_handle, unsigned int (*alloc_func) (),
+			    void (*free_func) (), void (*store_func) (),
+			    void (*location_func) (), ...)
+/*  [PURPOSE] This routine will create a high level colourmap.
+    <name> The name of the function used to initialise the colour values. If
+    this is NULL, the default "Greyscale1" function is used.
+    <num_cells> The initial number of colourcells to allocate. This must not be
+    less than 2.
+    <tolerant> If TRUE the routine will try to allocate as many colourcells as
+    possible (up to <<num_cells>>), else it will fail if it could not
+    allocatate all required colourcells.
+    <dpy_handle> The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+    <alloc_func> The function which must be called in order to allocate
+    colourcells. See the <xc_> routines for examples. The interface to this
+    routine is as follows:
+    [<pre>]
+    unsigned int alloc_func (unsigned int num_cells,
+                             unsigned long *pixel_values,
+			     unsigned int min_cells, Kdisplay dpy_handle)
+    *   [PURPOSE] This routine will allocate a number of colourcells in a low
+        level colourmap (e.g. using the Xlib routine XAllocColorCells).
+	<num_cells> The number of colourcells to allocate.
+	<pixel_values> The array ofpixel values allocated will be written here.
+	<min_cells> The minimum number of colourcells to allocate. The routine
+	will try to allocate at least this number of colourcells.
+	<dpy_handle> The low level display handle. The meaning of this value
+	depends on the lower level graphics library used.
+	[RETURNS] The number of colourcells allocated.
     *
-    unsigned int num_cells;
-    unsigned long *pixel_values;
-    flag tolerant;
-    Kdisplay dpy_handle;
-
-    The function which must be called to free colourcells must be pointed to by
-    free_func  .
-    The interface to this routine is as follows:
-
-    void free_func (num_cells, pixel_values, dpy_handle)
-    *   This routine will free a number of colourcells in a low level colourmap
-        The number of colourcells to free must be given by  num_cells  .
-        The pixel values (colourcells) to free must be pointed to by
-	pixel_values  .
-        The low level display handle must be given by  dpy_handle  .The meaning
-	of this value depends on the lower level graphics library used.
-	The routine returns nothing.
+    [</pre>]
+    <free_func> The function which must be called to free colourcells. The
+    interface to this routine is as follows:
+    [<pre>]
+    void free_func (unsigned int num_cells, unsigned long *pixel_values,
+                    Kdisplay dpy_handle)
+    *   [PURPOSE] This routine will free a number of colourcells in a low
+        level colourmap.
+	<num_cells> The number of colourcells to free.
+	<pixel_values> The array of pixel values (colourcells) to free.
+        <dpy_handle> The low level display handle. The meaning of this value
+	depends on the lower level graphics library used.
+	[RETURNS] Nothing.
     *
-    unsigned int num_cells;
-    unsigned long *pixel_values;
-    Kdisplay dpy_handle;
-
-    The function which is used to store colours into a low level colourmap must
-    be pointed to by  store_func  .
-    The interface to this routine is as follows:
-
-    void store_func (num_cells, pixel_values, reds, greens, blues, stride,
-                     dpy_handle)
-    *   This routine will store colours into a low level colourmap.
-        The number of colourcells to store must be given by  num_cells  .
-	The pixel values must be pointed to by  pixel_values  .
-	The red intensity values must be pointed to by  reds  .
-	The green intensity values must be pointed to by  greens  .
-	The blue intensity values must be pointed to by  blues  .
-	The stride (in unsigned shorts) between intensity values in each array
-	must be given by  stride  .
-	The low level display handle must be given by  dpy_handle  .The	meaning
-	of this value depends on the lower level graphics library used.
-	The routine returns nothing.
+    [</pre>]
+    <store_func> The function which is used to store colours into a low level
+    colourmap. The interface to this routine is as follows:
+    [<pre>]
+    void store_func (unsigned int num_cells, unsigned long *pixel_values,
+                     unsigned short *reds, unsigned short *greens,
+		     unsigned short *blues, unsigned int stride,
+		     Kdisplay dpy_handle)
+    *   [PURPOSE] This routine will store colours into a low level colourmap.
+        <num_cells> The number of colourcells to store.
+	<pixel_values> The array of pixel values.
+	<reds> The array of red intensity values.
+	<greens> The array of green intensity values.
+	<blues> The array of blue intensity values.
+	<stride> The stride (in unsigned shorts) between intensity values in
+	each array.
+	<dpy_handle> The low level display handle. The meaning of this value
+	depends on the lower level graphics library used.
+	[RETURNS] Nothing.
     *
-    unsigned int num_cells;
-    unsigned long *pixel_values;
-    unsigned short *reds;
-    unsigned short *greens;
-    unsigned short *blues;
-    unsigned int stride;
-    Kdisplay dpy_handle;
-
-    The function which is used to determine the location of a display must be
-    pointed to by  location_func  .
-    The interface to this routine is as follows:
-
-    void location_func (dpy_handle, serv_hostaddr, serv_display_num)
-    *   This routine will determine the location of the graphics display being
-        used.
-	The low level display handle must be given by  dpy_handle  .The	meaning
-	of this value depends on the lower level graphics library used.
-	The Internet address of the host on which the display is running will
-	be written to the storage pointed to by  serv_hostaddr  .
-	The number of the display will be written to the storage pointed to by
-	serv_display_num  .
-	The routine returns nothing.
+    [</pre>]
+    <location_func> The function which is used to determine the location of a
+    display. The interface to this routine is as follows:
+    [<pre>]
+    void location_func (Kdisplay dpy_handle, unsigned long *serv_hostaddr,
+                        unsigned long *serv_display_num)
+    *   [PURPOSE] This routine will determine the location of the graphics
+        display being used.
+	<dpy_handle> The low level display handle. The meaning of this value
+	depends on the lower level graphics library used.
+	<serv_hostaddr> The Internet address of the host to which the display
+	is connected will be written here.
+	<serv_display_num> The number of the display will be written here.
+	[RETURNS] Nothing.
     *
-    Kdisplay dpy_handle;
-    unsigned long *serv_hostaddr;
-    unsigned long *serv_display_num;
-
-    The routine returns nothing.
+    [</pre>]
+    [NOTE] If the above routines are NULL, the colourmap created is assumed to
+    be a software colourmap, otherwise it is considered to be a
+    hardware/virtual colourmap.
+    [VARARGS] The optional list of parameter attribute-key attribute-value
+    pairs must follow. This list must be terminated with the value
+    KCMAP_ATT_END.
+    [RETURNS] A colourmap on success, else NULL.
 */
-unsigned int (*alloc_func) ();
-void (*free_func) ();
-void (*store_func) ();
-void (*location_func) ();
 /*---------------------------------------------------------------------------*/
 
-void kcmap_add_RGB_func (name, func, min_cells, max_cells)
+void kcmap_add_RGB_func (char *name, void (*func) (), unsigned int min_cells,
+			 unsigned int max_cells)
 /*  This routine will register a named function which will compute RGB
     intensity values for a colourmap. This function is typically called in
     response to a call to  kcmap_modify  .
@@ -149,57 +146,34 @@ void kcmap_add_RGB_func (name, func, min_cells, max_cells)
     defined.
     The routine returns nothing.
 */
-char *name;
-void (*func) ();
-unsigned int min_cells;
-unsigned int max_cells;
-/*---------------------------------------------------------------------------*/
-
-Kcolourmap kcmap_create (name, num_cells, tolerant, dpy_handle)
-/*  This routine will create a high level colourmap.
-    The function used to initialise the colour values must be pointed to by
-    name  .If this is NULL, the default "Greyscale1" function is used.
-    The initial number of colourcells to allocate must be given by  num_cells
-    This must not be less than 2.
-    If the flag  tolerant  is TRUE, then the routine will try to allocate
-    as many colourcells as possible (up to  num_cells  ), else it will
-    fail if it could not allocatate all required colourcells.
-    The low level display handle must be given by  dpy_handle  .The meaning of
-    this value depends on the lower level graphics library used.
-    The routine returns a colourmap on success, else it returns NULL.
-*/
-char *name;
-unsigned int num_cells;
-flag tolerant;
-Kdisplay dpy_handle;
 /*---------------------------------------------------------------------------*/
 
 KCallbackFunc kcmap_register_resize_func (Kcolourmap cmap,
 					  void (*resize_func) (), void *info)
-/*  This routine will register a resize function for a high level colourmap.
-    The resize function will be called whenever the colourmap is resized.
+/*  [PURPOSE] This routine will register a resize function for a high level
+    colourmap. The resize function will be called whenever the colourmap is
+    resized. If the colourmap is a software colourmap, the resize function is
+    called whenever the colour values change.
     Many resize functions may be registered per colourmap. The first
     function registered is the first function called upon resize.
-    The colourmap must be given by  cmap  .
-    The function which is called when the colourmap is resized must be pointed
-    to by  resize_func  .
+    <cmap> The colourmap.
+    <resize_func> The function which is called when the colourmap is resized.
     The interface to this routine is as follows:
-
-    void resize_func (cmap, info)
-    *   This routine registers a change in the size of a colourmap.
-        The colourmap must be given by  cmap  .
-	The arbitrary colourmap information pointer is pointed to by  info  .
-	The routine returns nothing.
+    [<pre>]
+    void resize_func (Kcolourmap cmap, void **info)
+    *   [PURPOSE] This routine registers a change in the size of a colourmap.
+        <cmap> The colourmap.
+	<info> A pointer to the arbitrary colourmap information pointer.
+	[RETURNS] Nothing.
     *
-    Kcolourmap cmap;
-    void **info;
-
-    The initial arbitrary colourmap information pointer must be given by  info
-    The routine returns a KCallbackFunc object.
+    [</pre>]
+    <info> The initial arbitrary colourmap information pointer.
+    [RETURNS] A KCallbackFunc object.
 */
 /*---------------------------------------------------------------------------*/
 
-flag kcmap_change (cmap, new_name, num_cells, tolerant)
+flag kcmap_change (Kcolourmap cmap, char *new_name, unsigned int num_cells,
+		   flag tolerant)
 /*  This routine will change the active function (algorithm) used to calculate
     the colours in a colourmap and the size of the colourmap.
     The colourmap must be given by  cmap  .
@@ -212,10 +186,6 @@ flag kcmap_change (cmap, new_name, num_cells, tolerant)
     fail if it could not allocatate all required colourcells.
     The routine returns TRUE on success, else it returns FALSE.
 */
-Kcolourmap cmap;
-char *new_name;
-unsigned int num_cells;
-flag tolerant;
 /*---------------------------------------------------------------------------*/
 
 void kcmap_modify (Kcolourmap cmap, double x, double y, void *var_param)
@@ -239,17 +209,16 @@ char **kcmap_list_funcs ()
 */
 /*---------------------------------------------------------------------------*/
 
-char *kcmap_get_active_func (cmap)
+char *kcmap_get_active_func (Kcolourmap cmap)
 /*  This routine will get the name of the active colour function for a
     colourmap.
     The colourmap must be given by  cmap  .
     The routine returns a pointer to the name of the colour function. This
     name must not be freed.
 */
-Kcolourmap cmap;
 /*---------------------------------------------------------------------------*/
 
-unsigned int kcmap_get_pixels (cmap, pixel_values)
+unsigned int kcmap_get_pixels (Kcolourmap cmap, unsigned long **pixel_values)
 /*  This routine will determine the number of colourcells in a colourmap.
     The colourmap must be given by  cmap  .
     The routine will write a pointer to the array of pixel values to the 
@@ -257,21 +226,17 @@ unsigned int kcmap_get_pixels (cmap, pixel_values)
     here.
     The routine returns the number of colourcells allocated.
 */
-Kcolourmap cmap;
-unsigned long **pixel_values;
 /*---------------------------------------------------------------------------*/
 
-unsigned long kcmap_get_pixel (cmap, index)
+unsigned long kcmap_get_pixel (Kcolourmap cmap, unsigned int index)
 /*  This routine will get a numbered pixel value from a colourmap.
     The colourmap must be given by  cmap  .
     The index of the pixel must be given by  index  .
     The routine returns the pixel value.
 */
-Kcolourmap cmap;
-unsigned int index;
 /*---------------------------------------------------------------------------*/
 
-void kcmap_prepare_for_slavery (cmap)
+void kcmap_prepare_for_slavery (Kcolourmap cmap)
 /*  This routine will register a colourmap to be the choosen colourmap for
     subsequent attempts to open a slave colourmap connection.
     In order to make the colourmap a slave, a subsequent call to
@@ -279,10 +244,10 @@ void kcmap_prepare_for_slavery (cmap)
     The colourmap must be given by  cmap  .
     The routine returns nothing.
 */
-Kcolourmap cmap;
 /*---------------------------------------------------------------------------*/
 
-flag kcmap_copy_to_struct (cmap, top_pack_desc, top_packet)
+flag kcmap_copy_to_struct (Kcolourmap cmap, packet_desc **top_pack_desc,
+			   char **top_packet)
 /*  This routine will copy the colour data in a colourmap into a newly
     allocated Karma data structure. This data structure may be subsequently
     deallocated.
@@ -293,12 +258,10 @@ flag kcmap_copy_to_struct (cmap, top_pack_desc, top_packet)
     the storage pointed to by  top_packet  .
     The routine returns TRUE on success, else it returns FALSE.
 */
-Kcolourmap cmap;
-packet_desc **top_pack_desc;
-char **top_packet;
 /*---------------------------------------------------------------------------*/
 
-flag kcmap_copy_from_struct (cmap, top_pack_desc, top_packet)
+flag kcmap_copy_from_struct (Kcolourmap cmap, packet_desc *top_pack_desc,
+			     char *top_packet)
 /*  This routine will copy the colour data in a Karma data structure into a
     colourmap. If the colourmap changes size, then the  resize_func  registered
     is called.
@@ -307,12 +270,9 @@ flag kcmap_copy_from_struct (cmap, top_pack_desc, top_packet)
     The top level packet must be pointed to by  top_packet  .
     The routine returns TRUE on success, else it returns FALSE.
 */
-Kcolourmap cmap;
-packet_desc *top_pack_desc;
-char *top_packet;
 /*---------------------------------------------------------------------------*/
 
-unsigned short *kcmap_get_rgb_values (cmap, size)
+unsigned short *kcmap_get_rgb_values (Kcolourmap cmap, unsigned int *size)
 /*  This routine will return the RGB values in a colourmap. The colour values
     are arranged in packets of Red, Green and Blue values.
     The colourmap must be given by  cmap  .
@@ -322,29 +282,25 @@ unsigned short *kcmap_get_rgb_values (cmap, size)
     be freed with  m_free  .
     On failure it returns NULL.
 */
-Kcolourmap cmap;
-unsigned int *size;
 /*---------------------------------------------------------------------------*/
 
-void kcmap_get_attributes (cmap, va_alist)
-/*  This routine will get the attributes for a colourmap.
-    The colourmap must be given by  cmap  .
-    The list of parameter attribute-key attribute-value pairs must follow.
-    This list must be terminated with the value  KCMAP_ATT_END  .
-    The routine returns nothing.
+void kcmap_get_attributes (Kcolourmap cmap, ...)
+/*  [PURPOSE] This routine will get the attributes for a colourmap.
+    <cmap> The colourmap.
+    [VARARGS] The optional list of parameter attribute-key attribute-value
+    pairs must follow. This list must be terminated with the value
+    KCMAP_ATT_END.
+    [RETURNS] Nothing.
 */
-Kcolourmap cmap;
-va_dcl
 /*---------------------------------------------------------------------------*/
 
-void kcmap_set_attributes (cmap, va_alist)
+void kcmap_set_attributes (Kcolourmap cmap, ...)
 /*  [PURPOSE] This routine will set the attributes for a colourmap.
     <cmap> The colourmap.
-    [NOTE] The list of parameter attribute-key attribute-value pairs must
-    follow. This list must be terminated with the value  KCMAP_ATT_END  .
+    [VARARGS] The optional list of parameter attribute-key attribute-value
+    pairs must follow. This list must be terminated with the value
+    KCMAP_ATT_END.
     [NOTE] The colourmap is not recomputed: the effect is delayed.
     [RETURNS] Nothing.
 */
-Kcolourmap cmap;
-va_dcl
 /*---------------------------------------------------------------------------*/

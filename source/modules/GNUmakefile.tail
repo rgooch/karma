@@ -1,0 +1,7 @@
+remove:
+	\rm -f $(TARGETS)
+
+
+generic_clean:	$(TARGETS)
+	rm -f *.BAK *.log *.sed .#* *~ *.bak .*_*/*.bak .*defaults
+	-chmod u+rw,go-w * 2> /dev/null

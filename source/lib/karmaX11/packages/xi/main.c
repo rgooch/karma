@@ -55,8 +55,10 @@
     Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
 
-    Last updated by Richard Gooch   15-DEC-1994: Added notice when shared
+    Updated by      Richard Gooch   15-DEC-1994: Added notice when shared
   memory XImages are disabled by the XI_DISABLE_SHM environment variable.
+
+    Last updated by Richard Gooch   8-SEP-1995: Created <xi_create_shm_image>.
 
 
 */
@@ -192,9 +194,6 @@ XImage *xi_create_image (Display *display, Window window,
     char *image_data;
     XImage *ximage;
     XWindowAttributes window_attributes;
-#ifdef HAS_SYSV_SHARED_MEMORY
-    XShmSegmentInfo *shminfo;
-#endif
     extern char *sys_errlist[];
     static char function_name[] = "xi_create_image";
 
@@ -205,13 +204,54 @@ XImage *xi_create_image (Display *display, Window window,
     }
     /*  Get window attributes (to get visual structure)  */
     XGetWindowAttributes (display, window, &window_attributes);
-
     if (!*share)
     {
 	return ( create_unshared_image (display, window_attributes,
 					image_width, image_height, share) );
     }
     /*  Shared memory images requested  */
+    if ( ( ximage = xi_create_shm_image (display, window_attributes.visual,
+					 window_attributes.depth,
+					 image_width, image_height, FALSE) )
+	== NULL )
+    {
+	(void) fprintf (stderr,
+			"Falling back to normal memory for this image\n");
+	return ( create_unshared_image (display, window_attributes,
+					image_width, image_height, share) );
+    }
+    return (ximage);
+}   /*  End Function xi_create_image  */
+
+/*PUBLIC_FUNCTION*/
+XImage *xi_create_shm_image (Display *display, Visual *visual, int depth,
+			     unsigned int width, unsigned int height,
+			     flag quiet)
+/*  [PURPOSE] This routine will create a shared-memory XImage structure.
+    <display> The X11 display handle.
+    <visual> The Visual pointer.
+    <depth> The depth.
+    <width> The width of the image.
+    <height> The height of the image.
+    <quiet> If TRUE, no error messages are display if no shared memory XImage
+    could be created.
+    [RETURNS] An XImage pointer on success, else NULL.
+*/
+{
+    unsigned int image_bytes;
+    char *image_data;
+    XImage *ximage;
+#ifdef HAS_SYSV_SHARED_MEMORY
+    XShmSegmentInfo *shminfo;
+#endif
+    extern char *sys_errlist[];
+    static char function_name[] = "xi_create_shm_image";
+
+    if (display == NULL)
+    {
+	(void) fprintf (stderr, "NULL pointer(s) passed\n");
+	a_prog_bug (function_name);
+    }
 #ifdef HAS_SYSV_SHARED_MEMORY
     if ( ( shminfo = (XShmSegmentInfo *) m_alloc (sizeof *shminfo) )
 	== NULL )
@@ -219,30 +259,26 @@ XImage *xi_create_image (Display *display, Window window,
 	m_error_notify (function_name, "shared memory segment info");
 	return (NULL);
     }
-    if ( ( ximage = XShmCreateImage (display, window_attributes.visual,
-				     window_attributes.depth, ZPixmap,
-				     NULL,
-				     shminfo, image_width, image_height) )
-	== NULL )
+    if ( ( ximage = XShmCreateImage (display, visual, depth, ZPixmap, NULL,
+				     shminfo, width, height) ) == NULL )
     {
 	m_error_notify (function_name, "XShmImage structure");
-	return ( create_unshared_image (display, window_attributes,
-					image_width, image_height, share) );
+	return (NULL);
     }
-    image_bytes = (*ximage).bytes_per_line * image_height;
-    if ( ( (*shminfo).shmid = shmget (IPC_PRIVATE, (int) image_bytes,
-				      IPC_CREAT | 0777) ) == -1 )
+    image_bytes = ximage->bytes_per_line * height;
+    if ( ( shminfo->shmid = shmget (IPC_PRIVATE, (int) image_bytes,
+				    IPC_CREAT | 0777) ) == -1 )
     {
-	(void) fprintf (stderr,
-			"Error creating shared memory segment of size: %d bytes\t%s\n",
-			(*ximage).bytes_per_line * image_height,
-			sys_errlist[errno]);
+	if (!quiet)
+	{
+	    (void) fprintf (stderr,
+			    "Error creating shared memory segment of size: %d bytes\t%s\n",
+			    ximage->bytes_per_line * height,
+			    sys_errlist[errno]);
+	}
 	XDestroyImage (ximage);
-	(void) fprintf (stderr,
-			"Falling back to normal memory for this image\n");
 	m_free ( (char *) shminfo );
-	return ( create_unshared_image (display, window_attributes,
-					image_width, image_height, share) );
+	return (NULL);
     }
     /*  I first had the server attach, and then attached locally.
 	But the anal retentive Dec Alpha-OSF/1 system seems to have
@@ -255,17 +291,20 @@ XImage *xi_create_image (Display *display, Window window,
 	otherwise there will be an error when detaching the segment
 	from the process.
 	Probably a bug in SunOS.  */
-    (*shminfo).readOnly = False;
+    shminfo->readOnly = False;
     /*  Attach locally  */
-    if ( (long) ( (*shminfo).shmaddr = (*ximage).data =
-		 (char *) shmat ( (*shminfo).shmid, (char *) 0, 0 ) )
+    if ( (long) ( shminfo->shmaddr = ximage->data =
+		 (char *) shmat ( shminfo->shmid, (char *) 0, 0 ) )
 	== -1 )
     {
-	(void) fprintf (stderr,
-			"Error attaching to shared memory segment\t%s\n",
-			sys_errlist[errno]);
+	if (!quiet)
+	{
+	    (void) fprintf (stderr,
+			    "Error attaching to shared memory segment\t%s\n",
+			    sys_errlist[errno]);
+	}
 	XDestroyImage (ximage);
-	if (shmctl ( (*shminfo).shmid, IPC_RMID,
+	if (shmctl ( shminfo->shmid, IPC_RMID,
 		    (struct shmid_ds *) NULL) != 0)
 	{
 	    (void) fprintf (stderr,
@@ -273,21 +312,20 @@ XImage *xi_create_image (Display *display, Window window,
 			    sys_errlist[errno]);
 	}
 	m_free ( (char *) shminfo );
-	return ( create_unshared_image (display, window_attributes,
-					image_width, image_height, share) );
+	return (NULL);
     }
     /*  Make the X server attach  */
     if (XShmAttach (display, shminfo) != True)
     {
-	(void) fprintf (stderr, "Error attaching\n");
+	if (!quiet) (void) fprintf (stderr, "Error attaching\n");
 	XDestroyImage (ximage);
-	if (shmdt ( (*shminfo).shmaddr ) == -1)
+	if (shmdt ( shminfo->shmaddr ) == -1)
 	{
 	    (void) fprintf (stderr,
 			    "Error detaching shared memory segment\t%s\n",
 			    sys_errlist[errno]);
 	}
-	if (shmctl ( (*shminfo).shmid, IPC_RMID,
+	if (shmctl ( shminfo->shmid, IPC_RMID,
 		    (struct shmid_ds *) NULL ) != 0)
 	{
 	    (void) fprintf (stderr,
@@ -295,16 +333,15 @@ XImage *xi_create_image (Display *display, Window window,
 			    sys_errlist[errno]);
 	}
 	m_free ( (char *) shminfo );
-	return ( create_unshared_image (display, window_attributes,
-					image_width, image_height, share) );
+	return (NULL);
     }
     (void) XSync (display, False);
     /*  Now remove the segment (really queing the removal)  */
-    if (shmctl ( (*shminfo).shmid, IPC_RMID, (struct shmid_ds *) NULL) != 0)
+    if (shmctl ( shminfo->shmid, IPC_RMID, (struct shmid_ds *) NULL) != 0)
     {
 	(void) fprintf (stderr,
 			"Error removing shared memory segment: %d\t%s\n",
-			(*shminfo).shmid, sys_errlist[errno]);
+			shminfo->shmid, sys_errlist[errno]);
 	(void) XShmDetach (display, shminfo);
 	XDestroyImage (ximage);
 	m_free ( (char *) shminfo );
@@ -313,14 +350,13 @@ XImage *xi_create_image (Display *display, Window window,
     return (ximage);
 
 #else  /*  HAS_SYSV_SHARED_MEMORY  */
-	/*  Shared memory not supported on this platform  */
-	(void) fprintf (stderr,
-			"Operating system does not have shared memory segments\n");
+    if (quiet) return (NULL);
+    /*  Shared memory not supported on this platform  */
+    (void) fprintf (stderr,
+		    "Operating system does not have shared memory segments\n");
+    return (NULL);
 #endif  /*  HAS_SYSV_SHARED_MEMORY  */
-    /*  Shared memory images not available  */
-    return ( create_unshared_image (display, window_attributes,
-				    image_width, image_height, share) );
-}   /*  End Function xi_create_image  */
+}   /*  End Function xi_create_shm_image  */
 
 /*PUBLIC_FUNCTION*/
 void xi_destroy_image (display, ximage, shared_memory)
@@ -356,20 +392,20 @@ flag shared_memory;
     {
 	/*  Shared memory segment claimed to have been used  */
 #ifdef HAS_SYSV_SHARED_MEMORY
-	shminfo = (XShmSegmentInfo *) (*ximage).obdata;
+	shminfo = (XShmSegmentInfo *) ximage->obdata;
 	/*  Tell X server to detach  */
 	(void) XShmDetach (display, shminfo);
 	/*  Detach shared memory segment  */
-	if (shmdt ( (*shminfo).shmaddr ) != 0)
+	if (shmdt ( shminfo->shmaddr ) != 0)
 	{
 	    (void) fprintf (stderr,
 			    "Error detaching shared memory segment at address: %x\t%s\n",
-			    (*shminfo).shmaddr, sys_errlist[errno]);
+			    shminfo->shmaddr, sys_errlist[errno]);
 	}
 	m_free ( (char *) shminfo );
 	/*  Remove image  */
-	(*ximage).obdata = NULL;
-	(*ximage).data = NULL;
+	ximage->obdata = NULL;
+	ximage->data = NULL;
 	XDestroyImage (ximage);
 
 #else  /*  HAS_SYSV_SHARED_MEMORY  */
@@ -382,8 +418,8 @@ flag shared_memory;
     {
 	/*  Regular image  */
 	(void) fprintf (stderr, "Ximage being destroyed: %x\n", ximage);
-	m_free ( (char *) (*ximage).data );
-	(*ximage).data = NULL;
+	m_free ( (char *) ximage->data );
+	ximage->data = NULL;
 	XDestroyImage (ximage);
     }
 }   /*  End Function xi_destroy_image  */
@@ -466,7 +502,7 @@ flag wait;
 static Bool check_if_shm_event (Display *display, XEvent *event,
 				int *CompletionType)
 {
-    if (*CompletionType == (*event).type)
+    if (*CompletionType == event->type)
     {
 	return (True);
     }
@@ -500,7 +536,7 @@ static XImage *create_unshared_image (Display *display,
 				  window_attributes.depth, ZPixmap, 0,
 				  NULL, width, height, 32, 0) )
 	== NULL ) return (NULL);
-    image_bytes = (*ximage).bytes_per_line * height;
+    image_bytes = ximage->bytes_per_line * height;
     /*  Allocate actual image storage area  */
     if ( ( image_data = m_alloc (image_bytes) ) == NULL )
     {
@@ -508,6 +544,6 @@ static XImage *create_unshared_image (Display *display,
 	XFree (ximage);
 	return (NULL);
     }
-    (*ximage).data = image_data;
+    ximage->data = image_data;
     return (ximage);
 }   /*  End Function create_unshared_image  */

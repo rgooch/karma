@@ -3,7 +3,7 @@
 
     This code provides conversion between host and cannonical data formats.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -55,8 +55,14 @@
     Updated by      Richard Gooch   3-NOV-1994: Switched to OS_ and MACHINE_
   macros for machine determination.
 
-    Last updated by Richard Gooch   26-NOV-1994: Split and moved to
+    Updated by      Richard Gooch   26-NOV-1994: Split and moved to
   packages/p/u64.c
+
+    Updated by      Richard Gooch   23-FEB-1995: Improved portability.
+
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Last updated by Richard Gooch   9-JUN-1995: Changed to NEED_ALIGNED_DATA.
 
 
 */
@@ -78,14 +84,39 @@ flag p_write_buf64 (buffer, data)
 char *buffer;
 unsigned long data;
 {
-    static char function_name[] = "p_write_buf64";
-
-    /*  Temporary  */
-#ifdef MATCHING_SIZES
-    *(unsigned long *) buffer = 0;
-    buffer += 4;
+#undef NO_FALLBACK
+#if defined(Kword64u) && defined(MACHINE_BIG_ENDIAN)
+#  ifdef NEED_ALIGNED_DATA
+    if ( ( (int) buffer & 0x7 ) == 0 )
+    {
+	*(Kword64u *) buffer = data;
+	return (TRUE);
+    }
+#  else
+    *(Kword64u *) buffer = data;
+    return (TRUE);
+#    define NO_FALLBACK
+#  endif
 #else
-#  ifdef MACHINE_alpha
+#  if defined(Kword32u) && defined(MACHINE_BIG_ENDIAN)
+#    ifdef NEED_ALIGNED_DATA
+    if ( ( (int) buffer & 0x3 ) == 0 )
+    {
+	*(Kword32u *) buffer = 0;
+	buffer += 4;
+	*(Kword32u *) buffer = data;
+	return (TRUE);
+    }
+#    else
+    *(Kword32u *) buffer = 0;
+    buffer += 4;
+    *(Kword32u *) buffer = data;
+    return (TRUE);
+#      define NO_FALLBACK
+#    endif
+#  endif
+#endif
+#ifndef NO_FALLBACK
     /*  Convert data to network byte order  */
     /*  Have to do this the hard way  */
     /*  Byte 7 (LSB)  */
@@ -96,6 +127,7 @@ unsigned long data;
     *(unsigned char *) (buffer + 5) = (data >> 16) & BYTE_MASK;
     /*  Byte 4  */
     *(unsigned char *) (buffer + 4) = (data >> 24) & BYTE_MASK;
+#  ifdef Kword64u
     /*  Byte 3  */
     *(unsigned char *) (buffer + 3) = (data >> 32) & BYTE_MASK;
     /*  Byte 2  */
@@ -104,40 +136,16 @@ unsigned long data;
     *(unsigned char *) (buffer + 1) = (data >> 48) & BYTE_MASK;
     /*  Byte 0 (MSB)  */
     *(unsigned char *) buffer = (data >> 56) & BYTE_MASK;
-    return (TRUE);
 #  else
-    (void) fprintf (stderr, "64 bit quantities not supported yet\n");
-    return (FALSE);
-#  endif
-#endif
-#if defined(BLOCK_TRANSFER) && !defined(NEEDS_MISALIGN_COMPILE)
-    *(unsigned long *) buffer = data;
-    return (TRUE);
-#else
-#  if defined(BLOCK_TRANSFER) && defined(NEEDS_MISALIGN_COMPILE)
-    if ( (int) buffer & 0x3 == 0 )
-    {
-	*(unsigned long *) buffer = data;
-	return (TRUE);
-    }
-#  endif
-    if (data > NET_UINT_MAX)
-    {
-	(void) fprintf (stderr,
-			"WARNING: %s: data: %lu is outside range for network format: clipping\n",
-			function_name, data);
-	data = NET_UINT_MAX;
-    }
-    /*  Convert data to network byte order  */
-    /*  Have to do this the hard way  */
-    /*  Byte 3 (LSB)  */
-    *(unsigned char *) (buffer + 3) = data & BYTE_MASK;
+    /*  Byte 3  */
+    *(unsigned char *) (buffer + 3) = 0;
     /*  Byte 2  */
-    *(unsigned char *) (buffer + 2) = (data >> 8) & BYTE_MASK;
+    *(unsigned char *) (buffer + 2) = 0;
     /*  Byte 1  */
-    *(unsigned char *) (buffer + 1) = (data >> 16) & BYTE_MASK;
+    *(unsigned char *) (buffer + 1) = 0;
     /*  Byte 0 (MSB)  */
-    *(unsigned char *) buffer = (data >> 24) & BYTE_MASK;
+    *(unsigned char *) buffer = 0;
+#  endif
     return (TRUE);
 #endif
 }   /*  End Function p_write_buf64  */
@@ -154,19 +162,59 @@ flag p_read_buf64 (buffer, data)
 char *buffer;
 unsigned long *data;
 {
-    /*  Temporary  */
-#ifdef MATCHING_SIZES
-    if (*(unsigned long *) buffer != 0)
+#undef NO_FALLBACK
+#ifndef Kword64u
+    int count, num;
+
+    if (sizeof (unsigned long) < 8)
     {
-	(void) fprintf (stderr, "Reading 64 bit quantities not finished\n");
-	(void) fprintf (stderr, "Upper 32 bits: %lu\n",
-			*(unsigned long *) buffer);
-	return (FALSE);
+	/*  Check to make sure data will fit  */
+	num = 8 - sizeof (unsigned long);
+	for (count = 0; count < num; ++count)
+	{
+	    if (buffer[count] != 0)
+	    {
+		(void) fprintf(stderr,"Overflow on reading 64 bit quantity\n");
+		(void) fprintf (stderr, "val[0]: %lx  val[1]: %lx\n",
+				*(unsigned long *) buffer,
+				*(unsigned long *) (buffer + 4));
+		return (FALSE);
+	    }
+	}
     }
-    buffer += 4;
+#endif
+#if defined(Kword64u) && defined(MACHINE_BIG_ENDIAN)
+#  ifdef NEED_ALIGNED_DATA
+    if ( ( (int) buffer & 0x7 ) == 0 )
+    {
+	*data = *(Kword64u *) buffer;
+	return (TRUE);
+    }
+#  else
+    *data = *(Kword64u *) buffer;
+    return (TRUE);
+#    define NO_FALLBACK
+#  endif
 #else
-#  ifdef MACHINE_alpha
+#  if defined(Kword32u) && defined(MACHINE_BIG_ENDIAN)
+#    ifdef NEED_ALIGNED_DATA
+    if ( ( (int) buffer & 0x3 ) == 0 )
+    {
+	buffer += 4;
+	*data = *(Kword32u *) buffer;
+	return (TRUE);
+    }
+#    else
+    buffer += 4;
+    *data = *(Kword32u *) buffer;
+    return (TRUE);
+#      define NO_FALLBACK
+#    endif
+#  endif
+#endif
+#ifndef NO_FALLBACK
     /*  Have to do this the hard way  */
+#  ifdef Kword64u
     /*  Byte 0 (MSB)  */
     *data = (unsigned long) *(unsigned char *) buffer << 56;
     /*  Byte 1  */
@@ -175,6 +223,9 @@ unsigned long *data;
     *data |= (unsigned long) *(unsigned char *) (buffer + 2) << 40;
     /*  Byte 3  */
     *data |= (unsigned long) *(unsigned char *) (buffer + 3) << 32;
+#  else
+    *data = 0;
+#  endif
     /*  Byte 4  */
     *data |= (unsigned long) *(unsigned char *) (buffer + 4) << 24;
     /*  Byte 5  */
@@ -183,32 +234,6 @@ unsigned long *data;
     *data |= (unsigned long) *(unsigned char *) (buffer + 6) << 8;
     /*  Byte 7 (LSB)  */
     *data |= *(unsigned char *) (buffer + 7);
-    return (TRUE);
-#  else
-    (void) fprintf (stderr, "64 bit quantities not supported yet\n");
-    return (FALSE);
-#  endif
-#endif
-#if defined(BLOCK_TRANSFER) && !defined(NEEDS_MISALIGN_COMPILE)
-    *data = *(unsigned long *) buffer;
-    return (TRUE);
-#else
-#  if defined(BLOCK_TRANSFER) && defined(NEEDS_MISALIGN_COMPILE)
-    if ( (int) buffer & 0x3 == 0 )
-    {
-	*data = *(unsigned long *) buffer;
-	return (TRUE);
-    }
-#  endif
-    /*  Have to do this the hard way  */
-    /*  Byte 0 (MSB)  */
-    *data = (unsigned long) *(unsigned char *) buffer << 24;
-    /*  Byte 1  */
-    *data |= (unsigned long) *(unsigned char *) (buffer + 1) << 16;
-    /*  Byte 2  */
-    *data |= (unsigned long) *(unsigned char *) (buffer + 2) << 8;
-    /*  Byte 3 (LSB)  */
-    *data |= *(unsigned char *) (buffer + 3);
     return (TRUE);
 #endif
 }   /*  End Function p_read_buf64  */

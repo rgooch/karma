@@ -3,16 +3,33 @@
 
     These routines are meant to provide a VERY primitive mechanism to generate
     simple colourmaps. Although these routines are made public, their use is
-    NOT recommended. The kclrmap_ package is the suggested means to create and
+    NOT recommended. The kcmap_ package is the suggested means to create and
     manipulate colourmaps.
 
 
-    Written by		Richard Gooch	13-Dec-1994
+    Written by		Richard Gooch	29-Dec-1995
 
-    Last updated by	Richard Gooch	26-FEB-1993
+    Last updated by	Richard Gooch	29-Dec-1995
 
 
 */
+
+void cf_mandelbrot (unsigned int num_cells, unsigned short *reds,
+		    unsigned short *greens, unsigned short *blues,
+		    unsigned int stride, double x, double y,
+		    void *var_param)
+/*  [PURPOSE] This routine will compute a mandelbrot colourmap.
+    <num_cells> The number of colour cells to modify.
+    <reds> The red intensity values.
+    <greens> The green intensity values.
+    <blues> The blue intensity values.
+    <stride> The stride (in unsigned shorts) between intensity values.
+    <x> A parameter used to compute the colour values.
+    <y> A parameter used to compute the colour values.
+    <var_param> A parameter used to compute the colour values.
+    [RETURNS] Nothing.
+*/
+/*---------------------------------------------------------------------------*/
 
 void cf_greyscale1 (num_cells, reds, greens, blues, stride, x, y, var_param)
 /*  This routine will compute a grey scale colourmap and write out the pixel

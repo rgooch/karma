@@ -10,8 +10,9 @@
      XkwNmaximum              Int                  0
      XtNvalue                 Int                  0
      XkwNmodifier             Int                  0
-     XkwNwrap                 Boolean              False
+     XkwNwrap                 Bool                 False
      XtNorientation           Orientation          XtorientHorizontal
+     XkwNvaluePtr             Pointer              NULL
 
 */    
 /*----------------------------------------------------------------------*/
@@ -32,11 +33,12 @@ typedef struct _ValueRec *ValueWidget;
 #define XkwNmodifier "modifier"
 #define XkwNvalueChangeCallback "valueChangeCallback"
 #define XkwNwrap "wrap"
+#define XkwNvaluePtr "valuePtr"
 
 #define XkwCMinimum "Minimum"
 #define XkwCMaximum "Maximum"
 #define XkwCModifier "Modifier"
-#define XkwCValueChangeCallback "ValueChangeCallback"
 #define XkwCWrap "Wrap"
+#define XkwCValuePtr "ValuePtr"
 
 #endif

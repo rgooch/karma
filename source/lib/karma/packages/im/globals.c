@@ -3,7 +3,7 @@
 
     This code provides global variables for the  im_  package.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -37,8 +37,10 @@
     Updated by      Richard Gooch   6-JAN-1993: Changed from  #include "*.h"
   to  #include <*.h>
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to
+    Updated by      Richard Gooch   26-NOV-1994: Moved to
   packages/im/globals.c
+
+    Last updated by Richard Gooch   15-APR-1995: Added library version strings.
 
 
 */
@@ -47,3 +49,6 @@
 
 char module_name[STRING_LENGTH + 1] = "<<Unknown>>";
 char module_version_date[STRING_LENGTH + 1] = "Unknown";
+char module_lib_version[STRING_LENGTH + 1] = "Unknown";
+
+char karma_library_version[STRING_LENGTH + 1] = KARMA_VERSION;

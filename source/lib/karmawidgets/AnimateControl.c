@@ -37,7 +37,22 @@
     Updated by      Richard Gooch   25-DEC-1994: Removed border around number
   of frames label.
 
-    Last updated by Richard Gooch   4-JAN-1995: Cosmetic changes.
+    Updated by      Richard Gooch   4-JAN-1995: Cosmetic changes.
+
+    Updated by      Richard Gooch   18-JUL-1995: Prevented updating current
+  frame slider when frame interval < 100 ms.
+
+    Updated by      Richard Gooch   27-JUL-1995: Added canvas for prev/next
+  events.
+
+    Updated by      Richard Gooch   30-JUL-1995: Made use of XkwNvaluePtr
+  resource for ValueWidgetClass.
+
+    Updated by      Richard Gooch   17-AUG-1995: Ensured endFrame is always
+  greater than startFrame.
+
+    Last updated by Richard Gooch   31-AUG-1995: As above, but cope with
+  numFrames set to 0.
 
 
 */
@@ -56,18 +71,21 @@
 #include <X11/Xaw/Form.h>
 #include <X11/Xaw/Label.h>
 #include <X11/Xaw/Box.h>
-#include <X11/Xaw/Repeater.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <varargs.h>
 
+#include <karma.h>
 #include <Xkw/Value.h>
 #include <Xkw/ExclusiveMenu.h>
+#include <Xkw/Canvas.h>
+#include <Xkw/Repeater.h>
 
 #include <sys/wait.h>
 #include <signal.h>
+#include <k_event_codes.h>
 #include <karma_m.h>
 #include <karma_a.h>
 
@@ -93,9 +111,21 @@ STATIC_FUNCTION (void prev_frame_cbk, (Widget w, XtPointer client_data,
 STATIC_FUNCTION (void next_frame_cbk, (Widget w, XtPointer client_data,
 				       XtPointer call_data) );
 STATIC_FUNCTION (void store_cbk, (Widget w, XtPointer client_data,
-				   XtPointer call_data) );
+				  XtPointer call_data) );
 STATIC_FUNCTION (void timer_cbk, (XtPointer client_data, XtIntervalId *id) );
 STATIC_FUNCTION (void goto_frame_cbk, (Widget w, XtPointer client_data,
+				       XtPointer call_data) );
+STATIC_FUNCTION (void cnv_realise_cbk, (Widget w, XtPointer client_data,
+					XtPointer call_data) );
+STATIC_FUNCTION (flag position_func,
+		 (KWorldCanvas canvas, double x, double y,
+		  unsigned int event_code, void *e_info,
+		  void **f_info, double x_lin, double y_lin) );
+STATIC_FUNCTION (void refresh_func,
+		 (KWorldCanvas canvas, int width, int height,
+		  struct win_scale_type *win_scale, Kcolourmap cmap,
+		  flag cmap_resize, void **info, PostScriptPage pspage) );
+STATIC_FUNCTION (void set_limits_cbk, (Widget w, XtPointer client_data,
 				       XtPointer call_data) );
 
 
@@ -220,7 +250,7 @@ static void Initialise (Widget Request, Widget New)
     Widget form, w;
     Widget close_btn, start_btn, stop_btn, prev_btn, next_btn, goto_btn;
     Widget interval_sld, inc_sld;
-    Widget mode_menu;
+    Widget cnv, mode_menu;
     static char function_name[] = "AnimateControl::Initialise";
 
     new->animateControl.running_movie = FALSE;
@@ -228,6 +258,7 @@ static void Initialise (Widget Request, Widget New)
     new->animateControl.inc_factor = 1;
     new->animateControl.spin_mode = MODE_FORWARD_SPIN;
     new->animateControl.direction = 1;
+    new->animateControl.position_wc = NULL;
     form = XtVaCreateManagedWidget ("form", formWidgetClass, New,
 				    XtNborderWidth, 0,
 				    NULL);
@@ -277,9 +308,9 @@ static void Initialise (Widget Request, Widget New)
 					    XkwNmodifier, 10,
 					    XtNvalue,
 					    new->animateControl.interval_ms,
+					    XkwNvaluePtr,
+					    &new->animateControl.interval_ms,
 					    NULL);
-    XtAddCallback (interval_sld, XkwNvalueChangeCallback, store_cbk,
-		   (XtPointer) &new->animateControl.interval_ms);
     inc_sld = XtVaCreateManagedWidget ("interval", valueWidgetClass, form,
 				       XtNlabel, "Skip Factor",
 				       XtNfromVert, interval_sld,
@@ -288,9 +319,9 @@ static void Initialise (Widget Request, Widget New)
 				       XkwNmodifier, 1,
 				       XtNvalue,
 				       new->animateControl.inc_factor,
+				       XkwNvaluePtr,
+				       &new->animateControl.inc_factor,
 				       NULL);
-    XtAddCallback (inc_sld, XkwNvalueChangeCallback, store_cbk,
-		   (XtPointer) &new->animateControl.inc_factor);
     w = XtVaCreateManagedWidget ("label", labelWidgetClass, form,
 				 XtNlabel, "Number of frames:     ",
 				 XtNborderWidth, 0,
@@ -303,9 +334,17 @@ static void Initialise (Widget Request, Widget New)
 					XtNfromHoriz, w,
 					NULL);
     XtAddCallback (goto_btn, XtNcallback, goto_frame_cbk, (XtPointer) New);
+    cnv = XtVaCreateManagedWidget ("positionCanvas", canvasWidgetClass, form,
+				   XtNfromVert, w,
+				   XtNwidth, 309,
+				   XtNheight, 40,
+				   XkwNsilenceUnconsumed, True,
+				   XtNresizable, True,
+				   NULL);
+    XtAddCallback (cnv, XkwNrealiseCallback, cnv_realise_cbk, (XtPointer) New);
     w = XtVaCreateManagedWidget ("slider", valueWidgetClass, form,
 				 XtNlabel, "Current frame",
-				 XtNfromVert, w,
+				 XtNfromVert, cnv,
 				 XkwNminimum, 0,
 				 XkwNmaximum, 0,
 				 XkwNmodifier, 1,
@@ -320,10 +359,10 @@ static void Initialise (Widget Request, Widget New)
 				 XkwNmaximum, 0,
 				 XkwNmodifier, 1,
 				 XtNvalue, 0,
+				 XkwNvaluePtr, &new->animateControl.startFrame,
 				 NULL);
     new->animateControl.start_frame_sld = w;
-    XtAddCallback (w, XkwNvalueChangeCallback, store_cbk,
-		   (XtPointer) &new->animateControl.startFrame);
+    XtAddCallback (w, XkwNvalueChangeCallback, set_limits_cbk,(XtPointer) new);
     w = XtVaCreateManagedWidget ("endpos", valueWidgetClass, form,
 				 XtNlabel, "End Frame",
 				 XtNfromVert, w,
@@ -331,10 +370,10 @@ static void Initialise (Widget Request, Widget New)
 				 XkwNmaximum, 0,
 				 XkwNmodifier, 1,
 				 XtNvalue, 0,
+				 XkwNvaluePtr, &new->animateControl.endFrame,
 				 NULL);
     new->animateControl.end_frame_sld = w;
-    XtAddCallback (w, XkwNvalueChangeCallback, store_cbk,
-		   (XtPointer) &new->animateControl.endFrame);
+    XtAddCallback (w, XkwNvalueChangeCallback, set_limits_cbk,(XtPointer) new);
 }
 
 /*----------------------------------------------------------------------*/
@@ -352,19 +391,20 @@ static void Destroy(Widget W)
 
 static Boolean SetValues(Widget Current, Widget Request, Widget New)
 {
-    int num_frames;
+    int num_frames, width, height, dummy;
+    double x_min, x_max;
     char txt[STRING_LENGTH];
     AnimateControlWidget current = (AnimateControlWidget) Current;
     AnimateControlWidget request = (AnimateControlWidget) Request;
     AnimateControlWidget new = (AnimateControlWidget) New;
     static char function_name[] = "AnimateControl::SetValues";
 
-    if (new->animateControl.numFrames !=
-	current->animateControl.numFrames)
+    if (new->animateControl.numFrames != current->animateControl.numFrames)
     {
 	num_frames = new->animateControl.numFrames;
 	new->animateControl.startFrame = 0;
-	new->animateControl.endFrame = num_frames - 1;
+	if (num_frames < 1) new->animateControl.endFrame = 0;
+	else new->animateControl.endFrame = num_frames - 1;
 	new->animateControl.currentFrame = 0;
 	(void) sprintf (txt, "Number of frames: %d", num_frames);
 	XtVaSetValues (new->animateControl.num_frames_lbl,
@@ -383,6 +423,15 @@ static Boolean SetValues(Widget Current, Widget Request, Widget New)
 		       XkwNmaximum, num_frames - 1,
 		       XtNvalue, num_frames - 1,
 		       NULL);
+	x_min = new->animateControl.startFrame;
+	x_max = new->animateControl.endFrame;
+	if (x_max <= x_min) x_max = x_min + 1.0;
+	canvas_set_attributes (new->animateControl.position_wc,
+			       CANVAS_ATT_X_MIN, x_min,
+			       CANVAS_ATT_X_MAX, x_max,
+			       CANVAS_ATT_END);
+	(void) kwin_resize (canvas_get_pixcanvas (new->animateControl.position_wc),
+			    TRUE, 0, 0, 0, 0);
     }
     return False;
 }   /*  End Function SetValues  */
@@ -450,6 +499,11 @@ XtPointer call_data;
 	return;
     }
     top->animateControl.running_movie = FALSE;
+    XtVaSetValues (top->animateControl.current_frame_sld,
+		   XtNvalue, top->animateControl.currentFrame,
+		   NULL);
+    (void) canvas_resize (top->animateControl.position_wc,
+			  (struct win_scale_type *) NULL, TRUE);
 }   /*  End Function stop_movie_cbk   */
 
 static void prev_frame_cbk (w, client_data, call_data)
@@ -467,14 +521,15 @@ XtPointer call_data;
 	top->animateControl.currentFrame = 0;
 	return;
     }
-    if (--top->animateControl.currentFrame <
-	top->animateControl.startFrame)
+    if (--top->animateControl.currentFrame < top->animateControl.startFrame)
     {
 	top->animateControl.currentFrame = top->animateControl.endFrame;
     }
     XtVaSetValues (top->animateControl.current_frame_sld,
 		   XtNvalue, top->animateControl.currentFrame,
 		   NULL);
+    (void) canvas_resize (top->animateControl.position_wc,
+			  (struct win_scale_type *) NULL, TRUE);
     frame_number = top->animateControl.currentFrame;
     XtCallCallbacks ( (Widget) top, XkwNnewFrameCallback,
 		     (XtPointer) &frame_number );
@@ -494,14 +549,15 @@ XtPointer call_data;
     {
 	return;
     }
-    if (++top->animateControl.currentFrame >
-	top->animateControl.endFrame)
+    if (++top->animateControl.currentFrame > top->animateControl.endFrame)
     {
 	top->animateControl.currentFrame = top->animateControl.startFrame;
     }
     XtVaSetValues (top->animateControl.current_frame_sld,
 		   XtNvalue, top->animateControl.currentFrame,
 		   NULL);
+    (void) canvas_resize (top->animateControl.position_wc,
+			  (struct win_scale_type *) NULL, TRUE);
     frame_number = top->animateControl.currentFrame;
     XtCallCallbacks ( (Widget) top, XkwNnewFrameCallback,
 		     (XtPointer) &frame_number );
@@ -569,13 +625,19 @@ static void timer_cbk (XtPointer client_data, XtIntervalId *id)
 	}
     }
     top->animateControl.currentFrame = frame_number;
-    XtVaSetValues (top->animateControl.current_frame_sld,
-		   XtNvalue, top->animateControl.currentFrame,
-		   NULL);
-    frame_number = top->animateControl.currentFrame;
+    /*  Prevent updating the current frame at an excessive rate  */
+    if (top->animateControl.interval_ms >= 100)
+    {
+	XtVaSetValues (top->animateControl.current_frame_sld,
+		       XtNvalue, top->animateControl.currentFrame,
+		       NULL);
+	/*  Restore temp. value in case slider decides to change it  */
+	frame_number = top->animateControl.currentFrame;
+	(void) canvas_resize (top->animateControl.position_wc,
+			      (struct win_scale_type *) NULL, TRUE);
+    }
     XtCallCallbacks ( (Widget) top, XkwNnewFrameCallback,
 		     (XtPointer) &frame_number );
-
     app_context = XtWidgetToApplicationContext ( (Widget) top );
     XtAppAddTimeOut (app_context,
 		     (unsigned long) top->animateControl.interval_ms + 1,
@@ -589,6 +651,7 @@ Widget w;
 XtPointer client_data;
 XtPointer call_data;
 {
+    flag change = FALSE;
     int frame_number;
     AnimateControlWidget top = (AnimateControlWidget) client_data;
 
@@ -600,8 +663,163 @@ XtPointer call_data;
     XtVaGetValues (top->animateControl.current_frame_sld,
 		   XtNvalue, &frame_number,
 		   NULL);
+    if (frame_number > top->animateControl.endFrame)
+    {
+	frame_number = top->animateControl.endFrame;
+	change = TRUE;
+    }
+    else if (frame_number < top->animateControl.startFrame)
+    {
+	frame_number = top->animateControl.startFrame;
+	change = TRUE;
+    }
+    if (change) XtVaSetValues (top->animateControl.current_frame_sld,
+			       XtNvalue, frame_number,
+			       NULL);
     top->animateControl.currentFrame = frame_number;
+    (void) canvas_resize (top->animateControl.position_wc,
+			  (struct win_scale_type *) NULL, TRUE);
     XtCallCallbacks ( (Widget) top, XkwNnewFrameCallback,
 		     (XtPointer) &frame_number );
-
 }   /*  End Function goto_frame_cbk   */
+
+static void cnv_realise_cbk (w, client_data, call_data)
+/*  This is the canvas realise callback.
+*/
+Widget w;
+XtPointer client_data;
+XtPointer call_data;
+{
+    KPixCanvas pixcanvas = (KPixCanvas) call_data;
+    KWorldCanvas wc;
+    struct win_scale_type win_scale;
+    AnimateControlWidget top = (AnimateControlWidget) client_data;
+    static char function_name[] = "AnimateControl::cnv_realise_cbk";
+
+    canvas_init_win_scale (&win_scale, K_WIN_SCALE_MAGIC_NUMBER);
+    if ( ( wc = canvas_create (pixcanvas, NULL, &win_scale) ) == NULL )
+    {
+	m_abort (function_name, "world canvas");
+    }
+    top->animateControl.position_wc = wc;
+    (void) canvas_register_position_event_func (wc, position_func,
+						(void *) top);
+    (void) canvas_register_refresh_func (wc, refresh_func, (void *) top);
+}   /*  End Function cnv_realise_cbk   */
+
+static flag position_func (KWorldCanvas canvas, double x, double y,
+			   unsigned int event_code, void *e_info,
+			   void **f_info, double x_lin, double y_lin)
+/*  [PURPOSE] This routine is a position event consumer for a world canvas.
+    <canvas> The canvas on which the event occurred.
+    <x> The horizontal world co-ordinate of the event.
+    <y> The vertical world co-ordinate of the event.
+    [NOTE] These values will have been transformed by the registered
+    transform function (see <anvas_register_transform_func>>).
+    <event_code> The arbitrary event code.
+    <e_info> A pointer to arbitrary event information.
+    <f_info> A pointer to an arbitrary function information pointer.
+    <x_lin> The horizontal linear world co-ordinate prior to the transform
+    function being called.
+    <y_lin> The vertical linear world co-ordinate prior to the transform
+    function being called.
+    [RETURNS] TRUE if the event was consumed, else FALSE indicating that
+    the event is still to be processed.
+*/
+{
+    int frame_number;
+    AnimateControlWidget top = (AnimateControlWidget) *f_info;
+
+    switch (event_code)
+    {
+      case K_CANVAS_EVENT_LEFT_MOUSE_CLICK:
+	prev_frame_cbk (NULL, (XtPointer) *f_info, (XtPointer) NULL);
+	break;
+      case K_CANVAS_EVENT_RIGHT_MOUSE_CLICK:
+	next_frame_cbk (NULL, (XtPointer) *f_info, (XtPointer) NULL);
+	break;
+      case K_CANVAS_EVENT_MIDDLE_MOUSE_CLICK:
+      case K_CANVAS_EVENT_MIDDLE_MOUSE_DRAG:
+	frame_number = x + 0.5;
+	if ( (frame_number >= top->animateControl.startFrame) &&
+	    (frame_number <= top->animateControl.endFrame) &&
+	    (top->animateControl.currentFrame != frame_number) )
+	{
+	    top->animateControl.currentFrame = frame_number;
+	    canvas_resize (canvas, (struct win_scale_type *) NULL, TRUE);
+	    XtCallCallbacks ( (Widget) top, XkwNnewFrameCallback,
+			     (XtPointer) &frame_number );
+	}
+	break;
+      case K_CANVAS_EVENT_MIDDLE_MOUSE_RELEASE:
+	XtVaSetValues (top->animateControl.current_frame_sld,
+		       XtNvalue, top->animateControl.currentFrame,
+		       NULL);
+	break;
+      default:
+	break;
+    }
+    return (FALSE);
+}   /*  End Function position_func  */
+
+static void refresh_func (KWorldCanvas canvas, int width, int height,
+			  struct win_scale_type *win_scale, Kcolourmap cmap,
+			  flag cmap_resize, void **info, PostScriptPage pspage)
+/*  [PURPOSE] This routine is a refresh event consumer for a world canvas.
+    <canvas> The world canvas being refreshed.
+    <width> The width of the canvas in pixels.
+    <height> The height of the canvas in pixels.
+    <win_scale> A pointer to the window scaling information.
+    <cmap> The colourmap associated with the canvas.
+    <cmap_resize> TRUE if the refresh function was called as a result of a
+    colourmap resize, else FALSE.
+    <info> A pointer to the arbitrary canvas information pointer.
+    <pspage> If not NULL, the PostScriptPage object the refresh is
+    redirected to.
+    [RETURNS] Nothing.
+*/
+{
+    unsigned long pixel_value;
+    AnimateControlWidget top = (AnimateControlWidget) *info;
+
+    if ( !canvas_get_colour (canvas, "white", &pixel_value,
+			     (unsigned short *) NULL,
+			     (unsigned short *) NULL,
+			     (unsigned short *) NULL) ) return;
+    canvas_draw_line_p (canvas, top->animateControl.currentFrame, 0.0,
+			top->animateControl.currentFrame, 1.0,
+			pixel_value);
+}   /*  End Function refresh_func  */
+
+static void set_limits_cbk (w, client_data, call_data)
+/*  This is the limits callback.
+*/
+Widget w;
+XtPointer client_data;
+XtPointer call_data;
+{
+    int width, height, dummy;
+    AnimateControlWidget top = (AnimateControlWidget) client_data;
+    struct win_scale_type win_scale;
+
+    canvas_get_size (top->animateControl.position_wc, &dummy, &dummy,
+		     &win_scale);
+    if (top->animateControl.endFrame <= top->animateControl.startFrame)
+    {
+	top->animateControl.endFrame = top->animateControl.startFrame + 1;
+	if (top->animateControl.endFrame >= top->animateControl.numFrames)
+	{
+	    --top->animateControl.endFrame;
+	    --top->animateControl.startFrame;
+	    XtVaSetValues (top->animateControl.start_frame_sld,
+			   XtNvalue, top->animateControl.startFrame,
+			   NULL);
+	}
+	XtVaSetValues (top->animateControl.end_frame_sld,
+		       XtNvalue, top->animateControl.endFrame,
+		       NULL);
+    }
+    win_scale.x_min = top->animateControl.startFrame;
+    win_scale.x_max = top->animateControl.endFrame;
+    (void) canvas_resize (top->animateControl.position_wc, &win_scale, TRUE);
+}   /*  End Function set_limits_cbk   */

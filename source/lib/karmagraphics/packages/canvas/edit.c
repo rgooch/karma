@@ -89,7 +89,7 @@ KImageEditList ilist;
     }
     edit_list_desc = iedit_get_instruction_desc ();
     list_head = iedit_get_list (ilist);
-    if ( (*list_head).magic != MAGIC_LIST_HEADER )
+    if ( list_head->magic != MAGIC_LIST_HEADER )
     {
 	(void) fprintf (stderr, "List header has bad magic number\n");
 	a_prog_bug (function_name);
@@ -97,8 +97,8 @@ KImageEditList ilist;
     /*  Process instructions  */
     /*  Process contiguous section of list  */
     pack_size = ds_get_packet_size (edit_list_desc);
-    for (count = 0, data = (*list_head).contiguous_data;
-	 count < (*list_head).contiguous_length; ++count, data += pack_size)
+    for (count = 0, data = list_head->contiguous_data;
+	 count < list_head->contiguous_length; ++count, data += pack_size)
     {
 	if (canvas_draw_edit_object (canvas, data)
 	    != TRUE)
@@ -107,10 +107,10 @@ KImageEditList ilist;
 	}
     }
     /*  Process fragmented section of list  */
-    for (curr_entry = (*list_head).first_frag_entry; curr_entry != NULL;
-	 curr_entry = (*curr_entry).next)
+    for (curr_entry = list_head->first_frag_entry; curr_entry != NULL;
+	 curr_entry = curr_entry->next)
     {
-	if (canvas_draw_edit_object (canvas, (*curr_entry).data)
+	if (canvas_draw_edit_object (canvas, curr_entry->data)
 	    != TRUE)
 	{
 	    return (FALSE);
@@ -152,16 +152,16 @@ char *object;
     edit_list_desc = iedit_get_instruction_desc ();
     /*  Find first linked list (should be the co-ordinate list)  */
     for (elem_count = 0,
-	 edit_coord_list_index = (*edit_list_desc).num_elements;
-	 elem_count < (*edit_list_desc).num_elements;
+	 edit_coord_list_index = edit_list_desc->num_elements;
+	 elem_count < edit_list_desc->num_elements;
 	 ++elem_count)
     {
-	if (LISTP == (*edit_list_desc).element_types[elem_count])
+	if (LISTP == edit_list_desc->element_types[elem_count])
 	{
 	    edit_coord_list_index = elem_count;
 	}
     }
-    if (edit_coord_list_index >= (*edit_list_desc).num_elements)
+    if (edit_coord_list_index >= edit_list_desc->num_elements)
     {
 	(void) fprintf (stderr, "No linked list found\n");
 	a_prog_bug (function_name);
@@ -187,7 +187,7 @@ char *object;
 		       ( object +
 			ds_get_element_offset (edit_list_desc,
 					       edit_coord_list_index) ) );
-    if ( (*coord_list_head).magic != MAGIC_LIST_HEADER )
+    if ( coord_list_head->magic != MAGIC_LIST_HEADER )
     {
 	(void) fprintf (stderr,
 			"Co-ordinate list header has bad magic number\n");
@@ -267,10 +267,10 @@ double *value;
     edit_coord *coords;
     static char function_name[] = "draw_dab";
 
-    if ( (*coord_list_head).length != 2 )
+    if ( coord_list_head->length != 2 )
     {
 	(void) fprintf (stderr, "Dab requires 2 points, got: %u\n",
-			(*coord_list_head).length);
+			coord_list_head->length);
 	return (FALSE);
     }
     if (iedit_get_edit_coords (coord_list_head, &coords) != TRUE)
@@ -300,10 +300,10 @@ double *value;
     edit_coord *coords;
     static char function_name[] = "draw_stroke";
 
-    if ( (*coord_list_head).length != 4 )
+    if ( coord_list_head->length != 4 )
     {
 	(void) fprintf (stderr, "Stroke requires 4 points, got: %u\n",
-			(*coord_list_head).length);
+			coord_list_head->length);
 	return (FALSE);
     }
     if (iedit_get_edit_coords (coord_list_head, &coords) != TRUE)
@@ -334,6 +334,6 @@ double *value;
 	(void) fprintf (stderr, "Error getting co-ordinates\n");
 	return (FALSE);
     }
-    return ( canvas_fill_polygon (canvas, coords, (*coord_list_head).length,
+    return ( canvas_fill_polygon (canvas, coords, coord_list_head->length,
 				  value, FALSE) );
 }   /*  End Function draw_polygon  */

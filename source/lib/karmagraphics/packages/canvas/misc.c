@@ -3,7 +3,7 @@
 
     This code provides miscellaneous routines for world canvases.
 
-    Copyright (C) 1993,1994  Richard Gooch
+    Copyright (C) 1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -36,8 +36,14 @@
     Updated by      Richard Gooch   30-OCT-1994: Fixed bug in
   log_transform_func  when converting from linear co-ordinates.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to
+    Updated by      Richard Gooch   26-NOV-1994: Moved to
   packages/canvas/misc.c
+
+    Updated by      Richard Gooch   10-APR-1995: Added initialisation of
+  conv_type  field in <canvas_init_win_scale>.
+
+    Last updated by Richard Gooch   26-APR-1995: Added initialisation of
+  iscale_func  and  iscale_info  fields in <canvas_init_win_scale>.
 
 
 */
@@ -65,29 +71,35 @@ struct log_transform_info
 /*  Public functions follow  */
 
 /*PUBLIC_FUNCTION*/
-void canvas_init_win_scale (win_scale, magic_number)
-/*  This routine will initialise a window scaling structure with sensible
-    values. This routine may be used prior to calling  canvas_create  .
-    The window scaling information must be pointed to by  win_scale  .
-    The magic number value must be  K_WIN_SCALE_MAGIC_NUMBER  .
-    The routine returns nothing.
+void canvas_init_win_scale (struct win_scale_type *win_scale,
+			    unsigned int magic_number)
+/*  [PURPOSE] This routine will initialise a window scaling structure with
+    sensible values. This routine may be used prior to calling <canvas_create>.
+    <win_scale> A pointer to the window scaling structure.
+    <magic_number> The value of this must be K_WIN_SCALE_MAGIC_NUMBER.
+    [RETURNS] Nothing.
 */
-struct win_scale_type *win_scale;
-unsigned int magic_number;
 {
     static char function_name[] = "canvas_init_win_scale";
 
     if (magic_number != K_WIN_SCALE_MAGIC_NUMBER)
     {
-	(void) fprintf (stderr, "Bad magic number: %u\n", magic_number);
+	(void) fprintf (stderr,
+			"Bad magic number: %u\nRecompile application\n",
+			magic_number);
 	a_prog_bug (function_name);
     }
     m_clear ( (char *) win_scale, sizeof *win_scale );
-    (*win_scale).magic_number = K_WIN_SCALE_MAGIC_NUMBER;
-    (*win_scale).x_min = 0.0;
-    (*win_scale).x_max = 1.0;
-    (*win_scale).y_min = 0.0;
-    (*win_scale).y_max = 1.0;
+    win_scale->magic_number = K_WIN_SCALE_MAGIC_NUMBER;
+    win_scale->x_min = 0.0;
+    win_scale->x_max = 1.0;
+    win_scale->y_min = 0.0;
+    win_scale->y_max = 1.0;
+    win_scale->z_scale = K_INTENSITY_SCALE_LINEAR; /*  Remove in Karma v2.0  */
+    win_scale->iscale_func = ( flag (*) () ) NULL;
+    win_scale->iscale_free_info_func = ( void (*) (void *info) ) NULL;
+    win_scale->iscale_info = NULL;
+    win_scale->conv_type = CONV_CtoR_REAL;
 }   /*  End Function canvas_init_win_scale  */
 
 /*PUBLIC_FUNCTION*/

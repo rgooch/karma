@@ -10,9 +10,6 @@ iarray_put_named_string
 iarray_get_named_value
 iarray_get_named_string
 iarray_copy_data
-iarray_get_element_1D
-iarray_get_element_2D
-iarray_get_element_3D
 iarray_get_sub_array_2D
 iarray_get_2D_slice_from_3D
 iarray_dim_length
@@ -34,6 +31,7 @@ iarray_write_rgb_ps
 iarray_create_1D
 iarray_create_2D
 iarray_create_3D
+iarray_create_4D
 iarray_put_float
 iarray_put_int
 iarray_get_float

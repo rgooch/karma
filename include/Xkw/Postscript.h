@@ -1,8 +1,15 @@
 
 /*----------------------------------------------------------------------*/
 /* This widget implements a page setup control */
-/**/
-/* Resources:               Type:                Defaults:*/
+/*
+ Name		         Class		       RepType         Default Value
+ ----		         -----		       -------         -------------
+ portraitOrientation     PortraitOrientation   Bool            True
+ pageHorizontalOffset    PageHorizontalOffset  Int             10
+ pageVerticalOffset      PageVerticalOffset    Int             10
+ pageHorizontalSize      PageHorizontalSize    Int             180
+ pageVerticalSize        PageVerticalSize      Int             180
+*/
 /*----------------------------------------------------------------------*/
 
 #ifndef POSTSCRIPT__H
@@ -13,6 +20,18 @@
 extern WidgetClass postscriptWidgetClass;
 typedef struct _PostscriptClassRec *PostscriptWidgetClass;
 typedef struct _PostscriptRec *PostscriptWidget;
+
+#define XkwNportraitOrientation "portraitOrientation"
+#define XkwNpageHorizontalOffset "pageHorizontalOffset"
+#define XkwNpageVerticalOffset "pageVerticalOffset"
+#define XkwNpageHorizontalSize "pageHorizontalSize"
+#define XkwNpageVerticalSize "pageVerticalSize"
+
+#define XkwCPortraitOrientation "PortraitOrientation"
+#define XkwCPageHorizontalOffset "PageHorizontalOffset"
+#define XkwCPageVerticalOffset "PageVerticalOffset"
+#define XkwCPageHorizontalSize "PageHorizontalSize"
+#define XkwCPageVerticalSize "PageVerticalSize"
 
 #define XtIsPostscript(w) XtIsSubclass((w), postscriptWidgetClass)
 

@@ -4,7 +4,7 @@
     This code finds various specific forms of data from the Karma data
     structure and returns Intelligent Arrays.
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,10 @@
 
     Written by      Richard Gooch   25-DEC-1994
 
-    Last updated by Richard Gooch   25-DEC-1994
+    Updated by      Richard Gooch   25-DEC-1994
+
+    Last updated by Richard Gooch   15-APR-1995: Added message when trying for
+  TrueColour.
 
 
 */
@@ -130,6 +133,7 @@ flag iarray_get_image_from_multi (multi_array *multi_desc, iarray *pseudo,
 						  (char **) NULL, NULL) )
 	== NULL )
     {
+	(void) fprintf (stderr, "%s: trying TrueColour...\n", function_name);
 	if ( ( *red =
 	      iarray_get_from_multi_array (multi_desc, NULL, 2, (char **) NULL,
 					   "Red Intensity") ) == NULL )
@@ -249,6 +253,7 @@ flag iarray_get_movie_from_multi (multi_array *multi_desc, iarray *pseudo,
 						  (char **) NULL, NULL) )
 	== NULL )
     {
+	(void) fprintf (stderr, "%s: trying TrueColour...\n", function_name);
 	if ( ( *red =
 	      iarray_get_from_multi_array (multi_desc, NULL, 3, (char **) NULL,
 					   "Red Intensity") ) == NULL )

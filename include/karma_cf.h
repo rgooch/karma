@@ -2,7 +2,7 @@
 
     Header for  cf_  package.
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,18 +31,16 @@
 
     Written by      Richard Gooch   23-FEB-1993
 
-    Last updated by Richard Gooch   29-NOV-1993
+    Last updated by Richard Gooch   7-APR-1995
 
 */
 
-#ifndef KARMA_CF_H
-#define KARMA_CF_H
-
-
-#ifndef KARMA_H
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
 #  include <karma.h>
 #endif
 
+#ifndef KARMA_CF_H
+#define KARMA_CF_H
 
 
 typedef struct
@@ -178,6 +176,10 @@ EXTERN_FUNCTION (void cf_mirp,
 		  unsigned short *greens, unsigned short *blues,
 		  unsigned int stride,
 		  double x, double y, void *var_param) );
-
+EXTERN_FUNCTION (void cf_mandelbrot,
+		 (unsigned int num_cells, unsigned short *reds,
+		  unsigned short *greens, unsigned short *blues,
+		  unsigned int stride,
+		  double x, double y, void *var_param) );
 
 #endif /*  KARMA_CF_H  */

@@ -71,7 +71,8 @@ endif
     rs6000		IBM rs6000
     mips1		Mips (r2000/r3000/r4000)
     mips2		Mips (r4000)
-#    cray		Cray Y-MP (Unicos)
+    mips4		Mips (r8000 in 64 bit mode)
+    cray		Cray PVP (Parallel Vector Processor) (Y-MP) (Unicos)
     i860		Intel i860
     i386		Intel i386
     alpha		DEC alpha
@@ -80,13 +81,15 @@ endif
   Legal values of  OS  are:
 
     SunOS		Sun (SunOS 4.x)
+    Solaris		Solaris 2.x
     ConvexOS		Convex (ConvexOS)
     AIX			IBM (AIX)
     ULTRIX		DEC (Ultrix)
     IRIX5		SGI (IRIX 5.x)
-#    cray		Cray Y-MP (Unicos)
+    UNICOS		Cray Y-MP
     VXMVX		Vicom (VX/ MVX i860 accelerator(s) for Sun Sparc)
-    linux		IBM PC (Linux: free 386 Unix)
+    Linux		IBM PC (Linux: free 386 Unix)
+    OSF1		OSF/1
     MSDOS		IBM PC 386 in 32 bit mode (MS-DOS)
 
   This environment variable is also used by the supplied  .login  script.
@@ -134,8 +137,8 @@ endif
   library.
   To produce dependencies for library source code and headers, you will need
   access to  makedepend  as shipped with the MIT X distribution, Version 11,
-  Release 5.
-  You will also need a C compiler.
+  Release 5, or possibly later.
+  You will also need an ANSI C compiler.
 
 2.4	Making a binary distribution directory tree
 -------------------------------------------------------------------------------
@@ -162,34 +165,43 @@ endif
 
   Below is an ad-hoc list of special PATH requirements for different platforms:
 
-  Solaris 2: you need  /usr/ucb
+  Solaris 2: you need  /usr/ccs/bin /usr/ucb
 
   All platforms: you need a BSD-style  install  programme.
 
-3.0	Building the libraries
+3.0	Creating the build tree
 -------------------------------------------------------------------------------
 
-  The binary distributions come with the makefiles used to build the libraries.
-  There are also template makefiles in the directory  source/lib/makefiles
-  for a variety of platforms.
-  Copy the appropriate template makefiles into the  lib/karma*/  directories.
-  Use  GNUmakefile  as the filenames.
-  A script is supplied which copies the appropriate makefiles for you. Just
-  run  csh_script/update_libmakefiles
+  Karma uses a build tree for each platform. This build tree is used for both
+  the libraries and the modules. You need manually create the following
+  directories:
+	$KARMAROOT/build/$MACHINE_OS
+	$KARMAROOT/build/$MACHINE_OS/lib
+
+3.1	Building the libraries
+-------------------------------------------------------------------------------
+
+  There are template makefiles in the directory  source/lib/makefiles for a
+  variety of platforms. You should just be able to run the
+  csh_script/update_libmakefiles  script and the correct makefiles are
+  installed in the library build tree.
   If everything is set up properly, you should be able to type  gmake  (or
   gnumake  or  make) in each of these directories, and the libraries will be
   built.
   There should be a  Makefile  in  $KARMABASE/lib  which recursively makes in
-  each library directory. Just type  make  in this directory.
+  each library directory. Just type  gmake  in this directory. This also
+  requires GNUmake (but is not named so that you'd know: sorry).
 
   Some platforms require symbolic links to the shared libraries. You can run
-  the  remove_oldlibs  script to create these links.
+  the  remove_oldlibs  script to create these links. In particular, because of
+  a bug with GNUmake on Solaris 2, you will need to do this yourself (the
+  Makefile is supposed to do this but doesn't).
 
-3.1	Building the modules
+3.2	Building the modules
 -------------------------------------------------------------------------------
 
   The first thing you need to do is create the directories under
-  $KARMAROOT/$MACHINE_OS/build.modules
+  $KARMAROOT/build/$MACHINE_OS/modules
   These directories contain the object files and dependency files. You can run
   the script  csh_script/make_build.modules  to generate the entire directory
   tree.

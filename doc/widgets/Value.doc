@@ -1,0 +1,76 @@
+
+Widget Documentation
+
+------------------------------------------------------------------------
+
+Name: Value
+Date: 8-OCT-1995
+Author: Richard Gooch (rgooch@atnf.csiro.au)
+
+------------------------------------------------------------------------
+
+The Value widget implements a simple value control. It allows the user
+to increment or decrement an integer value. The integer value is
+displayed and dynamically updated. It contains 4 buttons:
+
+<<	Decrement fast (10x faster than the "<" button)
+<	Decrement
+>	Increment
+>>	Increment fast (10x faster than ">" button)
+
+If the user presses the left mouse button over one of of these
+buttons, the value will change appropriately. The user may also hold
+the mouse button down and the value will continue to change (at a
+substantial rate).
+
+This widget has the following resources:
+
+*)  XkwNvalueChangeCallback
+	This is the callback for the values changes. The callback has
+the following interface:
+
+void change_cbk (Widget w, XtPointer client_data, XtPointer call_data)
+/*  [PURPOSE] This routine is called when a Value widget changes value
+    as a result of a user action.
+    <w> The value widget.
+    <client_data> Arbitrary client data.
+    <call_data> A pointer to an integer which contains the new value. Use the
+    *(int *) cast to obtain the value.
+    [RETURNS] Nothing.
+*/
+
+*)  XtNlabel
+	The label string for the widget. This should tell the user
+what the widget controls.
+
+*)  XkwNminimum
+	This specifies the minimum value that the widget can be set
+to.
+
+*)  XkwNmaximum
+	This specifies the maximum value that the widget can be set
+to.
+
+*)  XtNvalue
+	This sets/gets the current value of the widget. The value
+cannot be set outside the range defined by XkwNminimum and
+XkwNmaximum.
+
+*)  XkwNmodifier
+	This specifies the absolute value of the increment by which the
+value widget can be changed when the "<" or ">" button is pressed.
+
+*)  XkwNwrap
+	This specifies whether the value will wrap around when it is
+increased or decreased beyond the allowed limits. If True, the value
+will wrap, else it will remain fixed at the appropriate limit.
+
+*)  XtNorientation
+	This specifies whether the label is above or to the left of
+the buttons. If XtorientHorizontal, the label is to the left. If
+XtorientVertical, the label is above the buttons.
+
+*)  XkwNvaluePtr
+	This specifies a pointer to an integer to which is written the
+current value of the widget. This value is written prior to any
+XkwNvalueChangeCallback being called.

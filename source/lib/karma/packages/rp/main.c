@@ -3,7 +3,7 @@
 
     This code provides support for managing a random pool of bytes.
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994,1995  Richard Gooch
 
     I first saw the idea of a random pool of bytes in PGP.
 
@@ -53,13 +53,18 @@
     Updated by      Richard Gooch   9-DEC-1994: Fixed bug in  rp_add_time_noise
   where old time values were not updated.
 
-    Last updated by Richard Gooch   25-JAN-1995: Added #ifdef OS_ConvexOS
+    Updated by      Richard Gooch   25-JAN-1995: Added #ifdef OS_ConvexOS
+
+    Updated by      Richard Gooch   9-APR-1995: Added #include <sys/types.h>
+
+    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
 
 
 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <sys/types.h>
 #include <math.h>
 #ifdef OS_MSDOS
 #  include <time.h>
@@ -83,7 +88,7 @@
 #define VERIFY_RANDPOOL(rp) if (rp == NULL) \
 {(void) fprintf (stderr, "NULL randpool passed\n"); \
  a_prog_bug (function_name); } \
-if ( (*rp).magic_number != RANDPOOL_MAGIC_NUMBER ) \
+if (rp->magic_number != RANDPOOL_MAGIC_NUMBER) \
 {(void) fprintf (stderr, "Invalid randpool object\n"); \
  a_prog_bug (function_name); }
 
@@ -187,24 +192,24 @@ RandPool rp_create ( unsigned int size, unsigned int hash_digest_size,
 	m_error_notify (function_name, "random pool");
 	return (NULL);
     }
-    (*rp).magic_number = RANDPOOL_MAGIC_NUMBER;
-    (*rp).size = size;
-    (*rp).hash_digest_size = hash_digest_size;
-    (*rp).hash_block_size = hash_block_size;
-    (*rp).pool = NULL;
-    (*rp).hash_key = NULL;
-    (*rp).iv = NULL;
-    (*rp).hash_func = hash_func;
-    (*rp).destroy_list = NULL;
-    if ( ( (*rp).pool = (unsigned char *) m_alloc (size) ) == NULL )
+    rp->magic_number = RANDPOOL_MAGIC_NUMBER;
+    rp->size = size;
+    rp->hash_digest_size = hash_digest_size;
+    rp->hash_block_size = hash_block_size;
+    rp->pool = NULL;
+    rp->hash_key = NULL;
+    rp->iv = NULL;
+    rp->hash_func = hash_func;
+    rp->destroy_list = NULL;
+    if ( ( rp->pool = (unsigned char *) m_alloc (size) ) == NULL )
     {
 	m_error_notify (function_name, "pool of bytes");
 	rp_destroy (rp);
 	return (NULL);
     }
     /*  Initialise pool  */
-    for (count = 0; count < size; ++count) (*rp).pool[count] =lrand48 () &0xff;
-    if ( ( (*rp).hash_key = (unsigned char *) m_alloc (hash_block_size) )
+    for (count = 0; count < size; ++count) rp->pool[count] =lrand48 () &0xff;
+    if ( ( rp->hash_key = (unsigned char *) m_alloc (hash_block_size) )
 	== NULL )
     {
 	m_error_notify (function_name, "hash key");
@@ -214,24 +219,24 @@ RandPool rp_create ( unsigned int size, unsigned int hash_digest_size,
     /*  Initialise key  */
     for (count = 0; count < hash_block_size; ++count)
     {
-	(*rp).hash_key[count] = lrand48 () & 0xff;
+	rp->hash_key[count] = lrand48 () & 0xff;
     }
-    if ( ( (*rp).iv = (unsigned char *) m_alloc (hash_digest_size) ) == NULL )
+    if ( ( rp->iv = (unsigned char *) m_alloc (hash_digest_size) ) == NULL )
     {
 	m_error_notify (function_name, "hash key");
 	rp_destroy (rp);
 	return (NULL);
     }
-    (*rp).add_pos = 0;
-    (*rp).get_pos = size;  /*  Force stir on get  */
+    rp->add_pos = 0;
+    rp->get_pos = size;  /*  Force stir on get  */
     /*  Add some data  */
     rp_add_time_noise (rp);
     /*  Place randpool object into list  */
-    (*rp).prev = NULL;
-    (*rp).next = first_randpool;
+    rp->prev = NULL;
+    rp->next = first_randpool;
     if (first_randpool != NULL)
     {
-	(*first_randpool).prev = rp;
+	first_randpool->prev = rp;
     }
     first_randpool = rp;
     return (rp);
@@ -257,17 +262,17 @@ void rp_add_bytes (RandPool rp, CONST unsigned char *buf, unsigned int length)
 	(void) fprintf (stderr, "NULL pointer passed\n");
 	a_prog_bug (function_name);
     }
-    while ( length > (space_in_key = (*rp).hash_block_size - (*rp).add_pos) )
+    while ( length > (space_in_key = rp->hash_block_size - rp->add_pos) )
     {
 	/*  Fill key to the brim and then some  */
-	xor_copy ( (*rp).hash_key + (*rp).add_pos, buf, space_in_key );
+	xor_copy (rp->hash_key + rp->add_pos, buf, space_in_key);
 	buf += space_in_key;
 	length -= space_in_key;
 	stir (rp);
     }
     /*  Add bytes to key.  */
-    xor_copy ( (*rp).hash_key + (*rp).add_pos, buf, length );
-    (*rp).add_pos += length;
+    xor_copy (rp->hash_key + rp->add_pos, buf, length);
+    rp->add_pos += length;
 }   /*  End Function rp_add_bytes  */
 
 /*PUBLIC_FUNCTION*/
@@ -290,18 +295,18 @@ void rp_get_bytes (RandPool rp, unsigned char *buf, unsigned int length)
 	(void) fprintf (stderr, "NULL pointer passed\n");
 	a_prog_bug (function_name);
     }
-    while ( length > (bytes_in_pool = (*rp).size - (*rp).get_pos) )
+    while ( length > (bytes_in_pool = rp->size - rp->get_pos) )
     {
 	/*  Get all bytes out of pool and then stir  */
-	m_copy ( (char *) buf, (char *) (*rp).pool + (*rp).get_pos,
+	m_copy ( (char *) buf, (char *) rp->pool + rp->get_pos,
 		bytes_in_pool );
 	buf += bytes_in_pool;
 	length -= bytes_in_pool;
 	stir (rp);
     }
     /*  Get bytes from pool  */
-    m_copy ( (char *) buf, (char *) (*rp).pool + (*rp).get_pos, length );
-    (*rp).get_pos += length;
+    m_copy ( (char *) buf, (char *) rp->pool + rp->get_pos, length );
+    rp->get_pos += length;
 }   /*  End Function rp_get_bytes  */
 
 /*PUBLIC_FUNCTION*/
@@ -311,45 +316,44 @@ void rp_destroy (RandPool rp)
     The routine returns nothing.
 */
 {
-    struct destroy_type *func, *next_func;
     extern RandPool first_randpool;
     static char function_name[] = "rp_destroy";
 
     VERIFY_RANDPOOL (rp);
-    if ( (*rp).pool != NULL )
+    if (rp->pool != NULL)
     {
-	m_clear ( (char *) (*rp).pool, (*rp).size );
-	m_free ( (char *) (*rp).pool );
+	m_clear ( (char *) rp->pool, rp->size );
+	m_free ( (char *) rp->pool );
     }
-    if ( (*rp).hash_key != NULL )
+    if (rp->hash_key != NULL)
     {
-	m_clear ( (char *) (*rp).hash_key, (*rp).hash_block_size );
-	m_free ( (char *) (*rp).hash_key );
+	m_clear ( (char *) rp->hash_key, rp->hash_block_size );
+	m_free ( (char *) rp->hash_key );
     }
-    if ( (*rp).iv != NULL )
+    if (rp->iv != NULL)
     {
-	m_clear ( (char *) (*rp).iv, (*rp).hash_digest_size );
-	m_free ( (char *) (*rp).iv );
+	m_clear ( (char *) rp->iv, rp->hash_digest_size );
+	m_free ( (char *) rp->iv );
     }
     /*  Call any destroy functions  */
-    c_call_callbacks ( (*rp).destroy_list, NULL );
-    c_destroy_list ( (*rp).destroy_list );
-    (*rp).destroy_list = NULL;
+    c_call_callbacks (rp->destroy_list, NULL);
+    c_destroy_list (rp->destroy_list);
+    rp->destroy_list = NULL;
     /*  Remove randpool object from list  */
-    if ( (*rp).next != NULL )
+    if (rp->next != NULL)
     {
 	/*  Another entry further in the list  */
-	(* (*rp).next ).prev = (*rp).prev;
+	rp->next->prev = rp->prev;
     }
-    if ( (*rp).prev != NULL )
+    if (rp->prev != NULL)
     {
 	/*  Another entry previous in the list  */
-	(* (*rp).prev ).next = (*rp).next;
+	rp->prev->next = rp->next;
     }
     if (rp == first_randpool)
     {
 	/*  Randpool is first in list: make next entry the first  */
-	first_randpool = (*rp).next;
+	first_randpool = rp->next;
     }
     /*  Kill magic number entry and everything else for safety  */
     m_clear ( (char *) rp, sizeof *rp );
@@ -437,7 +441,7 @@ void rp_register_destroy_func (RandPool rp, void (*destroy_func) (),void *info)
     static char function_name[] = "rp_register_destroy_func";
 
     VERIFY_RANDPOOL (rp);
-    (void) c_register_callback (&(*rp).destroy_list,
+    (void) c_register_callback (&rp->destroy_list,
 				( flag (*) () ) destroy_func,
 				rp, info, FALSE, NULL, FALSE,
 				FALSE);
@@ -457,38 +461,38 @@ static void stir (RandPool rp)
 
     VERIFY_RANDPOOL (rp);
     /*  Copy end of pool into IV  */
-    m_copy ( (char *) (*rp).iv,
-	    (char *) (*rp).pool + (*rp).size - (*rp).hash_digest_size,
-	    (*rp).hash_digest_size );
-    for (pool_count = 0; pool_count < (*rp).size;
-	 pool_count += (*rp).hash_digest_size)
+    m_copy ( (char *) rp->iv,
+	    (char *) rp->pool + rp->size - rp->hash_digest_size,
+	    rp->hash_digest_size );
+    for (pool_count = 0; pool_count < rp->size;
+	 pool_count += rp->hash_digest_size)
     {
-	(* (*rp).hash_func ) ( (*rp).iv, (*rp).hash_key );
-	for (hash_count = 0; hash_count < (*rp).hash_digest_size; ++hash_count)
+	(* rp->hash_func ) (rp->iv, rp->hash_key);
+	for (hash_count = 0; hash_count < rp->hash_digest_size; ++hash_count)
 	{
-	    (*rp).pool[pool_count + hash_count] ^= (*rp).iv[hash_count];
-	    (*rp).iv[hash_count] = (*rp).pool[pool_count + hash_count];
+	    rp->pool[pool_count + hash_count] ^= rp->iv[hash_count];
+	    rp->iv[hash_count] = rp->pool[pool_count + hash_count];
 	}
     }
     /*  Copy over new hash key  */
-    m_copy ( (char *) (*rp).hash_key, (char *) (*rp).pool,
-	    (*rp).hash_block_size );
-    for (pool_count = 0; pool_count < (*rp).size;
-	 pool_count += (*rp).hash_digest_size)
+    m_copy ( (char *) rp->hash_key, (char *) rp->pool,
+	    rp->hash_block_size );
+    for (pool_count = 0; pool_count < rp->size;
+	 pool_count += rp->hash_digest_size)
     {
-	(* (*rp).hash_func ) ( (*rp).iv, (*rp).hash_key );
-	for (hash_count = 0; hash_count < (*rp).hash_digest_size; ++hash_count)
+	(* rp->hash_func ) (rp->iv, rp->hash_key);
+	for (hash_count = 0; hash_count < rp->hash_digest_size; ++hash_count)
 	{
-	    (*rp).pool[pool_count + hash_count] ^= (*rp).iv[hash_count];
-	    (*rp).iv[hash_count] = (*rp).pool[pool_count + hash_count];
+	    rp->pool[pool_count + hash_count] ^= rp->iv[hash_count];
+	    rp->iv[hash_count] = rp->pool[pool_count + hash_count];
 	}
     }
     /*  Copy over new hash key  */
-    m_copy ( (char *) (*rp).hash_key, (char *) (*rp).pool,
-	    (*rp).hash_block_size );
-    m_clear ( (char *) (*rp).iv, (*rp).hash_digest_size );
-    (*rp).add_pos = 0;
-    (*rp).get_pos = (*rp).hash_block_size;
+    m_copy ( (char *) rp->hash_key, (char *) rp->pool,
+	    rp->hash_block_size );
+    m_clear ( (char *) rp->iv, rp->hash_digest_size );
+    rp->add_pos = 0;
+    rp->get_pos = rp->hash_block_size;
 }   /*  End Function stir  */
 
 static void xor_copy (unsigned char *dest, CONST unsigned char *source,

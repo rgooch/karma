@@ -13,14 +13,17 @@
 
 typedef struct _PostscriptPart
 {
-  flag portrait;
-  double hoffset;
-  double voffset;
-  double hsize;
-  double vsize;
-  char *arrayfile_name;
-  KPixCanvas pixcanvas;
-  XtCallbackList callback;
+    /*  Public resources  */
+    Bool portrait;
+    int hoffset;
+    int voffset;
+    int hsize;
+    int vsize;
+    XtCallbackList callback;
+    /*  Special resources (changed by XkwPostscriptRegisterImageAndName)  */
+    char *arrayfile_name;
+    KPixCanvas pixcanvas;
+    /*  Private resources  */
 } PostscriptPart, *PostscriptPartPtr;
 
 typedef struct _PostscriptRec

@@ -3,7 +3,7 @@
 
     This code provides a high level data structure processing routine.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -51,17 +51,23 @@
   dsxfr_get_multi  ,corrected documentation on the  post_process  routine and
   implemented its operation.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to
+    Updated by      Richard Gooch   26-NOV-1994: Moved to
   packages/dsproc/main.c
+
+    Updated by      Richard Gooch   19-APR-1995: Cleaned some code.
+
+    Last updated by Richard Gooch   13-JUL-1995: Cleaned some more code.
 
 
 */
 #include <stdio.h>
+#include <string.h>
 #include <karma.h>
 #include <karma_dsproc.h>
 #include <karma_dsxfr.h>
 #include <karma_ds.h>
 #include <karma_m.h>
+#include <karma_a.h>
 
 
 /*  Public functions follow  */
@@ -150,7 +156,7 @@ void dsproc_object (char *object, char *array_names[], unsigned int num_arrays,
 	return;
     }
     /*  Determine suitability of input array  */
-    if ( (*pre_process) (multi_desc) == FALSE )
+    if ( !(*pre_process) (multi_desc)  )
     {
 	return;
     }
@@ -172,19 +178,18 @@ void dsproc_object (char *object, char *array_names[], unsigned int num_arrays,
 	return;
     }
     /*  Process arrays  */
-    while (array_count < (*out_multi_desc).num_arrays)
+    while (array_count < out_multi_desc->num_arrays)
     {
-	if (index_list[array_count] < (*multi_desc).num_arrays)
+	if (index_list[array_count] < multi_desc->num_arrays)
 	{
 	    /*  Name match: process array  */
-	    if ( (*process_array)
-		( (*multi_desc).headers[index_list[array_count]],
-		 (*multi_desc).data[ index_list[array_count] ],
-		 &(*out_multi_desc).headers[array_count],
-		 &(*out_multi_desc).data[array_count] )
-		== FALSE )
+	    if ( !(*process_array)
+		( multi_desc->headers[index_list[array_count]],
+		 multi_desc->data[ index_list[array_count] ],
+		 &out_multi_desc->headers[array_count],
+		 &out_multi_desc->data[array_count] ) )
 	    {
-		if ( (*out_multi_desc).num_arrays < 2 )
+		if ( out_multi_desc->num_arrays < 2 )
 		{
 		    (void) fprintf (stderr,
 				    "Error processing array_file: %s\n",
@@ -194,7 +199,7 @@ void dsproc_object (char *object, char *array_names[], unsigned int num_arrays,
 		{
 		    (void) fprintf (stderr,
 				    "Error processing array: %s of array_file: %s\n",
-				    (*out_multi_desc).array_names[array_count],
+				    out_multi_desc->array_names[array_count],
 				    object);
 		}
 		(void) fprintf (stderr, "Function: %s error\n", function_name);
@@ -205,8 +210,8 @@ void dsproc_object (char *object, char *array_names[], unsigned int num_arrays,
 	}
 	else
 	{   /* No name match: copy over input array */
-	    if ( ( (*out_multi_desc).headers[array_count] =
-		  ds_copy_desc_until ( (*multi_desc).headers[array_count],
+	    if ( ( out_multi_desc->headers[array_count] =
+		  ds_copy_desc_until ( multi_desc->headers[array_count],
 				      (char *) NULL ) )
 		== NULL )
 	    {
@@ -217,8 +222,8 @@ void dsproc_object (char *object, char *array_names[], unsigned int num_arrays,
 		return;
 	    }
 	    /*  Allocate data space for array  */
-	    if ( ( (*out_multi_desc).data[array_count] =
-		  ds_alloc_data ( (*out_multi_desc).headers[array_count],
+	    if ( ( out_multi_desc->data[array_count] =
+		  ds_alloc_data ( out_multi_desc->headers[array_count],
 				 TRUE, TRUE ) )
 		== NULL )
 	    {
@@ -228,10 +233,10 @@ void dsproc_object (char *object, char *array_names[], unsigned int num_arrays,
 		return;
 	    }
 	    /*  Copy data  */
-	    if (ds_copy_data ( (*multi_desc).headers[array_count] ,
-			      (*multi_desc).data[array_count],
-			      (*out_multi_desc).headers[array_count],
-			      (*out_multi_desc).data[array_count]) == FALSE)
+	    if (ds_copy_data ( multi_desc->headers[array_count] ,
+			      multi_desc->data[array_count],
+			      out_multi_desc->headers[array_count],
+			      out_multi_desc->data[array_count]) == FALSE)
 	    {
 		a_func_abort (function_name,
 			      "Error copying over data for unprocessed array");
@@ -247,12 +252,12 @@ void dsproc_object (char *object, char *array_names[], unsigned int num_arrays,
     /*  Decrement attachment count for input data structure  */
     ds_dealloc_multi (multi_desc);
     /*  Determine suitability of output array  */
-    if ( (*post_process) (multi_desc, out_multi_desc) == FALSE )
+    if ( !(*post_process) (multi_desc, out_multi_desc)  )
     {
 	ds_dealloc_multi (out_multi_desc);
 	return;
     }
-    if (dsxfr_put_multi (txt, out_multi_desc) != TRUE)
+    if ( !dsxfr_put_multi (txt, out_multi_desc) )
     {
 	ds_dealloc_multi (out_multi_desc);
 	return;

@@ -40,7 +40,7 @@
  *  ----		-----		----		-------
  * 
  *  decay		Decay		int		5 milliseconds
- *  flash		Boolean		Boolean		FALSE
+ *  flash		Boolean		Bool   		FALSE
  *  initialDelay	Delay		int		200 milliseconds
  *  minimumDelay	MinimumDelay	int		10 milliseconds
  *  repeatDelay		Delay		int		50 milliseconds

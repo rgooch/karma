@@ -25,6 +25,8 @@ Related documents:
 
 The documentation on "Intelligent Arrays", communications support,
 colourmap support and image editing support are highly recommended.
+The documentation on Karma widgets explains how to build a complete
+graphical application using the Xt Graphical User Interface toolkit.
 
 
 
@@ -67,19 +69,26 @@ It is being superceeded by the <imw_> package.
   =======
 
 The lowest level display canvas is provided by the <kwin_> package. It
-provides a pixel canvas class.
+provides a pixel canvas class. A pixel canvas is graphics system
+independent. The graphics system is the layer of software that
+provides basic access to display hardware. There is support for the
+following graphics systems:
+	The X Window System (using Xlib)
+	The XGL rendering library
+	A VX board (used to be hot stuff in it's day:-)
+
 Routines are provided to create a pixel canvas from an X window. Many
 pixel canvases may be created per X window (though typically only one)
 and mosaiced. The routines to create pixel canvases are naturally
 graphics system dependent.
 A number of routines allow drawing onto a pixel canvas. These routines
-have generic interfaces (ie. no reference to the graphics system such
+have generic interfaces (i.e. no reference to the graphics system such
 as X). This allows an application to be written that can easily be
 ported to a non-X environment (provided the Karma graphics library
 supports the new graphics system). Note that these drawing routines do
 NOT perform any "clipping". If an object is drawn outside the pixel
 canvas boundaries, it is not necessarily clipped. It is the
-responsibility of the underlying graphics system (ie. X) to handle
+responsibility of the underlying graphics system (i.e. X) to handle
 this. The reason for this is that it is not my purpose to reinvent X,
 but rather to ease the porting of image display applications to
 specialised display hardware.
@@ -92,7 +101,7 @@ Events (ie. refresh/ resize/ cursor) on the underlying window (ie. X
 window) may be "pushed" up into the pixel canvas, where they will be
 redistributed to application or library code which has registered an
 interest in these events.
-When the underlying window (ie. X window) needs to be redisplayed or
+When the underlying window (i.e. X window) needs to be redisplayed or
 has resized, the <kwin_resize> routine should be called. This will
 send refresh/ resize events to higher levels in the image display
 system.
@@ -105,6 +114,26 @@ In many applications, the higher levels of the library process these
 events, so the application programmer need not write any event
 processing code. This can save thousands of lines of code even in a
 modest application.
+
+There are special attributes associated with each pixel canvas which
+must be used when computing pixel values for drawing on canvases with
+visual type TrueColour or DirectColour. This paragraph is only of
+relevance for TrueColour or DirectColour pixel canvasses.
+Those familiar with Xlib programming will recall that there is a
+defined bitmask for red, green and blue for each visual of type
+TrueColour or DirectColour. The bits in a pixel value required for
+full intensity for a primary colour requires using all the bits of
+that colour's bitmask. The colour white is a pixel value that is the
+OR of all three bitmasks. The Xlib model allows you to construct pixel
+values this way and draw them as required. However, for efficiency
+reasons, the model used in the Karma Graphics library is a little
+more complete. In Karma the distinction is made between pixel values
+used in most drawing operations and those used when drawing images of
+pixels. Hence a pixel canvas has the following attributes:
+  {red|green|blue} pixel masks which should be used except when
+		   drawing images
+  {red|green|blue} image masks which should be used only when drawing
+		   images
 
 
   Level 5
@@ -220,7 +249,15 @@ urged to use this module and then read the source code to see how much
 functionality may be packed into so few lines of code, using the image
 display support in the Karma library.
 
-Below are some examples:
+Some examples are provided below. Note that these are not complete
+applications: merely code extracts. These examples are targetted
+towards applications which will not use the Xt Intrinsics and widget
+libraries: some other X toolkit is assumed (i.e. XView). Please refer
+to the documentation on the Karma widget library for how to do things
+the easy way.
+These examples are legacy examples which date from the time XView was
+still heavily used, and life was hard. Use Xt Intrinsics and Karma
+widgets instead. (Think I'm trying to tell you something?)
 
   Example 1
   =========

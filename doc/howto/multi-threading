@@ -1,5 +1,6 @@
 This file is intended as a "getting-started" guide to multi-threading
-(parallelism) support in the Karma library.
+(parallelism) support in the Karma library. In this document the term
+"threading" is equivalent to "parallelisation".
 
 Purpose:
 --------
@@ -40,6 +41,98 @@ package. The <mt_> package allows the application programmer to create
 a pool of threads onto which jobs may be launched. Even if a platform
 does not support multi-threading, the same interface may still be used
 (without any significant performance penalty).
+
+
+Overview:
+---------
+
+To make use of multi-threading, you first need to create a pool of
+threads onto which you can launch jobs. This is done by calling
+<mt_create_pool>.
+You may then launch jobs onto the thread pool by calling
+<mt_launch_job>. It is important to understand the distinction between
+threads and jobs:
+- Threads are not destroyed (unless their pool is explicitely
+destroyed by <mt_destroy_pool>). Threads sit idle until they are given
+a job.
+- Jobs are just that: a job that must be done. It corresponds to a
+function that is called by the thread it runs on. They last a short
+time and are run on the first available idle thread. The actual
+execution order of jobs is unpredictable. Typically an algorithm
+divides up the work to be done and has one job function which is
+launched many times, once for each part of the work.
+- You may launch many more (or less) jobs than there are
+threads. Often it is not convenient to divide the work into N pieces
+(where N is the number of threads), and may actually be less efficient
+(the last thread may end up doing more work than others). It is
+usually better to divide the work into far more jobs than there are
+threads. This ensures that all threads are kept busy (this is termed
+"load balancing").
+
+You may require that each thread has a private working space (other
+than the stack) which is available to the jobs that run on that
+thread. This private data is "remembered" for all the jobs run on the
+thread, and is a convenient way to merge the results of different jobs
+together.
+
+One of the more common traps in threads programming is the incorrect
+use of global data. In particular, where more than one thread (or job)
+may update data which is not private to that thread. Examples of this
+kind of data are global variables and static variables inside
+functions. Because a function may be running more than once at the
+same time, you cannot update static variables in these functions if
+they are called from within a job function. Of course, reading global
+or function static data is not a problem. The problem occurs when
+updates are made. Instead use automatic variables (which go on the
+stack) and the thread-private working space discussed above.
+
+
+Classes of threaded algorithms:
+-------------------------------
+
+The simplest class of threaded algorithm is where the next iteration
+of the algorithm does not depend on any previous results. An example
+of this is where two arrays are added together element-wise and stored
+in a third array. This algorithm is the simplest to thread: simply
+replace the outermost iteration loop with a loop which launches each
+iteration as a job. Each job will be run on any available thread,
+making maximum use of the system. Absolutely no synchonisation is
+required between the threads.
+
+Another class of algorithm does require the previous result before the
+current value can be computed. At first glance, this algorithm cannot
+be threaded. However, if the algorithm is actually run many times with
+each run being independent of the other runs, the algorithm can be
+threaded. There is no global dependence on previous results, there is
+only local dependence on previous results.
+An example of this is computing the Mandebrot set. While the inner
+loop is iterative and cannot be threaded, computing the image values
+is a seperable process. The Karma module <mandel> does this. Once
+again no synchronisation between threads is required.
+
+Yet another class of algorithm has both local and global dependence on
+previous results. An example of this is computing the maximum value in
+an array. It would appear this algorithm cannot be threaded. This is
+not the case. The array can be divided into smaller chunks and the
+maximum of each chunk can be computed independently from other
+chunks. Once all chunks have been processed one simply has to
+determine the maximum of all the chunk maxima. This too requires no
+synchonisation between threads, but does require the result of each
+thread to be collated (reaped). To support this requires each thread
+to have a private working space which is initialised and then reaped
+once all threads have finished. The <mt_new_thread_info> and
+<mt_get_thread_info> routines provide this support.
+Alternatively, once the maximum is computed for a chunk (each job
+works on one chunk), this value can be merged into the global
+value. However this requires some synchronisation between
+threads. When a thread wants to update the global value it needs to
+aquire exclusive access the it, modify it and then release
+it. This is termed "locking" a resource (the global maximum
+value). Provided the period the global variable is locked is small,
+contention between threads is kept to a minumum. The <mt_setlock>
+routine provides locking functionality. In general it is better to use
+the previous method of thread-private data and reaping the results.
+
 A simple example is given below:
 
 
@@ -65,7 +158,8 @@ of course.
 
 EXTERN_FUNCTION (void job_func, (void *pool_info,
 				 void *call_info1, void *call_info2,
-				 void *call_info3, void *call_info4) );
+				 void *call_info3, void *call_info4,
+				 void *thread_info) );
 
 static iarray a;
 
@@ -88,7 +182,7 @@ main ()
 
 void job_func (void *pool_info,
 	       void *call_info1, void *call_info2,
-	       void *call_info3, void *call_info4)
+	       void *call_info3, void *call_info4, void *thread_info)
 {
     int y = (int) call_info1;
     int x;
@@ -105,7 +199,14 @@ dividing the array into lines and processing one line per job, the job
 is divided by the number of concurrent threads available (i.e. the
 number of CPUs). Hence each job processes a number of lines. The
 reason behind this is to reduce the (already small) overhead of
-launching jobs.
+launching jobs. Note that this assumes that each job takes the same
+amount of time. If this is not the case, some threads will be idle
+part of the time, and the work will take longer because of the bad
+load balancing. This can be improved by increasing the number of jobs
+(perhaps by 4), hence reducing the maximum time any thread spends
+idle. If the number of jobs is increased too much the overheads may
+become significant, so one needs to make a compromise. Hence I suggest
+4.
 
 /*------------------------------------------------------*/
 /* Multi-threading sample program: more efficient       */
@@ -144,7 +245,7 @@ main ()
 
 void job_func (void *pool_info,
 	       void *call_info1, void *call_info2,
-	       void *call_info3, void *call_info4)
+	       void *call_info3, void *call_info4, void *thread_info)
 {
     int y = (int) call_info1;
     int ystep = (int) call_info2;

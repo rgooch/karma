@@ -64,7 +64,9 @@
 
     Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
 
-    Last updated by Richard Gooch   2-JAN-1995: Fixed some comments.
+    Updated by      Richard Gooch   2-JAN-1995: Fixed some comments.
+
+    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
 
 
 */
@@ -90,6 +92,7 @@
 #include <karma_ch.h>
 #include <karma_m.h>
 #include <karma_a.h>
+#include <karma_r.h>
 
 #if defined(HAS_SOCKETS) || defined(HAS_COMMUNICATIONS_EMULATION)
 #define COMMUNICATIONS_AVAILABLE
@@ -214,11 +217,13 @@ flag (*output_func) ();
 flag (*exception_func) ();
 {
 #ifdef COMMUNICATIONS_AVAILABLE
+#  ifdef HAS_SOCKETS___dummy
     int fd_flags;
+#  endif
     int fd;
     struct managed_channel_type *entry;
     struct managed_channel_type *new_entry;
-    struct managed_channel_type *last_entry;
+    struct managed_channel_type *last_entry = NULL; /*  Init. for gcc -Wall  */
     extern struct managed_channel_type *managed_channel_list;
     extern char *sys_errlist[];
     static char function_name[] = "chm_manage";
@@ -252,7 +257,7 @@ flag (*exception_func) ();
     {
 	if (channel == entry->channel)
 	{
-	    (void) fprintf (stderr, "Channel: %x is already managed\n",
+	    (void) fprintf (stderr, "Channel: %p is already managed\n",
 			    channel);
 	    a_prog_bug (function_name);
 	}
@@ -364,7 +369,7 @@ Channel channel;
 	}
     }
     /*  Channel not found  */
-    (void) fprintf (stderr, "Channel: %x not managed\n", channel);
+    (void) fprintf (stderr, "Channel: %p not managed\n", channel);
     a_prog_bug (function_name);
 }   /*  End Function chm_unmanage  */
 
@@ -435,7 +440,9 @@ long timeout_ms;
     {
       case 0:
 	return;
+/*
 	break;
+*/
       case -1:
 	if (errno == EINTR)
 	{
@@ -444,7 +451,9 @@ long timeout_ms;
 	/*  Failure  */
 	(void) fprintf (stderr, "Error calling  select(2)\t%s\n",
 			sys_errlist[errno]);
+/*
 	return;
+*/
 	break;
       default:
 	/*  Success  */
@@ -616,7 +625,9 @@ static void close_channel (entry)
 struct managed_channel_type *entry;
 {
     extern char *sys_errlist[];
+/*
     static char function_name[] = "close_channel";
+*/
 
     if (entry->close_func != NULL)
     {

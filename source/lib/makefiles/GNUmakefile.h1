@@ -1,0 +1,32 @@
+# This GNUmakefile should be included by every Karma library makefile
+
+include $(KARMAINCLUDEPATH)/gmakedefs/general.h1
+
+libdir = $(KARMAROOT)/source/lib/$(LIB)
+sourcedir = $(libdir)/master
+lintdir = $(libdir)/lint
+builddir = $(KARMAROOT)/build/$(MACHINE_OS)/lib/$(LIB)
+
+vpath %.c $(sourcedir)
+
+vpath %.h $(KARMAINCLUDEPATH)
+
+ALL_CFLAGS = $(CEXTRAS)
+
+.c.o :
+ifeq ($(OS), SunOS)
+	@cc_util -I$(KARMAINCLUDEPATH) $(KOPTIMISE) $(ALL_CFLAGS) -c $(sourcedir)/$*.c
+else
+	$(CC) $(ALL_CFLAGS) -c $(sourcedir)/$*.c
+endif
+
+cs = $(wildcard $(sourcedir)/*.c)
+csource = $(notdir $(wildcard $(sourcedir)/*.c))
+cobjects = $(subst .c,.o,$(csource))
+objects =  $(cobjects)
+members = ${addprefix ${library}(,${addsuffix ),${objects}}}
+globfiles = $(notdir $(wildcard $(sourcedir)/*_globals.c))
+globobjs = $(subst .c,.o,$(globfiles))
+ifdef shared_archive
+samembers = ${addprefix ${shared_archive}(,${addsuffix ),${globobjs}}}
+endif

@@ -3,7 +3,7 @@
 
     This code provides PostScript output for Intelligent Arrays.
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -36,7 +36,9 @@
     Updated by      Richard Gooch   22-MAY-1994: Made use of
   psw_pseudocolour_image  .
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/iarray/ps.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/iarray/ps.c
+
+    Last updated by Richard Gooch   7-MAY-1995: Placate gcc -Wall
 
 
 */
@@ -54,7 +56,7 @@
 {(void) fprintf (stderr, "NULL iarray passed\n"); \
  a_prog_bug (function_name); }
 #ifdef dummy
-if ( (*array).magic_number != MAGIC_NUMBER ) \
+if (array->magic_number != MAGIC_NUMBER) \
 {(void) fprintf (stderr, "Invalid iarray\n"); \
  a_prog_bug (function_name); }
 #endif
@@ -127,10 +129,10 @@ flag iscale;
 	    return (FALSE);
 	}
     }
-    retval = psw_mono_image (pspage, (unsigned char *) (*ubarray).data,
+    retval = psw_mono_image (pspage, (unsigned char *) ubarray->data,
 			     iarray_dim_length (ubarray, 1),
 			     iarray_dim_length (ubarray, 0),
-			     (*ubarray).offsets[1], (*ubarray).offsets[0],
+			     ubarray->offsets[1], ubarray->offsets[0],
 			     (unsigned char *) NULL,
 			     xstart, ystart, xend, yend);
     if (ubarray != image) iarray_dealloc (ubarray);
@@ -212,10 +214,10 @@ unsigned int cmap_size;
 	imap_blue[count] = (int) cmap[count * 3 + 2] >> 8;
     }
     retval = psw_pseudocolour_image (pspage,
-				     (unsigned char *) (*ubarray).data,
+				     (unsigned char *) ubarray->data,
 				     xlen, ylen,
-				     (*ubarray).offsets[1],
-				     (*ubarray).offsets[0],
+				     ubarray->offsets[1],
+				     ubarray->offsets[0],
 				     imap_red, imap_green, imap_blue,
 				     xstart, ystart, xend, yend);
     iarray_dealloc (ubarray);
@@ -247,7 +249,7 @@ double ystart;
 double xend;
 double yend;
 {
-    unsigned int xlen, ylen;
+    unsigned long xlen, ylen;
     static char function_name[] = "iarray_write_rgb_ps";
 
     VERIFY_IARRAY (image_red);
@@ -288,41 +290,41 @@ double yend;
     if (iarray_dim_length (image_green, 1) != xlen)
     {
 	(void) fprintf (stderr,
-			"Green xlen: %u is not equal to red xlen: %u\n",
+			"Green xlen: %lu is not equal to red xlen: %lu\n",
 			iarray_dim_length (image_green, 1), xlen);
 	a_prog_bug (function_name);
     }
     if (iarray_dim_length (image_green, 0) != xlen)
     {
 	(void) fprintf (stderr,
-			"Green ylen: %u is not equal to red ylen: %u\n",
+			"Green ylen: %lu is not equal to red ylen: %lu\n",
 			iarray_dim_length (image_green, 0), ylen);
 	a_prog_bug (function_name);
     }
     if (iarray_dim_length (image_blue, 1) != xlen)
     {
 	(void) fprintf (stderr,
-			"Blue xlen: %u is not equal to red xlen: %u\n",
+			"Blue xlen: %lu is not equal to red xlen: %lu\n",
 			iarray_dim_length (image_blue, 1), xlen);
 	a_prog_bug (function_name);
     }
     if (iarray_dim_length (image_blue, 0) != xlen)
     {
 	(void) fprintf (stderr,
-			"Blue ylen: %u is not equal to red ylen: %u\n",
+			"Blue ylen: %lu is not equal to red ylen: %lu\n",
 			iarray_dim_length (image_blue, 0), ylen);
 	a_prog_bug (function_name);
     }
     return ( psw_rgb_image (pspage,
-			    (unsigned char *) (*image_red).data,
-			    (unsigned char *) (*image_green).data,
-			    (unsigned char *) (*image_blue).data,
+			    (unsigned char *) image_red->data,
+			    (unsigned char *) image_green->data,
+			    (unsigned char *) image_blue->data,
 			    xlen, ylen,
-			    (*image_red).offsets[1],
-			    (*image_red).offsets[0],
-			    (*image_green).offsets[1],
-			    (*image_green).offsets[0],
-			    (*image_blue).offsets[1],
-			    (*image_blue).offsets[0],
+			    image_red->offsets[1],
+			    image_red->offsets[0],
+			    image_green->offsets[1],
+			    image_green->offsets[0],
+			    image_blue->offsets[1],
+			    image_blue->offsets[0],
 			    0, xstart, ystart, xend, yend) );
 }   /*  End Function iarray_write_rgb_ps  */

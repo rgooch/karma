@@ -1,7 +1,7 @@
 /*
     Definition of structure used to describe variables to ez_decode
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -20,6 +20,14 @@
     Richard Gooch may be reached by email at  karma-request@atnf.csiro.au
     The postal address is:
       Richard Gooch, c/o ATNF, P. O. Box 76, Epping, N.S.W., 2121, Australia.
+*/
+
+/*
+
+    Written by      Richard Gooch   17-NOV-1992
+
+    Last updated by Richard Gooch   7-APR-1995
+
 */
 
 struct variable_description
@@ -42,10 +50,8 @@ typedef  void (*VFUNC)();
 
 char *ez_decode_fp ();
 
-#ifndef NUMTYPES
-
-#include <karma_ds_def.h>
-
+#if !defined(NUMTYPES) || defined(MAKEDEPEND)
+#  include <karma_ds_def.h>
 #endif
 
 #if NUMTYPES > 30000

@@ -68,8 +68,14 @@
     Updated by      Richard Gooch   26-NOV-1994: Moved to
   packages/ds/dealloc.c
 
-    Last updated by Richard Gooch   17-JAN-1995: Changed to  destroy_callbacks
+    Updated by      Richard Gooch   17-JAN-1995: Changed to  destroy_callbacks
   field for  multi_array  structure.
+
+    Updated by      Richard Gooch   19-APR-1995: Cleaned some code.
+
+    Last updated by Richard Gooch   22-AUG-1995: Made
+  <ds_dealloc_packet_subdata> more aware of alignment problems (hopefully
+  fully aware).
 
 
 */
@@ -172,7 +178,6 @@ char *data;
 {
     unsigned int element_count;
     unsigned int type;
-    static char function_name[] = "ds_dealloc_packet";
 
     if (pack_desc == NULL)
     {
@@ -236,8 +241,6 @@ void ds_dealloc_data (pack_desc, packet)
 packet_desc *pack_desc;
 char *packet;
 {
-    static char function_name[] = "ds_dealloc_data";
-
     if (packet == NULL)
     {
 	/*  No data to deallocate  */
@@ -267,12 +270,11 @@ void ds_dealloc_packet_subdata (pack_desc, packet)
 packet_desc *pack_desc;
 char *packet;
 {
-    FString *fstring;
+    FString fstring;
     unsigned int elem_count;
     unsigned int type;
-    char *element;
+    char *element, *ptr;
     extern char host_type_sizes[NUMTYPES];
-    static char function_name[] = "ds_dealloc_packet_subdata";
 
     if (packet == NULL)
     {
@@ -284,7 +286,7 @@ char *packet;
 	 ++elem_count, element += host_type_sizes[type])
     {
 	type = pack_desc->element_types[elem_count];
-	if (ds_element_is_legal (type) != TRUE) continue;
+	if ( !ds_element_is_legal (type) ) continue;
 	if ( ds_element_is_atomic (type) ) continue;
 	/*  Must specially deallocate element  */
 	switch (type)
@@ -302,16 +304,21 @@ char *packet;
 			     *(list_header **) (element) );
 	    break;
 	  case K_VSTRING:
-	    if (*(char **) element != NULL) m_free (*(char **) element);
+#ifdef NEED_ALIGNED_DATA
+	    ptr = (char *) &fstring;
+	    m_copy (ptr, element, sizeof ptr);
+#else
+	    ptr = element;
+#endif
+	    if (*(char **) ptr != NULL) m_free (*(char **) ptr);
 	    break;
 	  case K_FSTRING:
-	    fstring = (FString *) element;
-	    if ( fstring->string != NULL )
+	    m_copy ( (char *) &fstring, element, sizeof fstring);
+	    if (fstring.string != NULL)
 	    {
-		m_free ( fstring->string );
-		fstring->string = NULL;
+		m_free (fstring.string);
 	    }
-	    fstring->max_len = 0;
+	    m_clear (element, sizeof fstring);
 	    break;
 	  default:
 	    break;
@@ -333,7 +340,6 @@ array_desc *arr_desc;
     unsigned int dim_count;
     packet_desc *pack_desc;
     dim_desc *dimension;
-    static char function_name[] = "ds_dealloc_array_desc";
 
     if (arr_desc == NULL)
     {
@@ -553,7 +559,6 @@ char *arr_element;
     unsigned int packet_count;
     char *array, *ptr;
     packet_desc *pack_desc;
-    static char function_name[] = "ds_dealloc_array";
 
     if (arr_element == NULL)
     {

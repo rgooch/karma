@@ -1,0 +1,33 @@
+version = $(KARMA_VERSION)
+
+library = $(KARMALIBPATH)/lib$(LIB).a
+lintlib = $(KARMALIBPATH)/llib-l$(LIB).ln
+
+.PRECIOUS: $(library)
+
+CEXTRAS = $(CFLAGS)
+
+include $(KARMAROOT)/source/lib/makefiles/GNUmakefile.h1
+
+.PHONY: all
+all:	$(library) clean
+
+
+$(library):	$(members)
+
+
+lint:	$(lintlib)
+
+$(lintlib):	$(csource)
+	(cd $(libdir) ; make_lint)
+	(cd .. ; lint -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) -C$(LIB) $(lintdir)/*.c)
+
+
+clean:
+	\rm -f *~ *.bak
+
+
+depend:
+	(cd $(sourcedir); makedepend -DMAKEDEPEND -D__$(MACHINE)__ -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) $(DEPENDFLAGS) -f$(builddir)/dependfile $(csource) )
+
+include dependfile

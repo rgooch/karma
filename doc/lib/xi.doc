@@ -7,9 +7,9 @@
     data structures, as well as the transmission of these to the X server.
 
 
-    Written by		Richard Gooch	2-Jan-1995
+    Written by		Richard Gooch	29-Sep-1995
 
-    Last updated by	Richard Gooch	2-Jan-1995
+    Last updated by	Richard Gooch	29-Sep-1995
 
 
 */
@@ -40,6 +40,21 @@ XImage *xi_create_image (Display *display, Window window,
     did not return TRUE.
     The routine returns a pointer to the image structure on success,
     else it returns NULL.
+*/
+/*---------------------------------------------------------------------------*/
+
+XImage *xi_create_shm_image (Display *display, Visual *visual, int depth,
+			     unsigned int width, unsigned int height,
+			     flag quiet)
+/*  [PURPOSE] This routine will create a shared-memory XImage structure.
+    <display> The X11 display handle.
+    <visual> The Visual pointer.
+    <depth> The depth.
+    <width> The width of the image.
+    <height> The height of the image.
+    <quiet> If TRUE, no error messages are display if no shared memory XImage
+    could be created.
+    [RETURNS] An XImage pointer on success, else NULL.
 */
 /*---------------------------------------------------------------------------*/
 

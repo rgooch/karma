@@ -3,7 +3,7 @@
 
     This code provides Multi Threading support.
 
-    Copyright (C) 1995  Richard Gooch
+    Copyright (C) 1995-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -32,16 +32,53 @@
 
     Updated by      Richard Gooch   13-JAN-1995
 
-    Last updated by Richard Gooch   24-JAN-1995: Increased number of call
+    Updated by      Richard Gooch   24-JAN-1995: Increased number of call
   arguments to 4.
+
+    Updated by      Richard Gooch   1-FEB-1995: Added check for MT_MAX_THREADS
+  environment variable.
+
+    Updated by      Richard Gooch   10-FEB-1995: IRIX5 support.
+
+    Updated by      Richard Gooch   23-FEB-1995: IRIX6 support and bugfix.
+
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Updated by      Richard Gooch   23-JUL-1995: Created <mt_destroy_all_pools>
+
+    Updated by      Richard Gooch   9-AUG-1995: Partially worked around a bug
+  in thr_kill(3): sending SIGKILL kill the entire process.
+
+    Updated by      Richard Gooch   21-AUG-1995: Above mentioned bug has been
+  defined a "feature" by Sun support: used SIGTERM handler to kill thread to
+  cope with this lossage.
+
+    Updated by      Richard Gooch   31-AUG-1995: Made use of  __ateachexit
+  routine for IRIX. Yuk!
+
+    Updated by      Richard Gooch   24-JAN-1996: Created <mt_setlock> routine.
+  Added thread_info parameter to thread function and created
+  <mt_new_thread_info> routine.
+
+    Last updated by Richard Gooch   25-JAN-1996: Increased arena space from
+  64k to 256k for IRIX. Stupid limitations.
 
 
 */
 #ifdef OS_Solaris
 #  include <thread.h>
 #endif
+#if defined(OS_IRIX5) || defined(OS_IRIX6)
+#  define OS_IRIX
+#endif
+#ifdef OS_IRIX
+#  include <ulocks.h>
+#  include <sys/types.h>
+#  include <sys/prctl.h>
+#endif
 #include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <math.h>
 #include <errno.h>
 #include <signal.h>
@@ -49,26 +86,64 @@
 #include <karma_mt.h>
 #include <karma_a.h>
 #include <karma_m.h>
+#include <karma_r.h>
+#include <karma_c.h>
+#include <os.h>
 
 #define MAGIC_NUMBER 590322598
 
 #define VERIFY_POOL(pl) {if (pl == NULL) \
 {(void) fprintf (stderr, "NULL thread pool passed\n"); \
  a_prog_bug (function_name); } \
-if (pl->magic_number != MAGIC_NUMBER ) \
+if (pl->magic_number != MAGIC_NUMBER) \
 {(void) fprintf (stderr, "Invalid thread pool object\n"); \
  a_prog_bug (function_name); } }
 
 #ifdef OS_Solaris
+#  define LOCK_TYPE mutex_t
+#  define SEMAPHORE_TYPE sema_t
+#  define TID_TYPE thread_t
 #  define LOCK_POOL(pl) {if (mutex_trylock (&pl->lock) != 0) \
 {(void) fprintf (stderr, "Recursive operation on pool not permitted\n"); \
  a_prog_bug (function_name);} }
 #  define UNLOCK_POOL(pl) mutex_unlock (&pl->lock)
+#  define FUNC_LOCK mutex_lock (&func_lock)
+#  define FUNC_UNLOCK mutex_unlock (&func_lock)
+#  define HAS_FUNC_LOCKS
+#  define LOCK(lock) mutex_lock (&lock)
+#  define UNLOCK(lock) mutex_unlock (&lock)
+#  define TRYLOCK(lock) if (mutex_trylock (&lock) == 0)
+#  define THREAD_RETURN void *
+#  define HAS_THREADS
+#endif
+
+#ifdef OS_IRIX
+#  define LOCK_TYPE ulock_t
+#  define SEMAPHORE_TYPE usema_t *
+#  define TID_TYPE pid_t
+#  define LOCK_POOL(pl) {if (uscsetlock (pl->lock, 1) != 1) \
+{(void) fprintf (stderr, "Recursive operation on pool not permitted\n"); \
+ a_prog_bug (function_name);} }
+#  define UNLOCK_POOL(pl) usunsetlock (pl->lock)
+/*  Because IRIX locks are created we cannot use the compiler to initialise
+    them. Have to forego function locks.
+#  define FUNC_LOCK uswsetlock (func_lock)
+#  define FUNC_UNLOCK usunsetlock (func_lock)
+*/
+#  define FUNC_LOCK
+#  define FUNC_UNLOCK
+#  define LOCK(lock) uswsetlock (lock, 5)
+#  define UNLOCK(lock) usunsetlock (lock)
+#  define TRYLOCK(lock) if (uscsetlock (lock, 5) == 1)
+#  define THREAD_RETURN void
+#  define HAS_THREADS
 #endif
 
 #ifndef LOCK_POOL
 #  define LOCK_POOL(pl)
 #  define UNLOCK_POOL(pl)
+#  define FUNC_LOCK
+#  define FUNC_UNLOCK
 #endif
 
 /*  Private structures  */
@@ -77,33 +152,53 @@ struct threadpool_type
     unsigned int magic_number;
     unsigned int num_threads;  /*  Number of worker threads: 0 or 2 or more  */
     struct thread_type *threads;
+    KCallbackFunc callback_handle;
     void *info;
-#ifdef OS_Solaris
-    mutex_t lock;
-    sema_t semaphore;
+    char *thread_info_buffer;
+    uaddr thread_info_buf_size;
+    uaddr thread_info_size;
+#ifdef HAS_THREADS
+    LOCK_TYPE lock;
+    LOCK_TYPE synclock;
+    SEMAPHORE_TYPE semaphore;
 #endif
 };
 
 struct thread_type
 {
     KThreadPool pool;
-#ifdef OS_Solaris
-    thread_t tid;
-    mutex_t startlock;
-    mutex_t finishedlock;
+#ifdef HAS_THREADS
+    TID_TYPE tid;
+    LOCK_TYPE startlock;
+    LOCK_TYPE finishedlock;
 #endif
     void (*func) (void *pool_info, void *call_info1, void *call_info2,
-		  void *call_info3, void *call_info4);
+		  void *call_info3, void *call_info4, void *thread_info);
     void *info1;
     void *info2;
     void *info3;
     void *info4;
+    void *thread_info;
+#ifdef OS_Solaris
+    flag exit;
+#endif
 };
 
 
+/*  Private data  */
+KCallbackList destroy_list = NULL;
+#ifdef OS_IRIX
+static usptr_t *arena = NULL;
+#endif
+
 /*  Private functions  */
-STATIC_FUNCTION (void init, () );
-STATIC_FUNCTION (void *thread_main, (void *arg) );
+#ifdef HAS_THREADS
+STATIC_FUNCTION (THREAD_RETURN thread_main, (void *arg) );
+#endif
+STATIC_FUNCTION (flag destroy_callback,
+		 (KThreadPool pool, void *client1_data,
+		  flag *interrupt, void *client2_data) );
+STATIC_FUNCTION (void exit_callback, () );
 
 
 /*  Public functions follow  */
@@ -114,15 +209,100 @@ KThreadPool mt_create_pool (void *pool_info)
 /*  [PURPOSE] This routine will create a pool of threads which may have jobs
     launched onto it.
     <pool_info> An arbitrary pointer passed to work functions.
-    [MT-LEVEL] Safe
+    [NOTE] The environment variable MT_MAX_THEADS may be used to limit the
+    number of threads used.
+    [MT-LEVEL] Safe under Solaris 2.
     [RETURNS] A KThreadPool object on success, else NULL.
 */
 {
     KThreadPool pool;
+#ifdef HAS_THREADS
     unsigned int count;
+#endif
+    char *env;
+    extern KCallbackList destroy_list;
     extern char *sys_errlist[];
+#ifdef HAS_FUNC_LOCKS
+    static LOCK_TYPE func_lock;
+#endif
+#ifdef OS_IRIX
+    char txt[STRING_LENGTH];
+    extern usptr_t *arena;
+#endif
+    static flag first_time = TRUE;
+    static unsigned int max_threads = 0;
     static char function_name[] = "mt_create_pool";
 
+    FUNC_LOCK;
+    if (first_time)
+    {
+	first_time = FALSE;
+	/*  Register function to be called upon processing of  exit(3)  */
+#ifdef OS_IRIX
+	if (__ateachexit (exit_callback) != 0)
+	{
+	    (void) fprintf (stderr, "%s: error registering exit function\n",
+			    function_name);
+	}
+#else
+#  ifdef HAS_ATEXIT
+	if (atexit (exit_callback) != 0)
+	{
+	    (void) fprintf (stderr, "%s: error registering exit function\n",
+			    function_name);
+	}
+#  endif
+#  ifdef HAS_ON_EXIT
+	on_exit (exit_callback, (caddr_t) NULL);
+#  endif
+#endif
+	if ( ( env = r_getenv ("MT_MAX_THREADS") ) == NULL )
+	{
+	    max_threads = 0;
+	}
+	else
+	{
+	    max_threads = atoi (env);
+	    if (max_threads < 1) max_threads = 1;
+	    (void) fprintf (stderr,
+			    "Forcing maximum number of threads to: %u\n",
+			    max_threads);
+	}
+#ifdef OS_IRIX
+	if (usconfig (CONF_LOCKTYPE, US_NODEBUG) == -1)
+	{
+	    (void) fprintf (stderr, "Error configuring\t%s\n",
+			    sys_errlist[errno]);
+	    exit (RV_SYS_ERROR);
+	}
+	if (usconfig (CONF_ARENATYPE, US_SHAREDONLY) == -1)
+	{
+	    (void) fprintf (stderr, "Error configuring\t%s\n",
+			    sys_errlist[errno]);
+	    exit (RV_SYS_ERROR);
+	}
+	if (usconfig (CONF_INITSIZE, 262144) == -1)
+	{
+	    (void) fprintf (stderr, "Error configuring\t%s\n",
+			    sys_errlist[errno]);
+	    exit (RV_SYS_ERROR);
+	}
+	if (usconfig (CONF_INITUSERS, 256) == -1)
+	{
+	    (void) fprintf (stderr, "Error configuring\t%s\n",
+			    sys_errlist[errno]);
+	    exit (RV_SYS_ERROR);
+	}
+	(void) sprintf ( txt, "/tmp/karma_arena-%d", getpid () );
+	if ( ( arena = usinit (txt) ) == NULL )
+	{
+	    (void) fprintf (stderr, "Error creating arena\t%s\n",
+			    sys_errlist[errno]);
+	    exit (RV_SYS_ERROR);
+	}
+#endif
+    }
+    FUNC_UNLOCK;
     if ( ( pool = (KThreadPool) malloc (sizeof *pool) ) == NULL )
     {
 	m_abort (function_name, "thread pool");
@@ -130,17 +310,53 @@ KThreadPool mt_create_pool (void *pool_info)
     pool->magic_number = MAGIC_NUMBER;
     pool->num_threads = 0;
     pool->info = pool_info;
+    pool->thread_info_buffer = NULL;
+    pool->thread_info_buf_size = 0;
+    pool->thread_info_size = 0;
 #ifdef OS_Solaris
     pool->num_threads = sysconf (_SC_NPROCESSORS_ONLN);
 #endif
-    if (pool->num_threads < 2)
+#ifdef OS_IRIX
+    pool->num_threads = sysconf (_SC_NPROC_ONLN);
+#endif
+    if (max_threads > 0)
     {
-	pool->num_threads = 0;
-	return (pool);
+	if (pool->num_threads > max_threads) pool->num_threads = max_threads;
     }
+    if (pool->num_threads < 2) pool->num_threads = 0;
+    /*  Must create locks and semaphores even if number of threads forced to
+	zero.  */
 #ifdef OS_Solaris
     mutex_init (&pool->lock, USYNC_THREAD, NULL);
+    mutex_init (&pool->synclock, USYNC_THREAD, NULL);
     sema_init (&pool->semaphore, pool->num_threads, USYNC_THREAD, NULL);
+#endif
+#ifdef OS_IRIX
+    if ( ( pool->lock = usnewlock (arena) ) == NULL )
+    {
+	(void) fprintf (stderr, "Error creating pool lock\t%s\n",
+			sys_errlist[errno]);
+	exit (RV_SYS_ERROR);
+    }
+    if ( ( pool->synclock = usnewlock (arena) ) == NULL )
+    {
+	(void) fprintf (stderr, "Error creating synclock\t%s\n",
+			sys_errlist[errno]);
+	exit (RV_SYS_ERROR);
+    }
+    if ( ( pool->semaphore = usnewsema (arena, pool->num_threads) ) == NULL )
+    {
+	(void) fprintf (stderr, "Error creating semaphore\t%s\n",
+			sys_errlist[errno]);
+	exit (RV_SYS_ERROR);
+    }
+#endif
+    pool->callback_handle = c_register_callback (&destroy_list,
+						 destroy_callback, pool,
+						 NULL, FALSE,
+						 NULL, FALSE, FALSE);
+    if (pool->num_threads < 2) return (pool);
+#ifdef OS_Solaris
     if ( ( pool->threads = (struct thread_type *)
 	  malloc (sizeof *pool->threads * pool->num_threads) ) == NULL )
     {
@@ -151,12 +367,14 @@ KThreadPool mt_create_pool (void *pool_info)
 	pool->threads[count].pool = pool;
 	mutex_init (&pool->threads[count].startlock, USYNC_THREAD, NULL);
 	mutex_init (&pool->threads[count].finishedlock, USYNC_THREAD, NULL);
-	mutex_lock (&pool->threads[count].startlock);
+	LOCK (pool->threads[count].startlock);
 	pool->threads[count].func = ( void (*) () ) NULL;
 	pool->threads[count].info1 = NULL;
 	pool->threads[count].info2 = NULL;
 	pool->threads[count].info3 = NULL;
 	pool->threads[count].info4 = NULL;
+	pool->threads[count].thread_info = NULL;
+	pool->threads[count].exit = FALSE;
 	if (thr_create (NULL, 0, thread_main, pool->threads + count,
 			THR_NEW_LWP, &pool->threads[count].tid) != 0)
 	{
@@ -166,22 +384,63 @@ KThreadPool mt_create_pool (void *pool_info)
 	}
     }
 #endif  /*  OS_Solaris  */
+#ifdef OS_IRIX
+    if ( ( pool->threads = (struct thread_type *)
+	  malloc (sizeof *pool->threads * pool->num_threads) ) == NULL )
+    {
+	m_abort (function_name, "thread array");
+    }
+    for (count = 0; count < pool->num_threads; ++count)
+    {
+	pool->threads[count].pool = pool;
+	if ( ( pool->threads[count].startlock = usnewlock (arena) ) == NULL )
+	{
+	    (void) fprintf (stderr, "Error creating startlock\t%s\n",
+			    sys_errlist[errno]);
+	    exit (RV_SYS_ERROR);
+	}
+	if ( ( pool->threads[count].finishedlock = usnewlock (arena) ) ==NULL )
+	{
+	    (void) fprintf (stderr, "Error creating finishedlock\t%s\n",
+			    sys_errlist[errno]);
+	    exit (RV_SYS_ERROR);
+	}
+	LOCK (pool->threads[count].startlock);
+	pool->threads[count].func = ( void (*) () ) NULL;
+	pool->threads[count].info1 = NULL;
+	pool->threads[count].info2 = NULL;
+	pool->threads[count].info3 = NULL;
+	pool->threads[count].info4 = NULL;
+	pool->threads[count].thread_info = NULL;
+	if ( ( pool->threads[count].tid = sproc (thread_main, PR_SALL,
+						 pool->threads + count) )
+	    == -1 )
+	{
+	    (void) fprintf (stderr, "Error creating thread\t%s\n",
+			    sys_errlist[errno]);
+	    exit (RV_SYS_ERROR);
+	}
+    }
+#endif  /*  OS_IRIX  */
     return (pool);
 }   /*  End Function mt_create_pool  */
 
 /*PUBLIC_FUNCTION*/
 void mt_destroy_pool (KThreadPool pool, flag interrupt)
-/*  [PURPOSE] The function will destroy a thread pool.
+/*  [PURPOSE] This routine will destroy a thread pool.
     <pool) The thread pool.
     <interrupt> If TRUE, any jobs not yet completed will be killed, else the
     function will wait for uncompleted jobs to finish prior to destroying the
     pool.
-    [MT-LEVEL] Safe
+    [MT-LEVEL] Safe.
     [RETURNS] Nothing.
 */
 {
     unsigned int count;
     extern char *sys_errlist[];
+#ifdef OS_IRIX
+    extern usptr_t *arena;
+#endif
     static char function_name[] = "mt_destroy_pool";
 
     VERIFY_POOL (pool);
@@ -191,29 +450,75 @@ void mt_destroy_pool (KThreadPool pool, flag interrupt)
     for (count = 0; count < pool->num_threads; ++count)
     {
 #ifdef OS_Solaris
-	if (thr_kill (pool->threads[count].tid, SIGKILL) != 0)
+	/*  A bug in Solaris 2.4 caused thr_kill(3) to bugger the whole
+	    process, so I try a thr_exit(3) instead.  */
+	TRYLOCK (pool->threads[count].finishedlock)
+	{
+	    /*  Thread not busy  */
+	    pool->threads[count].exit = TRUE;
+	    /*  Fire away  */
+	    UNLOCK (pool->threads[count].startlock);
+	    (void) thr_join (pool->threads[count].tid, NULL, NULL);
+	}
+	else
+	{
+	    if (thr_kill (pool->threads[count].tid, SIGTERM) != 0)
+	    {
+		(void) fprintf (stderr, "Error killing thread\t%s\n",
+				sys_errlist[errno]);
+		exit (RV_SYS_ERROR);
+	    }
+	    (void) thr_join (pool->threads[count].tid, NULL, NULL);
+	}
+	mutex_destroy (&pool->threads[count].startlock);
+	mutex_destroy (&pool->threads[count].finishedlock);	
+#endif
+#ifdef OS_IRIX
+	if (kill (pool->threads[count].tid, SIGKILL) != 0)
 	{
 	    (void) fprintf (stderr, "Error killing thread\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_SYS_ERROR);
 	}
-	mutex_destroy (&pool->threads[count].startlock);
-	mutex_destroy (&pool->threads[count].finishedlock);	
+	usfreelock (pool->threads[count].startlock, arena);
+	usfreelock (pool->threads[count].finishedlock, arena);
 #endif
     }
 #ifdef OS_Solaris
     sema_destroy (&pool->semaphore);
 #endif
+#ifdef OS_IRIX
+    usfreesema (pool->semaphore, arena);
+#endif
+    if (pool->thread_info_buf_size > 0) m_free (pool->thread_info_buffer);
     pool->magic_number = 0;
+    c_unregister_callback (pool->callback_handle);
+    pool->callback_handle = NULL;
     free ( (char *) pool );
 }   /*  End Function mt_destroy_pool  */
+
+/*PUBLIC_FUNCTION*/
+void mt_destroy_all_pools (flag interrupt)
+/*  [PURPOSE] This routine will destroy all thread pools.
+    <interrupt> If TRUE, any jobs not yet completed will be killed, else the
+    function will wait for uncompleted jobs to finish prior to destroying the
+    pools.
+    [MT-LEVEL] Safe.
+    [RETURNS] Nothing.
+*/
+{
+    extern KCallbackList destroy_list;
+
+    (void) c_call_callbacks (destroy_list, (void *) &interrupt);
+    if (interrupt) c_destroy_list (destroy_list);
+}   /*  End Function mt_destroy_all_pools  */
 
 /*PUBLIC_FUNCTION*/
 unsigned int mt_num_threads (KThreadPool pool)
 /*  [PURPOSE] This function will determine the number of threads that may be
     run concurrently in a thread pool.
     <pool> The thread pool.
-    [MT-LEVEL] Safe
+    [MT-LEVEL] Unsafe.
     [RETURNS] The number of concurrent threads.
 */
 {
@@ -228,21 +533,40 @@ unsigned int mt_num_threads (KThreadPool pool)
 void mt_launch_job (KThreadPool pool,
 		    void (*func) (void *pool_info,
 				  void *call_info1, void *call_info2,
-				  void *call_info3, void *call_info4),
+				  void *call_info3, void *call_info4,
+				  void *thread_info),
 		    void *call_info1, void *call_info2,
 		    void *call_info3, void *call_info4)
-/*  [PURPOSE] This function will launch a job to a pool of threads.
+/*  [PURPOSE] This function will launch a job to a pool of threads, running the
+    job on the first available thread.
     <pool> The thread pool.
-    <func> The function to execute.
+    <func> The function to execute. The interface to this functions is as
+    follows:
+    [<pre>]
+    void func (void *pool_info, void *call_info1, void *call_info2,
+               void *call_info3, void *call_info4, void *thread_info)
+    *   [PURPOSE] This routine will perform a job.
+        <pool_info> The arbitrary pool information pointer.
+	<call_info1> The first arbitrary call information pointer.
+	<call_info2> The second arbitrary call information pointer.
+	<call_info3> The third arbitrary call information pointer.
+	<call_info4> The fourth arbitrary call information pointer.
+	<thread_info> A pointer to arbitrary, per thread, information. This
+	information is private to the thread.
+	[RETURNS] Nothing.
+    *
+    [</pre>]
     <call_info1> An arbitrary argument to <<func>>.
     <call_info2> An arbitrary argument to <<func>>.
     <call_info3> An arbitrary argument to <<func>>.
     <call_info4> An arbitrary argument to <<func>>.
-    [MT-LEVEL] Safe
+    [NOTE] Jobs must not modify any signal actions or masks.
+    [MT-LEVEL] Safe.
     [RETURNS] Nothing.
 */
 {
     unsigned int count;
+    char *thread_info;
     static char function_name[] = "mt_launch_job";
 
     VERIFY_POOL (pool);
@@ -250,18 +574,22 @@ void mt_launch_job (KThreadPool pool,
     LOCK_POOL (pool);
     if (pool->num_threads < 2)
     {
-	(*func) (pool->info, call_info1, call_info2, call_info3, call_info4);
+	(*func) (pool->info, call_info1, call_info2, call_info3, call_info4,
+		 (void *) pool->thread_info_buffer);
 	UNLOCK_POOL (pool);
 	return;
     }
 #ifdef OS_Solaris
     while (sema_wait (&pool->semaphore) == EINTR);
 #endif
+#ifdef OS_IRIX
+    uspsema (pool->semaphore);
+#endif
     /*  One of the threads must be ready now  */
     for (count = 0; count < pool->num_threads; ++count)
     {
-#ifdef OS_Solaris
-	if (mutex_trylock (&pool->threads[count].finishedlock) == 0)
+#ifdef HAS_THREADS
+	TRYLOCK (pool->threads[count].finishedlock)
 	{
 	    /*  This thread ready for work  */
 	    pool->threads[count].func = func;
@@ -269,7 +597,19 @@ void mt_launch_job (KThreadPool pool,
 	    pool->threads[count].info2 = call_info2;
 	    pool->threads[count].info3 = call_info3;
 	    pool->threads[count].info4 = call_info4;
-	    mutex_unlock (&pool->threads[count].startlock);
+	    /*  Ensure thread has correct private data pointer  */
+	    if (pool->thread_info_buffer == NULL)
+	    {
+		pool->threads[count].thread_info = NULL;
+	    }
+	    else
+	    {
+		thread_info = pool->thread_info_buffer;
+		thread_info += count * pool->thread_info_size;
+		pool->threads[count].thread_info = thread_info;
+	    }
+	    /*  Start thread running  */
+	    UNLOCK (pool->threads[count].startlock);
 	    UNLOCK_POOL (pool);
 	    return;
 	}
@@ -280,11 +620,104 @@ void mt_launch_job (KThreadPool pool,
 }   /*  End Function mt_launch_job  */
 
 /*PUBLIC_FUNCTION*/
+void mt_setlock (KThreadPool pool, flag lock)
+/*  [PURPOSE] This function will lock a thread pool such that no other thread
+    can lock the pool at the same time. This does not prevent other threads
+    from running, nor new jobs from being launched, it merely prevents them
+    from aquiring the lock.
+    <pool> The thread pool to lock.
+    <lock> If TRUE the pool is locked. If FALSE the pool is unlocked and any
+    other threads wishing to lock the pool may do so (one at a time of course).
+    [MT-LEVEL] Safe.
+    [RETURNS] Nothing.
+*/
+{
+    static char function_name[] = "mt_setlock";
+
+    VERIFY_POOL (pool);
+    FLAG_VERIFY (lock);
+#ifdef HAS_THREADS
+    if (lock) LOCK (pool->synclock);
+    else UNLOCK (pool->synclock);
+#endif
+}   /*  End Function mt_setlock  */
+
+/*PUBLIC_FUNCTION*/
+void mt_new_thread_info (KThreadPool pool, void *info, uaddr size)
+/*  [PURPOSE] This routine will register new thread information for the threads
+    in a pool.
+    <pool> The thread pool.
+    <info> A pointer to the thread information array. If NULL and <<size>> is
+    not 0 then the routine will allocate an array of sufficient size.
+    <size> The size (per thread) in bytes of the thread information. When
+    threads are executing each is guaranteed to have a private working space of
+    this size.
+    [MT-LEVEL] Safe.
+    [RETURNS] Nothing. On failure the process aborts.
+*/
+{
+    uaddr num_threads;
+    static char function_name[] = "mt_new_thread_info";
+
+    VERIFY_POOL (pool);
+    if (size < 1)
+    {
+	(void) fprintf (stderr, "Illegal size: %u\n", size);
+	a_prog_bug (function_name);
+    }
+    num_threads = mt_num_threads (pool);
+    LOCK_POOL (pool);
+    pool->thread_info_size = size;
+    if (info == NULL)
+    {
+	/*  Need an internally allocated array  */
+	if (size * num_threads <= pool->thread_info_buf_size)
+	{
+	    UNLOCK_POOL (pool);
+	    return;
+	}
+	/*  Existing buffer not big enough: free and allocate  */
+	if (pool->thread_info_buf_size > 0) m_free (pool->thread_info_buffer);
+	if ( ( info = (void *) m_alloc (size * num_threads) ) == NULL )
+	{
+	    m_abort (function_name, "thread information array");
+	}
+	pool->thread_info_buf_size = size * num_threads;
+	pool->thread_info_buffer = (char *) info;
+	UNLOCK_POOL (pool);
+	return;
+    }
+    /*  Array supplied  */
+    if (pool->thread_info_buf_size > 0)
+    {
+	 m_free (pool->thread_info_buffer);
+	 pool->thread_info_buf_size = 0;
+     }
+    pool->thread_info_buffer = (char *) info;
+    UNLOCK_POOL (pool);
+}   /*  End Function mt_new_thread_info  */
+
+
+/*PUBLIC_FUNCTION*/
+void *mt_get_thread_info (KThreadPool pool)
+/*  [PURPOSE] This routine will get the thread information pointer for a pool
+    of threads.
+    <pool> The thread pool.
+    [RETURNS] A pointer to the thread information array.
+*/
+{
+    static char function_name[] = "mt_get_thread_info";
+
+    VERIFY_POOL (pool);
+    return ( (char *) pool->thread_info_buffer );
+}   /*  End Function mt_get_thread_info  */
+
+/*PUBLIC_FUNCTION*/
 void mt_wait_for_all_jobs (KThreadPool pool)
 /*  [PURPOSE] This function will wait for all previously launched jobs to
     complete.
     <pool> The thread pool.
-    [MT-LEVEL] Safe
+    [MT-LEVEL] Safe.
     [RETURNS] Nothing.
 */
 {
@@ -295,10 +728,10 @@ void mt_wait_for_all_jobs (KThreadPool pool)
     LOCK_POOL (pool);
     for (count = 0; count < pool->num_threads; ++count)
     {
-#ifdef OS_Solaris
-	mutex_lock (&pool->threads[count].finishedlock);
-	mutex_unlock (&pool->threads[count].finishedlock);
-#endif  /*  OS_Solaris  */
+#ifdef HAS_THREADS
+	LOCK (pool->threads[count].finishedlock);
+	UNLOCK (pool->threads[count].finishedlock);
+#endif
     }
     UNLOCK_POOL (pool);
 }   /*  End Function mt_wait_for_all_jobs  */
@@ -306,22 +739,71 @@ void mt_wait_for_all_jobs (KThreadPool pool)
 
 /*  Private functions follow  */
 
-static void *thread_main (void *arg)
+#ifdef HAS_THREADS
+static THREAD_RETURN thread_main (void *arg)
 /*  [PURPOSE] This function is the entry point for a thread.
     [RETURNS] NULL on error, else never returns.
 */
 {
     struct thread_type *thread = (struct thread_type *) arg;
     KThreadPool parent = thread->pool;
+    extern char *sys_errlist[];
 
+#  ifdef OS_Solaris
+    /*  Set up sigTERM handler  */
+    if ( (long) signal (SIGTERM, ( void (*) () ) thr_exit) == -1 )
+    {
+	(void) fprintf (stderr, "Error setting sigTERM handler\t%s\n",
+			sys_errlist[errno]);
+	(void) exit (RV_SYS_ERROR);
+    }
+#  endif
     while (TRUE)
     {
-#ifdef OS_Solaris
-	mutex_lock (&thread->startlock);
+#  ifdef OS_Solaris
+	LOCK (thread->startlock);
+	if (thread->exit) thr_exit (NULL);
 	(*thread->func) (parent->info, thread->info1, thread->info2,
-			 thread->info3, thread->info4);
-	mutex_unlock (&thread->finishedlock);
+			 thread->info3, thread->info4, thread->thread_info);
+	if (thread->exit) thr_exit (NULL);
+	UNLOCK (thread->finishedlock);
 	sema_post (&parent->semaphore);
-#endif
+#  endif
+#  ifdef OS_IRIX
+	LOCK (thread->startlock);
+	(*thread->func) (parent->info, thread->info1, thread->info2,
+			 thread->info3, thread->info4, thread->thread_info);
+	UNLOCK (thread->finishedlock);
+	usvsema (parent->semaphore);
+#  endif
     }
 }   /*  End Function thread_main  */
+#endif  /*  HAS_THREADS  */
+
+static flag destroy_callback (KThreadPool pool, void *client1_data,
+			      flag *interrupt, void *client2_data)
+/*  [PURPOSE] This routine is the destroy callback.
+    <pool> The thread pool to destroy.
+    <client1_data> Ignored.
+    <interrupt> Pointer to value passed to <<mt_destroy_pool>>.
+    <client2_data> Ignored.
+    [RETURNS] FALSE.
+*/
+{
+    static char function_name[] = "destroy_callback";
+
+    VERIFY_POOL (pool);
+    mt_destroy_pool (pool, *interrupt);
+    return (FALSE);
+}   /*  End Function destroy_callback  */
+
+static void exit_callback ()
+/*  [PURPOSE] This routine is the exit callback, called when exit(3) is called.
+    [RETURNS] Nothing.
+*/
+{
+#ifdef OS_IRIX
+    if (getuid () == 465) (void) fprintf (stderr, "exit_callback...\n");
+#endif
+    mt_destroy_all_pools (TRUE);
+}   /*  End Function exit_callback  */

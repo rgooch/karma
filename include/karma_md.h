@@ -2,7 +2,7 @@
 
     Header for  md_  package.
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,17 +31,17 @@
 
     Written by      Richard Gooch   24-AUG-1994
 
-    Last updated by Richard Gooch   24-AUG-1994
+    Last updated by Richard Gooch   7-APR-1995
 
 */
+
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
+#  include <karma.h>
+#endif
 
 #ifndef KARMA_MD_H
 #define KARMA_MD_H
 
-
-#ifndef KARMA_H
-#  include <karma.h>
-#endif
 
 typedef struct md5_context_type * MD5Context;
 

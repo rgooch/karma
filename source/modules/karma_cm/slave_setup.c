@@ -2,7 +2,7 @@
 
     Slave process setup file for Connection Management tool and shell.
 
-    Copyright (C) 1993,1994  Richard Gooch
+    Copyright (C) 1993,1994,1995  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,9 +37,15 @@
 
     Updated by      Richard Gooch   29-SEP-1993
 
-    Last updated by Richard Gooch   19-APR-1994: Made specification of host,
+    Updated by      Richard Gooch   19-APR-1994: Made specification of host,
   port and display mandatory, and return position of unprocessed (optional)
   arguments.
+
+    Updated by      Richard Gooch   1-MAR-1995: Removed code to prepend
+  "/usr/local/karma/bin" to the PATH: not necessary and old PATH exceeded the
+  allocated string space anyway (not a problem unless started manaully).
+
+    Last updated by Richard Gooch   14-MAR-1995: Incremented protocol version.
 
 
     Usage:   *karma_cm_slave host port display [args...]
@@ -56,7 +62,7 @@
 #include <karma_r.h>
 #include <karma_m.h>
 
-#define PROTOCOL_VERSION (unsigned int) 0
+#define PROTOCOL_VERSION (unsigned int) 1
 
 int slave_setup (argc, argv, cm_port_number, cm_host_addr,
 		 open_func, read_func, close_func)
@@ -182,15 +188,6 @@ void (*close_func) ();
 	    m_abort (function_name, "PATH environment");
 	}
     }
-    else
-    {
-	(void) strcpy (txt, "/usr/local/karma/bin:");
-	(void) strcat (txt, path);
-	if (r_setenv ("PATH", txt) != 0)
-	{
-	    m_abort (function_name, "PATH environment");
-	}
-    }
     /*  Start connection library package  */
     conn_register_managers (chm_manage, chm_unmanage, ( void (*) () ) NULL);
     conn_register_client_protocol ("conn_mngr_slave", PROTOCOL_VERSION, 1,
@@ -254,8 +251,7 @@ void (*close_func) ();
     /*  Try to connect  */
     (void) fprintf (stderr, "SLAVE: attempting connect to: %s %u\n",
 		    host, *cm_port_number);
-    if (conn_attempt_connection (host, *cm_port_number, "conn_mngr_slave")
-	!= TRUE)
+    if ( !conn_attempt_connection (host, *cm_port_number, "conn_mngr_slave") )
     {
 	(void) fprintf (stderr,
 			"SLAVE: Error connecting to Connection Management tool\n");

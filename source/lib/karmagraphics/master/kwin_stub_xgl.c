@@ -1,0 +1,1 @@
+../packages/kwin/stub_xgl.c

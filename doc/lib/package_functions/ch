@@ -31,3 +31,5 @@ ch_open_and_fill_memory
 ch_gets
 ch_getl
 ch_puts
+ch_drain
+ch_printf

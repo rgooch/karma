@@ -8,14 +8,16 @@
     in the  fft_  package.
 
 
-    Written by		Richard Gooch	30-Nov-1994
+    Written by		Richard Gooch	5-Jun-1995
 
-    Last updated by	Richard Gooch	30-Nov-1994
+    Last updated by	Richard Gooch	5-Jun-1995
 
 
 */
 
-unsigned int t_c_to_c_1D_fft_float (real, imag, length, stride, direction)
+unsigned int t_c_to_c_1D_fft_float (float *real, float *imag,
+				    unsigned int length, unsigned int stride,
+				    int direction)
 /*  This routine will perform a complex to complex 1 dimensional FFT on an
     array of single precision complex data.
     The array of real components must be pointed to by  real  .
@@ -31,15 +33,14 @@ unsigned int t_c_to_c_1D_fft_float (real, imag, length, stride, direction)
     This routine has been pinched from Patrick Jordan, who pinched and modified
     the Numerical Recipes in C routine.
 */
-float *real;
-float *imag;
-unsigned int length;
-unsigned int stride;
-unsigned int direction;
 /*---------------------------------------------------------------------------*/
 
-unsigned int t_c_to_c_many_1D_fft_float (real, imag, length, elem_stride,
-					 number, dim_stride, direction)
+unsigned int t_c_to_c_many_1D_fft_float (float *real, float *imag,
+					 unsigned int length,
+					 unsigned int elem_stride,
+					 unsigned int number,
+					 unsigned int dim_stride,
+					 int direction)
 /*  This routine will perform a number of complex to complex 1 dimensional FFTs
     on an array of single precision complex data.
     The array of real components must be pointed to by  real  .
@@ -59,26 +60,21 @@ unsigned int t_c_to_c_many_1D_fft_float (real, imag, length, elem_stride,
     This routine has been pinched from Patrick Jordan, who pinched and modified
     the Numerical Recipes in C routine.
 */
-float *real;
-float *imag;
-unsigned int length;
-unsigned int elem_stride;
-unsigned int number;
-unsigned int dim_stride;
-unsigned int direction;
 /*---------------------------------------------------------------------------*/
 
-flag t_check_power_of_2 (number)
+flag t_check_power_of_2 (unsigned int number)
 /*  This routine will check if a number is a power of 2.
     The number must be given by  number  .
     The routine returns TRUE if the number is a power of 2,
     else it returns FALSE.
 */
-unsigned int number;
 /*---------------------------------------------------------------------------*/
 
-unsigned int t_r_to_c_many_1D_fft_float (a, length, elem_stride, number,
-					 dim_stride, direction)
+unsigned int t_r_to_c_many_1D_fft_float (float *a, unsigned int length,
+					 unsigned int elem_stride,
+					 unsigned int number,
+					 unsigned int dim_stride,
+					 int direction)
 /*  This routine will perform a real to complex or complex to real FFT.
     The array must be pointed to by  a  .
     The number of elements to transform must be given by  n  .
@@ -92,10 +88,4 @@ unsigned int t_r_to_c_many_1D_fft_float (a, length, elem_stride, number,
     The routine returns a value indicating the success / failure status of the
     transform.
 */
-float *a;
-unsigned int length;
-unsigned int elem_stride;
-unsigned int number;
-unsigned int dim_stride;
-unsigned int direction;
 /*---------------------------------------------------------------------------*/

@@ -9,9 +9,9 @@
     preferred means of transferring data structures.
 
 
-    Written by		Richard Gooch	13-Dec-1994
+    Written by		Richard Gooch	28-Aug-1995
 
-    Last updated by	Richard Gooch	13-Dec-1994
+    Last updated by	Richard Gooch	28-Aug-1995
 
 
 */
@@ -84,19 +84,16 @@ packet_desc *pack_desc;
 char *packet;
 /*---------------------------------------------------------------------------*/
 
-void dsrw_write_element (channel, type, desc, element)
-/*  This routine will write the binary representation of the element of type
-    type  and pointed to by  element  to the channel object given by
-    channel  .
-    The descriptor for the element is pointed to by  desc  .
-    If the element is a pointer to an array or a linked list, then the array
-    or linked list is recursively written to the channel object.
-    The routine returns nothing.
+void dsrw_write_element (Channel channel, unsigned int type, char *desc,
+			 char *element)
+/*  [PURPOSE] This routine will write the binary representation of an element
+    to a channel object.
+    <channel> The channel object.
+    <type> The type of the element.
+    <desc> The descriptor for the element.
+    <element> A pointer to the element data.
+    [RETURNS] Nothing.
 */
-Channel channel;
-unsigned int type;
-char *desc;
-char *element;
 /*---------------------------------------------------------------------------*/
 
 void dsrw_write_array (channel, arr_desc, element, pad)
@@ -198,20 +195,18 @@ packet_desc *descriptor;
 char *packet;
 /*---------------------------------------------------------------------------*/
 
-flag dsrw_read_element (channel, type, desc, element)
-/*  This routine will read the binary representation of an element from the
-    channel object given by  channel  and will write the value to the
-    storage pointed to by  element  .
-    The type of the element to read must be in  type  and the descriptor for
-    the element must be pointed to by  desc  .
-    If the element type is a pointer to an array or linked lists, the routine
-    will recursively read in the array or linked list of packets.
-    The routine returns TRUE on success, else it returns FALSE.
+flag dsrw_read_element (Channel channel, unsigned int type, char *desc,
+			char *element)
+/*  [PURPOSE] This routine will read the binary representation of an element
+    from a channel object. If the element type is a pointer to an array or
+    linked lists, the routine will recursively read in the array or linked
+    list of packets.
+    <channel> The channel object.
+    <type> The type of the element.
+    <desc> The element descriptor.
+    <element> A pointer to the element storage. This will be written to.
+    [RETURNS] TRUE on success, else FALSE.
 */
-Channel channel;
-unsigned int type;
-char *desc;
-char *element;
 /*---------------------------------------------------------------------------*/
 
 flag dsrw_read_array (channel, descriptor, element, pad)

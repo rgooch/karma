@@ -57,7 +57,17 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/m/main.c
 
-    Last updated by Richard Gooch   21-JAN-1995: Made routines MT-Safe.
+    Updated by      Richard Gooch   21-JAN-1995: Made routines MT-Safe.
+
+    Updated by      Richard Gooch   7-APR-1995: Moved #include <sys/types.h>
+  from header file.
+
+    Updated by      Richard Gooch   7-MAY-1995: Placate gcc -Wall
+
+    Updated by      Richard Gooch   9-JUN-1995: Attempt to fix for crayPVP.
+
+    Last updated by Richard Gooch   1-JAN-1996: Documented M_ALLOC_FAST
+  environment variable.
 
 
 */
@@ -68,11 +78,15 @@
 #  include <thread.h>
 #endif
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <sys/types.h>
 #include <os.h>
 #include <karma.h>
 #include <karma_m.h>
+
+#define CHAR_MALLOC(s) (char *) malloc ( (s) )
 
 
 #ifdef OS_Solaris
@@ -118,18 +132,17 @@ struct mem_header
 {
     struct mem_header *next;
     struct mem_header *prev;
-    size_t size;              /*  Length of block requested by application  */
+    uaddr size;              /*  Length of block requested by application  */
 };
 
 
 /*  Private data  */
-static size_t total_allocated = 0;
+static uaddr total_allocated = 0;
 static struct mem_header *block_list = NULL;
 #ifdef OS_Solaris
 static mutex_t global_lock;
 #endif
 
-char *malloc ();
 #ifdef HAS_ENVIRON
 extern char *getenv ();
 #else
@@ -159,10 +172,13 @@ char c;
 char *m_alloc (uaddr size)
 /*  [PURPOSE] Allocate Virtual Memory.
     <size> The number of bytes to allocate.
-    [MT-LEVEL] Safe.
+    [MT-LEVEL] Safe under Solaris 2.
     [RETURNS] A pointer to the memory on success, else NULL.
     [NOTE] If the environment variable "M_ALLOC_DEBUG" is set to "TRUE" then
     the routine will print allocation debugging information.
+    [NOTE] If the environment variable "M_ALLOC_FAST" is set to "TRUE" then NO
+    periodic integrity check of memory is performed and no debugging
+    information will be printed.
 */
 {
     unsigned char test_val = 0x81;
@@ -170,10 +186,11 @@ char *m_alloc (uaddr size)
     char *ptr;
     unsigned char *tail_ptr;
     struct mem_header *header;
-    extern size_t total_allocated;
+    extern uaddr total_allocated;
     extern struct mem_header *block_list;
     static char first_time = TRUE;
 
+#ifndef MACHINE_crayPVP
     LOCK;
     if (first_time)
     {
@@ -190,16 +207,17 @@ char *m_alloc (uaddr size)
 	}
     }
     UNLOCK;
+#endif
     /*  Check fast flag  */
     if ( fast_alloc_required () )
     {
-	return ( malloc (size) );
+	return ( CHAR_MALLOC (size) );
     }
     (void) m_verify_memory_integrity (FALSE);
     pad_bytes = MIN_HEAD_SIZE % MIN_BOUNDARY_SIZE;
     if (pad_bytes > 0) pad_bytes = MIN_BOUNDARY_SIZE - pad_bytes;
     tot_head_size = MIN_HEAD_SIZE + pad_bytes;
-    if ( ( ptr = malloc (tot_head_size + size + TAIL_SIZE) ) == NULL )
+    if ( ( ptr = CHAR_MALLOC (tot_head_size + size + TAIL_SIZE) ) == NULL )
     {
 	(void) fprintf (stderr,
 			"Unable to allocate memory, size = %lu bytes\n",
@@ -244,7 +262,7 @@ void m_free (char *ptr)
     int pad_bytes, tot_head_size;
     unsigned char *tail_ptr;
     struct mem_header *header;
-    extern size_t total_allocated;
+    extern uaddr total_allocated;
     extern struct mem_header *block_list;
     static char function_name[] = "m_free";
 
@@ -259,11 +277,13 @@ void m_free (char *ptr)
 	(void) free (ptr);
 	return;
     }
+#ifndef MACHINE_crayPVP  /*  I might manage to get away with this  */
     if ( (unsigned long) ptr % MIN_BOUNDARY_SIZE != 0 )
     {
 	(void) fprintf (stderr, "Non aligned block: %p\n", ptr);
 	prog_bug (function_name);
     }
+#endif
     pad_bytes = MIN_HEAD_SIZE % MIN_BOUNDARY_SIZE;
     if (pad_bytes > 0) pad_bytes = MIN_BOUNDARY_SIZE - pad_bytes;
     tot_head_size = MIN_HEAD_SIZE + pad_bytes;
@@ -459,7 +479,7 @@ static void prog_bug (char *function_name)
     (void) fprintf (stderr, "Program bug noted in function: %s\n",
 		    function_name);
     (void) fprintf (stderr, "Aborting.%c\n", BEL);
-    exit (RV_PROGRAM_BUG);
+    abort ();
 }   /*  End Function prog_bug   */
 
 static int string_icmp (char *string1, char *string2)
@@ -486,14 +506,14 @@ static int string_icmp (char *string1, char *string2)
     {
 	return (1);
     }
-    if ( ( str1 = malloc (strlen (string1) + 1) ) == NULL )
+    if ( ( str1 = CHAR_MALLOC (strlen (string1) + 1) ) == NULL )
     {
 	m_abort (function_name, "copy of string1");
     }
     (void) strcpy (str1, string1);
     (void) string_upr (str1);
 
-    if ( ( str2 = malloc (strlen (string2) + 1) ) == NULL )
+    if ( ( str2 = CHAR_MALLOC (strlen (string2) + 1) ) == NULL )
     {
 	m_abort (function_name, "copy of string2");
     }

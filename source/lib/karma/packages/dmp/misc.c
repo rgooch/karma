@@ -1,10 +1,9 @@
 /*LINTLIBRARY*/
-/*MISALIGNED*/
 /*  misc.c
 
     This code provides routines to write the Karma data structure to Channels.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -53,7 +52,12 @@
     Updated by      Richard Gooch   17-MAY-1993: Added support for string data
   types.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/dmp/misc.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/dmp/misc.c
+
+    Updated by      Richard Gooch   19-APR-1995: Cleaned some code.
+
+    Last updated by Richard Gooch   5-JUN-1995: Added code to cope with
+  misaligned data accesses on sensitive platforms.
 
 
 */
@@ -63,6 +67,9 @@
 #include <karma.h>
 #include <karma_dmp.h>
 #include <karma_ds.h>
+#include <karma_a.h>
+#include <os.h>
+
 
 #define ARRAYP        6    /*  Backwards compatibility  */
 
@@ -107,29 +114,29 @@ flag comments;
     /*  Print number of data structures */
     if (comments)
     {
-	(void) fprintf (fp, "\t%-32u%s\n", (*multi_desc).num_arrays,
+	(void) fprintf (fp, "\t%-32u%s\n", multi_desc->num_arrays,
 			"#The number of general data structures");
     }
     else
     {
-	(void) fprintf (fp, "\t%u\n", (*multi_desc).num_arrays);
+	(void) fprintf (fp, "\t%u\n", multi_desc->num_arrays);
     }
-    if ( (*multi_desc).num_arrays > 1 )
+    if ( multi_desc->num_arrays > 1 )
     {
 	/*  Print array names   */
         array_count = 0;
-        while (array_count < (*multi_desc).num_arrays)
+        while (array_count < multi_desc->num_arrays)
         {
 	    if (comments)
             {
 		(void) fprintf (fp, "\t%-32s%s %u\n",
-				(*multi_desc).array_names[array_count],
+				multi_desc->array_names[array_count],
 				"#Name of array", array_count);
             }
             else
             {
 		(void) fprintf (fp, "\t%s\n",
-				(*multi_desc).array_names[array_count]);
+				multi_desc->array_names[array_count]);
             }
             ++array_count;
         }
@@ -145,9 +152,9 @@ flag comments;
     }
     /*  Print packet descriptors for each data structure    */
     array_count = 0;
-    while (array_count < (*multi_desc).num_arrays)
+    while (array_count < multi_desc->num_arrays)
     {
-	dmp_packet_desc (fp, (*multi_desc).headers[array_count], comments);
+	dmp_packet_desc (fp, multi_desc->headers[array_count], comments);
         ++array_count;
     }
     if (comments)
@@ -197,12 +204,12 @@ flag comments;
     /*  Print number of elements    */
     if (comments)
     {
-	(void) fprintf (fp, "\t%-32u%s\n", (*pack_desc).num_elements,
+	(void) fprintf (fp, "\t%-32u%s\n", pack_desc->num_elements,
 			"#Number of elements in this packet");
     }
     else
     {
-	(void) fprintf (fp, "\t%u\n", (*pack_desc).num_elements);
+	(void) fprintf (fp, "\t%u\n", pack_desc->num_elements);
     }
     /*  Print "END" */
     if (comments)
@@ -214,11 +221,11 @@ flag comments;
 	(void) fprintf (fp, "END\n");
     }
     /*  Print element descriptors   */
-    while (element_count < (*pack_desc).num_elements)
+    while (element_count < pack_desc->num_elements)
     {
 	/*  Print an element descriptor */
-        dmp_element_desc (fp, (*pack_desc).element_types[element_count],
-			  (*pack_desc).element_desc[element_count],
+        dmp_element_desc (fp, pack_desc->element_types[element_count],
+			  pack_desc->element_desc[element_count],
 			  comments);
         ++element_count;
     }
@@ -639,41 +646,41 @@ flag comments;
     /*  Print number of dimensions  */
     if (comments)
     {
-	(void) fprintf (fp, "\t%-32u%s\n", (*arr_desc).num_dimensions,
+	(void) fprintf (fp, "\t%-32u%s\n", arr_desc->num_dimensions,
 			"#Number of dimensions");
     }
     else
     {
-	(void) fprintf (fp, "\t%u\n", (*arr_desc).num_dimensions);
+	(void) fprintf (fp, "\t%u\n", arr_desc->num_dimensions);
     }
     /*  Print number of levels of tiling  */
     if (comments)
     {
-	(void) fprintf (fp, "\t%-32u%s\n", (*arr_desc).num_levels,
+	(void) fprintf (fp, "\t%-32u%s\n", arr_desc->num_levels,
 			"#Number of levels of tiling");
     }
     else
     {
-	(void) fprintf (fp, "\t%u\n", (*arr_desc).num_levels);
+	(void) fprintf (fp, "\t%u\n", arr_desc->num_levels);
     }
     /*  Print tile lengths  */
-    for (dim_count = 0; dim_count < (*arr_desc).num_dimensions; ++dim_count)
+    for (dim_count = 0; dim_count < arr_desc->num_dimensions; ++dim_count)
     {
 	/*  Print tile lengths for this dimension  */
-	for (level_count = 0; level_count < (*arr_desc).num_levels;
+	for (level_count = 0; level_count < arr_desc->num_levels;
 	     ++level_count)
 	{
 	    if (comments)
 	    {
 		(void) fprintf (fp, "\t%-32u%s %u  %s %u\n",
-				(*arr_desc).tile_lengths[dim_count][level_count],
+				arr_desc->tile_lengths[dim_count][level_count],
 				"#Tile length for dimension:", dim_count,
 				"level:", level_count);
 	    }
 	    else
 	    {
 		(void) fprintf (fp, "\t%u\n",
-				(*arr_desc).tile_lengths[dim_count][level_count]);
+				arr_desc->tile_lengths[dim_count][level_count]);
 	    }
 	}
     }
@@ -687,12 +694,12 @@ flag comments;
 	(void) fprintf (fp, "END\n");
     }
     /*  Print dimension descriptors */
-    for (dim_count = 0; dim_count < (*arr_desc).num_dimensions; ++dim_count)
+    for (dim_count = 0; dim_count < arr_desc->num_dimensions; ++dim_count)
     {
-	dmp_dim_desc (fp, (*arr_desc).dimensions[dim_count], comments);
+	dmp_dim_desc (fp, arr_desc->dimensions[dim_count], comments);
     }
     /*  Print array packet descriptor   */
-    dmp_packet_desc (fp, (*arr_desc).packet, comments);
+    dmp_packet_desc (fp, arr_desc->packet, comments);
 }   /*  End Function dmp_array_desc    */
 
 /*PUBLIC_FUNCTION*/
@@ -732,7 +739,7 @@ flag comments;
 	(void) fprintf (fp, "DIMENSION\n");
     }
     /*  Print dimension name    */
-    if ( ( (*dimension).name == NULL ) || ( *( (*dimension).name ) == '\0' ) )
+    if ( ( dimension->name == NULL ) || ( *( dimension->name ) == '\0' ) )
     {
 	if (comments)
         {
@@ -749,27 +756,27 @@ flag comments;
 	if (comments)
         {
 	    (void) fprintf (fp, "\t%-32s%s\n",
-			    (*dimension).name, "#Dimension name");
+			    dimension->name, "#Dimension name");
         }
         else
         {
-	    (void) fprintf (fp, "\t%s\n", (*dimension).name);
+	    (void) fprintf (fp, "\t%s\n", dimension->name);
         }
     }
     /*  Print dimension length  */
     if (comments)
     {
-	(void) fprintf (fp, "\t%-32u%s\n",
-			(*dimension).length, "#Dimension length");
+	(void) fprintf (fp, "\t%-32lu%s\n",
+			dimension->length, "#Dimension length");
     }
     else
     {
-	(void) fprintf (fp, "\t%u\n", (*dimension).length);
+	(void) fprintf (fp, "\t%lu\n", dimension->length);
     }
     /*  Print "REGULAR" or "RANDOM" */
     if (comments)
     {
-	if ( (*dimension).coordinates == NULL )
+	if ( dimension->coordinates == NULL )
         {
 	    (void) fprintf (fp, "\t%-32s%s\n", "REGULAR",
 			    "#Co-ordinates are regularly spaced");
@@ -782,7 +789,7 @@ flag comments;
     }
     else
     {
-	if ( (*dimension).coordinates == NULL )
+	if ( dimension->coordinates == NULL )
         {
 	    (void) fprintf (fp, "\tREGULAR\n");
         }
@@ -791,37 +798,37 @@ flag comments;
 	    (void) fprintf (fp, "\tRANDOM\n");
         }
     }
-    if ( (*dimension).coordinates == NULL )
+    if ( dimension->coordinates == NULL )
     {
 	/*  Print minimum and maximum   */
         if (comments)
         {
-	    (void) fprintf (fp, "\t%-32.16e%s\n", (*dimension).minimum,
+	    (void) fprintf (fp, "\t%-32.16e%s\n", dimension->minimum,
 			    "#Minimum co-ordinate");
-            (void) fprintf (fp, "\t%-32.16e%s\n", (*dimension).maximum,
+            (void) fprintf (fp, "\t%-32.16e%s\n", dimension->maximum,
 			    "#Maximum co-ordinate");
         }
         else
         {
-	    (void) fprintf (fp, "\t%.16e\n", (*dimension).minimum);
-            (void) fprintf (fp, "\t%.16e\n", (*dimension).maximum);
+	    (void) fprintf (fp, "\t%.16e\n", dimension->minimum);
+            (void) fprintf (fp, "\t%.16e\n", dimension->maximum);
         }
     }
     else
     {
 	/*  Print co-ordinates  */
-        while (coord_count < (*dimension).length)
+        while (coord_count < dimension->length)
         {
 	    if (comments)
             {
 		(void) fprintf (fp, "\t%-32.16e%s %u\n",
-				(*dimension).coordinates[coord_count],
+				dimension->coordinates[coord_count],
 			 "#Co-ordinate number", coord_count);
             }
             else
             {
 		(void) fprintf (fp, "\t%.16e\n",
-				(*dimension).coordinates[coord_count]);
+				dimension->coordinates[coord_count]);
             }
             ++coord_count;
         }
@@ -865,7 +872,7 @@ flag comments;
         }
         return;
     }
-    if ( (*multi_desc).data == NULL )
+    if (multi_desc->data == NULL)
     {
 	if (comments)
         {
@@ -879,9 +886,9 @@ flag comments;
 	(void) fprintf (fp, "#Multi array data starts here\n");
     }
     /*  Dump top level packets  */
-    while (array_count < (*multi_desc).num_arrays)
+    while (array_count < multi_desc->num_arrays)
     {
-	if ( (*multi_desc).data[array_count] == NULL )
+	if (multi_desc->data[array_count] == NULL)
         {
 	    if (comments)
             {
@@ -897,8 +904,8 @@ flag comments;
 				"#Data for data structure number %u starts here\n",
 				array_count);
             }
-            dmp_packet (fp, (*multi_desc).headers[array_count],
-			(*multi_desc).data[array_count], comments);
+            dmp_packet (fp, multi_desc->headers[array_count],
+			multi_desc->data[array_count], comments);
         }
         ++array_count;
     }
@@ -953,11 +960,11 @@ flag comments;
 	(void) fprintf (fp, "#Packet data starts here\n");
     }
     /*  Print packet data   */
-    while (element_count < (*pack_desc).num_elements)
+    while (element_count < pack_desc->num_elements)
     {
 	/*  Print element   */
-        type = (*pack_desc).element_types[element_count];
-        dmp_element (fp, type, (*pack_desc).element_desc[element_count],
+        type = pack_desc->element_types[element_count];
+        dmp_element (fp, type, pack_desc->element_desc[element_count],
 		     packet, comments);
         packet += host_type_sizes[type];
         ++element_count;
@@ -985,24 +992,34 @@ char *element;
 flag comments;
 {
     FString *fstring;
+#ifdef NEED_ALIGNED_DATA
+    int datum_size;
+    double buf[2];
+    extern char host_type_sizes[NUMTYPES];
+#endif
     static char function_name[] = "dmp_element";
 
-    if (fp == NULL)
-    {
-	return;
-    }
+    if (fp == NULL) return;
     if (element == NULL)
     {
 	(void) fprintf (stderr, "No element data to dump\n");
         a_prog_bug (function_name);
     }
+#ifdef NEED_ALIGNED_DATA
+    datum_size = host_type_sizes[type];
+    if ( (iaddr) element % datum_size != 0 )
+    {
+	m_copy ( (char *) buf, element, datum_size );
+	element = (char *) buf;
+    }
+#endif
     switch (type)
     {
       case K_FLOAT:
 	(void) fprintf ( fp, "%.7e\n", *( (float *) element ) );
 	break;
       case K_DOUBLE:
-	(void) fprintf ( fp, "%.15le\n", *( (double *) element ) );
+	(void) fprintf ( fp, "%.15e\n", *( (double *) element ) );
 	break;
       case K_BYTE:
 	(void) fprintf (fp, "%d\n", (int) *element);
@@ -1018,7 +1035,7 @@ flag comments;
 			*( (float *) element + 1 ) );
 	break;
       case K_DCOMPLEX:
-	(void) fprintf ( fp, "%.15le %.15le\n",
+	(void) fprintf ( fp, "%.15e %.15e\n",
 			*( (double *) element ),
 			*( (double *) element + 1 ) );
 	break;
@@ -1074,7 +1091,7 @@ flag comments;
 	break;
       case K_FSTRING:
 	fstring = (FString *) element;
-	(void) fprintf (fp, "%u\n%s\n", (*fstring).max_len, (*fstring).string);
+	(void) fprintf (fp, "%u\n%s\n", fstring->max_len, fstring->string);
 	break;
       case K_ARRAY:
 	dmp_array (fp, (array_desc *) desc,
@@ -1137,12 +1154,12 @@ flag comments;
 	(void) fprintf (fp, "#Array data starts here\n");
     }
     array_size = ds_get_array_size (arr_desc);
-    packet_size = ds_get_packet_size ( (*arr_desc).packet );
+    packet_size = ds_get_packet_size ( arr_desc->packet );
     data = array;
     while (array_count++ < array_size)
     {
 	/*  Dump a packet in the array  */
-        dmp_packet (fp, (*arr_desc).packet, data, comments);
+        dmp_packet (fp, arr_desc->packet, data, comments);
         data += packet_size;
     }
     /*  Print "#End array data" */
@@ -1192,12 +1209,12 @@ flag comments;
         }
         return;
     }
-    if ( (*list_head).magic != MAGIC_LIST_HEADER )
+    if ( list_head->magic != MAGIC_LIST_HEADER )
     {
 	(void) fprintf (stderr, "List header has bad magic number\n");
 	a_prog_bug (function_name);
     }
-    if ( (*list_head).length < 1 )
+    if ( list_head->length < 1 )
     {
 	if (comments)
         {
@@ -1214,15 +1231,15 @@ flag comments;
     /*  Print list length   */
     if (comments)
     {
-	(void) fprintf (fp, "%-40u%s\n", (*list_head).length,
+	(void) fprintf (fp, "%-40lu%s\n", list_head->length,
 			"#Length of linked list");
     }
     else
     {
-	(void) fprintf (fp, "%u\n", (*list_head).length);
+	(void) fprintf (fp, "%lu\n", list_head->length);
     }
     /*  Print list sort type    */
-    switch ( (*list_head).sort_type )
+    switch ( list_head->sort_type )
     {
       case SORT_INCREASING:
 	if (comments)
@@ -1264,27 +1281,27 @@ flag comments;
     /*  Print list sort element number  */
     if (comments)
     {
-	(void) fprintf (fp, "%-40u%s\n", (*list_head).sort_elem_num,
+	(void) fprintf (fp, "%-40u%s\n", list_head->sort_elem_num,
 			"#Element number list sorted by");
     }
     else
     {
-	(void) fprintf (fp, "%u\n", (*list_head).sort_elem_num);
+	(void) fprintf (fp, "%u\n", list_head->sort_elem_num);
     }
     
     /*  Print list packets  */
     /*  Dump list packets in contiguous section  */
     pack_size = ds_get_packet_size (pack_desc);
-    for (count = 0, data = (*list_head).contiguous_data;
-	 count < (*list_head).contiguous_length; ++count, data += pack_size)
+    for (count = 0, data = list_head->contiguous_data;
+	 count < list_head->contiguous_length; ++count, data += pack_size)
     {
 	dmp_packet (fp, pack_desc, data, comments);
     }
     /*  Dump list packets in fragmented section  */
-    for (curr_entry = (*list_head).first_frag_entry; curr_entry != NULL;
-	 curr_entry = (*curr_entry).next)
+    for (curr_entry = list_head->first_frag_entry; curr_entry != NULL;
+	 curr_entry = curr_entry->next)
     {
-	dmp_packet (fp, pack_desc, (*curr_entry).data, comments);
+	dmp_packet (fp, pack_desc, curr_entry->data, comments);
     }
     /*  Print "#End linked list */
     if (comments)

@@ -1,0 +1,82 @@
+
+    /*  Generic raycasting code  */
+    if (_sh_min > _sh_max)
+    {
+	(void) fprintf (stderr, "max: %e  less than min: %e\n", _sh_max, _sh_min);
+	a_prog_bug (function_name);
+    }
+    /*  Find furthest plane  */
+    if (_sh_ray_direction0 >= 0.0)
+    {
+#ifdef HACK3
+	_sh_t = (_sh_min - _sh_ray_start0) * _sh_one_on_ray_direction0;
+	_sh_t_inc = _sh_one_on_ray_direction0;
+#else
+	_sh_z = _sh_min;
+	_sh_z_inc = 1.0;
+#endif
+	_sh_plane_pos = _sh_min;
+	_sh_plane_inc = 1;
+	_sh_plane_end = _sh_plane_pos + (int) (_sh_max - _sh_min);
+#ifdef HACK1
+	_sh_max_iter = _sh_plane_end - _sh_plane_pos;
+#endif
+    }
+    else
+    {
+#ifdef HACK3
+	_sh_t = (_sh_max - _sh_ray_start0) * _sh_one_on_ray_direction0;
+	_sh_t_inc = -_sh_one_on_ray_direction0;
+#else
+	_sh_z = _sh_max;
+	_sh_z_inc = -1.0;
+#endif
+	_sh_plane_pos = _sh_max;
+	_sh_plane_inc = -1;
+	_sh_plane_end = _sh_plane_pos - (int) (_sh_max - _sh_min);
+#ifdef HACK1
+	_sh_max_iter = _sh_plane_pos - _sh_plane_end;
+#endif
+    }
+#ifdef HACK3
+    _sh_y = _sh_ray_start1 + _sh_t * _sh_ray_direction1 + _sh_offset;
+    _sh_x = _sh_ray_start2 + _sh_t * _sh_ray_direction2 + _sh_offset;
+    _sh_y_inc = _sh_t_inc * _sh_ray_direction1;
+    _sh_x_inc = _sh_t_inc * _sh_ray_direction2;
+#endif
+#ifdef HACK1
+    for (_sh_iter_count = 0; _sh_iter_count < _sh_max_iter; ++_sh_iter_count)
+#else
+#  ifdef HACK3
+    for (; _sh_plane_pos != _sh_plane_end;
+	 _sh_y += _sh_y_inc, _sh_x += _sh_x_inc,_sh_plane_pos += _sh_plane_inc)
+#  else
+    for (; _sh_plane_pos != _sh_plane_end;
+	 _sh_z += _sh_z_inc, _sh_plane_pos += _sh_plane_inc)
+#  endif
+#endif
+    {
+	/*  Have another plane: compute position in plane  */
+#ifdef HACK3
+	_sh_i_y = _sh_y;
+	_sh_i_x = _sh_x;
+#else
+	_sh_t = (_sh_z - _sh_ray_start0) * _sh_one_on_ray_direction0;
+	_sh_i_y = (_sh_ray_start1 + _sh_t * _sh_ray_direction1 + _sh_offset);
+	_sh_i_x = (_sh_ray_start2 + _sh_t * _sh_ray_direction2 + _sh_offset);
+#endif
+	voxel = *(_sh_planes[_sh_plane_pos] +
+		  _sh_dim_offsets1[_sh_i_y] + _sh_dim_offsets2[_sh_i_x]);
+#ifdef HACK1
+	if (_sh_plane_pos == _sh_plane_end) _sh_max_iter = -10;
+#  ifdef HACK3
+	_sh_y += _sh_y_inc;
+	_sh_x += _sh_x_inc;
+#  else
+	_sh_z += _sh_z_inc;
+#  endif
+	_sh_plane_pos += _sh_plane_inc;
+#endif
+	if (voxel < -127) continue;
+
+	/*  START Shader specific computations  */

@@ -1,9 +1,9 @@
 /*LINTLIBRARY*/
-/*  main.c
+/*  misc.c
 
     This code provides simple module initialisation routines.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -37,7 +37,12 @@
     Updated by      Richard Gooch   6-JAN-1993: Changed from  #include "*.h"
   to  #include <*.h>
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/im/misc.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/im/misc.c
+
+    Updated by      Richard Gooch   15-APR-1995: Created
+  <im_register_lib_version>.
+
+    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
 
 
 */
@@ -47,16 +52,14 @@
 #include <karma_a.h>
 
 /*  Private data  */
-static flag clean_exit_request = FALSE;
 
 
 /*PUBLIC_FUNCTION*/
-void im_register_module_name (name_string)
-/*  This routine will register a new name for the module.
-    The name string must be pointed to by  name_string  .
-    The routine returns nothing.
+void im_register_module_name (char *name_string)
+/*  [PURPOSE] This routine will register a new name for the module.
+    <name_string> The name string.
+    [RETURNS] Nothing.
 */
-char *name_string;
 {
     extern char module_name[STRING_LENGTH + 1];
     static char function_name[] = "im_register_module_name";
@@ -82,12 +85,11 @@ char *name_string;
 }   /*  End Function im_register_module_name  */
 
 /*PUBLIC_FUNCTION*/
-void im_register_module_version_date (date_string)
-/*  This routine will register a new version date for the module.
-    The date string must be pointed to by  date_string  .
-    The routine returns nothing.
+void im_register_module_version_date (char *date_string)
+/*  [PURPOSE] This routine will register a new version date for the module.
+    <date_string> The date string.
+    [RETURNS] Nothing.
 */
-char *date_string;
 {
     extern char module_version_date[STRING_LENGTH + 1];
     static char function_name[] = "im_register_module_version_date";
@@ -100,3 +102,23 @@ char *date_string;
     }
     (void) strcpy (module_version_date, date_string);
 }   /*  End Function im_register_module_version_date  */
+
+/*PUBLIC_FUNCTION*/
+void im_register_lib_version (char *version_string)
+/*  [PURPOSE] This routine will register the library version a module was
+    compiled with.
+    <version_string> The version string of the library.
+    [RETURNS] Nothing.
+*/
+{
+    extern char module_lib_version[STRING_LENGTH + 1];
+    static char function_name[] = "im_register_lib_version";
+
+    if (strlen (version_string) > STRING_LENGTH)
+    {
+	(void) fprintf (stderr, "Version string: \"%s\" is too long\n",
+			version_string);
+	a_prog_bug (function_name);
+    }
+    (void) strcpy (module_lib_version, version_string);
+}   /*  End Function im_register_lib_version  */

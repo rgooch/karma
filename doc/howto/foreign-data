@@ -1,0 +1,72 @@
+This file is intended as a "getting-started" guide to reading foreign
+data formats. It should be used in conjuction with the library
+reference documentation, which documents all the functions available
+for working with foreign data formats.
+
+Purpose:
+--------
+
+While the Karma data format is a very fast and compact way of storing
+data, for some reason not everyone uses this format. Hence a means of
+reading in data in other formats and converting to Karma format is
+required. The <foreign_> package provides routines which will read
+many different formats, including:
+
+  + FITS
+  + PPM (Portable Pixel Map)
+  + Sun Rasterfile
+
+The <foreign_> package also provides routines to write a Karma data
+structure to a file in a foreign data format.
+
+Combined with the powerful "Intelligent Array" package (<iarray_>) in
+the Karma library, easy access to foreign data is possible.
+
+
+
+Related documents:
+------------------
+
+The documentation on "Intelligent Arrays" is highly recommended.
+
+
+
+Tutorial:
+---------
+
+Some sample code extracts are shown below which demonstrate how to
+read data in foreign formats.
+
+  Example 1
+  =========
+
+This routine will read a file of any supported format (including Karma
+format) and returns a 2-dimensional Intelligent Array.
+
+iarray read_2d_array (CONST char *filename)
+/*  [PURPOSE] This routine will read a file containing a 2-dimensional
+    array and will return an Intelligent Array.
+    <filename> The name of the file to read.
+    [RETURNS] An Intelligent Array on success, else NULL.
+*/
+{
+    iarray arr;
+    unsigned int ftype;
+    multi_array *multi_desc;
+
+    if ( ( multi_desc = foreign_guess_and_read (filename, K_CH_MAP_LOCAL,
+						FALSE, &ftype,
+						FA_GUESS_READ_END) ) == NULL )
+    {
+	(void) fprintf (stderr, "Error reading file: \"%s\"\n", filename);
+	return (NULL);
+    }
+    if ( ( arr = iarray_get_from_multi_array (multi_desc, NULL, 2,
+					      (char **) NULL, NULL) )
+	== NULL )
+    {
+	(void) fprintf (stderr, "Error extracting 2-D Intelligent Array\n");
+	return (NULL);
+    }
+    return (arr);
+}

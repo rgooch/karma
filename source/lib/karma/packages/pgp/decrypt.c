@@ -36,8 +36,10 @@
     Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
 
-    Last updated by Richard Gooch   23-JAN-1995: Fixed test when opening
+    Updated by      Richard Gooch   23-JAN-1995: Fixed test when opening
   channels.
+
+    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
 
 
 */
@@ -87,7 +89,6 @@ char *pgp_decrypt (CONST char *ciphertext, unsigned int ciphertext_length,
     char ch;
     char *buffer, *new_buf;
     char *pgppath;
-    char frompipe_filename[STRING_LENGTH];
     extern char *sys_errlist[];
     static char function_name[] = "pgp_decrypt";
 

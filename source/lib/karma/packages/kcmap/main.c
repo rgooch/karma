@@ -79,8 +79,18 @@
     Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
 
-    Last updated by Richard Gooch   3-JAN-1995: Fixed  kcmap_modify  to
+    Updated by      Richard Gooch   3-JAN-1995: Fixed  kcmap_modify  to
   correctly reverse colourmap.
+
+    Updated by      Richard Gooch   31-JAN-1995: Added <cf_mandelbrot>.
+
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Updated by      Richard Gooch   7-MAY-1995: Placate gcc -Wall
+
+    Updated by      Richard Gooch   1-SEP-1995: Created <kwin_va_create>.
+
+    Last updated by Richard Gooch   28-OCT-1995: Added *_DPY_HANDLE attribute.
 
 
 */
@@ -90,14 +100,15 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <varargs.h>
+#include <stdarg.h>
 #include <errno.h>
 #include <karma.h>
-#define KCMAP_INTERNAL
 #include <karma_kcmap.h>
 #include <karma_conn.h>
 #include <karma_dsrw.h>
+#include <karma_pio.h>
 #include <karma_ds.h>
+#include <karma_ch.h>
 #include <karma_cf.h>
 #include <karma_st.h>
 #include <karma_a.h>
@@ -123,6 +134,10 @@ struct colourmap_type
 {
     unsigned int magic_number;
     Kdisplay dpy_handle;
+    unsigned int (*alloc_func) ();
+    void (*free_func) ();
+    void (*store_func) ();
+    void (*location_func) ();
     unsigned int size;
     unsigned long *pixel_values;
     unsigned short *intensities;
@@ -135,6 +150,7 @@ struct colourmap_type
     flag modifiable;
     flag reverse;
     flag invert;
+    flag software;
 };
 
 struct cmap_func_type
@@ -148,16 +164,11 @@ struct cmap_func_type
 };
 
 
-/*  Local functions  */
-void kcmap_get_attributes ();
-void kcmap_set_attributes ();
-
-
 /*  Private data  */
-static unsigned int (*alloc_ccells_func) () = NULL;
-static void (*free_ccells_func) () = NULL;
-static void (*store_ccells_func) () = NULL;
-static void (*get_location_func) () = NULL;
+static unsigned int (*obsolete_alloc_ccells_func) () = NULL;
+static void (*obsolete_free_ccells_func) () = NULL;
+static void (*obsolete_store_ccells_func) () = NULL;
+static void (*obsolete_get_location_func) () = NULL;
 
 static struct cmap_func_type *cmap_functions = NULL;
 static Kcolourmap shareable_colourmap = NULL;
@@ -165,10 +176,12 @@ static Kcolourmap slaveable_colourmap = NULL;
 
 
 /*  Private functions  */
+STATIC_FUNCTION (void initialise, () );
 static struct cmap_func_type *get_cmap_function (/* name */);
 static flag register_new_cmap_indices_slave (/* connection, info */);
 static flag register_new_full_cmap_slave (/* connection, info */);
-static flag verify_slave_cmap_connection (/* info */);
+static flag verify_indices_slave_cmap_connection (/* info */);
+static flag verify_full_slave_cmap_connection (/* info */);
 static flag register_cmap_indices_connection (/* connection, info */);
 static flag register_full_cmap_connection (/* connection, info */);
 static void register_cmap_connection_close (/* connection, info */);
@@ -176,8 +189,8 @@ static flag write_cmap_indices (/* connection, cmap */);
 static flag read_cmap_indices (/* connection, cmap */);
 static flag write_full_cmap (/* connection, cmap */);
 static flag read_full_cmap (/* connection, cmap */);
-static void transmit_cmap_resize (/* cmap */);
-static void transmit_cmap_modify (/* cmap */);
+static void notify_cmap_resize (/* cmap */);
+static void notify_cmap_modify (/* cmap */);
 static flag change_cmap_size (/* cmap, num_cells, tolerant, notify,
 			       colour_array, pack_desc, packet */);
 
@@ -185,7 +198,222 @@ static flag change_cmap_size (/* cmap, num_cells, tolerant, notify,
 /*  Public functions follow  */
 
 /*PUBLIC_FUNCTION*/
-void kcmap_init (alloc_func, free_func, store_func, location_func)
+Kcolourmap kcmap_va_create (char *name, unsigned int num_cells, flag tolerant,
+			    Kdisplay dpy_handle, unsigned int (*alloc_func) (),
+			    void (*free_func) (), void (*store_func) (),
+			    void (*location_func) (), ...)
+/*  [PURPOSE] This routine will create a high level colourmap.
+    <name> The name of the function used to initialise the colour values. If
+    this is NULL, the default "Greyscale1" function is used.
+    <num_cells> The initial number of colourcells to allocate. This must not be
+    less than 2.
+    <tolerant> If TRUE the routine will try to allocate as many colourcells as
+    possible (up to <<num_cells>>), else it will fail if it could not
+    allocatate all required colourcells.
+    <dpy_handle> The low level display handle. The meaning of this value
+    depends on the lower level graphics library used.
+    <alloc_func> The function which must be called in order to allocate
+    colourcells. See the <xc_> routines for examples. The interface to this
+    routine is as follows:
+    [<pre>]
+    unsigned int alloc_func (unsigned int num_cells,
+                             unsigned long *pixel_values,
+			     unsigned int min_cells, Kdisplay dpy_handle)
+    *   [PURPOSE] This routine will allocate a number of colourcells in a low
+        level colourmap (e.g. using the Xlib routine XAllocColorCells).
+	<num_cells> The number of colourcells to allocate.
+	<pixel_values> The array ofpixel values allocated will be written here.
+	<min_cells> The minimum number of colourcells to allocate. The routine
+	will try to allocate at least this number of colourcells.
+	<dpy_handle> The low level display handle. The meaning of this value
+	depends on the lower level graphics library used.
+	[RETURNS] The number of colourcells allocated.
+    *
+    [</pre>]
+    <free_func> The function which must be called to free colourcells. The
+    interface to this routine is as follows:
+    [<pre>]
+    void free_func (unsigned int num_cells, unsigned long *pixel_values,
+                    Kdisplay dpy_handle)
+    *   [PURPOSE] This routine will free a number of colourcells in a low
+        level colourmap.
+	<num_cells> The number of colourcells to free.
+	<pixel_values> The array of pixel values (colourcells) to free.
+        <dpy_handle> The low level display handle. The meaning of this value
+	depends on the lower level graphics library used.
+	[RETURNS] Nothing.
+    *
+    [</pre>]
+    <store_func> The function which is used to store colours into a low level
+    colourmap. The interface to this routine is as follows:
+    [<pre>]
+    void store_func (unsigned int num_cells, unsigned long *pixel_values,
+                     unsigned short *reds, unsigned short *greens,
+		     unsigned short *blues, unsigned int stride,
+		     Kdisplay dpy_handle)
+    *   [PURPOSE] This routine will store colours into a low level colourmap.
+        <num_cells> The number of colourcells to store.
+	<pixel_values> The array of pixel values.
+	<reds> The array of red intensity values.
+	<greens> The array of green intensity values.
+	<blues> The array of blue intensity values.
+	<stride> The stride (in unsigned shorts) between intensity values in
+	each array.
+	<dpy_handle> The low level display handle. The meaning of this value
+	depends on the lower level graphics library used.
+	[RETURNS] Nothing.
+    *
+    [</pre>]
+    <location_func> The function which is used to determine the location of a
+    display. The interface to this routine is as follows:
+    [<pre>]
+    void location_func (Kdisplay dpy_handle, unsigned long *serv_hostaddr,
+                        unsigned long *serv_display_num)
+    *   [PURPOSE] This routine will determine the location of the graphics
+        display being used.
+	<dpy_handle> The low level display handle. The meaning of this value
+	depends on the lower level graphics library used.
+	<serv_hostaddr> The Internet address of the host to which the display
+	is connected will be written here.
+	<serv_display_num> The number of the display will be written here.
+	[RETURNS] Nothing.
+    *
+    [</pre>]
+    [NOTE] If the above routines are NULL, the colourmap created is assumed to
+    be a software colourmap, otherwise it is considered to be a
+    hardware/virtual colourmap.
+    [VARARGS] The optional list of parameter attribute-key attribute-value
+    pairs must follow. This list must be terminated with the value
+    KCMAP_ATT_END.
+    [RETURNS] A colourmap on success, else NULL.
+*/
+{
+    va_list argp;
+    Kcolourmap cmap;
+    unsigned int min_cells;
+    unsigned int att_key;
+    unsigned int num_null;
+    struct cmap_func_type *cmap_func;
+    extern Kcolourmap shareable_colourmap;
+    extern Kcolourmap slaveable_colourmap;
+    static char *def_name = "Greyscale1";
+    static char function_name[] = "kcmap_va_create";
+
+    va_start (argp, location_func);
+    initialise ();
+    /*  It's all or nothing...  */
+    num_null = 0;
+    if (alloc_func == NULL) ++num_null;
+    if (free_func == NULL) ++num_null;
+    if (store_func == NULL) ++num_null;
+    if (location_func == NULL) ++num_null;
+    if ( (num_null != 0) && (num_null != 4) )
+    {
+	(void) fprintf (stderr, "Number of NULL functions: %u\n", num_null);
+	a_prog_bug (function_name);
+    }
+    if (num_cells < 2)
+    {
+	(void) fprintf (stderr, "Must specify colourmap size of at least 2\n");
+	a_prog_bug (function_name);
+    }
+    if (name == NULL) name = def_name;
+    /*  Verify if colourmap function exists  */
+    if ( (cmap_func = get_cmap_function (name) ) == NULL )
+    {
+	(void) fprintf (stderr, "Colourmap function: \"%s\" does not exist\n",
+			name);
+	a_prog_bug (function_name);
+    }
+    if ( (cmap_func->min_cells > 1) && (num_cells < cmap_func->min_cells) )
+    {
+	(void) fprintf (stderr, "Requested number of cells: %u is less than\n",
+			num_cells);
+	(void) fprintf (stderr,
+			"minimum number of cells: %u for colourmap function: %s\n",
+			cmap_func->min_cells, cmap_func->name);
+	return (NULL);
+    }
+    if ( (cmap_func->max_cells > 1) && (num_cells > cmap_func->max_cells) )
+    {
+	(void) fprintf (stderr,
+			"Requested number of cells: %u is greater than\n",
+			num_cells);
+	(void) fprintf (stderr,
+			"maximum number of cells: %u for colourmap function: %s\n",
+			cmap_func->max_cells, cmap_func->name);
+	return (NULL);
+    }
+    if ( ( cmap = (Kcolourmap) m_alloc (sizeof *cmap) ) == NULL )
+    {
+	m_error_notify (function_name, "colourmap");
+	return (NULL);
+    }
+    cmap->magic_number = MAGIC_NUMBER;
+    cmap->dpy_handle = dpy_handle;
+    if (num_null > 0)
+    {
+	cmap->alloc_func = ( unsigned int (*) () ) NULL;
+	cmap->free_func = ( void (*) () ) NULL;
+	cmap->store_func = ( void (*) () ) NULL;
+	cmap->location_func = ( void (*) () ) NULL;
+    }
+    else
+    {
+	cmap->alloc_func = alloc_func;
+	cmap->free_func = free_func;
+	cmap->store_func = store_func;
+	cmap->location_func = location_func;
+    }
+    cmap->size = 0;
+    cmap->pixel_values = NULL;
+    cmap->intensities = NULL;
+    min_cells = tolerant ? cmap_func->min_cells : num_cells;
+    if ( !change_cmap_size (cmap, num_cells, min_cells, FALSE,
+			    (unsigned short *) NULL,
+			    (packet_desc *) NULL, (char *) NULL) )
+    {
+	m_error_notify (function_name, "array of pixel values");
+	cmap->magic_number = 0;
+	m_free ( (char *) cmap );
+	return (NULL);
+    }
+    cmap->modify_func_name = cmap_func->name;
+    cmap->resize_list = NULL;
+    cmap->master = NULL;
+    cmap->modifiable = TRUE;
+    /* Must initialise the reverse flag prior to  kcmap_modify  being called */
+    cmap->reverse = FALSE;
+    cmap->invert = FALSE;
+    cmap->software = (num_null > 0) ? TRUE : FALSE;
+    kcmap_modify (cmap, (double) 0.5, (double) 0.5, (void *) NULL);
+    if (shareable_colourmap == NULL)
+    {
+	/*  Register this colourmap as the shareable one  */
+	shareable_colourmap = cmap;
+    }
+    if (slaveable_colourmap == NULL)
+    {
+	/*  Register this colourmap as the slaveable one  */
+	slaveable_colourmap = cmap;
+    }
+    while ( ( att_key = va_arg (argp, unsigned int) ) != KCMAP_ATT_END )
+    {
+	switch (att_key)
+	{
+	  default:
+	    (void) fprintf (stderr, "Unknown attribute key: %u\n", att_key);
+	    a_prog_bug (function_name);
+	    break;
+	}
+    }
+    va_end (argp);
+    return (cmap);
+}   /*  End Function kcmap_va_create  */
+
+/*OBSOLETE_FUNCTION*/
+void kcmap_init ( unsigned int (*alloc_func) (), void (*free_func) (),
+		 void (*store_func) (), void (*location_func) () )
 /*  This routine will initialise the high level colourmap package. This must be
     called before any other  kcmap_  routines.
     The function which must be called in order to allocate colourcells must be
@@ -207,7 +435,7 @@ void kcmap_init (alloc_func, free_func, store_func, location_func)
     *
     unsigned int num_cells;
     unsigned long *pixel_values;
-    flag tolerant;
+    unsigned int min_cells;
     Kdisplay dpy_handle;
 
     The function which must be called to free colourcells must be pointed to by
@@ -274,74 +502,32 @@ void kcmap_init (alloc_func, free_func, store_func, location_func)
 
     The routine returns nothing.
 */
-unsigned int (*alloc_func) ();
-void (*free_func) ();
-void (*store_func) ();
-void (*location_func) ();
 {
-    extern unsigned int (*alloc_ccells_func) ();
-    extern void (*free_ccells_func) ();
-    extern void (*store_ccells_func) ();
-    extern void (*get_location_func) ();
+    extern unsigned int (*obsolete_alloc_ccells_func) ();
+    extern void (*obsolete_free_ccells_func) ();
+    extern void (*obsolete_store_ccells_func) ();
+    extern void (*obsolete_get_location_func) ();
     static char function_name[] = "kcmap_init";
 
-    if (alloc_ccells_func != NULL)
+    if (obsolete_alloc_ccells_func != NULL)
     {
 	(void) fprintf (stderr, "Initialisation already performed\n");
 	a_prog_bug (function_name);
     }
-    alloc_ccells_func = alloc_func;
-    free_ccells_func = free_func;
-    store_ccells_func = store_func;
-    get_location_func = location_func;
-    kcmap_add_RGB_func ("Greyscale1", cf_greyscale1, 0, 0);
-#ifndef OS_VXMVX
-    kcmap_add_RGB_func ("Greyscale2", cf_greyscale2, 0, 0);
-    kcmap_add_RGB_func ("Random Grey", cf_random_grey, 0, 0);
-    kcmap_add_RGB_func ("Random Pseudocolour", cf_random_pseudocolour, 0, 0);
-    kcmap_add_RGB_func ("mirp", cf_mirp, 0, 0);
-    kcmap_add_RGB_func ("Glynn Rogers1", cf_rainbow1, 0, 0);
-    kcmap_add_RGB_func ("Glynn Rogers2", cf_rainbow2, 0, 0);
-    kcmap_add_RGB_func ("Glynn Rogers3", cf_rainbow3, 0, 0);
-    kcmap_add_RGB_func ("Cyclic 1", cf_cyclic1, 0, 0);
-    kcmap_add_RGB_func ("Velocity: Compensating Tones",
-			  cf_velocity_compensating_tones, 0, 0);
-    kcmap_add_RGB_func ("Compressed Colourmap 3R2G2B",
-			  cf_compressed_colourmap_3r2g2b, 128, 128);
-
-    kcmap_add_RGB_func ("Background", cf_background, 0, 0);
-    kcmap_add_RGB_func ("Heat",       cf_heat,       0, 0);
-    kcmap_add_RGB_func ("Isophot",    cf_isophot,    0, 0);
-    kcmap_add_RGB_func ("Mono",       cf_mono,       0, 0);
-    kcmap_add_RGB_func ("Mousse",     cf_mousse,     0, 0);
-    kcmap_add_RGB_func ("Rainbow",    cf_rainbow,    0, 0);
-    kcmap_add_RGB_func ("Random",     cf_random,     0, 0);
-    kcmap_add_RGB_func ("RGB",        cf_rgb,        0, 0);
-    kcmap_add_RGB_func ("Ronekers",   cf_ronekers,   0, 0);
-    kcmap_add_RGB_func ("Smooth",     cf_smooth,     0, 0);
-    kcmap_add_RGB_func ("Staircase",  cf_staircase,  0, 0);
-#endif
-    conn_register_server_protocol ("colourmap_indices", PROTOCOL_VERSION, 0,
-				   register_new_cmap_indices_slave,
-				   ( flag (*) () ) NULL, ( void (*) () ) NULL);
-    conn_register_client_protocol ("colourmap_indices", PROTOCOL_VERSION, 1,
-				   verify_slave_cmap_connection,
-				   register_cmap_indices_connection,
-				   read_cmap_indices,
-				   register_cmap_connection_close);
-    conn_register_server_protocol ("full_colourmap", PROTOCOL_VERSION, 0,
-				   register_new_full_cmap_slave,
-				   ( flag (*) () ) NULL,
-				   ( void (*) () ) NULL);
-    conn_register_client_protocol ("full_colourmap", PROTOCOL_VERSION, 1,
-				   verify_slave_cmap_connection,
-				   register_full_cmap_connection,
-				   read_full_cmap,
-				   register_cmap_connection_close);
+    (void) fprintf (stderr,
+		    "WARNING: the <%s> routine will be removed in Karma ",
+		    function_name);
+    (void)fprintf(stderr,
+		  "version 2.0\nUse the <kcmap_va_create> routine instead.\n");
+    obsolete_alloc_ccells_func = alloc_func;
+    obsolete_free_ccells_func = free_func;
+    obsolete_store_ccells_func = store_func;
+    obsolete_get_location_func = location_func;
 }   /*  End Function kcmap_init  */
 
 /*PUBLIC_FUNCTION*/
-void kcmap_add_RGB_func (name, func, min_cells, max_cells)
+void kcmap_add_RGB_func (char *name, void (*func) (), unsigned int min_cells,
+			 unsigned int max_cells)
 /*  This routine will register a named function which will compute RGB
     intensity values for a colourmap. This function is typically called in
     response to a call to  kcmap_modify  .
@@ -381,10 +567,6 @@ void kcmap_add_RGB_func (name, func, min_cells, max_cells)
     defined.
     The routine returns nothing.
 */
-char *name;
-void (*func) ();
-unsigned int min_cells;
-unsigned int max_cells;
 {
     struct cmap_func_type *new_entry;
     extern struct cmap_func_type *cmap_functions;
@@ -395,21 +577,22 @@ unsigned int max_cells;
     {
 	m_abort (function_name, "new function entry");
     }
-    (*new_entry).type = CMAP_FUNC_TYPE_RGB;
-    if ( ( (*new_entry).name = st_dup (name) ) == NULL )
+    new_entry->type = CMAP_FUNC_TYPE_RGB;
+    if ( ( new_entry->name = st_dup (name) ) == NULL )
     {
 	m_abort (function_name, "new function entry name");
     }
-    (*new_entry).func = func;
-    (*new_entry).min_cells = min_cells;
-    (*new_entry).max_cells = max_cells;
+    new_entry->func = func;
+    new_entry->min_cells = min_cells;
+    new_entry->max_cells = max_cells;
     /*  Insert at top of list  */
-    (*new_entry).next = cmap_functions;
+    new_entry->next = cmap_functions;
     cmap_functions = new_entry;
 }   /*  End Function kcmap_add_RGB_func  */
 
-/*PUBLIC_FUNCTION*/
-Kcolourmap kcmap_create (name, num_cells, tolerant, dpy_handle)
+/*OBSOLETE_FUNCTION*/
+Kcolourmap kcmap_create (char *name, unsigned int num_cells, flag tolerant,
+			 Kdisplay dpy_handle)
 /*  This routine will create a high level colourmap.
     The function used to initialise the colour values must be pointed to by
     name  .If this is NULL, the default "Greyscale1" function is used.
@@ -422,131 +605,54 @@ Kcolourmap kcmap_create (name, num_cells, tolerant, dpy_handle)
     this value depends on the lower level graphics library used.
     The routine returns a colourmap on success, else it returns NULL.
 */
-char *name;
-unsigned int num_cells;
-flag tolerant;
-Kdisplay dpy_handle;
 {
-    Kcolourmap cmap;
-    unsigned int min_cells;
-    struct cmap_func_type *cmap_func;
-    extern Kcolourmap shareable_colourmap;
-    extern Kcolourmap slaveable_colourmap;
-    extern unsigned int (*alloc_ccells_func) ();
-    static char *def_name = "Greyscale1";
+    extern unsigned int (*obsolete_alloc_ccells_func) ();
+    extern void (*obsolete_free_ccells_func) ();
+    extern void (*obsolete_store_ccells_func) ();
+    extern void (*obsolete_get_location_func) ();
     static char function_name[] = "kcmap_create";
 
-    if (alloc_ccells_func == NULL)
+    if (obsolete_alloc_ccells_func == NULL)
     {
 	(void) fprintf (stderr,
 			"Lower level display routines not registered yet\n");
 	a_prog_bug (function_name);
     }
-    if (num_cells < 2)
-    {
-	(void) fprintf (stderr, "Must specify colourmap size of at least 2\n");
-	a_prog_bug (function_name);
-    }
-    if (name == NULL) name = def_name;
-    /*  Verify if colourmap function exists  */
-    if ( (cmap_func = get_cmap_function (name) ) == NULL )
-    {
-	(void) fprintf (stderr, "Colourmap function: \"%s\" does not exist\n",
-			name);
-	a_prog_bug (function_name);
-    }
-    if ( (cmap_func->min_cells > 1) && 
-	(num_cells < cmap_func->min_cells) )
-    {
-	(void) fprintf (stderr, "Requested number of cells: %u is less than\n",
-			num_cells);
-	(void) fprintf (stderr,
-			"minimum number of cells: %u for colourmap function: %s\n",
-			cmap_func->min_cells, cmap_func->name);
-	return (NULL);
-    }
-    if ( (cmap_func->max_cells > 1) && 
-	(num_cells > cmap_func->max_cells) )
-    {
-	(void) fprintf (stderr,
-			"Requested number of cells: %u is greater than\n",
-			num_cells);
-	(void) fprintf (stderr,
-			"maximum number of cells: %u for colourmap function: %s\n",
-			cmap_func->max_cells, cmap_func->name);
-	return (NULL);
-    }
-    if ( ( cmap = (Kcolourmap) m_alloc (sizeof *cmap) ) == NULL )
-    {
-	m_error_notify (function_name, "colourmap");
-	return (NULL);
-    }
-    cmap->dpy_handle = dpy_handle;
-    cmap->size = 0;
-    cmap->pixel_values = NULL;
-    cmap->intensities = NULL;
-    cmap->magic_number = MAGIC_NUMBER;
-    if (tolerant)
-    {
-	min_cells = cmap_func->min_cells;
-    }
-    else
-    {
-	min_cells = num_cells;
-    }
-    if (change_cmap_size (cmap, num_cells, min_cells, FALSE,
-			  (unsigned short *) NULL,
-			  (packet_desc *) NULL, (char *) NULL) != TRUE)
-    {
-	m_error_notify (function_name, "array of pixel values");
-	cmap->magic_number = 0;
-	m_free ( (char *) cmap );
-	return (NULL);
-    }
-    cmap->modify_func_name = cmap_func->name;
-    cmap->resize_list = NULL;
-    cmap->master = NULL;
-    cmap->modifiable = TRUE;
-    /* Must initialise the reverse flag prior to  kcmap_modify  being called */
-    cmap->reverse = FALSE;
-    cmap->invert = FALSE;
-    kcmap_modify (cmap, (double) 0.5, (double) 0.5, (void *) NULL);
-    if (shareable_colourmap == NULL)
-    {
-	/*  Register this colourmap as the shareable one  */
-	shareable_colourmap = cmap;
-    }
-    if (slaveable_colourmap == NULL)
-    {
-	/*  Register this colourmap as the slaveable one  */
-	slaveable_colourmap = cmap;
-    }
-    return (cmap);
+    (void) fprintf (stderr,
+		    "WARNING: the <%s> routine will be removed in Karma ",
+		    function_name);
+    (void)fprintf(stderr,
+		  "version 2.0\nUse the <kcmap_va_create> routine instead.\n");
+    return ( kcmap_va_create (name, num_cells, tolerant, dpy_handle,
+			      obsolete_alloc_ccells_func,
+			      obsolete_free_ccells_func,
+			      obsolete_store_ccells_func,
+			      obsolete_get_location_func,
+			      KCMAP_ATT_END) );
 }   /*  End Function kcmap_create  */
 
 /*PUBLIC_FUNCTION*/
 KCallbackFunc kcmap_register_resize_func (Kcolourmap cmap,
 					  void (*resize_func) (), void *info)
-/*  This routine will register a resize function for a high level colourmap.
-    The resize function will be called whenever the colourmap is resized.
+/*  [PURPOSE] This routine will register a resize function for a high level
+    colourmap. The resize function will be called whenever the colourmap is
+    resized. If the colourmap is a software colourmap, the resize function is
+    called whenever the colour values change.
     Many resize functions may be registered per colourmap. The first
     function registered is the first function called upon resize.
-    The colourmap must be given by  cmap  .
-    The function which is called when the colourmap is resized must be pointed
-    to by  resize_func  .
+    <cmap> The colourmap.
+    <resize_func> The function which is called when the colourmap is resized.
     The interface to this routine is as follows:
-
-    void resize_func (cmap, info)
-    *   This routine registers a change in the size of a colourmap.
-        The colourmap must be given by  cmap  .
-	The arbitrary colourmap information pointer is pointed to by  info  .
-	The routine returns nothing.
+    [<pre>]
+    void resize_func (Kcolourmap cmap, void **info)
+    *   [PURPOSE] This routine registers a change in the size of a colourmap.
+        <cmap> The colourmap.
+	<info> A pointer to the arbitrary colourmap information pointer.
+	[RETURNS] Nothing.
     *
-    Kcolourmap cmap;
-    void **info;
-
-    The initial arbitrary colourmap information pointer must be given by  info
-    The routine returns a KCallbackFunc object.
+    [</pre>]
+    <info> The initial arbitrary colourmap information pointer.
+    [RETURNS] A KCallbackFunc object.
 */
 {
     static char function_name[] = "kcmap_register_resize_func";
@@ -559,7 +665,8 @@ KCallbackFunc kcmap_register_resize_func (Kcolourmap cmap,
 }   /*  End Function kcmap_register_resize_func  */
 
 /*PUBLIC_FUNCTION*/
-flag kcmap_change (cmap, new_name, num_cells, tolerant)
+flag kcmap_change (Kcolourmap cmap, char *new_name, unsigned int num_cells,
+		   flag tolerant)
 /*  This routine will change the active function (algorithm) used to calculate
     the colours in a colourmap and the size of the colourmap.
     The colourmap must be given by  cmap  .
@@ -572,10 +679,6 @@ flag kcmap_change (cmap, new_name, num_cells, tolerant)
     fail if it could not allocatate all required colourcells.
     The routine returns TRUE on success, else it returns FALSE.
 */
-Kcolourmap cmap;
-char *new_name;
-unsigned int num_cells;
-flag tolerant;
 {
     unsigned int orig_num_cells = num_cells;
     unsigned int min_cells;
@@ -591,7 +694,7 @@ flag tolerant;
     if ( (cmap->master != NULL) && (new_name != NULL) )
     {
 	/*  Slave colourmap: close connection  */
-	if (conn_close (cmap->master) != TRUE)
+	if ( !conn_close (cmap->master) )
 	{
 	    (void) fprintf (stderr, "Error closing slave connection\n");
 	    return (FALSE);
@@ -673,18 +776,11 @@ flag tolerant;
 	    return (FALSE);
 	}
 	/*  num_cells  is within legal range  */
-	if (tolerant)
-	{
-	    min_cells = cmap_func->min_cells;
-	}
-	else
-	{
-	    min_cells = num_cells;
-	}
+	min_cells = tolerant ? cmap_func->min_cells : num_cells;
     }
-    if (change_cmap_size (cmap, num_cells, min_cells, TRUE,
-			  (unsigned short *) NULL,
-			  (packet_desc *) NULL, (char *) NULL) != TRUE)
+    if ( !change_cmap_size (cmap, num_cells, min_cells, TRUE,
+			    (unsigned short *) NULL,
+			    (packet_desc *) NULL, (char *) NULL) )
     {
 	if (num_cells > 1)
 	{
@@ -718,7 +814,6 @@ void kcmap_modify (Kcolourmap cmap, double x, double y, void *var_param)
     unsigned int count, far;
     unsigned short *intensities;
     struct cmap_func_type *cmap_func;
-    extern void (*store_ccells_func) ();
     static char function_name[] = "kcmap_modify";
 
     VERIFY_COLOURMAP (cmap);
@@ -778,11 +873,14 @@ void kcmap_modify (Kcolourmap cmap, double x, double y, void *var_param)
 	    intensities[count * 3 + 2] = max - intensities[count * 3 + 2];
 	}
     }
-    (*store_ccells_func) (cmap->size, cmap->pixel_values,
-			  intensities, intensities + 1, intensities + 2, 3,
-			  cmap->dpy_handle);
+    if (!cmap->software)
+    {
+	(*cmap->store_func) (cmap->size, cmap->pixel_values,
+			     intensities, intensities + 1, intensities + 2, 3,
+			     cmap->dpy_handle);
+    }
     /*  Transmit this colourmap to any slaves of it  */
-    transmit_cmap_modify (cmap);
+    notify_cmap_modify (cmap);
 }   /*  End Function kcmap_modify  */
 
 /*PUBLIC_FUNCTION*/
@@ -802,7 +900,7 @@ char **kcmap_list_funcs ()
     static char function_name[] = "kcmap_list_funcs";
  
     for (num_funcs = 0, entry = cmap_functions; entry != NULL;
-	 ++num_funcs, entry = (*entry).next);
+	 ++num_funcs, entry = entry->next);
     if (num_funcs < 1)
     {
 	(void) fprintf (stderr, "No colourmap functions!\n");
@@ -814,23 +912,22 @@ char **kcmap_list_funcs ()
 	m_abort (function_name, "array of name pointers");
     }
     for (count = num_funcs - 1, entry = cmap_functions; entry != NULL;
-	 --count, entry = (*entry).next)
+	 --count, entry = entry->next)
     {
-	names[count] = (*entry).name;
+	names[count] = entry->name;
     }
     names[num_funcs] = NULL;
     return (names);
 }   /*  End Function kcmap_list_funcs  */
 
 /*PUBLIC_FUNCTION*/
-char *kcmap_get_active_func (cmap)
+char *kcmap_get_active_func (Kcolourmap cmap)
 /*  This routine will get the name of the active colour function for a
     colourmap.
     The colourmap must be given by  cmap  .
     The routine returns a pointer to the name of the colour function. This
     name must not be freed.
 */
-Kcolourmap cmap;
 {
     static char function_name[] = "kcmap_get_active_func";
 
@@ -839,7 +936,7 @@ Kcolourmap cmap;
 }   /*  End Function kcmap_get_active_func  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int kcmap_get_pixels (cmap, pixel_values)
+unsigned int kcmap_get_pixels (Kcolourmap cmap, unsigned long **pixel_values)
 /*  This routine will determine the number of colourcells in a colourmap.
     The colourmap must be given by  cmap  .
     The routine will write a pointer to the array of pixel values to the 
@@ -847,32 +944,30 @@ unsigned int kcmap_get_pixels (cmap, pixel_values)
     here.
     The routine returns the number of colourcells allocated.
 */
-Kcolourmap cmap;
-unsigned long **pixel_values;
 {
     static char function_name[] = "kcmap_get_pixels";
 
     VERIFY_COLOURMAP (cmap);
-    if (pixel_values != NULL)
-    {
-	*pixel_values = cmap->pixel_values;
-    }
+    if (pixel_values != NULL) *pixel_values = cmap->pixel_values;
     return (cmap->size);
 }   /*  End Function kcmap_get_pixels  */
 
 /*PUBLIC_FUNCTION*/
-unsigned long kcmap_get_pixel (cmap, index)
+unsigned long kcmap_get_pixel (Kcolourmap cmap, unsigned int index)
 /*  This routine will get a numbered pixel value from a colourmap.
     The colourmap must be given by  cmap  .
     The index of the pixel must be given by  index  .
     The routine returns the pixel value.
 */
-Kcolourmap cmap;
-unsigned int index;
 {
     static char function_name[] = "kcmap_get_pixel";
 
     VERIFY_COLOURMAP (cmap);
+    if (cmap->software)
+    {
+	(void) fprintf (stderr, "No pixels in a software colourmap!\n");
+	a_prog_bug (function_name);
+    }
     if (index >= cmap->size)
     {
 	(void) fprintf (stderr,
@@ -884,7 +979,7 @@ unsigned int index;
 }   /*  End Function kcmap_get_pixel  */
 
 /*PUBLIC_FUNCTION*/
-void kcmap_prepare_for_slavery (cmap)
+void kcmap_prepare_for_slavery (Kcolourmap cmap)
 /*  This routine will register a colourmap to be the choosen colourmap for
     subsequent attempts to open a slave colourmap connection.
     In order to make the colourmap a slave, a subsequent call to
@@ -892,7 +987,6 @@ void kcmap_prepare_for_slavery (cmap)
     The colourmap must be given by  cmap  .
     The routine returns nothing.
 */
-Kcolourmap cmap;
 {
     extern Kcolourmap slaveable_colourmap;
     static char function_name[] = "kcmap_prepare_for_slavery";
@@ -902,7 +996,8 @@ Kcolourmap cmap;
 }   /*  End Function kcmap_prepare_for_slavery  */
 
 /*PUBLIC_FUNCTION*/
-flag kcmap_copy_to_struct (cmap, top_pack_desc, top_packet)
+flag kcmap_copy_to_struct (Kcolourmap cmap, packet_desc **top_pack_desc,
+			   char **top_packet)
 /*  This routine will copy the colour data in a colourmap into a newly
     allocated Karma data structure. This data structure may be subsequently
     deallocated.
@@ -913,9 +1008,6 @@ flag kcmap_copy_to_struct (cmap, top_pack_desc, top_packet)
     the storage pointed to by  top_packet  .
     The routine returns TRUE on success, else it returns FALSE.
 */
-Kcolourmap cmap;
-packet_desc **top_pack_desc;
-char **top_packet;
 {
     static char function_name[] = "kcmap_copy_to_struct";
 
@@ -940,8 +1032,8 @@ char **top_packet;
 	*top_pack_desc = NULL;
 	return (FALSE);
     }
-    if (ds_copy_data (cmap->top_pack_desc, cmap->top_packet,
-		      *top_pack_desc, *top_packet) != TRUE)
+    if ( !ds_copy_data (cmap->top_pack_desc, cmap->top_packet,
+			*top_pack_desc, *top_packet) )
     {
 	(void) fprintf (stderr, "Data structure copy not identical\n");
 	a_prog_bug (function_name);
@@ -950,7 +1042,8 @@ char **top_packet;
 }   /*  End Function kcmap_copy_to_struct  */
 
 /*PUBLIC_FUNCTION*/
-flag kcmap_copy_from_struct (cmap, top_pack_desc, top_packet)
+flag kcmap_copy_from_struct (Kcolourmap cmap, packet_desc *top_pack_desc,
+			     char *top_packet)
 /*  This routine will copy the colour data in a Karma data structure into a
     colourmap. If the colourmap changes size, then the  resize_func  registered
     is called.
@@ -959,16 +1052,12 @@ flag kcmap_copy_from_struct (cmap, top_pack_desc, top_packet)
     The top level packet must be pointed to by  top_packet  .
     The routine returns TRUE on success, else it returns FALSE.
 */
-Kcolourmap cmap;
-packet_desc *top_pack_desc;
-char *top_packet;
 {
     flag reordering_done;
     unsigned int colourmap_size;
     unsigned short *colour_array;
     packet_desc *pack_desc;
     char *packet;
-    extern void (*store_ccells_func) ();
     static char function_name[] = "kcmap_copy_from_struct";
 
     VERIFY_COLOURMAP (cmap);
@@ -984,7 +1073,7 @@ char *top_packet;
 	ds_dealloc_packet (pack_desc, NULL);
 	return (FALSE);
     }
-    if (ds_copy_data (top_pack_desc, top_packet, pack_desc, packet) != TRUE)
+    if ( !ds_copy_data (top_pack_desc, top_packet, pack_desc, packet) )
     {
 	(void) fprintf (stderr, "Data structure copy not identical\n");
 	a_prog_bug (function_name);
@@ -1005,32 +1094,35 @@ char *top_packet;
     if (cmap->master != NULL)
     {
 	/*  Slave colourmap: close connection  */
-	if (conn_close (cmap->master) != TRUE)
+	if ( !conn_close (cmap->master) )
 	{
 	    (void) fprintf (stderr, "Error closing slave connection\n");
 	    ds_dealloc_packet (pack_desc, packet);
 	    return (FALSE);
 	}
     }
-    if (change_cmap_size (cmap, colourmap_size, colourmap_size, TRUE,
-			  colour_array, pack_desc, packet) != TRUE)
+    if ( !change_cmap_size (cmap, colourmap_size, colourmap_size, TRUE,
+			    colour_array, pack_desc, packet) )
     {
 	(void) fprintf (stderr, "Could not reallocate colourmap\n");
 	ds_dealloc_packet (pack_desc, packet);
 	return (FALSE);
     }
-    (*store_ccells_func) (cmap->size, cmap->pixel_values,
-			  cmap->intensities, cmap->intensities + 1,
-			  cmap->intensities + 2, 3,
-			  cmap->dpy_handle);
+    if (!cmap->software)
+    {
+	(*cmap->store_func) (cmap->size, cmap->pixel_values,
+			     cmap->intensities, cmap->intensities + 1,
+			     cmap->intensities + 2, 3,
+			     cmap->dpy_handle);
+    }
     cmap->modifiable = FALSE;
     /*  Transmit this colourmap to any slaves of it  */
-    transmit_cmap_modify (cmap);
+    notify_cmap_modify (cmap);
     return (TRUE);
 }   /*  End Function kcmap_copy_from_struct  */
 
 /*PUBLIC_FUNCTION*/
-unsigned short *kcmap_get_rgb_values (cmap, size)
+unsigned short *kcmap_get_rgb_values (Kcolourmap cmap, unsigned int *size)
 /*  This routine will return the RGB values in a colourmap. The colour values
     are arranged in packets of Red, Green and Blue values.
     The colourmap must be given by  cmap  .
@@ -1040,10 +1132,7 @@ unsigned short *kcmap_get_rgb_values (cmap, size)
     be freed with  m_free  .
     On failure it returns NULL.
 */
-Kcolourmap cmap;
-unsigned int *size;
 {
-    unsigned int count;
     unsigned short *intensities;
     static char function_name[] = "kcmap_get_rgb_values";
 
@@ -1066,70 +1155,74 @@ unsigned int *size;
 }   /*  End Function kcmap_get_rgb_values  */
 
 /*PUBLIC_FUNCTION*/
-void kcmap_get_attributes (cmap, va_alist)
-/*  This routine will get the attributes for a colourmap.
-    The colourmap must be given by  cmap  .
-    The list of parameter attribute-key attribute-value pairs must follow.
-    This list must be terminated with the value  KCMAP_ATT_END  .
-    The routine returns nothing.
+void kcmap_get_attributes (Kcolourmap cmap, ...)
+/*  [PURPOSE] This routine will get the attributes for a colourmap.
+    <cmap> The colourmap.
+    [VARARGS] The optional list of parameter attribute-key attribute-value
+    pairs must follow. This list must be terminated with the value
+    KCMAP_ATT_END.
+    [RETURNS] Nothing.
 */
-Kcolourmap cmap;
-va_dcl
 {
-    va_list arg_pointer;
+    va_list argp;
     unsigned int att_key;
     static char function_name[] = "kcmap_get_attributes";
 
-    va_start (arg_pointer);
+    va_start (argp, cmap);
     VERIFY_COLOURMAP (cmap);
-    while ( ( att_key = va_arg (arg_pointer, unsigned int) ) != KCMAP_ATT_END )
+    while ( ( att_key = va_arg (argp, unsigned int) ) != KCMAP_ATT_END )
     {
 	switch (att_key)
 	{
 	  case KCMAP_ATT_REVERSE:
-	    *( va_arg (arg_pointer, flag *) ) = cmap->reverse;
+	    *( va_arg (argp, flag *) ) = cmap->reverse;
 	    break;
 	  case KCMAP_ATT_INVERT:
-	    *( va_arg (arg_pointer, flag *) ) = cmap->invert;
+	    *( va_arg (argp, flag *) ) = cmap->invert;
+	    break;
+	  case KCMAP_ATT_SOFTWARE:
+	    *( va_arg (argp, flag *) ) = cmap->software;
+	    break;
+	  case KCMAP_ATT_DPY_HANDLE:
+	    *( va_arg (argp, Kdisplay *) ) = cmap->dpy_handle;
 	    break;
 	  default:
 	    (void) fprintf (stderr, "Illegal attribute key: %u\n", att_key);
 	    a_prog_bug (function_name);
 	}
     }
-    va_end (arg_pointer);
+    va_end (argp);
 }   /*  End Function kcmap_get_attributes  */
 
 /*PUBLIC_FUNCTION*/
-void kcmap_set_attributes (cmap, va_alist)
+void kcmap_set_attributes (Kcolourmap cmap, ...)
 /*  [PURPOSE] This routine will set the attributes for a colourmap.
     <cmap> The colourmap.
-    [NOTE] The list of parameter attribute-key attribute-value pairs must
-    follow. This list must be terminated with the value  KCMAP_ATT_END  .
+    [VARARGS] The optional list of parameter attribute-key attribute-value
+    pairs must follow. This list must be terminated with the value
+    KCMAP_ATT_END.
     [NOTE] The colourmap is not recomputed: the effect is delayed.
     [RETURNS] Nothing.
 */
-Kcolourmap cmap;
-va_dcl
 {
-    va_list arg_pointer;
+    va_list argp;
     flag bool;
     unsigned int att_key;
     static char function_name[] = "kcmap_set_attributes";
 
-    va_start (arg_pointer);
+    va_start (argp, cmap);
     VERIFY_COLOURMAP (cmap);
-    while ( ( att_key = va_arg (arg_pointer, unsigned int) ) != KCMAP_ATT_END )
+    while ( ( att_key = va_arg (argp, unsigned int) ) != KCMAP_ATT_END )
     {
 	switch (att_key)
 	{
 	  case KCMAP_ATT_REVERSE:
-	    bool = va_arg (arg_pointer, flag);
+	    bool = va_arg (argp, flag);
 	    FLAG_VERIFY (bool);
 	    cmap->reverse = bool;
 	    break;
 	  case KCMAP_ATT_INVERT:
-	    bool = va_arg (arg_pointer, flag);
+	    bool = va_arg (argp, flag);
 	    FLAG_VERIFY (bool);
 	    cmap->invert = bool;
 	    break;
@@ -1138,26 +1231,79 @@ va_dcl
 	    a_prog_bug (function_name);
 	}
     }
-    va_end (arg_pointer);
+    va_end (argp);
 }   /*  End Function kcmap_set_attributes  */
 
 
 /*  Private routines follow  */
 
-static struct cmap_func_type *get_cmap_function (name)
+static void initialise ()
+/*  [PURPOSE] This routine will initialise the package.
+    [RETURNS] Nothing.
+*/
+{
+    static flag initialised = FALSE;
+
+    if (initialised) return;
+    initialised = TRUE;
+    kcmap_add_RGB_func ("Greyscale1", cf_greyscale1, 0, 0);
+    kcmap_add_RGB_func ("Greyscale2", cf_greyscale2, 0, 0);
+    kcmap_add_RGB_func ("Random Grey", cf_random_grey, 0, 0);
+    kcmap_add_RGB_func ("Random Pseudocolour", cf_random_pseudocolour, 0, 0);
+    kcmap_add_RGB_func ("mirp", cf_mirp, 0, 0);
+    kcmap_add_RGB_func ("Glynn Rogers1", cf_rainbow1, 0, 0);
+    kcmap_add_RGB_func ("Glynn Rogers2", cf_rainbow2, 0, 0);
+    kcmap_add_RGB_func ("Glynn Rogers3", cf_rainbow3, 0, 0);
+    kcmap_add_RGB_func ("Cyclic 1", cf_cyclic1, 0, 0);
+    kcmap_add_RGB_func ("Velocity: Compensating Tones",
+			  cf_velocity_compensating_tones, 0, 0);
+    kcmap_add_RGB_func ("Compressed Colourmap 3R2G2B",
+			  cf_compressed_colourmap_3r2g2b, 128, 128);
+
+    kcmap_add_RGB_func ("Background", cf_background, 0, 0);
+    kcmap_add_RGB_func ("Heat",       cf_heat,       0, 0);
+    kcmap_add_RGB_func ("Isophot",    cf_isophot,    0, 0);
+    kcmap_add_RGB_func ("Mono",       cf_mono,       0, 0);
+    kcmap_add_RGB_func ("Mousse",     cf_mousse,     0, 0);
+    kcmap_add_RGB_func ("Rainbow",    cf_rainbow,    0, 0);
+    kcmap_add_RGB_func ("Random",     cf_random,     0, 0);
+    kcmap_add_RGB_func ("RGB",        cf_rgb,        0, 0);
+    kcmap_add_RGB_func ("Ronekers",   cf_ronekers,   0, 0);
+    kcmap_add_RGB_func ("Smooth",     cf_smooth,     0, 0);
+    kcmap_add_RGB_func ("Staircase",  cf_staircase,  0, 0);
+    kcmap_add_RGB_func ("Mandelbrot", cf_mandelbrot, 0, 0);
+    conn_register_server_protocol ("colourmap_indices", PROTOCOL_VERSION, 0,
+				   register_new_cmap_indices_slave,
+				   ( flag (*) () ) NULL, ( void (*) () ) NULL);
+    conn_register_client_protocol ("colourmap_indices", PROTOCOL_VERSION, 1,
+				   verify_indices_slave_cmap_connection,
+				   register_cmap_indices_connection,
+				   read_cmap_indices,
+				   register_cmap_connection_close);
+    conn_register_server_protocol ("full_colourmap", PROTOCOL_VERSION, 0,
+				   register_new_full_cmap_slave,
+				   ( flag (*) () ) NULL,
+				   ( void (*) () ) NULL);
+    conn_register_client_protocol ("full_colourmap", PROTOCOL_VERSION, 1,
+				   verify_full_slave_cmap_connection,
+				   register_full_cmap_connection,
+				   read_full_cmap,
+				   register_cmap_connection_close);
+}   /*  End Function initialise  */
+
+static struct cmap_func_type *get_cmap_function (char *name)
 /*  This routine will get the named colourmap function
     The name must be pointed to by  name  .
     The routine returns a pointer to a struct on success, else it returns NULL
     (indicating there is no colourmap function with that name).
 */
-char *name;
 {
     struct cmap_func_type *entry;
     extern struct cmap_func_type *cmap_functions;
 
-    for (entry = cmap_functions; entry != NULL; entry = (*entry).next)
+    for (entry = cmap_functions; entry != NULL; entry = entry->next)
     {
-	if (strcmp (name, (*entry).name) == 0)
+	if (strcmp (name, entry->name) == 0)
 	{
 	    /*  Found it  */
 	    return (entry);
@@ -1169,7 +1315,7 @@ char *name;
 
 /*  Routines related to incoming colourmap connections  */
 
-static flag register_new_cmap_indices_slave (connection, info)
+static flag register_new_cmap_indices_slave (Connection connection,void **info)
 /*  This routine will register the connection of a new colourmap_indices client
     The connection must be given by  connection  .
     Any appropriate information is pointed to by  info  (unused).
@@ -1181,8 +1327,6 @@ static flag register_new_cmap_indices_slave (connection, info)
     The routine returns TRUE on success, else it returns FALSE (indicating that
     the connection should be closed).
 */
-Connection connection;
-void **info;
 {
     Channel channel;
     unsigned long serv_display_num;
@@ -1191,12 +1335,12 @@ void **info;
     char false = FALSE;
     char true = TRUE;
     extern Kcolourmap shareable_colourmap;
-    extern void (*get_location_func) ();
     extern char *sys_errlist[];
 
     channel = conn_get_channel (connection);
     if ( (shareable_colourmap == NULL) ||
-	(shareable_colourmap->master != NULL) )
+	(shareable_colourmap->master != NULL) ||
+	shareable_colourmap->software )
     {
 	/*  Cannot service requests: tell client  */
 	if (ch_write (channel, &false, 1) < 1)
@@ -1205,7 +1349,7 @@ void **info;
 			    sys_errlist[errno]);
 	    return (FALSE);
 	}
-	if (ch_flush (channel) != TRUE)
+	if ( !ch_flush (channel) )
 	{
 	    (void) fprintf (stderr, "Error flushing channel\t%s\n",
 			    sys_errlist[errno]);
@@ -1219,18 +1363,18 @@ void **info;
 	return (FALSE);
     }
     /*  Determine X server we are connected to  */
-    (*get_location_func) (shareable_colourmap->dpy_handle,
-			  &serv_hostaddr, &serv_display_num);
+    (*shareable_colourmap->location_func) (shareable_colourmap->dpy_handle,
+					   &serv_hostaddr, &serv_display_num);
     /*  Tell client what X Windows display we are connected to  */
-    if (pio_write32 (channel, serv_hostaddr) != TRUE)
+    if ( !pio_write32 (channel, serv_hostaddr) )
     {
 	return (FALSE);
     }
-    if (pio_write32 (channel, serv_display_num) != TRUE)
+    if ( !pio_write32 (channel, serv_display_num) )
     {
 	return (FALSE);
     }
-    if (ch_flush (channel) != TRUE)
+    if ( !ch_flush (channel) )
     {
 	(void) fprintf (stderr, "Error flushing channel\t%s\n",
 			sys_errlist[errno]);
@@ -1243,13 +1387,13 @@ void **info;
 			sys_errlist[errno]);
 	return (FALSE);
     }
-    if (accepted != TRUE)
+    if (!accepted)
     {
 	/*  Connection rejected by client  */
 	return (FALSE);
     }
     /*  Client is happy about this connection: send pixel values  */
-    if (write_cmap_indices (connection, shareable_colourmap) != TRUE)
+    if ( !write_cmap_indices (connection, shareable_colourmap) )
     {
 	(void) fprintf (stderr, "Error writing pixels\n");
 	return (FALSE);
@@ -1258,7 +1402,7 @@ void **info;
     return (TRUE);
 }   /*  End Function register_new_cmap_indices_slave  */
 
-static flag register_new_full_cmap_slave (connection, info)
+static flag register_new_full_cmap_slave (Connection connection, void **info)
 /*  This routine will register the connection of a new full_colourmap client
     The connection must be given by  connection  .
     Any appropriate information is pointed to by  info  (unused).
@@ -1266,8 +1410,6 @@ static flag register_new_full_cmap_slave (connection, info)
     The routine returns TRUE on success, else it returns FALSE (indicating that
     the connection should be closed).
 */
-Connection connection;
-void **info;
 {
     Channel channel;
     char false = FALSE;
@@ -1286,7 +1428,7 @@ void **info;
 			    sys_errlist[errno]);
 	    return (FALSE);
 	}
-	if (ch_flush (channel) != TRUE)
+	if ( !ch_flush (channel) )
 	{
 	    (void) fprintf (stderr, "Error flushing channel\t%s\n",
 			    sys_errlist[errno]);
@@ -1299,8 +1441,7 @@ void **info;
 			sys_errlist[errno]);
 	return (FALSE);
     }
-    if (write_full_cmap (connection, shareable_colourmap)
-	!= TRUE)
+    if ( !write_full_cmap (connection, shareable_colourmap) )
     {
 	(void) fprintf (stderr, "Error writing colourcell definitions\n");
 	return (FALSE);
@@ -1312,9 +1453,9 @@ void **info;
 
 /*  Routines related to outgoing colourmap connections  */
 
-static flag verify_slave_cmap_connection (info)
+static flag verify_indices_slave_cmap_connection (void **info)
 /*   This routine will validate whether it is appropriate to open a slave
-     colourmap connection.
+     colourmap indicies connection.
      The routine will write the slaveable colourmap to the storage
      pointed to by  info  .The pointer value written here will be passed
      to the other routines.
@@ -1323,7 +1464,40 @@ static flag verify_slave_cmap_connection (info)
      NOTE: Even if this routine is called and returns TRUE, there is no
      guarantee that the connection will be subsequently opened.
 */
-void **info;
+{
+    extern Kcolourmap slaveable_colourmap;
+
+    if (slaveable_colourmap == NULL)
+    {
+	(void) fprintf (stderr, "No slaveable colourmap registered\n");
+	return (FALSE);
+    }
+    if (slaveable_colourmap->master != NULL)
+    {
+	(void) fprintf (stderr, "Slaveable colourmap is already a slave\n");
+	return (FALSE);
+    }
+    if (slaveable_colourmap->software)
+    {
+	(void) fprintf (stderr,
+			"Slaveable colourmap is a software colourmap\n");
+	return (FALSE);
+    }
+    *info = (void *) slaveable_colourmap;
+    return (TRUE);
+}   /*  End Function verify_indices_slave_cmap_connection  */
+
+static flag verify_full_slave_cmap_connection (void **info)
+/*   This routine will validate whether it is appropriate to open a slave
+     full colourmap connection.
+     The routine will write the slaveable colourmap to the storage
+     pointed to by  info  .The pointer value written here will be passed
+     to the other routines.
+     The routine returns TRUE if the connection should be attempted,
+     else it returns FALSE (indicating the connection should be aborted).
+     NOTE: Even if this routine is called and returns TRUE, there is no
+     guarantee that the connection will be subsequently opened.
+*/
 {
     extern Kcolourmap slaveable_colourmap;
 
@@ -1339,9 +1513,10 @@ void **info;
     }
     *info = (void *) slaveable_colourmap;
     return (TRUE);
-}   /*  End Function verify_slave_cmap_connection  */
+}   /*  End Function verify_full_slave_cmap_connection  */
 
-static flag register_cmap_indices_connection (connection, info)
+static flag register_cmap_indices_connection (Connection connection,
+					      void **info)
 /*  This routine will register the connection to a  colourmap_indices  server
     The connection must be given by  connection  .
     The colourmap to enslave must be pointed to by  info  .
@@ -1353,8 +1528,6 @@ static flag register_cmap_indices_connection (connection, info)
     The routine returns TRUE on success, else it returns FALSE (indicating that
     the connection should be closed).
 */
-Connection connection;
-void **info;
 {
     char true = TRUE;
     char false = FALSE;
@@ -1366,8 +1539,6 @@ void **info;
     unsigned long my_display_inet_addr;
     unsigned long server_display_inet_addr;
     unsigned long server_display_num;
-    extern void (*free_ccells_func) ();
-    extern void (*get_location_func) ();
     extern char *sys_errlist[];
     static char function_name[] = "register_cmap_indices_connection";
 
@@ -1389,13 +1560,13 @@ void **info;
     /* Now see if server is connected to the same X Windows display as we are*/
     /*  Server should soon write the  X Windows display server Internet address
 	and display number it is connected to.  */
-    if (pio_read32 (channel, &server_display_inet_addr) != TRUE)
+    if ( !pio_read32 (channel, &server_display_inet_addr) )
     {
 	(void) fprintf (stderr,
 			"Error reading Internet address of X server of colourmap server\n");
 	return (FALSE);
     }
-    if (pio_read32 (channel, &server_display_num) != TRUE)
+    if ( !pio_read32 (channel, &server_display_num) )
     {
 	(void) fprintf (stderr,
 			"Error reading display number for colourmap server\n");
@@ -1403,8 +1574,8 @@ void **info;
     }
     /*  Server has said which X Display it is using: let's find out what one
 	we are using  */
-    (*get_location_func) (cmap->dpy_handle,
-			  &my_display_inet_addr, &my_display_num);
+    (*cmap->location_func) (cmap->dpy_handle,
+			    &my_display_inet_addr, &my_display_num);
     /*  Now compare my display address and number with that of
 	colourmap server  */
     if ( (server_display_inet_addr != my_display_inet_addr) ||
@@ -1427,7 +1598,7 @@ void **info;
 			sys_errlist[errno]);
 	return (FALSE);
     }
-    if (ch_flush (channel) != TRUE)
+    if ( !ch_flush (channel) )
     {
 	(void) fprintf (stderr, "Error flushing channel\t%s\n",
 			sys_errlist[errno]);
@@ -1441,11 +1612,9 @@ void **info;
     /*  No colourcells need be allocated: free any  */
     if (cmap->size > 0)
     {
-	(*free_ccells_func) (cmap->size,
-			     cmap->pixel_values,
-			     cmap->dpy_handle);
+	(*cmap->free_func) (cmap->size, cmap->pixel_values, cmap->dpy_handle);
     }
-    if (read_cmap_indices (connection, info) != TRUE)
+    if ( !read_cmap_indices (connection, info) )
     {
 	(void) fprintf (stderr, "Error reading pixels\n");
 	(void) kcmap_change (cmap, cmap->modify_func_name, num_cells,TRUE);
@@ -1454,7 +1623,7 @@ void **info;
     return (TRUE);
 }   /*  End Function register_cmap_indices_connection  */
 
-static flag register_full_cmap_connection (connection, info)
+static flag register_full_cmap_connection (Connection connection, void **info)
 /*  This routine will register the connection to a  full_colourmap  server
     The connection must be given by  connection  .
     The colourmap to enslave must be pointed to by  info  .
@@ -1462,14 +1631,11 @@ static flag register_full_cmap_connection (connection, info)
     The routine returns TRUE on success, else it returns FALSE (indicating that
     the connection should be closed).
 */
-Connection connection;
-void **info;
 {
     char server_happy;
     Channel channel;
     Kcolourmap cmap;
     unsigned int num_cells;
-    extern void (*free_ccells_func) ();
     extern char *sys_errlist[];
     static char function_name[] = "register_full_cmap_connection";
 
@@ -1493,24 +1659,22 @@ void **info;
     cmap->master = connection;
     cmap->full_cmap = TRUE;
     cmap->modifiable = FALSE;
-    if (read_full_cmap (connection, info) != TRUE)
+    if ( !read_full_cmap (connection, info) )
     {
 	(void) fprintf (stderr, "Error reading full colourmap\n");
-	(void) kcmap_change (cmap, cmap->modify_func_name, num_cells,TRUE);
+	(void) kcmap_change (cmap, cmap->modify_func_name, num_cells, TRUE);
 	return (FALSE);
     }
     return (TRUE);
 }   /*  End Function register_full_cmap_connection  */
 
-static void register_cmap_connection_close (connection, info)
+static void register_cmap_connection_close (Connection connection, void *info)
 /*  This routine will register the closure of the connection to the colourmap
     server.
     The connection must be given by  connection  .
     The colourmap to emancipate must be pointed to by  info  .
     The routine returns nothing.
 */
-Connection connection;
-void *info;
 {
     unsigned int num_cells;
     Kcolourmap cmap;
@@ -1527,7 +1691,7 @@ void *info;
     cmap->master = NULL;
     num_cells = cmap->size;
     cmap->modifiable = TRUE;
-    if (cmap->full_cmap != TRUE)
+    if (!cmap->full_cmap)
     {
 	/*  Colourmap indicies: deallocate and change  */
 	m_free ( (char *) cmap->pixel_values );
@@ -1538,14 +1702,12 @@ void *info;
     /*  Everything deallocated  */
 }   /*  End Function register_cmap_connection_close  */
 
-static flag write_cmap_indices (connection, cmap)
+static flag write_cmap_indices (Connection connection, Kcolourmap cmap)
 /*  This routine will write an array of pixel values to a connection.
     The connection must be given by  connection  .
     The colourmap must be given by  cmap  .
     The routine returns TRUE on sucess, else it returns FALSE.
 */
-Connection connection;
-Kcolourmap cmap;
 {
     Channel channel;
     unsigned int num_pixels;
@@ -1558,7 +1720,7 @@ Kcolourmap cmap;
     channel = conn_get_channel (connection);
     num_pixels = kcmap_get_pixels (cmap, &pixel_values);
     /*  Write 4 bytes indicicating how many pixel values are coming  */
-    if (pio_write32 (channel, (unsigned long) num_pixels) != TRUE)
+    if ( !pio_write32 (channel, (unsigned long) num_pixels) )
     {
 	(void) fprintf (stderr, "Error writing number of pixels\t%s\n",
 			sys_errlist[errno]);
@@ -1567,7 +1729,7 @@ Kcolourmap cmap;
     /*  Write pixel values  */
     for (pixel_count = 0; pixel_count < num_pixels; ++pixel_count)
     {
-	if (pio_write32 (channel, pixel_values[pixel_count]) != TRUE)
+	if ( !pio_write32 (channel, pixel_values[pixel_count]) )
 	{
 	    (void) fprintf (stderr,
 			    "Error writing pixel value: %u to channel\t%s\n",
@@ -1575,7 +1737,7 @@ Kcolourmap cmap;
 	    return (FALSE);
 	}
     }
-    if (ch_flush (channel) != TRUE)
+    if ( !ch_flush (channel) )
     {
 	(void) fprintf (stderr, "Error flushing channel\t%s\n",
 			sys_errlist[errno]);
@@ -1585,14 +1747,12 @@ Kcolourmap cmap;
     return (TRUE);
 }   /*  End Function write_cmap_indices  */
 
-static flag read_cmap_indices (connection, info)
+static flag read_cmap_indices (Connection connection, void **info)
 /*  This routine will read an array of pixel values from a connection.
     The connection must be given by  connection  .
     The colourmap must be pointed to by  info  .
     The routine returns TRUE on sucess, else it returns FALSE.
 */
-Connection connection;
-void **info;
 {
     Channel channel;
     Kcolourmap cmap;
@@ -1630,7 +1790,7 @@ void **info;
     /*  Read in array of pixels  */
     for (pixel_count = 0; pixel_count < pixels_to_read; ++pixel_count)
     {
-	if (pio_read32 (channel, pixel_values + pixel_count) != TRUE)
+	if ( !pio_read32 (channel, pixel_values + pixel_count) )
 	{
 	    (void) fprintf (stderr, "Error reading pixel value: %u\t%s\n",
 			    pixel_count, sys_errlist[errno]);
@@ -1645,7 +1805,7 @@ void **info;
     return (TRUE);
 }   /*  End Function read_cmap_indices  */
 
-static flag write_full_cmap (connection, cmap)
+static flag write_full_cmap (Connection connection, Kcolourmap cmap)
 /*  This routine will write an array of pixel colours to a connection.
     The connection must be given by  connection  .
     The colourmap must be given by  cmap  .
@@ -1653,8 +1813,6 @@ static flag write_full_cmap (connection, cmap)
     (which utilises the Karma general data structure format).
     The routine returns TRUE on sucess, else it returns FALSE.
 */
-Connection connection;
-Kcolourmap cmap;
 {
     Channel channel;
     extern char *sys_errlist[];
@@ -1665,7 +1823,7 @@ Kcolourmap cmap;
     /*  Write colourmap  */
     dsrw_write_packet_desc (channel, cmap->top_pack_desc);
     dsrw_write_packet (channel, cmap->top_pack_desc, cmap->top_packet);
-    if (ch_flush (channel) != TRUE)
+    if ( !ch_flush (channel) )
     {
 	(void) fprintf (stderr, "Error writing Karma colourmap\t%s\n",
 			sys_errlist[errno]);
@@ -1675,14 +1833,12 @@ Kcolourmap cmap;
     return (TRUE);
 }   /*  End Function write_full_cmap  */
 
-static flag read_full_cmap (connection, info)
+static flag read_full_cmap (Connection connection, void **info)
 /*  This routine will read an array of pixel colours from a connection.
     The connection must be given by  connection  .
     The colourmap must be pointed to by  info  .
     The routine returns TRUE on sucess, else it returns FALSE.
 */
-Connection connection;
-void **info;
 {
     Channel channel;
     Kcolourmap cmap;
@@ -1690,7 +1846,6 @@ void **info;
     unsigned short *colour_array;
     char *packet;
     packet_desc *pack_desc;
-    extern void (*store_ccells_func) ();
     extern char *sys_errlist[];
     static char function_name[] = "read_full_cmap";
 
@@ -1709,7 +1864,7 @@ void **info;
 	ds_dealloc_packet (pack_desc, (char *) NULL);
 	return (FALSE);
     }
-    if (dsrw_read_packet (channel, pack_desc, packet) != TRUE)
+    if ( !dsrw_read_packet (channel, pack_desc, packet) )
     {
 	(void) fprintf (stderr, "Error reading Karma colourmap data\n");
 	ds_dealloc_packet (pack_desc, packet);
@@ -1727,33 +1882,32 @@ void **info;
 	ds_dealloc_packet (pack_desc, packet);
 	return (FALSE);
     }
-    if (change_cmap_size (cmap, colourmap_size, colourmap_size, TRUE,
-			  colour_array, pack_desc, packet) != TRUE)
+    if ( !change_cmap_size (cmap, colourmap_size, colourmap_size, TRUE,
+			    colour_array, pack_desc, packet) )
     {
 	(void) fprintf (stderr, "Could not reallocate colourmap\n");
 	ds_dealloc_packet (pack_desc, packet);
 	return (FALSE);
     }
-    (*store_ccells_func) (cmap->size, cmap->pixel_values,
-			  cmap->intensities, cmap->intensities + 1,
-			  cmap->intensities + 2, 3,
-			  cmap->dpy_handle);
+    (*cmap->store_func) (cmap->size, cmap->pixel_values,
+			 cmap->intensities, cmap->intensities + 1,
+			 cmap->intensities + 2, 3,
+			 cmap->dpy_handle);
     return (TRUE);
 }   /*  End Function read_full_cmap  */
 
-static void transmit_cmap_resize (cmap)
+static void notify_cmap_resize (Kcolourmap cmap)
 /*  This routine will transmit a colourmap resize to all colourmap_indices
     clients.
     The colourmap must be given by  cmap  .
     The routine returns nothing.
 */
-Kcolourmap cmap;
 {
     Connection connection;
     Kcolourmap conn_cmap;
     unsigned int num_connections;
     unsigned int connection_count;
-    static char function_name[] = "transmit_cmap_resize";
+    static char function_name[] = "notify_cmap_resize";
 
     VERIFY_COLOURMAP (cmap);
     num_connections = conn_get_num_serv_connections ("colourmap_indices");
@@ -1778,21 +1932,20 @@ Kcolourmap cmap;
 	if (conn_cmap != cmap) continue;
 	(void) write_cmap_indices (connection, cmap);
     }
-}   /*  End Function transmit_cmap_resize  */
+}   /*  End Function notify_cmap_resize  */
 
-static void transmit_cmap_modify (cmap)
+static void notify_cmap_modify (Kcolourmap cmap)
 /*  This routine will transmit a change in the colourmap colours to all
     full_colourmap clients.
     The colourmap must be given by  cmap  .
     The routine returns nothing.
 */
-Kcolourmap cmap;
 {
     Connection connection;
     Kcolourmap conn_cmap;
     unsigned int num_connections;
     unsigned int connection_count;
-    static char function_name[] = "transmit_cmap_modify";
+    static char function_name[] = "notify_cmap_modify";
 
     VERIFY_COLOURMAP (cmap);
     num_connections = conn_get_num_serv_connections ("full_colourmap");
@@ -1817,10 +1970,12 @@ Kcolourmap cmap;
 	if (conn_cmap != cmap) continue;
 	(void) write_full_cmap (connection, cmap);
     }
-}   /*  End Function transmit_cmap_modify  */
+}   /*  End Function notify_cmap_modify  */
 
-static flag change_cmap_size (cmap, num_cells, min_cells, notify,
-			      colour_array, pack_desc, packet)
+static flag change_cmap_size (Kcolourmap cmap, unsigned int num_cells,
+			      unsigned int min_cells, flag notify,
+			      unsigned short *colour_array,
+			      packet_desc *pack_desc, char *packet)
 /*  This routine will change the size of a colourmap. The  resize_func  IS
     called on a successfull size change.
     The colourmap must be given by  cmap  .
@@ -1835,23 +1990,13 @@ static flag change_cmap_size (cmap, num_cells, min_cells, notify,
     intensities.
     The routine returns TRUE on success, else it returns FALSE.
 */
-Kcolourmap cmap;
-unsigned int num_cells;
-unsigned int min_cells;
-flag notify;
-unsigned short *colour_array;
-packet_desc *pack_desc;
-char *packet;
 {
-    flag tolerant = TRUE;
     unsigned int num_to_alloc;
     unsigned int num_allocated;
     char *top_packet;
     unsigned short *intensities;
     unsigned long *pixel_values;
     packet_desc *top_pack_desc;
-    extern unsigned int (*alloc_ccells_func) ();
-    extern void (*free_ccells_func) ();
     static char function_name[] = "change_cmap_size";
 
     VERIFY_COLOURMAP (cmap);
@@ -1917,9 +2062,9 @@ char *packet;
 	    top_pack_desc = pack_desc;
 	    top_packet = packet;
 	}
-	(*free_ccells_func) (cmap->size - num_cells,
-			     cmap->pixel_values + num_cells,
-			     cmap->dpy_handle);
+	(*cmap->free_func) (cmap->size - num_cells,
+			    cmap->pixel_values + num_cells,
+			    cmap->dpy_handle);
 	ds_dealloc_packet (cmap->top_pack_desc, cmap->top_packet);
 	cmap->size = num_cells;
 	cmap->top_pack_desc = top_pack_desc;
@@ -1937,9 +2082,9 @@ char *packet;
 	if (min_cells > 1) min_cells -= cmap->size;
 	if (min_cells < 1) min_cells = 1;
 	if ( ( num_allocated =
-	      (*alloc_ccells_func) (num_to_alloc,
-				    pixel_values + cmap->size, min_cells,
-				    cmap->dpy_handle) )
+	      (*cmap->alloc_func) (num_to_alloc,
+				   pixel_values + cmap->size, min_cells,
+				   cmap->dpy_handle) )
 	    < min_cells )
 	{
 	    /*  Failed  */
@@ -1959,9 +2104,9 @@ char *packet;
 		== NULL )
 	    {
 		m_error_notify (function_name, "array of intensities");
-		(*free_ccells_func) (num_allocated,
-				     pixel_values + cmap->size,
-				     cmap->dpy_handle);
+		(*cmap->free_func) (num_allocated,
+				    pixel_values + cmap->size,
+				    cmap->dpy_handle);
 		m_free ( (char *) pixel_values );
 		return (FALSE);
 	    }
@@ -1989,7 +2134,7 @@ char *packet;
     /*  Colourmap has been resized (colours not computed yet)  */
     if (notify) (void) c_call_callbacks (cmap->resize_list, NULL);
     /*  Transmit this colourmap to any slaves of it  */
-    transmit_cmap_resize (cmap);
+    notify_cmap_resize (cmap);
     return (TRUE);
 }   /*  End Function change_cmap_size  */
 

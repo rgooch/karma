@@ -3,7 +3,7 @@
 
     This code provides signal blocking routines.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -49,8 +49,10 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/s/main.c
 
-    Last updated by Richard Gooch   7-DEC-1994: Stripped declaration of  errno
+    Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
+
+    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
 
 
 */
@@ -91,7 +93,9 @@ int signal;
     extern flag initialised;
     extern sigset_t blocked_mask;
     extern char *sys_errlist[];
+/*
     static char function_name[] = "s_block";
+*/
 
     if (initialised != TRUE)
     {
@@ -195,7 +199,9 @@ int signal;
       case 0:
 	/*  Signal not already blocked  */
 	return;
+/*
 	break;
+*/
       case 1:
 	/*  Signal already blocked  */
 	break;
@@ -315,7 +321,9 @@ int sig;
 {
 #ifdef CAN_FORK
     extern char *sys_errlist[];
+/*
     static char function_name[] = "s_ignore";
+*/
 
     return ( (void *) signal (sig, SIG_IGN) );
 

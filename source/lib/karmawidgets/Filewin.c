@@ -3,7 +3,7 @@
 
     This code provides a file selector widget for Xt.
 
-    Copyright (C) 1993,1994  Patrick Jordan
+    Copyright (C) 1993,1994,1995  Patrick Jordan
     Incorporated into Karma by permission.
 
     This library is free software; you can redistribute it and/or
@@ -44,8 +44,12 @@
     Updated by      Richard Gooch   30-JUL-1994: Removed height setting of
   viewport: this should be done externally.
 
-    Last updated by Richard Gooch   5-OCT-1994: Worked around bug in AIX/rs6000
+    Updated by      Richard Gooch   5-OCT-1994: Worked around bug in AIX/rs6000
   native compiler.
+
+    Updated by      Richard Gooch   28-SEP-1995: Added directory callbacks.
+
+    Last updated by Richard Gooch   20-OCT-1995: Added minimum list height.
 
 
 */
@@ -70,6 +74,9 @@
 #include <karma_dir.h>
 #include <karma_st.h>
 #include <karma_m.h>
+#include <karma_c.h>
+
+#define MINIMUM_LIST_ROWS 20
 
 /*----------------------------------------------------------------------*/
 /* Function prototypes*/
@@ -168,7 +175,7 @@ WidgetClass filewinWidgetClass = (WidgetClass) &filewinClassRec;
 /* Reallocate a bigger directory space */
 /*----------------------------------------------------------------------*/
 
-static flag increase_list_size(FilewinWidget w)
+static void increase_list_size (FilewinWidget w)
 {
   char **new;
   int i;
@@ -186,13 +193,14 @@ static flag increase_list_size(FilewinWidget w)
 /* Create the list*/
 /*----------------------------------------------------------------------*/
 
-static void create_list(FilewinWidget w)
+static void create_list (FilewinWidget w)
 {
 #define W w->filewin
     KDir thedir;
     KFileInfo *finfo;
     flag ok;
     char *ptr;
+    static char function_name[] = "Filewin::create_list";
 
     while (W.listcount > 0)
     {
@@ -222,8 +230,15 @@ static void create_list(FilewinWidget w)
 	}
     }
     dir_close (thedir);
-
     st_qsort (W.list, 0, W.listcount - 1);
+    while (W.listcount < MINIMUM_LIST_ROWS)
+    {
+	if ( ( W.list[W.listcount] = st_dup ("") ) == NULL )
+	{
+	    m_abort (function_name, "empty string");
+	}
+	++W.listcount;
+    }
 #undef W
 }
 
@@ -232,22 +247,32 @@ static void create_list(FilewinWidget w)
 /* A selection has been made from the list. It may be a directory though*/
 /*----------------------------------------------------------------------*/
 
-static void filesel_cbk(Widget w,XtPointer client_data,XtPointer call_data)
+static void filesel_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 {
-  XawListReturnStruct *lr=(XawListReturnStruct *)call_data;
-  FilewinWidget fw = (FilewinWidget)client_data;
+    XawListReturnStruct *lr=(XawListReturnStruct *)call_data;
+    FilewinWidget fw = (FilewinWidget)client_data;
+    char dirname[STRING_LENGTH];
+    static char fname[200];
 
-  static char fname[200];
-
-  if((fw->filewin.list[lr->list_index])[0]=='D') {
-    sprintf(fw->filewin.curdir,"%s/%s",fw->filewin.curdir,
-	    fw->filewin.list[lr->list_index]+3);
-    create_list(fw);
-    XawListChange(w,fw->filewin.list,fw->filewin.listcount,0,True);
-  } else {
-    sprintf(fname,"%s/%s",fw->filewin.curdir,fw->filewin.list[lr->list_index]+3);
-    XtCallCallbacks((Widget)fw,XkwNfileSelectCallback,fname);
-  }
+    if (fw->filewin.list[lr->list_index][0] == '\0')
+    {
+	XawListUnhighlight (fw->filewin.listwidget);
+	return;
+    }
+    if ( (fw->filewin.list[lr->list_index])[0] == 'D' )
+    {
+	(void) sprintf (dirname, "%s/%s", fw->filewin.curdir,
+			fw->filewin.list[lr->list_index] + 3);
+	if ( c_call_callbacks (fw->filewin.dir_callbacks, dirname) ) return;
+	(void) strcpy (fw->filewin.curdir, dirname);
+	create_list(fw);
+	XawListChange(w,fw->filewin.list,fw->filewin.listcount,0,True);
+    }
+    else
+    {
+	sprintf(fname,"%s/%s",fw->filewin.curdir,fw->filewin.list[lr->list_index]+3);
+	XtCallCallbacks((Widget)fw,XkwNfileSelectCallback,fname);
+    }
 }
 
 /*----------------------------------------------------------------------*/
@@ -281,31 +306,32 @@ static void ConstraintInitialize(Widget request,Widget new)
 
 static void Initialize(Widget Request,Widget New)
 {
-  int list_width;
-  FilewinWidget request = (FilewinWidget) Request;
-  FilewinWidget new = (FilewinWidget) New;
-  Widget view,cancelbtn,rescanbtn;
+    int list_width;
+    FilewinWidget request = (FilewinWidget) Request;
+    FilewinWidget new = (FilewinWidget) New;
+    Widget view,cancelbtn,rescanbtn;
   
-  /* Initialise the directory list space */
-  new->filewin.listmax=64;
-  new->filewin.list=(char **)m_alloc(new->filewin.listmax*sizeof(char *));
-  new->filewin.listcount=0;
+    /* Initialise the directory list space */
+    new->filewin.listmax = 64;
+    new->filewin.list = (char **)m_alloc (new->filewin.listmax*sizeof(char *));
+    new->filewin.listcount = 0;
+    new->filewin.dir_callbacks = NULL;
 
-  sprintf(new->filewin.curdir,".");
-  create_list(new);
+    sprintf (new->filewin.curdir,".");
+    create_list (new);
   
-  view=XtVaCreateManagedWidget
+    view=XtVaCreateManagedWidget
     ("view",viewportWidgetClass,New,
      XtNforceBars,True,
      XtNwidth,190,
-/*
-     XtNheight,250,
-*/
+     /*
+	XtNheight,250,
+	*/
      XtNuseRight,True,
      XtNallowVert,True,
      NULL);
-  
-  new->filewin.listwidget=XtVaCreateManagedWidget
+
+    new->filewin.listwidget=XtVaCreateManagedWidget
     ("listwidget",listWidgetClass,view,
      XtNlist,new->filewin.list,
      XtNnumberStrings,new->filewin.listcount,
@@ -314,7 +340,7 @@ static void Initialize(Widget Request,Widget New)
      XtNdefaultColumns,1,
      XtNforceColumns,True,
      NULL);
-  XtAddCallback(new->filewin.listwidget,XtNcallback,filesel_cbk,new);
+    XtAddCallback(new->filewin.listwidget,XtNcallback,filesel_cbk,new);
 }
 
 /*----------------------------------------------------------------------*/
@@ -358,3 +384,33 @@ char *XkwFilewinCurrentDirectory(Widget W)
   return st_dup(w->filewin.curdir);
 }
   
+KCallbackFunc XkwFilewinRegisterDirCbk (Widget w,
+					flag (*callback) (Widget w,
+							  void *info,
+							  CONST char *dirname),
+					void *info)
+/*  [PURPOSE] This routine will register a callback to capture directory
+    selection events prior to the Filewin widget changing directory.
+    <w> The Filewin widget.
+    <callback> The routine which will be called when directories are selected.
+    The interface to this routine is given below:
+    [<pre>]
+    flag callback (Widget w, void *info, CONST char *dirname)
+    *   [PURPOSE] This routine will process a directory selection event.
+        <w> The Filewin widget on which the selection occurred.
+	<info> A pointer to arbitrary information.
+	<dirname> The name of the directory.
+	[RETURNS] TRUE if the selection event is to be consumed, else FALSE
+	(meaning the event should be passed on to other callbacks, or, if none
+	consume the event, the widget will change it's active directory).
+    *
+    [</pre>]
+    <info> A pointer to arbitrary information.
+    [RETURNS] A KCallbackFunc object.
+*/
+{
+    FilewinWidget fw = (FilewinWidget) w;
+
+    return ( c_register_callback (&fw->filewin.dir_callbacks, callback, w,
+				  info, FALSE, NULL, FALSE, TRUE) );
+}   /*  End Function XkwFilewinRegisterDirCbk  */

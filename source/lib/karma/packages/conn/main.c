@@ -115,8 +115,24 @@
     Updated by      Richard Gooch   7-JAN-1995: Changed from "PRIMARY_KEY" to
   "RAW_PROTOCOL" for raw protocol.
 
-    Last updated by Richard Gooch   23-JAN-1995: Added some casts to keep
+    Updated by      Richard Gooch   23-JAN-1995: Added some casts to keep
   IRIX compiler happy.
+
+    Updated by      Richard Gooch   14-MAR-1995: Changed
+  <attempt_connection_to_cm> to send fully qualified hostname if possible.
+
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Updated by      Richard Gooch   14-JUN-1995: Made use of <ex_uint>.
+
+    Updated by      Richard Gooch   16-JUN-1995: Made use of
+  <r_get_fq_hostname>.
+
+    Updated by      Richard Gooch   10-AUG-1995: Removed printing of error
+  message in <conn_attempt_connection> if raw connection failed.
+
+    Last updated by Richard Gooch   30-NOV-1995: Changed from call to <_exit>
+  to call to <exit> in <cm_close_func> for IRIX sproc() problems.
 
 
 */
@@ -131,13 +147,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
-/*  I think this is not needed. Disabled 3-DEC-1994
-#ifdef HAS_SOCKETS
-#  include <netdb.h>
-#  include <netinet/in.h>
-#  include <arpa/inet.h>
-#endif
-*/
 #include <karma.h>
 #include <karma_conn.h>
 #include <karma_pio.h>
@@ -178,6 +187,7 @@ if (conn->magic_number != OBJECT_MAGIC_NUMBER) \
 #define PROTOCOL_DEFINITION_MESSAGE_LENGTH (PROTOCOL_NAME_LENGTH + 4)
 
 #define RAW_PROTOCOL "RAW_PROTOCOL"
+#define CM_PROTOCOL_VERSION (unsigned int) 1
 
 #define SECURITY_TYPE_KEY (unsigned int) 0
 #define SECURITY_TYPE_IDEA (unsigned int) 1
@@ -314,7 +324,6 @@ static Connection serv_connections = NULL;
 static Connection client_connections = NULL;
 static struct serv_protocol_list_type *serv_protocol_list = NULL;
 static struct client_protocol_list_type *client_protocol_list = NULL;
-static struct host_list_type *host_list = NULL;
 
 /*  Connection to Connection Management tool  */
 static Channel cm_channel = NULL;
@@ -353,7 +362,9 @@ STATIC_FUNCTION (struct auth_password_list_type *get_authinfo,
 STATIC_FUNCTION (struct auth_password_list_type *get_password_list, () );
 STATIC_FUNCTION (void convert_password_to_bin,
 		 (unsigned char *binpassword, CONST char *asciipassword) );
+#ifdef dummy
 static flag check_host_access ();
+#endif
 STATIC_FUNCTION (char *write_protocol, (Channel channel, char *protocol_name,
 					unsigned int version) );
 static flag respond_to_ping_server_from_client ();
@@ -439,9 +450,9 @@ static flag dock_input_func (Channel dock, void **info)
 	return (TRUE);
     }
     /*  Search for end of list  */
-    for (last_entry = serv_connections; (*last_entry).next != NULL;
-	 last_entry = (*last_entry).next);
-    (*last_entry).next = new_conn;
+    for (last_entry = serv_connections; last_entry->next != NULL;
+	 last_entry = last_entry->next);
+    last_entry->next = new_conn;
     new_conn->prev = last_entry;
     return (TRUE);
 }   /*  End Function dock_input_func  */
@@ -572,7 +583,6 @@ static flag verify_raw (Connection connection)
     unsigned long magic_number;
     unsigned long revision_number;
     struct auth_password_list_type *authinfo;
-    char idea_block[EN_IDEA_BLOCK_SIZE];
     extern char *sys_errlist[];
     static char function_name[] = "verify_raw";
 
@@ -982,12 +992,12 @@ char *protocol_name;
     entry = serv_protocol_list;
     while (entry != NULL)
     {
-	if (strcmp (protocol_name, (*entry).protocol_name) == 0)
+	if (strcmp (protocol_name, entry->protocol_name) == 0)
 	{
 	    /*  Found it!  */
 	    return (entry);
 	}
-	entry = (*entry).next;
+	entry = entry->next;
     }
     /*  Not found  */
     return (NULL);
@@ -1007,12 +1017,12 @@ char *protocol_name;
     entry = client_protocol_list;
     while (entry != NULL)
     {
-	if (strcmp (protocol_name, (*entry).protocol_name) == 0)
+	if (strcmp (protocol_name, entry->protocol_name) == 0)
 	{
 	    /*  Found it!  */
 	    return (entry);
 	}
-	entry = (*entry).next;
+	entry = entry->next;
     }
     /*  Not found  */
     return (NULL);
@@ -1121,7 +1131,9 @@ static struct auth_password_list_type *get_authinfo (char *protocol)
 #ifdef COMMUNICATIONS_AVAILABLE
     struct auth_password_list_type *entry;
     struct auth_password_list_type *password_list;
+/*
     static char function_name[] = "get_authinfo";
+*/
 
     password_list = get_password_list ();
     if (password_list == NULL)
@@ -1129,9 +1141,9 @@ static struct auth_password_list_type *get_authinfo (char *protocol)
 	/*  No list: no passwords required  */
 	return (NULL);
     }
-    for (entry = password_list; entry != NULL; entry = (*entry).next)
+    for (entry = password_list; entry != NULL; entry = entry->next)
     {
-	if (strcmp (protocol, (*entry).protocol_name) == 0)
+	if (strcmp (protocol, entry->protocol_name) == 0)
 	{
 	    return (entry);
 	}
@@ -1157,7 +1169,6 @@ static struct auth_password_list_type *get_password_list ()
     char *p, *security_name;
     char *password = NULL;
     struct auth_password_list_type *entry;
-    struct auth_password_list_type *end_entry;
     char auth_file[STRING_LENGTH];
     char txt[STRING_LENGTH + 1];
     extern char *sys_errlist[];
@@ -1292,18 +1303,8 @@ static struct auth_password_list_type *get_password_list ()
 	    }
 	}
 	/*  Add entry to list  */
-	if (password_list == NULL)
-	{
-	    /*  Create list  */
-	    password_list = entry;
-	    end_entry = entry;
-	}
-	else
-	{
-	    /*  Append to list  */
-	    end_entry->next = entry;
-	    end_entry = entry;
-	}
+	entry->next = password_list;
+	password_list = entry;
     }
     /*  End of file  */
     (void) ch_close (channel);
@@ -1352,6 +1353,7 @@ static void convert_password_to_bin (unsigned char *binpassword,
     byte[1] = 0;
 }   /*  End Function convert_password_to_bin  */
 
+#ifdef dummy
 static flag check_host_access (inet_addr, protocol)
 /*  This routine will check if the host with Internet address given by
     inet_addr  is authorised to connect to the server with protocol given by
@@ -1383,9 +1385,9 @@ char *protocol;
     }
     /*  Search if host is authorised  */
     for (auth_entry = protocol_info->authorised_hosts; auth_entry != NULL;
-	 auth_entry = (*auth_entry).next)
+	 auth_entry = auth_entry->next)
     {
-	if (inet_addr == (* (*auth_entry).host_ptr ).inet_addr)
+	if (inet_addr == auth_entry->host_ptr->inet_addr)
 	{
 	    /*  Found it  */
 	    return (TRUE);
@@ -1394,6 +1396,7 @@ char *protocol;
     /*  Host is not authorised  */
     return (FALSE);
 }   /*  End Function check_host_access  */
+#endif
 
 static char *write_protocol (Channel channel, char *protocol_name,
 			     unsigned int version)
@@ -1410,7 +1413,6 @@ static char *write_protocol (Channel channel, char *protocol_name,
     ChConverter pro_converter = NULL;
     unsigned int length;
     char *message;
-    char password_buffer[AUTH_PASSWORD_LENGTH];
     char protocol_buffer[PROTOCOL_NAME_LENGTH];
     char idea_block_client[EN_IDEA_BLOCK_SIZE];
     char idea_block_serv[EN_IDEA_BLOCK_SIZE];
@@ -1605,8 +1607,7 @@ void **info;
 
     VERIFY_CONNECTION (connection);
     channel = connection->channel;
-    if ( ( bytes_readable = ch_get_bytes_readable (channel) )
-	< 0 )
+    if ( ( bytes_readable = ch_get_bytes_readable (channel) ) < 0 )
     {
 	(void) exit (RV_SYS_ERROR);
     }
@@ -1702,9 +1703,9 @@ Connection list;
 
     if (list != NULL) VERIFY_CONNECTION (list);
     for (conn_count = 0, curr_entry = list; curr_entry != NULL;
-	 curr_entry = (*curr_entry).next)
+	 curr_entry = curr_entry->next)
     {
-	if (strcmp (protocol_name, (*curr_entry).protocol_name) == 0)
+	if (strcmp (protocol_name, curr_entry->protocol_name) == 0)
 	{
 	    /*  Found a connection of the correct protocol  */
 	    if (conn_count == number)
@@ -1724,21 +1725,20 @@ static void attempt_connection_to_cm ()
     The routine returns nothing.
 */
 {
+    Channel stdio;
     int x;
     int y;
     int out_fd;
     unsigned int port_number;
-    unsigned int length;
     unsigned long host_addr;
-    Channel stdio;
     char *control_command;
     char *char_ptr;
     char *message;
+    char *keyword;
     char my_hostname[STRING_LENGTH];
     char txt[STRING_LENGTH];
     extern Channel cm_channel;
     extern flag (*manage_channel) ();
-    extern void (*unmanage_channel) ();
     extern char *sys_errlist[];
     extern char module_name[STRING_LENGTH + 1];
     static char function_name[] = "attempt_connection_to_cm";
@@ -1790,7 +1790,8 @@ static void attempt_connection_to_cm ()
 	exit (RV_SYS_ERROR);
     }
 #endif
-    r_gethostname (my_hostname, STRING_LENGTH);
+    /*  Get the fully qualified hostname  */
+    if ( !r_get_fq_hostname (my_hostname, STRING_LENGTH) ) exit (RV_SYS_ERROR);
     /*  Decode command  */
     for (char_ptr = control_command; *char_ptr != '\0'; ++char_ptr)
     {
@@ -1801,8 +1802,8 @@ static void attempt_connection_to_cm ()
 	}
     }
     char_ptr = control_command;
-    host_addr = ex_int (char_ptr, &char_ptr);
-    port_number = ex_int (char_ptr, &char_ptr);
+    host_addr = ex_uint (char_ptr, &char_ptr);
+    port_number = ex_uint (char_ptr, &char_ptr);
     x = ex_int (char_ptr, &char_ptr);
     y = ex_int (char_ptr, &char_ptr);
     if (host_addr == 0) (void) strcpy (my_hostname, "localhost");
@@ -1815,13 +1816,14 @@ static void attempt_connection_to_cm ()
     if ( ( cm_channel = ch_open_connection (host_addr, port_number) ) == NULL )
     {
 	(void) fprintf (stderr,
-			"Could not open connection to Connection Management tool\n");
+			"Could not open control connection to Connection Management tool\n");
 	(void) fprintf (stderr, "on host addr: %lu  port: %u\n",
 			host_addr, port_number);
 	exit (RV_UNDEF_ERROR);
     }
     /*  Send protocol info  */
-    if ( ( message = write_protocol (cm_channel, "conn_mngr_control", 0) )
+    if ( ( message = write_protocol (cm_channel, "conn_mngr_control", 
+				     CM_PROTOCOL_VERSION) )
 	== NULL )
     {
 	(void) fprintf (stderr, "Error writing authentication information\n");
@@ -1881,11 +1883,12 @@ static void attempt_connection_to_cm ()
     if ( ( stdio = ch_open_connection (host_addr, port_number) ) == NULL )
     {
 	(void) fprintf (stderr,
-			"Could not open connection to Connection Management tool");
+			"Could not open stdio connection to Connection Management tool");
 	exit (RV_UNDEF_ERROR);
     }
     /*  Send protocol info  */
-    if ( ( message = write_protocol (stdio, "conn_mngr_stdio", 0) ) == NULL )
+    if ( ( message = write_protocol (stdio, "conn_mngr_stdio",
+				     CM_PROTOCOL_VERSION) ) == NULL )
     {
 	(void) fprintf (stderr, "Error writing authentication information\n");
 	(void) ch_close (stdio);
@@ -1935,7 +1938,6 @@ void **info;
     unsigned long port_number;
     char *hostname;
     char *protocol_name;
-    extern flag clean_exit_request;
     extern Channel cm_channel;
     extern void (*exit_schedule_function) ();
     extern void (*quiescent_function) ();
@@ -2014,7 +2016,8 @@ void **info;
 	}
 	break;
       default:
-	(void) fprintf (stderr, "%s: illegal command value from CM tool: %u\n",
+	(void) fprintf (stderr,
+			"%s: illegal command value from CM tool: %lu\n",
 			function_name, command);
 	return (FALSE);
     }
@@ -2046,7 +2049,10 @@ void **info;
     }
     (void) fprintf (stderr,
 		    "PANIC: lost connection to Connection Management tool\n");
-    _exit (RV_OK);
+    /*  Used to call _exit() but because this leaves sproc() processes lying
+	around under IRIX, changed to exit(). Hope this doesn't cause a nasty
+	loop.  */
+    exit (RV_OK);
 }   /*  End Function cm_close_func  */
 
 static void setup_prng ()
@@ -2099,7 +2105,8 @@ static ChConverter get_encryption (Channel channel,
     unsigned int ciphertext_length, plaintext_length;
     unsigned long data;
     char *ciphertext, *plaintext;
-    char *session_key, *session_iv;
+    char *session_key = NULL;  /*  Initialised to keep compiler happy  */
+    char *session_iv = NULL;   /*  Initialised to keep compiler happy  */
     char *recipient;
     char idea_session[EN_IDEA_KEY_SIZE + EN_IDEA_BLOCK_SIZE];
     extern RandPool main_randpool;
@@ -2111,13 +2118,13 @@ static ChConverter get_encryption (Channel channel,
 	(void) fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
-    switch ( (*authinfo).security_type )
+    switch ( authinfo->security_type )
     {
       case SECURITY_TYPE_KEY:
       case SECURITY_TYPE_IDEA:
 	idea_encryption = TRUE;
-	session_key = (*authinfo).password;
-	session_iv = (*authinfo).password + EN_IDEA_KEY_SIZE;
+	session_key = authinfo->password;
+	session_iv = authinfo->password + EN_IDEA_KEY_SIZE;
 	clear_session = FALSE;
 	break;
       case SECURITY_TYPE_PGPuserID_IDEA:
@@ -2126,7 +2133,7 @@ static ChConverter get_encryption (Channel channel,
 	{
 	    rp_get_bytes (main_randpool, (unsigned char *) idea_session,
 			  EN_IDEA_KEY_SIZE + EN_IDEA_BLOCK_SIZE);
-	    recipient = (*authinfo).password;
+	    recipient = authinfo->password;
 	    (void) fprintf (stderr, "recipient: \"%s\"\n",
 			    recipient);
 	    if ( ( ciphertext =
@@ -2212,7 +2219,7 @@ static ChConverter get_encryption (Channel channel,
 	break;
       default:
 	(void) fprintf (stderr, "Illegal security type: %u\n",
-			(*authinfo).security_type);
+			authinfo->security_type);
 	a_prog_bug (function_name);
 	break;
     }
@@ -2402,9 +2409,9 @@ void (*close_func) ();
     else
     {
 	/*  Append entry to protocol list  */
-	for (last_entry = serv_protocol_list; (*last_entry).next != NULL;
-	     last_entry = (*last_entry).next);
-	(*last_entry).next = entry;
+	for (last_entry = serv_protocol_list; last_entry->next != NULL;
+	     last_entry = last_entry->next);
+	last_entry->next = entry;
     }
     return;
 }   /*  End Function conn_register_server_protocol  */
@@ -2551,9 +2558,9 @@ void (*close_func) ();
     else
     {
 	/*  Append entry to protocol list  */
-	for (last_entry = client_protocol_list; (*last_entry).next != NULL;
-	     last_entry = (*last_entry).next);
-	(*last_entry).next = entry;
+	for (last_entry = client_protocol_list; last_entry->next != NULL;
+	     last_entry = last_entry->next);
+	last_entry->next = entry;
     }
     return;
 }   /*  End Function conn_register_client_protocol  */
@@ -2591,13 +2598,11 @@ char *protocol_name;
 {
     flag local;
     int bytes;
-    unsigned int length;
     unsigned long host_addr;
     Connection new_connection;
     Connection last_entry;
     Channel channel;
     void *info = NULL;
-    char *message;
     struct client_protocol_list_type *protocol_info;
     extern Channel cm_channel;
     extern Connection client_connections;
@@ -2681,7 +2686,6 @@ char *protocol_name;
     /*  Open connection  */
     if ( ( channel = ch_open_connection (host_addr, port_number) ) == NULL )
     {
-	a_func_abort (function_name, "Could not open connection");
 	m_free ( (char *) new_connection );
 	return (FALSE);
     }
@@ -2731,10 +2735,10 @@ char *protocol_name;
     else
     {
 	/*  Search for end of list  */
-	for (last_entry = client_connections; (*last_entry).next != NULL;
-	     last_entry = (*last_entry).next);
+	for (last_entry = client_connections; last_entry->next != NULL;
+	     last_entry = last_entry->next);
 	/*  Append entry  */
-	(*last_entry).next = new_connection;
+	last_entry->next = new_connection;
 	new_connection->prev = last_entry;
     }
     /*  Drain any input on new connection  */
@@ -2932,7 +2936,9 @@ unsigned int conn_get_num_serv_connections (protocol_name)
 char *protocol_name;
 {
     struct serv_protocol_list_type *serv_protocol_info;
+/*
     static char function_name[] = "conn_get_num_serv_connections";
+*/
 
     if ( ( serv_protocol_info = get_serv_protocol_info (protocol_name) )
 	== NULL )
@@ -2955,7 +2961,9 @@ unsigned int conn_get_num_client_connections (protocol_name)
 char *protocol_name;
 {
     struct client_protocol_list_type *client_protocol_info;
+/*
     static char function_name[] = "conn_get_num_client_connections";
+*/
 
     if ( ( client_protocol_info = get_client_protocol_info (protocol_name) )
 	== NULL )
@@ -3111,12 +3119,12 @@ char **conn_extract_protocols ()
     /*  Loop through all server protocols  */
     for (serv_entry = serv_protocol_list, num_protocols = 0;
 	 serv_entry != NULL;
-	 serv_entry = (*serv_entry).next, ++num_protocols);
+	 serv_entry = serv_entry->next, ++num_protocols);
     /*  Loop through all client protocols  */
     for (client_entry = client_protocol_list; client_entry != NULL;
-	 client_entry = (*client_entry).next)
+	 client_entry = client_entry->next)
     {
-	if (get_serv_protocol_info ( (*client_entry).protocol_name ) == NULL )
+	if (get_serv_protocol_info (client_entry->protocol_name) == NULL )
 	{
 	    /*  Client protocol not in the server list  */
 	    ++num_protocols;
@@ -3141,40 +3149,40 @@ char **conn_extract_protocols ()
     /*  Process the server protocol list again  */
     for (serv_entry = serv_protocol_list, num_protocols = 0;
 	 serv_entry != NULL;
-	 serv_entry = (*serv_entry).next, ++num_protocols)
+	 serv_entry = serv_entry->next, ++num_protocols)
     {
-	if ( (*serv_entry).max_connections == 0 )
+	if ( serv_entry->max_connections == 0 )
 	{
 	    (void) strcpy (tmp1, "unlimited");
 	}
 	else
 	{
-	    (void) sprintf (tmp1, "%u", (*serv_entry).max_connections);
+	    (void) sprintf (tmp1, "%u", serv_entry->max_connections);
 	}
-	client_entry = get_client_protocol_info ( (*serv_entry).protocol_name);
+	client_entry = get_client_protocol_info ( serv_entry->protocol_name);
 	if (client_entry == NULL)
 	{
 	    (void) sprintf (txt, "%-27s%-10s%-10u-          -",
-			    (*serv_entry).protocol_name,
+			    serv_entry->protocol_name,
 			    tmp1,
-			    (*serv_entry).connection_count);
+			    serv_entry->connection_count);
 	}
 	else
 	{
-	    if ( (*client_entry).max_connections == 0 )
+	    if ( client_entry->max_connections == 0 )
 	    {
 		(void) strcpy (tmp2, "unlimited");
 	    }
 	    else
 	    {
-		(void) sprintf (tmp2, "%u", (*client_entry).max_connections);
+		(void) sprintf (tmp2, "%u", client_entry->max_connections);
 	    }
 	    (void) sprintf (txt, "%-27s%-10s%-10u%-11s%u",
-			    (*serv_entry).protocol_name,
+			    serv_entry->protocol_name,
 			    tmp1,
-			    (*serv_entry).connection_count,
+			    serv_entry->connection_count,
 			    tmp2,
-			    (*client_entry).connection_count);
+			    client_entry->connection_count);
 	}
 	if ( ( strings[num_protocols + 1] = st_dup (txt) ) == NULL )
 	{
@@ -3188,25 +3196,25 @@ char **conn_extract_protocols ()
     }
     /*  Process the client protocol list again  */
     for (client_entry = client_protocol_list; client_entry != NULL;
-	 client_entry = (*client_entry).next)
+	 client_entry = client_entry->next)
     {
-	if (get_serv_protocol_info ( (*client_entry).protocol_name ) != NULL )
+	if (get_serv_protocol_info ( client_entry->protocol_name ) != NULL )
 	{
 	    /*  Client protocol is in the server list  */
 	    continue;
 	}
-	if ( (*client_entry).max_connections == 0 )
+	if ( client_entry->max_connections == 0 )
 	{
 	    (void) strcpy (tmp2, "unlimited");
 	}
 	else
 	{
-	    (void) sprintf (tmp2, "%u", (*client_entry).max_connections);
+	    (void) sprintf (tmp2, "%u", client_entry->max_connections);
 	}
 	(void) sprintf (txt, "%-27s-         -         %-11s%u",
-			(*client_entry).protocol_name,
+			client_entry->protocol_name,
 			tmp2,
-			(*client_entry).connection_count);
+			client_entry->connection_count);
 	if ( ( strings[num_protocols + 1] = st_dup (txt) ) == NULL )
 	{
 	    m_error_notify (function_name, "protocol string information");

@@ -1,0 +1,163 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the foreign_ package of routines in the Karma
+    library.
+
+    These routines convert between the Karma data format and foreign data
+  formats.
+
+
+    Written by		Richard Gooch	22-Jan-1996
+
+    Last updated by	Richard Gooch	22-Jan-1996
+
+
+*/
+
+multi_array *foreign_fits_read_header (Channel channel, flag data_alloc,
+				       flag convert_int_to_float,
+				       flag sanitise, ...)
+/*  [PURPOSE] This routine will read the header of a FITS file from a channel.
+    The data section is NOT read.
+    <channel> The channel to read from.
+    <data_alloc> If TRUE, the data space is allocated.
+    <convert_int_to_float> If TRUE, integer FITS data is converted to floating
+    point data.
+    <sanitise> If TRUE, FITS axes with length 1 are ignored. This is highly
+    recommended.
+    [VARARGS] The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. The last argument must be FA_FITS_READ_HEADER_END.
+    The attributes are passed using varargs.
+    [RETURNS] A pointer to the multi_array data structure on success, else
+    NULL.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag foreign_fits_read_data (Channel channel, multi_array *multi_desc,
+			     char *data, uaddr num_values, ...)
+/*  [PURPOSE] This routine will read the data of a FITS file from a channel.
+    The header section is NOT read.
+    <channel> The channel to read from.
+    <multi_desc> The Karma data structure to write the data into.
+    <data> An alternate data array to write the FITS data into. If this is
+    NULL, the routine will write the data into the Karma data structure.
+    <num_values> The number of values to write into the data array. This is
+    only used when data is not NULL.
+    [VARARGS] The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. The last argument must be FA_FITS_READ_DATA_END.
+    The attributes are passed using varargs.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+multi_array *foreign_guess_and_read (CONST char *filename,
+				     unsigned int mmap_option, flag writeable,
+				     unsigned int *ftype, ...)
+/*  [PURPOSE] This routine will attempt to guess the filetype of a file and
+    in the file, converting to the Karma data format if possible.
+    <filename> The name of the file to read.
+    <mmap_option> This has the same meaning as for the <dsxfr_get_multi>
+    routine.
+    <writeable> This has the same meaning as for the <dsxfr_get_multi> routine.
+    <ftype> The type of the file that was read in is written here.
+    [VARARGS] The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. The last argument must be FA_GUESS_READ_END.
+    The attributes are passed using varargs.
+    [RETURNS] A pointer to the multi_array data structure on success, else
+    NULL.
+*/
+/*---------------------------------------------------------------------------*/
+
+multi_array *foreign_miriad_read_header (Channel channel, flag data_alloc,
+					 flag sanitise, ...)
+/*  [PURPOSE] This routine will read the header of a Miriad Image file from a
+    channel.
+    The data section is NOT read.
+    <channel> The channel to read from.
+    <data_alloc> If TRUE, the data space is allocated.
+    <sanitise> If TRUE, Miriad axes with length 1 are ignored. This is highly
+    recommended.
+    [VARARGS] The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. The last argument must be FA_MIRIAD_READ_HEADER_END.
+    The attributes are passed using varargs.
+    [RETURNS] A pointer to the multi_array data structure on success, else
+    NULL.
+*/
+/*---------------------------------------------------------------------------*/
+
+multi_array *foreign_miriad_read (CONST char *dirname, flag sanitise, ...)
+/*  [PURPOSE] This routine will read a Miriad image file.
+    <dirname> The directory name of the Miriad dataset name.
+    <sanitise> If TRUE, Miriad axes with length 1 are ignored. This is highly
+    recommended.
+    [VARARGS] The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. The last argument must be FA_MIRIAD_READ_END.
+    The attributes are passed using varargs.
+    [RETURNS] A multi_array descriptor on success, else NULL.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag foreign_miriad_test (CONST char *dirname)
+/*  [PURPOSE] This routine will test if a directory is a Miriad Image file.
+    <dirname> The directory name of the Miriad dataset name.
+    [RETURNS] TRUE if the directory is a Miriad Image file, else FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+unsigned int foreign_guess_format_from_filename (CONST char *filename)
+/*  [PURPOSE] This routine will attempt to guess the format of a file by
+    examining its filename.
+    <filename> The name of the file.
+    [RETURNS] A value indicating the format of the file. The value
+    FOREIGN_FILE_FORMAT_KARMA is returned if the extension is ".kf".
+*/
+/*---------------------------------------------------------------------------*/
+
+multi_array *foreign_ppm_read (Channel channel, ...)
+/*  [PURPOSE] This routine will read a colour image in PPM format from a
+    channel.
+    <channel> The channel to read from.
+    [VARARGS] The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. The last argument must be FA_PPM_READ_END.
+    The attributes are passed using varargs.
+    [RETURNS] A pointer to the multi_array data structure on success, else NULL
+*/
+/*---------------------------------------------------------------------------*/
+
+flag foreign_ppm_write (Channel channel, multi_array *multi_desc, flag binary,
+			...)
+/*  [PURPOSE] This routine will write a colour image to a channel in PPM format
+    <channel> The channel to write to. The channel is not flushed.
+    <multi_desc> The multi_array descriptor pointer. The routine will find a
+    TrueColour image or a PseudoColour image within the data structure.
+    <binary> If TRUE, the pixels will be written in binary mode.
+    [VARARGS] The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. The last argument must be FA_PPM_WRITE_END.
+    The attributes are passed using varargs.
+    [RETURNS] TRUE on succes, else FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+multi_array *foreign_sunras_read (Channel channel, ...)
+/*  [PURPOSE] This routine will read an image in Sun rasterfile format from a
+    channel.
+    <channel> The channel to read from.
+    [VARARGS] The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. The last argument must be FA_SUNRAS_READ_END.
+    The attributes are passed using varargs.
+    [RETURNS] A pointer to the multi_array data structure on success, else NULL
+*/
+/*---------------------------------------------------------------------------*/
+
+flag foreign_sunras_write (Channel channel, multi_array *multi_desc, ...)
+/*  [PURPOSE] This routine will write a colour image to a channel in Sun
+    rasterfile format
+    <channel> The channel to write to. The channel is not flushed.
+    <multi_desc> The multi_array descriptor pointer. The routine will find a
+    TrueColour image or a PseudoColour image within the data structure.
+    [VARARGS] The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. The last argument must be FA_SUNRAS_WRITE_END.
+    The attributes are passed using varargs.
+    [MT-LEVEL] Unsafe.
+    [RETURNS] TRUE on succes, else FALSE.
+*/
+/*---------------------------------------------------------------------------*/

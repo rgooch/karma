@@ -50,12 +50,13 @@ typedef struct {			/* new fields in widget */
     int repeat_delay;			/* repeatDelay/Delay */
     int minimum_delay;			/* minimumDelay/MinimumDelay */
     int decay;				/* decay to minimum delay */
-    Boolean flash;			/* flash/Boolean */
+    Bool    flash;			/* flash/Boolean */
     XtCallbackList start_callbacks;	/* startCallback/StartCallback */
     XtCallbackList stop_callbacks;	/* stopCallback/StopCallback */
     /* private data... */
     int next_delay;			/* next amount for timer */
     XtIntervalId timer;			/* timer that will fire */
+    Bool allow_timer;           /* a way to prevent timer from being started */
 } RepeaterPart;
 
 typedef struct _RepeaterRec {

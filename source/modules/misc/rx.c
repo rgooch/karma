@@ -2,7 +2,7 @@
 
     Source file for  rx  (data srtucture receiver module).
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1993,1994,1995  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -40,8 +40,11 @@
     Updated by      Richard Gooch   6-OCT-1993: Changed over to  panel_
   package for command line user interface.
 
-    Last updated by Richard Gooch   3-NOV-1994: Switched to OS_ and MACHINE_
+    Updated by      Richard Gooch   3-NOV-1994: Switched to OS_ and MACHINE_
   macros for machine determination.
+
+    Last updated by Richard Gooch   10-MAR-1995: Added support for "spray"
+  protocol.
 
 
 */
@@ -55,6 +58,7 @@
 #endif
 #include <sys/resource.h>
 #include <string.h>
+#include <errno.h>
 #include <os.h>
 #include <karma.h>
 #include <karma_module.h>
@@ -75,10 +79,12 @@
 #define COMMAND_LINE_LENGTH 4096
 #define WALL_CLOCK_TIME_DETECT 60
 #define CPUTIME_DETECT 2
+#define BUF_SIZE 16384
 
-static flag read_multi_array ();
+STATIC_FUNCTION (flag read_multi_array, (Connection connection, void **info) );
 static flag process_one_line (/* line, decode_func */);
 static flag internal_decode_func (/* line, fp */);
+STATIC_FUNCTION (flag read_spray, (Connection connection, void **info) );
 
 
 static char *arrayfile = "";
@@ -106,6 +112,10 @@ char **argv;
     conn_register_server_protocol ("multi_array", 0, 0,
 				   ( flag (*) () ) NULL,
 				   read_multi_array,
+				   ( void (*) () ) NULL);
+    conn_register_server_protocol ("spray", 0, 0,
+				   ( flag (*) () ) NULL,
+				   read_spray,
 				   ( void (*) () ) NULL);
     if ( ( def_port_number = r_get_def_port (module_name, NULL) ) < 0 )
     {
@@ -245,7 +255,7 @@ flag (*decode_func) ();
     return (TRUE);
 }   /*  End Function process_one_line  */
 
-static flag read_multi_array (connection, info)
+static flag read_multi_array (Connection connection, void **info)
 /*  This routine will read in data from the connection given by  connection
     and will write any appropriate information to the pointer pointed to by
     info  .
@@ -253,8 +263,6 @@ static flag read_multi_array (connection, info)
     else it returns FALSE (indicating the connection should be closed).
     Note that the  close_func  will be called upon connection closure.
 */
-Connection connection;
-void **info;
 {
     Channel channel;
     multi_array *multi_desc;
@@ -285,3 +293,46 @@ FILE *fp;
     return ( panel_process_command_with_stack (line, ( flag (*) () ) NULL,
 					       fp) );
 }
+
+static flag read_spray (Connection connection, void **info)
+/*  This routine will read in data from the connection given by  connection
+    and will write any appropriate information to the pointer pointed to by
+    info  .
+    The routine returns TRUE on successful reading,
+    else it returns FALSE (indicating the connection should be closed).
+    Note that the  close_func  will be called upon connection closure.
+*/
+{
+    Channel channel;
+    int bytes_readable;
+    unsigned int bytes_to_read;
+    char buffer[BUF_SIZE];
+    extern char *sys_errlist[];
+    static char function_name[] = "read_spray";
+
+    channel = conn_get_channel (connection);
+    if ( ( bytes_readable = ch_get_bytes_readable (channel) ) < 0 )
+    {
+	(void) exit (RV_SYS_ERROR);
+    }
+    if (bytes_readable < 1)
+    {
+	(void) fprintf (stderr,
+			"Connection has: %d bytes readable: should be at least 1\n",
+			bytes_readable);
+	a_prog_bug (function_name);
+    }
+    while (bytes_readable > 0)
+    {
+	bytes_to_read = (bytes_readable >BUF_SIZE) ? BUF_SIZE : bytes_readable;
+	if (ch_read (channel, buffer, bytes_to_read) < bytes_to_read)
+	{
+	    (void) fprintf (stderr,
+			    "Error reading: %u bytes from descriptor\t%s\n",
+			    (unsigned int) bytes_readable, sys_errlist[errno]);
+	    return (FALSE);
+	}
+	bytes_readable -= bytes_to_read;
+    }
+    return (TRUE);
+}   /*  End Function read_spray  */

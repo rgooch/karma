@@ -2,7 +2,7 @@
 
     Header for  c_  package.
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,21 +31,20 @@
 
     Written by      Richard Gooch   27-NOV-1994
 
-    Last updated by Richard Gooch   28-NOV-1994
+    Last updated by Richard Gooch   7-APR-1995
 
 */
 
-#ifndef KARMA_C_H
-#define KARMA_C_H
-
-
-#ifndef KARMA_H
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
 #  include <karma.h>
 #endif
 
-#ifndef KARMA_C_DEF_H
+#if !defined(KARMA_C_DEF_H) || defined(MAKEDEPEND)
 #  include <karma_c_def.h>
 #endif
+
+#ifndef KARMA_C_H
+#define KARMA_C_H
 
 
 /*  File:  main.c  */

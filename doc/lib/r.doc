@@ -7,9 +7,9 @@
     accept connections.
 
 
-    Written by		Richard Gooch	7-Jan-1995
+    Written by		Richard Gooch	22-Aug-1995
 
-    Last updated by	Richard Gooch	7-Jan-1995
+    Last updated by	Richard Gooch	22-Aug-1995
 
 
 */
@@ -181,15 +181,22 @@ CONST char *env_name;
 CONST char *env_value;
 /*---------------------------------------------------------------------------*/
 
-void r_gethostname (name, namelen)
-/*  This routine will determine the local hostname.
-    The buffer to write the hostname to must be pointed to by  name  .
-    The length of the buffer must be given by  namelen  .
-    The buffer is guaranteed to be null terminated.
-    The routine returns nothing.
+void r_gethostname (char *name, unsigned int namelen)
+/*  [PURPOSE] This routine will determine the local hostname.
+    <name> The hostname will be written here. It is guaranteed to be null
+    terminated.
+    <namelen> The size of the buffer.
+    [RETURNS] Nothing.
 */
-char *name;
-unsigned int namelen;
+/*---------------------------------------------------------------------------*/
+
+flag r_get_fq_hostname (char *name, unsigned int namelen)
+/*  [PURPOSE] This routine will get the fully qualified local hostname.
+    <name> The hostname will be written here. It is guaranteed to be null
+    terminated.
+    <namelen> The size of the buffer.
+    [RETURNS] TRUE on success, else FALSE.
+*/
 /*---------------------------------------------------------------------------*/
 
 int r_getppid ()

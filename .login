@@ -25,17 +25,17 @@
 
 # Written by		Richard Gooch	22-SEP-1992
 
-# Last updated by	Richard Gooch	25-JAN-1995
+# Last updated by	Richard Gooch	10-JAN-1996
 
 
 # Define Karma installed base (for ordinary users)
 if ("$?KARMABASE" == "0") setenv KARMABASE /usr/local/karma
 
 # List of Karma root directories
-set karmaroots = (/wyvern/karma /applic/karma /aips++1/karma /usr/local/src/karma /purgatory_1/rgooch/karma $HOME/karma)
+set karmaroots = (/vindaloo/karma /nfs/applic/karma /aips++1/karma /usr/local/src/karma $HOME/karma)
 foreach i ($karmaroots)
-    if (-d $i) then
-	if ("$?KARMAROOT" == "0") setenv KARMAROOT $i
+    if ("$?KARMAROOT" == "0") then
+	if (-d $i) setenv KARMAROOT $i
     endif
 end
 
@@ -60,17 +60,23 @@ setenv KARMABINPATH ${KARMABASE}/bin
 setenv KARMALIBPATH ${KARMABASE}/lib
 setenv KARMAINCLUDEPATH ${KARMABASE}/include
 
+# Set version number environment variable
+set _versionfile = $KARMAINCLUDEPATH/k_version.h
+set tmp = `fgrep KARMA_VERSION $_versionfile | tr '"' ' ' | tr - ' '`
+setenv KARMA_VERSION "$tmp[$#tmp]"
+if ("$KARMA_VERSION" == "") then
+    echo "WARNING: KARMA_VERSION environment variable could not be computed."
+endif
+unset _versionfile
+
 # Libraries to depend on (for modules)
 switch ("$OS")
     case "SunOS":
-	setenv KARMA_CC "gcc -fpcc-struct-return"
-	setenv KARMA_CPIC "-fPIC"
-	setenv KARMA_LD gcc
-	setenv KDEPLIB_KARMA $KARMALIBPATH/libkarma.sa.*
-	#setenv KDEPLIB_KARMAX11 $KARMALIBPATH/libkarmaX11.sa.*
-	#setenv KDEPLIB_KARMAXT $KARMALIBPATH/libkarmaXt.sa.*
-	#setenv KDEPLIB_KARMAXVIEW $KARMALIBPATH/libkarmaxview.sa.*
-	#setenv KDEPLIB_KARMAGRAPHICS $KARMALIBPATH/libkarmagraphics.sa.*
+	setenv KDEPLIB_KARMA $KARMALIBPATH/libkarma.sa.$KARMA_VERSION
+	#setenv KDEPLIB_KARMAX11 $KARMALIBPATH/libkarmaX11.sa.$KARMA_VERSION
+	#setenv KDEPLIB_KARMAXT $KARMALIBPATH/libkarmaXt.sa.$KARMA_VERSION
+	#setenv KDEPLIB_KARMAXVIEW $KARMALIBPATH/libkarmaxview.sa.$KARMA_VERSION
+	#setenv KDEPLIB_KARMAGRAPHICS $KARMALIBPATH/libkarmagraphics.sa.$KARMA_VERSION
 	if ("$?_k_need_llp" != "0") then
 	    if ("$?LD_LIBRARY_PATH" == "0") then
 		setenv LD_LIBRARY_PATH $KARMALIBPATH
@@ -80,10 +86,6 @@ switch ("$OS")
 	endif
 	breaksw
     case "Solaris":
-	setenv KARMA_CC "gcc -fpcc-struct-return -D_REENTRANT"
-	setenv KARMA_CPIC "-fPIC"
-	setenv KARMA_LD gcc
-	setenv OS_LIBS "-lthread"
 	if ("$?_k_need_llp" != "0") then
 	    if ("$?LD_LIBRARY_PATH" == "0") then
 		setenv LD_LIBRARY_PATH $KARMALIBPATH
@@ -93,54 +95,15 @@ switch ("$OS")
 	endif
 	breaksw
     case "Linux"
-	setenv KARMA_CC cc
-	setenv KARMA_LD "$KARMA_CC"
-	setenv KDEPLIB_KARMA $KARMALIBPATH/libkarma.sa
-	setenv KDEPLIB_KARMAX11 $KARMALIBPATH/libkarmaX11.sa
-	setenv KDEPLIB_KARMAXT $KARMALIBPATH/libkarmaXt.sa
-	setenv KDEPLIB_KARMAXVIEW $KARMALIBPATH/libkarmaxview.sa
-	setenv KDEPLIB_KARMAGRAPHICS $KARMALIBPATH/libkarmagraphics.sa
-	setenv KDEPLIB_KARMAWIDGETS $KARMALIBPATH/libkarmawidgets.sa
-	breaksw
     case "IRIX5":
-	setenv KARMA_CC "cc -xansi -signed -D_SGI_MP_SOURCE"
-	setenv KARMA_LD "cc -xansi -Wl,-no_library_replacement"
-	breaksw
+    case "IRIX6":
     case "OSF1":
-	# gcc causes problems with shared Xt library ???
-	#setenv KARMA_CC "gcc -fpcc-struct-return"
-	setenv KARMA_CC "cc -std"
-	setenv KARMA_LD "$KARMA_CC -Wl,-no_library_replacement"
-	breaksw
     case "AIX":
-	setenv KARMA_CC "cc -qchars=signed -qlanglvl=ansi"
-	setenv KARMA_LD "cc"
-	breaksw
-    case "ConvexOS":
-	setenv KARMA_CC "cc -ext"
-	setenv KARMA_LD "$KARMA_CC"
-	setenv KDEPLIB_KARMA $KARMALIBPATH/libkarma.a
-	setenv KDEPLIB_KARMAX11 $KARMALIBPATH/libkarmaX11.a
-	setenv KDEPLIB_KARMAXT $KARMALIBPATH/libkarmaXt.a
-	setenv KDEPLIB_KARMAGRAPHICS $KARMALIBPATH/libkarmagraphics.a
-	setenv KDEPLIB_KARMAWIDGETS $KARMALIBPATH/libkarmawidgets.a
-	breaksw
     case "HPUX":
-	setenv KARMA_CC "cc -Aa -D_HPUX_SOURCE"
-	setenv KARMA_LD "cc"
-	breaksw
-    case "ULTRIX":
-	setenv KARMA_CC "gcc -fpcc-struct-return"
-	setenv KARMA_LD gcc
-	setenv KDEPLIB_KARMA $KARMALIBPATH/libkarma.a
-	setenv KDEPLIB_KARMAX11 $KARMALIBPATH/libkarmaX11.a
-	setenv KDEPLIB_KARMAXT $KARMALIBPATH/libkarmaXt.a
-	setenv KDEPLIB_KARMAGRAPHICS $KARMALIBPATH/libkarmagraphics.a
-	setenv KDEPLIB_KARMAWIDGETS $KARMALIBPATH/libkarmawidgets.a
+	# Platforms with shared libraries: no dependencies on libraries.
 	breaksw
     default:
-	setenv KARMA_CC cc
-	setenv KARMA_LD "$KARMA_CC"
+	# Platforms with static libraries: modules depend on libraries.
 	setenv KDEPLIB_KARMA $KARMALIBPATH/libkarma.a
 	setenv KDEPLIB_KARMAX11 $KARMALIBPATH/libkarmaX11.a
 	setenv KDEPLIB_KARMAXT $KARMALIBPATH/libkarmaXt.a
@@ -165,10 +128,14 @@ else
     set _newpath = ($karmabin $_newpath)
 endif
 
+if ("$?MANPATH" == "0") then
+    # Initialise MANPATH
+    setenv MANPATH "${KARMABASE}/man:/usr/man"
+else
+    setenv MANPATH "${KARMABASE}/man:${MANPATH}"
+endif
+
 # Source KARMA .cshrc (not done initiallly)
 source $KARMABASE/.cshrc
-
-# Set version number environment variable
-setenv KARMA_VERSION `cat $KARMABASE/.version`
 
 exit

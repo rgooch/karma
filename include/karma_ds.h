@@ -2,7 +2,7 @@
 
     Header for  ds_  package.
 
-    Copyright (C) 1992,1993,1994,1995  Richard Gooch
+    Copyright (C) 1992-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,17 +31,16 @@
 
     Written by      Richard Gooch   13-SEP-1992
 
-    Last updated by Richard Gooch   2-JAN-1995
+    Last updated by Richard Gooch   21-JAN-1996
 
 */
 
-#ifndef KARMA_DS_H
-#define KARMA_DS_H
-
-
-#ifndef KARMA_DS_DEF_H
+#if !defined(KARMA_DS_DEF_H) || defined(MAKEDEPEND)
 #  include <karma_ds_def.h>
 #endif
+
+#ifndef KARMA_DS_H
+#define KARMA_DS_H
 
 
 /*  File:   ds_alloc.c   */
@@ -179,6 +178,9 @@ EXTERN_FUNCTION (flag ds_get_scattered_elements,
 		 (CONST char *data, unsigned int data_type,
 		  CONST uaddr *offsets, double *values, flag *complex,
 		  unsigned int num_values) );
+EXTERN_FUNCTION (flag ds_can_transfer_element_as_block, (unsigned int type) );
+EXTERN_FUNCTION (flag ds_can_transfer_packet_as_block,
+		 (packet_desc *pack_desc) );
 
 
 /*  File:   ds_put.c  */
@@ -246,6 +248,15 @@ EXTERN_FUNCTION (unsigned int ds_get_handle_in_list,
 
 
 /*  File:   ds_array.c  */
+EXTERN_FUNCTION (flag ds_find_1D_extremes,
+		 (CONST char *data, unsigned int num_values, uaddr *offsets,
+		  unsigned int elem_type, unsigned int conv_type,
+		  double *min, double *max) );
+EXTERN_FUNCTION (flag ds_find_2D_extremes,
+		 (CONST char *data, unsigned int length1, uaddr *offsets1,
+		  unsigned int length2, uaddr *offsets2,
+		  unsigned int elem_type, unsigned int conv_type,
+		  double *min, double *max) );
 EXTERN_FUNCTION (flag ds_find_single_extremes, (char *data,
 						unsigned int elem_type,
 						unsigned int conv_type,
@@ -273,6 +284,10 @@ EXTERN_FUNCTION (flag ds_find_single_histogram,
 		  unsigned long *histogram_array,
 		  unsigned long *histogram_peak,
 		  unsigned long *histogram_mode) );
+EXTERN_FUNCTION (void ds_complex_to_real_1D,
+		 (double *out, unsigned int out_stride,
+		  double *inp, unsigned int num_values,
+		  unsigned int conv_type) );
 
 
 /*  File:  ds_attach.c  */
@@ -286,7 +301,7 @@ EXTERN_FUNCTION (flag ds_put_unique_named_string, (packet_desc *pack_desc,
 						   flag update) );
 EXTERN_FUNCTION (flag ds_get_unique_named_value,
 		 (packet_desc *pack_desc, char *packet, CONST char *name,
-		  unsigned int *type, double *value) );
+		  unsigned int *type, double value[2]) );
 EXTERN_FUNCTION (char *ds_get_unique_named_string, (packet_desc *pack_desc,
 						    char *packet,
 						    CONST char *name) );

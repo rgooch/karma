@@ -3,7 +3,7 @@
 
     This code provides routines to draw objects into Karma data structures.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -56,13 +56,16 @@
   order to avoid having to link with buggy UCB compatibility library in
   Slowaris 2.3
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/ds/draw.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/ds/draw.c
+
+    Last updated by Richard Gooch   19-APR-1995: Cleaned some code.
 
 
 */
 
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 #include <karma.h>
 #include <karma_ds.h>
 #include <karma_m.h>
@@ -70,8 +73,6 @@
 
 static void put_segment_at();
 static void put_segment();
-static delete();
-static insert();
 
 typedef struct {
   double x, y;
@@ -87,12 +88,15 @@ typedef struct {		/* a polygon edge */
    and compare_active, and there is no other way to get them in 
 */
 
-static int n;			/* number of vertices */
-static Point2 *pt;		/* vertices */
+static int n;		       /* number of vertices */
+static Point2 *pt;	       /* vertices */
 
-static int nact;		/* number of active edges */
-static Edge *active;		/* active edge list:edges crossing scanline y */
+static int nact;	       /* number of active edges */
+static Edge *active;	       /* active edge list:edges crossing scanline y */
 
+
+STATIC_FUNCTION (void delete, (int i) );
+STATIC_FUNCTION (void insert, (int i, int y) );
 static int compare_ind(), compare_active();
 
 
@@ -289,8 +293,7 @@ double *value;
 
 /*  Private functions follow  */
 
-static delete(i)		/* remove edge i from active list */
-int i;
+static void delete (int i)		/* remove edge i from active list */
 {
     int j;
     for (j=0; j<nact && active[j].i!=i; j++);
@@ -300,8 +303,7 @@ int i;
 	    (nact-j)*sizeof active[0] );
 }
 
-static insert(i, y)		/* append edge i to end of active list */
-int i, y;
+static void insert (int i, int y)     /* append edge i to end of active list */
 {
     int j;
     double dx;
@@ -318,8 +320,8 @@ int i, y;
 }
 
 /* comparison routines for qsort */
-static compare_ind(u, v) int *u, *v; {return pt[*u].y <= pt[*v].y ? -1 : 1;}
-static compare_active(u, v) Edge *u, *v; {return u->x <= v->x ? -1 : 1;}
+static int compare_ind(u, v) int *u, *v; {return pt[*u].y <= pt[*v].y ? -1 :1;}
+static int compare_active(u, v) Edge *u, *v; {return u->x <= v->x ? -1 : 1;}
 
 static void put_segment_at(data,data_type,linestride,segstride,line_dim_desc,
 			   seg_dim_desc,line_num,line_scale,
@@ -340,18 +342,16 @@ double seg_end;
 double *value;
 unsigned int abs_bias;
 {
-  static char function_name[] = "put_segment_at";
-  
-  int co;
+    int co;
 
-  /* Check for out of bounds and return */
-  line_scale=line_scale/2.0;
-  if (line_num-line_scale>=line_dim_desc->maximum) return;
-  if (line_num+line_scale<=line_dim_desc->minimum) return;
+    /* Check for out of bounds and return */
+    line_scale = line_scale / 2.0;
+    if (line_num-line_scale >= line_dim_desc->maximum) return;
+    if (line_num+line_scale <= line_dim_desc->minimum) return;
 
-  co = ds_get_coord_num (line_dim_desc,line_num,SEARCH_BIAS_CLOSEST);
-  put_segment (data+linestride*co,data_type,segstride,seg_dim_desc,seg_start,
-	       seg_end,value,abs_bias);
+    co = ds_get_coord_num (line_dim_desc, line_num, SEARCH_BIAS_CLOSEST);
+    put_segment (data + linestride * co, data_type, segstride, seg_dim_desc,
+		 seg_start, seg_end, value, abs_bias);
 }
 
 static void put_segment(data,data_type,stride,seg_dim_desc,seg_start,seg_end,
@@ -376,7 +376,6 @@ double *value;
 unsigned int bias;
 {
     unsigned int st_co, end_co, num_els;
-    static char function_name[] = "put_segment";
 
     st_co = ds_get_coord_num (seg_dim_desc, seg_start, bias);
     end_co = ds_get_coord_num (seg_dim_desc, seg_end, bias);

@@ -3,7 +3,7 @@
 
     This code provides initialisation, control and sequencing for many modules.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -88,14 +88,20 @@
     Updated by      Richard Gooch   26-NOV-1994: Moved to
   packages/module/misc.c
 
-    Last updated by Richard Gooch   7-DEC-1994: Stripped declaration of  errno
+    Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
+
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Last updated by Richard Gooch   9-AUG-1995: Used sigaction(2) instead of
+  signal(3) for SIGINT.
 
 
 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <sys/time.h>
 #include <sys/times.h>
 #ifdef OS_VXMVX
@@ -114,6 +120,7 @@
 #include <karma_conn.h>
 #include <karma_arln.h>
 #include <karma_chm.h>
+#include <karma_ch.h>
 #include <karma_im.h>
 #include <karma_hi.h>
 #include <karma_s.h>
@@ -178,9 +185,9 @@ int max_incoming;
 int max_outgoing;
 flag server;
 {
-    int arg_count;
     int def_port_number;
     unsigned int server_port_number;
+    struct sigaction new_action;
     char line[COMMAND_LINE_LENGTH];
     char prompt[STRING_LENGTH + 3];
     extern char *sys_errlist[];
@@ -205,8 +212,7 @@ flag server;
 	    exit (RV_UNDEF_ERROR);
 	}
 	server_port_number = def_port_number;
-	if (conn_become_server (&server_port_number, CONN_MAX_INSTANCES)
-	    != TRUE)
+	if ( !conn_become_server (&server_port_number, CONN_MAX_INSTANCES) )
 	{
 	    (void) fprintf (stderr, "Module not operating as Karma server\n");
 	    exit (RV_UNDEF_ERROR);
@@ -216,8 +222,14 @@ flag server;
     conn_register_server_protocol ("command_line", 0, 0,
 				   ( flag (*) () ) NULL, command_read_func,
 				   ( void (*) () ) NULL);
+    sigemptyset (&new_action.sa_mask);
+    new_action.sa_flags = 0;
+#ifdef SA_RESTART
+    new_action.sa_flags |= SA_RESTART;
+#endif
     /*  Set up control_c handler  */
-    if ( (long) signal (SIGINT, s_int_handler) == -1 )
+    new_action.sa_handler = s_int_handler;
+    if (sigaction (SIGINT, &new_action, (struct sigaction *) NULL) != 0)
     {
 	(void) fprintf (stderr, "Error setting control_c handler\t%s%c\n",
 			sys_errlist[errno], BEL);
@@ -233,12 +245,12 @@ flag server;
 	(void) exit (RV_SYS_ERROR);
     }
 #endif
-    if (conn_controlled_by_cm_tool () != TRUE)
+    if ( !conn_controlled_by_cm_tool () )
     {
 	/*  Read in defaults  */
 	hi_read (module_name, internal_decode_func);
     }
-    if (s_check_for_int () == TRUE)
+    if ( s_check_for_int () )
     {
 	(void) fprintf (stderr, "control_c abort\n");
 	(void) exit (RV_CONTROL_C);
@@ -260,7 +272,7 @@ flag server;
     /*  Read lines and processes until eof on input  */
     while ( arln_read_from_stdin (line, COMMAND_LINE_LENGTH, prompt) &&
 	   process_one_line (line, decode_func) );
-    if (conn_controlled_by_cm_tool () != TRUE)
+    if ( !conn_controlled_by_cm_tool () )
     {
 	/*  Save defaults  */
 	hi_write (module_name, internal_decode_func);
@@ -299,7 +311,9 @@ flag (*unknown_func) ();
     flag more_parameters;
     char *arg;
     char line[COMMAND_LINE_LENGTH + 1];
+/*
     static char function_name[] = "module_process_argvs";
+*/
 
     if (argc < 1) return;
     /*  Concatenate command line parameters into a single line  */
@@ -315,7 +329,7 @@ flag (*unknown_func) ();
 	    if (line_length > 0)
 	    {
 		/*  Send off the last parameter  */
-		if (process_one_line (line, unknown_func) != TRUE)
+		if ( !process_one_line (line, unknown_func) )
 		{
 		    exit (RV_UNDEF_ERROR);
 		}
@@ -331,7 +345,7 @@ flag (*unknown_func) ();
 	    if (line_length > 0)
 	    {
 		/*  Send off the last parameter  */
-		if (process_one_line (line, unknown_func) != TRUE)
+		if ( !process_one_line (line, unknown_func) )
 		{
 		    exit (RV_UNDEF_ERROR);
 		}
@@ -387,7 +401,7 @@ flag (*unknown_func) ();
     }
     if (line_length > 0)
     {
-	if (process_one_line (line, unknown_func) != TRUE)
+	if ( !process_one_line (line, unknown_func) )
 	{
 	    exit (RV_UNDEF_ERROR);
 	}
@@ -445,14 +459,14 @@ flag (*decode_func) ();
     }
 #  endif  /*  HAS_GETRUSAGE  */
 #endif  /*  defined(HAS_GETRUSAGE) || defined(HAS_TIMES)  */
-    if (panel_process_command_with_stack (line, decode_func, stderr) != TRUE)
+    if ( !panel_process_command_with_stack (line, decode_func, stderr) )
     {
 	return (FALSE);
     }
-    if (s_check_for_int () == TRUE)
+    if ( s_check_for_int () )
     {
 	(void) fprintf (stderr, "control_c abort\n");
-	return (TRUE);
+	return (FALSE);
     }
 #if defined(HAS_GETRUSAGE) || defined(HAS_TIMES)
     if (gettimeofday (&stop_time, &tz) != 0)
@@ -516,9 +530,11 @@ void **info;
     extern flag (*decode_function) ();
     char buffer[STRING_LENGTH];
     extern char *sys_errlist[];
+/*
     static char function_name[] = "command_read_func";
+*/
 
-    if (ch_gets (conn_get_channel (connection), buffer, STRING_LENGTH) != TRUE)
+    if ( !ch_gets (conn_get_channel (connection), buffer, STRING_LENGTH) )
     {
 	(void) fprintf (stderr, "Error reading string\t%s\n",
 			sys_errlist[errno]);

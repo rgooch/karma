@@ -45,8 +45,48 @@
 
     Updated by      Richard Gooch   12-JAN-1995: Created cmapSize resource.
 
-    Last updated by Richard Gooch   20-JAN-1995: No longer set visible canvas
+    Updated by      Richard Gooch   20-JAN-1995: No longer set visible canvas
   upon canvas refresh since not all refreshes are due to CanvasWidget mapping.
+
+    Updated by      Richard Gooch   30-JAN-1995: Added stereo support.
+
+    Updated by      Richard Gooch   17-APR-1995: Fixed mix of XtRBool and
+  sizeof Boolean in resource fields. Use Bool because it is of int size.
+
+    Updated by      Richard Gooch   10-JUL-1995: Added showAnimateButton
+  resource.
+
+    Updated by      Richard Gooch   13-JUL-1995: Made use of
+  VIEWIMG_ATT_ALLOW_TRUNCATION attribute.
+
+    Updated by      Richard Gooch   6-AUG-1995: Don't assume PseudoColour
+  visual is always available.
+
+    Updated by      Richard Gooch   29-AUG-1995: Set saturation pixels to auto.
+
+    Updated by      Richard Gooch   1-SEP-1995: Moved to <kcmap_va_create>.
+
+    Updated by      Richard Gooch   4-SEP-1995: Ensure one of the mono canvases
+  is mapped when managed.
+
+    Updated by      Richard Gooch   6-SEP-1995: Added "Export" menu. Supported
+  Sun Rasterfile format.
+
+    Updated by      Richard Gooch   7-SEP-1995: Update imageName member with
+  dynamically allocated private copy of image name.
+
+    Updated by      Richard Gooch   8-SEP-1995: Added experimental fullscreen
+  resource.
+
+    Updated by      Richard Gooch   23-SEP-1995: Took account of stereo modes.
+
+    Uupdated by     Richard Gooch   11-OCT-1995: Forced use of same Kcolourmap
+  for mono and stereo pseudocolour world canvases.
+
+    Updated by      Richard Gooch   13-OCT-1995: Prevented unmap/map when
+  switching active canvas from left<->right within same visual type.
+
+    Last updated by Richard Gooch   28-DEC-1995: Added verbose resource.
 
 
 */
@@ -62,8 +102,11 @@
 #include <X11/Xaw/Toggle.h>
 #include <karma.h>
 #include <k_event_codes.h>
+#include <karma_foreign.h>
 #include <karma_viewimg.h>
 #include <karma_xc.h>
+#include <karma_ch.h>
+#include <karma_st.h>
 #include <karma_m.h>
 #include <Xkw/ImageDisplayP.h>
 #include <Xkw/MultiCanvas.h>
@@ -113,6 +156,19 @@ STATIC_FUNCTION (void zoom,
 STATIC_FUNCTION (void clear_crosshairs, (ImageDisplayWidget w) );
 STATIC_FUNCTION (void show_crosshair_positions, (ImageDisplayWidget w) );
 STATIC_FUNCTION (void irange_control, (double min, double max) );
+STATIC_FUNCTION (flag log_iscale_func,
+		 (double *out, unsigned int out_stride,
+		  double *inp, unsigned int inp_stride,
+		  unsigned int num_values, double i_min, double i_max,
+		  void *info) );
+STATIC_FUNCTION (void export_cbk, (Widget w, XtPointer client_data,
+				   XtPointer call_data) );
+STATIC_FUNCTION (void show_fullscreen, (ImageDisplayWidget w) );
+STATIC_FUNCTION (void GlobalKeyPress, () );
+
+
+static char *def_image_name = "fred";
+
 
 #define offset(field) XtOffsetOf(ImageDisplayRec, imageDisplay.field)
 
@@ -124,16 +180,34 @@ static XtResource resources[] =
      offset (directCanvas), XtRImmediate, NULL},
     {XkwNtrueColourCanvas, XkwCWorldCanvas, XtRPointer, sizeof (XtPointer),
      offset (trueCanvas), XtRImmediate, NULL},
+    {XkwNpseudoColourLeftCanvas, XkwCWorldCanvas, XtRPointer,
+     sizeof (XtPointer), offset (pseudoCanvasLeft), XtRImmediate, NULL},
+    {XkwNpseudoColourRightCanvas, XkwCWorldCanvas, XtRPointer,
+     sizeof (XtPointer), offset (pseudoCanvasRight), XtRImmediate, NULL},
+    {XkwNdirectColourLeftCanvas, XkwCWorldCanvas, XtRPointer,
+     sizeof (XtPointer), offset (directCanvasLeft), XtRImmediate, NULL},
+    {XkwNdirectColourRightCanvas, XkwCWorldCanvas, XtRPointer,
+     sizeof (XtPointer), offset (directCanvasRight), XtRImmediate, NULL},
+    {XkwNtrueColourLeftCanvas, XkwCWorldCanvas, XtRPointer,
+     sizeof (XtPointer), offset (trueCanvasLeft), XtRImmediate, NULL},
+    {XkwNtrueColourRightCanvas, XkwCWorldCanvas, XtRPointer,
+     sizeof (XtPointer), offset (trueCanvasRight), XtRImmediate, NULL},
     {XkwNvisibleCanvas, XkwCWorldCanvas, XtRPointer, sizeof (XtPointer),
      offset (visibleCanvas), XtRImmediate, NULL},
     {XkwNimageName, XkwCImageName, XtRString, sizeof (String),
-     offset (imageName), XtRImmediate, "fred"},
-    {XkwNenableAnimation, XkwCEnableAnimation, XtRBoolean, sizeof (Boolean),
+     offset (imageName), XtRImmediate, NULL},
+    {XkwNenableAnimation, XkwCEnableAnimation, XtRBool, sizeof (Bool),
      offset (enableAnimation), XtRImmediate, (XtPointer) False},
-    {XkwNshowQuitButton, XkwCShowQuitButton, XtRBoolean, sizeof (Boolean),
+    {XkwNshowAnimateButton, XkwCShowAnimateButton, XtRBool, sizeof (Bool),
+     offset (showAnimateButton), XtRImmediate, (XtPointer) True},
+    {XkwNshowQuitButton, XkwCShowQuitButton, XtRBool, sizeof (Bool),
      offset (showQuitButton), XtRImmediate, (XtPointer) True},
     {XkwNcmapSize, XkwCCmapSize, XtRInt, sizeof (int),
      offset (cmapSize), XtRImmediate, (XtPointer) 200},
+    {XkwNfullscreen, XkwCFullscreen, XtRBool, sizeof (Bool),
+     offset (fullscreen), XtRImmediate, (XtPointer) False},
+    {XkwNverbose, XkwCVerbose, XtRBool, sizeof (Bool),
+     offset (verbose), XtRImmediate, False},
 #undef offset
 };
 
@@ -142,11 +216,13 @@ static XtResource resources[] =
 #define ZOOMCODE_AREA       (unsigned int) 2
 #define ZOOMCODE_UNZOOM     (unsigned int) 3
 #define ZOOMCODE_INTENSITY  (unsigned int) 4
+/*#define ZOOMCODE_FULLSCREEN  (unsigned int) 5*/
 #define NUM_ZOOM_CHOICES 5
 
 static char *zoom_choices[NUM_ZOOM_CHOICES] =
 {
-    "Horizontal", "Vertical", "2-dimensional", "Unzoom", "Intensity"
+    "Horizontal", "Vertical", "2-dimensional", "Unzoom", "Intensity",
+/*    "Fullscreen"*/
 };
 
 #define CROSSHAIRCODE_CLEAR (unsigned int) 0
@@ -158,6 +234,15 @@ static char *crosshair_choices[NUM_CROSSHAIR_CHOICES] =
     "Clear", "Show"
 };
 
+#define EXPORT_POSTSCRIPT (unsigned int) 0
+#define EXPORT_SUNRAS     (unsigned int) 1
+#define EXPORT_PPM        (unsigned int) 2
+#define NUM_EXPORT_CHOICES 2
+
+static char *export_choices[NUM_EXPORT_CHOICES] =
+{
+    "PostScript", "SunRasterfile" /*, "PortablePixelMap" */
+};
 
 ImageDisplayClassRec imageDisplayClassRec =
 {
@@ -225,18 +310,25 @@ WidgetClass imageDisplayWidgetClass = (WidgetClass) &imageDisplayClassRec;
 
 static void Initialise (Widget Request, Widget New)
 {
+    Boolean one_to_map = True;
     ImageDisplayWidget request = (ImageDisplayWidget) Request;
     ImageDisplayWidget new = (ImageDisplayWidget) New;
     int canvas_types;
     Widget filewin, files_btn, track_label, canvas;
-    Widget colourmap_btn, aspect_tgl, print_btn, quit_btn, menu_btn;
+    Widget colourmap_btn, aspect_tgl, quit_btn, menu_btn;
     Widget quit_neighbour, animate_btn;
-    Widget pswinpopup, izoomwinpopup, animatepopup;
+    Widget pswinpopup, izoomwinpopup, animatepopup, shell;
     Widget pseudo_cnvs, direct_cnvs, true_cnvs;
     Display *dpy;
+    Screen *screen;
     struct dual_crosshair_type *crosshairs;
     /*static char function_name[] = "ImageDisplayWidget::Initialise";*/
 
+    if (new->imageDisplay.imageName == NULL)
+    {
+	new->imageDisplay.imageName = def_image_name;
+    }
+    new->imageDisplay.override_shell = NULL;
     crosshairs = &new->imageDisplay.crosshairs;
     m_clear ( (char *) crosshairs, sizeof *crosshairs );
     new->imageDisplay.visibleCanvas = NULL;
@@ -254,6 +346,8 @@ static void Initialise (Widget Request, Widget New)
 				       postscriptWidgetClass, New,
 				       XtNtitle, "Postscript Window",
 				       NULL);
+    new->imageDisplay.pswinpopup = pswinpopup;
+    XtAddCallback (pswinpopup, XtNcallback, postscript_cbk, New);
     izoomwinpopup = XtVaCreatePopupShell ("izoomwinpopup",
 					  dataclipWidgetClass, New,
 					  XtNtitle, "Intensity Zoom",
@@ -308,25 +402,30 @@ static void Initialise (Widget Request, Widget New)
 					XkwNitemStrings, crosshair_choices,
 					NULL);
     XtAddCallback (menu_btn, XkwNselectCallback, crosshair_cbk, New);
-    print_btn = XtVaCreateManagedWidget ("button", commandWidgetClass, New,
-					 XtNlabel, "Print",
-					 XtNfromHoriz, menu_btn,
-					 NULL);
-    XtAddCallback (pswinpopup, XtNcallback, postscript_cbk, New);
-    XtAddCallback (print_btn, XtNcallback, popup_cbk, pswinpopup);
-    if (new->imageDisplay.enableAnimation)
+    menu_btn = XtVaCreateManagedWidget ("menuButton", choiceMenuWidgetClass,
+					New,
+					XtNlabel, "Export",
+					XkwNmenuTitle, "Export Menu",
+					XtNfromHoriz, menu_btn,
+					XtNmenuName, "exportMenu",
+					XkwNnumItems, NUM_EXPORT_CHOICES,
+					XkwNitemStrings, export_choices,
+					NULL);
+    XtAddCallback (menu_btn, XkwNselectCallback, export_cbk, New);
+    if (new->imageDisplay.enableAnimation &&
+	new->imageDisplay.showAnimateButton)
     {
 	animate_btn = XtVaCreateManagedWidget ("button", commandWidgetClass,
 					       New,
 					       XtNlabel, "Animate",
-					       XtNfromHoriz, print_btn,
+					       XtNfromHoriz, menu_btn,
 					       NULL);
 	quit_neighbour = animate_btn;
 	XtAddCallback (animate_btn, XtNcallback, popup_cbk, animatepopup);
     }
     else
     {
-	quit_neighbour = print_btn;
+	quit_neighbour = menu_btn;
     }
     if (new->imageDisplay.showQuitButton)
     {
@@ -342,29 +441,89 @@ static void Initialise (Widget Request, Widget New)
 					   XtNfromVert, files_btn,
 					   NULL);
     new->imageDisplay.trackLabel = track_label;
+    /*  Create the canvases  */
     canvas_types = XkwCanvasTypePseudoColour | XkwCanvasTypeDirectColour;
-    canvas_types |= XkwCanvasTypeTrueColour;
-    canvas = XtVaCreateManagedWidget ("multiCanvas", multiCanvasWidgetClass,
-				      New,
-				      XtNfromVert, track_label,
-				      XtNwidth, 512,
-				      XtNheight, 512,
-				      XkwNcanvasTypes, canvas_types,
+    canvas_types |= XkwCanvasTypeTrueColour | XkwCanvasTypeStereo;
+    if (new->imageDisplay.fullscreen)
+    {
+	screen = new->core.screen;
+	/*  Create the override shell  */
+	shell = XtVaCreatePopupShell ("fullscreenPopup",
+				      overrideShellWidgetClass, New,
+				      XtNx, 0,
+				      XtNy, 0,
+				      XtNwidth, WidthOfScreen (screen),
+				      XtNheight, HeightOfScreen (screen),
+				      XtNborderWidth, 0,
 				      NULL);
+	new->imageDisplay.override_shell = shell;
+	canvas = XtVaCreateManagedWidget ("multiCanvas",
+					  multiCanvasWidgetClass, shell,
+					  XkwNcanvasTypes, canvas_types,
+					  XtNwidth, WidthOfScreen (screen),
+					  XtNheight, HeightOfScreen (screen),
+					  NULL);
+    }
+    else
+    {
+	canvas = XtVaCreateManagedWidget ("multiCanvas",multiCanvasWidgetClass,
+					  New,
+					  XtNfromVert, track_label,
+					  XtNwidth, 512,
+					  XtNheight, 512,
+					  XkwNcanvasTypes, canvas_types,
+					  NULL);
+    }
     new->imageDisplay.multi_canvas = canvas;
+    /*  Setup for mono canvases  */
     pseudo_cnvs = XtNameToWidget (canvas, "pseudoColourCanvas");
     direct_cnvs = XtNameToWidget (canvas, "directColourCanvas");
     true_cnvs = XtNameToWidget (canvas, "trueColourCanvas");
-    XtVaSetValues (pseudo_cnvs,
-		   XtNmappedWhenManaged, True,
-		   XkwNsilenceUnconsumed, True,
-		   NULL);
-    XtAddCallback (pseudo_cnvs, XkwNrealiseCallback, canvas_realise_cbk,
-		   (XtPointer) New);
+    if (pseudo_cnvs != NULL)
+    {
+	XtVaSetValues (pseudo_cnvs,
+		       XtNmappedWhenManaged, one_to_map,
+		       XkwNsilenceUnconsumed, True,
+		       NULL);
+	XtAddCallback (pseudo_cnvs, XkwNrealiseCallback, canvas_realise_cbk,
+		       (XtPointer) New);
+	one_to_map = False;
+    }
     if (direct_cnvs != NULL)
     {
 	XtVaSetValues (direct_cnvs,
-		       XtNmappedWhenManaged, False,
+		       XtNmappedWhenManaged, one_to_map,
+		       XkwNsilenceUnconsumed, True,
+		       NULL);
+	XtAddCallback (direct_cnvs, XkwNrealiseCallback, canvas_realise_cbk,
+		       (XtPointer) New);
+	one_to_map = False;
+    }
+    if (true_cnvs != NULL)
+    {
+	XtVaSetValues (true_cnvs,
+		       XtNmappedWhenManaged, one_to_map,
+		       XkwNsilenceUnconsumed, True,
+		       NULL);
+	XtAddCallback (true_cnvs, XkwNrealiseCallback, canvas_realise_cbk,
+		       (XtPointer) New);
+	one_to_map = False;
+    }
+    /*  Setup for stereo canvases  */
+    pseudo_cnvs = XtNameToWidget (canvas, "pseudoColourStereoCanvas");
+    direct_cnvs = XtNameToWidget (canvas, "directColourStereoCanvas");
+    true_cnvs = XtNameToWidget (canvas, "trueColourStereoCanvas");
+    if (pseudo_cnvs != NULL)
+    {
+	XtVaSetValues (pseudo_cnvs,
+		       XkwNsilenceUnconsumed, True,
+		       NULL);
+	XtAddCallback (pseudo_cnvs, XkwNrealiseCallback, canvas_realise_cbk,
+		       (XtPointer) New);
+    }
+    if (direct_cnvs != NULL)
+    {
+	XtVaSetValues (direct_cnvs,
 		       XkwNsilenceUnconsumed, True,
 		       NULL);
 	XtAddCallback (direct_cnvs, XkwNrealiseCallback, canvas_realise_cbk,
@@ -373,11 +532,15 @@ static void Initialise (Widget Request, Widget New)
     if (true_cnvs != NULL)
     {
 	XtVaSetValues (true_cnvs,
-		       XtNmappedWhenManaged, False,
 		       XkwNsilenceUnconsumed, True,
 		       NULL);
 	XtAddCallback (true_cnvs, XkwNrealiseCallback, canvas_realise_cbk,
 		       (XtPointer) New);
+    }
+    if (new->imageDisplay.fullscreen)
+    {
+	XtRealizeWidget (shell);
+	XtPopup (shell, XtGrabNone);
     }
 }   /*  End Function Initialise  */
 
@@ -400,17 +563,39 @@ static Boolean SetValues (Widget Current, Widget Request, Widget New)
 	    new->imageDisplay.cmapSize = current->imageDisplay.cmapSize;
 	}
     }
+    if (new->imageDisplay.imageName != current->imageDisplay.imageName)
+    {
+	if ( (current->imageDisplay.imageName != NULL) &&
+	    (current->imageDisplay.imageName != def_image_name) )
+	{
+	    /*  The was an old name and it's not the default: free it  */
+	    m_free ( (char *) current->imageDisplay.imageName );
+	}
+	if (new->imageDisplay.imageName == NULL)
+	{
+	    new->imageDisplay.imageName = def_image_name;
+	}
+	else
+	{
+	    if ( ( new->imageDisplay.imageName =
+		  st_dup (new->imageDisplay.imageName) ) == NULL )
+	    {
+		m_abort (function_name, "image name");
+	    }
+	}
+    }
     old_wc = current->imageDisplay.visibleCanvas;
     new_wc = new->imageDisplay.visibleCanvas;
-    if (new_wc == NULL)
-    {
-	(void) fprintf (stderr, "NULL visibleCanvas resource!\n");
-	a_prog_bug (function_name);
-    }
     multi_canvas = new->imageDisplay.multi_canvas;
     if (new_wc != old_wc)
     {
-	if (old_wc == new->imageDisplay.pseudoCanvas)
+	if (new_wc == NULL)
+	{
+	    (void) fprintf (stderr, "NULL visibleCanvas resource!\n");
+	    a_prog_bug (function_name);
+	}
+	if (old_wc == NULL) old_cnv = NULL;
+	else if (old_wc == new->imageDisplay.pseudoCanvas)
 	{
 	    old_cnv = XtNameToWidget (multi_canvas, "pseudoColourCanvas");
 	}
@@ -421,6 +606,30 @@ static Boolean SetValues (Widget Current, Widget Request, Widget New)
 	else if (old_wc == new->imageDisplay.trueCanvas)
 	{
 	    old_cnv = XtNameToWidget (multi_canvas, "trueColourCanvas");
+	}
+	else if (old_wc == new->imageDisplay.pseudoCanvasLeft)
+	{
+	    old_cnv = XtNameToWidget (multi_canvas,"pseudoColourStereoCanvas");
+	}
+	else if (old_wc == new->imageDisplay.pseudoCanvasRight)
+	{
+	    old_cnv = XtNameToWidget (multi_canvas,"pseudoColourStereoCanvas");
+	}
+	else if (old_wc == new->imageDisplay.directCanvasLeft)
+	{
+	    old_cnv = XtNameToWidget (multi_canvas,"directColourStereoCanvas");
+	}
+	else if (old_wc == new->imageDisplay.directCanvasRight)
+	{
+	    old_cnv = XtNameToWidget (multi_canvas,"directColourStereoCanvas");
+	}
+	else if (old_wc == new->imageDisplay.trueCanvasLeft)
+	{
+	    old_cnv = XtNameToWidget (multi_canvas, "trueColourStereoCanvas");
+	}
+	else if (old_wc == new->imageDisplay.trueCanvasRight)
+	{
+	    old_cnv = XtNameToWidget (multi_canvas, "trueColourStereoCanvas");
 	}
 	else
 	{
@@ -439,12 +648,37 @@ static Boolean SetValues (Widget Current, Widget Request, Widget New)
 	{
 	    new_cnv = XtNameToWidget (multi_canvas, "trueColourCanvas");
 	}
+	else if (new_wc == new->imageDisplay.pseudoCanvasLeft)
+	{
+	    new_cnv = XtNameToWidget (multi_canvas,"pseudoColourStereoCanvas");
+	}
+	else if (new_wc == new->imageDisplay.pseudoCanvasRight)
+	{
+	    new_cnv = XtNameToWidget (multi_canvas,"pseudoColourStereoCanvas");
+	}
+	else if (new_wc == new->imageDisplay.directCanvasLeft)
+	{
+	    new_cnv = XtNameToWidget (multi_canvas,"directColourStereoCanvas");
+	}
+	else if (new_wc == new->imageDisplay.directCanvasRight)
+	{
+	    new_cnv = XtNameToWidget (multi_canvas,"directColourStereoCanvas");
+	}
+	else if (new_wc == new->imageDisplay.trueCanvasLeft)
+	{
+	    new_cnv = XtNameToWidget (multi_canvas, "trueColourStereoCanvas");
+	}
+	else if (new_wc == new->imageDisplay.trueCanvasRight)
+	{
+	    new_cnv = XtNameToWidget (multi_canvas, "trueColourStereoCanvas");
+	}
 	else
 	{
 	    (void) fprintf (stderr, "Visible canvas: %p unknown!\n", new_wc);
 	    a_prog_bug (function_name);
 	}
-	XtUnmapWidget (old_cnv);
+	if (old_cnv == new_cnv) return False;
+	if (old_cnv != NULL) XtUnmapWidget (old_cnv);
 	XtMapWidget (new_cnv);
 	return False;
     }
@@ -482,28 +716,46 @@ XtPointer call_data;
 {
     Kcolourmap kcmap;
     Kdisplay dpy_handle;
-    flag mappable;
-    KPixCanvas pixcanvas = (KPixCanvas) call_data;
+    flag verbose;
+    Boolean mappable;
+    KPixCanvas pixcanvas, *stereopixcanvases;
+    int stereo_mode;
     unsigned int num_ccels;
     unsigned int visual_type;
     ImageDisplayWidget top = (ImageDisplayWidget) client_data;
     Colormap xcmap;
     GC gc_image, gc_crosshair;
     XGCValues gcvalues;
-    XColor scrn_def, exact_def;
     Widget colourmapwinpopup, multicanvas;
     Widget pseudo_cnvs, direct_cnvs, true_cnvs;
-    KWorldCanvas *worldcanvas;
-    Display *dpy;
+    KWorldCanvas *worldcanvas, *leftworldcanvas, *rightworldcanvas;
     unsigned long *pixel_values;
+    Display *dpy;
+    Visual *visual;
     struct win_scale_type win_scale;
     static char function_name[] = "ImageDisplayWidget::canvas_realise_cbk";
 
+    verbose = top->imageDisplay.verbose;
     dpy = XtDisplay (w);
     multicanvas = top->imageDisplay.multi_canvas;
-    pseudo_cnvs = XtNameToWidget (multicanvas, "pseudoColourCanvas");
-    direct_cnvs = XtNameToWidget (multicanvas, "directColourCanvas");
-    true_cnvs = XtNameToWidget (multicanvas, "trueColourCanvas");
+    XtVaGetValues (w,
+		   XkwNstereoMode, &stereo_mode,
+		   NULL);
+    if (stereo_mode == XkwSTEREO_MODE_MONO)
+    {
+	pseudo_cnvs = XtNameToWidget (multicanvas, "pseudoColourCanvas");
+	direct_cnvs = XtNameToWidget (multicanvas, "directColourCanvas");
+	true_cnvs = XtNameToWidget (multicanvas, "trueColourCanvas");
+	pixcanvas = (KPixCanvas) call_data;
+    }
+    else
+    {
+	pseudo_cnvs = XtNameToWidget (multicanvas, "pseudoColourStereoCanvas");
+	direct_cnvs = XtNameToWidget (multicanvas, "directColourStereoCanvas");
+	true_cnvs = XtNameToWidget (multicanvas, "trueColourStereoCanvas");
+	stereopixcanvases = (KPixCanvas *) call_data;
+	pixcanvas = stereopixcanvases[0];
+    }
     kwin_get_attributes (pixcanvas,
 			 KWIN_ATT_VISUAL, &visual_type,
 			 KWIN_ATT_END);
@@ -511,12 +763,26 @@ XtPointer call_data;
 		   XtNcolormap, &xcmap,
 		   XtNbackground, &gcvalues.background,
 		   XtNmappedWhenManaged, &mappable,
+		   XtNvisual, &visual,
 		   NULL);
-    /*  Create graphics context for crosshairs  */
-    gcvalues.function = GXinvert;
-    gc_image = kwin_get_gc_x (pixcanvas);
-    gc_crosshair = XCreateGC (dpy, XtWindow (w), GCBackground | GCFunction,
-			      &gcvalues);
+    if (verbose)
+    {
+	(void) fprintf ( stderr, "%s: visual: %p visualID: %p\n",
+			function_name, visual, XVisualIDFromVisual (visual) );
+    }
+    if (stereo_mode != XkwSTEREO_MODE_XGL)
+    {
+	/*  Create graphics context for crosshairs  */
+	gcvalues.function = GXinvert;
+	gc_image = kwin_get_gc_x (pixcanvas);
+	gc_crosshair = XCreateGC (dpy, XtWindow (w), GCBackground | GCFunction,
+				  &gcvalues);
+    }
+    else
+    {
+	gc_image = NULL;
+	gc_crosshair = NULL;
+    }
     if (w == pseudo_cnvs)
     {
 	if (visual_type != KWIN_VISUAL_PSEUDOCOLOUR)
@@ -524,34 +790,49 @@ XtPointer call_data;
 	    (void) fprintf (stderr,"pseudo_canvas not PseudoColour visual!\n");
 	    a_prog_bug (function_name);
 	}
-	if ( ( dpy_handle = xc_get_dpy_handle (dpy, xcmap) )
-	    == NULL )
+	if (top->imageDisplay.pseudo_cmap == NULL)
 	{
-	    (void) fprintf (stderr, "Error getting display handle\n");
-	    a_prog_bug (function_name);
+	    if ( ( dpy_handle = xc_get_dpy_handle (dpy, xcmap) )
+		== NULL )
+	    {
+		(void) fprintf (stderr, "Error getting display handle\n");
+		a_prog_bug (function_name);
+	    }
+	    if ( ( kcmap = kcmap_va_create (DEFAULT_COLOURMAP_NAME,
+					    top->imageDisplay.cmapSize, TRUE,
+					    dpy_handle,
+					    xc_alloc_colours, xc_free_colours,
+					    xc_store_colours, xc_get_location,
+					    KCMAP_ATT_END) )
+		== NULL )
+	    {
+		(void) fprintf (stderr, "Error creating main colourmap\n");
+		a_prog_bug (function_name);
+	    }
+	    top->imageDisplay.pseudo_cmap = kcmap;
+	    num_ccels = kcmap_get_pixels (kcmap, &pixel_values);
+	    if (verbose)
+	    {
+		(void) fprintf (stderr, "%s: num colours: %u\n",
+				function_name, num_ccels);
+	    }
+	    colourmapwinpopup = XtVaCreatePopupShell ("cmapwinpopup",
+						      cmapwinpopupWidgetClass,
+						      (Widget) top,
+						      XtNvisual, visual,
+						      XtNdepth, 8,
+						      XtNcolormap, xcmap,
+						      XkwNkarmaColourmap,kcmap,
+						      NULL);
+	    XtAddCallback (top->imageDisplay.cmap_btn, XtNcallback, popup_cbk,
+			   colourmapwinpopup);
 	}
-	if ( ( kcmap = kcmap_create (DEFAULT_COLOURMAP_NAME,
-				     top->imageDisplay.cmapSize, TRUE,
-				     dpy_handle) )
-	    == NULL )
-	{
-	    (void) fprintf (stderr, "Error creating main colourmap\n");
-	    a_prog_bug (function_name);
-	}
-	top->imageDisplay.pseudo_cmap = kcmap;
-	num_ccels = kcmap_get_pixels (kcmap, &pixel_values);
-	(void) fprintf (stderr, "num colours: %u\n", num_ccels);
+	else kcmap = top->imageDisplay.pseudo_cmap;
 	top->imageDisplay.pseudo_main_gc = gc_image;
 	top->imageDisplay.pseudo_crosshair_gc = gc_crosshair;
 	worldcanvas = &top->imageDisplay.pseudoCanvas;
-	colourmapwinpopup = XtVaCreatePopupShell ("cmapwinpopup",
-						  cmapwinpopupWidgetClass,
-						  (Widget) top,
-						  XkwNkarmaColourmap, kcmap,
-						  NULL);
-	XtAddCallback (top->imageDisplay.cmap_btn, XtNcallback, popup_cbk,
-		       colourmapwinpopup);
-	/*  No need to realise the popup, as it is done when it is popped up */
+	leftworldcanvas = &top->imageDisplay.pseudoCanvasLeft;
+	rightworldcanvas = &top->imageDisplay.pseudoCanvasRight;
     }
     else if (w == direct_cnvs)
     {
@@ -564,6 +845,8 @@ XtPointer call_data;
 	top->imageDisplay.direct_main_gc = gc_image;
 	top->imageDisplay.direct_crosshair_gc = gc_crosshair;
 	worldcanvas = &top->imageDisplay.directCanvas;
+	leftworldcanvas = &top->imageDisplay.directCanvasLeft;
+	rightworldcanvas = &top->imageDisplay.directCanvasRight;
     }
     else if (w == true_cnvs)
     {
@@ -576,6 +859,8 @@ XtPointer call_data;
 	top->imageDisplay.true_main_gc = gc_image;
 	top->imageDisplay.true_crosshair_gc = gc_crosshair;
 	worldcanvas = &top->imageDisplay.trueCanvas;
+	leftworldcanvas = &top->imageDisplay.trueCanvasLeft;
+	rightworldcanvas = &top->imageDisplay.trueCanvasRight;
     }
     else
     {
@@ -584,40 +869,77 @@ XtPointer call_data;
     }
     /*  First initialise win_scale since all data is wiped here  */
     canvas_init_win_scale (&win_scale, K_WIN_SCALE_MAGIC_NUMBER);
-    /*  Get saturation pixels  */
-    if (XAllocNamedColor (dpy, xcmap, "Black", &scrn_def, &exact_def) == 0)
-    {
-	(void) fprintf (stderr,
-			"Error allocating black in colourmap\n");
-	exit (RV_UNDEF_ERROR);
-    }
-    win_scale.min_sat_pixel = scrn_def.pixel;
-    if (XAllocNamedColor (dpy, xcmap, "White", &scrn_def, &exact_def) == 0)
-    {
-	(void) fprintf (stderr,
-			"Error allocating white in colourmap\n");
-	exit (RV_UNDEF_ERROR);
-    }
-    win_scale.max_sat_pixel = scrn_def.pixel;
     win_scale.blank_pixel = gcvalues.background;
     /*  Create the main world canvas (with dummy world min and max)  */
-    win_scale.z_scale = K_INTENSITY_SCALE_LINEAR;
     win_scale.conv_type = CONV1_REAL;
-    if ( ( *worldcanvas = canvas_create (pixcanvas, kcmap, &win_scale) )
-	== NULL )
+/*
+    win_scale.iscale_func = log_iscale_func;
+*/
+    if (stereo_mode == XkwSTEREO_MODE_MONO)
     {
-	exit (RV_UNDEF_ERROR);
+	if ( ( *worldcanvas = canvas_create (pixcanvas, kcmap, &win_scale) )
+	    == NULL )
+	{
+	    exit (RV_UNDEF_ERROR);
+	}
+	canvas_set_attributes (*worldcanvas,
+			       CANVAS_ATT_AUTO_MIN_SAT, TRUE,
+			       CANVAS_ATT_AUTO_MAX_SAT, TRUE,
+			       CANVAS_ATT_END);
+	if (mappable) top->imageDisplay.visibleCanvas = *worldcanvas;
+	canvas_register_position_event_func (*worldcanvas,
+					     crosshair_click_consumer,
+					     (void *) top);
+	viewimg_init (*worldcanvas);
+	viewimg_set_canvas_attributes (*worldcanvas,
+				       VIEWIMG_ATT_MAINTAIN_ASPECT, TRUE,
+				       VIEWIMG_ATT_ALLOW_TRUNCATION, TRUE,
+				       VIEWIMG_ATT_END);
+	canvas_register_refresh_func (*worldcanvas, worldcanvas_refresh_func,
+				      (void *) top);
     }
-    if (mappable) top->imageDisplay.visibleCanvas = *worldcanvas;
-    canvas_register_position_event_func (*worldcanvas,
-					 crosshair_click_consumer,
-					 (void *) top);
-    viewimg_init (*worldcanvas);
-    viewimg_set_canvas_attributes (*worldcanvas,
-				   VIEWIMG_ATT_MAINTAIN_ASPECT, TRUE,
-				   VIEWIMG_ATT_END);
-    canvas_register_refresh_func (*worldcanvas, worldcanvas_refresh_func,
-				  (void *) top);
+    else
+    {
+	if ( ( *leftworldcanvas = canvas_create (stereopixcanvases[0], kcmap,
+						 &win_scale) ) == NULL )
+	{
+	    exit (RV_UNDEF_ERROR);
+	}
+	canvas_set_attributes (*leftworldcanvas,
+			       CANVAS_ATT_AUTO_MIN_SAT, TRUE,
+			       CANVAS_ATT_AUTO_MAX_SAT, TRUE,
+			       CANVAS_ATT_END);
+	if ( ( *rightworldcanvas = canvas_create (stereopixcanvases[1], kcmap,
+						  &win_scale) ) == NULL )
+	{
+	    exit (RV_UNDEF_ERROR);
+	}
+	canvas_set_attributes (*rightworldcanvas,
+			       CANVAS_ATT_AUTO_MIN_SAT, TRUE,
+			       CANVAS_ATT_AUTO_MAX_SAT, TRUE,
+			       CANVAS_ATT_END);
+	if (mappable) top->imageDisplay.visibleCanvas = *leftworldcanvas;
+	canvas_register_position_event_func (*leftworldcanvas,
+					     crosshair_click_consumer,
+					     (void *) top);
+	viewimg_init (*leftworldcanvas);
+	viewimg_set_canvas_attributes (*leftworldcanvas,
+				       VIEWIMG_ATT_MAINTAIN_ASPECT, TRUE,
+				       VIEWIMG_ATT_ALLOW_TRUNCATION, TRUE,
+				       VIEWIMG_ATT_END);
+	canvas_register_refresh_func (*leftworldcanvas,
+				      worldcanvas_refresh_func, (void *) top);
+	canvas_register_position_event_func (*rightworldcanvas,
+					     crosshair_click_consumer,
+					     (void *) top);
+	viewimg_init (*rightworldcanvas);
+	viewimg_set_canvas_attributes (*rightworldcanvas,
+				       VIEWIMG_ATT_MAINTAIN_ASPECT, TRUE,
+				       VIEWIMG_ATT_ALLOW_TRUNCATION, TRUE,
+				       VIEWIMG_ATT_END);
+	canvas_register_refresh_func (*rightworldcanvas,
+				      worldcanvas_refresh_func, (void *) top);
+    }
 }   /*  End Function canvas_realise_cbk   */
 
 static void zoom_cbk (w, client_data, call_data)
@@ -648,6 +970,11 @@ XtPointer call_data;
       case ZOOMCODE_INTENSITY:
 	XtPopup (top->imageDisplay.izoomwinpopup, XtGrabNone);
 	break;
+/*
+      case ZOOMCODE_FULLSCREEN:
+	show_fullscreen (top);
+	break;
+*/
       default:
 	(void) fprintf (stderr, "Illegal zoom code: %u\n", zoomcode);
 	a_prog_bug (function_name);
@@ -990,7 +1317,7 @@ static void zoom (ImageDisplayWidget w, flag horizontal, flag vertical)
 				       VIEWIMG_ATT_AUTO_Y, TRUE,
 				       VIEWIMG_ATT_END);
 	/*  Redraw the canvas  */
-	if (canvas_resize (visible_worldcanvas, NULL, FALSE) != TRUE)
+	if ( !canvas_resize (visible_worldcanvas, NULL, FALSE) )
 	{
 	    (void) fprintf (stderr, "Error refreshing window\n");
 	}
@@ -1104,3 +1431,210 @@ static void show_crosshair_positions (ImageDisplayWidget w)
     (void) fprintf (stderr, "Ordinate difference: %f\n",
 		    fabs (crosshairs.second.y - crosshairs.first.y) );
 }   /*  End Function show_crosshair_positions  */
+
+static flag log_iscale_func (double *out, unsigned int out_stride,
+			     double *inp, unsigned int inp_stride,
+			     unsigned int num_values,
+			     double i_min, double i_max,
+			     void *info)
+{
+    unsigned int count;
+    double tmp, factor;
+    double toobig = TOOBIG;
+
+    if (i_max <= 0.0)
+    {
+	(void) fprintf (stderr, "i_max: %e must be greater than 0\n", i_max);
+	return (FALSE);
+    }
+    if (i_min <= 0.0) i_min = 1.0;
+    if (i_min <= 0.0)
+    {
+	(void) fprintf (stderr, "i_min: %e must be greater than 0\n", i_min);
+	return (FALSE);
+    }
+    factor = (i_max - i_min) / log (i_max / i_min);
+    for (count = 0; count < num_values;
+	 ++count, out += out_stride, inp += inp_stride)
+    {
+	if ( (tmp = *inp) >= toobig) continue;
+	if (tmp <= i_min) continue;
+	if (tmp >= i_max) continue;
+	tmp = log (tmp / i_min) * factor + i_min;
+	*out = tmp;
+    }
+    return (TRUE);
+}   /*  End Function log_iscale_func  */
+
+static void export_cbk (w, client_data, call_data)
+/*  This is the export menu callback.
+*/
+Widget w;
+XtPointer client_data;
+XtPointer call_data;
+{
+    ViewableImage vimage;
+    Kcolourmap cmap;
+    Channel channel;
+    flag truecolour;
+    unsigned int exportcode = *(int *) call_data;
+    unsigned int hdim, vdim;
+    unsigned int pseudo_index, red_index, green_index, blue_index;
+    unsigned int cmap_size;
+    ImageDisplayWidget top = (ImageDisplayWidget) client_data;
+    double i_min, i_max;
+    array_desc *arr_desc;
+    CONST unsigned char *image;
+    unsigned short *intensities;
+    char fname[STRING_LENGTH];
+    static char function_name[] = "ImageDisplayWidget::export_cbk";
+
+    if (exportcode == EXPORT_POSTSCRIPT)
+    {
+	XtPopup (top->imageDisplay.pswinpopup, XtGrabNone);
+	return;
+    }
+    if (top->imageDisplay.visibleCanvas == NULL)
+    {
+	(void) fprintf (stderr, "No visible canvas!\n");
+	return;
+    }
+    if ( ( vimage = viewimg_get_active (top->imageDisplay.visibleCanvas) )
+	== NULL )
+    {
+	(void) fprintf (stderr, "No visible image!\n");
+	return;
+    }
+    viewimg_get_attributes (vimage,
+			    VIEWIMG_VATT_TRUECOLOUR, &truecolour,
+			    VIEWIMG_VATT_ARRAY_DESC, &arr_desc,
+			    VIEWIMG_VATT_SLICE, &image,
+			    VIEWIMG_VATT_HDIM, &hdim,
+			    VIEWIMG_VATT_VDIM, &vdim,
+			    VIEWIMG_VATT_END);
+    if (truecolour)
+    {
+	viewimg_get_attributes (vimage,
+				VIEWIMG_VATT_RED_INDEX, &red_index,
+				VIEWIMG_VATT_GREEN_INDEX, &green_index,
+				VIEWIMG_VATT_BLUE_INDEX, &blue_index,
+				VIEWIMG_VATT_END);
+    }
+    else
+    {
+	canvas_get_attributes (top->imageDisplay.visibleCanvas,
+			       CANVAS_ATT_VALUE_MIN, &i_min,
+			       CANVAS_ATT_VALUE_MAX, &i_max,
+			       CANVAS_ATT_END);
+	viewimg_get_attributes (vimage,
+				VIEWIMG_VATT_PSEUDO_INDEX, &pseudo_index,
+				VIEWIMG_VATT_END);
+	cmap = canvas_get_cmap (top->imageDisplay.visibleCanvas);
+	if ( ( intensities = kcmap_get_rgb_values (cmap, &cmap_size) )
+	    == NULL )
+	{
+	    return;
+	}
+    }
+    switch (exportcode)
+    {
+      case EXPORT_PPM:
+	(void) fprintf (stderr, "PPM not supported yet\n");
+	break;
+      case EXPORT_SUNRAS:
+	(void) sprintf (fname, "%s.ras", top->imageDisplay.imageName);
+	if ( ( channel = ch_open_file (fname, "w") ) == NULL )
+	{
+	    if (!truecolour) m_free ( (char *) intensities );
+	    return;
+	}
+	if (truecolour)
+	{
+	    if ( !foreign_sunras_write_rgb
+		(channel,
+		 image + ds_get_element_offset (arr_desc->packet, red_index),
+		 image + ds_get_element_offset (arr_desc->packet, green_index),
+		 image + ds_get_element_offset (arr_desc->packet, blue_index),
+		 arr_desc->offsets[hdim], arr_desc->offsets[vdim],
+		 arr_desc->dimensions[hdim]->length,
+		 arr_desc->dimensions[vdim]->length) )
+	    {
+		(void) ch_close (channel);
+		(void) unlink (fname);
+		return;
+	    }
+	}
+	else
+	{
+	    if ( !foreign_sunras_write_pseudo
+		(channel,
+		 (CONST char *) image +
+		 ds_get_element_offset (arr_desc->packet,pseudo_index),
+		 arr_desc->packet->element_types[pseudo_index],
+		 arr_desc->offsets[hdim], arr_desc->offsets[vdim],
+		 arr_desc->dimensions[hdim]->length,
+		 arr_desc->dimensions[vdim]->length,
+		 intensities, intensities + 1, intensities + 2, cmap_size, 3,
+		 i_min, i_max) )
+	    {
+		m_free ( (char *) intensities );
+		(void) ch_close (channel);
+		(void) unlink (fname);
+		return;
+	    }
+	    m_free ( (char *) intensities );
+	}
+	(void) ch_close (channel);
+	(void) fprintf (stderr, "Wrote file: \"%s\"\n", fname);
+	break;
+      default:
+	(void) fprintf (stderr, "Illegal export code: %u\n", exportcode);
+	a_prog_bug (function_name);
+	break;
+    }
+}   /*  End Function export_cbk   */
+#ifdef dummy
+static char shellTranslations[] =
+  "#override \n\
+   <KeyPress>:          GlobalKeyPress()";
+
+static XtActionsRec shell_actions[] = {
+  {"GlobalKeyPress",                   GlobalKeyPress},
+};
+
+static void show_fullscreen (ImageDisplayWidget w)
+/*  [PURPOSE] This routine will show the fullscreen canvas.
+    <w> The ImageDisplay widget.
+    [RETURNS] Nothing.
+*/
+{
+    Widget shell;
+    XtTranslations translations;
+    Screen *screen;
+
+    if (w->imageDisplay.override_shell == NULL)
+    {
+	XtAddActions ( shell_actions, XtNumber (shell_actions) );
+	translations = XtParseTranslationTable (shellTranslations);
+	screen = w->core.screen;
+	/*  Create the override shell  */
+	shell = XtVaCreatePopupShell ("fullscreenPopup",
+				      overrideShellWidgetClass, (Widget ) w,
+				      XtNx, 0,
+				      XtNy, 0,
+				      XtNwidth, WidthOfScreen (screen),
+				      XtNheight, HeightOfScreen (screen),
+				      XtNborderWidth, 0,
+				      NULL);
+	w->imageDisplay.override_shell = shell;
+	XtOverrideTranslations (shell, translations);
+	XtRealizeWidget (shell);
+	XtPopup (shell, XtGrabNone);
+    }
+}   /*  End Function show_fullscreen  */
+
+static void GlobalKeyPress (Widget w, XEvent *event)
+{
+    exit (1);
+}
+#endif

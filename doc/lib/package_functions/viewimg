@@ -18,3 +18,4 @@ viewimg_fill_ellipse
 viewimg_fill_polygon
 viewimg_get_canvas_attributes
 viewimg_set_canvas_attributes
+viewimg_get_attributes

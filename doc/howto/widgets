@@ -1,0 +1,333 @@
+This file is intended as a "getting-started" guide to the Karma widget
+library. It should be used in conjuction with the library reference
+documentation, which documents all the functions available for display
+manipulation (but not the widgets themselves).
+
+
+
+Purpose:
+--------
+
+The Karma widgets library is a set of Xt Intrinsics widgets which is
+intended to tie the Karma graphics library into a Graphical User
+Interface implemented by one or more third-party widget libraries. The
+tedious details of geometry management and event insertion into the
+Karma graphics library is solved by a range of display widgets.
+Advanced dynamic colourmap control and other user interface widgets
+are also provided.
+
+
+
+Related documents:
+------------------
+
+The documentation on image display, communications support,
+colourmap support and image editing support are highly recommended.
+The reader may also want to become familiar with Xt Intrinsics and
+widget libraries in general.
+
+
+
+Architecture:
+-------------
+
+The Karma widgets library is distinct from the rest of the library in
+that it is not so clearly layered. There is no naming convention to
+determine the level a package/routine is in, and hence it's power.
+Furthermore, widgets are free to draw upon the resources of packages
+at any level in the rest of the library.
+Basic information about what each widget provides is given below.
+Detailed information about widgets must be gleaned from their
+respective header files (which enumerate the widget-specific
+resources).
+
+
+  AnimateControl widget
+  =====================
+
+Provides various buttons, sliders and value widgets to assist an
+application to animate through a sequence of images or graphics. Used
+in the ImageDisplay widget.
+
+
+  Canvas widget
+  =============
+
+The fundamental link between Xt Intrinsics and the Karma graphics
+library. It provides geometry management and event insertion from the
+Xt world into a Karma pixel canvas. The pixel canvas is managed by the
+widget. The visual type of the underlying X window (and hence the
+pixel canvas) may be specified at creation (the default is to copy the
+parent window visual). On display hardware which supports stereoscopic
+display, a stereo canvas may be created if requested, rather than a
+regular canvas. A stereo canvas has a left and right pixel canvas
+created, rather than a monoscopic (normal) pixel canvas.
+A set of Canvas widgets may be created by creating one MultiCanvas
+widget. Please read the section on the MultiCanvas widget.
+
+
+  ChoiceMenu widget
+  =================
+
+An easy to construct non-exclusive menu widget.
+
+
+  Cmapwin widget
+  ==============
+
+A colourmap manipulation widget. Very handy for applications which
+require dynamic colourmap control. This widget is really a building
+block for the Cmapwinpopup widget.
+
+
+  Cmapwinpopup widget
+  ===================
+
+The real colourmap widget that people use: it comes in it's own popup
+window. Hence it's name.
+
+
+  Dataclip widget
+  ===============
+
+Computes and displays the histogram of a n-dimensional Intelligent
+Array. The user may then define a region on that widget and have the
+co-ordinates of the region passed to a callback function. Handy for
+segmenting data by value, rather than position.
+
+
+  Dialogpopup widget
+  ==================
+
+A simple dialog widget (text entry) which has it's own window. Good
+for implementing a last-minute filename query before doing something
+(like saving data to a file).
+
+
+  ExclusiveMenu widget
+  ====================
+
+Another menu widget, but the choices are exclusive: i.e. only one
+choice is allowed at a time. Good for implementing a mode menu.
+
+
+  Filepopup widget
+  ================
+
+A directory browser and file selector widget. You can specify a
+filename pattern matching/rejecting routine. A callback is called when
+the user selects a file. The user can also navigate up and down the
+directory tree. This widget has it's own window.
+
+
+  Filewin widget
+  ==============
+
+The building block for the Filepopup widget: it needs a window around
+it.
+
+
+  Hdial widget
+  ============
+
+A "dial" widget, made to look a bit like an old-style tuning knob.
+
+
+  ImageDisplay widget
+  ===================
+
+The all singing, all dancing display widget. It does practically
+everything but choose the data you want to display. It comes with the
+following widgets: Filewinpopup, Cmapwinpopup, Postscript,
+AnimateControl and Dataclip. It also has zoom controls.
+
+
+  Increment widget
+  ================
+
+A simple widget with a "+", "-" buttons and a value display.
+
+
+  MultiCanvas widget
+  ==================
+
+Allows you to create many Canvas widgets in one fell swoop. All the
+Canvas widgets occupy the same area in the window: only one can be
+visible at a time. You can ask for canvases with any of the following
+visuals: PseudoColour, Directcolour, TrueColour.
+You can also ask for stereo canvases. The widget will try to create
+all the canvas types you requested possible on your display hardware.
+At any time the application can switch which type of canvas is visible
+(i.e. when switching from an 8bit PseudoColour display to a 24bit
+TrueColour display). Saves an awful lot of code trying to work out
+what visuals the display can support. This is used in the ImageDisplay
+widget.
+
+
+  Palette widget
+  ==============
+
+A building block for the Cmapwin widget: a simple colour pallette,
+allowing the user to choose a colour (such as when drawing).
+
+
+  Postscript widget
+  =================
+
+A widget that, given a Karma pixel canvas, allows the user to specify
+page size, orientation and whether to generate a PostScript file (or
+EPS) or to queue directly to a printer.
+
+
+  Repeater widget
+  ===============
+
+A fixed version of the Repeater widget from the Athena widget library.
+Does the right thing when the widget is set insensitive.
+Holding down the mouse button over this widget will result in periodic
+invocation of the registered callbacks.
+
+
+  ThreeDeeSlice widget
+  ====================
+
+This will display the three orthogonal primary planes of a
+3-dimensional array, where those planes intersect in a 3-D point. This
+point may be interactively changed. Nice for slicing through a cube of
+data.
+
+
+  Twodpos widget
+  ==============
+
+Another building block for the Cmapwin widget. This allows the user to
+move around a 2-dimensional point in a plane, which can be used to
+control something else in the application.
+
+
+  Value widget
+  ============
+
+A sort-of slider widget, except that the value is incremented and
+decremented with slow and fast Repeater widgets.
+
+
+Tutorial:
+---------
+
+A quite powerful image display tool is <kview_2d>. The power user is
+urged to use this module and then read the source code to see how much
+functionality may be packed into so few lines of code, using the image
+display support in the Karma library and the ImageDisplay widget.
+
+An example is provided below.
+
+  Example 1
+  =========
+
+This is a complete application (97 lines) which will display a
+parabola on the screen. It also displays a lot of buttons/menus which
+you can happily ignore (or explore).
+
+
+/*----------------------------------------------------------*/
+/*  Parabola display sample programme                       */
+/*----------------------------------------------------------*/
+
+#include <stdio.h>
+#include <unistd.h>
+#include <X11/Xatom.h>
+#include <X11/Intrinsic.h>
+#include <X11/StringDefs.h>
+#include <karma.h>
+#include <k_event_codes.h>
+#include <karma_overlay.h>
+#include <karma_kcmap.h>
+#include <karma_chx.h>
+#include <karma_im.h>
+#include <karma_xc.h>
+#include <Xkw/ImageDisplay.h>
+
+#define VERSION "1.0"
+#define NUM_SEGMENTS 100
+
+
+STATIC_FUNCTION (void draw_parabola, (KOverlayList olist) );
+
+
+/*  Private data  */
+String fallback_resources[] =
+{
+    "Kparabola*pseudoColourCanvas*background:            black",
+    "Kparabola*Command*background:                       grey70",
+    "Kparabola*Toggle*background:                        grey80",
+    "Kparabola*ImageDisplay*quit*background:             orange",
+    "Kparabola*background:                               aquamarine",
+    "Kparabola*font:                                     9x15bold",
+    NULL
+};
+static Widget image_display = NULL;
+
+
+int main (argc, argv)
+int argc;
+char **argv;
+{
+    KWorldCanvas wc_pseudo;
+    KOverlayList olist;
+    XtAppContext app_context;
+    Widget main_shell;
+    extern Widget image_display;
+
+    /*  Initialise module  */
+    im_register_module_name ("kparabola");
+    im_register_module_version_date (VERSION);
+    im_register_lib_version (KARMA_VERSION);
+    /*  Start up Xt  */
+    main_shell = XtVaAppInitialize (&app_context, "Kparabola",
+				    NULL, 0,
+				    &argc, argv, fallback_resources,
+				    NULL, 0);
+    kcmap_init (xc_alloc_colours, xc_free_colours, xc_store_colours,
+		xc_get_location);
+    /*  Initialise communications  */
+    chx_register_app_context (app_context);
+    image_display = XtVaCreateManagedWidget ("topForm",
+					     imageDisplayWidgetClass,
+					     main_shell,
+					     XtNborderWidth, 0,
+					     NULL);
+    XtRealizeWidget (main_shell);
+    XtVaGetValues (image_display,
+		   XkwNpseudoColourCanvas, &wc_pseudo,
+		   NULL);
+    olist = overlay_create_list ( (void *) NULL );
+    overlay_specify_canvas (olist, wc_pseudo);
+    (void) overlay_associate_display_canvas (olist, wc_pseudo);
+    draw_parabola (olist);
+    XtAppMainLoop (app_context);
+    return (RV_OK);
+}   /*  End Function main   */
+
+static void draw_parabola (KOverlayList olist)
+/*  [PURPOSE] This routine will draw a parabola into an overlay list.
+    <olist> The overlay list.
+    [RETURNS] Nothing.
+*/
+{
+    int count;
+    double x_factor, x;
+    double x_arr[NUM_SEGMENTS];
+    double y_arr[NUM_SEGMENTS];
+
+    /*  Generate array of points  */
+    x_factor = 2.0 / (double) (NUM_SEGMENTS);
+    for (count = 0; count < NUM_SEGMENTS; ++count)
+    {
+	x = (double) (count - NUM_SEGMENTS / 2) * x_factor;
+	x_arr[count] = x / 2.0 + 0.5;
+	y_arr[count] = x * x;
+    }
+    /*  Draw lines  */
+    (void) overlay_lines (olist, NUM_SEGMENTS, NULL, x_arr, y_arr, "yellow");
+}   /*  End Function draw_parabola  */

@@ -3,7 +3,7 @@
 
     This code provides colourmap manipulation for Karma data structures.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -53,7 +53,9 @@
 
     Updated by      Richard Gooch   20-JUL-1994: Added some CONST declarations.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/ds/cmap.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/ds/cmap.c
+
+    Last updated by Richard Gooch   19-APR-1995: Cleaned some code.
 
 
 */
@@ -61,6 +63,8 @@
 #include <karma.h>
 #include <karma_ds.h>
 #include <karma_m.h>
+#include <karma_a.h>
+
 
 #define NUM_ELEMENTS (unsigned int) 3
 

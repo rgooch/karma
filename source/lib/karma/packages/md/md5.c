@@ -3,7 +3,7 @@
 
     This code provides support for the MD5 message digest algorithm.
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994,1995  Richard Gooch
 
     Based on code obtained from Colin Plumb  (colin@nyx10.cs.du.edu)
     The MD5 algorithm is due to Ron Rivest.
@@ -40,11 +40,19 @@
     Updated by      Richard Gooch   3-NOV-1994: Switched to OS_ and MACHINE_
   macros for machine determination.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/md/md5.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/md/md5.c
+
+    Updated by      Richard Gooch   27-FEB-1995: Changed to
+  MACHINE_LITTLE_ENDIAN macro.
+
+    Updated by      Richard Gooch   7-MAY-1995: Placate gcc -Wall
+
+    Last updated by Richard Gooch   8-JUN-1995: Added temporary hack for Cray.
 
 
 */
 #include <stdio.h>
+#include <string.h>
 #include <ctype.h>
 #include <karma.h>
 #include <karma_md.h>
@@ -53,37 +61,40 @@
 #include <os.h>
 
 
-#if defined(MATCHING_SIZES) || defined(MACHINE_alpha)
-typedef unsigned int word32;
-#else
-***error unsigned int is not 32 bits wide
+/*  Temporary hack for Cray so I can at least compile!  */
+#if !defined(Kword32u) && defined(MACHINE_crayPVP)
+#  define Kword32u unsigned long
+#endif
+
+#ifndef Kword32u
+***error no 32 bit integer available
 #endif
 
 /*  Internal definition of MD5 context object structure type  */
 struct md5_context_type
 {
-    word32 buf[4];
-    word32 bytes[2];
-    word32 in[16];
+    Kword32u buf[4];
+    Kword32u bytes[2];
+    Kword32u in[16];
 };
 
 
 /*  Private functions follow  */
 
-#ifdef BYTE_SWAPPER
+#ifdef MACHINE_LITTLE_ENDIAN
 #  define byteSwap(buf, len)  /*  Nothing  */
 #else
 
 /*
  * Note: this code is harmless on little-endian machines.
  */
-static void byteSwap (word32 *buf, unsigned words)
+static void byteSwap (Kword32u *buf, unsigned words)
 {
     unsigned char *p = (unsigned char *)buf;
 
     do
     {
-	*buf++ = (word32)((unsigned)p[3]<<8 | p[2]) << 16 |
+	*buf++ = (Kword32u)((unsigned)p[3]<<8 | p[2]) << 16 |
 	((unsigned)p[1]<<8 | p[0]);
 	p += 4;
     }
@@ -107,9 +118,9 @@ static void byteSwap (word32 *buf, unsigned words)
  * reflect the addition of 16 longwords of new data.  MD5Update blocks
  * the data and converts bytes into longwords for this routine.
  */
-static void transform (word32 buf[4], CONST word32 in[16])
+static void transform (Kword32u buf[4], CONST Kword32u in[16])
 {
-    register word32 a, b, c, d;
+    register Kword32u a, b, c, d;
 
     a = buf[0];
     b = buf[1];
@@ -225,7 +236,7 @@ void md_md5_update (MD5Context ctx, CONST unsigned char *buf, unsigned int len)
  * of bytes.
  */
 {
-    word32 t;
+    Kword32u t;
 
     /*  Update byte count  */
 
@@ -304,15 +315,15 @@ void md_md5_transform (unsigned char buf[16], CONST unsigned char in[64])
     The routine returns nothing.
 */
 {
-    word32 w_in[16];
+    Kword32u w_in[16];
     unsigned int count;
 
-    byteSwap ( (word32 *) buf, 4 );
+    byteSwap ( (Kword32u *) buf, 4 );
     for (count = 0; count < 16; ++count)
     {
-	w_in[count] = *in++ | (word32) *in++ << 8 |
-	(word32) *in++ << 16 | (word32) *in++ << 24;
+	w_in[count] = *in++ | (Kword32u) *in++ << 8 |
+	(Kword32u) *in++ << 16 | (Kword32u) *in++ << 24;
     }
-    transform ( (word32 *) buf, w_in );
-    byteSwap ( (word32 *) buf, 4 );
+    transform ( (Kword32u *) buf, w_in );
+    byteSwap ( (Kword32u *) buf, 4 );
 }   /*  End Function md_md5_transform  */

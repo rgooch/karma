@@ -12,15 +12,15 @@
 typedef struct _FilepopupPart
 {
     /*  Public resources  */
-    flag (*accept_file) ();
-    XtCallbackList fileSelectCallback;
-    Boolean autoPopdown;
+    flag            (*accept_file) ();
+    XtCallbackList  fileSelectCallback;
+    Bool            autoPopdown;
     /*  Private resources  */
-    Widget selector;
-    char **list;
-    char curdir[500];
-    int listcount;
-    int listmax;
+    Widget          selector;
+    char            **list;
+    char            curdir[500];
+    int             listcount;
+    int             listmax;
 } FilepopupPart, *FilepopupPartPtr;
 
 typedef struct _FilepopupRec

@@ -6,98 +6,82 @@
     command lines.
 
 
-    Written by		Richard Gooch	30-Nov-1994
+    Written by		Richard Gooch	22-Jan-1996
 
     Last updated by	Richard Gooch	5-OCT-1993
 
 
 */
 
-KControlPanel panel_create (blank)
-/*  This routine will create a control panel object.
-    If the value of  blank  is TRUE, then the routine will create a blank form,
-    else it will add some internally defined panel items.
-    The routine returns a KControlPanel object on success,
-    else it returns NULL.
+KControlPanel panel_create (flag blank)
+/*  [PUEPOSE] This routine will create a control panel object.
+    <blank> If TRUE, then the routine will create a blank form, else it will
+    add some internally defined panel items.
+    [RETURNS] A KControlPanel object on success, else NULL.
 */
-flag blank;
 /*---------------------------------------------------------------------------*/
 
 KControlPanel panel_create_group ()
-/*  This routine will create a control panel object which is a container for a
-    group of items. Panel items may be added to this panel object, and the
-    panel object itself may be later added as panel item to another panel
-    object (of type  PIT_GROUP  ).
-    The routine returns a KControlPanel object on success,
-    else it returns NULL.
+/*  [PURPOSE] This routine will create a control panel object which is a
+    container for a group of items. Panel items may be added to this panel
+    object, and the panel object itself may be later added as panel item to
+    another panel object (of type PIT_GROUP).
+    [RETURNS] A KControlPanel object on success, else NULL.
 */
 /*---------------------------------------------------------------------------*/
 
-void panel_add_item (panel, name, comment, type, value_ptr, va_alist)
-/*  This routine will add a panel item to a KControlPanel object. Each
-    panel item has a number of "attributes". First come the "core" attributes,
-    follwed by the optional attributes.
+void panel_add_item (KControlPanel panel, char *name, char *comment,
+		     unsigned int type, void *value_ptr, ...)
+/*  [PURPOSE] This routine will add a panel item to a KControlPanel object.
+    Each panel item has a number of "attributes". First come the "core"
+    attributes, follwed by the optional attributes.
     Below are the core attributes:
-    The control panel to add to must be given by  panel  .
-    The name of the panel item must be pointed to by  name  .
-    The comment (eg. name of the units: "(km/sec)") must be pointed to by
-    comment  .
-    The type of the panel item must be given by  type  .
-    The panel item data storage must be pointed by  value_ptr  .
-    The optional attributes are given as pairs of attribute-key attribute-value
-    pairs. The last argument must be PIA_END. The attributes are passed using
-    varargs, and are given by  va_alist  .
-    The routine returns nothing.
+    <panel> The control panel to add to.
+    <name> The name of the panel item.
+    <comment> the comment (eg. name of the units: "(km/sec)").
+    <type> The type of the panel item.
+    <value_ptr> A pointer to the panel item data storage.
+    [VARARGS] The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. The last argument must be PIA_END.
+    The attributes are passed using varargs.
+    [RETURNS] Nothing.
 */
-KControlPanel panel;
-char *name;
-char *comment;
-unsigned int type;
-void *value_ptr;
-va_dcl
 /*---------------------------------------------------------------------------*/
 
-void panel_push_onto_stack (panel)
-/*  This routine will push a control panel object onto the control panel
-    stack.
-    The control panel must be given by  panel  .
-    The routine returns nothing.
+void panel_push_onto_stack (KControlPanel panel)
+/*  [PURPOSE] This routine will push a control panel object onto the control
+    panel stack.
+    <panel> The control panel.
+    [RETURNS] Nothing.
 */
-KControlPanel panel;
 /*---------------------------------------------------------------------------*/
 
 void panel_pop_from_stack ()
-/*  This routine will pop the last pushed control panel object from the
-    control panel stack.
-    The routine returns nothing.
+/*  [PURPOSE] This routine will pop the last pushed control panel object from
+    the control panel stack.
+    [RETURNS] Nothing.
 */
 /*---------------------------------------------------------------------------*/
 
-flag panel_process_command_with_stack (cmd, unknown_func, fp)
-/*  This routine will process a command, using the top control panel on the
-    stack to interpret it.
-    The command must be pointed to by  cmd  .
-    If the command is not understood, then the command will be passed to the
-    function pointed to by  unknown_func  .If this is NULL, then a message is
-    displayed if the command is not understood.
-    The interface to this function is given below:
-
-    flag unknown_func (cmd, fp)
-    *   This routine will process a command.
-        The command must be pointed to by  cmd  .
-	Output messages are directed to  fp  .
-	The routine returns TRUE if more commands should be processed,
-	else it returns FALSE, indicating that the "exit" command was entered.
+flag panel_process_command_with_stack (char *cmd, flag (*unknown_func) (),
+				       FILE *fp)
+/*  [PURPOSE] This routine will process a command, using the top control panel
+    on the stack to interpret it.
+    <cmd> The command.
+    <unknown_func> The function that is called when the command is not
+    understood. If this is NULL, then a message is displayed if the command is
+    not understood. The interface to this routine is as follows:
+    [<pre>]
+    flag unknown_func (char *cmd, FILE *fp)
+    *   [PURPOSE] This routine will process a command.
+        <cmd> The command.
+	<fp> Output messages are directed here.
+	[RETURNS] TRUE if more commands should be processed, else FALSE,
+	indicating that the "exit" command was entered.
     *
-    char *cmd;
-    FILE *fp;
-
-    Output messages are directed to  fp  .
-    The routine returns TRUE if more commands should be processed,
-    else it returns FALSE, indicating that the control panel's "exit" command
-    was entered.
+    [</pre>]
+    <fp> Output messages are directed here.
+    [RETURNS] TRUE if more commands should be processed, else FALSE, indicating
+    that the control panel's "exit" command was entered.
 */
-char *cmd;
-flag (*unknown_func) ();
-FILE *fp;
 /*---------------------------------------------------------------------------*/

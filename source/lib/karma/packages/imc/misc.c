@@ -3,7 +3,7 @@
 
     This code provides image conversion routines.
 
-    Copyright (C) 1993,1994  Richard Gooch
+    Copyright (C) 1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -34,7 +34,9 @@
     Updated by      Richard Gooch   9-AUG-1994: Converted to full ANSI C
   function declarations.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/imc/main.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/imc/main.c
+
+    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
 
 
 */
@@ -43,6 +45,7 @@
 #include <ctype.h>
 #include <karma.h>
 #include <karma_imc.h>
+#include <karma_ds.h>
 #include <karma_m.h>
 #include <karma_a.h>
 
@@ -213,7 +216,9 @@ unsigned int speed;
     int red, green, blue;
     int count;
     unsigned char pixel;
+/*
     static char function_name[] = "c_24_to_8";
+*/
 
     if (speed > 5)
     {

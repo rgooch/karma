@@ -1,31 +1,32 @@
-include ../GNUmakefile.head
+include $(KARMAROOT)/source/modules/GNUmakefile.head
 
 
-TARGETS =	$(KARMABINPATH)/chlen
+TARGETS =	$(KARMABINPATH)/chlen	$(KARMABINPATH)/kfuncgen
 
-all:	$(TARGETS)	clean
+all:	$(TARGETS)	generic_clean
 
 
 CHLEN =		chlen.c
 CHLENO =	chlen.o
 
 $(KARMABINPATH)/chlen:	$(CHLENO) $(KDEPLIB_KARMA)
-	cd $(machine_dir); $(LD) $(LDFLAGS) -o tmpchlen $(CHLENO) $(LIBS)
+	cd $(machine_dir); $(LD) $(LDFLAGS) -o tmpchlen $(CHLENO) $(CLIBS)
 	install -s $(machine_dir)/tmpchlen $(KARMABINPATH)/chlen
 	chmod u=rwx,go=x $(KARMABINPATH)/chlen
 
 
+KFUNCGEN =	kfuncgen.c
+KFUNCGENO =	kfuncgen.o
+
+$(KARMABINPATH)/kfuncgen:	$(KFUNCGENO) $(KDEPLIB_KARMA)
+	cd $(machine_dir);$(LD) $(LDFLAGS) -o tmpkfuncgen $(KFUNCGENO) $(CLIBS)
+	install -s $(machine_dir)/tmpkfuncgen $(KARMABINPATH)/kfuncgen
+	chmod u=rwx,go=x $(KARMABINPATH)/kfuncgen
+
+
 depend:
-	makedepend -I$(KARMAINCLUDEPATH) -f$(machine_dir)/depend *.c
+	makedepend -DMAKEDEPEND -D__$(MACHINE)__ -I$(KARMAINCLUDEPATH) -f$(machine_dir)/depend *.c
 
 
-
-clean:
-	rm -f *.BAK *.log *.sed .#* *~ *.bak */*.bak */tmp* .*defaults
-	-chmod u+rw,go-w * 2> /dev/null
-
-
-remove:
-	\rm -f $(TARGETS)
-
+include $(KARMAROOT)/source/modules/GNUmakefile.tail
 include $(machine_dir)/depend

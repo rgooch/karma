@@ -1,0 +1,85 @@
+ifdef LIBDIRS
+rpath = $(KARMALIBPATH):$(LIBDIRS)
+lpath = -L$(KARMALIBPATH) $(addprefix -L,$(subst :, ,$(LIBDIRS)))
+else
+rpath = $(KARMALIBPATH)
+lpath = -L$(KARMALIBPATH)
+endif
+
+kcflags = -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) $(KOPTIMISE)
+
+ifeq ($(OS),SunOS)
+CC = gcc -fpcc-struct-return $(kcflags)
+LD = gcc $(lpath)
+KOPTIMISE = -O2
+endif
+
+ifeq ($(OS),Solaris)
+CC = gcc -fpcc-struct-return -D_REENTRANT $(kcflags)
+LD = gcc $(lpath) -R$(rpath)
+KOPTIMISE = -O2
+OS_LIBS = -lthread
+endif
+
+ifeq ($(OS),Linux)
+CC = cc $(kcflags)
+LD = cc $(lpath) -Wl,-rpath,$(rpath)
+KOPTIMISE = -O2
+endif
+
+ifeq ($(OS),IRIX5)
+ktmpos = IRIX
+endif
+ifeq ($(OS),IRIX6)
+ktmpos = IRIX
+endif
+ifeq ($(ktmpos),IRIX)
+CC = cc -xansi -signed -D_SGI_MP_SOURCE $(kcflags)
+LD = cc -xansi $(lpath) -Wl,-no_library_replacement -rpath $(rpath)
+KOPTIMISE = -O2
+endif
+
+ifeq ($(OS),OSF1)
+# gcc causes problems with shared Xt library ???
+# CC = gcc -fpcc-struct-return
+CC = cc -std $(kcflags)
+#LD = $(CC) $(lpath) -Wl,-no_library_replacement -Wl,-rpath,$(rpath)
+LD = $(CC) $(lpath) -Wl,-rpath,$(rpath)
+KOPTIMISE = -O2
+endif
+
+ifeq ($(OS),AIX)
+CC = cc -qchars=signed -qlanglvl=ansi $(kcflags)
+LD = cc $(lpath)
+KOPTIMISE = -O
+endif
+
+ifeq ($(OS),ConvexOS)
+CC = cc -ext $(kcflags)
+LD = $(CC) $(lpath)
+KOPTIMISE = -O
+endif
+
+ifeq ($(OS),HPUX)
+CC = cc -Aa -D_HPUX_SOURCE $(kcflags)
+LD = cc $(lpath)
+KOPTIMISE = -O
+endif
+
+ifeq ($(OS),ULTRIX)
+CC = gcc -fpcc-struct-return $(kcflags)
+LD = gcc $(lpath)
+KOPTIMISE = -O
+endif
+
+ifeq ($(OS),UNICOS)
+CC = cc $(kcflags)
+LD = cc $(lpath)
+KOPTIMISE = -h inline3,scalar3,vector2
+endif
+
+ifndef CC
+CC = cc $(kcflags)
+LD = cc $(lpath)
+KOPTIMISE = -O
+endif

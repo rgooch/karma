@@ -3,7 +3,7 @@
 
     This code provides Channel scanning routines.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -45,7 +45,9 @@
 
     Updated by      Richard Gooch   21-MAY-1994: Added  #include <karma_ch.h>
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/chs/scan.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/chs/scan.c
+
+    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
 
 
 */
@@ -112,7 +114,9 @@ Channel channel;
 {
     char *p;
     char string[STRING_LENGTH];
+/*
     static char function_name[] = "chs_get_float";
+*/
 
     if (chs_get_value (channel, string, STRING_LENGTH) == 0)
     {
@@ -132,7 +136,9 @@ Channel channel;
 {
     char *p;
     char string[STRING_LENGTH];
+/*
     static char function_name[] = "chs_get_int";
+*/
 
     if (chs_get_value (channel, string, STRING_LENGTH) == 0)
     {

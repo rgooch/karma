@@ -12,6 +12,7 @@ r_open_stdin
 r_getenv
 r_setenv
 r_gethostname
+r_get_fq_hostname
 r_getppid
 r_open_file
 r_create_pipe

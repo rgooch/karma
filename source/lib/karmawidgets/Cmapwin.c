@@ -37,8 +37,14 @@
     Updated by      Richard Gooch   2-AUG-1994: Removed unneccessary parameter
   from call to  kcmap_list_funcs  .
 
-    Last updated by Richard Gooch   3-JAN-1995: Added  regenerateColourmap
+    Updated by      Richard Gooch   3-JAN-1995: Added  regenerateColourmap
   resource.
+
+    Updated by      Richard Gooch   17-APR-1995: Fixed mix of XtRBool and
+  sizeof Boolean in resource fields. Use Bool because it is of int size.
+
+    Last updated by Richard Gooch   28-OCT-1995: Pass Kcolourmap at creation
+  rather than setting afterwards.
 
 
 */
@@ -87,8 +93,8 @@ static XtResource CmapwinResources[] =
    TheOffset(colourCallback), XtRCallback, (caddr_t)NULL},
   {XkwNkarmaColourmap, XkwCKarmaColourmap, XtRPointer, sizeof(XtPointer),
     TheOffset(dcm), XtRPointer, (XtPointer)NULL},
-  {XkwNregenerateColourmap, XkwCRegenerateColourmap, XtRBoolean,
-   sizeof (Boolean), TheOffset (regenerateColourmap), XtRImmediate,
+  {XkwNregenerateColourmap, XkwCRegenerateColourmap, XtRBool,
+   sizeof (Bool), TheOffset (regenerateColourmap), XtRImmediate,
    (XtPointer) False},
 };
 
@@ -249,46 +255,44 @@ static void palette_cbk(Widget w,XtPointer client_data,XtPointer call_data)
 
 static void Initialize(Widget Request,Widget New)
 {
-  CmapwinWidget request = (CmapwinWidget) Request;
-  CmapwinWidget new = (CmapwinWidget) New;
-  Widget view,centrebtn,rescanbtn,palette,form,colour;
-  Widget savebtn,loadbtn,slavebtn,dummy;
-  float zero=0.0;
-  float one=1.0;
-  float point5=0.5;
-  XtArgVal *l_zero, *l_one, *l_point5;
-  int i;
+    CmapwinWidget request = (CmapwinWidget) Request;
+    CmapwinWidget new = (CmapwinWidget) New;
+    Widget view,centrebtn,rescanbtn,palette,form,colour;
+    Widget savebtn,loadbtn,slavebtn,dummy;
+    float zero = 0.0;
+    float one = 1.0;
+    float point5 = 0.5;
+    XtArgVal *l_zero, *l_one, *l_point5;
+    int i;
 
-  new->form.default_spacing = 0;
-  new->cmapwin.cmap_x=0.5;
-  new->cmapwin.cmap_y=0.5;
+    new->form.default_spacing = 0;
+    new->cmapwin.cmap_x = 0.5;
+    new->cmapwin.cmap_y = 0.5;
 
-  new->cmapwin.listcount=0;
-  new->cmapwin.list=kcmap_list_funcs();
-  for(i=0;new->cmapwin.list[i]!=NULL;i++)
-    new->cmapwin.listcount++;  /* Count the list */
+    new->cmapwin.listcount=0;
+    new->cmapwin.list=kcmap_list_funcs();
+    for (i=0; new->cmapwin.list[i] != NULL; i++)
+    new->cmapwin.listcount++;	/* Count the list */
 
-  palette=XtVaCreateManagedWidget
-    ("palette",paletteWidgetClass,New,
-     XtNwidth,350,
-     XtNheight,50,
-     XtNvalue,0.0,
-     XtNhorizDistance,0,
-     XtNvertDistance,0,
-     NULL);
-  XtVaSetValues(palette,XkwNkarmaColourmap,new->cmapwin.dcm,NULL);
-  XtAddCallback(palette,XkwNvalueChangeCallback,palette_cbk,new);
-
-  form = XtVaCreateManagedWidget ("form", formWidgetClass, New,
-				  XtNdefaultDistance, 0,
-				  XtNborderWidth, 1,
-				  XtNwidth,50,
-				  XtNheight,50,
-				  XtNhorizDistance, 5,
-				  XtNvertDistance, 0,
-				  XtNfromHoriz, palette,
-				  NULL);
-  new->cmapwin.thecolour=XtVaCreateManagedWidget
+    palette = XtVaCreateManagedWidget ("palette", paletteWidgetClass, New,
+				       XtNwidth, 350,
+				       XtNheight, 50,
+				       XtNvalue, 0,
+				       XtNhorizDistance, 0,
+				       XtNvertDistance, 0,
+				       XkwNkarmaColourmap, new->cmapwin.dcm,
+				       NULL);
+    XtAddCallback(palette,XkwNvalueChangeCallback,palette_cbk,new);
+    form = XtVaCreateManagedWidget ("form", formWidgetClass, New,
+				    XtNdefaultDistance, 0,
+				    XtNborderWidth, 1,
+				    XtNwidth,50,
+				    XtNheight,50,
+				    XtNhorizDistance, 5,
+				    XtNvertDistance, 0,
+				    XtNfromHoriz, palette,
+				    NULL);
+    new->cmapwin.thecolour=XtVaCreateManagedWidget
     ("thecolour",labelWidgetClass,form,
      XtNlabel,"",
      XtNwidth,30,
@@ -299,7 +303,7 @@ static void Initialize(Widget Request,Widget New)
      XtNborderWidth,10,
      NULL);
 
-  new->cmapwin.twodthing=XtVaCreateManagedWidget
+    new->cmapwin.twodthing=XtVaCreateManagedWidget
     ("twodthing",twodposWidgetClass,New,
      XtNwidth,155,
      XtNheight,155,
@@ -307,11 +311,11 @@ static void Initialize(Widget Request,Widget New)
      XtNvertDistance,5,
      XtNfromVert,palette,
      NULL);
-  XtAddCallback(new->cmapwin.twodthing,XkwNvalueChangeCallback,
-		twodthing_cbk,new);
+    XtAddCallback(new->cmapwin.twodthing,XkwNvalueChangeCallback,
+		  twodthing_cbk,new);
 
   
-  view=XtVaCreateManagedWidget
+    view=XtVaCreateManagedWidget
     ("view",viewportWidgetClass,New,
      XtNforceBars,True,
      XtNwidth,245,
@@ -324,14 +328,14 @@ static void Initialize(Widget Request,Widget New)
      XtNallowVert,True,
      NULL);
   
-  new->cmapwin.selector=XtVaCreateManagedWidget
+    new->cmapwin.selector=XtVaCreateManagedWidget
     ("selector",listWidgetClass,view,
      XtNlist,new->cmapwin.list,
      XtNnumberStrings,new->cmapwin.listcount,
      XtNdefaultColumns,1,
      XtNforceColumns,True,
      NULL);
-  XtAddCallback(new->cmapwin.selector,XtNcallback,colourmap_cbk,new);
+    XtAddCallback(new->cmapwin.selector,XtNcallback,colourmap_cbk,new);
 }
 
 /*----------------------------------------------------------------------*/

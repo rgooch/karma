@@ -1,8 +1,9 @@
 #! /bin/csh -f
 
-# This C shell script will create the library build tree under  $KARMALIBPATH
+# This C shell script will create the library build tree under:
+# $KARMABASE/build.lib
 
-#   Copyright (C) 1993,1994  Richard Gooch
+#   Copyright (C) 1993,1994,1995  Richard Gooch
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -25,13 +26,15 @@
 
 # Written by		Richard Gooch	6-JAN-1993
 
-# Last updated by	Richard Gooch	3-NOV-1994
+# Last updated by	Richard Gooch	9-JUN-1995
 
+
+set karmalibdir = $KARMAROOT/build/$MACHINE_OS/lib
 
 cd $KARMAROOT
 set dir = source/lib/makefiles
-if ( ! -d $dir/$OS ) then
-    echo "Directory:  $dir/$OS  does not exist!"
+if ( ! -f $dir/$OS/GNUmakefile.rules ) then
+    echo "Directory:  $dir/$OS/GNUmakefile.rules  does not exist"
     exit 1
 endif
 
@@ -41,23 +44,27 @@ find . \( -name '*~' -o -name '.*~' \) -print -exec rm {} \;
 cd $dir
 
 if (-r Makefile.$OS) then
-    cp -p Makefile.$OS $KARMALIBPATH/Makefile
+    cp -p Makefile.$OS $karmalibdir/Makefile
 else
-    cp -p Makefile $KARMALIBPATH
+    cp -p Makefile $karmalibdir
 endif
 
 cd $OS
 
-foreach i (*)
-    if ( ! -d $KARMALIBPATH/$i ) then
-	echo "Making directory: $KARMALIBPATH/$i"
-	mkdir $KARMALIBPATH/$i
+foreach i (karma*)
+    if ( ! -d $karmalibdir/$i ) then
+	echo "Making directory: $karmalibdir/$i"
+	mkdir $karmalibdir/$i
+    endif
+    if ( ! -r $karmalibdir/$i/dependfile ) then
+	echo "Creating empty file: $karmalibdir/$i/dependfile"
+	touch $karmalibdir/$i/dependfile
     endif
     echo $i
     if ("$OS" == "IRIX5") then
-	cp $i $KARMALIBPATH/$i/GNUmakefile
+	cp $i $karmalibdir/$i/GNUmakefile
     else
-	cp -p $i $KARMALIBPATH/$i/GNUmakefile
+	cp -p $i $karmalibdir/$i/GNUmakefile
     endif
 end
 

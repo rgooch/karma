@@ -1,6 +1,5 @@
-kcmap_init
+kcmap_va_create
 kcmap_add_RGB_func
-kcmap_create
 kcmap_register_resize_func
 kcmap_change
 kcmap_modify

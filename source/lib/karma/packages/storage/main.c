@@ -31,7 +31,9 @@
 
     Written by      Richard Gooch   8-APR-1993
 
-    Last updated by Richard Gooch   6-JAN-1995
+    Updated by      Richard Gooch   6-JAN-1995
+
+    Last updated by Richard Gooch   7-MAY-1995: Placate gcc -Wall
 
 
 */
@@ -42,6 +44,7 @@
 #include <errno.h>
 #include <karma.h>
 #include <karma_dsxfr.h>
+#include <karma_dsrw.h>
 #include <karma_st.h>
 #include <karma_ds.h>
 #include <karma_ch.h>
@@ -100,16 +103,16 @@ typedef struct
 #define VERIFY_DATASTORE(datastore) if (datastore == NULL) \
 {(void) fprintf (stderr, "NULL DataStore passed\n"); \
  a_prog_bug (function_name); } \
-if ( (*datastore).magic_number != DATASTORE_MAGIC_NUMBER ) \
+if (datastore->magic_number != DATASTORE_MAGIC_NUMBER) \
 {(void) fprintf (stderr, "Invalid DataStore object\n"); \
  a_prog_bug (function_name); }
 #define VERIFY_DATASECTION(section) if (section == NULL) \
 {(void) fprintf (stderr, "NULL DataSection passed\n"); \
  a_prog_bug (function_name); } \
-if ( (*section).priv == NULL ) \
+if (section->priv == NULL) \
 {(void) fprintf (stderr, "NULL priv pointer\n"); \
  a_prog_bug (function_name); } \
-if ( (* (*section).priv ).magic_number != DATASECTIONINTERNAL_MAGIC_NUMBER ) \
+if (section->priv->magic_number != DATASECTIONINTERNAL_MAGIC_NUMBER) \
 {(void) fprintf (stderr, "Invalid private structure\n"); \
  a_prog_bug (function_name); }
 
@@ -195,9 +198,9 @@ DataStore storage_open (CONST char *pathname, flag read_only, flag reshape)
 	    dealloc_datastore (datastore);
 	    return (NULL);
 	}
-	(*datastore).multi_desc = multi_desc;
+	datastore->multi_desc = multi_desc;
 	switch ( ds_f_array_name (multi_desc, structname, (char **) NULL,
-				  &(*datastore).array_num) )
+				  &datastore->array_num) )
 	{
 	  case IDENT_GEN_STRUCT:
 	    /*  Perfect  */
@@ -225,8 +228,8 @@ DataStore storage_open (CONST char *pathname, flag read_only, flag reshape)
 	    a_prog_bug (function_name);
 	    break;
 	}
-	(*datastore).vm = TRUE;
-	(*datastore).new = FALSE;
+	datastore->vm = TRUE;
+	datastore->new = FALSE;
 	break;
       default:
 	(void) fprintf (stderr,
@@ -257,7 +260,6 @@ DataStore storage_create (CONST char *pathname, packet_desc *top_pack_desc)
     else it returns NULL (and displays a message on the standard error).
 */
 {
-    Channel channel;
     DataStore datastore;
     flag rename_file;
     char *tilde_filename;
@@ -289,18 +291,17 @@ DataStore storage_create (CONST char *pathname, packet_desc *top_pack_desc)
 	    ds_dealloc_packet (top_pack_desc, NULL);
 	    return (NULL);
 	}
-	(*datastore).multi_desc = multi_desc;
-	(*datastore).array_num = 0;
-	(*multi_desc).headers[0] = top_pack_desc;
-	if ( ( (*multi_desc).data[0] = ds_alloc_data (top_pack_desc, TRUE,
-						      TRUE) )
+	datastore->multi_desc = multi_desc;
+	datastore->array_num = 0;
+	multi_desc->headers[0] = top_pack_desc;
+	if ( ( multi_desc->data[0] = ds_alloc_data (top_pack_desc, TRUE,TRUE) )
 	    == NULL )
 	{
 	    dealloc_datastore (datastore);
 	    return (NULL);
 	}
-	(*datastore).vm = TRUE;
-	(*datastore).new = TRUE;
+	datastore->vm = TRUE;
+	datastore->new = TRUE;
 	return (datastore);
     }
     /*  A file must be associated with the DataStore  */
@@ -359,7 +360,7 @@ DataStore storage_create (CONST char *pathname, packet_desc *top_pack_desc)
 	    }
 	    m_free (tilde_filename);
 	}
-	if ( ( (*datastore).channel = ch_open_file (filename, "w") ) == NULL )
+	if ( ( datastore->channel = ch_open_file (filename, "w") ) == NULL )
 	{
 	    (void) fprintf (stderr,
 			    "Error opening file: \"%s\" for output\t%s\n",
@@ -370,26 +371,26 @@ DataStore storage_create (CONST char *pathname, packet_desc *top_pack_desc)
 	}
 	if ( ( multi_desc = ds_alloc_multi (1) ) == NULL )
 	{
-	    (void) ch_close ( (*datastore).channel );
-	    (*datastore).channel = NULL;
+	    (void) ch_close (datastore->channel);
+	    datastore->channel = NULL;
 	    dealloc_datastore (datastore);
 	    ds_dealloc_packet (top_pack_desc, NULL);
 	    return (NULL);
 	}
-	(*datastore).multi_desc = multi_desc;
-	(*datastore).array_num = 0;
-	(*multi_desc).headers[0] = top_pack_desc;
-	if ( ( (*multi_desc).data[0] = ds_alloc_data (top_pack_desc, TRUE,
-						      TRUE) )
+	datastore->multi_desc = multi_desc;
+	datastore->array_num = 0;
+	multi_desc->headers[0] = top_pack_desc;
+	if ( ( multi_desc->data[0] = ds_alloc_data (top_pack_desc, TRUE,
+						    TRUE) )
 	    == NULL )
 	{
-	    (void) ch_close ( (*datastore).channel );
-	    (*datastore).channel = NULL;
+	    (void) ch_close (datastore->channel);
+	    datastore->channel = NULL;
 	    dealloc_datastore (datastore);
 	    return (NULL);
 	}
-	(*datastore).vm = TRUE;
-	(*datastore).new = TRUE;
+	datastore->vm = TRUE;
+	datastore->new = TRUE;
 	break;
       default:
 	(void) fprintf (stderr,
@@ -449,15 +450,15 @@ CONST char *storage_get_one_value (DataStore datastore, CONST char *value_name,
     static char function_name[] = "storage_get_one_value";
 
     VERIFY_DATASTORE (datastore);
-    if (!(*datastore).vm)
+    if (!datastore->vm)
     {
 	(void) fprintf (stderr,
 			"Operation on non-VM DataStore not implemented\n");
 	a_prog_bug (function_name);
     }
-    multi_desc = (*datastore).multi_desc;
-    top_pack_desc = (*multi_desc).headers[(*datastore).array_num];
-    top_packet = (*multi_desc).data[(*datastore).array_num];
+    multi_desc = datastore->multi_desc;
+    top_pack_desc = multi_desc->headers[datastore->array_num];
+    top_packet = multi_desc->data[datastore->array_num];
     switch ( ds_get_handle_in_packet (top_pack_desc, top_packet, value_name,
 				      key_names, key_values, num_keys,
 				      &parent_desc, &parent, &parent_type,
@@ -531,15 +532,15 @@ flag storage_put_one_value (DataStore datastore, CONST char *value_name,
     static char function_name[] = "storage_put_one_value";
 
     VERIFY_DATASTORE (datastore);
-    if (!(*datastore).vm)
+    if (!datastore->vm)
     {
 	(void) fprintf (stderr,
 			"Operation on non-VM DataStore not implemented\n");
 	a_prog_bug (function_name);
     }
-    multi_desc = (*datastore).multi_desc;
-    top_pack_desc = (*multi_desc).headers[(*datastore).array_num];
-    top_packet = (*multi_desc).data[(*datastore).array_num];
+    multi_desc = datastore->multi_desc;
+    top_pack_desc = multi_desc->headers[datastore->array_num];
+    top_packet = multi_desc->data[datastore->array_num];
     switch ( ds_get_handle_in_packet (top_pack_desc, top_packet, value_name,
 				      key_names, key_values, num_keys,
 				      &parent_desc, &parent, &parent_type,
@@ -630,35 +631,34 @@ DataSection storage_get_one_section (DataStore datastore,
     char *top_packet;
     packet_desc *top_pack_desc;
     multi_array *multi_desc;
-    multi_array *tmp_multi_desc;
     static char function_name[] = "storage_get_one_section";
 
     VERIFY_DATASTORE (datastore);
-    if (!(*datastore).vm)
+    if (!datastore->vm)
     {
 	(void) fprintf (stderr,
 			"Operation on non-VM DataStore not implemented\n");
 	a_prog_bug (function_name);
     }
-    multi_desc = (*datastore).multi_desc;
-    top_pack_desc = (*multi_desc).headers[(*datastore).array_num];
-    top_packet = (*multi_desc).data[(*datastore).array_num];
+    multi_desc = datastore->multi_desc;
+    top_pack_desc = multi_desc->headers[datastore->array_num];
+    top_packet = multi_desc->data[datastore->array_num];
     /*  Disable this for now. Maybe eventually I can remove the code. Some
 	thought will be needed.  */
 #ifdef dummy
-    if ( (*datastore).new )
+    if (datastore->new)
     {
 	(void) fprintf (stderr, "DataStore must not be a newly created one\n");
 	a_prog_bug (function_name);
     }
 #endif
     /*  This is an ugly hack which will have to be changed later  */
-    (*datastore).new = TRUE;
+    datastore->new = TRUE;
     section = storage_create_section (datastore, value_name, num_axis_keys,
 				      axis_key_names, axis_key_lengths,
 				      axis_key_coordinates, num_loc_keys,
 				      loc_key_names, loc_key_values, errcode);
-    (*datastore).new = FALSE;
+    datastore->new = FALSE;
     return (section);
 }   /*  End Function storage_get_one_section  */
 
@@ -732,10 +732,10 @@ DataSection storage_define_iterator (DataStore datastore,
     char *top_packet;
     unsigned int *ordered_key_indices;
     packet_desc *top_pack_desc;
-    packet_desc *value_pack_desc;
+    packet_desc *value_pack_desc = NULL; /*Initialised to keep compiler happy*/
     multi_array *multi_desc;
     array_desc *prev_arr_desc;
-    array_desc *arr_desc;
+    array_desc *arr_desc = NULL;  /*  Initialised to keep compiler happy  */
     array_desc *single_arr_desc = NULL;
     dim_desc *dim;
     static char function_name[] = "storage_define_iterator";
@@ -750,15 +750,15 @@ DataSection storage_define_iterator (DataStore datastore,
 	a_prog_bug (function_name);
     }
     *errcode = STORAGE_ERR_UNDEFINED;
-    if (!(*datastore).vm)
+    if (!datastore->vm)
     {
 	(void) fprintf (stderr,
 			"Only virtual memory DataStore implemented yet\n");
 	return (NULL);
     }
-    multi_desc = (*datastore).multi_desc;
-    top_pack_desc = (*multi_desc).headers[(*datastore).array_num];
-    top_packet = (*multi_desc).data[(*datastore).array_num];
+    multi_desc = datastore->multi_desc;
+    top_pack_desc = multi_desc->headers[datastore->array_num];
+    top_packet = multi_desc->data[datastore->array_num];
     /*  Get parent packet descriptor for data value  */
     switch ( ds_f_name_in_packet (top_pack_desc, value_name,
 				  &var_desc, &value_index) )
@@ -821,7 +821,7 @@ DataSection storage_define_iterator (DataStore datastore,
 	    if (prev_arr_desc == NULL)
 	    {
 		prev_arr_desc = arr_desc;
-		if (value_pack_desc != (*arr_desc).packet)
+		if (value_pack_desc != arr_desc->packet)
 		{
 		    /*  Data value is not in this array  */
 		    in_one_array = FALSE;
@@ -834,7 +834,7 @@ DataSection storage_define_iterator (DataStore datastore,
 		    in_one_array = FALSE;
 		}
 	    }
-	    dim = (*arr_desc).dimensions[index];
+	    dim = arr_desc->dimensions[index];
 	    /*  Verify co-ordinates match  */
 	    /*  Fine  */
 	    break;
@@ -870,7 +870,7 @@ DataSection storage_define_iterator (DataStore datastore,
 	(void) fprintf (stderr, "Error computing array offsets\n");
 	return (NULL);
     }
-    offsets = (*single_arr_desc).offsets;
+    offsets = single_arr_desc->offsets;
     /*  At this point the axis keys have been grokked. Time to meditate on the
 	order keys.  */
     if ( ( ordered_key_indices = (unsigned int *)
@@ -906,7 +906,7 @@ DataSection storage_define_iterator (DataStore datastore,
 	    if (prev_arr_desc == NULL)
 	    {
 		prev_arr_desc = arr_desc;
-		if (value_pack_desc != (*arr_desc).packet)
+		if (value_pack_desc != arr_desc->packet)
 		{
 		    /*  Data value is not in this array  */
 		    in_one_array = FALSE;
@@ -958,7 +958,7 @@ DataSection storage_define_iterator (DataStore datastore,
 	return (NULL);
     }
     /*  Simple, n-dimensional array: yay!  */
-    if (num_axis_keys + num_ordered_keys > (*single_arr_desc).num_dimensions)
+    if (num_axis_keys + num_ordered_keys > single_arr_desc->num_dimensions)
     {
 	(void) fprintf (stderr, "Too many axis/order keys for array\n");
 	m_free ( (char *) ordered_key_indices );
@@ -967,17 +967,17 @@ DataSection storage_define_iterator (DataStore datastore,
     /*  Locate section  */
     /*  First find array in top packet  */
     for (elem_count = 0, single_array = NULL;
-	 elem_count < (*top_pack_desc).num_elements;
+	 elem_count < top_pack_desc->num_elements;
 	 ++elem_count)
     {
-	if ( (*top_pack_desc).element_types[elem_count] != K_ARRAY ) continue;
+	if (top_pack_desc->element_types[elem_count] != K_ARRAY) continue;
 	if (single_arr_desc ==
-	    (array_desc *) (*top_pack_desc).element_desc[elem_count])
+	    (array_desc *) top_pack_desc->element_desc[elem_count])
 	{
 	    single_array = top_packet + ds_get_element_offset (top_pack_desc,
 							       elem_count);
 	    single_array = *(char **) single_array;
-	    elem_count = (*top_pack_desc).num_elements;
+	    elem_count = top_pack_desc->num_elements;
 	}
     }
     if (single_array == NULL)
@@ -993,19 +993,19 @@ DataSection storage_define_iterator (DataStore datastore,
 	m_free ( (char *) ordered_key_indices );
 	return (NULL);
     }
-    internal = (*section).priv;
-    (*internal).num_o_keys = num_ordered_keys;
-    (*internal).o_key_indices = ordered_key_indices;
-    (*internal).single_array = single_array;
-    (*internal).single_array += ds_get_element_offset (value_pack_desc,
-						       value_index);
-    (*internal).num_u_keys = (*single_arr_desc).num_dimensions - num_axis_keys;
-    (*internal).num_u_keys -= (*internal).num_u_keys;
-    if ( (*internal).num_u_keys > 0 )
+    internal = section->priv;
+    internal->num_o_keys = num_ordered_keys;
+    internal->o_key_indices = ordered_key_indices;
+    internal->single_array = single_array;
+    internal->single_array += ds_get_element_offset (value_pack_desc,
+						     value_index);
+    internal->num_u_keys = single_arr_desc->num_dimensions - num_axis_keys;
+    internal->num_u_keys -= internal->num_u_keys;
+    if (internal->num_u_keys > 0)
     {
-	if ( ( (*internal).u_key_indices = (unsigned int *)
-	      m_alloc (sizeof *(*internal).u_key_indices *
-		       (*internal).num_u_keys) ) == NULL )
+	if ( ( internal->u_key_indices = (unsigned int *)
+	      m_alloc (sizeof *internal->u_key_indices *
+		       internal->num_u_keys) ) == NULL )
 	{
 	    m_error_notify (function_name, "unordered key indices");
 	    storage_free_section (section);
@@ -1014,7 +1014,7 @@ DataSection storage_define_iterator (DataStore datastore,
     }
     else
     {
-	(*internal).u_key_indices = NULL;
+	internal->u_key_indices = NULL;
     }
     if ( ( iarr = (iarray) m_alloc (sizeof *iarr) ) == NULL )
     {
@@ -1023,32 +1023,32 @@ DataSection storage_define_iterator (DataStore datastore,
 	return (NULL);
     }
     m_clear ( (char *) iarr, sizeof *iarr );
-    (*section).iarray = iarr;
-    (*iarr).multi_desc = (*datastore).multi_desc;
-    ++(* (*iarr).multi_desc ).attachments;
-    if ( ( (*iarr).offsets = (uaddr **)
-	  m_alloc (num_axis_keys * sizeof *(*iarr).offsets) ) == NULL )
+    section->iarray = iarr;
+    iarr->multi_desc = datastore->multi_desc;
+    ++iarr->multi_desc->attachments;
+    if ( ( iarr->offsets = (uaddr **)
+	  m_alloc (num_axis_keys * sizeof *iarr->offsets) ) == NULL )
     {
 	m_error_notify (function_name, "array of offset array pointers");
 	storage_free_section (section);
 	return (NULL);
     }
-    if ( ( (*iarr).lengths = (unsigned long *)
-	  m_alloc (num_axis_keys * sizeof *(*iarr).lengths) ) == NULL )
+    if ( ( iarr->lengths = (unsigned long *)
+	  m_alloc (num_axis_keys * sizeof *iarr->lengths) ) == NULL )
     {
 	m_error_notify (function_name, "array of lengths");
 	storage_free_section (section);
 	return (NULL);
     }
-    if ( ( (*iarr).contiguous = (flag *)
-	  m_alloc (num_axis_keys * sizeof *(*iarr).contiguous) ) == NULL )
+    if ( ( iarr->contiguous = (flag *)
+	  m_alloc (num_axis_keys * sizeof *iarr->contiguous) ) == NULL )
     {
 	m_error_notify (function_name, "array of lengths");
 	storage_free_section (section);
 	return (NULL);
     }
-    if ( ( (*iarr).orig_dim_indices = (unsigned int *)
-	  m_alloc (num_axis_keys * sizeof *(*iarr).orig_dim_indices) )
+    if ( ( iarr->orig_dim_indices = (unsigned int *)
+	  m_alloc (num_axis_keys * sizeof *iarr->orig_dim_indices) )
 	== NULL )
     {
 	m_error_notify (function_name, "array of dimension indices");
@@ -1060,26 +1060,26 @@ DataSection storage_define_iterator (DataStore datastore,
     {
 	if ( ( index = ds_f_dim_in_array (single_arr_desc,
 					  axis_key_names[key_count]) )
-	    >= (*single_arr_desc).num_dimensions )
+	    >= single_arr_desc->num_dimensions )
 	{
 	    (void) fprintf (stderr, "Axis: \"%s\" not found\n",
 			    axis_key_names[key_count]);
 	    a_prog_bug (function_name);
 	}
-	dim = (*arr_desc).dimensions[index];
+	dim = arr_desc->dimensions[index];
 	/*  For VM case, make undefined section size equal to whole section
 	    size. This will break for non-VM code.  */
 	length = (axis_key_lengths ==
-		  NULL) ? (*dim).length : axis_key_lengths[key_count];
-	if ( ( (*iarr).offsets[key_count] = (unsigned long *)
-	      m_alloc (sizeof **(*iarr).offsets * length) )
+		  NULL) ? dim->length : axis_key_lengths[key_count];
+	if ( ( iarr->offsets[key_count] = (unsigned long *)
+	      m_alloc (sizeof **iarr->offsets * length) )
 	    == NULL )
 	{
 	    m_error_notify (function_name, "offset array");
 	    storage_free_section (section);
 	    return (NULL);
 	}
-	(*iarr).lengths[key_count] = length;
+	iarr->lengths[key_count] = length;
 	for (coord_count = 0; coord_count < length; ++coord_count)
 	{
 	    if (axis_key_coordinates == NULL)
@@ -1092,39 +1092,39 @@ DataSection storage_define_iterator (DataStore datastore,
 		off = ds_get_coord_num (dim, coord, SEARCH_BIAS_CLOSEST);
 	    }
 	    off = offsets[index][off];
-	    (*iarr).offsets[key_count][coord_count] = off;
+	    iarr->offsets[key_count][coord_count] = off;
 	}
-	(*iarr).contiguous[key_count] = FALSE;
-	(*iarr).orig_dim_indices[key_count] = index;
+	iarr->contiguous[key_count] = FALSE;
+	iarr->orig_dim_indices[key_count] = index;
     }
-    (*iarr).data = NULL;
-    (*iarr).top_pack_desc = top_pack_desc;
-    (*iarr).top_packet = (*multi_desc).data + (*datastore).array_num;
-    (*iarr).arr_desc = single_arr_desc;
-    (*iarr).array_num = (*datastore).array_num;
-    (*iarr).boundary_width = 0;
-    (*iarr).elem_index = value_index;
-    (*iarr).num_dim = num_axis_keys;
-    (*iarr).restrictions = NULL;
+    iarr->data = NULL;
+    iarr->top_pack_desc = top_pack_desc;
+    iarr->top_packet = multi_desc->data + datastore->array_num;
+    iarr->arr_desc = single_arr_desc;
+    iarr->array_num = datastore->array_num;
+    iarr->boundary_width = 0;
+    iarr->elem_index = value_index;
+    iarr->num_dim = num_axis_keys;
+    iarr->restrictions = NULL;
     /*  Do more work  */
-    if ( ( (*internal).o_key_lengths = (unsigned long *)
-	  m_alloc (num_ordered_keys * sizeof *(*internal).o_key_lengths) )
+    if ( ( internal->o_key_lengths = (unsigned long *)
+	  m_alloc (num_ordered_keys * sizeof *internal->o_key_lengths) )
 	== NULL )
     {
 	m_error_notify (function_name, "array of ordered key lengths");
 	storage_free_section (section);
 	return (NULL);
     }
-    if ( ( (*internal).o_key_coords = (unsigned long **)
-	  m_alloc (num_ordered_keys * sizeof *(*internal).o_key_coords) )
+    if ( ( internal->o_key_coords = (unsigned long **)
+	  m_alloc (num_ordered_keys * sizeof *internal->o_key_coords) )
 	== NULL )
     {
 	m_error_notify (function_name, "array of co-ordinate array pointers");
 	storage_free_section (section);
 	return (NULL);
     }
-    if ( ( (*internal).o_location = (unsigned long *)
-	  m_alloc (sizeof *(*internal).o_location * num_ordered_keys) )
+    if ( ( internal->o_location = (unsigned long *)
+	  m_alloc (sizeof *internal->o_location * num_ordered_keys) )
 	== NULL )
     {
 	m_error_notify (function_name, "array of ordered co-ordinates");
@@ -1132,11 +1132,11 @@ DataSection storage_define_iterator (DataStore datastore,
 	return (NULL);
     }
     /*  Initialise ordered location  */
-    m_clear ( (char *) (*internal).o_location, sizeof *(*internal).o_location *
+    m_clear ( (char *) internal->o_location, sizeof *internal->o_location *
 	     num_ordered_keys );
     num_unordered_keys = datastore->arr_desc->num_dimensions - num_axis_keys - num_ordered_keys;
-    if ( ( (*internal).u_location = (unsigned long *)
-	  m_alloc (sizeof *(*internal).u_location * num_unordered_keys) )
+    if ( ( internal->u_location = (unsigned long *)
+	  m_alloc (sizeof *internal->u_location * num_unordered_keys) )
 	== NULL )
     {
 	m_error_notify (function_name, "array of ordered co-ordinates");
@@ -1144,53 +1144,53 @@ DataSection storage_define_iterator (DataStore datastore,
 	return (NULL);
     }
     /*  Initialise unordered location  */
-    m_clear ( (char *) (*internal).u_location, sizeof *(*internal).u_location *
+    m_clear ( (char *) internal->u_location, sizeof *internal->u_location *
 	     num_unordered_keys );
     /*  Fill in rest of the ordered key information  */
     for (key_count = 0; key_count < num_ordered_keys; ++key_count)
     {
 	index = ordered_key_indices[key_count];
-	(*internal).o_key_lengths[key_count] = ordered_key_lengths[key_count];
-	dim = (*single_arr_desc).dimensions[index];
+	internal->o_key_lengths[key_count] = ordered_key_lengths[key_count];
+	dim = single_arr_desc->dimensions[index];
 	for (coord_count = 0; coord_count < ordered_key_lengths[key_count];
 	     ++coord_count)
 	{
 	    coord = ordered_key_coordinates[key_count][coord_count];
 	    off = offsets[index][ds_get_coord_num (dim, coord,
 						   SEARCH_BIAS_CLOSEST)];
-	    (*internal).o_key_coords[key_count][coord_count] = off;
+	    internal->o_key_coords[key_count][coord_count] = off;
 	}
     }
     /*  Fill in the unordered key information  */
     for (dim_count = 0, u_key_count = 0;
-	 dim_count < (*single_arr_desc).num_dimensions;
+	 dim_count < single_arr_desc->num_dimensions;
 	 ++dim_count)
     {
 	for (key_count = 0, found_key = FALSE;
 	     (key_count < num_axis_keys) && !found_key;
 	     ++key_count)
 	{
-	    if (dim_count == (*iarr).orig_dim_indices[key_count])
+	    if (dim_count == iarr->orig_dim_indices[key_count])
 	    {
 		found_key = TRUE;
 	    }
 	}
 	for (key_count = 0, found_key = FALSE;
-	     (key_count < (*internal).num_u_keys) && !found_key;
+	     (key_count < internal->num_u_keys) && !found_key;
 	     ++key_count)
 	{
-	    if (dim_count == (*internal).o_key_indices[key_count])
+	    if (dim_count == internal->o_key_indices[key_count])
 	    {
 		found_key = TRUE;
 	    }
 	}
 	if (found_key) continue;
-	if (u_key_count >= (*internal).num_u_keys)
+	if (u_key_count >= internal->num_u_keys)
 	{
 	    (void) fprintf (stderr, "Inconsistent number of unordered keys\n");
 	    a_prog_bug (function_name);
 	}
-	(*internal).u_key_indices[u_key_count] = dim_count;
+	internal->u_key_indices[u_key_count] = dim_count;
     }
     /*  YES! The structure is filled in. Now get the first section  */
     compute_section_from_location (section);
@@ -1209,7 +1209,9 @@ flag storage_goto_next_section (DataSection section)
     else it returns FALSE indicting that there are no more sections to process.
 */
 {
+/*
     static char function_name[] = "storage_goto_next_section";
+*/
 
     if ( !find_next_section (section) ) return (FALSE);
     compute_section_from_location (section);
@@ -1261,10 +1263,10 @@ DataSection storage_create_section (DataStore datastore,
     char *top_packet;
     uaddr **offsets;
     packet_desc *top_pack_desc;
-    packet_desc *value_pack_desc;
+    packet_desc *value_pack_desc = NULL; /*Initialised to keep compiler happy*/
     multi_array *multi_desc;
     array_desc *prev_arr_desc;
-    array_desc *arr_desc;
+    array_desc *arr_desc = NULL;  /*  Initialised to keep compiler happy  */
     array_desc *single_arr_desc = NULL;
     dim_desc *dim;
     static char function_name[] = "storage_create_section";
@@ -1278,20 +1280,20 @@ DataSection storage_create_section (DataStore datastore,
 	a_prog_bug (function_name);
     }
     *errcode = STORAGE_ERR_UNDEFINED;
-    if (!(*datastore).vm)
+    if (!datastore->vm)
     {
 	(void) fprintf (stderr,
 			"Only virtual memory DataStore implemented yet\n");
 	return (NULL);
     }
-    if (!(*datastore).new)
+    if (!datastore->new)
     {
 	(void) fprintf (stderr, "DataStore must be a newly created one\n");
 	return (NULL);
     }
-    multi_desc = (*datastore).multi_desc;
-    top_pack_desc = (*multi_desc).headers[(*datastore).array_num];
-    top_packet = (*multi_desc).data[(*datastore).array_num];
+    multi_desc = datastore->multi_desc;
+    top_pack_desc = multi_desc->headers[datastore->array_num];
+    top_packet = multi_desc->data[datastore->array_num];
     /*  Get parent packet descriptor for data value  */
     switch ( ds_f_name_in_packet (top_pack_desc, value_name,
 				  &var_desc, &value_index) )
@@ -1369,7 +1371,7 @@ DataSection storage_create_section (DataStore datastore,
 	    if (prev_arr_desc == NULL)
 	    {
 		prev_arr_desc = arr_desc;
-		if (value_pack_desc != (*arr_desc).packet)
+		if (value_pack_desc != arr_desc->packet)
 		{
 		    /*  Data value is not in this array  */
 		    in_one_array = FALSE;
@@ -1382,7 +1384,7 @@ DataSection storage_create_section (DataStore datastore,
 		    in_one_array = FALSE;
 		}
 	    }
-	    dim = (*arr_desc).dimensions[index];
+	    dim = arr_desc->dimensions[index];
 	    /*  Verify co-ordinates match  */
 	    /*  Fine  */
 	    break;
@@ -1418,7 +1420,7 @@ DataSection storage_create_section (DataStore datastore,
 	(void) fprintf (stderr, "Error computing array offsets\n");
 	return (NULL);
     }
-    offsets = (*single_arr_desc).offsets;
+    offsets = single_arr_desc->offsets;
     /*  At this point the axis keys have been grokked. Time to meditate on the
 	location keys.  */
     for (key_count = 0, prev_arr_desc = NULL, section_offset = 0;
@@ -1446,7 +1448,7 @@ DataSection storage_create_section (DataStore datastore,
 	    if (prev_arr_desc == NULL)
 	    {
 		prev_arr_desc = arr_desc;
-		if (value_pack_desc != (*arr_desc).packet)
+		if (value_pack_desc != arr_desc->packet)
 		{
 		    /*  Data value is not in this array  */
 		    in_one_array = FALSE;
@@ -1460,7 +1462,7 @@ DataSection storage_create_section (DataStore datastore,
 		}
 	    }
 	    /*  Fine  */
-	    dim = (*arr_desc).dimensions[index];
+	    dim = arr_desc->dimensions[index];
 	    off = offsets[index][ds_get_coord_num (dim,
 						   loc_key_values[key_count],
 						   SEARCH_BIAS_CLOSEST)];
@@ -1499,12 +1501,12 @@ DataSection storage_create_section (DataStore datastore,
 	return (NULL);
     }
     /*  Simple, n-dimensional array: yay!  */
-    if (num_axis_keys + num_loc_keys > (*single_arr_desc).num_dimensions)
+    if (num_axis_keys + num_loc_keys > single_arr_desc->num_dimensions)
     {
 	(void) fprintf (stderr, "Too many axis/location keys for array\n");
 	return (NULL);
     }
-    if (num_axis_keys + num_loc_keys < (*single_arr_desc).num_dimensions)
+    if (num_axis_keys + num_loc_keys < single_arr_desc->num_dimensions)
     {
 	(void) fprintf (stderr, "Insufficient axis/location keys for array\n");
 	return (NULL);
@@ -1512,17 +1514,17 @@ DataSection storage_create_section (DataStore datastore,
     /*  Locate section  */
     /*  First find array in top packet  */
     for (elem_count = 0, single_array = NULL;
-	 elem_count < (*top_pack_desc).num_elements;
+	 elem_count < top_pack_desc->num_elements;
 	 ++elem_count)
     {
-	if ( (*top_pack_desc).element_types[elem_count] != K_ARRAY ) continue;
+	if (top_pack_desc->element_types[elem_count] != K_ARRAY) continue;
 	if (single_arr_desc ==
-	    (array_desc *) (*top_pack_desc).element_desc[elem_count])
+	    (array_desc *) top_pack_desc->element_desc[elem_count])
 	{
 	    single_array = top_packet + ds_get_element_offset (top_pack_desc,
 							       elem_count);
 	    single_array = *(char **) single_array;
-	    elem_count = (*top_pack_desc).num_elements;
+	    elem_count = top_pack_desc->num_elements;
 	}
     }
     if (single_array == NULL)
@@ -1544,32 +1546,32 @@ DataSection storage_create_section (DataStore datastore,
 	return (NULL);
     }
     m_clear ( (char *) iarr, sizeof *iarr );
-    (*section).iarray = iarr;
-    (*iarr).multi_desc = (*datastore).multi_desc;
-    ++(* (*iarr).multi_desc ).attachments;
-    if ( ( (*iarr).offsets = (uaddr **)
-	  m_alloc (num_axis_keys * sizeof *(*iarr).offsets) ) == NULL )
+    section->iarray = iarr;
+    iarr->multi_desc = datastore->multi_desc;
+    ++iarr->multi_desc->attachments;
+    if ( ( iarr->offsets = (uaddr **)
+	  m_alloc (num_axis_keys * sizeof *iarr->offsets) ) == NULL )
     {
 	m_error_notify (function_name, "array of offset array pointers");
 	storage_free_section (section);
 	return (NULL);
     }
-    if ( ( (*iarr).lengths = (unsigned long *)
-	  m_alloc (num_axis_keys * sizeof *(*iarr).lengths) ) == NULL )
+    if ( ( iarr->lengths = (unsigned long *)
+	  m_alloc (num_axis_keys * sizeof *iarr->lengths) ) == NULL )
     {
 	m_error_notify (function_name, "array of lengths");
 	storage_free_section (section);
 	return (NULL);
     }
-    if ( ( (*iarr).contiguous = (flag *)
-	  m_alloc (num_axis_keys * sizeof *(*iarr).contiguous) ) == NULL )
+    if ( ( iarr->contiguous = (flag *)
+	  m_alloc (num_axis_keys * sizeof *iarr->contiguous) ) == NULL )
     {
 	m_error_notify (function_name, "array of lengths");
 	storage_free_section (section);
 	return (NULL);
     }
-    if ( ( (*iarr).orig_dim_indices = (unsigned int *)
-	  m_alloc (num_axis_keys * sizeof *(*iarr).orig_dim_indices) )
+    if ( ( iarr->orig_dim_indices = (unsigned int *)
+	  m_alloc (num_axis_keys * sizeof *iarr->orig_dim_indices) )
 	== NULL )
     {
 	m_error_notify (function_name, "array of dimension indices");
@@ -1581,43 +1583,43 @@ DataSection storage_create_section (DataStore datastore,
     {
 	if ( ( index = ds_f_dim_in_array (single_arr_desc,
 					  axis_key_names[key_count]) )
-	    >= (*single_arr_desc).num_dimensions )
+	    >= single_arr_desc->num_dimensions )
 	{
 	    (void) fprintf (stderr, "Axis: \"%s\" not found\n",
 			    axis_key_names[key_count]);
 	    a_prog_bug (function_name);
 	}
-	dim = (*arr_desc).dimensions[index];
-	if ( ( (*iarr).offsets[key_count] = (uaddr *)
-	      m_alloc (sizeof **(*iarr).offsets *axis_key_lengths[key_count]) )
+	dim = arr_desc->dimensions[index];
+	if ( ( iarr->offsets[key_count] = (uaddr *)
+	      m_alloc (sizeof **iarr->offsets *axis_key_lengths[key_count]) )
 	    == NULL )
 	{
 	    m_error_notify (function_name, "offset array");
 	    storage_free_section (section);
 	    return (NULL);
 	}
-	(*iarr).lengths[key_count] = axis_key_lengths[key_count];
+	iarr->lengths[key_count] = axis_key_lengths[key_count];
 	for (coord_count = 0; coord_count < axis_key_lengths[key_count];
 	     ++coord_count)
 	{
 	    coord = axis_key_coordinates[key_count][coord_count];
 	    off = offsets[index][ds_get_coord_num (dim, coord,
 						   SEARCH_BIAS_CLOSEST)];
-	    (*iarr).offsets[key_count][coord_count] = off;
+	    iarr->offsets[key_count][coord_count] = off;
 	}
-	(*iarr).contiguous[key_count] = FALSE;
-	(*iarr).orig_dim_indices[key_count] = index;
+	iarr->contiguous[key_count] = FALSE;
+	iarr->orig_dim_indices[key_count] = index;
     }
-    (*iarr).data = ds_get_element_offset (value_pack_desc,
+    iarr->data = ds_get_element_offset (value_pack_desc,
 					  value_index) + array_ptr;
-    (*iarr).top_pack_desc = top_pack_desc;
-    (*iarr).top_packet = (*multi_desc).data + (*datastore).array_num;
-    (*iarr).arr_desc = single_arr_desc;
-    (*iarr).array_num = (*datastore).array_num;
-    (*iarr).boundary_width = 0;
-    (*iarr).elem_index = value_index;
-    (*iarr).num_dim = num_axis_keys;
-    (*iarr).restrictions = NULL;
+    iarr->top_pack_desc = top_pack_desc;
+    iarr->top_packet = multi_desc->data + datastore->array_num;
+    iarr->arr_desc = single_arr_desc;
+    iarr->array_num = datastore->array_num;
+    iarr->boundary_width = 0;
+    iarr->elem_index = value_index;
+    iarr->num_dim = num_axis_keys;
+    iarr->restrictions = NULL;
     /*  Do more work  */
     return (section);
 }   /*  End Function storage_create_section  */
@@ -1630,26 +1632,28 @@ void storage_free_section (DataSection section)
 */
 {
     iarray iarr;
+/*
     unsigned int count;
     static char function_name[] = "storage_free_section";
+*/
 
     storage_flush_section (section);
-    iarr = (*section).iarray;
+    iarr = section->iarray;
     /*  Deallocate section information  */
 #ifdef not_implemented
-    if ( (*section).coordinates != NULL )
+    if (section->coordinates != NULL)
     {
 	for (count = 0; count < iarray_num_dim (iarr); ++count)
 	{
-	    if ( (*section).coordinates[count] != NULL )
+	    if (section->coordinates[count] != NULL)
 	    {
-		m_free ( (char *) (*section).coordinates[count] );
+		m_free ( (char *) section->coordinates[count] );
 	    }
 	}
-	m_free ( (char *) (*section).coordinates );
+	m_free ( (char *) section->coordinates );
     }
 #endif
-    if ( (*section).priv != NULL ) m_free ( (char *) (*section).priv );
+    if (section->priv != NULL) m_free ( (char *) section->priv );
     iarray_dealloc (iarr);
     m_free ( (char *) section );
 }   /*  End Function storage_free_section  */
@@ -1661,7 +1665,9 @@ void storage_flush_section (DataSection section)
     The routine returns nothing.
 */
 {
+/*
     static char function_name[] = "storage_flush_section";
+*/
 
 }   /*  End Function storage_flush_section  */
 
@@ -1687,13 +1693,13 @@ unsigned int storage_get_keywords (DataStore datastore, char ***keyword_names,
     multi_array *multi_desc;
     static char function_name[] = "storage_get_keywords";
 
-    multi_desc = (*datastore).multi_desc;
-    top_pack_desc = (*multi_desc).headers[(*datastore).array_num];
-    top_packet = (*multi_desc).data[(*datastore).array_num];
-    for (count = 0, num_keys = 0; count < (*top_pack_desc).num_elements;
+    multi_desc = datastore->multi_desc;
+    top_pack_desc = multi_desc->headers[datastore->array_num];
+    top_packet = multi_desc->data[datastore->array_num];
+    for (count = 0, num_keys = 0; count < top_pack_desc->num_elements;
 	 ++count)
     {
-	if ( ds_element_is_named ( (*top_pack_desc).element_types[count] ) )
+	if ( ds_element_is_named (top_pack_desc->element_types[count]) )
 	{
 	    ++num_keys;
 	}
@@ -1707,18 +1713,18 @@ unsigned int storage_get_keywords (DataStore datastore, char ***keyword_names,
     {
 	m_abort (function_name, "array of keyword types");
     }
-    for (count = 0, num_keys = 0; count < (*top_pack_desc).num_elements;
+    for (count = 0, num_keys = 0; count < top_pack_desc->num_elements;
 	 ++count)
     {
-	if ( ds_element_is_named ( (*top_pack_desc).element_types[count] ) )
+	if ( ds_element_is_named (top_pack_desc->element_types[count]) )
 	{
 	    if ( ( names[num_keys] =
-		  st_dup ( (*top_pack_desc).element_desc[count] ) ) == NULL )
+		  st_dup (top_pack_desc->element_desc[count]) ) == NULL )
 	    {
 		m_abort (function_name, "keyword name");
 	    }
 	}
-	types[num_keys] = (*top_pack_desc).element_types[count];
+	types[num_keys] = top_pack_desc->element_types[count];
     }
     *keyword_names = names;
     *keyword_types = types;
@@ -1753,15 +1759,15 @@ CONST char *storage_get_keyword_value (DataStore datastore, CONST char *name,
 	(void) fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
-    multi_desc = (*datastore).multi_desc;
-    top_pack_desc = (*multi_desc).headers[(*datastore).array_num];
-    top_packet = (*multi_desc).data[(*datastore).array_num];
+    multi_desc = datastore->multi_desc;
+    top_pack_desc = multi_desc->headers[datastore->array_num];
+    top_packet = multi_desc->data[datastore->array_num];
     if ( ( index = ds_f_elem_in_packet (top_pack_desc, name) ) >=
-	(*top_pack_desc).num_elements )
+	top_pack_desc->num_elements )
     {
 	return (NULL);
     }
-    type = (*top_pack_desc).element_types[index];
+    type = top_pack_desc->element_types[index];
     inp_value = top_packet + ds_get_element_offset (top_pack_desc, index);
     if ( ( out_value = m_alloc (host_type_sizes[type]) ) == NULL )
     {
@@ -1779,14 +1785,14 @@ CONST char *storage_get_keyword_value (DataStore datastore, CONST char *name,
       case K_FSTRING:
 	inp_fstring = (FString *) inp_value;
 	out_fstring = (FString *) out_value;
-	if ( ( str = m_alloc ( (*inp_fstring).max_len ) ) == NULL )
+	if ( ( str = m_alloc (inp_fstring->max_len) ) == NULL )
 	{
 	    m_abort (function_name, "fixed string");
 	}
-	m_clear (str, (*inp_fstring).max_len);
-	(void) strncpy (str, (*inp_fstring).string, (*inp_fstring).max_len);
-	(*out_fstring).string = str;
-	(*out_fstring).max_len = (*inp_fstring).max_len;
+	m_clear (str, inp_fstring->max_len);
+	(void) strncpy (str, inp_fstring->string, inp_fstring->max_len);
+	out_fstring->string = str;
+	out_fstring->max_len = inp_fstring->max_len;
 	break;
       default:
 	m_copy (out_value, inp_value, host_type_sizes[type]);
@@ -1825,25 +1831,25 @@ flag storage_change_keyword_value (DataStore datastore, CONST char *name,
 	(void) fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
-    if (!(*datastore).vm)
+    if (!datastore->vm)
     {
 	(void) fprintf (stderr,
 			"Operation on non-VM DataStore not implemented\n");
 	a_prog_bug (function_name);
     }
-    multi_desc = (*datastore).multi_desc;
-    top_pack_desc = (*multi_desc).headers[(*datastore).array_num];
-    top_packet = (*multi_desc).data[(*datastore).array_num];
+    multi_desc = datastore->multi_desc;
+    top_pack_desc = multi_desc->headers[datastore->array_num];
+    top_packet = multi_desc->data[datastore->array_num];
     if ( ( index = ds_f_elem_in_packet (top_pack_desc, name) ) >=
-	(*top_pack_desc).num_elements )
+	top_pack_desc->num_elements )
     {
 	return (FALSE);
     }
-    if (type != (*top_pack_desc).element_types[index])
+    if (type != top_pack_desc->element_types[index])
     {
 	(void) fprintf (stderr,
 			"Attempt to change keyword type from: %u to %u\n",
-			(*top_pack_desc).element_types[index], type);
+			top_pack_desc->element_types[index], type);
 	a_prog_bug (function_name);
     }
     new_value = top_packet + ds_get_element_offset (top_pack_desc, index);
@@ -1867,15 +1873,15 @@ flag storage_change_keyword_value (DataStore datastore, CONST char *name,
       case K_FSTRING:
 	inp_fstring = (FString *) value;
 	out_fstring = (FString *) new_value;
-	if ( ( str = m_alloc ( (*inp_fstring).max_len ) ) == NULL )
+	if ( ( str = m_alloc (inp_fstring->max_len) ) == NULL )
 	{
 	    m_abort (function_name, "fixed string");
 	}
-	m_clear (str, (*inp_fstring).max_len);
-	(void) strncpy (str, (*inp_fstring).string, (*inp_fstring).max_len);
-	if ( (*out_fstring).string != NULL ) m_free ( (*out_fstring).string );
-	(*out_fstring).string = str;
-	(*out_fstring).max_len = (*inp_fstring).max_len;
+	m_clear (str, inp_fstring->max_len);
+	(void) strncpy (str, inp_fstring->string, inp_fstring->max_len);
+	if (out_fstring->string != NULL) m_free (out_fstring->string);
+	out_fstring->string = str;
+	out_fstring->max_len = inp_fstring->max_len;
 	break;
       default:
 	break;
@@ -1936,18 +1942,20 @@ static DataStore alloc_datastore ()
 */
 {
     DataStore datastore;
+/*
     static char function_name[] = "alloc_datastore";
+*/
 
     if ( ( datastore = (DataStore) m_alloc (sizeof *datastore) ) == NULL )
     {
 	return (NULL);
     }
-    (*datastore).magic_number = DATASTORE_MAGIC_NUMBER;
-    (*datastore).multi_desc = NULL;
-    (*datastore).arr_desc = NULL;
-    (*datastore).channel = NULL;
-    (*datastore).vm = FALSE;
-    (*datastore).new = FALSE;
+    datastore->magic_number = DATASTORE_MAGIC_NUMBER;
+    datastore->multi_desc = NULL;
+    datastore->arr_desc = NULL;
+    datastore->channel = NULL;
+    datastore->vm = FALSE;
+    datastore->new = FALSE;
     return (datastore);
 }   /*  End Function alloc_datastore  */
 
@@ -1968,16 +1976,16 @@ static DataSection alloc_datasection (DataStore datastore)
     }
     m_clear ( (char *) datasection, sizeof *datasection );
     if ( ( internal = (DataSectionInternal)
-	  m_alloc (sizeof *(*datasection).priv) ) == NULL )
+	  m_alloc (sizeof *datasection->priv) ) == NULL )
     {
 	m_free ( (char *) datasection );
 	m_error_notify (function_name, "DataSectionInternal");
 	return (NULL);
     }
     m_clear ( (char *) internal, sizeof *internal );
-    (*datasection).priv = internal;
-    (*internal).magic_number = DATASECTIONINTERNAL_MAGIC_NUMBER;
-    (*internal).datastore = datastore;
+    datasection->priv = internal;
+    internal->magic_number = DATASECTIONINTERNAL_MAGIC_NUMBER;
+    internal->datastore = datastore;
     return (datasection);
 }   /*  End Function alloc_datasection  */
 
@@ -1990,12 +1998,12 @@ static void dealloc_datastore (DataStore datastore)
     static char function_name[] = "dealloc_datastore";
 
     VERIFY_DATASTORE (datastore);
-    if ( (*datastore).channel != NULL )
+    if (datastore->channel != NULL)
     {
-	dsrw_write_multi ( (*datastore).channel, (*datastore).multi_desc );
-	(void) ch_close ( (*datastore).channel );
+	dsrw_write_multi (datastore->channel, datastore->multi_desc);
+	(void) ch_close (datastore->channel);
     }
-    ds_dealloc_multi ( (*datastore).multi_desc );
+    ds_dealloc_multi (datastore->multi_desc);
     m_clear ( (char *) datastore, sizeof *datastore );
     m_free ( (char *) datastore );
 }   /*  End Function dealloc_datastore  */
@@ -2090,14 +2098,14 @@ static flag test_for_list (packet_desc *pack_desc)
 	(void) fprintf (stderr, "NULL descriptor pointer passed\n");
 	a_prog_bug (function_name);
     }
-    for (count = 0; count < (*pack_desc).num_elements; ++count)
+    for (count = 0; count < pack_desc->num_elements; ++count)
     {
-	type = (*pack_desc).element_types[count];
+	type = pack_desc->element_types[count];
 	switch (type)
 	{
 	  case K_ARRAY:
-	    arr_desc = (array_desc *) (*pack_desc).element_desc[count];
-	    if ( test_for_list ( (*arr_desc).packet ) ) return (TRUE);
+	    arr_desc = (array_desc *) pack_desc->element_desc[count];
+	    if ( test_for_list (arr_desc->packet) ) return (TRUE);
 	    break;
 	  case LISTP:
 	    return (TRUE);
@@ -2125,29 +2133,29 @@ static void compute_section_from_location (DataSection section)
     static char function_name[] = "compute_section_from_location";
 
     VERIFY_DATASECTION (section);
-    internal = (*section).priv;
-    if ( (*internal).single_array == NULL )
+    internal = section->priv;
+    if (internal->single_array == NULL)
     {
 	(void) fprintf (stderr, "Illegal operation on non-iterator section\n");
 	a_prog_bug (function_name);
     }
-    arr_desc = (* (*section).iarray ).arr_desc;
+    arr_desc = section->iarray->arr_desc;
     /*  First run through the unordered keys  */
-    for (key_count = 0; key_count < (*internal).num_u_keys; ++key_count)
+    for (key_count = 0; key_count < internal->num_u_keys; ++key_count)
     {
-	dim_index = (*internal).u_key_indices[key_count];
-	coord = (*internal).u_location[key_count];
-	off += (*arr_desc).offsets[dim_index][coord];
+	dim_index = internal->u_key_indices[key_count];
+	coord = internal->u_location[key_count];
+	off += arr_desc->offsets[dim_index][coord];
     }
     /*  Now run through the ordered keys  */
-    for (key_count = 0; key_count < (*internal).num_o_keys; ++key_count)
+    for (key_count = 0; key_count < internal->num_o_keys; ++key_count)
     {
-	dim_index = (*internal).o_key_indices[key_count];
-	coord = (*internal).o_location[key_count];
-	coord = (*internal).o_key_coords[key_count][coord];
-	off += (*arr_desc).offsets[dim_index][coord];
+	dim_index = internal->o_key_indices[key_count];
+	coord = internal->o_location[key_count];
+	coord = internal->o_key_coords[key_count][coord];
+	off += arr_desc->offsets[dim_index][coord];
     }
-    (* (*section).iarray ).data = (*internal).single_array + off;
+    section->iarray->data = internal->single_array + off;
 }   /*  End Function compute_section_from_location  */
 
 static flag find_next_section (DataSection section)
@@ -2158,45 +2166,44 @@ static flag find_next_section (DataSection section)
 */
 {
     DataSectionInternal internal;
-    uaddr off;
     int key_count;
-    unsigned int dim_count, dim_index;
+    unsigned int dim_index;
     array_desc *arr_desc;
     dim_desc *dim;
     static char function_name[] = "find_next_section";
 
     VERIFY_DATASECTION (section);
-    internal = (*section).priv;
-    if ( (*internal).single_array == NULL )
+    internal = section->priv;
+    if (internal->single_array == NULL)
     {
 	(void) fprintf (stderr, "Illegal operation on non-iterator section\n");
 	a_prog_bug (function_name);
     }
-    arr_desc = (* (*section).iarray ).arr_desc;
+    arr_desc = section->iarray->arr_desc;
     /*  First run through the unordered keys  */
-    for (key_count = (*internal).num_u_keys - 1; key_count >= 0; --key_count)
+    for (key_count = internal->num_u_keys - 1; key_count >= 0; --key_count)
     {
-	dim_index = (*internal).u_key_indices[key_count];
-	dim = (*arr_desc).dimensions[dim_index];
-	if (++(*internal).u_location[key_count] < (*dim).length)
+	dim_index = internal->u_key_indices[key_count];
+	dim = arr_desc->dimensions[dim_index];
+	if (++internal->u_location[key_count] < dim->length)
 	{
 	    /*  Haven't run past end of this dimension: return now  */
 	    return (TRUE);
 	}
 	/*  Have run past end of this dimension: reset it and go up  */
-	(*internal).u_location[key_count] = 0;
+	internal->u_location[key_count] = 0;
     }
     /*  Now run through the ordered keys  */
-    for (key_count = (*internal).num_o_keys - 1; key_count >= 0; --key_count)
+    for (key_count = internal->num_o_keys - 1; key_count >= 0; --key_count)
     {
-	if (++(*internal).o_location[key_count] <
-	    (*internal).o_key_lengths[key_count])
+	if (++internal->o_location[key_count] <
+	    internal->o_key_lengths[key_count])
 	{
 	    /*  Haven't run past end of this dimension: return now  */
 	    return (TRUE);
 	}
 	/*  Have run past end of this dimension: reset it and go up  */
-	(*internal).o_location[key_count] = 0;
+	internal->o_location[key_count] = 0;
     }
     return (FALSE);
 }   /*  End Function find_next_section  */

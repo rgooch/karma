@@ -13,13 +13,14 @@
 typedef struct _DataclipPart
 {
     /*  Public resources  */
-    iarray array;
-    XtCallbackList intensityScaleCallback;
-    XtCallbackList regionCallback;
-    int max_regions;
-    Boolean show_intensity_scale_button;
-    Boolean auto_v;
-    int pad;
+    iarray          array;
+    XtCallbackList  intensityScaleCallback;
+    XtCallbackList  regionCallback;
+    int             max_regions;
+    Bool            show_intensity_scale_button;
+    Bool            auto_v;
+    int             pad;
+    Bool            verbose;
     /*  Private resources: must start on a  double  boundary  */
     double data_min;
     double data_max;
@@ -29,6 +30,7 @@ typedef struct _DataclipPart
     unsigned int num_regions;
     KPixCanvas pixcanvas;
     KWorldCanvas worldcanvas;
+    KCallbackFunc iarr_destroy_callback;
     double *histogram_array;
     unsigned hist_arr_length;
     unsigned hist_buf_length;

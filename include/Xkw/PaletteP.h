@@ -9,18 +9,19 @@
 
 typedef struct _PalettePart
 {
-  Pixel foreground;
-  float minimum; 
-  float maximum;
-  float value;
-  float scale;
-  int division;
-  XkwOrientation orientation;
-  GC gc;
-  GC eraseGC;
-  GC cbarGC;
-  Kcolourmap dcm;
-  XtCallbackList valueChangeCallback;
+    Pixel foreground;
+    float minimum; 
+    float maximum;
+    float value;
+    float scale;
+    int division;
+    XkwOrientation orientation;
+    GC gc;
+    GC eraseGC;
+    GC cbarGC;
+    Kcolourmap dcm;
+    XtCallbackList valueChangeCallback;
+    KCallbackFunc cmap_resize_callback;
 } PalettePart, *PalettePartPtr;
 
 typedef struct _PaletteRec

@@ -31,55 +31,36 @@
 
     Written by      Richard Gooch   17-NOV-1992
 
-    Last updated by Richard Gooch   18-JAN-1995
+    Last updated by Richard Gooch   24-DEC-1995
 
 */
 
-#ifndef KARMA_IARRAY_H
-#define KARMA_IARRAY_H
-
-
-#ifndef KARMA_H
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
 #  include <karma.h>
 #endif
 
-#ifndef KARMA_DS_DEF_H
+#if !defined(KARMA_DS_DEF_H) || defined(MAKEDEPEND)
 #  include <karma_ds_def.h>
 #endif
 
-#ifndef KARMA_CH_DEF_H
+#if !defined(KARMA_CH_DEF_H) || defined(MAKEDEPEND)
 #  include <karma_ch_def.h>
 #endif
 
-#ifndef KARMA_PSW_DEF_H
+#if !defined(KARMA_PSW_DEF_H) || defined(MAKEDEPEND)
 #  include <karma_psw_def.h>
 #endif
 
-#ifndef KARMA_C_DEF_H
-#  include <karma_c_def.h>
+#if !defined(KARMA_IARRAY_DEF_H) || defined(MAKEDEPEND)
+#  include <karma_iarray_def.h>
 #endif
 
+#if !defined(KARMA_C_H) || defined(MAKEDEPEND)
+#  include <karma_c.h>
+#endif
 
-/*  Structure declarations  */
-typedef struct
-{
-    char *data;             /*  Pointer to start of array  */
-    uaddr **offsets;        /*  Array of offset pointers for each dimension  */
-    unsigned long *lengths; /*  Array of dimension lengths                   */
-    flag *contiguous;
-    packet_desc *top_pack_desc;
-    char **top_packet;
-    multi_array *multi_desc;
-    array_desc *arr_desc;
-    unsigned int array_num;
-    int boundary_width;
-    unsigned int elem_index;
-    unsigned int num_dim;
-    unsigned int *orig_dim_indices;
-    unsigned int *restrictions;
-    unsigned int magic_number;
-    KCallbackList destroy_callbacks;
-} *iarray;
+#ifndef KARMA_IARRAY_H
+#define KARMA_IARRAY_H
 
 
 /*  Macros  */
@@ -87,51 +68,67 @@ typedef struct
 #ifdef DEBUG
 
 #define F1(a, x) ( *(float *) iarray_get_element_1D ( (a), K_FLOAT, (x) ) )
-#define I1(a, x) ( *(int *) iarray_get_element_1D ( (a), K_INT, (x) ) )
-#define UI1(a, x) ( *(unsigned int *) iarray_get_element_1D ( (a), K_INT, (x) ) )
+#define I1(a, x) ( *(signed int *) iarray_get_element_1D ( (a), K_INT, (x) ) )
+#define UI1(a, x) ( *(unsigned int *) iarray_get_element_1D ( (a), K_UINT, (x) ) )
 #define UB1(a, x) ( *(unsigned char *) iarray_get_element_1D ( (a), K_UBYTE,(x) ) )
-#define B1(a, x) ( *(char *) iarray_get_element_1D ( (a), K_BYTE, (x) ) )
+#define B1(a, x) ( *(signed char *) iarray_get_element_1D ( (a), K_BYTE, (x) ) )
 
 #define F2(a, y, x) ( *(float *) iarray_get_element_2D ( (a), K_FLOAT, (y), (x) ) )
-#define UI2(a, y, x) ( *(unsigned int *) iarray_get_element_2D ( (a), K_INT, (y), (x) ) )
-#define I2(a, y, x) ( *(int *) iarray_get_element_2D ( (a), K_INT, (y), (x) ) )
+#define UI2(a, y, x) ( *(unsigned int *) iarray_get_element_2D ( (a), K_UINT, (y), (x) ) )
+#define I2(a, y, x) ( *(signed int *) iarray_get_element_2D ( (a), K_INT, (y), (x) ) )
+#define US2(a, y, x) ( *(unsigned short *) iarray_get_element_2D ( (a), K_SHORT, (y), (x) ) )
+#define S2(a, y, x) ( *(signed short *) iarray_get_element_2D ( (a), K_SHORT, (y), (x) ) )
 #define UB2(a, y, x) ( *(unsigned char *) iarray_get_element_2D ( (a), K_UBYTE, (y), (x) ) )
-#define B2(a, y, x) ( *(char *) iarray_get_element_2D ( (a), K_BYTE, (y), (x) ) )
+#define B2(a, y, x) ( *(signed char *) iarray_get_element_2D ( (a), K_BYTE, (y), (x) ) )
 
 #define F3(a, z, y, x) ( *(float *) iarray_get_element_3D ( (a), K_FLOAT, (z), (y), (x) ) )
-#define I3(a, z, y, x) ( *(int *) iarray_get_element_3D ( (a), K_INT, (z), (y), (x) ) )
-#define UI3(a, z, y, x) ( *(unsigned int *) iarray_get_element_3D ( (a), K_INT, (z), (y), (x) ) )
+#define I3(a, z, y, x) ( *(signed int *) iarray_get_element_3D ( (a), K_INT, (z), (y), (x) ) )
+#define UI3(a, z, y, x) ( *(unsigned int *) iarray_get_element_3D ( (a), K_UINT, (z), (y), (x) ) )
 #define UB3(a, z, y, x) ( *(unsigned char *) iarray_get_element_3D ( (a), K_UBYTE, (z), (y), (x) ) )
-#define B3(a, z, y, x) ( *(char *) iarray_get_element_3D ( (a), K_BYTE, (z), (y), (x) ) )
+#define B3(a, z, y, x) ( *(signed char *) iarray_get_element_3D ( (a), K_BYTE, (z), (y), (x) ) )
+
+#define F4(a, z, y, x) ( *(float *) iarray_get_element_4D ( (a), K_FLOAT, (z), (y), (x), (w) ) )
+#define I4(a, z, y, x) ( *(signed int *) iarray_get_element_4D ( (a), K_INT, (z), (y), (x), (w) ) )
+#define UI4(a, z, y, x) ( *(unsigned int *) iarray_get_element_4D ( (a), K_INT, (z), (y), (x), (w) ) )
+#define UB4(a, z, y, x) ( *(unsigned char *) iarray_get_element_4D ( (a), K_UBYTE, (z), (y), (x), (w) ) )
+#define B4(a, z, y, x) ( *(signed char *) iarray_get_element_4D ( (a), K_BYTE, (z), (y), (x), (w) ) )
 
 #else  /*  !DEBUG  */
 
-#define F1(a, x) ( *(float *) ( (*(a)).data + (*(a)).offsets[0][(x)] ) )
-#define I1(a, x) ( *(int *) ( (*(a)).data + (*(a)).offsets[0][(x)] ) )
-#define UI1(a, x) ( *(unsigned int *) ( (*(a)).data + (*(a)).offsets[0][(x)] ) )
-#define UB1(a, x) ( *(unsigned char *) ( (*(a)).data + (*(a)).offsets[0][(x)] ) )
-#define B1(a, x) ( *(char *) ( (*(a)).data + (*(a)).offsets[0][(x)] ) )
+#define F1(a, x) ( *(float *) ( (a)->data + (a)->offsets[0][(x)] ) )
+#define I1(a, x) ( *(signed int *) ( (a)->data + (a)->offsets[0][(x)] ) )
+#define UI1(a, x) ( *(unsigned int *) ( (a)->data + (a)->offsets[0][(x)] ) )
+#define UB1(a, x) ( *(unsigned char *) ( (a)->data + (a)->offsets[0][(x)] ) )
+#define B1(a, x) ( *(signed char *) ( (a)->data + (a)->offsets[0][(x)] ) )
 
-#define F2(a, y, x) ( *(float *) ( (*(a)).data + (*(a)).offsets[0][(y)] + (*(a)).offsets[1][(x)] ) )
-#define I2(a, y, x) ( *(int *) ( (*(a)).data + (*(a)).offsets[0][(y)] + (*(a)).offsets[1][(x)] ) )
-#define UI2(a, y, x) ( *(unsigned int *) ( (*(a)).data + (*(a)).offsets[0][(y)] + (*(a)).offsets[1][(x)] ) )
-#define UB2(a, y, x) ( *(unsigned char *) ( (*(a)).data + (*(a)).offsets[0][(y)] + (*(a)).offsets[1][(x)] ) )
-#define B2(a, y, x) ( *(char *) ( (*(a)).data + (*(a)).offsets[0][(y)] + (*(a)).offsets[1][(x)] ) )
+#define F2(a, y, x) ( *(float *) ( (a)->data + (a)->offsets[0][(y)] + (a)->offsets[1][(x)] ) )
+#define I2(a, y, x) ( *(signed int *) ( (a)->data + (a)->offsets[0][(y)] + (a)->offsets[1][(x)] ) )
+#define UI2(a, y, x) ( *(unsigned int *) ( (a)->data + (a)->offsets[0][(y)] + (a)->offsets[1][(x)] ) )
+#define S2(a, y, x) ( *(signed short *) ( (a)->data + (a)->offsets[0][(y)] + (a)->offsets[1][(x)] ) )
+#define US2(a, y, x) ( *(unsigned short *) ( (a)->data + (a)->offsets[0][(y)] + (a)->offsets[1][(x)] ) )
+#define UB2(a, y, x) ( *(unsigned char *) ( (a)->data + (a)->offsets[0][(y)] + (a)->offsets[1][(x)] ) )
+#define B2(a, y, x) ( *(signed char *) ( (a)->data + (a)->offsets[0][(y)] + (a)->offsets[1][(x)] ) )
 
-#define F3(a, z, y, x) ( *(float *) ( (*(a)).data + (*(a)).offsets[0][(z)] + (*(a)).offsets[1][(y)] + (*(a)).offsets[2][(x)] ) )
-#define I3(a, z, y, x) ( *(int *) ( (*(a)).data + (*(a)).offsets[0][(z)] + (*(a)).offsets[1][(y)] + (*(a)).offsets[2][(x)] ) )
-#define UI3(a, z, y, x) ( *(unsigned int *) ( (*(a)).data + (*(a)).offsets[0][(z)] + (*(a)).offsets[1][(y)] + (*(a)).offsets[2][(x)] ) )
-#define UB3(a, z, y, x) ( *(unsigned char *) ( (*(a)).data + (*(a)).offsets[0][(z)] + (*(a)).offsets[1][(y)] + (*(a)).offsets[2][(x)] ) )
-#define B3(a, z, y, x) ( *(char *) ( (*(a)).data + (*(a)).offsets[0][(z)] + (*(a)).offsets[1][(y)] + (*(a)).offsets[2][(x)] ) )
+#define F3(a, z, y, x) ( *(float *) ( (a)->data + (a)->offsets[0][(z)] + (a)->offsets[1][(y)] + (a)->offsets[2][(x)] ) )
+#define I3(a, z, y, x) ( *(signed int *) ( (a)->data + (a)->offsets[0][(z)] + (a)->offsets[1][(y)] + (a)->offsets[2][(x)] ) )
+#define UI3(a, z, y, x) ( *(unsigned int *) ( (a)->data + (a)->offsets[0][(z)] + (a)->offsets[1][(y)] + (a)->offsets[2][(x)] ) )
+#define UB3(a, z, y, x) ( *(unsigned char *) ( (a)->data + (a)->offsets[0][(z)] + (a)->offsets[1][(y)] + (a)->offsets[2][(x)] ) )
+#define B3(a, z, y, x) ( *(signed char *) ( (a)->data + (a)->offsets[0][(z)] + (a)->offsets[1][(y)] + (a)->offsets[2][(x)] ) )
+
+#define F4(a, z, y, x, w) ( *(float *) ( (a)->data + (a)->offsets[0][(z)] + (a)->offsets[1][(y)] + (a)->offsets[2][(x)] + (a)->offsets[3][(w)] ) )
+#define I4(a, z, y, x, w) ( *(signed int *) ( (a)->data + (a)->offsets[0][(z)] + (a)->offsets[1][(y)] + (a)->offsets[2][(x)] + (a)->offsets[3][(w)] ) )
+#define UI4(a, z, y, x, w) ( *(unsigned int *) ( (a)->data + (a)->offsets[0][(z)] + (a)->offsets[1][(y)] + (a)->offsets[2][(x)] + (a)->offsets[3][(w)] ) )
+#define UB4(a, z, y, x, w) ( *(unsigned char *) ( (a)->data + (a)->offsets[0][(z)] + (a)->offsets[1][(y)] + (a)->offsets[2][(x)] + (a)->offsets[3][(w)] ) )
+#define B4(a, z, y, x, w) ( *(signed char *) ( (a)->data + (a)->offsets[0][(z)] + (a)->offsets[1][(y)] + (a)->offsets[2][(x)] + (a)->offsets[3][(w)] ) )
 
 #endif
 
-#define iarray_num_dim(a) (*(a)).num_dim
-#define iarray_type(a) (* (* (*(a)).arr_desc ).packet ).element_types[(*(a)).elem_index]
-#define iarray_value_name(a) (* (* (*(a)).arr_desc ).packet ).element_desc[(*(a)).elem_index]
+#define iarray_num_dim(a) (a)->num_dim
+#define iarray_type(a) (a)->arr_desc->packet->element_types[(a)->elem_index]
+#define iarray_value_name(a) (a)->arr_desc->packet->element_desc[(a)->elem_index]
+#define iarray_register_destroy_func(a,func,o) c_register_callback (&(a)->destroy_callbacks, (func), (a), (o), FALSE, NULL, FALSE, FALSE)
 
-
-/*  File:  main.c   */
+/*  File:  main.c  */
 EXTERN_FUNCTION (iarray iarray_read_nD, (CONST char *arrayfile, flag cache,
 					 CONST char *arrayname,
 					 unsigned int num_dim,
@@ -169,6 +166,8 @@ EXTERN_FUNCTION (char *iarray_get_element_3D, (iarray array,
 					       int z,
 					       int y,
 					       int x) );
+EXTERN_FUNCTION (char *iarray_get_element_4D,
+		 (iarray array, unsigned int type, int z, int y,int x,int w) );
 EXTERN_FUNCTION (iarray iarray_get_sub_array_2D,
 		 (iarray array, int starty, int startx,
 		  unsigned int ylen, unsigned int xlen) );
@@ -221,16 +220,17 @@ EXTERN_FUNCTION (flag iarray_compute_histogram,
 		  unsigned long *histogram_mode) );
 
 
-/*  File:  wrappers.c   */
-EXTERN_FUNCTION (iarray iarray_create_1D, (unsigned long xlen,
-					   unsigned int type) );
-EXTERN_FUNCTION (iarray iarray_create_2D, (unsigned long ylen,
-					   unsigned long xlen,
-					   unsigned int type) );
-EXTERN_FUNCTION (iarray iarray_create_3D, (unsigned long zlen,
-					   unsigned long ylen,
-					   unsigned long xlen,
-					   unsigned int type) );
+/*  File:  wrappers.c  */
+EXTERN_FUNCTION (iarray iarray_create_1D,
+		 (unsigned long xlen, unsigned int type) );
+EXTERN_FUNCTION (iarray iarray_create_2D,
+		 (unsigned long ylen, unsigned long xlen, unsigned int type) );
+EXTERN_FUNCTION (iarray iarray_create_3D,
+		 (unsigned long zlen, unsigned long ylen, unsigned long xlen,
+		  unsigned int type) );
+EXTERN_FUNCTION (iarray iarray_create_4D,
+		 (unsigned long zlen, unsigned long ylen,
+		  unsigned long xlen, unsigned int wlen, unsigned int type) );
 EXTERN_FUNCTION (flag iarray_put_float, (iarray array, char *name,
 					 float value) );
 EXTERN_FUNCTION (flag iarray_put_int, (iarray array, char *name, int value) );

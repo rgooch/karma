@@ -3,7 +3,7 @@
 
     This code provides simple string manipulation routines.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -57,7 +57,9 @@
     Updated by      Richard Gooch   6-NOV-1994: Optimised  st_dup  by calling
   m_dup  .
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/st/misc.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/st/misc.c
+
+    Last updated by Richard Gooch   7-MAY-1995: Placate gcc -Wall
 
 
 */
@@ -392,7 +394,7 @@ char *st_pbrk (CONST char *string, CONST char *brkset)
  * in the character string `string'; NULL if none exists.
  */
 {
-    CONST register char *p;
+    register CONST char *p;
     static char function_name[] = "st_pbrk";
 
     if ( (string == NULL) || (brkset == NULL) )
@@ -419,7 +421,7 @@ CONST char *st_rchr (CONST char *string, char c)
  * appears; NULL if not found
 */
 {
-    CONST register char *r;
+    register CONST char *r;
     static char function_name[] = "st_rchr";
 
     if (string == NULL)
@@ -445,7 +447,7 @@ int st_spn (CONST char *string, CONST char *charset)
  * of string which consists solely of characters from charset.
  */
 {
-    CONST register char *p, *q;
+    register CONST char *p, *q;
     static char function_name[] = "st_rchr";
 
     if ( (string == NULL) || (charset == NULL) )

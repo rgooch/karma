@@ -49,7 +49,33 @@
 
     Updated by      Richard Gooch   23-DEC-1994: Added realiseCallback resource
 
-    Last updated by Richard Gooch   4-JAN-1995: Cosmetic changes.
+    Updated by      Richard Gooch   4-JAN-1995: Cosmetic changes.
+
+    Updated by      Richard Gooch   28-JAN-1995: Added stereo support.
+
+    Updated by      Richard Gooch   17-APR-1995: Fixed mix of XtRBool and
+  sizeof Boolean in resource fields. Use Bool because it is of int size.
+
+    Updated by      Richard Gooch   26-JUL-1995: Removed buggy setting of
+  border pixmap in <Realise>.
+
+    Updated by      Richard Gooch   23-SEP-1995: Made use of XGL.
+
+    Updated by      Richard Gooch   13-OCT-1995: Ensure XGL stereo canvases are
+  not visible upon creation.
+
+    Updated by      Richard Gooch   20-OCT-1995: Removed call to special XGL
+  resize function.
+
+    Updated by      Richard Gooch   22-OCT-1995: Force redisplay upon Expose
+  even if canvas state not visible: print a warning message.
+
+    Updated by      Richard Gooch   29-OCT-1995: Made use of OpenGL.
+
+    Updated by      Richard Gooch   23-DEC-1995: Supported split (fake) stereo
+  mode.
+
+    Last updated by Richard Gooch   28-DEC-1995: Added verbose resource.
 
 
 */
@@ -59,6 +85,7 @@
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xaw/XawInit.h>
+#include <X11/extensions/multibuf.h>
 #include <karma.h>
 #include <k_event_codes.h>
 #include <Xkw/CanvasP.h>
@@ -68,47 +95,56 @@
 
 static XtResource resources[] =
 {
-    {XtNinsensitiveBorder, XtCInsensitive, XtRPixmap, sizeof (Pixmap),
-     offset (insensitive_border), XtRImmediate, (XtPointer) NULL},
     {XtNvisual, XtCVisual, XtRVisual, sizeof (Visual *),
      offset (visual), XtRImmediate, CopyFromParent},
-    {XkwNpixCanvas, XkwCPixCanvas, XtRPointer, sizeof (XtPointer *),
-     offset (pixcanvas), XtRImmediate, NULL},
-    {XkwNclipEvents, XkwCClipEvents, XtRBool, sizeof (Boolean),
+    {XkwNstereoMode, XkwCStereoMode, XtRInt, sizeof (int),
+     offset (stereoMode), XtRImmediate, XkwSTEREO_MODE_MONO},
+    {XkwNmonoPixCanvas, XkwCPixCanvas, XtRPointer, sizeof (XtPointer),
+     offset (monoPixCanvas), XtRImmediate, NULL},
+    {XkwNleftPixCanvas, XkwCPixCanvas, XtRPointer, sizeof (XtPointer),
+     offset (leftPixCanvas), XtRImmediate, NULL},
+    {XkwNrightPixCanvas, XkwCPixCanvas, XtRPointer, sizeof (XtPointer),
+     offset (rightPixCanvas), XtRImmediate, NULL},
+    {XkwNclipEvents, XkwCClipEvents, XtRBool, sizeof (Bool),
      offset (clip), XtRImmediate, False},
-    {XkwNsilenceUnconsumed, XkwCSilenceUnconsumed, XtRBool, sizeof (Boolean),
+    {XkwNsilenceUnconsumed, XkwCSilenceUnconsumed, XtRBool, sizeof (Bool),
      offset (silence_unconsumed_events), XtRImmediate, False},
     {XtNforeground, XtCForeground, XtRPixel, sizeof (Pixel),
      offset (foreground_pixel), XtRString, XtDefaultForeground},
-    {XkwNforceNewCmap, XkwCForceNewCmap, XtRBool, sizeof (Boolean),
+    {XkwNforceNewCmap, XkwCForceNewCmap, XtRBool, sizeof (Bool),
      offset (force_new_cmap), XtRImmediate, False},
-    {XkwNretainFgBg, XkwCRetainFgBg, XtRBool, sizeof (Boolean),
+    {XkwNretainFgBg, XkwCRetainFgBg, XtRBool, sizeof (Bool),
      offset (retain_fgbg), XtRImmediate, False},
     {XkwNrealiseCallback, XtCCallback, XtRCallback, sizeof (caddr_t),
      offset (realiseCallback), XtRCallback, (caddr_t) NULL},
+    {XkwNverbose, XkwCVerbose, XtRBool, sizeof (Bool),
+     offset (verbose), XtRImmediate, False},
 #undef offset
 };
 
-static void ClassPartInitialize ();
-static void ClassInitialize ();
 static void Realise ();
 static Boolean SetValues ();
-static Boolean ChangeSensitive ();
 static void Redisplay ();
 static void CanvasColourmapChange ();
 static void CanvasEnterNotify ();
-static void CanvasLeaveNotify ();
 static void CanvasMotionNotify ();
 static void CanvasButtonNotify ();
 static void CanvasMapNotify ();
 static void CanvasUnmapNotify ();
 static void CanvasVisibilityNotify ();
+STATIC_FUNCTION (void create_stereo_window,
+		 (Widget widget, unsigned int window_class, Visual *visual,
+		  XtValueMask value_mask, XSetWindowAttributes *attributes,
+		  Multibuffer *left, Multibuffer *right) );
+STATIC_FUNCTION (void set_visibility, (CanvasWidget cnv, flag visible) );
+STATIC_FUNCTION (void inject_event,
+		 (CanvasWidget cnv, int x, int y, unsigned int k_event) );
+
 
 static char defaultTranslations[] =
   "#override \n\
    <ColormapNotify>:    CanvasColourmapChange()  \n\
    <EnterNotify>:       CanvasEnterNotify() \n\
-   <LeaveNotify>:       CanvasLeaveNotify() \n\
    <MotionNotify>:      CanvasMotionNotify() \n\
    <ButtonPress>:       CanvasButtonNotify() \n\
    <ButtonRelease>:     CanvasButtonNotify() \n\
@@ -119,7 +155,6 @@ static char defaultTranslations[] =
 static XtActionsRec actions[] = {
   {"CanvasColourmapChange",      CanvasColourmapChange},
   {"CanvasEnterNotify",          CanvasEnterNotify},
-  {"CanvasLeaveNotify",          CanvasLeaveNotify},
   {"CanvasMotionNotify",         CanvasMotionNotify},
   {"CanvasButtonNotify",         CanvasButtonNotify},
   {"CanvasMapNotify",            CanvasMapNotify},
@@ -133,17 +168,17 @@ CanvasClassRec canvasClassRec =
 	/* core fields  */
 	(WidgetClass) &widgetClassRec,  /*  superclass             */
 	"Canvas",                       /*  class_name             */
-	sizeof(CanvasRec),              /*  widget_size            */
-	ClassInitialize,                /*  class_initialize       */
-	ClassPartInitialize,            /*  class_part_initialize  */
+	sizeof (CanvasRec),             /*  widget_size            */
+	NULL,                           /*  class_initialise       */
+	NULL,                           /*  class_part_initialise  */
 	FALSE,                          /*  class_inited           */
-	NULL,                           /*  initialize             */
-	NULL,                           /*  initialize_hook        */
+	NULL,                           /*  initialise             */
+	NULL,                           /*  initialise_hook        */
 	Realise,                        /*  realise                */
 	actions,                        /*  actions                */
-	XtNumber(actions),              /*  num_actions            */
+	XtNumber (actions),             /*  num_actions            */
 	resources,                      /*  resources              */
-	XtNumber(resources),            /*  num_resources          */
+	XtNumber (resources),           /*  num_resources          */
 	NULLQUARK,                      /*  xrm_class              */
 	TRUE,                           /*  compress_motion        */
 	TRUE,                           /*  compress_exposure      */
@@ -166,65 +201,31 @@ CanvasClassRec canvasClassRec =
     },
     {
 	/*  canvas fields */
-	ChangeSensitive                 /*  change_sensitive       */
+	0                               /*  ignore                 */
     }
 };
 
 WidgetClass canvasWidgetClass = (WidgetClass) &canvasClassRec;
-
-static void ClassInitialize ()
-{
-    static XtConvertArgRec convertArg[] = {
-        {XtWidgetBaseOffset, (XtPointer) XtOffsetOf(WidgetRec, core.screen),
-	 sizeof(Screen *)},
-        {XtWidgetBaseOffset, (XtPointer) XtOffsetOf(WidgetRec, core.colormap),
-	 sizeof(Colormap)}
-    };
-
-    XawInitializeWidgetSet();
-}
-
-static void ClassPartInitialize (class)
-WidgetClass class;
-{
-    register CanvasWidgetClass c = (CanvasWidgetClass) class;
-    register CanvasWidgetClass super;
-
-    super = (CanvasWidgetClass) c->core_class.superclass;
-
-    if (c->canvas_class.change_sensitive == NULL)
-    {
-	char buf[BUFSIZ];
-
-	(void) sprintf (buf,
-			"%s Widget: The Canvas Widget class method %s%s",
-			c->core_class.class_name,
-			"'change_sensitive' is undefined.\n",
-			"A function must be defined or inherited.");
-	XtWarning(buf);
-	c->canvas_class.change_sensitive = ChangeSensitive;
-    }
-    if (c->canvas_class.change_sensitive == XtInheritChangeSensitive)
-    c->canvas_class.change_sensitive = super->canvas_class.change_sensitive;
-}
 
 static void Realise (w, valueMask, attributes)
 register Widget w;
 Mask *valueMask;
 XSetWindowAttributes *attributes;
 {
-    KPixCanvas pixcanvas;
-    int count;
+    KPixCanvas pixcanvas, stereopixcanvases[2];
+    flag verbose;
+    int count, dummy;
     GC gc;
-    int num_vinfos, num_cmaps;
+    int num_vinfos, num_cmaps, nmono, nstereo;
     XWindowAttributes parent_att;
+    Window parentwin;
     Widget parent;
     Colormap cmap, *cmap_list;
     Display *dpy;
     Visual *visual;
     Screen *screen;
+    XmbufBufferInfo *dummy_info1, *dummy_info2;
     CanvasWidget cnv = (CanvasWidget) w;
-    Pixmap border_pixmap;
     XVisualInfo vinfo_template;
     XGCValues gcvalues;
     XVisualInfo *vinfos;
@@ -232,24 +233,63 @@ XSetWindowAttributes *attributes;
     XColor colour_defs[2];
     static char function_name[] = "Canvas::Realise";
 
-    if (!XtIsSensitive(w))
+    verbose = cnv->canvas.verbose;
+    parentwin = (w->core.parent ? w->core.parent->core.window :
+		 w->core.screen->root);
+    switch (cnv->canvas.stereoMode)
     {
-	/* change border to gray; have to remember the old one,
-	 * so XtDestroyWidget deletes the proper one */
-	if (((CanvasWidget)w)->canvas.insensitive_border == None)
-	((CanvasWidget)w)->canvas.insensitive_border =
-	XmuCreateStippledPixmap(XtScreen(w),
-				w->core.border_pixel, 
-				w->core.background_pixel,
-				w->core.depth);
-        border_pixmap = w->core.border_pixmap;
-	attributes->border_pixmap =
-	w->core.border_pixmap = ((CanvasWidget)w)->canvas.insensitive_border;
-
-	*valueMask |= CWBorderPixmap;
-	*valueMask &= ~CWBorderPixel;
+      case XkwSTEREO_MODE_XMBUF:
+	if ( !XmbufQueryExtension (XtDisplay (w), &dummy, &dummy) )
+	{
+	    cnv->core.window = None;
+	    (void) fprintf (stderr,
+			    "Multi-Buffering extension not available\n");
+	    exit (RV_UNDEF_ERROR);
+	}
+	if (XmbufGetScreenInfo (XtDisplay (w), parentwin, &nmono, &dummy_info1,
+				&nstereo, &dummy_info2) == 0)
+	{
+	    cnv->core.window = None;
+	    return;
+	}
+	if (nmono > 0) XFree ( (char *) dummy_info1 );
+	if (nstereo > 0) XFree ( (char *) dummy_info2 );
+	if (nstereo < 1)
+	{
+	    cnv->core.window = None;
+	    (void) fprintf (stderr, "No stereo multibuffers available\n");
+	    exit (RV_UNDEF_ERROR);
+	}
+	break;
+      case XkwSTEREO_MODE_XGL:
+	if (kwin_xgl_test_stereo (XtDisplay (w), parentwin)
+	    != KWIN_XGL_STEREO_AVAILABLE)
+	{
+	    cnv->core.window = None;
+	    (void) fprintf (stderr, "XGL stereo not available\n");
+	    exit (RV_UNDEF_ERROR);
+	}
+	break;
+      case XkwSTEREO_MODE_OpenGL:
+	if (kwin_open_gl_test_stereo (XtDisplay (w),
+				      XScreenNumberOfScreen (w->core.screen),
+				      0, 0)
+	    != KWIN_OpenGL_STEREO_AVAILABLE)
+	{
+	    cnv->core.window = None;
+	    (void) fprintf (stderr, "OpenGL stereo not available\n");
+	    exit (RV_UNDEF_ERROR);
+	}
+	break;
+      case XkwSTEREO_MODE_SPLIT:
+      case XkwSTEREO_MODE_MONO:
+	break;
+      default:
+	(void) fprintf (stderr, "Illegal stereo mode: %d\n",
+			cnv->canvas.stereoMode);
+	a_prog_bug (function_name);
+	return;
     }
-
     /*  Create the X window  */
     visual = cnv->canvas.visual;
     dpy = XtDisplay (cnv);
@@ -281,11 +321,15 @@ XSetWindowAttributes *attributes;
 			    "%s: WARNING: number of visuals for visual: %p is: %d\n",
 			    function_name, visual, num_vinfos);
 	}
-	(void) fprintf (stderr,
-			"creating window with visualID: 0x%x\tdepth: %d\n",
-			vinfos[0].visualid, vinfos[0].depth);
+	if (verbose)
+	{
+	    (void) fprintf (stderr,
+			    "%s: creating window with visualID: 0x%x\tdepth: %d\n",
+			    function_name,
+			    vinfos[0].visualid, vinfos[0].depth);
+	}
 	cnv->core.depth = vinfos[0].depth;
-	XFree (vinfos);
+	XFree ( (void *) vinfos );
 	if (parent_att.colormap == cnv->core.colormap)
 	{
 	    /*  Invalidate original colourmap  */
@@ -302,7 +346,8 @@ XSetWindowAttributes *attributes;
 	    (void) fprintf (stderr, "Could not create colourmap\n");
 	    exit (1);
 	}
-	(void) fprintf (stderr, "new cmap: %x\n", cnv->core.colormap);
+	if (verbose) (void) fprintf (stderr, "%s: new cmap: 0x%x\n",
+				     function_name, cnv->core.colormap);
 	/* Copy over foreground and background colours from parent colourmap */
 	colour_defs[0].pixel = cnv->canvas.foreground_pixel;
 	colour_defs[1].pixel = cnv->core.background_pixel;
@@ -329,26 +374,28 @@ XSetWindowAttributes *attributes;
     attributes->colormap = cnv->core.colormap;
     attributes->background_pixel = cnv->core.background_pixel;
     *valueMask |= CWColormap | CWBackPixel;
-    XtCreateWindow (w, (unsigned int) InputOutput, visual,
-		    *valueMask, attributes);
-    /*  Create graphics context  */
-    gcvalues.function = GXcopy;
-    gcvalues.foreground = cnv->canvas.foreground_pixel;
-    gcvalues.background = cnv->core.background_pixel;
-    gc = XCreateGC (dpy, cnv->core.window,
-		    GCForeground | GCBackground | GCFunction,
-		    &gcvalues);
-    /*  Create the KPixCanvas  */
-    if ( ( pixcanvas =
-	  kwin_create_x (dpy, cnv->core.window, gc,
-			 0, 0, cnv->core.width, cnv->core.height) )
-	== NULL )
+    switch (cnv->canvas.stereoMode)
     {
-	m_abort (function_name, "pixel canvas");
+      case XkwSTEREO_MODE_XMBUF:
+	create_stereo_window (w, (unsigned int) InputOutput, visual,
+			      *valueMask, attributes,
+			      &cnv->canvas.left_window,
+			      &cnv->canvas.right_window);
+	break;
+      case XkwSTEREO_MODE_XGL:
+      case XkwSTEREO_MODE_OpenGL:
+	if (cnv->core.depth == 8) (void) fprintf (stderr, "bg: %lu\n", cnv->core.background_pixel);
+	/*  Fall through  */
+      case XkwSTEREO_MODE_SPLIT:
+      case XkwSTEREO_MODE_MONO:
+	XtCreateWindow (w, (unsigned int) InputOutput, visual,
+			*valueMask, attributes);
+	break;
+      default:(void) fprintf (stderr, "Illegal stereo mode: %d\n",
+			cnv->canvas.stereoMode);
+	a_prog_bug (function_name);
+	return;
     }
-    kwin_set_attributes (pixcanvas,
-			 KWIN_ATT_VISIBLE, FALSE,
-			 KWIN_ATT_END);
     cnv->canvas.cmap_installed = FALSE;
     cnv->canvas.mapped = FALSE;
     cnv->canvas.partly_unobscured = FALSE;
@@ -358,13 +405,125 @@ XSetWindowAttributes *attributes;
     {
 	if (cmap == cmap_list[count]) cnv->canvas.cmap_installed = TRUE;
     }
-    XFree (cmap_list);
+    XFree ( (void *) cmap_list );
     cnv->canvas.cmap_installed_internally = FALSE;
-    cnv->canvas.pixcanvas = pixcanvas;
-    if ( !XtIsSensitive(w) )
-    w->core.border_pixmap = border_pixmap;
-    XtCallCallbacks (w, XkwNrealiseCallback,
-		     (XtPointer) cnv->canvas.pixcanvas);
+    /*  Create graphics context  */
+    gcvalues.function = GXcopy;
+    gcvalues.foreground = cnv->canvas.foreground_pixel;
+    gcvalues.background = cnv->core.background_pixel;
+    gc = XCreateGC (dpy, cnv->core.window,
+		    GCForeground | GCBackground | GCFunction,
+		    &gcvalues);
+    /*  Create the KPixCanvas  */
+    switch (cnv->canvas.stereoMode)
+    {
+      case XkwSTEREO_MODE_XMBUF:
+	if ( ( stereopixcanvases[0] =
+	      kwin_create_x (dpy, cnv->canvas.left_window, gc,
+			     0, 0, cnv->core.width, cnv->core.height) )
+	    == NULL )
+	{
+	    m_abort (function_name, "left pixel canvas");
+	}
+	kwin_set_attributes (stereopixcanvases[0],
+			     KWIN_ATT_VISIBLE, FALSE,
+			     KWIN_ATT_END);
+	cnv->canvas.leftPixCanvas = stereopixcanvases[0];
+	if ( ( stereopixcanvases[1] =
+	      kwin_create_x (dpy, cnv->canvas.right_window, gc,
+			     0, 0, cnv->core.width, cnv->core.height) )
+	    == NULL )
+	{
+	    m_abort (function_name, "right pixel canvas");
+	}
+	kwin_set_attributes (stereopixcanvases[1],
+			     KWIN_ATT_VISIBLE, FALSE,
+			     KWIN_ATT_END);
+	cnv->canvas.rightPixCanvas = stereopixcanvases[1];
+	XtCallCallbacks (w, XkwNrealiseCallback,(XtPointer) stereopixcanvases);
+	break;
+      case XkwSTEREO_MODE_XGL:
+	if ( !kwin_xgl_create_stereo (dpy, cnv->core.window,
+				      0, 0, cnv->core.width, cnv->core.height,
+				      &pixcanvas, stereopixcanvases,
+				      stereopixcanvases + 1) )
+	{
+	    (void) fprintf (stderr, "%s: error creating stereo canvas\n",
+			    function_name);
+	    exit (RV_UNDEF_ERROR);
+	}
+	kwin_set_attributes (stereopixcanvases[0],
+			     KWIN_ATT_VISIBLE, FALSE,
+			     KWIN_ATT_END);
+	kwin_set_attributes (stereopixcanvases[1],
+			     KWIN_ATT_VISIBLE, FALSE,
+			     KWIN_ATT_END);
+	cnv->canvas.leftPixCanvas = stereopixcanvases[0];
+	cnv->canvas.rightPixCanvas = stereopixcanvases[1];
+	XtCallCallbacks (w, XkwNrealiseCallback,(XtPointer) stereopixcanvases);
+	break;
+      case XkwSTEREO_MODE_OpenGL:
+	if ( !kwin_open_gl_create_stereo (dpy, cnv->core.window,
+					  0, 0,
+					  cnv->core.width, cnv->core.height,
+					  &pixcanvas, stereopixcanvases,
+					  stereopixcanvases + 1) )
+	{
+	    (void) fprintf (stderr, "%s: error creating stereo canvas\n",
+			    function_name);
+	    exit (RV_UNDEF_ERROR);
+	}
+	kwin_set_attributes (stereopixcanvases[0],
+			     KWIN_ATT_VISIBLE, FALSE,
+			     KWIN_ATT_END);
+	kwin_set_attributes (stereopixcanvases[1],
+			     KWIN_ATT_VISIBLE, FALSE,
+			     KWIN_ATT_END);
+	cnv->canvas.leftPixCanvas = stereopixcanvases[0];
+	cnv->canvas.rightPixCanvas = stereopixcanvases[1];
+	XtCallCallbacks (w, XkwNrealiseCallback,(XtPointer) stereopixcanvases);
+	break;
+      case XkwSTEREO_MODE_SPLIT:
+	if ( ( stereopixcanvases[0] =
+	      kwin_create_x (dpy, cnv->core.window, gc,
+			     0, 0, cnv->core.width / 2, cnv->core.height) )
+	    == NULL )
+	{
+	    m_abort (function_name, "pixel canvas");
+	}
+	kwin_set_attributes (stereopixcanvases[0],
+			     KWIN_ATT_VISIBLE, FALSE,
+			     KWIN_ATT_END);
+	if ( ( stereopixcanvases[1] =
+	      kwin_create_x (dpy, cnv->core.window, gc,
+			     cnv->core.width / 2, 0,
+			     cnv->core.width / 2, cnv->core.height) )
+	    == NULL )
+	{
+	    m_abort (function_name, "pixel canvas");
+	}
+	kwin_set_attributes (stereopixcanvases[1],
+			     KWIN_ATT_VISIBLE, FALSE,
+			     KWIN_ATT_END);
+	cnv->canvas.leftPixCanvas = stereopixcanvases[0];
+	cnv->canvas.rightPixCanvas = stereopixcanvases[1];
+	XtCallCallbacks (w, XkwNrealiseCallback,(XtPointer) stereopixcanvases);
+	break;
+      case XkwSTEREO_MODE_MONO:
+	if ( ( pixcanvas =
+	      kwin_create_x (dpy, cnv->core.window, gc,
+			     0, 0, cnv->core.width, cnv->core.height) )
+	    == NULL )
+	{
+	    m_abort (function_name, "pixel canvas");
+	}
+	kwin_set_attributes (pixcanvas,
+			     KWIN_ATT_VISIBLE, FALSE,
+			     KWIN_ATT_END);
+	cnv->canvas.monoPixCanvas = pixcanvas;
+	XtCallCallbacks (w, XkwNrealiseCallback, (XtPointer) pixcanvas);
+	break;
+    }
 }   /*  End Function Realise  */
 
 
@@ -375,46 +534,18 @@ Widget Current, Request, New;
     CanvasWidget old = (CanvasWidget) Current;
     CanvasWidget new = (CanvasWidget) New;
 
-    new->canvas.pixcanvas = old->canvas.pixcanvas;
+    new->canvas.monoPixCanvas = old->canvas.monoPixCanvas;
+    new->canvas.leftPixCanvas = old->canvas.leftPixCanvas;
+    new->canvas.rightPixCanvas = old->canvas.rightPixCanvas;
     new->canvas.visual = old->canvas.visual;
-
-    if ( XtIsSensitive(Current) != XtIsSensitive(New) )
-    (*((CanvasWidgetClass)XtClass(New))->
-     canvas_class.change_sensitive) (New);
+    new->canvas.stereoMode = old->canvas.stereoMode;
 
     return False;   
 }
 
-
-static Boolean ChangeSensitive(w)
-    register Widget w;
-{
-    if (XtIsRealized(w)) {
-if (XtIsSensitive(w))
-    if (w->core.border_pixmap != XtUnspecifiedPixmap)
-XSetWindowBorderPixmap( XtDisplay(w), XtWindow(w),
-        w->core.border_pixmap );
-    else
-XSetWindowBorder( XtDisplay(w), XtWindow(w), 
-  w->core.border_pixel );
-else {
-    if (((CanvasWidget)w)->canvas.insensitive_border == None)
-((CanvasWidget)w)->canvas.insensitive_border =
-    XmuCreateStippledPixmap(XtScreen(w),
-    w->core.border_pixel, 
-    w->core.background_pixel,
-    w->core.depth);
-    XSetWindowBorderPixmap( XtDisplay(w), XtWindow(w),
-    ((CanvasWidget)w)->
-        canvas.insensitive_border );
-}
-    }
-    return False;
-}
-
 static void Redisplay (cnv, event, region)
 CanvasWidget cnv;
-XExposeEvent *event;
+XEvent *event;
 Region region;
 {
     Widget w = (Widget) cnv;
@@ -424,6 +555,11 @@ Region region;
 	(void) fprintf (stderr, "Expose on non-realised canvas widget!\n");
 	return;
     }
+    if (event->xexpose.window != cnv->core.window)
+    {
+	(void) fprintf (stderr, "Expose event not on canvas widget window!\n");
+	return;
+    }
     if (!cnv->canvas.cmap_installed)
     {
 	(void) fprintf (stderr, "installing cmap: 0x%x\n",
@@ -431,42 +567,82 @@ Region region;
 	XInstallColormap (XtDisplay (cnv), cnv->core.colormap);
 	cnv->canvas.cmap_installed_internally = TRUE;
     }
-    if (!cnv->core.visible) return;
-    if ( !kwin_resize (cnv->canvas.pixcanvas, FALSE,
-		       0, 0, cnv->core.width, cnv->core.height) )
+    if (!cnv->core.visible)
+    {
+	(void) fprintf (stderr, "Expose on: %p which is not visible\n", cnv);
+    }
+    if (!cnv->canvas.partly_unobscured)
     {
 	(void) fprintf (stderr,
-			"Error redisplaying KPixCanvas of canvas widget\n");
+			"Expose on: %p which is fully obscured: unobscuring\n",
+			cnv);
+	cnv->canvas.partly_unobscured = TRUE;
+	set_visibility (cnv, cnv->canvas.mapped);
+    }
+    if (cnv->canvas.monoPixCanvas != NULL)
+    {
+	if ( !kwin_resize (cnv->canvas.monoPixCanvas, FALSE,
+			   0, 0, cnv->core.width, cnv->core.height) )
+	{
+	    (void) fprintf(stderr,
+			   "Error redisplaying mono KPixCanvas of canvas widget\n");
+	    return;
+	}
+    }
+    if (cnv->canvas.stereoMode == XkwSTEREO_MODE_SPLIT)
+    {
+	if ( !kwin_resize (cnv->canvas.leftPixCanvas, FALSE,
+			   0, 0, cnv->core.width / 2, cnv->core.height) )
+	{
+	    (void) fprintf(stderr,
+			   "Error redisplaying left KPixCanvas of canvas widget\n");
+	    return;
+	}
+	if ( !kwin_resize (cnv->canvas.rightPixCanvas, FALSE,
+			   cnv->core.width / 2, 0,
+			   cnv->core.width / 2, cnv->core.height) )
+	{
+	    (void) fprintf(stderr,
+			   "Error redisplaying right KPixCanvas of canvas widget\n");
+	    return;
+	}
 	return;
+    }
+    if (cnv->canvas.leftPixCanvas != NULL)
+    {
+	if ( !kwin_resize (cnv->canvas.leftPixCanvas, FALSE,
+			   0, 0, cnv->core.width, cnv->core.height) )
+	{
+	    (void) fprintf(stderr,
+			   "Error redisplaying left KPixCanvas of canvas widget\n");
+	    return;
+	}
+    }
+    if (cnv->canvas.rightPixCanvas != NULL)
+    {
+	if ( !kwin_resize (cnv->canvas.rightPixCanvas, FALSE,
+			   0, 0, cnv->core.width, cnv->core.height) )
+	{
+	    (void) fprintf(stderr,
+			   "Error redisplaying right KPixCanvas of canvas widget\n");
+	    return;
+	}
     }
 }   /*  End Function Redisplay  */
 
-static void CanvasColourmapChange (cnv, report)
+static void CanvasColourmapChange (cnv, event)
 CanvasWidget cnv;
-XEvent *report;
+XEvent *event;
 {
     static char function_name[] = "Canvas::CanvasColourmapChange";
 
-#ifdef dummy
-    switch (report->xcolormap.state)
+    if (event->xcolormap.window != cnv->core.window)
     {
-      case ColormapInstalled:
-	(void) fprintf (stderr, "cmap: 0x%x installed\n",
-			report->xcolormap.colormap);
-	break;
-      case ColormapUninstalled:
-	(void) fprintf (stderr, "cmap: 0x%x uninstalled\n",
-			report->xcolormap.colormap);
-	break;
-      default:
-	(void) fprintf (stderr, "Illegal state: %d\n",
-			report->xcolormap.state);
-	a_prog_bug (function_name);
-	break;
+	(void) fprintf (stderr,
+			"Colourmap event not on canvas widget window!\n");
+	return;
     }
-#endif
-    if (cnv->core.window != report->xcolormap.window) return;
-    switch (report->xcolormap.state)
+    switch (event->xcolormap.state)
     {
       case ColormapInstalled:
 	cnv->canvas.cmap_installed = TRUE;
@@ -475,68 +651,55 @@ XEvent *report;
 	cnv->canvas.cmap_installed = FALSE;
 	break;
       default:
-	(void) fprintf (stderr, "Illegal state: %d\n",
-			report->xcolormap.state);
+	(void) fprintf (stderr, "Illegal state: %d\n", event->xcolormap.state);
 	a_prog_bug (function_name);
 	break;
     }
 }   /*  End Function CanvasColourmapChange   */
 
-static void CanvasEnterNotify (cnv, report)
+static void CanvasEnterNotify (cnv, event)
 CanvasWidget cnv;
-XEvent *report;
+XEvent *event;
 {
+    if (event->xcrossing.window != cnv->core.window)
+    {
+	(void) fprintf (stderr,
+			"EnterNotify event not on canvas widget window!\n");
+	return;
+    }
     if (!cnv->canvas.cmap_installed)
     {
-#ifdef dummy
-	(void) fprintf (stderr, "installing cmap: 0x%x\n",
-			cnv->core.colormap);
-#endif
 	XInstallColormap (XtDisplay (cnv), cnv->core.colormap);
 	cnv->canvas.cmap_installed_internally = TRUE;
     }
 }   /*  End Function CanvasEnterNotify   */
 
-static void CanvasLeaveNotify (cnv, report)
+static void CanvasMotionNotify (cnv, event)
 CanvasWidget cnv;
-XEvent *report;
+XEvent *event;
 {
-#ifdef dummy
-    if (cnv->canvas.cmap_installed_internally)
-    {
-	(void) fprintf (stderr, "uninstalling my cmap\n");
-	XUninstallColormap (XtDisplay (cnv), cnv->core.colormap);
-	cnv->canvas.cmap_installed = FALSE;
-	cnv->canvas.cmap_installed_internally = FALSE;
-    }
-#endif
-}   /*  End Function CanvasLeaveNotify   */
-
-static void CanvasMotionNotify (cnv, report)
-CanvasWidget cnv;
-XEvent *report;
-{
-    flag consumed;
     unsigned int k_event;
 
+    if (event->xmotion.window != cnv->core.window)
+    {
+	(void) fprintf (stderr,
+			"MotionNotify event not on canvas widget window!\n");
+	return;
+    }
     if (!cnv->canvas.cmap_installed)
     {
-#ifdef dummy
-	(void) fprintf (stderr, "installing cmap: 0x%x\n",
-			cnv->core.colormap);
-#endif
 	XInstallColormap (XtDisplay (cnv), cnv->core.colormap);
 	cnv->canvas.cmap_installed_internally = TRUE;
     }
-    if (report->xmotion.state & Button1Mask)
+    if (event->xmotion.state & Button1Mask)
     {
 	k_event = K_CANVAS_EVENT_LEFT_MOUSE_DRAG;
     }
-    else if (report->xmotion.state & Button2Mask)
+    else if (event->xmotion.state & Button2Mask)
     {
 	k_event = K_CANVAS_EVENT_MIDDLE_MOUSE_DRAG;
     }
-    else if (report->xmotion.state & Button3Mask)
+    else if (event->xmotion.state & Button3Mask)
     {
 	k_event = K_CANVAS_EVENT_RIGHT_MOUSE_DRAG;
     }
@@ -544,35 +707,30 @@ XEvent *report;
     {
 	k_event = K_CANVAS_EVENT_POINTER_MOVE;
     }
-    consumed = kwin_process_position_event (cnv->canvas.pixcanvas,
-					    report->xmotion.x,
-					    report->xmotion.y,
-					    cnv->canvas.clip, k_event,
-					    NULL);
-    if (consumed || cnv->canvas.silence_unconsumed_events) return;
-    (void) fprintf (stderr, "Karma event: %u not consumed\n", k_event);
+    inject_event (cnv, event->xmotion.x, event->xmotion.y, k_event);
 }   /*  End Function CanvasMotionNotify   */
 
-static void CanvasButtonNotify (cnv, report)
+static void CanvasButtonNotify (cnv, event)
 CanvasWidget cnv;
-XEvent *report;
+XEvent *event;
 {
-    flag consumed;
     unsigned int k_event;
 
+    if (event->xbutton.window != cnv->core.window)
+    {
+	(void) fprintf (stderr,
+			"ButtonNotify event not on canvas widget window!\n");
+	return;
+    }
     if (!cnv->canvas.cmap_installed)
     {
-#ifdef dummy
-	(void) fprintf (stderr, "installing cmap: 0x%x\n",
-			cnv->core.colormap);
-#endif
 	XInstallColormap (XtDisplay (cnv), cnv->core.colormap);
 	cnv->canvas.cmap_installed_internally = TRUE;
     }
-    switch (report->xbutton.button)
+    switch (event->xbutton.button)
     {
       case Button1:
-	if (report->xbutton.state & Button1Mask)
+	if (event->xbutton.state & Button1Mask)
 	{
 	    k_event = K_CANVAS_EVENT_LEFT_MOUSE_RELEASE;
 	}
@@ -582,7 +740,7 @@ XEvent *report;
 	}
 	break;
       case Button2:
-	if (report->xbutton.state & Button2Mask)
+	if (event->xbutton.state & Button2Mask)
 	{
 	    k_event = K_CANVAS_EVENT_MIDDLE_MOUSE_RELEASE;
 	}
@@ -592,7 +750,7 @@ XEvent *report;
 	}
 	break;
       case Button3:
-	if (report->xbutton.state & Button3Mask)
+	if (event->xbutton.state & Button3Mask)
 	{
 	    k_event = K_CANVAS_EVENT_RIGHT_MOUSE_RELEASE;
 	}
@@ -605,60 +763,156 @@ XEvent *report;
 	k_event = K_CANVAS_EVENT_UNDEFINED;
 	break;
     }
-    consumed = kwin_process_position_event (cnv->canvas.pixcanvas,
-					    report->xbutton.x,
-					    report->xbutton.y,
-					    cnv->canvas.clip, k_event,
-					    NULL);
-    if (consumed || cnv->canvas.silence_unconsumed_events) return;
-    (void) fprintf (stderr, "Karma event: %u not consumed\n", k_event);
+    inject_event (cnv, event->xbutton.x, event->xbutton.y, k_event);
 }   /*  End Function CanvasButtonNotify   */
 
-static void CanvasMapNotify (cnv, report)
+static void CanvasMapNotify (cnv, event)
 CanvasWidget cnv;
-XEvent *report;
+XEvent *event;
 {
+    if (event->xmap.window != cnv->core.window)
+    {
+	(void) fprintf (stderr,
+			"MapNotify event not on canvas widget window!\n");
+	return;
+    }
     cnv->canvas.mapped = TRUE;
-    kwin_set_attributes (cnv->canvas.pixcanvas,
-			 KWIN_ATT_VISIBLE, cnv->canvas.partly_unobscured,
-			 KWIN_ATT_END);
+    set_visibility (cnv, cnv->canvas.partly_unobscured);
 }   /*  End Function CanvasMapNotify   */
 
-static void CanvasUnmapNotify (cnv, report)
+static void CanvasUnmapNotify (cnv, event)
 CanvasWidget cnv;
-XEvent *report;
+XEvent *event;
 {
-    cnv->canvas.mapped = TRUE;
-    kwin_set_attributes (cnv->canvas.pixcanvas,
-			 KWIN_ATT_VISIBLE, FALSE,
-			 KWIN_ATT_END);
+    if (event->xunmap.window != cnv->core.window)
+    {
+	(void) fprintf (stderr,
+			"UnmapNotify event not on canvas widget window!\n");
+	return;
+    }
+    cnv->canvas.mapped = FALSE;
+    set_visibility (cnv, FALSE);
 }   /*  End Function CanvasUnmapNotify   */
 
-static void CanvasVisibilityNotify (cnv, report)
+static void CanvasVisibilityNotify (cnv, event)
 CanvasWidget cnv;
-XEvent *report;
+XEvent *event;
 {
-    switch (report->xvisibility.state)
+    if (event->xvisibility.window != cnv->core.window)
+    {
+	(void) fprintf (stderr,
+			"VisibilityNotify event not on canvas widget window!\n");
+	return;
+    }
+    switch (event->xvisibility.state)
     {
       case VisibilityFullyObscured:
 	/*  This is only received when the window is obscured behind other
 	    windows, not when it is iconified. There seem to be no events
 	    dispatched when the window is iconified. A pity.  */
 	cnv->canvas.partly_unobscured = FALSE;
-	kwin_set_attributes (cnv->canvas.pixcanvas,
-			     KWIN_ATT_VISIBLE, FALSE,
-			     KWIN_ATT_END);
+	set_visibility (cnv, FALSE);
 	break;
       case VisibilityPartiallyObscured:
       case VisibilityUnobscured:
 	cnv->canvas.partly_unobscured = TRUE;
-	kwin_set_attributes (cnv->canvas.pixcanvas,
-			     KWIN_ATT_VISIBLE, cnv->canvas.mapped,
-			     KWIN_ATT_END);
+	set_visibility (cnv, cnv->canvas.mapped);
 	break;
       default:
 	(void) fprintf (stderr, "Unknown visibility event state: %d\n",
-			report->xvisibility.state);
+			event->xvisibility.state);
 	break;
     }
 }   /*  End Function CanvasVisibilityNotify   */
+
+static void create_stereo_window (Widget widget, unsigned int window_class,
+				  Visual *visual, XtValueMask value_mask,
+				  XSetWindowAttributes *attributes,
+				  Multibuffer *left, Multibuffer *right)
+/*  [PURPOSE] This routine will create a stereo window.
+*/
+{
+    Window win, parentwin;
+
+    parentwin = (widget->core.parent ? widget->core.parent->core.window :
+		 widget->core.screen->root);
+    if (widget->core.window == None)
+    {
+	if (widget->core.width == 0 || widget->core.height == 0)
+	{
+	    (void) fprintf (stderr, "Widget %s has zero width and/or height\n",
+			    &widget->core.name);
+	}
+	win = XmbufCreateStereoWindow (XtDisplay (widget), parentwin,
+				       (int) widget->core.x,
+				       (int) widget->core.y,
+				       (unsigned int) widget->core.width,
+				       (unsigned int) widget->core.height,
+				       (unsigned) widget->core.border_width,
+				       (int) widget->core.depth,
+				       window_class, visual, value_mask,
+				       attributes, left, right);
+	if (win == (Window) None)
+	{
+	    (void) fprintf (stderr, "Error creating stereo window\n");
+	    exit (RV_UNDEF_ERROR);
+	}
+	widget->core.window = win;
+    }
+}   /*  End Function create_stereo_window  */
+
+static void set_visibility (CanvasWidget cnv, flag visible)
+/*  [PURPOSE] This routine will set the visibility state of any pixel canvases.
+    <cnv> The Canvas widget.
+    <visible> If TRUE, the pixel canvases are set to be visible, else they are
+    invisible.
+    [RETURNS] Nothing.
+*/
+{
+    if (cnv->canvas.monoPixCanvas != NULL)
+    {
+	kwin_set_attributes (cnv->canvas.monoPixCanvas,
+			     KWIN_ATT_VISIBLE, visible,
+			     KWIN_ATT_END);
+    }
+    if (cnv->canvas.leftPixCanvas != NULL)
+    {
+	kwin_set_attributes (cnv->canvas.leftPixCanvas,
+			     KWIN_ATT_VISIBLE, visible,
+			     KWIN_ATT_END);
+    }
+    if (cnv->canvas.rightPixCanvas != NULL)
+    {
+	kwin_set_attributes (cnv->canvas.rightPixCanvas,
+			     KWIN_ATT_VISIBLE, visible,
+			     KWIN_ATT_END);
+    }
+}   /*  End Function set_visibility  */
+
+static void inject_event (CanvasWidget cnv, int x, int y, unsigned int k_event)
+/*  [PURPOSE] This routine will inject an event into an appropriate pixel
+    canvas.
+    <cnv> The Canvas widget.
+    <k_event> The Karma event code.
+    [RETURNS] Nothing.
+*/
+{
+    flag consumed = FALSE;
+
+    if (cnv->canvas.monoPixCanvas != NULL)
+    {
+	consumed = kwin_process_position_event (cnv->canvas.monoPixCanvas,
+						x, y,
+						cnv->canvas.clip, k_event,
+						NULL);
+    }
+    else if (cnv->canvas.leftPixCanvas != NULL)
+    {
+	consumed = kwin_process_position_event (cnv->canvas.leftPixCanvas,
+						x, y,
+						cnv->canvas.clip, k_event,
+						NULL);
+    }
+    if (consumed || cnv->canvas.silence_unconsumed_events) return;
+    (void) fprintf (stderr, "Karma event: %u not consumed\n", k_event);
+}   /*  End Function inject_event  */

@@ -3,7 +3,7 @@
 
     This code provides miscellaneous channel manipulation routines.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -44,15 +44,21 @@
     Updated by      Richard Gooch   21-NOV-1994: Tidied up  VERIFY_CHANNEL
   macro.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/ch/misc.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/ch/misc.c
+
+    Last updated by Richard Gooch   27-SEP-1995: Created <ch_drain> and
+  <ch_printf>.
 
 
 */
 #include <stdio.h>
+#include <stdarg.h>
 #include <karma.h>
 #include <karma_ch.h>
 #include <karma_m.h>
 #include <karma_a.h>
+
+#define BUF_LEN 4096
 
 #define VERIFY_CHANNEL(ch) if (ch == NULL) \
 {(void) fprintf (stderr, "NULL channel passed\n"); \
@@ -255,7 +261,7 @@ flag newline;
     {
 	return (FALSE);
     }
-    if (newline == TRUE)
+    if (newline)
     {
 	if (ch_write (channel, &newline_char, 1) < 1)
 	{
@@ -264,3 +270,45 @@ flag newline;
     }
     return (TRUE);
 }   /*  End Function ch_puts  */
+
+/*PUBLIC_FUNCTION*/
+unsigned int ch_drain (Channel channel, unsigned int length)
+/*  [PURPOSE] This routine will drain (read) a specified number of bytes from a
+    channel, ignoring the data.
+    <channel> The Channel object.
+    <length> The number of bytes to drain.
+    [RETURNS] The number of bytes drained.
+*/
+{
+    unsigned int count, block, read;
+    unsigned int num_drained = 0;
+    char buffer[BUF_LEN];
+
+    while (num_drained < length)
+    {
+	block = length - num_drained;
+	if (block > BUF_LEN) block = BUF_LEN;
+	read = ch_read (channel, buffer, block);
+	num_drained += read;
+	if (read < block) return (num_drained);
+    }
+    return (num_drained);
+}   /*  End Function ch_drain  */
+
+/*PUBLIC_FUNCTION*/
+flag ch_printf (Channel channel, CONST char *format, ...)
+/*  [PURPOSE] This routine provides writing of formatted output to a channel.
+    <channel> The channel object.
+    <format> The format string. See <<fprintf>>.
+    [VARARGS] The optional parameters. See <<fprintf>>.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    va_list argp;
+    char buffer[BUF_LEN];
+
+    va_start (argp, format);
+    (void) vsprintf (buffer, format, argp);
+    va_end (argp);
+    return ( ch_puts (channel, buffer, FALSE) );
+}   /*  End Function ch_printf  */

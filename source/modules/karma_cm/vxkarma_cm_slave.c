@@ -2,7 +2,7 @@
 
     VX slave process setup file for Connection Management tool and shell.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -40,7 +40,13 @@
     Updated by      Richard Gooch   19-APR-1994: Added support for specifying
   VX video mode (none, mono video or stereo video).
 
-    Last updated by Richard Gooch   21-MAY-1994: Added  #include <karma_ch.h>
+    Updated by      Richard Gooch   21-MAY-1994: Added  #include <karma_ch.h>
+
+    Updated by      Richard Gooch   14-MAR-1995: Changed to send fully
+  qualified hostname to CM tool.
+
+    Last updated by Richard Gooch   16-JUN-1995: Made use of
+  <r_get_fq_hostname>.
 
 
     Usage:   vxkarma_cm_slave host port display
@@ -365,18 +371,14 @@ Connection connection;
 void **info;
 {
     Channel channel;
+    char *keyword;
+    char txt[STRING_LENGTH];
     char my_hostname[STRING_LENGTH + 4];
     ERRNO_TYPE errno;
     extern char *sys_errlist[];
 
-    /*  Get my host information  */
-    if (gethostname (my_hostname, STRING_LENGTH) != 0)
-    {
-	(void) fprintf (stderr, "SLAVE: Error getting hostname\t%s\n",
-			sys_errlist[errno]);
-	myexit (RV_SYS_ERROR);
-    }
-    my_hostname[STRING_LENGTH] = NULL;
+    /*  Get the fully qualified hostname  */
+    if ( !r_get_fq_hostname (my_hostname, STRING_LENGTH) ) exit (RV_SYS_ERROR);
     (void) strcat (my_hostname, ":vx");
     channel = conn_get_channel (connection);
     if (pio_write_string (channel, my_hostname) != TRUE)

@@ -1,0 +1,41 @@
+library = lib$(LIB).a
+lintlib = $(KARMALIBPATH)/llib-l$(LIB).ln
+shared_target = $(KARMALIBPATH)/$(library)
+
+.PRECIOUS: $(library)
+
+CEXTRAS = -bM\:SRE $(CFLAGS)
+
+include $(KARMAROOT)/source/lib/makefiles/GNUmakefile.h1
+
+.PHONY: all
+all:	$(shared_target) clean
+
+
+$(library):	$(members)
+	ranlib $(library)
+
+
+$(shared_target):	$(library)
+	/usr/bin/dump -g $(library) | sed -n -e 's/^[ 	]*[0-9][0-9]*[	 ]*\([^	 .][^	 ]*\)$$/\1/p' > symbols
+	ld -o shr.o $(library) -H512 -T512 -bM\:SRE -bE\:symbols  -L$(KARMALIBPATH) $(inclibs)
+	rm -f $(shared_target)
+	ar clq $(shared_target) shr.o
+	rm shr.o symbols
+
+
+lint:	$(lintlib)
+
+$(lintlib):	$(csource)
+	(cd $(libdir) ; make_lint)
+	(cd .. ; lint -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) -C$(LIB) $(lintdir)/*.c)
+
+
+clean:
+	\rm -f *~ *.bak
+
+
+depend:
+	(cd $(sourcedir); makedepend -DMAKEDEPEND -D__i386__ -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) $(DEPENDFLAGS) -f$(builddir)/dependfile $(csource) )
+
+include dependfile

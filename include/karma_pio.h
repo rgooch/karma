@@ -2,7 +2,7 @@
 
     Header for  pio_  package.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,24 +31,24 @@
 
     Written by      Richard Gooch   13-SEP-1992
 
-    Last updated by Richard Gooch   21-MAY-1994
+    Last updated by Richard Gooch   31-JUL-1995
 
 */
+
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
+#  include <karma.h>
+#endif
+
+#if !defined(KARMA_CH_DEF_H) || defined(MAKEDEPEND)
+#  include <karma_ch_def.h>
+#endif
 
 #ifndef KARMA_PIO_H
 #define KARMA_PIO_H
 
 
-#ifndef KARMA_H
-#  include <karma.h>
-#endif
 
-#ifndef KARMA_CH_DEF_H
-#  include <karma_ch_def.h>
-#endif
-
-
-/*  File:   portable_io.c   */
+/*  File:  misc_io.c  */
 EXTERN_FUNCTION (flag pio_write64, (Channel channel, unsigned long data) );
 EXTERN_FUNCTION (flag pio_read64, (Channel channel, unsigned long *data) );
 EXTERN_FUNCTION (flag pio_write32, (Channel channel, unsigned long data) );
@@ -57,8 +57,12 @@ EXTERN_FUNCTION (flag pio_write16, (Channel channel, unsigned long data) );
 EXTERN_FUNCTION (flag pio_read16, (Channel channel, unsigned long *data) );
 EXTERN_FUNCTION (flag pio_write_float, (Channel channel, float data) );
 EXTERN_FUNCTION (flag pio_read_float, (Channel channel, float *data) );
+EXTERN_FUNCTION (flag pio_read_float_nantrap,
+		 (Channel channel, float *data, flag *was_nan) );
 EXTERN_FUNCTION (flag pio_write_double, (Channel channel, double data) );
 EXTERN_FUNCTION (flag pio_read_double, (Channel channel, double *data) );
+EXTERN_FUNCTION (flag pio_read_double_nantrap,
+		 (Channel channel, double *data, flag *was_nan) );
 EXTERN_FUNCTION (flag pio_write32s, (Channel channel, long data) );
 EXTERN_FUNCTION (flag pio_read32s, (Channel channel, long *data) );
 EXTERN_FUNCTION (flag pio_write16s, (Channel channel, long data) );

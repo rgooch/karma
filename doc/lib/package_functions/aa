@@ -1,0 +1,7 @@
+aa_create
+aa_get_info
+aa_put_pair
+aa_get_pair
+aa_destroy_pair
+aa_get_all_pairs
+aa_get_pair_info

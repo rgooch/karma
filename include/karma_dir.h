@@ -2,7 +2,7 @@
 
     Header for  dir_  package.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,18 +31,18 @@
 
     Written by      Richard Gooch   1-JUN-1993
 
-    Last updated by Richard Gooch   4-OCT-1994
+    Last updated by Richard Gooch   7-APR-1995
 
 */
+
+#include <sys/types.h>
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
+#  include <karma.h>
+#endif
 
 #ifndef KARMA_DIR_H
 #define KARMA_DIR_H
 
-
-#include <sys/types.h>
-#ifndef KARMA_H
-#  include <karma.h>
-#endif
 
 typedef struct dir_type * KDir;
 
@@ -87,7 +87,7 @@ typedef struct
     char *fs_type;          /*  Filesystem type (eg. "4.2", "nfs", "minix")  */
 #endif
     flag local_fs;          /*  TRUE if locally mounted filesystem           */
-    void *private;
+    void *private_ptr;
 } KFileInfo;
 
 typedef struct

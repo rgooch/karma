@@ -8,16 +8,18 @@
 
 #include <Xkw/AnimateControl.h>
 #include <karma.h>
+#include <karma_canvas.h>
 
 typedef struct _AnimateControlPart
 {
     /*  Public resources  */
+    XtCallbackList newFrameCallback;
     int numFrames;
     int startFrame;
     int endFrame;
-    int currentFrame;
-    XtCallbackList newFrameCallback;
     /*  Private resources  */
+    KWorldCanvas position_wc;
+    int currentFrame;
     int interval_ms;
     int inc_factor;
     int spin_mode;

@@ -3,13 +3,13 @@
 
     These routines are meant to provide a VERY primitive mechanism to generate
     simple colourmaps. Although these routines are made public, their use is
-    NOT recommended. The kclrmap_ package is the suggested means to create and
+    NOT recommended. The kcmap_ package is the suggested means to create and
     manipulate colourmaps.
 
 
     Written by		Richard Gooch	<<DATE>>
 
-    Last updated by	Richard Gooch	26-FEB-1993
+    Last updated by	Richard Gooch	<<DATE>>
 
 
 */

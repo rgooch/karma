@@ -3,7 +3,7 @@
 
     This code provides enhanced directory scanning routines.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -48,7 +48,9 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/dir/main.c
 
-    Last updated by Richard Gooch   7-DEC-1994: Stripped declaration of  errno
+    Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
+
+    Last updated by Richard Gooch   6-MAY-1995: Placate gcc -Wall
 
 
 */
@@ -125,14 +127,14 @@ KDir dir_open (CONST char *dirname)
 	m_error_notify (function_name, "directory object");
 	return (NULL);
     }
-    if ( ( (*dir).dirname = st_dup (dirname) ) == NULL )
+    if ( ( dir->dirname = st_dup (dirname) ) == NULL )
     {
 	m_error_notify (function_name, "directory name");
 	m_free ( (char *) dir );
 	return (NULL);
     }
-    (*dir).magic_number = MAGIC_NUMBER;
-    (*dir).dirp = dirp;
+    dir->magic_number = MAGIC_NUMBER;
+    dir->dirp = dirp;
     return (dir);
 }   /*  End Function dir_open  */
 
@@ -160,7 +162,7 @@ unsigned int skip_control;
     long count;
     struct stat statbuf;
     KFileInfo *file;
-    struct dirent *dp;
+    struct dirent *dp = NULL;  /*  Initialised to keep compiler happy  */
     char pathname[STRING_LENGTH];
     extern char *sys_errlist[];
     static uid_t euid = -1;
@@ -209,30 +211,30 @@ unsigned int skip_control;
 	a_prog_bug (function_name);
     }
     /*  Check if directory is valid  */
-    if ( (*dir).magic_number != MAGIC_NUMBER )
+    if (dir->magic_number != MAGIC_NUMBER)
     {
 	(void) fprintf (stderr, "Invalid directory object\n");
 	a_prog_bug (function_name);
     }
     while (scan_another)
     {
-	if ( ( dp = readdir ( (*dir).dirp ) ) == NULL )
+	if ( ( dp = readdir (dir->dirp) ) == NULL )
 	{
 	    return (NULL);
 	}
 	switch (skip_control)
 	{
 	  case KDIR_DOT:
-	    if (strcmp ("..", (*dp).d_name) == 0) continue;
+	    if (strcmp ("..", dp->d_name) == 0) continue;
 	    break;
 	  case KDIR_DOTDOT:
-	    if (strcmp (".", (*dp).d_name) == 0) continue;
+	    if (strcmp (".", dp->d_name) == 0) continue;
 	    break;
 	  case KDIR_DOT_AND_DOTDOT:
 	    break;
 	  case KDIR_NO_DOTS:
-	    if (strcmp (".", (*dp).d_name) == 0) continue;
-	    if (strcmp ("..", (*dp).d_name) == 0) continue;
+	    if (strcmp (".", dp->d_name) == 0) continue;
+	    if (strcmp ("..", dp->d_name) == 0) continue;
 	    break;
 	  default:
 	    (void) fprintf (stderr, "Illegal value of  skip_control: %u\n",
@@ -242,12 +244,12 @@ unsigned int skip_control;
 	}
 	scan_another = FALSE;
     }
-    file = &(*dir).file;
-    (*file).filename = (*dp).d_name;
+    file = &dir->file;
+    file->filename = dp->d_name;
     /*  Construct full pathname  */
-    (void) strcpy (pathname, (*dir).dirname);
+    (void) strcpy (pathname, dir->dirname);
     (void) strcat (pathname, "/");
-    (void) strcat (pathname, (*file).filename);
+    (void) strcat (pathname, file->filename);
     /*  Get stats on file  */
     if (lstat (pathname, &statbuf) != 0)
     {
@@ -255,7 +257,7 @@ unsigned int skip_control;
 			pathname, sys_errlist[errno]);
 	return (NULL);
     }
-    (*file).type = KFILETYPE_REGULAR;
+    file->type = KFILETYPE_REGULAR;
     if ( S_ISLNK (statbuf.st_mode) )
     {
 	/*  Symbolic link  */
@@ -264,7 +266,7 @@ unsigned int skip_control;
 	    if (errno == ENOENT)
 	    {
 		/*  Symbolic link does not point to anything  */
-		(*file).type = KFILETYPE_DANGLING_SYMLINK;
+		file->type = KFILETYPE_DANGLING_SYMLINK;
 	    }
 	    else
 	    {
@@ -274,7 +276,7 @@ unsigned int skip_control;
 		return (NULL);
 	    }
 	}
-	if ( ( sym_length = readlink (pathname, (*dir).sym_path,
+	if ( ( sym_length = readlink (pathname, dir->sym_path,
 				      STRING_LENGTH - 1) ) == -1 )
 	{
 	    (void) fprintf (stderr,
@@ -282,42 +284,42 @@ unsigned int skip_control;
 			    pathname, sys_errlist[errno]);
 	    return (NULL);
 	}
-	(*dir).sym_path[sym_length] = '\0';
-	(*file).sym_path = (*dir).sym_path;
-	(*file).is_symlink = TRUE;
-	if ( (*file).type == KFILETYPE_DANGLING_SYMLINK )
+	dir->sym_path[sym_length] = '\0';
+	file->sym_path = dir->sym_path;
+	file->is_symlink = TRUE;
+	if (file->type == KFILETYPE_DANGLING_SYMLINK)
 	{
 	    return (file);
 	}
     }
     else
     {
-	(*file).sym_path = NULL;
-	(*file).is_symlink = FALSE;
+	file->sym_path = NULL;
+	file->is_symlink = FALSE;
     }
     if ( S_ISDIR (statbuf.st_mode) )
     {
-	(*file).type = KFILETYPE_DIRECTORY;
+	file->type = KFILETYPE_DIRECTORY;
     }
     else if ( S_ISCHR (statbuf.st_mode) )
     {
-	(*file).type = KFILETYPE_CHAR;
+	file->type = KFILETYPE_CHAR;
     }
     else if ( S_ISBLK (statbuf.st_mode) )
     {
-	(*file).type = KFILETYPE_BLOCK;
+	file->type = KFILETYPE_BLOCK;
     }
     else if ( S_ISREG (statbuf.st_mode) )
     {
-	(*file).type = KFILETYPE_REGULAR;
+	file->type = KFILETYPE_REGULAR;
     }
     else if ( S_ISSOCK (statbuf.st_mode) )
     {
-	(*file).type = KFILETYPE_SOCKET;
+	file->type = KFILETYPE_SOCKET;
     }
     else if ( S_ISFIFO (statbuf.st_mode) )
     {
-	(*file).type = KFILETYPE_FIFO;
+	file->type = KFILETYPE_FIFO;
     }
     else
     {
@@ -325,29 +327,29 @@ unsigned int skip_control;
 			(int) statbuf.st_mode);
 	return (NULL);
     }
-    (*file).uid = statbuf.st_uid;
-    (*file).gid = statbuf.st_gid;
-    (*file).mode = statbuf.st_mode;
-    (*file).num_links = statbuf.st_nlink;
-    (*file).dev_num = statbuf.st_dev;
-    (*file).inode = statbuf.st_ino;
-    (*file).size = statbuf.st_size;
-    (*file).atime = statbuf.st_atime;
-    (*file).mtime = statbuf.st_mtime;
-    (*file).ctime = statbuf.st_ctime;
+    file->uid = statbuf.st_uid;
+    file->gid = statbuf.st_gid;
+    file->mode = statbuf.st_mode;
+    file->num_links = statbuf.st_nlink;
+    file->dev_num = statbuf.st_dev;
+    file->inode = statbuf.st_ino;
+    file->size = statbuf.st_size;
+    file->atime = statbuf.st_atime;
+    file->mtime = statbuf.st_mtime;
+    file->ctime = statbuf.st_ctime;
 /*  NOT PORTABLE (not in POSIX)
-    (*file).blocksize = statbuf.st_blksize;
+    file->blocksize = statbuf.st_blksize;
 */
     /*  Determine file access permissions for this process  */
-    (*file).can_read = FALSE;
-    (*file).can_write = FALSE;
-    (*file).can_execute = FALSE;
-    if (euid == (*file).uid)
+    file->can_read = FALSE;
+    file->can_write = FALSE;
+    file->can_execute = FALSE;
+    if (euid == file->uid)
     {
 	/*  Owner  */
-	if (S_IRUSR & (*file).mode) (*file).can_read = TRUE;
-	if (S_IWUSR & (*file).mode) (*file).can_write = TRUE;
-	if (S_IXUSR & (*file).mode) (*file).can_execute = TRUE;
+	if (S_IRUSR & file->mode) file->can_read = TRUE;
+	if (S_IWUSR & file->mode) file->can_write = TRUE;
+	if (S_IXUSR & file->mode) file->can_execute = TRUE;
 	other = FALSE;
     }
     else
@@ -355,12 +357,12 @@ unsigned int skip_control;
 	/*  See if in group  */
 	for (count = 0; count < num_groups; ++count)
 	{
-	    if (groups[count] == (*file).gid)
+	    if (groups[count] == file->gid)
 	    {
 		/*  In the group  */
-		if (S_IRGRP & (*file).mode) (*file).can_read = TRUE;
-		if (S_IWGRP & (*file).mode) (*file).can_write = TRUE;
-		if (S_IXGRP & (*file).mode) (*file).can_execute = TRUE;
+		if (S_IRGRP & file->mode) file->can_read = TRUE;
+		if (S_IWGRP & file->mode) file->can_write = TRUE;
+		if (S_IXGRP & file->mode) file->can_execute = TRUE;
 		other = FALSE;
 		count = num_groups;
 	    }
@@ -368,18 +370,18 @@ unsigned int skip_control;
     }
     if (other)
     {
-	if (S_IROTH & (*file).mode) (*file).can_read = TRUE;
-	if (S_IWOTH & (*file).mode) (*file).can_write = TRUE;
-	if (S_IXOTH & (*file).mode) (*file).can_execute = TRUE;
+	if (S_IROTH & file->mode) file->can_read = TRUE;
+	if (S_IWOTH & file->mode) file->can_write = TRUE;
+	if (S_IXOTH & file->mode) file->can_execute = TRUE;
     }
     /*  Determine if local filesystem  */
-    if ( (*file).dev_num < 0 )
+    if (file->dev_num < 0)
     {
-	(*file).local_fs = FALSE;
+	file->local_fs = FALSE;
     }
     else
     {
-	(*file).local_fs = TRUE;
+	file->local_fs = TRUE;
     }
     return (file);
 }   /*  End Function dir_read  */
@@ -400,17 +402,17 @@ KDir dir;
 	a_prog_bug (function_name);
     }
     /*  Check if directory is valid  */
-    if ( (*dir).magic_number != MAGIC_NUMBER )
+    if (dir->magic_number != MAGIC_NUMBER)
     {
 	(void) fprintf (stderr, "Invalid directory object\n");
 	a_prog_bug (function_name);
     }
-    if (closedir ( (*dir).dirp ) != 0)
+    if (closedir (dir->dirp) != 0)
     {
 	(void) fprintf (stderr,
 			"Error closing directory: \"%s\"\t%s\n",
-			(*dir).dirname, sys_errlist[errno]);
+			dir->dirname, sys_errlist[errno]);
     }
-    m_free ( (char *) (*dir).dirname );
+    m_free ( (char *) dir->dirname );
     m_free ( (char *) dir );
 }   /*  End Function dir_close  */

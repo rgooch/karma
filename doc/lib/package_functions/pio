@@ -6,8 +6,10 @@ pio_write16
 pio_read16
 pio_write_float
 pio_read_float
+pio_read_float_nantrap
 pio_write_double
 pio_read_double
+pio_read_double_nantrap
 pio_write32s
 pio_read32s
 pio_write16s

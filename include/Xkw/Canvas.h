@@ -2,7 +2,7 @@
 
     Public header for  Canvas  widget class.
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   17-JUL-1994
 
-    Last updated by Richard Gooch   24-DEC-1994
+    Last updated by Richard Gooch   28-DEC-1995
 
 */
 
@@ -57,37 +57,51 @@
  borderWidth	     BorderWidth	Dimension	1
  destroyCallback     Callback		Pointer		NULL
  height		     Height		Dimension	0
- insensitiveBorder   Insensitive	Pixmap		Gray
- mappedWhenManaged   MappedWhenManaged	Boolean		True
+ mappedWhenManaged   MappedWhenManaged	Boolean         True
  sensitive	     Sensitive		Boolean		True
  width		     Width		Dimension	0
  x		     Position		Position	0
  y		     Position		Position	0
  visual              Visual             Pointer         CopyFromParent
- pixCanvas           PixCanvas          Pointer         NULL
- clipEvents          ClipEvents         Boolean         FALSE
- silenceUnconsumed   SilenceUnconsumed  Boolean         FALSE
+ stereoMode          StereoMode         Int             XkwSTEREO_MODE_MONO
+ monoPixCanvas       PixCanvas          Pointer         NULL
+ leftPixCanvas       PixCanvas          Pointer         NULL
+ rightPixCanvas      PixCanvas          Pointer         NULL
+ clipEvents          ClipEvents         Bool            FALSE
+ silenceUnconsumed   SilenceUnconsumed  Bool            FALSE
  foreground	     Foreground		Pixel		XtDefaultForeground
- forceNewCmap	     ForceNewCmap	Boolean		False
- retainFgBg	     RetainFgBg		Boolean		False
+ forceNewCmap	     ForceNewCmap	Bool   		False
+ retainFgBg	     RetainFgBg		Bool   		False
  realiseCallback     Callback           Callback        NULL
+ verbose             Verbose            Bool            False
 
 */
 
-#define XtNinsensitiveBorder "insensitiveBorder"
-#define XkwNpixCanvas "pixCanvas"
+#define XkwNstereoMode "stereoMode"
+#define XkwNmonoPixCanvas "monoPixCanvas"
+#define XkwNleftPixCanvas "leftPixCanvas"
+#define XkwNrightPixCanvas "rightPixCanvas"
+#define XkwNpixCanvas XkwNmonoPixCanvas  /*  For backwards compatibility  */
 #define XkwNclipEvents "clipEvents"
 #define XkwNsilenceUnconsumed "silenceUnconsumed"
 #define XkwNforceNewCmap "forceNewCmap"
 #define XkwNretainFgBg "retainFgBg"
 #define XkwNrealiseCallback "realiseCallback"
+#define XkwNverbose "verbose"
 
-#define XtCInsensitive "Insensitive"
+#define XkwCStereoMode "StereoMode"
 #define XkwCPixCanvas "PixCanvas"
 #define XkwCClipEvents "ClipEvents"
 #define XkwCSilenceUnconsumed "SilenceUnconsumed"
 #define XkwCForceNewCmap "ForceNewCmap"
 #define XkwCRetainFgBg "RetainFgBg"
+#define XkwCVerbose "Verbose"
+
+#define XkwSTEREO_MODE_MONO      0
+#define XkwSTEREO_MODE_XMBUF     1
+#define XkwSTEREO_MODE_XGL       2
+#define XkwSTEREO_MODE_OpenGL    3
+#define XkwSTEREO_MODE_SPLIT     4
 
 typedef struct _CanvasClassRec	*CanvasWidgetClass;
 typedef struct _CanvasRec	*CanvasWidget;

@@ -4,7 +4,7 @@
     This code provides a popup file selector widget with close and
     rescan buttons, for Xt.
 
-    Copyright (C) 1993,1994  Patrick Jordan
+    Copyright (C) 1993,1994,1995  Patrick Jordan
     Incorporated into Karma by permission.
 
     This library is free software; you can redistribute it and/or
@@ -46,8 +46,11 @@
 
     Updated by      Richard Gooch   18-NOV-1994: Added XkwNautoPopdown resource
 
-    Last updated by Richard Gooch   24-DEC-1994: Propagated change of filename
+    Updated by      Richard Gooch   24-DEC-1994: Propagated change of filename
   tester resource.
+
+    Last updated by Richard Gooch   17-APR-1995: Fixed mix of XtRBool and
+  sizeof Boolean in resource fields. Use Bool because it is of int size.
 
 
 */
@@ -93,7 +96,7 @@ static Boolean SetValues(Widget current,Widget request,Widget new);
 
 static XtResource FilepopupResources[] = 
 {
-  {XkwNautoPopdown, XkwCAutoPopdown, XtRBoolean, sizeof (Boolean),
+  {XkwNautoPopdown, XkwCAutoPopdown, XtRBool, sizeof (Bool),
    TheOffset (autoPopdown), XtRImmediate, False},
   {XkwNfileSelectCallback, XtCCallback, XtRCallback, sizeof (caddr_t),
    TheOffset (fileSelectCallback), XtRCallback, (caddr_t) NULL},

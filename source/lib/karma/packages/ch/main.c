@@ -3,7 +3,7 @@
 
     This code provides Channel objects.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -125,8 +125,15 @@
     Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
 
-    Last updated by Richard Gooch   25-DEC-1994: Removed group-write enable
+    Updated by      Richard Gooch   25-DEC-1994: Removed group-write enable
   when writing files.
+
+    Updated by      Richard Gooch   31-JAN-1995: Fixed descriptor leak in
+  <ch_map_disc> when channels not mapped.
+
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Last updated by Richard Gooch   15-JUN-1995: Made use of IS_ALIGNED macro.
 
 
 */
@@ -136,6 +143,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <karma.h>
@@ -183,7 +191,7 @@ caddr_t mmap ();
 #define VERIFY_CHANNEL(ch) if (ch == NULL) \
 {(void) fprintf (stderr, "NULL channel passed\n"); \
  a_prog_bug (function_name); } \
-if ( (*ch).magic_number != CHANNEL_MAGIC_NUMBER ) \
+if (ch->magic_number != CHANNEL_MAGIC_NUMBER) \
 {(void) fprintf (stderr, "Invalid channel object\n"); \
  a_prog_bug (function_name); }
 
@@ -249,20 +257,10 @@ struct channel_type
     struct channel_type *next;
 };
 
-struct channel_tap_type
-{
-    unsigned int magic_number;
-    void (*tap_func) ();
-    void *info;
-    ChannelTap prev;
-    ChannelTap next;
-};
-
 
 /*  Private data follows  */
 static Channel first_channel = NULL;
 static flag registered_exit_func = FALSE;
-static char *convert_buffer = NULL;
 static KCallbackList tap_list = NULL;
 
 
@@ -288,7 +286,7 @@ static Channel ch_alloc ()
     {
 	/*  Register function to be called upon processing of  exit(3)  */
 #ifdef HAS_ATEXIT
-	atexit (ch_close_all_channels, NULL);
+	atexit (ch_close_all_channels);
 #endif
 #ifdef HAS_ON_EXIT
 	on_exit (ch_close_all_channels, (caddr_t) NULL);
@@ -303,33 +301,33 @@ static Channel ch_alloc ()
 	m_error_notify (function_name, "channel object");
 	return (NULL);
     }
-    (*channel).magic_number = CHANNEL_MAGIC_NUMBER;
-    (*channel).type = CHANNEL_TYPE_UNDEFINED;
-    (*channel).fd = -1;
-    (*channel).ch_errno = 0;
-    (*channel).read_buffer = NULL;
-    (*channel).read_buf_len = 0;
-    (*channel).read_buf_pos = 0;
-    (*channel).bytes_read = 0;
-    (*channel).write_buffer = NULL;
-    (*channel).write_buf_len = 0;
-    (*channel).write_buf_pos = 0;
-    (*channel).write_start_pos = 0;
-    (*channel).memory_buffer = NULL;
-    (*channel).mem_buf_len = 0;
-    (*channel).mem_buf_read_pos = 0;
-    (*channel).mem_buf_write_pos = 0;
-    (*channel).mmap_access_count = 0;
-    (*channel).abs_read_pos = 0;
-    (*channel).abs_write_pos = 0;
-    (*channel).top_converter = NULL;
-    (*channel).next_converter = NULL;
+    channel->magic_number = CHANNEL_MAGIC_NUMBER;
+    channel->type = CHANNEL_TYPE_UNDEFINED;
+    channel->fd = -1;
+    channel->ch_errno = 0;
+    channel->read_buffer = NULL;
+    channel->read_buf_len = 0;
+    channel->read_buf_pos = 0;
+    channel->bytes_read = 0;
+    channel->write_buffer = NULL;
+    channel->write_buf_len = 0;
+    channel->write_buf_pos = 0;
+    channel->write_start_pos = 0;
+    channel->memory_buffer = NULL;
+    channel->mem_buf_len = 0;
+    channel->mem_buf_read_pos = 0;
+    channel->mem_buf_write_pos = 0;
+    channel->mmap_access_count = 0;
+    channel->abs_read_pos = 0;
+    channel->abs_write_pos = 0;
+    channel->top_converter = NULL;
+    channel->next_converter = NULL;
     /*  Place channel object into list  */
-    (*channel).prev = NULL;
-    (*channel).next = first_channel;
+    channel->prev = NULL;
+    channel->next = first_channel;
     if (first_channel != NULL)
     {
-	(*first_channel).prev = channel;
+	first_channel->prev = channel;
     }
     first_channel = channel;
     return (channel);
@@ -352,51 +350,53 @@ unsigned int length;
     int bytes_read;
     extern KCallbackList tap_list;
     extern char *sys_errlist[];
+/*
     static char function_name[] = "ch_read_disc";
+*/
 
-    if ( ( (*channel).bytes_read - (*channel).read_buf_pos ) >= length )
+    if ( (channel->bytes_read - channel->read_buf_pos) >= length )
     {
 	/*  Read buffer has enough data in it  */
-	m_copy (buffer, (*channel).read_buffer + (*channel).read_buf_pos,
+	m_copy (buffer, channel->read_buffer + channel->read_buf_pos,
 		length);
-	(*channel).read_buf_pos += length;
+	channel->read_buf_pos += length;
 	return (length);
     }
     /*  Need to read from disc  */
     /*  Copy what is left in the read buffer  */
-    read_pos = (*channel).bytes_read - (*channel).read_buf_pos;
-    m_copy (buffer, (*channel).read_buffer + (*channel).read_buf_pos,
+    read_pos = channel->bytes_read - channel->read_buf_pos;
+    m_copy (buffer, channel->read_buffer + channel->read_buf_pos,
 	    read_pos);
     /*  Test if an error occurred  */
-    if ( (*channel).ch_errno != 0 )
+    if (channel->ch_errno != 0)
     {
-	errno = ( (*channel).ch_errno > 0 ) ? (*channel).ch_errno : 0;
-	(*channel).read_buf_pos = 0;
-	(*channel).bytes_read = 0;
+	errno = (channel->ch_errno > 0) ? channel->ch_errno : 0;
+	channel->read_buf_pos = 0;
+	channel->bytes_read = 0;
 	return (read_pos);
     }
     /*  Test if that's all there is in the file  */
-    if ( ( (*channel).bytes_read > 0 ) &&
-	( (*channel).bytes_read < (*channel).read_buf_len ) )
+    if ( (channel->bytes_read > 0) &&
+	(channel->bytes_read < channel->read_buf_len) )
     {
 	/*  Must have hit EOF  */
 	return (read_pos);
     }
-    (*channel).read_buf_pos = 0;
-    (*channel).bytes_read = 0;
+    channel->read_buf_pos = 0;
+    channel->bytes_read = 0;
     bytes_to_read = length - read_pos;
-    if (bytes_to_read > (*channel).read_buf_len)
+    if (bytes_to_read > channel->read_buf_len)
     {
 	/*  Call any tap functions that were registered  */
 	c_call_callbacks (tap_list, NULL);
 	/*  Read an intregal number of blocks directly  */
-	bytes_to_read -= bytes_to_read % (int) (*channel).read_buf_len;
-	if ( ( bytes_read = read ( (*channel).fd, buffer + read_pos,
-				  bytes_to_read ) )
+	bytes_to_read -= bytes_to_read % (int) channel->read_buf_len;
+	if ( ( bytes_read = read (channel->fd, buffer + read_pos,
+				  bytes_to_read) )
 	    < 0 )
 	{
 	    /*  Error occurred  */
-	    (*channel).ch_errno = errno;
+	    channel->ch_errno = errno;
 	    if (read_pos > 0)
 	    {
 		errno = 0;
@@ -414,19 +414,19 @@ unsigned int length;
     /*  Call any tap functions that were registered  */
     c_call_callbacks (tap_list, NULL);
     /*  Read one block into read buffer  */
-    bytes_to_read = (*channel).read_buf_len;
-    if ( ( bytes_read = read ( (*channel).fd, (*channel).read_buffer,
-			      bytes_to_read ) )
+    bytes_to_read = channel->read_buf_len;
+    if ( ( bytes_read = read (channel->fd, channel->read_buffer,
+			      bytes_to_read) )
 	< 0 )
     {
 	/*  Error reading complete block  */
-	(*channel).ch_errno = errno;
+	channel->ch_errno = errno;
     }
     if (bytes_read < bytes_to_read)
     {
-	(*channel).ch_errno = -1;
+	channel->ch_errno = -1;
     }
-    (*channel).bytes_read = bytes_read;
+    channel->bytes_read = bytes_read;
     /*  Read what is needed from the read buffer  */
     read_pos += ch_read_disc (channel, buffer + read_pos, length - read_pos);
     errno = 0;
@@ -456,43 +456,43 @@ unsigned int length;
     extern char *sys_errlist[];
     static char function_name[] = "ch_read_connection";
 
-    if ( ( (*channel).bytes_read - (*channel).read_buf_pos ) >= length )
+    if ( (channel->bytes_read - channel->read_buf_pos) >= length )
     {
 	/*  Read buffer has enough data in it  */
-	m_copy (buffer, (*channel).read_buffer + (*channel).read_buf_pos,
+	m_copy (buffer, channel->read_buffer + channel->read_buf_pos,
 		length);
-	(*channel).read_buf_pos += length;
+	channel->read_buf_pos += length;
 	return (length);
     }
     /*  Will need to read from connection  */
     /*  Copy what is left in the read buffer  */
-    read_pos = (*channel).bytes_read - (*channel).read_buf_pos;
-    m_copy (buffer, (*channel).read_buffer + (*channel).read_buf_pos,
+    read_pos = channel->bytes_read - channel->read_buf_pos;
+    m_copy (buffer, channel->read_buffer + channel->read_buf_pos,
 	    read_pos);
-    (*channel).read_buf_pos = 0;
-    (*channel).bytes_read = 0;
+    channel->read_buf_pos = 0;
+    channel->bytes_read = 0;
     /*  Test if an error occurred  */
-    if ( (*channel).ch_errno > 0 )
+    if (channel->ch_errno > 0)
     {
-	errno = (*channel).ch_errno;
+	errno = channel->ch_errno;
 	return (read_pos);
     }
     /*  Call any tap functions that were registered  */
     c_call_callbacks (tap_list, NULL);
     /*  Read the remainder directly  */
     bytes_to_read = length - read_pos;
-    if ( ( bytes_read = r_read ( (*channel).fd, buffer + read_pos,
-				bytes_to_read ) )
+    if ( ( bytes_read = r_read (channel->fd, buffer + read_pos,
+				bytes_to_read) )
 	< 0 )
     {
 	/*  Error reading  */
-	(*channel).ch_errno = errno;
+	channel->ch_errno = errno;
 	return (read_pos);
     }
     if (bytes_read < bytes_to_read)
     {
 	/*  Only read some bytes  */
-	switch ( (*channel).type )
+	switch (channel->type)
 	{
 	  case CHANNEL_TYPE_CONNECTION:
 	    (void) fprintf (stderr,
@@ -506,7 +506,7 @@ unsigned int length;
 	    was_error = FALSE;
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Bad channel type: %u\n", (*channel).type);
+	    (void) fprintf (stderr, "Bad channel type: %u\n", channel->type);
 	    a_prog_bug (function_name);
 	    break;
 	}
@@ -517,22 +517,22 @@ unsigned int length;
     }
     read_pos += bytes_read;
     /*  Drain data on connection into buffer  */
-    if ( ( bytes_available = r_get_bytes_readable ( (*channel).fd ) ) < 0 )
+    if ( ( bytes_available = r_get_bytes_readable (channel->fd) ) < 0 )
     {
-	(*channel).ch_errno = errno;
+	channel->ch_errno = errno;
 	errno = 0;
 	return (read_pos);
     }
     /*  Call any tap functions that were registered  */
     c_call_callbacks (tap_list, NULL);
-    bytes_to_read = ( (bytes_available <= (*channel).read_buf_len) ?
-		     bytes_available : (*channel).read_buf_len );
-    if ( ( bytes_read = r_read ( (*channel).fd, (*channel).read_buffer,
-				bytes_to_read ) )
+    bytes_to_read = ( (bytes_available <= channel->read_buf_len) ?
+		     bytes_available : channel->read_buf_len );
+    if ( ( bytes_read = r_read (channel->fd, channel->read_buffer,
+				bytes_to_read) )
 	< bytes_to_read )
     {
 	/*  Only read some bytes  */
-	switch ( (*channel).type )
+	switch (channel->type)
 	{
 	  case CHANNEL_TYPE_CONNECTION:
 	    (void) fprintf (stderr,
@@ -550,13 +550,13 @@ unsigned int length;
 			    sys_errlist[errno]);
 	    break;
 	  default:
-	    (void) fprintf (stderr, "Bad channel type: %u\n", (*channel).type);
+	    (void) fprintf (stderr, "Bad channel type: %u\n", channel->type);
 	    a_prog_bug (function_name);
 	    break;
 	}
 	exit (RV_SYS_ERROR);
     }
-    (*channel).bytes_read = bytes_read;
+    channel->bytes_read = bytes_read;
     errno = 0;
     return (read_pos);
 }   /*  End Function ch_read_connection  */
@@ -575,14 +575,16 @@ unsigned int length;
 {
     unsigned int bytes_to_read;
     unsigned int bytes_left;
+/*
     static char function_name[] = "ch_read_memory";
+*/
 
-    bytes_left = (*channel).mem_buf_len - (*channel).mem_buf_read_pos;
+    bytes_left = channel->mem_buf_len - channel->mem_buf_read_pos;
     bytes_to_read = (length <= bytes_left) ? length : bytes_left;
     m_copy (buffer,
-	    (*channel).memory_buffer + (*channel).mem_buf_read_pos,
+	    channel->memory_buffer + channel->mem_buf_read_pos,
 	    bytes_to_read);
-    (*channel).mem_buf_read_pos += bytes_to_read;
+    channel->mem_buf_read_pos += bytes_to_read;
     return (bytes_to_read);
 }   /*  End Function ch_read_memory  */
 
@@ -601,52 +603,54 @@ unsigned int length;
     int bytes_written;
     int bytes_to_write;
     unsigned int write_pos = 0;
+/*
     static char function_name[] = "ch_write_descriptor";
+*/
 
-    if ( (*channel).ch_errno != 0 )
+    if (channel->ch_errno != 0)
     {
 	/*  Error occurred previously during writing  */
-	errno = (*channel).ch_errno;
+	errno = channel->ch_errno;
 	return (0);
     }
-    if ( length < ( (*channel).write_buf_len - (*channel).write_buf_pos ) )
+    if ( length < (channel->write_buf_len - channel->write_buf_pos) )
     {
 	/*  Write buffer will not be filled up  */
-	m_copy ( (*channel).write_buffer + (*channel).write_buf_pos,
-		buffer, length );
-	(*channel).write_buf_pos += length;
+	m_copy (channel->write_buffer + channel->write_buf_pos,
+		buffer, length);
+	channel->write_buf_pos += length;
 	return (length);
     }
     /*  Copy over as much as possible into write buffer  */
-    write_pos = (*channel).write_buf_len - (*channel).write_buf_pos;
-    m_copy ( (*channel).write_buffer + (*channel).write_buf_pos, buffer,
-	    write_pos );
-    (*channel).write_buf_pos += write_pos;
+    write_pos = channel->write_buf_len - channel->write_buf_pos;
+    m_copy (channel->write_buffer + channel->write_buf_pos, buffer,
+	    write_pos);
+    channel->write_buf_pos += write_pos;
     /*  Flush write buffer  */
-    bytes_to_write = (*channel).write_buf_pos - (*channel).write_start_pos;
-    if ( ( bytes_written = mywrite_raw (channel, (*channel).write_buffer,
+    bytes_to_write = channel->write_buf_pos - channel->write_start_pos;
+    if ( ( bytes_written = mywrite_raw (channel, channel->write_buffer,
 					bytes_to_write) )
 	< bytes_to_write )
     {
-	(*channel).write_start_pos = 0;
+	channel->write_start_pos = 0;
 	return (FALSE);
     }
-    (*channel).write_start_pos = 0;
+    channel->write_start_pos = 0;
     /*  Write integral number of blocks directly  */
     bytes_to_write = length - write_pos;
-    bytes_to_write -= bytes_to_write % (int) (*channel).write_buf_len;
+    bytes_to_write -= bytes_to_write % (int) channel->write_buf_len;
     if ( ( bytes_written = mywrite_raw (channel, buffer + write_pos,
 					bytes_to_write) )
 	< bytes_to_write )
     {
 	/*  Error writing  */
-	(*channel).ch_errno = errno;
+	channel->ch_errno = errno;
 	return (write_pos + bytes_written);
     }
     write_pos += bytes_written;
     /*  Place remainder into write buffer  */
-    m_copy ( (*channel).write_buffer, buffer + write_pos, length - write_pos );
-    (*channel).write_buf_pos = length - write_pos;
+    m_copy (channel->write_buffer, buffer + write_pos, length - write_pos);
+    channel->write_buf_pos = length - write_pos;
     return (length);
 }  /*  End Function ch_write_descriptor  */
 
@@ -661,7 +665,6 @@ static int mywrite_raw (Channel channel, CONST char *buffer,
 */
 {
     int bytes_to_write;
-    int bytes_written;
     unsigned int bytes_left;
     extern KCallbackList tap_list;
     static char function_name[] = "mywrite_raw";
@@ -673,12 +676,12 @@ static int mywrite_raw (Channel channel, CONST char *buffer,
 	a_prog_bug (function_name);
     }
     if (length < 1) return (0);
-    switch ( (*channel).type )
+    switch (channel->type)
     {
       case CHANNEL_TYPE_DISC:
 	/*  Call any tap functions that were registered  */
 	c_call_callbacks (tap_list, NULL);
-	return ( write ( (*channel).fd, buffer, length ) );
+	return ( write (channel->fd, buffer, length) );
 /*
 	break;
 */
@@ -687,17 +690,17 @@ static int mywrite_raw (Channel channel, CONST char *buffer,
       case CHANNEL_TYPE_FIFO:
 	/*  Call any tap functions that were registered  */
 	c_call_callbacks (tap_list, NULL);
-	return ( r_write ( (*channel).fd, buffer, length ) );
+	return ( r_write (channel->fd, buffer, length) );
 /*
 	break;
 */
       case CHANNEL_TYPE_MEMORY:
       case CHANNEL_TYPE_MMAP:
-	bytes_left = (*channel).mem_buf_len - (*channel).mem_buf_write_pos;
+	bytes_left = channel->mem_buf_len - channel->mem_buf_write_pos;
 	bytes_to_write = (length <= bytes_left) ? length : bytes_left;
-	m_copy ( (*channel).memory_buffer + (*channel).mem_buf_write_pos,
-		buffer, bytes_to_write );
-	(*channel).mem_buf_write_pos += bytes_to_write;
+	m_copy (channel->memory_buffer + channel->mem_buf_write_pos,
+		buffer, bytes_to_write);
+	channel->mem_buf_write_pos += bytes_to_write;
 	return (bytes_to_write);
 /*
 	break;
@@ -753,7 +756,7 @@ CONST char *type;
 {
     flag read_flag = FALSE;
     flag write_flag = FALSE;
-    int flags;
+    int flags = 0;  /*  Initialised to keep compiler happy  */
     int mode;
     unsigned int filetype;
     unsigned int blocksize;
@@ -823,8 +826,8 @@ CONST char *type;
     mode |= S_ISVTX;
 #endif
     /*  Open file descriptor  */
-    if ( ( (*channel).fd = r_open_file (filename, flags, mode, &filetype,
-					&blocksize) ) < 0 )
+    if ( ( channel->fd = r_open_file (filename, flags, mode, &filetype,
+				      &blocksize) ) < 0 )
     {
 	(void) ch_close (channel);
 	return (NULL);
@@ -833,26 +836,26 @@ CONST char *type;
     switch (filetype)
     {
       case KFTYPE_DISC:
-	(*channel).type = CHANNEL_TYPE_DISC;
+	channel->type = CHANNEL_TYPE_DISC;
 	break;
       case KFTYPE_CHARACTER:
-	(*channel).type = CHANNEL_TYPE_CHARACTER;
+	channel->type = CHANNEL_TYPE_CHARACTER;
 	break;
       case KFTYPE_FIFO:
-	(*channel).type = CHANNEL_TYPE_FIFO;
+	channel->type = CHANNEL_TYPE_FIFO;
 	break;
       case KFTYPE_UNIX_CONNECTION:
-	(*channel).type = CHANNEL_TYPE_CONNECTION;
+	channel->type = CHANNEL_TYPE_CONNECTION;
 	blocksize = CONNECTION_BUF_SIZE;
 	break;
       case KFTYPE_LOCAL_tcpIP_CONNECTION:
-	(*channel).type = CHANNEL_TYPE_CONNECTION;
-	(*channel).local = TRUE;
+	channel->type = CHANNEL_TYPE_CONNECTION;
+	channel->local = TRUE;
 	blocksize = CONNECTION_BUF_SIZE;
 	break;
       case KFTYPE_REMOTE_tcpIP_CONNECTION:
-	(*channel).type = CHANNEL_TYPE_CONNECTION;
-	(*channel).local = FALSE;
+	channel->type = CHANNEL_TYPE_CONNECTION;
+	channel->local = FALSE;
 	blocksize = CONNECTION_BUF_SIZE;
 	break;
       default:
@@ -864,28 +867,28 @@ CONST char *type;
     if (read_flag)
     {
 	/*  Allocate read buffer  */
-	if ( ( (*channel).read_buffer = m_alloc (blocksize) ) == NULL )
+	if ( ( channel->read_buffer = m_alloc (blocksize) ) == NULL )
 	{
 	    m_error_notify (function_name, "read buffer");
 	    (void) ch_close (channel);
 	    return (NULL);
 	}
-	(*channel).read_buf_len = blocksize;
-	(*channel).read_buf_pos = 0;
-	(*channel).bytes_read = 0;
+	channel->read_buf_len = blocksize;
+	channel->read_buf_pos = 0;
+	channel->bytes_read = 0;
     }
     if (write_flag)
     {
 	/*  Allocate write buffer  */
-	if ( ( (*channel).write_buffer = m_alloc (blocksize) ) == NULL )
+	if ( ( channel->write_buffer = m_alloc (blocksize) ) == NULL )
 	{
 	    m_error_notify (function_name, "write buffer");
 	    (void) ch_close (channel);
 	    return (NULL);
 	}
-	(*channel).write_buf_len = blocksize;
-	(*channel).write_buf_pos = 0;
-	(*channel).write_start_pos = 0;
+	channel->write_buf_len = blocksize;
+	channel->write_buf_pos = 0;
+	channel->write_start_pos = 0;
     }
     return (channel);
 }   /*  End Function ch_open_file  */
@@ -965,22 +968,25 @@ flag update_on_write;
     {
 	open_flags = O_RDONLY;
     }
-    if ( ( (*channel).fd = open (filename, open_flags, 0) ) < 0 )
+    if ( ( channel->fd = open (filename, open_flags, 0) ) < 0 )
     {
 	(void) ch_close (channel);
 	return (NULL);
     }
+    /*  Set the type to disc so that premature closure closes the descriptor */
+    channel->type = CHANNEL_TYPE_DISC;
     /*  Get stats on file  */
-    if (fstat ( (*channel).fd, &statbuf ) != 0)
+    if (fstat (channel->fd, &statbuf) != 0)
     {
 	(void) fprintf (stderr, "Error getting file stats\n");
 	(void) ch_close (channel);
 	return (NULL);
     }
 #  ifdef OS_Linux
-    if (fstatfs ( (*channel).fd, &statfs_buf ) != 0)
+    if (fstatfs (channel->fd, &statfs_buf) != 0)
     {
 	(void) fprintf (stderr, "Error getting filesystem stats\n");
+	(void) close (channel->fd);
 	(void) ch_close (channel);
 	return (NULL);
     }
@@ -1086,14 +1092,14 @@ flag update_on_write;
 #  ifdef OS_ConvexOS
     map_len = statbuf.st_size;
 #endif
-    if ( ( (*channel).memory_buffer = mmap ( (caddr_t ) NULL,
+    if ( ( channel->memory_buffer = mmap ( (caddr_t ) NULL,
 #  ifdef OS_ConvexOS  /*  Why the fuck to they have to be different?  */
-					    &map_len,
+					  &map_len,
 #  else
-					    (size_t) statbuf.st_size,
+					  (size_t) statbuf.st_size,
 #  endif
-					    mmap_prot, mmap_flags,
-					    (*channel).fd, (off_t) 0 ) )
+					  mmap_prot, mmap_flags,
+					  channel->fd, (off_t) 0 ) )
 	== (caddr_t) -1 )
     {
 	/*  Failed  */
@@ -1103,9 +1109,9 @@ flag update_on_write;
 	return (NULL);
     }
     /*  Set channel type  */
-    (*channel).type = CHANNEL_TYPE_MMAP;
-    (*channel).mem_buf_allocated = FALSE;
-    (*channel).mem_buf_len = statbuf.st_size;
+    channel->type = CHANNEL_TYPE_MMAP;
+    channel->mem_buf_allocated = FALSE;
+    channel->mem_buf_len = statbuf.st_size;
     return (channel);
 #else  /*  HAS_MMAP  */
     if (option != K_CH_MAP_ALWAYS) return ( ch_open_file (filename, "r") );
@@ -1136,34 +1142,34 @@ Channel ch_open_connection (unsigned long host_addr, unsigned int port_number)
 	return (NULL);
     }
     /*  Set channel type  */
-    (*channel).type = CHANNEL_TYPE_CONNECTION;
+    channel->type = CHANNEL_TYPE_CONNECTION;
     /*  Open connection descriptor  */
-    if ( ( (*channel).fd = r_connect_to_port (host_addr, port_number,
-					      &(*channel).local) ) < 0 )
+    if ( ( channel->fd = r_connect_to_port (host_addr, port_number,
+					    &channel->local) ) < 0 )
     {
 	(void) ch_close (channel);
 	return (NULL);
     }
     /*  Allocate read buffer  */
-    if ( ( (*channel).read_buffer = m_alloc (CONNECTION_BUF_SIZE) ) == NULL )
+    if ( ( channel->read_buffer = m_alloc (CONNECTION_BUF_SIZE) ) == NULL )
     {
 	m_error_notify (function_name, "read buffer");
 	(void) ch_close (channel);
 	return (NULL);
     }
-    (*channel).read_buf_len = CONNECTION_BUF_SIZE;
-    (*channel).read_buf_pos = 0;
-    (*channel).bytes_read = 0;
+    channel->read_buf_len = CONNECTION_BUF_SIZE;
+    channel->read_buf_pos = 0;
+    channel->bytes_read = 0;
     /*  Allocate write buffer  */
-    if ( ( (*channel).write_buffer = m_alloc (CONNECTION_BUF_SIZE) ) == NULL )
+    if ( ( channel->write_buffer = m_alloc (CONNECTION_BUF_SIZE) ) == NULL )
     {
 	m_error_notify (function_name, "write buffer");
 	(void) ch_close (channel);
 	return (NULL);
     }
-    (*channel).write_buf_len = CONNECTION_BUF_SIZE;
-    (*channel).write_buf_pos = 0;
-    (*channel).write_start_pos = 0;
+    channel->write_buf_len = CONNECTION_BUF_SIZE;
+    channel->write_buf_pos = 0;
+    channel->write_start_pos = 0;
     return (channel);
 }   /*  End Function ch_open_connection  */
 
@@ -1189,25 +1195,25 @@ unsigned int size;
 	return (NULL);
     }
     /*  Set channel type  */
-    (*channel).type = CHANNEL_TYPE_MEMORY;
+    channel->type = CHANNEL_TYPE_MEMORY;
     if (buffer == NULL)
     {
 	/*  Must allocate a buffer  */
-	if ( ( (*channel).memory_buffer = m_alloc (size) ) == NULL )
+	if ( ( channel->memory_buffer = m_alloc (size) ) == NULL )
 	{
 	    m_error_notify (function_name, "channel memory buffer");
 	    (void) ch_close (channel);
 	    return (NULL);
 	}
-	(*channel).mem_buf_allocated = TRUE;
+	channel->mem_buf_allocated = TRUE;
     }
     else
     {
 	/*  Use specified buffer  */
-	(*channel).memory_buffer = buffer;
-	(*channel).mem_buf_allocated = FALSE;
+	channel->memory_buffer = buffer;
+	channel->mem_buf_allocated = FALSE;
     }
-    (*channel).mem_buf_len = size;
+    channel->mem_buf_len = size;
     return (channel);
 }   /*  End Function ch_open_memory  */
 
@@ -1234,7 +1240,7 @@ unsigned long *addr;
 	a_prog_bug (function_name);
     }
     /*  Check if channel is a dock  */
-    if ( (*dock).type != CHANNEL_TYPE_DOCK )
+    if (dock->type != CHANNEL_TYPE_DOCK)
     {
 	(void) fprintf (stderr, "Channel is not a dock: %s\n",
 			function_name);
@@ -1245,10 +1251,10 @@ unsigned long *addr;
 	return (NULL);
     }
     /*  Set channel type  */
-    (*channel).type = CHANNEL_TYPE_CONNECTION;
+    channel->type = CHANNEL_TYPE_CONNECTION;
     /*  Accept connection  */
-    if ( ( (*channel).fd = r_accept_connection_on_dock ( (*dock).fd, addr,
-							&(*channel).local ) )
+    if ( ( channel->fd = r_accept_connection_on_dock (dock->fd, addr,
+						      &channel->local) )
 	< 0 )
     {
 	(void) fprintf (stderr, "Error accepting connection\n");
@@ -1256,25 +1262,25 @@ unsigned long *addr;
 	return (NULL);
     }
     /*  Allocate read buffer  */
-    if ( ( (*channel).read_buffer = m_alloc (CONNECTION_BUF_SIZE) ) == NULL )
+    if ( ( channel->read_buffer = m_alloc (CONNECTION_BUF_SIZE) ) == NULL )
     {
 	m_error_notify (function_name, "read buffer");
 	(void) ch_close (channel);
 	return (NULL);
     }
-    (*channel).read_buf_len = CONNECTION_BUF_SIZE;
-    (*channel).read_buf_pos = 0;
-    (*channel).bytes_read = 0;
+    channel->read_buf_len = CONNECTION_BUF_SIZE;
+    channel->read_buf_pos = 0;
+    channel->bytes_read = 0;
     /*  Allocate write buffer  */
-    if ( ( (*channel).write_buffer = m_alloc (CONNECTION_BUF_SIZE) ) == NULL )
+    if ( ( channel->write_buffer = m_alloc (CONNECTION_BUF_SIZE) ) == NULL )
     {
 	m_error_notify (function_name, "write buffer");
 	(void) ch_close (channel);
 	return (NULL);
     }
-    (*channel).write_buf_len = CONNECTION_BUF_SIZE;
-    (*channel).write_buf_pos = 0;
-    (*channel).write_start_pos = 0;
+    channel->write_buf_len = CONNECTION_BUF_SIZE;
+    channel->write_buf_pos = 0;
+    channel->write_start_pos = 0;
     return (channel);
 }   /*  End Function ch_accept_on_dock  */
 
@@ -1315,14 +1321,14 @@ unsigned int *num_docks;
 	a_prog_bug (function_name);
     }
     /*  Check alignment of  port_number  */
-    if ( (long) port_number % sizeof (long) != 0 )
+    if ( !IS_ALIGNED (port_number, sizeof *port_number) )
     {
 	(void) fprintf (stderr,
 			"Pointer to port number storage does not lie on an  int  boundary\n");
 	a_prog_bug (function_name);
     }
     /*  Check alignment of  num_docks  */
-    if ( (long) num_docks % sizeof (int) != 0 )
+    if ( !IS_ALIGNED (num_docks, sizeof *num_docks) )
     {
 	(void) fprintf (stderr,
 			"Pointer to number of docks storage does not lie on an  int  boundary\n");
@@ -1358,8 +1364,8 @@ unsigned int *num_docks;
 	    m_free ( (char *) ch_docks );
 	    return (NULL);
 	}
-	(*ch_docks[dock_count]).fd = docks[dock_count];
-	(*ch_docks[dock_count]).type = CHANNEL_TYPE_DOCK;
+	ch_docks[dock_count]->fd = docks[dock_count];
+	ch_docks[dock_count]->type = CHANNEL_TYPE_DOCK;
     }
     return (ch_docks);
 }   /*  End Function ch_alloc_port  */
@@ -1381,36 +1387,35 @@ Channel channel;
 
     VERIFY_CHANNEL (channel);
 #ifndef DISABLE_CONVERTERS
-    for (converter = (*channel).top_converter; converter != NULL;
-	 converter = (*converter).next)
+    for (converter = channel->top_converter; converter != NULL;
+	 converter = converter->next)
     {
 	/*  Call the flush routine  */
-	(*channel).next_converter = (*converter).next;
-	if ( (* (*converter).flush_func ) (channel, &(*converter).info)
-	    != TRUE )
+	channel->next_converter = converter->next;
+	if ( !(*converter->flush_func) (channel, &converter->info) )
 	{
-	    (*channel).next_converter = (*channel).top_converter;
+	    channel->next_converter = channel->top_converter;
 	    return (FALSE);
 	}
     }
-    (*channel).next_converter = (*channel).top_converter;
+    channel->next_converter = channel->top_converter;
 #endif
     /*  Close descriptor if open  */
-    if ( (*channel).fd > -1 )
+    if (channel->fd > -1)
     {
 	/*  Have open file descriptor: flush buffer and close descriptor  */
-	switch ( (*channel).type )
+	switch (channel->type)
 	{
 	  case CHANNEL_TYPE_MMAP:
 #ifdef HAS_MMAP
-	    if (munmap ( (*channel).memory_buffer, (*channel).mem_buf_len )
+	    if (munmap (channel->memory_buffer, channel->mem_buf_len)
 		!= 0)
 	    {
 		(void) fprintf (stderr, "Error unmapping\t%s\n",
 				sys_errlist[errno]);
 		exit (RV_SYS_ERROR);
 	    }
-	    (*channel).memory_buffer = NULL;
+	    channel->memory_buffer = NULL;
 #else
 	    (void) fprintf (stderr,
 			    "Channel memory mapped but platform does not support\n");
@@ -1424,10 +1429,10 @@ Channel channel;
 	    {
 		return_value = FALSE;
 	    }
-	    if (close ( (*channel).fd ) != 0)
+	    if (close (channel->fd) != 0)
 	    {
 		(void) fprintf (stderr, "Error closing descriptor: %d\t%s\n",
-				(*channel).fd, sys_errlist[errno]);
+				channel->fd, sys_errlist[errno]);
 		return_value = FALSE;
 	    }
 	    break;
@@ -1436,10 +1441,10 @@ Channel channel;
 	    {
 		return_value = FALSE;
 	    }
-	    return_value = r_close_connection ( (*channel).fd );
+	    return_value = r_close_connection (channel->fd);
 	    break;
 	  case CHANNEL_TYPE_DOCK:
-	    r_close_dock ( (*channel).fd );
+	    r_close_dock (channel->fd);
 	    return_value = TRUE;
 	    break;
 	  case CHANNEL_TYPE_ASYNCHRONOUS:
@@ -1450,55 +1455,54 @@ Channel channel;
 	    break;
 	  default:
 	    (void) fprintf (stderr, "Illegal channel type: %u\n",
-			    (*channel).type);
+			    channel->type);
 	    a_prog_bug (function_name);
 	    break;
 	}
     }
 #ifndef DISABLE_CONVERTERS
-    for (converter = (*channel).top_converter; converter != NULL;
+    for (converter = channel->top_converter; converter != NULL;
 	 converter = next_converter)
     {
 	/*  Call the close routine  */
-	(*channel).next_converter = (*converter).next;
-	if ( (*converter).close_func != NULL )
+	channel->next_converter = converter->next;
+	if (converter->close_func != NULL)
 	{
-	    (* (*converter).close_func ) ( (*converter).info );
+	    (*converter->close_func) (converter->info);
 	}
-	next_converter = (*converter).next;
-	(*converter).magic_number = 0;
+	next_converter = converter->next;
+	converter->magic_number = 0;
 	m_free ( (char *) converter );
     }
 #endif
     /*  Deallocate buffers  */
-    if ( (*channel).read_buffer != NULL )
+    if (channel->read_buffer != NULL)
     {
-	m_free ( (*channel).read_buffer );
+	m_free (channel->read_buffer);
     }
-    if ( (*channel).write_buffer != NULL )
+    if (channel->write_buffer != NULL)
     {
-	m_free ( (*channel).write_buffer );
+	m_free (channel->write_buffer);
     }
-    if ( ( (*channel).memory_buffer != NULL ) &&
-	( (*channel).mem_buf_allocated == TRUE ) )
+    if ( (channel->memory_buffer != NULL) && channel->mem_buf_allocated )
     {
-	m_free ( (*channel).memory_buffer );
+	m_free (channel->memory_buffer);
     }
     /*  Remove channel object from list  */
-    if ( (*channel).next != NULL )
+    if (channel->next != NULL)
     {
 	/*  Another entry further in the list  */
-	(* (*channel).next ).prev = (*channel).prev;
+	channel->next->prev = channel->prev;
     }
-    if ( (*channel).prev != NULL )
+    if (channel->prev != NULL)
     {
 	/*  Another entry previous in the list  */
-	(* (*channel).prev ).next = (*channel).next;
+	channel->prev->next = channel->next;
     }
     if (channel == first_channel)
     {
 	/*  Channel is first in list: make next entry the first  */
-	first_channel = (*channel).next;
+	first_channel = channel->next;
     }
     /*  Kill magic number entry and everything else for security  */
     m_clear ( (char *) channel, sizeof *channel );
@@ -1516,7 +1520,6 @@ flag ch_flush (channel)
 Channel channel;
 {
     int bytes_to_write;
-    int bytes_written;
     ChConverter converter;
     static char function_name[] = "ch_flush";
 
@@ -1524,25 +1527,24 @@ Channel channel;
 	ROUTINES  */
     VERIFY_CHANNEL (channel);
 #ifndef DISABLE_CONVERTERS
-    for (converter = (*channel).top_converter; converter != NULL;
-	 converter = (*converter).next)
+    for (converter = channel->top_converter; converter != NULL;
+	 converter = converter->next)
     {
 	/*  Call the flush routine  */
-	(*channel).next_converter = (*converter).next;
-	if ( (* (*converter).flush_func ) (channel, &(*converter).info)
-	    != TRUE )
+	channel->next_converter = converter->next;
+	if ( !(*converter->flush_func) (channel, &converter->info) )
 	{
-	    (*channel).next_converter = (*channel).top_converter;
+	    channel->next_converter = channel->top_converter;
 	    return (FALSE);
 	}
     }
-    (*channel).next_converter = (*channel).top_converter;
+    channel->next_converter = channel->top_converter;
 #endif
-    if ( (*channel).fd < 0 )
+    if (channel->fd < 0)
     {
 	return (TRUE);
     }
-    switch ( (*channel).type )
+    switch (channel->type)
     {
       case CHANNEL_TYPE_DISC:
 	break;
@@ -1575,19 +1577,18 @@ Channel channel;
 	a_prog_bug (function_name);
 	break;
     }
-    if ( (*channel).write_buf_pos > (*channel).write_start_pos )
+    if (channel->write_buf_pos > channel->write_start_pos)
     {
 	/*  Flush write buffer  */
-	bytes_to_write = (*channel).write_buf_pos - (*channel).write_start_pos;
-	if ( ( bytes_written = mywrite_raw (channel, (*channel).write_buffer,
-					    bytes_to_write) )
-	    < bytes_to_write )
+	bytes_to_write = channel->write_buf_pos - channel->write_start_pos;
+	if (mywrite_raw (channel, channel->write_buffer, bytes_to_write)
+	    < bytes_to_write)
 	{
-	    (*channel).write_start_pos = 0;
+	    channel->write_start_pos = 0;
 	    return (FALSE);
 	}
-	(*channel).write_start_pos = 0;
-	(*channel).write_buf_pos = 0;
+	channel->write_start_pos = 0;
+	channel->write_buf_pos = 0;
     }
     return (TRUE);
 }   /*  End Function ch_flush  */
@@ -1607,9 +1608,8 @@ Channel channel;
 char *buffer;
 unsigned int length;
 {
-    unsigned int num_read;
+    unsigned int num_read = 0;  /*  Initialised to keep compiler happy  */
     ChConverter converter, old_converter;
-    ChannelTap tap;
     static char function_name[] = "ch_read";
 
     VERIFY_CHANNEL (channel);
@@ -1619,30 +1619,29 @@ unsigned int length;
 	a_prog_bug (function_name);
     }
 #ifndef DISABLE_CONVERTERS
-    if ( ( converter = (*channel).next_converter ) != NULL )
+    if ( (converter = channel->next_converter) != NULL )
     {
 	/*  Pass it on to a read converter  */
-	old_converter = (*channel).next_converter;
-	(*channel).next_converter = (*converter).next;
-	if ( ( num_read = (* (*converter).read_func ) (channel, buffer,
-						       length,
-						       &(*converter).info) )
+	old_converter = channel->next_converter;
+	channel->next_converter = converter->next;
+	if ( ( num_read = (*converter->read_func) (channel, buffer, length,
+						   &converter->info) )
 	    < length )
 	{
-	    (*channel).next_converter = (*channel).top_converter;
-	    (*channel).abs_write_pos += num_read;
+	    channel->next_converter = channel->top_converter;
+	    channel->abs_write_pos += num_read;
 	    return (num_read);
 	}
 	/*  Read converter has produced all data  */
-	if (converter == (*channel).top_converter)
+	if (converter == channel->top_converter)
 	{
-	    (*channel).abs_read_pos += num_read;
+	    channel->abs_read_pos += num_read;
 	}
-	(*channel).next_converter = old_converter;
+	channel->next_converter = old_converter;
 	return (num_read);
     }
 #endif
-    switch ( (*channel).type )
+    switch (channel->type)
     {
       case CHANNEL_TYPE_DISC:
 	num_read = ch_read_disc (channel, buffer, length);
@@ -1676,7 +1675,7 @@ unsigned int length;
 	a_prog_bug (function_name);
 	break;
     }
-    (*channel).abs_read_pos += num_read;
+    channel->abs_read_pos += num_read;
     return (num_read);
 }   /*  End Function ch_read  */
 
@@ -1694,8 +1693,7 @@ unsigned int length;
 {
     ChConverter converter, old_converter;
     unsigned int bytes_to_write, bytes_written;
-    unsigned int num_written;
-    ChannelTap tap;
+    unsigned int num_written = 0;  /*  Initialised to keep compiler happy  */
     static char function_name[] = "ch_write";
 
     VERIFY_CHANNEL (channel);
@@ -1705,13 +1703,13 @@ unsigned int length;
 	a_prog_bug (function_name);
     }
 #ifndef DISABLE_CONVERTERS
-    if ( ( converter = (*channel).next_converter ) != NULL )
+    if ( (converter = channel->next_converter) != NULL )
     {
 	/*  Pass it on to a write converter  */
 	char tmp_buf[CONV_BUF_SIZE];
 
-	old_converter = (*channel).next_converter;
-	(*channel).next_converter = (*converter).next;
+	old_converter = channel->next_converter;
+	channel->next_converter = converter->next;
 	for (num_written = 0; length > 0;
 	     length -= bytes_written, buffer += bytes_written,
 	     num_written += bytes_written)
@@ -1719,26 +1717,25 @@ unsigned int length;
 	    bytes_to_write = (length > CONV_BUF_SIZE) ? CONV_BUF_SIZE : length;
 	    m_copy (tmp_buf, buffer, bytes_to_write);
 	    if ( ( bytes_written =
-		  (* (*converter).write_func ) (channel, tmp_buf,
-						bytes_to_write,
-						&(*converter).info) )
+		  (*converter->write_func) (channel, tmp_buf, bytes_to_write,
+					    &converter->info) )
 		< bytes_to_write )
 	    {
-		(*channel).next_converter = (*channel).top_converter;
-		(*channel).abs_write_pos += num_written;
+		channel->next_converter = channel->top_converter;
+		channel->abs_write_pos += num_written;
 		return (num_written);
 	    }
 	}
 	/*  Write converter has consumed all data  */
-	if (converter == (*channel).top_converter)
+	if (converter == channel->top_converter)
 	{
-	    (*channel).abs_write_pos += num_written;
+	    channel->abs_write_pos += num_written;
 	}
-	(*channel).next_converter = old_converter;
+	channel->next_converter = old_converter;
 	return (num_written);
     }
 #endif
-    switch ( (*channel).type )
+    switch (channel->type)
     {
       case CHANNEL_TYPE_DISC:
       case CHANNEL_TYPE_CONNECTION:
@@ -1767,9 +1764,9 @@ unsigned int length;
 	a_prog_bug (function_name);
 	break;
     }
-    if ( (*channel).top_converter == NULL )
+    if (channel->top_converter == NULL)
     {
-	(*channel).abs_write_pos += num_written;
+	channel->abs_write_pos += num_written;
     }
     return (num_written);
 }   /*  End Function ch_write  */
@@ -1806,58 +1803,58 @@ flag ch_seek (Channel channel, unsigned long position)
 
     VERIFY_CHANNEL (channel);
 #ifndef DISABLE_CONVERTERS
-    if ( (*channel).top_converter != NULL )
+    if (channel->top_converter != NULL)
     {
 	(void) fprintf (stderr,
 			"Cannot seek channels with converter functions\n");
 	a_prog_bug (function_name);
     }
 #endif
-    switch ( (*channel).type )
+    switch (channel->type)
     {
       case CHANNEL_TYPE_DISC:
-	if ( (*channel).ch_errno > 0 ) return (FALSE);
+	if (channel->ch_errno > 0) return (FALSE);
 	if ( !ch_flush (channel) ) return (FALSE);
-	if ( (block_len = (*channel).read_buf_len) > 0 )
+	if ( (block_len = channel->read_buf_len) > 0 )
 	{
-	    if ( ( (*channel).write_buffer != NULL ) &&
-		(block_len != (*channel).write_buf_len) )
+	    if ( (channel->write_buffer != NULL) &&
+		(block_len != channel->write_buf_len) )
 	    {
 		(void) fprintf (stderr,
 				"Read buffer length: %u not equal to write ",
-				(*channel).read_buf_len);
+				channel->read_buf_len);
 		(void) fprintf (stderr, "buffer length: %u\n",
-				(*channel).write_buf_len);
+				channel->write_buf_len);
 		a_prog_bug (function_name);
 	    }
 	}
-	else block_len = (*channel).write_buf_len;
+	else block_len = channel->write_buf_len;
 	block_pos = position % block_len;
 	newpos = position - block_pos;
-	if (lseek ( (*channel).fd, newpos, SEEK_SET ) == -1) return (FALSE);
-	if ( (*channel).read_buffer != NULL )
+	if (lseek (channel->fd, newpos, SEEK_SET) == -1) return (FALSE);
+	if (channel->read_buffer != NULL)
 	{
-	    (*channel).read_buf_pos = 0;
-	    (*channel).bytes_read = 0;
-	    (*channel).abs_read_pos = newpos;
+	    channel->read_buf_pos = 0;
+	    channel->bytes_read = 0;
+	    channel->abs_read_pos = newpos;
 	    for (count = 0; count < block_pos; ++count)
 	    {
 		if ( !ch_read (channel, &dummy, 1) ) return (FALSE);
 	    }
-	    if (position != (*channel).abs_read_pos)
+	    if (position != channel->abs_read_pos)
 	    {
-		(void) fprintf (stderr, "Position missmatch: %u  and  %u\n",
-				position, (*channel).abs_read_pos);
+		(void) fprintf (stderr, "Position missmatch: %lu  and  %u\n",
+				position, channel->abs_read_pos);
 		a_prog_bug (function_name);
 	    }
 	}
-	if ( (*channel).write_buffer != NULL )
+	if (channel->write_buffer != NULL)
 	{
-	    (*channel).write_buf_pos = block_pos;
-	    (*channel).write_start_pos = block_pos;
-	    (*channel).abs_write_pos = position;
+	    channel->write_buf_pos = block_pos;
+	    channel->write_start_pos = block_pos;
+	    channel->abs_write_pos = position;
 	}
-	(*channel).ch_errno = 0;
+	channel->ch_errno = 0;
 	break;
       case CHANNEL_TYPE_CONNECTION:
 	(void) fprintf (stderr,
@@ -1876,15 +1873,15 @@ flag ch_seek (Channel channel, unsigned long position)
 	break;
       case CHANNEL_TYPE_MEMORY:
       case CHANNEL_TYPE_MMAP:
-	if (position > (*channel).mem_buf_len)
+	if (position > channel->mem_buf_len)
 	{
 	    /*  Illegal seek position  */
 	    return (FALSE);
 	}
-	(*channel).mem_buf_read_pos = position;
-	(*channel).mem_buf_write_pos = position;
-	(*channel).abs_read_pos = position;
-	(*channel).abs_write_pos = position;
+	channel->mem_buf_read_pos = position;
+	channel->mem_buf_write_pos = position;
+	channel->abs_read_pos = position;
+	channel->abs_write_pos = position;
 	break;
       case CHANNEL_TYPE_DOCK:
 	(void) fprintf (stderr,
@@ -1928,7 +1925,7 @@ Channel channel;
     static char function_name[] = "ch_get_bytes_readable";
 
     VERIFY_CHANNEL (channel);
-    switch ( (*channel).type )
+    switch (channel->type)
     {
       case CHANNEL_TYPE_DISC:
 	(void) fprintf (stderr,
@@ -1975,34 +1972,34 @@ Channel channel;
 	break;
 */
       default:
-	(void) fprintf (stderr, "Invalid channel type: %u\n", (*channel).type);
+	(void) fprintf (stderr, "Invalid channel type: %u\n", channel->type);
 	return (-1);
 /*
 	break;
 */
     }
-    if ( (*channel).ch_errno != 0 )
+    if (channel->ch_errno != 0)
     {
-	errno = (*channel).ch_errno;
+	errno = channel->ch_errno;
 	return (-1);
     }
 #ifndef DISABLE_CONVERTERS
-    for (converter = (*channel).top_converter, conv_bytes = 0;
+    for (converter = channel->top_converter, conv_bytes = 0;
 	 converter != NULL;
-	 converter = (*converter).next)
+	 converter = converter->next)
     {
 	/*  Call the close routine  */
-	(*channel).next_converter = (*converter).next;
-	conv_bytes += (* (*converter).size_func ) (channel,&(*converter).info);
+	channel->next_converter = converter->next;
+	conv_bytes += (*converter->size_func) (channel, &converter->info);
     }
-    (*channel).next_converter = (*channel).top_converter;
+    channel->next_converter = channel->top_converter;
 #endif
-    if ( ( bytes_available = r_get_bytes_readable ( (*channel).fd ) ) < 0 )
+    if ( ( bytes_available = r_get_bytes_readable (channel->fd) ) < 0 )
     {
-	(*channel).ch_errno = errno;
+	channel->ch_errno = errno;
 	return (-1);
     }
-    return (conv_bytes + (*channel).bytes_read - (*channel).read_buf_pos
+    return (conv_bytes + channel->bytes_read - channel->read_buf_pos
 	    + (unsigned int) bytes_available);
 }   /*  End Function ch_get_bytes_readable  */
 
@@ -2018,7 +2015,7 @@ Channel channel;
     static char function_name[] = "ch_get_descriptor";
 
     VERIFY_CHANNEL (channel);
-    return ( (*channel).fd );
+    return (channel->fd);
 }   /*  End Function ch_get_descriptor  */
 
 /*PUBLIC_FUNCTION*/
@@ -2043,20 +2040,20 @@ void ch_open_stdin ()
     {
 	m_abort (function_name, "ch_stdin");
     }
-    if ( ( (*ch_stdin).fd = r_open_stdin (&disc) ) < 0 )
+    if ( ( ch_stdin->fd = r_open_stdin (&disc) ) < 0 )
     {
 	(void) fprintf (stderr, "Error getting input descriptor\n");
 	exit (RV_UNDEF_ERROR);
     }
     /*  Allocate read buffer  */
-    if ( ( (*ch_stdin).read_buffer = m_alloc (CONNECTION_BUF_SIZE) )
+    if ( ( ch_stdin->read_buffer = m_alloc (CONNECTION_BUF_SIZE) )
 	== NULL )
     {
 	m_abort (function_name, "read buffer");
     }
-    (*ch_stdin).read_buf_len = CONNECTION_BUF_SIZE;
+    ch_stdin->read_buf_len = CONNECTION_BUF_SIZE;
     /*  Tag type  */
-    (*ch_stdin).type = (disc) ? CHANNEL_TYPE_DISC : CHANNEL_TYPE_CHARACTER;
+    ch_stdin->type = (disc) ? CHANNEL_TYPE_DISC : CHANNEL_TYPE_CHARACTER;
 }   /*  End Function ch_open_stdin  */
 
 /*PUBLIC_FUNCTION*/
@@ -2075,7 +2072,7 @@ Channel channel;
     static char function_name[] = "ch_test_for_io";
 
     VERIFY_CHANNEL (channel);
-    switch ( (*channel).type )
+    switch (channel->type)
     {
       case CHANNEL_TYPE_DOCK:
       case CHANNEL_TYPE_ASYNCHRONOUS:
@@ -2104,7 +2101,7 @@ Channel channel;
     static char function_name[] = "ch_test_for_asynchronous";
 
     VERIFY_CHANNEL (channel);
-    switch ( (*channel).type )
+    switch (channel->type)
     {
       case CHANNEL_TYPE_CONNECTION:
       case CHANNEL_TYPE_DOCK:
@@ -2132,7 +2129,7 @@ Channel channel;
     static char function_name[] = "ch_test_for_connection";
 
     VERIFY_CHANNEL (channel);
-    if ( (*channel).type == CHANNEL_TYPE_CONNECTION )
+    if (channel->type == CHANNEL_TYPE_CONNECTION)
     {
 	return (TRUE);
     }
@@ -2155,11 +2152,11 @@ Channel channel;
     static char function_name[] = "ch_test_for_local_connection";
 
     VERIFY_CHANNEL (channel);
-    if ( (*channel).type != CHANNEL_TYPE_CONNECTION )
+    if (channel->type != CHANNEL_TYPE_CONNECTION)
     {
 	return (FALSE);
     }
-    return ( (*channel).local );
+    return (channel->local);
 }   /*  End Function ch_test_for_local_connection  */
 
 /*PUBLIC_FUNCTION*/
@@ -2171,15 +2168,17 @@ Channel ch_attach_to_asynchronous_descriptor (fd)
 int fd;
 {
     Channel channel;
+/*
     static char function_name[] = "ch_attach_to_asynchronous_descriptor";
+*/
 
     if ( ( channel = ch_alloc () ) == NULL )
     {
 	return (NULL);
     }
     /*  Set channel type  */
-    (*channel).type = CHANNEL_TYPE_ASYNCHRONOUS;
-    (*channel).fd = fd;
+    channel->type = CHANNEL_TYPE_ASYNCHRONOUS;
+    channel->fd = fd;
     return (channel);
 }   /*  End Function ch_attach_to_asynchronous_descriptor  */
 
@@ -2195,7 +2194,7 @@ Channel channel;
     static char function_name[] = "ch_test_for_mmap";
 
     VERIFY_CHANNEL (channel);
-    if ( (*channel).type == CHANNEL_TYPE_MMAP )
+    if (channel->type == CHANNEL_TYPE_MMAP)
     {
 	return (TRUE);
     }
@@ -2222,7 +2221,7 @@ unsigned long *write_pos;
     static char function_name[] = "ch_tell";
 
     VERIFY_CHANNEL (channel);
-    switch ( (*channel).type )
+    switch (channel->type)
     {
       case CHANNEL_TYPE_DISC:
       case CHANNEL_TYPE_MEMORY:
@@ -2231,8 +2230,8 @@ unsigned long *write_pos;
       case CHANNEL_TYPE_CHARACTER:
       case CHANNEL_TYPE_FIFO:
       case CHANNEL_TYPE_SINK:
-	*read_pos = (*channel).abs_read_pos;
-	*write_pos = (*channel).abs_write_pos;
+	*read_pos = channel->abs_read_pos;
+	*write_pos = channel->abs_write_pos;
 	break;
       case CHANNEL_TYPE_DOCK:
 	(void) fprintf (stderr,
@@ -2265,13 +2264,13 @@ Channel channel;
     static char function_name[] = "ch_get_mmap_addr";
 
     VERIFY_CHANNEL (channel);
-    if ( (*channel).type != CHANNEL_TYPE_MMAP )
+    if (channel->type != CHANNEL_TYPE_MMAP)
     {
 	(void) fprintf (stderr, "Channel is not a memory mapped disc file\n");
 	a_prog_bug (function_name);
     }
-    ++(*channel).mmap_access_count;
-    return ( (*channel).memory_buffer );
+    ++channel->mmap_access_count;
+    return (channel->memory_buffer);
 }   /*  End Function ch_get_mmap_addr  */
 
 /*PUBLIC_FUNCTION*/
@@ -2287,12 +2286,12 @@ Channel channel;
     static char function_name[] = "ch_get_mmap_access_count";
 
     VERIFY_CHANNEL (channel);
-    if ( (*channel).type != CHANNEL_TYPE_MMAP )
+    if (channel->type != CHANNEL_TYPE_MMAP)
     {
 	(void) fprintf (stderr, "Channel is not a memory mapped disc file\n");
 	a_prog_bug (function_name);
     }
-    return ( (*channel).mmap_access_count );
+    return (channel->mmap_access_count);
 }   /*  End Function ch_get_mmap_access_count  */
 
 /*PUBLIC_FUNCTION*/
@@ -2435,7 +2434,7 @@ void *info;
     a_prog_bug (function_name);
     return (NULL);
 #else
-    switch ( (*channel).type )
+    switch (channel->type)
     {
       case CHANNEL_TYPE_DISC:
       case CHANNEL_TYPE_CONNECTION:
@@ -2483,22 +2482,22 @@ void *info;
 	m_error_notify (function_name, "converter structure");
 	return (NULL);
     }
-    (*new).magic_number = CONVERTER_MAGIC_NUMBER;
-    (*new).channel = channel;
-    (*new).size_func = size_func;
-    (*new).read_func = read_func;
-    (*new).write_func = write_func;
-    (*new).flush_func = flush_func;
-    (*new).close_func = close_func;
-    (*new).info = info;
-    (*new).prev = NULL;
-    (*new).next = (*channel).top_converter;
-    if ( (*channel).top_converter != NULL )
+    new->magic_number = CONVERTER_MAGIC_NUMBER;
+    new->channel = channel;
+    new->size_func = size_func;
+    new->read_func = read_func;
+    new->write_func = write_func;
+    new->flush_func = flush_func;
+    new->close_func = close_func;
+    new->info = info;
+    new->prev = NULL;
+    new->next = channel->top_converter;
+    if (channel->top_converter != NULL)
     {
-	(* (*channel).top_converter ).prev = new;
+	channel->top_converter->prev = new;
     }
-    (*channel).top_converter = new;
-    (*channel).next_converter = (*channel).top_converter;
+    channel->top_converter = new;
+    channel->next_converter = channel->top_converter;
     return (new);
 #endif  /*  DISABLE_CONVERTERS  */
 }   /*  End Function ch_register_converter  */
@@ -2527,41 +2526,41 @@ ChConverter converter;
 	(void) fprintf (stderr, "NULL converter passed\n");
 	a_prog_bug (function_name);
     }
-    if ( (*converter).magic_number != CONVERTER_MAGIC_NUMBER )
+    if (converter->magic_number != CONVERTER_MAGIC_NUMBER)
     {
 	(void) fprintf (stderr, "Invalid converter object\n");
 	a_prog_bug (function_name);
     }
-    channel = (*converter).channel;
+    channel = converter->channel;
     /*  Preserve the stack  */
-    old_converter = (*channel).next_converter;
+    old_converter = channel->next_converter;
     /*  Call flush and close functions  */
-    (*channel).next_converter = (*converter).next;
-    (void) (* (*converter).flush_func ) (channel, &(*converter).info);
-    if ( (*converter).close_func != NULL )
+    channel->next_converter = converter->next;
+    (void) (*converter->flush_func) (channel, &converter->info);
+    if (converter->close_func != NULL)
     {
-	(* (*converter).close_func ) ( (*converter).info );
+	(*converter->close_func) (converter->info);
     }
     /*  Restore the stack  */
-    (*channel).next_converter = old_converter;
+    channel->next_converter = old_converter;
     /*  Unlink from list  */
-    if ( (*converter).prev != NULL )
+    if (converter->prev != NULL)
     {
-	(* (*converter).prev ).next = (*converter).next;
+	converter->prev->next = converter->next;
     }
-    if ( (*converter).next != NULL )
+    if (converter->next != NULL)
     {
-	(* (*converter).next ).prev = (*converter).prev;
+	converter->next->prev = converter->prev;
     }
-    if (converter == (*channel).next_converter)
+    if (converter == channel->next_converter)
     {
-	(*channel).next_converter = (*converter).next;
+	channel->next_converter = converter->next;
     }
-    if (converter == (*channel).top_converter)
+    if (converter == channel->top_converter)
     {
-	(*channel).top_converter = (*converter).next;
+	channel->top_converter = converter->next;
     }
-    (*converter).magic_number = 0;
+    converter->magic_number = 0;
     m_free ( (char *) converter );
 #endif  /*  DISABLE_CONVERTERS  */
 }   /*  End Function ch_unregister_converter  */
@@ -2581,7 +2580,6 @@ Channel *read_ch;
 Channel *write_ch;
 {
     Channel rch, wch;
-    int retval;
     int read_fd;
     int write_fd;
     static char function_name[] = "ch_create_pipe";
@@ -2594,47 +2592,47 @@ Channel *write_ch;
 	(void) close (write_fd);
 	return (FALSE);
     }
-    (*rch).type = CHANNEL_TYPE_FIFO;
-    (*rch).fd = read_fd;
+    rch->type = CHANNEL_TYPE_FIFO;
+    rch->fd = read_fd;
     if ( ( wch = ch_alloc () ) == NULL )
     {
 	(void) ch_close (rch);
 	(void) close (write_fd);
 	return (FALSE);
     }
-    (*wch).type = CHANNEL_TYPE_FIFO;
-    (*wch).fd = write_fd;
+    wch->type = CHANNEL_TYPE_FIFO;
+    wch->fd = write_fd;
     /*  Read channel  */
     /*  Allocate read buffer  */
-    if ( ( (*rch).read_buffer = m_alloc (CONNECTION_BUF_SIZE) ) == NULL )
+    if ( ( rch->read_buffer = m_alloc (CONNECTION_BUF_SIZE) ) == NULL )
     {
 	m_error_notify (function_name, "read buffer");
 	(void) ch_close (rch);
 	(void) ch_close (wch);
 	return (FALSE);
     }
-    (*rch).read_buf_len = CONNECTION_BUF_SIZE;
-    (*rch).read_buf_pos = 0;
-    (*rch).bytes_read = 0;
-    (*rch).write_buffer = NULL;
-    (*rch).write_buf_len = 0;
-    (*rch).write_buf_pos = 0;
-    (*rch).write_start_pos = 0;
+    rch->read_buf_len = CONNECTION_BUF_SIZE;
+    rch->read_buf_pos = 0;
+    rch->bytes_read = 0;
+    rch->write_buffer = NULL;
+    rch->write_buf_len = 0;
+    rch->write_buf_pos = 0;
+    rch->write_start_pos = 0;
     /*  Write channel  */
-    (*wch).read_buffer = NULL;
-    (*wch).read_buf_len = 0;
-    (*wch).read_buf_pos = 0;
-    (*wch).bytes_read = 0;
+    wch->read_buffer = NULL;
+    wch->read_buf_len = 0;
+    wch->read_buf_pos = 0;
+    wch->bytes_read = 0;
     /*  Allocate write buffer  */
-    if ( ( (*wch).write_buffer = m_alloc (CONNECTION_BUF_SIZE) ) == NULL )
+    if ( ( wch->write_buffer = m_alloc (CONNECTION_BUF_SIZE) ) == NULL )
     {
 	m_error_notify (function_name, "write buffer");
 	(void) ch_close (rch);
 	(void) ch_close (wch);
 	return (FALSE);
     }
-    (*wch).write_buf_len = CONNECTION_BUF_SIZE;
-    (*wch).write_buf_pos = 0;
+    wch->write_buf_len = CONNECTION_BUF_SIZE;
+    wch->write_buf_pos = 0;
     *read_ch = rch;
     *write_ch = wch;
     return (TRUE);
@@ -2650,13 +2648,15 @@ Channel ch_create_sink ()
 */
 {
     Channel channel;
+/*
     static char function_name[] = "ch_create_sink";
+*/
 
     if ( ( channel = ch_alloc () ) == NULL )
     {
 	return (NULL);
     }
-    (*channel).type = CHANNEL_TYPE_SINK;
+    channel->type = CHANNEL_TYPE_SINK;
     return (channel);
 }   /*  End Function ch_create_sink  */
 

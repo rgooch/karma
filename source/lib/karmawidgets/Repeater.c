@@ -25,15 +25,21 @@
  * Modified:  Richard Gooch  rgooch@atnf.csiro.au  Disabled timer when widget
  *                                                 is set insensitive.
  * 
+ * Modified:  Richard Gooch  rgooch@atnf.csiro.au  Add timer before calling
+ *                                                 callbacks.
+ *
+ * Modified:  Richard Gooch  rgooch@atnf.csiro.au  Added enable_timer flag.
+ * 
  * This widget is used for press-and-hold style buttons.
  */
 
+#include <stdio.h>
 #include <X11/IntrinsicP.h>		/* for toolkit inheritance stuff */
 #include <X11/StringDefs.h>		/* for XtN and XtC defines */
 #include <X11/Xaw/XawInit.h>		/* for XawInitializeWidgetSet() */
 #include <Xkw/RepeaterP.h>		/* us */
 
-static void tic();			/* clock timeout */
+static void tic ();			/* clock timeout */
 
 #define DO_CALLBACK(rw) \
     XtCallCallbackList ((Widget) rw, rw->command.callbacks, NULL)
@@ -44,10 +50,14 @@ static void tic();			/* clock timeout */
 		   (unsigned long) delay, tic, (XtPointer) rw)
 
 #define CLEAR_TIMEOUT(rw) \
-  if ((rw)->repeater.timer) { \
-      XtRemoveTimeOut ((rw)->repeater.timer); \
-      (rw)->repeater.timer = 0; \
-  }
+{ \
+  (rw)->repeater.allow_timer = FALSE; \
+  if ((rw)->repeater.timer) \
+  { \
+    XtRemoveTimeOut ((rw)->repeater.timer); \
+    (rw)->repeater.timer = 0; \
+  } \
+}
 
 
 /*
@@ -84,7 +94,7 @@ static XtResource resources[] = {
 	off(minimum_delay), XtRImmediate, (XtPointer) REP_DEF_MINIMUM_DELAY },
     { XtNrepeatDelay, XtCDelay, XtRInt, sizeof (int),
 	off(repeat_delay), XtRImmediate, (XtPointer) REP_DEF_REPEAT_DELAY },
-    { XtNflash, XtCBoolean, XtRBoolean, sizeof (Boolean),
+    { XtNflash, XtCBoolean, XtRBool, sizeof (Bool),
 	off(flash), XtRImmediate, (XtPointer) FALSE },
     { XtNstartCallback, XtCStartCallback, XtRCallback, sizeof (XtPointer),
 	off(start_callbacks), XtRImmediate, (XtPointer) NULL },
@@ -161,12 +171,21 @@ WidgetClass repeaterWidgetClass = (WidgetClass) &repeaterClassRec;
  *****************************************************************************/
 
 /* ARGSUSED */
-static void tic (client_data, id)
-    XtPointer client_data;
-    XtIntervalId *id;
+static void tic (XtPointer client_data, XtIntervalId *id)
 {
     RepeaterWidget rw = (RepeaterWidget) client_data;
 
+    if (rw->repeater.timer == 0)
+    {
+	(void) fprintf (stderr, "RepeaterWiget::tic: no timer! Ignoring\n");
+	return;
+    }
+    if (!rw->repeater.allow_timer)
+    {
+	(void) fprintf (stderr,
+			"RepeaterWiget::tic: timer disabled! Ignoring\n");
+	return;
+    }
     rw->repeater.timer = 0;		/* timer is removed */
     if ( !XtIsSensitive ( (Widget) rw ) ) return;
     if (rw->repeater.flash) {
@@ -206,17 +225,16 @@ static void Initialize (greq, gnew)
 
     if (new->repeater.minimum_delay < 0) new->repeater.minimum_delay = 0;
     new->repeater.timer = (XtIntervalId) 0;
+    new->repeater.allow_timer = FALSE;
 }
 
-static void Destroy (gw)
-    Widget gw;
+static void Destroy (Widget gw)
 {
     CLEAR_TIMEOUT ((RepeaterWidget) gw);
 }
 
 /* ARGSUSED */
-static Boolean SetValues (gcur, greq, gnew)
-    Widget gcur, greq, gnew;
+static Boolean SetValues (Widget gcur, Widget greq, Widget gnew)
 {
     RepeaterWidget cur = (RepeaterWidget) gcur;
     RepeaterWidget new = (RepeaterWidget) gnew;
@@ -227,7 +245,11 @@ static Boolean SetValues (gcur, greq, gnew)
 	if (new->repeater.next_delay < new->repeater.minimum_delay) 
 	  new->repeater.next_delay = new->repeater.minimum_delay;
     }
-    if ( !XtIsSensitive (gnew) ) CLEAR_TIMEOUT (new);
+    if ( !XtIsSensitive (gnew) )
+    {
+	CLEAR_TIMEOUT (new);
+	new->repeater.timer = 0;
+    }
     return redisplay;
 }
 
@@ -247,12 +269,20 @@ static void ActionStart (gw, event, params, num_params)
     RepeaterWidget rw = (RepeaterWidget) gw;
 
     CLEAR_TIMEOUT (rw);
+    /*  Set allow_timer flag *before* calling callbacks, since in the callbacks
+	the widget may be set insensitive, and hence the flag will be cleared
+	again. The timer used to be added before calling the callbacks, but
+	then I sometimes got multiple callbacks when the callbacks took longer
+	than the initial timer delay.  */
+    rw->repeater.allow_timer = TRUE;
     if (rw->repeater.start_callbacks) 
-      XtCallCallbackList (gw, rw->repeater.start_callbacks, NULL);
-
+        XtCallCallbackList (gw, rw->repeater.start_callbacks, NULL);
     DO_CALLBACK (rw);
-    rw->repeater.timer = ADD_TIMEOUT (rw, rw->repeater.initial_delay);
-    rw->repeater.next_delay = rw->repeater.repeat_delay;
+    if (rw->repeater.allow_timer)
+    {
+	rw->repeater.timer = ADD_TIMEOUT (rw, rw->repeater.initial_delay);
+	rw->repeater.next_delay = rw->repeater.repeat_delay;
+    }
 }
 
 

@@ -1,0 +1,46 @@
+version = $(KARMA_VERSION)
+
+library = $(KARMALIBPATH)/lib$(LIB).a
+shared_lib = lib$(LIB).so.$(version)
+shared_target = $(KARMALIBPATH)/$(shared_lib)
+shared_archive = $(KARMALIBPATH)/lib$(LIB).sa.$(version)
+lintlib = $(KARMALIBPATH)/llib-l$(LIB).ln
+
+.PRECIOUS: $(library)
+
+CEXTRAS = $(CFLAGS)
+
+include $(KARMAROOT)/source/lib/makefiles/GNUmakefile.h1
+
+.PHONY: all
+all:	$(shared_target) clean
+
+
+$(library):	$(members)
+	ranlib $(library)
+
+
+$(shared_target):	$(objects) $(csource)
+	ld -o $(shared_lib) -assert pure-text $(objects)
+	mv $(shared_lib) $(KARMALIBPATH)
+
+
+$(shared_archive):	$(samembers)
+	ranlib $(shared_archive)
+
+
+lint:	$(lintlib)
+
+$(lintlib):	$(csource)
+	(cd $(libdir) ; make_lint)
+	(cd .. ; lint -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) -C$(LIB) $(lintdir)/*.c)
+
+
+clean:
+	\rm -f *~ *.bak
+
+
+depend:
+	(cd $(sourcedir); makedepend -DMAKEDEPEND -D__$(MACHINE)__ -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) $(DEPENDFLAGS) -f$(builddir)/dependfile $(csource) )
+
+include dependfile

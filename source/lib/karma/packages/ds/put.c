@@ -1,10 +1,9 @@
 /*LINTLIBRARY*/
-/*MISALIGNED*/
 /*  put.c
 
     This code provides routines to put data into Karma data structures.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -50,7 +49,16 @@
     Updated by      Richard Gooch   4-NOV-1993: Used automatic variable for
   TOOBIG value to improve speed.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/ds/put.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/ds/put.c
+
+    Updated by      Richard Gooch   19-APR-1995: Cleaned some code.
+
+    Updated by      Richard Gooch   5-JUN-1995: Added code to cope with
+  misaligned data accesses on sensitive platforms.
+
+    Last updated by Richard Gooch   9-JUN-1995: Explicitly declared integer
+  data types to be signed: crayPVP does not have compile switch to treat all
+  "char" types as signed.
 
 
 */
@@ -60,115 +68,142 @@
 #include <karma_ds.h>
 #include <karma_m.h>
 #include <karma_a.h>
+#include <os.h>
 
 
 /*PUBLIC_FUNCTION*/
 char *ds_put_element (output, type, input)
-/*  This routine will write out an element of data to the storage pointed to by
-    output  .
-    The type of the element must be in  type  .
-    The input data must be pointed to by  input  .
-    The routine returns the address of the next element on success, else it
-    returns NULL.
+/*  [PURPOSE] This routine will write out an element of data.
+    <output> A pointer to the output storage.
+    <type> The type of the element to be written.
+    <input> The input data.
+    [RETURNS] The address of the next element on success, else NULL.
 */
 char *output;
 unsigned int type;
 double *input;
 {
+    int datum_size;
     double toobig = TOOBIG;
+    char *out_ptr;
     extern char host_type_sizes[NUMTYPES];
+#ifdef NEED_ALIGNED_DATA
+    int count;
+    double buf[2];
+#endif
     static char function_name[] = "ds_put_element";
 
     if ( (output == NULL) || (input == NULL) )
     {
 	return (NULL);
     }
-    /*  Convert value back into type of primary array  */
+    datum_size = host_type_sizes[type];
+#ifdef NEED_ALIGNED_DATA
+    if ( (iaddr) output % datum_size != 0 )
+    {
+	/*  Data is not aligned  */
+	out_ptr = (char *) buf;
+    }
+    else
+    {
+	out_ptr = output;
+    }
+#else
+    out_ptr = output;
+#endif
+    /*  Convert value back into specific type  */
     switch (type)
     {
       case K_FLOAT:
-	*(float *) output = input[0];
+	*(float *) out_ptr = input[0];
 	break;
       case K_DOUBLE:
-	*(double *) output = input[0];
+	*(double *) out_ptr = input[0];
 	break;
       case K_BYTE:
 	if (input[0] >= toobig)
 	{
-	    *output = -128;
+	    *(signed char *) out_ptr = -128;
 	}
 	else
 	{
-	    *output = input[0];
+	    *(signed char *) out_ptr = input[0];
 	}
 	break;
       case K_INT:
-	*(int *) output = input[0];
+	*(signed int *) out_ptr = input[0];
 	break;
       case K_SHORT:
-	*(short *) output = input[0];
+	*(signed short *) out_ptr = input[0];
 	break;
       case K_COMPLEX:
-	*(float *) output = input[0];
-	*( (float *) output + 1 ) = input[1];
+	*(float *) out_ptr = input[0];
+	*( (float *) out_ptr + 1 ) = input[1];
 	break;
       case K_DCOMPLEX:
-	*(double *) output = input[0];
-	*( (double *) output + 1 ) = input[1];
+	*(double *) out_ptr = input[0];
+	*( (double *) out_ptr + 1 ) = input[1];
 	break;
       case K_BCOMPLEX:
-	*output = input[0];
-	*(output + 1) = input[1];
+	*(signed char *) out_ptr = input[0];
+	*( (signed char *) out_ptr + 1 ) = input[1];
 	break;
       case K_ICOMPLEX:
-	*(int *) output = input[0];
-	*( (int *) output + 1 ) = input[1];
+	*(signed int *) out_ptr = input[0];
+	*( (signed int *) out_ptr + 1 ) = input[1];
 	break;
       case K_SCOMPLEX:
-	*(short *) output = input[0];
-	*( (short *) output + 1 ) = input[1];
+	*(signed short *) out_ptr = input[0];
+	*( (signed short *) out_ptr + 1 ) = input[1];
 	break;
       case K_LONG:
-	*(long *) output = input[0];
+	*(signed long *) out_ptr = input[0];
 	break;
       case K_LCOMPLEX:
-	*(long *) output = input[0];
-	*( (long *) output + 1 ) = input[1];
+	*(signed long *) out_ptr = input[0];
+	*( (signed long *) out_ptr + 1 ) = input[1];
 	break;
       case K_UBYTE:
-	*(unsigned char *) output = input[0];
+	*(unsigned char *) out_ptr = input[0];
 	break;
       case K_UINT:
-	*(unsigned int *) output = input[0];
+	*(unsigned int *) out_ptr = input[0];
 	break;
       case K_USHORT:
-	*(unsigned short *) output = input[0];
+	*(unsigned short *) out_ptr = input[0];
 	break;
       case K_ULONG:
-	*(unsigned long *) output = input[0];
+	*(unsigned long *) out_ptr = input[0];
 	break;
       case K_UBCOMPLEX:
-	*(unsigned char *) output = input[0];
-	*( (unsigned char *) output + 1 ) = input[1];
+	*(unsigned char *) out_ptr = input[0];
+	*( (unsigned char *) out_ptr + 1 ) = input[1];
 	break;
       case K_UICOMPLEX:
-	*(unsigned int *) output = input[0];
-	*( (unsigned int *) output + 1 ) = input[1];
+	*(unsigned int *) out_ptr = input[0];
+	*( (unsigned int *) out_ptr + 1 ) = input[1];
 	break;
       case K_USCOMPLEX:
-	*(unsigned short *) output = input[0];
-	*( (unsigned short *) output + 1 ) = input[1];
+	*(unsigned short *) out_ptr = input[0];
+	*( (unsigned short *) out_ptr + 1 ) = input[1];
 	break;
       case K_ULCOMPLEX:
-	*(unsigned long *) output = input[0];
-	*( (unsigned long *) output + 1 ) = input[1];
+	*(unsigned long *) out_ptr = input[0];
+	*( (unsigned long *) out_ptr + 1 ) = input[1];
 	break;
       default:
 	(void) fprintf (stderr, "Illegal data type: %u\n", type);
 	a_prog_bug (function_name);
 	break;
     }
-    return (output + host_type_sizes[type]);
+#ifdef NEED_ALIGNED_DATA
+    if (out_ptr != output)
+    {
+	for (count = 0; count < datum_size; ++count)
+	output[count] = out_ptr[count];
+    }
+#endif
+    return (output + datum_size);
 }   /*  End Function ds_put_element  */
 
 /*PUBLIC_FUNCTION*/
@@ -190,8 +225,11 @@ unsigned int data_stride;
 double *values;
 unsigned int num_values;
 {
-    unsigned int data_count;
+    unsigned int count;
     double toobig = TOOBIG;
+#ifdef NEED_ALIGNED_DATA
+    extern char host_type_sizes[NUMTYPES];
+#endif
     static char function_name[] = "ds_put_elements";
 
     if (data == NULL)
@@ -204,6 +242,19 @@ unsigned int num_values;
 	(void) fprintf (stderr, "NULL values storage pointer passed\n");
 	a_prog_bug (function_name);
     }
+#ifdef NEED_ALIGNED_DATA
+    if ( ( (iaddr) data % host_type_sizes[data_type] != 0 ) ||
+	( (iaddr) data_stride % host_type_sizes[data_type] != 0 ) )
+    {
+	/*  Not all data is aligned  */
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride, values += 2)
+	{
+	    if (ds_put_element (data, data_type, values) == NULL )return FALSE;
+	}
+	return (TRUE);
+    }
+#endif
     switch (data_type)
     {
       case NONE:
@@ -217,157 +268,151 @@ unsigned int num_values;
 	break;
 */
       case K_FLOAT:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride, values += 2)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride, values += 2)
 	{
 	    *(float *) data = *values;
 	}
 	break;
       case K_DOUBLE:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride, values += 2)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride, values += 2)
 	{
 	    *(double *) data = *values;
 	}
 	break;
       case K_BYTE:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride, values += 2)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride, values += 2)
 	{
-	    if (*values >= toobig)
-	    {
-		*(char *) data = -128;
-	    }
-	    else
-	    {
-		*(char *) data = *values;
-	    }
+	    if (*values >= toobig) *(signed char *) data = -128;
+	    else *(signed char *) data = *values;
 	}
 	break;
       case K_INT:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride, values += 2)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride, values += 2)
 	{
-	    *(int *) data = *values;
+	    *(signed int *) data = *values;
 	}
 	break;
       case K_SHORT:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride, values += 2)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride, values += 2)
 	{
-	    *(short *) data = *values;
+	    *(signed short *) data = *values;
 	}
 	break;
       case K_COMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride)
 	{
 	    *(float *) data = *values++;
 	    *( (float *) data + 1 ) = *values++;
 	}
 	break;
       case K_DCOMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride)
 	{
 	    *(double *) data = *values++;
 	    *( (double *) data + 1 ) = *values++;
 	}
 	break;
       case K_BCOMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride)
 	{
-	    *(char *) data = *values++;
-	    *( (char *) data + 1 ) = *values++;
+	    *(signed char *) data = *values++;
+	    *( (signed char *) data + 1 ) = *values++;
 	}
 	break;
       case K_ICOMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride)
 	{
-	    *(int *) data = *values++;
-	    *( (int *) data + 1 ) = *values++;
+	    *(signed int *) data = *values++;
+	    *( (signed int *) data + 1 ) = *values++;
 	}
 	break;
       case K_SCOMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride)
 	{
-	    *(short *) data = *values++;
-	    *( (short *) data + 1 ) = *values++;
+	    *(signed short *) data = *values++;
+	    *( (signed short *) data + 1 ) = *values++;
 	}
 	break;
       case K_LONG:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride, values += 2)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride, values += 2)
 	{
-	    *(long *) data = *values;
+	    *(signed long *) data = *values;
 	}
 	break;
       case K_LCOMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride)
 	{
-	    *(long *) data = *values++;
-	    *( (long *) data + 1 ) = *values++;
+	    *(signed long *) data = *values++;
+	    *( (signed long *) data + 1 ) = *values++;
 	}
 	break;
       case K_UBYTE:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride, values += 2)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride, values += 2)
 	{
 	    *(unsigned char *) data = *values;
 	}
 	break;
       case K_UINT:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride, values += 2)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride, values += 2)
 	{
 	    *(unsigned int *) data = *values;
 	}
 	break;
       case K_USHORT:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride, values += 2)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride, values += 2)
 	{
 	    *(unsigned short *) data = *values;
 	}
 	break;
       case K_ULONG:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride, values += 2)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride, values += 2)
 	{
 	    *(unsigned long *) data = *values;
 	}
 	break;
       case K_UBCOMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride)
 	{
 	    *(unsigned char *) data = *values++;
 	    *( (unsigned char *) data + 1 ) = *values++;
 	}
 	break;
       case K_UICOMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride)
 	{
 	    *(unsigned int *) data = *values++;
 	    *( (unsigned int *) data + 1 ) = *values++;
 	}
 	break;
       case K_USCOMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride)
 	{
 	    *(unsigned short *) data = *values++;
 	    *( (unsigned short *) data + 1 ) = *values++;
 	}
 	break;
       case K_ULCOMPLEX:
-	for (data_count = 0; data_count < num_values;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_values;
+	     ++count, data += data_stride)
 	{
 	    *(unsigned long *) data = *values++;
 	    *( (unsigned long *) data + 1 ) = *values++;
@@ -401,14 +446,17 @@ unsigned int data_stride;
 double *value;
 unsigned int num_elem;
 {
-    int sir, sii;
-    long slr, sli;
+    signed int sir, sii;
+    signed long slr, sli;
     unsigned int uir, uii;
     unsigned long ulr, uli;
-    unsigned int data_count;
+    unsigned int count;
     float fr, fi;
     double dr, di;
     double toobig = TOOBIG;
+#ifdef NEED_ALIGNED_DATA
+    extern char host_type_sizes[NUMTYPES];
+#endif
     static char function_name[] = "ds_put_element_many_times";
 
     if (data == NULL)
@@ -423,6 +471,18 @@ unsigned int num_elem;
 	a_prog_bug (function_name);
 	return (FALSE);
     }
+#ifdef NEED_ALIGNED_DATA
+    if ( ( (iaddr) data % host_type_sizes[data_type] != 0 ) ||
+	( (iaddr) data_stride % host_type_sizes[data_type] != 0 ) )
+    {
+	/*  Not all data is aligned  */
+	for (count = 0; count < num_elem; ++count, data += data_stride)
+	{
+	    if (ds_put_element (data, data_type, value) == NULL ) return FALSE;
+	}
+	return (TRUE);
+    }
+#endif
     switch (data_type)
     {
       case NONE:
@@ -437,56 +497,44 @@ unsigned int num_elem;
 */
       case K_FLOAT:
 	fr = *value;
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
 	    *(float *) data = fr;
 	}
 	break;
       case K_DOUBLE:
 	dr = *value;
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
 	    *(double *) data = dr;
 	}
 	break;
       case K_BYTE:
-	if (*value >= toobig)
+	if (*value >= toobig) sir = -128;
+	else sir = *value;
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
-	    sir = -128;
-	}
-	else
-	{
-	    sir = *value;
-	}
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
-	{
-	    *(char *) data = sir;
+	    *(signed char *) data = sir;
 	}
 	break;
       case K_INT:
 	sir = *value;
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
-	    *(int *) data = sir;
+	    *(signed int *) data = sir;
 	}
 	break;
       case K_SHORT:
 	sir = *value;
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
-	    *(short *) data = sir;
+	    *(signed short *) data = sir;
 	}
 	break;
       case K_COMPLEX:
 	fr = value[0];
 	fi = value[1];
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
 	    *(float *) data = fr;
 	    *( (float *) data + 1 ) = fi;
@@ -495,8 +543,7 @@ unsigned int num_elem;
       case K_DCOMPLEX:
 	dr = value[0];
 	di = value[1];
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
 	    *(double *) data = dr;
 	    *( (double *) data + 1 ) = di;
@@ -505,79 +552,70 @@ unsigned int num_elem;
       case K_BCOMPLEX:
 	sir = value[0];
 	sii = value[1];
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
-	    *(char *) data = sir;
-	    *( (char *) data + 1 ) = sii;
+	    *(signed char *) data = sir;
+	    *( (signed char *) data + 1 ) = sii;
 	}
 	break;
       case K_ICOMPLEX:
 	sir = value[0];
 	sii = value[1];
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
-	    *(int *) data = sir;
-	    *( (int *) data + 1 ) = sii;
+	    *(signed int *) data = sir;
+	    *( (signed int *) data + 1 ) = sii;
 	}
 	break;
       case K_SCOMPLEX:
 	sir = value[0];
 	sii = value[1];
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
-	    *(short *) data = sir;
-	    *( (short *) data + 1 ) = sii;
+	    *(signed short *) data = sir;
+	    *( (signed short *) data + 1 ) = sii;
 	}
 	break;
       case K_LONG:
 	slr = value[0];
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
-	    *(long *) data = slr;
+	    *(signed long *) data = slr;
 	}
 	break;
       case K_LCOMPLEX:
 	slr = value[0];
 	sli = value[1];
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
-	    *(long *) data = slr;
-	    *( (long *) data + 1 ) = sli;
+	    *(signed long *) data = slr;
+	    *( (signed long *) data + 1 ) = sli;
 	}
 	break;
       case K_UBYTE:
 	uir = *value;
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
 	    *(unsigned char *) data = uir;
 	}
 	break;
       case K_UINT:
 	uir = *value;
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
 	    *(unsigned int *) data = uir;
 	}
 	break;
       case K_USHORT:
 	uir = *value;
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
 	    *(unsigned short *) data = uir;
 	}
 	break;
       case K_ULONG:
 	ulr = *value;
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
 	    *(unsigned long *) data = ulr;
 	}
@@ -585,8 +623,7 @@ unsigned int num_elem;
       case K_UBCOMPLEX:
 	uir = value[0];
 	uii = value[1];
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
 	    *(unsigned char *) data = uir;
 	    *( (unsigned char *) data + 1 ) = uii;
@@ -595,8 +632,7 @@ unsigned int num_elem;
       case K_UICOMPLEX:
 	uir = value[0];
 	uii = value[1];
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
 	    *(unsigned int *) data = uir;
 	    *( (unsigned int *) data + 1 ) = uii;
@@ -605,8 +641,7 @@ unsigned int num_elem;
       case K_USCOMPLEX:
 	uir = value[0];
 	uii = value[1];
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
 	    *(unsigned short *) data = uir;
 	    *( (unsigned short *) data + 1 ) = uii;
@@ -615,8 +650,7 @@ unsigned int num_elem;
       case K_ULCOMPLEX:
 	ulr = value[0];
 	uli = value[1];
-	for (data_count = 0; data_count < num_elem;
-	     ++data_count, data += data_stride)
+	for (count = 0; count < num_elem; ++count, data += data_stride)
 	{
 	    *(unsigned long *) data = ulr;
 	    *( (unsigned long *) data + 1 ) = uli;
@@ -647,18 +681,19 @@ CONST char *name;
 double *value;
 {
     unsigned int elem_index;
-    static char function_name[] = "ds_put_named_element";
 
     /*  Test to see if named item exists  */
     if ( ( elem_index = ds_f_elem_in_packet (pack_desc, name) )
-	>= (*pack_desc).num_elements )
+	>= pack_desc->num_elements )
     {
 	(void) fprintf (stderr, "Element: \"%s\" not found\n", name);
 	return (FALSE);
     }
     /*  Write in new data  */
-    (void) ds_put_element (packet + ds_get_element_offset (pack_desc,
-							   elem_index),
-			   (*pack_desc).element_types[elem_index], value);
+    if (ds_put_element (packet + ds_get_element_offset (pack_desc, elem_index),
+			pack_desc->element_types[elem_index], value) == NULL)
+    {
+	return (FALSE);
+    }
     return (TRUE);
 }   /*  End Function ds_put_named_element  */

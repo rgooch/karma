@@ -2,7 +2,7 @@
 
     Header for  xi_  package.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,18 +31,18 @@
 
     Written by      Richard Gooch   21-SEP-1992
 
-    Last updated by Richard Gooch   29-NOV-1993
+    Last updated by Richard Gooch   8-SEP-1995
 
 */
+
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
+#  include <karma.h>
+#endif
+#include <X11/Xlib.h>
 
 #ifndef KARMA_XI_H
 #define KARMA_XI_H
 
-
-#ifndef KARMA_H
-#  include <karma.h>
-#endif
-#include <X11/Xlib.h>
 
 /*  File:   xi.c   */
 EXTERN_FUNCTION (flag xi_check_shared_images_available, (Display *display) );
@@ -50,6 +50,9 @@ EXTERN_FUNCTION (XImage *xi_create_image, (Display *display, Window window,
 					   unsigned int image_width,
 					   unsigned int image_height,
 					   flag *share) );
+EXTERN_FUNCTION (XImage *xi_create_shm_image,
+		 (Display *display, Visual *visual, int depth,
+		  unsigned int width, unsigned int height, flag quiet) );
 EXTERN_FUNCTION (void xi_destroy_image, (Display *display, XImage *ximage,
 					 flag shared_memory) );
 EXTERN_FUNCTION (void xi_put_image, (Display *display, Drawable drawable,

@@ -38,11 +38,16 @@
 	If you have any suggestions for Karma, please mail them to:
   karma-suggestions@atnf.csiro.au
 
-	Karma is available on anonymous ftp from:  ftp.atnf.csiro.au
+	Karma is available for anonymous ftp from:  ftp.atnf.csiro.au
   under the  pub/software/karma  directory. Both the source code and binary
   distributions are kept here. The source code is available free of charge.
+  There is also a WWW page for the library:
+    http://wwwatnf.atnf.csiro.au/karma/
+  In addition, the ATNF visualisation software, which uses the Karma
+  library, also has a WWW page:
+    http://wwwatnf.atnf.csiro.au/Software/Analysis/visualisation/
 
-  The Karma World Wide Web page is:  http://www.atnf.csiro.au/karma/
+  The Karma World Wide Web page is:  http://wwwatnf.atnf.csiro.au/karma/
   This provides online access to the documentation and ftp site.
 
   You are urged to get the binary distribution if possible, as this will save
@@ -56,7 +61,7 @@
   for every platform.
 
 
-	Karma modules use the GNU General Public License, version 2 or later.
+  Karma modules use the GNU General Public License, version 2 or later.
   For the complete text of this license, please see the file
   doc/COPYING
 

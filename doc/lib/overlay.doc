@@ -7,9 +7,9 @@
     world canvases (see the  canvas_  package) is supplied automatically.
 
 
-    Written by		Richard Gooch	30-Nov-1994
+    Written by		Richard Gooch	29-Dec-1995
 
-    Last updated by	Richard Gooch	30-Nov-1994
+    Last updated by	Richard Gooch	29-Dec-1995
 
 
 */
@@ -96,18 +96,18 @@ unsigned int overlay_line (KOverlayList olist,
 unsigned int overlay_lines (KOverlayList olist, unsigned int num_coords,
 			    unsigned int *types, double *x_arr, double *y_arr,
 			    char *colourname)
-/*  This routine will add a number of connected lines to an overlay object list
-    These lines will form a single object. Using this routine is far more
-    efficient than calling  overlay_line  repeatedly.
-    The overlay list must be given by  olist  .
-    The number of co-ordinates must be given by  num_coords  .The number of
-    lines is one less than this value.
-    The co-ordinate types must be pointed to by  types  .If this is
-    NULL, all co-ordinates are assumed to be world co-ordinates.
-    The horizontal co-ordinate values must be pointed to by  x_arr  .
-    The vertical co-ordinate values must be pointed to by  y_arr  .
-    The colourname must be pointed to by  colourname  .
-    The routine returns the objectID on success, else it returns 0.
+/*  [PURPOSE] This routine will add a number of connected lines to an overlay
+    object list. These lines will form a single object. Using this routine is
+    far more efficient than calling <<overlay_line>> repeatedly.
+    <olist> The overlay list.
+    <num_coords> The number of co-ordinates. The number of lines is one less
+    than this value.
+    <types> An array of co-ordinate types. If this is NULL, all co-ordinates
+    are assumed to be world co-ordinates.
+    <x_arr> The horizontal co-ordinate values.
+    <y_arr> The vertical co-ordinate values.
+    <colourname> The colourname.
+    [RETURNS] The objectID on success, else 0.
 */
 /*---------------------------------------------------------------------------*/
 

@@ -11,18 +11,18 @@
 typedef struct _CmapwinPart
 {
     /*  Public resources  */
-    XtCallbackList colourCallback;
-    Boolean regenerateColourmap;
-    Kcolourmap dcm;
+    XtCallbackList  colourCallback;
+    Bool            regenerateColourmap;
+    Kcolourmap      dcm;
     /*  Private resources  */
-    Widget selector;
-    Widget palette;
-    Widget twodthing;
-    Widget thecolour;
-    char **list;
-    double cmap_x;
-    double cmap_y;
-    int listcount;
+    Widget          selector;
+    Widget          palette;
+    Widget          twodthing;
+    Widget          thecolour;
+    char            **list;
+    double          cmap_x;
+    double          cmap_y;
+    int             listcount;
 } CmapwinPart, *CmapwinPartPtr;
 
 typedef struct _CmapwinRec

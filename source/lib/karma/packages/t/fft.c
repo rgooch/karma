@@ -43,6 +43,7 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <karma.h>
 #include <karma_t.h>
@@ -51,7 +52,9 @@
 /*  Public routines follow  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int t_c_to_c_1D_fft_float (real, imag, length, stride, direction)
+unsigned int t_c_to_c_1D_fft_float (float *real, float *imag,
+				    unsigned int length, unsigned int stride,
+				    int direction)
 /*  This routine will perform a complex to complex 1 dimensional FFT on an
     array of single precision complex data.
     The array of real components must be pointed to by  real  .
@@ -67,11 +70,6 @@ unsigned int t_c_to_c_1D_fft_float (real, imag, length, stride, direction)
     This routine has been pinched from Patrick Jordan, who pinched and modified
     the Numerical Recipes in C routine.
 */
-float *real;
-float *imag;
-unsigned int length;
-unsigned int stride;
-unsigned int direction;
 {
     int mmax,mmax2,m,j,i;
     int ind,length_on_mmax2,ii,jj;
@@ -110,7 +108,7 @@ unsigned int direction;
     {
 	int a,b;
 
-	if (first_time == TRUE)
+	if (first_time)
 	{
 	    first_time = FALSE;
 	    /*  Calculate 2 * PI  */
@@ -126,7 +124,7 @@ unsigned int direction;
 	}
 
 	/*  Check if length is a power of 2  */
-	if (t_check_power_of_2 (length) != TRUE)
+	if ( !t_check_power_of_2 (length) )
 	{
 	    /*  Not a power of 2  */
 	    return (KARMA_FFT_BAD_LENGTH);
@@ -251,8 +249,12 @@ unsigned int direction;
 }   /*  End Function t_c_to_c_1D_fft_float  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int t_c_to_c_many_1D_fft_float (real, imag, length, elem_stride,
-					 number, dim_stride, direction)
+unsigned int t_c_to_c_many_1D_fft_float (float *real, float *imag,
+					 unsigned int length,
+					 unsigned int elem_stride,
+					 unsigned int number,
+					 unsigned int dim_stride,
+					 int direction)
 /*  This routine will perform a number of complex to complex 1 dimensional FFTs
     on an array of single precision complex data.
     The array of real components must be pointed to by  real  .
@@ -272,13 +274,6 @@ unsigned int t_c_to_c_many_1D_fft_float (real, imag, length, elem_stride,
     This routine has been pinched from Patrick Jordan, who pinched and modified
     the Numerical Recipes in C routine.
 */
-float *real;
-float *imag;
-unsigned int length;
-unsigned int elem_stride;
-unsigned int number;
-unsigned int dim_stride;
-unsigned int direction;
 {
     int mmax,mmax2,m,j,i;
     int ind,length_on_mmax2,ii,jj;
@@ -324,7 +319,7 @@ unsigned int direction;
     {
 	int a,b;
 
-	if (first_time == TRUE)
+	if (first_time)
 	{
 	    first_time = FALSE;
 	    /*  Calculate 2 * PI  */
@@ -340,7 +335,7 @@ unsigned int direction;
 	}
 
 	/*  Check if length is a power of 2  */
-	if (t_check_power_of_2 (length) != TRUE)
+	if ( !t_check_power_of_2 (length) )
 	{
 	    /*  Not a power of 2  */
 	    return (KARMA_FFT_BAD_LENGTH);
@@ -482,22 +477,18 @@ unsigned int direction;
 }   /*  End Function t_c_to_c_many_1D_fft_float  */
 
 /*PUBLIC_FUNCTION*/
-flag t_check_power_of_2 (number)
+flag t_check_power_of_2 (unsigned int number)
 /*  This routine will check if a number is a power of 2.
     The number must be given by  number  .
     The routine returns TRUE if the number is a power of 2,
     else it returns FALSE.
 */
-unsigned int number;
 {
     unsigned int i;
     static flag prev_result = FALSE;
     static unsigned int prev_number = 0;
 
-    if (number == prev_number)
-    {
-	return (prev_result);
-    }
+    if (number == prev_number) return (prev_result);
     prev_number = number;
     for (i = 1; i < number; i *= 2);
     if (i == number)
@@ -514,8 +505,11 @@ unsigned int number;
 }   /*  End Function t_check_power_of_2  */
 
 /*PUBLIC_FUNCTION*/
-unsigned int t_r_to_c_many_1D_fft_float (a, length, elem_stride, number,
-					 dim_stride, direction)
+unsigned int t_r_to_c_many_1D_fft_float (float *a, unsigned int length,
+					 unsigned int elem_stride,
+					 unsigned int number,
+					 unsigned int dim_stride,
+					 int direction)
 /*  This routine will perform a real to complex or complex to real FFT.
     The array must be pointed to by  a  .
     The number of elements to transform must be given by  n  .
@@ -529,12 +523,6 @@ unsigned int t_r_to_c_many_1D_fft_float (a, length, elem_stride, number,
     The routine returns a value indicating the success / failure status of the
     transform.
 */
-float *a;
-unsigned int length;
-unsigned int elem_stride;
-unsigned int number;
-unsigned int dim_stride;
-unsigned int direction;
 {
     int i1,i2,i3,i4,count,err;
     float c1=0.5,c2=0.5,h1r,h1i,h2r,h2i;
@@ -542,7 +530,7 @@ unsigned int direction;
     int stride2=2*elem_stride;
     float *aa=a;
   
-    theta=PI/(float) length;
+    theta = PI / (float) length;
 
     if (direction == KARMA_FFT_FORWARD)
     {

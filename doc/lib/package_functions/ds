@@ -14,9 +14,10 @@ ds_easy_alloc_n_element_array
 ds_wrap_preallocated_n_element_array
 ds_easy_alloc_array_desc
 ds_alloc_contiguous_list
-ds_find_single_extremes
-ds_find_plane_extremes
+ds_find_1D_extremes
+ds_find_2D_extremes
 ds_find_single_histogram
+ds_complex_to_real_1D
 ds_put_unique_named_value
 ds_put_unique_named_string
 ds_get_unique_named_value
@@ -69,6 +70,8 @@ ds_get_elements
 ds_get_coordinate_array
 ds_element_is_complex
 ds_get_scattered_elements
+ds_can_transfer_element_as_block
+ds_can_transfer_packet_as_block
 ds_get_handle_in_packet
 ds_get_handle_in_array
 ds_get_handle_in_list

@@ -5,7 +5,7 @@ lintlib = ../llib-l$(LIB).ln
 
 .PRECIOUS: $(library)
 
-libdir = $(KARMAROOT)/source/lib/$(LIB)
+include $(KARMAROOT)/source/lib/makefiles/GNUmakefile.h1
 sourcedir = $(libdir)/master
 lintdir = $(libdir)/lint
 
@@ -14,7 +14,7 @@ vpath %.s $(sourcedir)/VXMVX
 
 vpath %.h $(KARMAINCLUDEPATH)
 
-CFLAGS = -O -I$(KARMAINCLUDEPATH)
+CFLAGS = $(KOPTIMISE) -I$(KARMAINCLUDEPATH) -DFVERSION="$(KARMA_FVERSION)"
 
 .c.o :
 	vxcc -DOS_VXMVX -DMACHINE_i860 $(CFLAGS) -c $(sourcedir)/$*.c
@@ -50,6 +50,6 @@ clean:
 
 
 depend:
-	makedepend -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) -I$(VXHOME)/include -fGNUmakefile -p$(library)"(" -o'.o)' $(cs)
+	(cd $(sourcedir); makedepend -DMAKEDEPEND -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) -I$(VXHOME)/include -fdependfile -p$(library)"(" -o'.o)' $(cs)
 
-# DO NOT DELETE THIS LINE -- make depend depends on it.
+include dependfile

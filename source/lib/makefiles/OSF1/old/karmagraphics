@@ -1,0 +1,43 @@
+LIB = karmagraphics
+
+library = ../lib$(LIB).a
+shared_lib = lib$(LIB).so
+lintlib = ../llib-l$(LIB).ln
+shared_target = $(KARMALIBPATH)/$(shared_lib)
+
+.PRECIOUS: $(library)
+
+CFLAGS = -DX11 -I$(XINCLUDEPATH)
+
+include $(KARMAROOT)/source/lib/makefiles/GNUmakefile.h1
+
+.PHONY: all
+all:	$(shared_target) clean
+
+
+$(library):	$(members)
+	ranlib $(library)
+
+
+$(shared_target):	$(objects) $(csource) ../so_locations
+	ld -shared -VS $(KARMA_VERSION) -check_registry ../so_locations \
+	-update_registry ../so_locations -o $(shared_lib) -all $(objects) \
+	-none -L$(KARMALIBPATH) -lkarmaX11 -lkarma -lXext -lX11 -lc -lm
+	mv $(shared_lib) $(KARMALIBPATH)
+
+
+lint:	$(lintlib)
+
+$(lintlib):	$(csource)
+	(cd $(libdir) ; make_lint)
+	(cd .. ; lint -DX11 -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) -C$(LIB) $(lintdir)/*.c)
+
+
+clean:
+	\rm -f *~ *.bak
+
+
+depend:
+	(cd $(sourcedir); makedepend -DMAKEDEPEND -DX11 -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) -f$(builddir)/dependfile $(csource) )
+
+include dependfile

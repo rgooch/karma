@@ -14,7 +14,7 @@ typedef struct _FilewinPart
 {
     /*  Public resources  */
     XtCallbackList fileSelectCallback;
-    flag (*accept_file)();
+    flag (*accept_file) ();
     Pixel foreground;
     /*  Private resources  */
     Widget listwidget;
@@ -22,6 +22,7 @@ typedef struct _FilewinPart
     char curdir[500];
     int listcount;
     int listmax;
+    KCallbackList dir_callbacks;
 } FilewinPart, *FilewinPartPtr;
 
 typedef struct _FilewinRec

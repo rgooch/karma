@@ -2,7 +2,7 @@
 
     Header for  cen_  package.
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -30,25 +30,24 @@
 
     Written by      Richard Gooch   6-APR-1994
 
-    Last updated by Richard Gooch   25-NOV-1994
+    Last updated by Richard Gooch   7-APR-1995
 
 */
 
-#ifndef KARMA_CEN_H
-#define KARMA_CEN_H
-
-
-#ifndef KARMA_H
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
 #  include <karma.h>
 #endif
 
-#ifndef KARMA_CH_DEF_H
+#if !defined(KARMA_CH_DEF_H) || defined(MAKEDEPEND)
 #  include <karma_ch_def.h>
 #endif
 
-#ifndef KARMA_EN_H
+#if !defined(KARMA_EN_H) || defined(MAKEDEPEND)
 #  include <karma_en.h>
 #endif
+
+#ifndef KARMA_CEN_H
+#define KARMA_CEN_H
 
 
 /*  File:  cen_idea.c  */

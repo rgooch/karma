@@ -9,9 +9,9 @@
     independent.
 
 
-    Written by		Richard Gooch	13-Jan-1995
+    Written by		Richard Gooch	5-Jan-1996
 
-    Last updated by	Richard Gooch	13-Jan-1995
+    Last updated by	Richard Gooch	5-Jan-1996
 
 
 */
@@ -56,37 +56,33 @@ KWorldCanvas canvas_create (KPixCanvas pixcanvas, Kcolourmap cmap,
 
 KCallbackFunc canvas_register_refresh_func (KWorldCanvas canvas,
 					    void (*refresh_func) (),void *info)
-/*  This routine will register a refresh function for a world canvas. The
-    refresh function will be called whenever the contents of the canvas need to
-    be redrawn. Many refresh functions may be registered per canvas. The first
-    function registered is the first function called upon refresh.
-    The canvas must be given by  canvas  .
-    The function that is called when the canvas is to be refreshed must be
-    pointed to by  refresh_func  .
-    The interface to this routine is as follows:
-
-    void refresh_func (canvas, width, height, win_scale, cmap,cmap_resize,info)
-    *   This routine is a refresh event consumer for a world canvas.
-        The canvas is given by  canvas  .
-	The width of the canvas in pixels is given by  width  .
-	The height of the canvas in pixels is given by  height  .
-	The window scaling information is pointed to by  win_scale  .
-	The colourmap associated with the canvas is given by  cmap  .
-	If the refresh function was called as a result of a colourmap resize
-	the value of  cmap_resize  will be TRUE.
-	The arbitrary canvas information pointer is pointed to by  info  .
-	The routine returns nothing.
+/*  [PURPOSE] This routine will register a refresh function for a world canvas.
+    The refresh function will be called whenever the contents of the canvas
+    need to be redrawn. Many refresh functions may be registered per canvas.
+    The first function registered is the first function called upon refresh.
+    <canvas> The world canvas.
+    <refresh_func> The function that is called when the canvas is to be
+    refreshed. The interface to this routine is as follows:
+    [<pre>]
+    void refresh_func (KWorldCanvas canvas, int width, int height,
+                       struct win_scale_type *win_scale, Kcolourmap cmap,
+		       flag cmap_resize, void **info, PostScriptPage pspage)
+    *   [PURPOSE] This routine is a refresh event consumer for a world canvas.
+        <canvas> The world canvas being refreshed.
+	<width> The width of the canvas in pixels.
+	<height> The height of the canvas in pixels.
+	<win_scale> A pointer to the window scaling information.
+	<cmap> The colourmap associated with the canvas.
+	<cmap_resize> TRUE if the refresh function was called as a result of a
+	colourmap resize, else FALSE.
+	<info> A pointer to the arbitrary canvas information pointer.
+	<pspage> If not NULL, the PostScriptPage object the refresh is
+	redirected to.
+	[RETURNS] Nothing.
     *
-    KWorldCanvas canvas;
-    int width;
-    int height;
-    struct win_scale_type *win_scale;
-    Kcolourmap cmap;
-    flag cmap_resize;
-    void **info;
-
-    The initial arbitrary canvas information pointer must be given by  info  .
-    The routine returns a KCallbackFunc object.
+    [</pre>]
+    <info> The initial arbitrary canvas information pointer.
+    [RETURNS] A KCallbackFunc object.
 */
 /*---------------------------------------------------------------------------*/
 
@@ -141,42 +137,72 @@ void canvas_register_size_control_func (KWorldCanvas canvas,
 KCallbackFunc canvas_register_position_event_func (KWorldCanvas canvas,
 						   flag (*func) (),
 						   void *f_info)
-/*  This routine will register a position event function for a world canvas.
-    The position event function will be called whenever a position event on the
-    canvas has not been consumed. Many position event functions may be
-    registered per canvas. The first function registered is the first function
-    called upon a position event.
-    The canvas must be given by  canvas  .
-    The function that is called when a position event occurs must be pointed to
-    by  func  .
-    The interface to this routine is as follows:
-
-    flag func (canvas, x, y, event_code, e_info, f_info, x_lin, y_lin)
-    *   This routine is a position event consumer for a world canvas.
-        The canvas is given by  canvas  .
-	The horizontal world co-ordinate of the event will be given by  x  .
-	The vertical world co-ordinate of the event will be given by  y  .
-	These values will have been transformed by the registered transform
-	function (see  canvas_register_transform_func  ).
-	The arbitrary event code is given by  event_code  .
-	The arbitrary event information is pointed to by  e_info  .
-	The arbitrary function information pointer is pointed to by  f_info  .
-	The linear world co-ordinates (the co-ordinates prior to the transform
-	function being called) will be given by  x_lin  and  y_lin  .
-	The routine returns TRUE if the event was consumed, else it returns
-	FALSE indicating that the event is still to be processed.
+/*  [PURPOSE] This routine will register a position event function for a world
+    canvas. The position event function will be called whenever a position
+    event on the canvas has not been consumed. Many position event functions
+    may be registered per canvas. The first function registered is the first
+    function called upon a position event.
+    <canvas> The world canvas.
+    <func> The function that is called when a position event occurs. The
+    interface to this routine is as follows:
+    [<pre>]
+    flag func (KWorldCanvas canvas, double x, double y,
+               unsigned int event_code, void *e_info, void **f_info,
+	       double x_lin, double y_lin)
+    *   [PURPOSE] This routine is a position event consumer for a world canvas.
+        <canvas> The canvas on which the event occurred.
+	<x> The horizontal world co-ordinate of the event.
+	<y> The vertical world co-ordinate of the event.
+	[NOTE] These values will have been transformed by the registered
+	transform function (see <anvas_register_transform_func>>).
+	<event_code> The arbitrary event code.
+	<e_info> A pointer to arbitrary event information.
+	<f_info> A pointer to an arbitrary function information pointer.
+	<x_lin> The horizontal linear world co-ordinate prior to the transform
+	function being called.
+	<y_lin> The vertical linear world co-ordinate prior to the transform
+	function being called.
+	[RETURNS] TRUE if the event was consumed, else FALSE indicating that
+	the event is still to be processed.
     *
-    KWorldCanvas canvas;
-    double x;
-    double y;
-    unsigned int event_code;
-    void *e_info;
-    void **f_info;
-    double x_lin;
-    double y_lin;
+    [</pre>]
 
-    The initial arbitrary function information pointer must be given by  f_info
-    The routine returns a KCallbackFunc object.
+    <f_info> The initial arbitrary function information pointer.
+    [RETURNS] A KCallbackFunc object.
+*/
+/*---------------------------------------------------------------------------*/
+
+void canvas_get_attributes (KWorldCanvas canvas, ...)
+/*  [PURPOSE] This routine will get canvas attributes.
+    <canvas> The world canvas.
+    [VARARGS] The optional attributes are given as pairs of attribute-key
+    attribute-value pointer pairs. The last argument must be CANVAS_ATT_END.
+    The attributes are passed using varargs.
+    [RETURNS] Nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+void canvas_get_size (KWorldCanvas canvas, int *width, int *height,
+		      struct win_scale_type *win_scale)
+/*  This routine will get the size of a world canvas.
+    The world canvas must be given by  canvas  .
+    The number of horizontal pixels will be written to the storage pointed to
+    by  width  .
+    The number of vertical pixels will be written to the storage pointed to by
+    height  .
+    The window scaling information will be written to the storage pointed to by
+    win_scale  .
+    The routine returns nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag canvas_set_attributes (KWorldCanvas canvas, ...)
+/*  [PURPOSE] This routine will set canvas attributes.
+    <canvas> The world canvas.
+    [VARARGS] The optional attributes are given as pairs of attribute-key
+    attribute-value pairs. The last argument must be CANVAS_ATT_END.
+    The attributes are passed using varargs.
+    [RETURNS] TRUE on success, else FALSE.
 */
 /*---------------------------------------------------------------------------*/
 
@@ -198,20 +224,6 @@ flag canvas_resize (KWorldCanvas canvas, struct win_scale_type *win_scale,
     Under all other circumstances, the pixel canvas is cleared prior to calling
     any refresh functions.
     The routine returns TRUE on success, else it returns FALSE.
-*/
-/*---------------------------------------------------------------------------*/
-
-void canvas_get_size (KWorldCanvas canvas, int *width, int *height,
-		      struct win_scale_type *win_scale)
-/*  This routine will get the size of a world canvas.
-    The world canvas must be given by  canvas  .
-    The number of horizontal pixels will be written to the storage pointed to
-    by  width  .
-    The number of vertical pixels will be written to the storage pointed to by
-    height  .
-    The window scaling information will be written to the storage pointed to by
-    win_scale  .
-    The routine returns nothing.
 */
 /*---------------------------------------------------------------------------*/
 
@@ -255,7 +267,8 @@ void canvas_get_specification (KWorldCanvas canvas, char **xlabel,
 */
 /*---------------------------------------------------------------------------*/
 
-flag canvas_convert_to_canvas_coord (KWorldCanvas canvas, int xin, int yin,
+flag canvas_convert_to_canvas_coord (KWorldCanvas canvas,
+				     double xin, double yin,
 				     double *xout, double *yout)
 /*  This routine will convert co-ordinates in a pixel canvas to co-ordinates in
     a world canvas.
@@ -290,49 +303,38 @@ flag canvas_convert_from_canvas_coord (KWorldCanvas canvas,
 */
 /*---------------------------------------------------------------------------*/
 
-void canvas_register_convert_func (KWorldCanvas canvas,
-				   flag (*coord_convert_func) (), void *info)
-/*  This routine will register the co-ordinate conversion function for a world
-    canvas.
-    This function will be called whenever conversions between world
-    co-ordinates and pixel co-ordinates are performed.
-    Only one co-ordinate conversion function is permitted per canvas. This is
-    a means for a higher level object to take control of the world canvas.
-    The canvas must be given by  canvas  .
-    The function that is called when co-ordinates are to be converted must be
-    pointed to by  coord_convert_func  .
+void canvas_register_d_convert_func (KWorldCanvas canvas,
+				     flag (*coord_convert_func) (), void *info)
+/*  [PURPOSE] This routine will register the co-ordinate conversion function
+    for a world canvas. This function will be called whenever conversions
+    between world co-ordinates and pixel co-ordinates are performed. Only one
+    co-ordinate conversion function is permitted per canvas. This is a means
+    for a higher level object to take control of the world canvas.
+    <canvas> The canvas.
+    <func> The function that is called when co-ordinates are to be converted.
     The interface to this routine is as follows:
-
-    flag coord_convert_func (canvas, win_scale, px, py, wx, wy,
-                             to_world, info)
-    *   This routine will modify the window scaling information for a world
-        canvas.
-        The canvas is given by  canvas  .
-	The window scaling information is pointed to by  win_scale  .The data
+    [<pre>]
+    flag coord_convert_func (KWorldCanvas canvas,
+                             struct win_scale_type *win_scale,
+			     double *x, double *y,
+			     flag to_world, void **info)
+    *   [PURPOSE] This routine will modify the window scaling information for a
+        world canvas.
+	<canvas> The canvas.
+	<win_scale> A pointer to the window scaling information. The data
 	herein may be modified.
-	The horizontal pixel co-ordinate storage must be pointed to by  px  .
-	The vertical pixel co-ordinate storage must be pointed to by  py  .
-	The horizontal world co-ordinate storage must be pointed to by  wx  .
-	The vertical world co-ordinate storage must be pointed to by  wy  .
-	If the value of  to_world  is TRUE, then a pixel to world co-ordinate
-	transform is required, else a world to pixel co-ordinate transform is
-	required.
-	The arbitrary canvas information pointer is pointed to by  info  .
-	The routine should return TRUE if the conversion was completed,
-	else it returns FALSE indicating that the default conversions should be
-	used.
+	<x> A pointer to the horizontal co-ordinate storage. This is updated.
+	<y> A pointer to the vertical co-ordinate storage. This is updated.
+	<to_world> If TRUE, then a pixel to world co-ordinate transform is
+	required, else a world to pixel co-ordinate transform is required.
+	<info> A pointer to the arbitrary canvas information pointer.
+	[RETURNS] TRUE if the conversion was completed, else FALSE indicating
+	that the default conversions should be used.
     *
-    KWorldCanvas canvas;
-    struct win_scale_type *win_scale;
-    int *px;
-    int *py;
-    double *wx;
-    double *wy;
-    flag to_world;
-    void **info;
-
-    The initial arbitrary canvas information pointer must be given by  info  .
-    The routine returns nothing.
+    {
+    </pre>]
+    <info> The initial arbitrary canvas information pointer.
+    [RETURNS] Nothing.
 */
 /*---------------------------------------------------------------------------*/
 
@@ -426,7 +428,7 @@ flag canvas_get_colour (KWorldCanvas canvas, char *colourname,
 */
 /*---------------------------------------------------------------------------*/
 
-void canvas_set_dressing (canvas, va_alist)
+void canvas_set_dressing (KWorldCanvas canvas, ...)
 /*  [PURPOSE] This routine will set dressing parameters for a world canvas.
     <canvas> The world canvas.
     <va_alist> The list of parameter attribute-key attribute-value pairs. This
@@ -434,8 +436,6 @@ void canvas_set_dressing (canvas, va_alist)
     [NOTE] The dressing code is not yet complete.
     [RETURNS] Nothing.
 */
-KWorldCanvas canvas;
-va_dcl
 /*---------------------------------------------------------------------------*/
 
 void canvas_sequence_dressing_refresh (KWorldCanvas canvas)
@@ -705,15 +705,14 @@ void canvas_draw_lines_p (KWorldCanvas canvas,
 */
 /*---------------------------------------------------------------------------*/
 
-void canvas_init_win_scale (win_scale, magic_number)
-/*  This routine will initialise a window scaling structure with sensible
-    values. This routine may be used prior to calling  canvas_create  .
-    The window scaling information must be pointed to by  win_scale  .
-    The magic number value must be  K_WIN_SCALE_MAGIC_NUMBER  .
-    The routine returns nothing.
+void canvas_init_win_scale (struct win_scale_type *win_scale,
+			    unsigned int magic_number)
+/*  [PURPOSE] This routine will initialise a window scaling structure with
+    sensible values. This routine may be used prior to calling <canvas_create>.
+    <win_scale> A pointer to the window scaling structure.
+    <magic_number> The value of this must be K_WIN_SCALE_MAGIC_NUMBER.
+    [RETURNS] Nothing.
 */
-struct win_scale_type *win_scale;
-unsigned int magic_number;
 /*---------------------------------------------------------------------------*/
 
 void canvas_use_log_scale (KWorldCanvas canvas, flag x_log, flag y_log)

@@ -2,7 +2,7 @@
 
     Header for  iedit_  package.
 
-    Copyright (C) 1993,1994  Richard Gooch
+    Copyright (C) 1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,15 +31,17 @@
 
     Written by      Richard Gooch   24-MAR-1993
 
-    Last updated by Richard Gooch   26-AUG-1994
+    Last updated by Richard Gooch   7-APR-1995
 
 */
+
+#if !defined(KARMA_DS_DEF_H) || defined(MAKEDEPEND)
+#  include <karma_ds_def.h>
+#endif
 
 #ifndef KARMA_IEDIT_H
 #define KARMA_IEDIT_H
 
-
-#include <karma_ds_def.h>
 
 #define EDIT_INSTRUCTION_DAB (unsigned int) 0
 #define EDIT_INSTRUCTION_STROKE (unsigned int) 1

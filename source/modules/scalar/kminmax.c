@@ -2,7 +2,7 @@
 
     Source file for  kminmax  (scalar min-max determination module).
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994,1995  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,7 +28,9 @@
 
     Written by      Richard Gooch   21-APR-1994
 
-    Last updated by Richard Gooch   21-APR-1994
+    Updated by      Richard Gooch   21-APR-1994
+
+    Last updated by Richard Gooch   31-JUL-1995: Cosmetic changes.
 
 
 */
@@ -162,7 +164,7 @@ char *elem_name;
     {
 	return;
     }
-    if ( (*multi_desc).num_arrays < 2 )
+    if (multi_desc->num_arrays < 2)
     {
 	/*  Only one array to process  */
 	if (num_arrays != 0)
@@ -172,22 +174,22 @@ char *elem_name;
 	    (void) fprintf (stderr, ": naming not allowed\n");
 	    return;
 	}
-	pack_desc = (*multi_desc).headers[0];
-	data = (*multi_desc).data[0];
+	pack_desc = multi_desc->headers[0];
+	data = multi_desc->data[0];
 	(void) process_array (pack_desc, data, elem_name);
 	return;
     }
     if (num_arrays == 0)
     {
 	/*  Iterate through arrays  */
-	for (array_count = 0; array_count < (*multi_desc).num_arrays;
+	for (array_count = 0; array_count < multi_desc->num_arrays;
 	     ++array_count)
 	{
-	    pack_desc = (*multi_desc).headers[array_count];
-	    data = (*multi_desc).data[array_count];
+	    pack_desc = multi_desc->headers[array_count];
+	    data = multi_desc->data[array_count];
 	    (void) fprintf (stderr, "Stats for array: \"%s\"\n",
-			    (*multi_desc).array_names[array_count]);
-	    if (process_array (pack_desc, data, elem_name) != TRUE)
+			    multi_desc->array_names[array_count]);
+	    if ( !process_array (pack_desc, data, elem_name) )
 	    {
 		return;
 	    }
@@ -199,24 +201,24 @@ char *elem_name;
     {
 	/*  Find name  */
 	found_name = FALSE;
-	for (array_count = 0; array_count < (*multi_desc).num_arrays;
+	for (array_count = 0; array_count < multi_desc->num_arrays;
 	     ++array_count)
 	{
 	    if (strcmp (array_names[name_count],
-			(*multi_desc).array_names[array_count]) == 0)
+			multi_desc->array_names[array_count]) == 0)
 	    {
 		found_name = TRUE;
-		pack_desc = (*multi_desc).headers[array_count];
-		data = (*multi_desc).data[array_count];
+		pack_desc = multi_desc->headers[array_count];
+		data = multi_desc->data[array_count];
 		(void) fprintf (stderr, "Stats for array: \"%s\"\n",
-				(*multi_desc).array_names[array_count]);
-		if (process_array (pack_desc, data, elem_name) != TRUE)
+				multi_desc->array_names[array_count]);
+		if ( !process_array (pack_desc, data, elem_name) )
 		{
 		    return;
 		}
 		/*  Do it for this array  */
 	    }
-	    if (found_name != TRUE)
+	    if (!found_name)
 	    {
 		/*  Array name not found  */
 		(void) fprintf (stderr, "Array name: \"%s\" not found\n",
@@ -365,7 +367,7 @@ unsigned int index;
 	pack_desc = (packet_desc *) encls_desc;
 	elem_offset = ds_get_element_offset (pack_desc, index);
 	return ( find_array_minmax (data + elem_offset,
-				    (*pack_desc).element_types[index],
+				    pack_desc->element_types[index],
 				    1, 0) );
 /*
         break;
@@ -373,10 +375,10 @@ unsigned int index;
       case K_ARRAY:
 	/*  Array of packet descriptors  */
 	arr_desc = (array_desc *) encls_desc;
-	pack_desc = (*arr_desc).packet;
+	pack_desc = arr_desc->packet;
 	elem_offset = ds_get_element_offset (pack_desc, index);
 	return ( find_array_minmax ( data + elem_offset,
-				    (*pack_desc).element_types[index],
+				    pack_desc->element_types[index],
 				    (int) ds_get_array_size (arr_desc),
 				    ds_get_packet_size (pack_desc) ) );
 /*
@@ -387,30 +389,29 @@ unsigned int index;
 	pack_desc = (packet_desc *) encls_desc;
 	elem_offset = ds_get_element_offset (pack_desc, index);
 	list_head = (list_header *) data;
-	if ( (*list_head).magic != MAGIC_LIST_HEADER )
+	if (list_head->magic != MAGIC_LIST_HEADER)
 	{
 	    (void) fprintf (stderr, "List header has bad magic number\n");
 	    a_prog_bug (function_name);
 	}
 	/*  Process contiguous section of list  */
-	if ( (*list_head).contiguous_length > 0 )
+	if (list_head->contiguous_length > 0)
 	{
-	    if (find_array_minmax ( (*list_head).contiguous_data + elem_offset,
-				   (*pack_desc).element_types[index],
-				   (int) (*list_head).contiguous_length,
-				   ds_get_packet_size (pack_desc) ) != TRUE)
+	    if ( !find_array_minmax ( list_head->contiguous_data + elem_offset,
+				     pack_desc->element_types[index],
+				     (int) list_head->contiguous_length,
+				     ds_get_packet_size (pack_desc) ) )
 	    {
 		return (FALSE);
 	    }
 	}
 	/*  Process fragmented section of list  */
-	for (curr_entry = (*list_head).first_frag_entry; curr_entry != NULL;
-	     curr_entry = (*curr_entry).next)
+	for (curr_entry = list_head->first_frag_entry; curr_entry != NULL;
+	     curr_entry = curr_entry->next)
 	{
 	    /*  Process this entry  */
-	    if (find_array_minmax ( (*curr_entry).data + elem_offset,
-				   (*pack_desc).element_types[index],
-				   1, 0 ) != TRUE)
+	    if ( !find_array_minmax (curr_entry->data + elem_offset,
+				     pack_desc->element_types[index], 1, 0) )
 	    {
 		return (FALSE);
 	    }
@@ -460,9 +461,8 @@ unsigned int stride;
 	 ++block_count, data += BLOCK_LENGTH * stride)
     {
 	/*  Process this block  */
-	if (ds_get_elements (data, type, stride, values, &complex,
-			     BLOCK_LENGTH)
-	    != TRUE)
+	if ( !ds_get_elements (data, type, stride, values, &complex,
+			       BLOCK_LENGTH) )
 	{
 	    (void) fprintf (stderr, "Error converting values\n");
 	    return (FALSE);
@@ -496,9 +496,8 @@ unsigned int stride;
     /*  Process residual  */
     num_left = length - num_blocks * BLOCK_LENGTH;
     /*  Process this block  */
-    if (ds_get_elements (data, type, stride, values, &complex,
-			 (unsigned int) num_left)
-	!= TRUE)
+    if ( !ds_get_elements (data, type, stride, values, &complex,
+			   (unsigned int) num_left) )
     {
 	(void) fprintf (stderr, "Error converting residual values\n");
 	return (FALSE);

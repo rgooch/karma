@@ -2,7 +2,7 @@
 
     Slave process file for Connection Management tool and shell.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -36,8 +36,14 @@
     Updated by      Richard Gooch   15-APR-1994: Added support for passing of
   arguments to modules.
 
-    Last updated by Richard Gooch   19-APR-1994: Took account of change to
+    Updated by      Richard Gooch   19-APR-1994: Took account of change to
   interface to  slave_setup  .
+
+    Updated by      Richard Gooch   14-MAR-1995: Changed to send fully
+  qualified hostname to CM tool.
+
+    Last updated by Richard Gooch   16-JUN-1995: Made use of
+  <r_get_fq_hostname>.
 
 
     Usage:   karma_cm_slave host port display [args...]
@@ -47,10 +53,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+#include <errno.h>
 #include <karma.h>
 #include <karma_conn.h>
 #include <karma_pio.h>
 #include <karma_ex.h>
+#include <karma_ch.h>
 #include <karma_a.h>
 #include <karma_m.h>
 
@@ -106,21 +114,18 @@ Connection connection;
 void **info;
 {
     Channel channel;
-    char my_hostname[STRING_LENGTH + 1];
-    ERRNO_TYPE errno;
+    char *keyword;
+    char my_hostname[STRING_LENGTH];
+    char txt[STRING_LENGTH];
     extern char *sys_errlist[];
 
     (void) fprintf (stderr, "SLAVE: open_func...\n");
-    /*  Get my host information  */
-    if (gethostname (my_hostname, STRING_LENGTH) != 0)
-    {
-	(void) fprintf (stderr, "SLAVE: Error getting hostname\t%s\n",
-			sys_errlist[errno]);
-	exit (RV_SYS_ERROR);
-    }
-    my_hostname[STRING_LENGTH] = '\0';
+    /*  Get the fully qualified hostname  */
+    if ( !r_get_fq_hostname (my_hostname, STRING_LENGTH) ) exit (RV_SYS_ERROR);
     channel = conn_get_channel (connection);
-    (void) fprintf (stderr, "SLAVE: open_func writing my hostname...\n");
+    (void) fprintf (stderr,
+		    "SLAVE: open_func writing my hostname: \"%s\"...\n",
+		    my_hostname);
     if (pio_write_string (channel, my_hostname) != TRUE)
     {
 	(void) fprintf (stderr, "SLAVE: Error writing hostname\t%s\n",
@@ -159,7 +164,6 @@ void **info;
     char *args;
     extern unsigned int cm_port_number;
     extern unsigned long cm_host_addr;
-    ERRNO_TYPE errno;
     extern char *sys_errlist[];
 
     channel = conn_get_channel (connection);

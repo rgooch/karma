@@ -6,8 +6,6 @@
 #include <X11/Xaw/FormP.h>
 #include <X11/StringDefs.h>
 
-#include <karma_kcmap.h>
-
 #include <Xkw/Value.h>
 
 typedef struct _ValuePart
@@ -19,7 +17,8 @@ typedef struct _ValuePart
     int maximum;
     char *label;
     XtCallbackList valueChangeCallback;
-    Boolean wrap;
+    Bool wrap;
+    int *valuePtr;
     XtOrientation layout;
     /*  Private resources  */
     Widget vallabel;

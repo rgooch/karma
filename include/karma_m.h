@@ -2,7 +2,7 @@
 
     Header for  m_  package.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,21 +31,20 @@
 
     Written by      Richard Gooch   12-SEP-1992
 
-    Last updated by Richard Gooch   26-NOV-1994
+    Last updated by Richard Gooch   7-APR-1995
 
 */
+
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
+#  include <karma.h>
+#endif
+#ifndef NULL
+#  define NULL 0
+#endif
 
 #ifndef KARMA_M_H
 #define KARMA_M_H
 
-
-#ifndef KARMA_H
-#  include <karma.h>
-#endif
-#ifndef NULL
-#define NULL 0
-#endif
-#include <sys/types.h>
 
 
 /*  File:   mem_alloc.c   */

@@ -25,10 +25,12 @@ The last release of the previous version will be moved to an archive
 directory.
 
 NOTE: This strict update policy does not apply to the Karma widgets
-library nor the <storage_> package in the core Karma library, which
-are more volatile at time of writing than the rest of the
-library. There may be incompatible changes between releases, however
-notice will still be given in the release notes.
+library nor other packages in the Karma libraries which are documented
+as being work in progress. An appropriate notice will appear at the
+top of the package documentation file. The package has therefore been
+documented to give early access, but you cannot rely on me not making
+a few (usually small) incompatible changes. Notice should still be
+given in the release notes if these packages are changed incompatibly.
 
 Notices of a new public release are made to people who have mailed to:
 karma-request@atnf.csiro.au  asking to be placed on the mailing list.

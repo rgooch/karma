@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   17-JUL-1994
 
-    Last updated by Richard Gooch   24-DEC-1994
+    Last updated by Richard Gooch   28-DEC-1995
 
 */
 
@@ -40,11 +40,10 @@
 
 #include <Xkw/Canvas.h>
 
-typedef struct {
-    Boolean	(*change_sensitive)(/* widget */);
+typedef struct
+{
+    int empty;
 } CanvasClassPart;
-
-#define XtInheritChangeSensitive ((Boolean (*)())_XtInherit)
 
 typedef struct _CanvasClassRec {
     CoreClassPart	core_class;
@@ -55,21 +54,25 @@ extern CanvasClassRec canvasClassRec;
 
 typedef struct {
     /* resources */
-    Pixmap	insensitive_border;
-
     Visual *    visual;
-    KPixCanvas  pixcanvas;
-    Boolean     clip;
-    Boolean     silence_unconsumed_events;
+    KPixCanvas  monoPixCanvas;
+    KPixCanvas  leftPixCanvas;
+    KPixCanvas  rightPixCanvas;
+    Bool        clip;
+    Bool        silence_unconsumed_events;
+    int         stereoMode;
     Pixel       foreground_pixel;
-    Boolean     force_new_cmap;
-    Boolean     retain_fgbg;
+    Bool        force_new_cmap;
+    Bool        retain_fgbg;
     XtCallbackList realiseCallback;
+    Bool        verbose;
     /* private state */
     flag        cmap_installed;
     flag        cmap_installed_internally;
     flag        mapped;
     flag        partly_unobscured;
+    Multibuffer left_window;
+    Multibuffer right_window;
 } CanvasPart;
 
 typedef struct _CanvasRec {

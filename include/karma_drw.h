@@ -2,7 +2,7 @@
 
     Header for  drw_  package.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,17 +31,23 @@
 
     Written by      Richard Gooch   3-OCT-1992
 
-    Last updated by Richard Gooch   29-NOV-1993
+    Last updated by Richard Gooch   7-APR-1995
 
 */
+
+#if !defined(KARMA_DS_DEF_H) || defined(MAKEDEPEND)
+#  include <karma_ds_def.h>
+#endif
+
+#if !defined(K_WIN_SCALE_H) || defined(MAKEDEPEND)
+#  include <k_win_scale.h>
+#endif
+
+#include <X11/Xlib.h>
 
 #ifndef KARMA_DRW_H
 #define KARMA_DRW_H
 
-
-#include <karma_ds_def.h>
-#include <k_win_scale.h>
-#include <X11/Xlib.h>
 
 /*  File:   drw_image.c   */
 EXTERN_FUNCTION (flag drw_single_plane, (XImage *ximage,

@@ -2,7 +2,7 @@
 
     Header for  storage_  package.
 
-    Copyright (C) 1993,1994  Richard Gooch
+    Copyright (C) 1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,20 +31,20 @@
 
     Written by      Richard Gooch   8-APR-1993
 
-    Last updated by Richard Gooch   23-AUG-1994
+    Last updated by Richard Gooch   7-APR-1995
 
 */
 
-#ifndef KARMA_STORAGE_H
-#define KARMA_STORAGE_H
-
-#ifndef KARMA_IARRAY_H
+#if !defined(KARMA_IARRAY_H) || defined(MAKEDEPEND)
 #  include <karma_iarray.h>
 #endif
 
-#ifndef KARMA_DS_DEF_H
+#if !defined(KARMA_DS_DEF_H) || defined(MAKEDEPEND)
 #  include <karma_ds_def.h>
 #endif
+
+#ifndef KARMA_STORAGE_H
+#define KARMA_STORAGE_H
 
 #define SM_MAX_PATHNAME_LENGTH (unsigned int) 256
 

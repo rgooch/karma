@@ -2,7 +2,7 @@
 
     Header for  canvas_  package.
 
-    Copyright (C) 1993,1994  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,24 +31,52 @@
 
     Written by      Richard Gooch   17-APR-1993
 
-    Last updated by Richard Gooch   29-NOV-1994
+    Last updated by Richard Gooch   4-JAN-1996
 
 */
+
+#if !defined(KARMA_IEDIT_H) || defined(MAKEDEPEND)
+#  include <karma_iedit.h>
+#endif
+
+#if !defined(KARMA_KCMAP_H) || defined(MAKEDEPEND)
+#  include <karma_kcmap.h>
+#endif
+
+#if !defined(KARMA_KWIN_H) || defined(MAKEDEPEND)
+#  include <karma_kwin.h>
+#endif
+
+#if !defined(KARMA_C_DEF_H) || defined(MAKEDEPEND)
+#  include <karma_c_def.h>
+#endif
 
 #ifndef KARMA_CANVAS_H
 #define KARMA_CANVAS_H
 
 
-#include <karma_iedit.h>
-#include <karma_kcmap.h>
-#include <karma_kwin.h>
-
-#ifndef KARMA_C_DEF_H
-#  include <karma_c_def.h>
-#endif
-
 typedef struct worldcanvas_type * KWorldCanvas;
 
+/*  Canvas attributes  */
+#define CANVAS_ATT_END              0   /*  End of varargs list              */
+#define CANVAS_ATT_X_OFFSET         1   /*  (int)                            */
+#define CANVAS_ATT_Y_OFFSET         2   /*  (int)                            */
+#define CANVAS_ATT_X_PIXELS         3   /*  (int)                            */
+#define CANVAS_ATT_Y_PIXELS         4   /*  (int)                            */
+#define CANVAS_ATT_BLANK_PIXEL      5   /*  (unsigned long)                  */
+#define CANVAS_ATT_MIN_SAT_PIXEL    6   /*  (unsigned long)                  */
+#define CANVAS_ATT_MAX_SAT_PIXEL    7   /*  (unsigned long)                  */
+#define CANVAS_ATT_X_MIN            8   /*  (double)                         */
+#define CANVAS_ATT_X_MAX            9   /*  (double)                         */
+#define CANVAS_ATT_Y_MIN            10  /*  (double)                         */
+#define CANVAS_ATT_Y_MAX            11  /*  (double)                         */
+#define CANVAS_ATT_VALUE_MIN        12  /*  (double)                         */
+#define CANVAS_ATT_VALUE_MAX        13  /*  (double)                         */
+#define CANVAS_ATT_ISCALE_FUNC      14  /*  ( flag (*) () )                  */
+#define CANVAS_ATT_ISCALE_FREE_FUNC 15  /*  ( (void (*) () )                 */
+#define CANVAS_ATT_ISCALE_INFO      16  /*  (void *)                         */
+#define CANVAS_ATT_AUTO_MIN_SAT     17  /*  (flag)                           */
+#define CANVAS_ATT_AUTO_MAX_SAT     18  /*  (flag)                           */
 
 /*  Dressing parameters  */
 #define KCD_END (unsigned int) 0
@@ -83,12 +111,14 @@ EXTERN_FUNCTION (void canvas_register_size_control_func,
 EXTERN_FUNCTION (KCallbackFunc canvas_register_position_event_func,
 		 (KWorldCanvas canvas, flag (*position_func) (),
 		  void *f_info) );
-EXTERN_FUNCTION (flag canvas_resize, (KWorldCanvas canvas,
-				      struct win_scale_type *win_scale,
-				      flag always_clear) );
+EXTERN_FUNCTION (void canvas_get_attributes, (KWorldCanvas canvas, ...) );
 EXTERN_FUNCTION (void canvas_get_size, (KWorldCanvas canvas,
 					int *width, int *height,
 					struct win_scale_type *win_scale) );
+EXTERN_FUNCTION (flag canvas_set_attributes, (KWorldCanvas canvas, ...) );
+EXTERN_FUNCTION (flag canvas_resize, (KWorldCanvas canvas,
+				      struct win_scale_type *win_scale,
+				      flag always_clear) );
 EXTERN_FUNCTION (flag canvas_specify,
 		 (KWorldCanvas canvas, char *xlabel, char *ylabel,
 		  unsigned int num_restr, char **restr_names,
@@ -97,15 +127,15 @@ EXTERN_FUNCTION (void canvas_get_specification,
 		 (KWorldCanvas canvas, char **xlabel, char **ylabel,
 		  unsigned int *num_restr, char ***restr_names,
 		  double **restr_values) );
-EXTERN_FUNCTION (flag canvas_convert_to_canvas_coord, (KWorldCanvas canvas,
-						       int xin, int yin,
-						       double *xout,
-						       double *yout) );
-EXTERN_FUNCTION (flag canvas_convert_from_canvas_coord, (KWorldCanvas canvas,
-							 double xin,
-							 double yin,
-							 int *xout,
-							 int *yout) );
+EXTERN_FUNCTION (flag canvas_convert_to_canvas_coord,
+		 (KWorldCanvas canvas, double xin, double yin,
+		  double *xout, double *yout) );
+EXTERN_FUNCTION (flag canvas_convert_from_canvas_coord,
+		 (KWorldCanvas canvas, double xin, double yin,
+		  int *xout, int *yout) );
+EXTERN_FUNCTION (void canvas_register_d_convert_func,
+		 (KWorldCanvas canvas, flag (*coord_convert_func) (),
+		  void *info) );
 EXTERN_FUNCTION (void canvas_register_convert_func,
 		 (KWorldCanvas canvas, flag (*coord_convert_func) (),
 		  void *info) );
@@ -119,9 +149,7 @@ EXTERN_FUNCTION (flag canvas_get_colour,
 		 (KWorldCanvas canvas, char *colourname,
 		  unsigned long *pixel_value, unsigned short *red,
 		  unsigned short *green, unsigned short *blue) );
-#ifndef KCANVAS_INTERNAL
 EXTERN_FUNCTION (void canvas_set_dressing, (KWorldCanvas canvas, ...) );
-#endif
 EXTERN_FUNCTION (void canvas_sequence_dressing_refresh, (KWorldCanvas canvas));
 EXTERN_FUNCTION (void canvas_draw_dressing, (KWorldCanvas canvas) );
 EXTERN_FUNCTION (Kcolourmap canvas_get_cmap, (KWorldCanvas canvas) );

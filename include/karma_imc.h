@@ -2,7 +2,7 @@
 
     Header for  imc_  package.
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,15 +31,17 @@
 
     Written by      Richard Gooch   18-SEP-1993
 
-    Last updated by Richard Gooch   29-NOV-1993
+    Last updated by Richard Gooch   7-APR-1995
 
 */
+
+#if !defined(KARMA_DS_DEF_H) || defined(MAKEDEPEND)
+#  include <karma_ds_def.h>
+#endif
 
 #ifndef KARMA_IMC_H
 #define KARMA_IMC_H
 
-
-#include <karma_ds.h>
 
 /*  File:   image_conv.c   */
 EXTERN_FUNCTION (flag imc_24to8, (unsigned int image_size,

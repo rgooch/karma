@@ -2,7 +2,7 @@
 
     Header for  xc_  package.
 
-    Copyright (C) 1993,1994  Richard Gooch
+    Copyright (C) 1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,18 +31,18 @@
 
     Written by      Richard Gooch   25-FEB-1993
 
-    Last updated by Richard Gooch   22-NOV-1994
+    Last updated by Richard Gooch   28-OCT-1995
 
 */
+
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
+#  include <karma.h>
+#endif
+#include <X11/Xlib.h>
 
 #ifndef KARMA_XC_H
 #define KARMA_XC_H
 
-
-#ifndef KARMA_H
-#  include <karma.h>
-#endif
-#include <X11/Xlib.h>
 
 #ifndef KDISPLAY_DEFINED
 #define KDISPLAY_DEFINED
@@ -70,6 +70,7 @@ EXTERN_FUNCTION (void xc_store_colours, (unsigned int num_cells,
 EXTERN_FUNCTION (void xc_get_location, (Kdisplay dpy_handle,
 					unsigned long *serv_hostaddr,
 					unsigned long *serv_display_num) );
+EXTERN_FUNCTION (Colormap xc_get_cmap, (Kdisplay dpy_handle) );
 
 
 #endif /*  KARMA_XC_H  */

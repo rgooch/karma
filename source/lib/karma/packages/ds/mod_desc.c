@@ -3,7 +3,7 @@
 
     This code provides Karma data structure descriptor manipulation routines.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -51,8 +51,10 @@
 
     Updated by      Richard Gooch   8-AUG-1994: Changed to  uaddr  type.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to
+    Updated by      Richard Gooch   26-NOV-1994: Moved to
   packages/ds/mod_desc.c
+
+    Last updated by Richard Gooch   19-APR-1995: Cleaned some code.
 
 
 */
@@ -480,11 +482,11 @@ array_desc *arr_desc;
     int level;
     uaddr stride;
     unsigned int tile_size;
-    unsigned int bot_tile_size;
+    unsigned int bot_tile_size = 0;  /*  Initialised to keep compiler happy  */
     unsigned int coord_count;
     uaddr offset;
     uaddr block;
-    uaddr *coords;
+    uaddr *coords = NULL;  /*  Initialised to keep compiler happy  */
     dim_desc *dim;
     static char function_name[] = "ds_compute_array_offsets";
 

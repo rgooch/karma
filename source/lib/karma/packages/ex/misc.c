@@ -3,7 +3,7 @@
 
     This code provides routines to extract values and substrings from strings.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,10 +31,13 @@
 
     Updated by      Richard Gooch    2-DEC-1992
 
-    Updated by      Richard Gooch   6-JAN-1993: Changed from  #include "*.h"
+    Updated by      Richard Gooch    6-JAN-1993: Changed from  #include "*.h"
   to  #include <*.h>
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/ex/misc.c
+    Updated by      Richard Gooch    26-NOV-1994: Moved to  packages/ex/misc.c
+
+    Last updated by Richard Gooch    14-JUN-1995: Created <ex_uint> because
+  <ex_int> failed on crayPVP with value greater than 0x7fffffff.
 
 
 */
@@ -130,7 +133,68 @@ char **rest;
     if(neg)i= -i ; return(i) ;
 }
 
+/*PUBLIC_FUNCTION*/
+unsigned int ex_uint (str, rest)
+char *str;
+char **rest;
+{   
+    unsigned int i=0,base=10,maxdig=0xffffffff,neg=FALSE,dig  ;
 
+    if(!str || !(*str))
+    {
+	*rest=0 ; return(0) ; 
+    }
+    
+    for( ; !isdigit(*str) ; str++)
+    {
+	if(! *str)
+	{
+	    *rest=0 ; return(0) ; 
+	}
+	if(*str=='+')
+	{
+	    str++ ; break ; 
+	}
+	if(*str=='-')
+	{
+	    neg=TRUE ; str++ ; break ; 
+	}
+    }
+    
+    if(*str=='0')		/* leading "0" indicates octal */
+    {
+	base=8 ; str++ ;
+	if(*str=='x' || *str=='X') /* leading "0x" indicates hex.*/
+        {
+	    base=16 ; str++ ;
+            
+	    for( ; isxdigit(*str) ; str++)
+            {
+		dig=isdigit(*str) ? (*str-'0') :
+                isupper(*str) ? (*str-'A'+10) :
+		(*str-'a'+10) ;
+		i=i*base+dig ;
+		if(i>maxdig)
+		{
+		    *rest=0 ; if(neg)i= -i ; return(i) ; 
+		}
+            }
+        }
+    }    
+    
+    for( ; isdigit(*str) ; str++)
+    {
+	i=i*base+(*str-'0') ; 
+	if(i>maxdig)
+	{
+	    *rest=0 ; if(neg)i= -i ; return(i) ; 
+	}
+    }
+    
+    for( ; isspace(*str)  ; str++) ; /* skip trailing spaces */
+    *rest= *str ? str : 0 ;     
+    if(neg)i= -i ; return(i) ;
+}
 
 
 /*PUBLIC_FUNCTION*/

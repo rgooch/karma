@@ -6,9 +6,9 @@
     data is to be represented.
 
 
-    Written by		Richard Gooch	24-Jan-1995
+    Written by		Richard Gooch	25-Jan-1996
 
-    Last updated by	Richard Gooch	24-Jan-1995
+    Last updated by	Richard Gooch	25-Jan-1996
 
 
 */
@@ -150,34 +150,32 @@ iarray iarray_get_from_multi_array (multi_array *multi_desc,
 				    CONST char *arrayname,
 				    unsigned int num_dim, char **dim_names,
 				    char *elem_name)
-/*  This routine will yield an "Intelligent Array" from a multi array Karma
-    general data structure.
-    The multi array header must be pointed to by  multi_desc  .The attachment
-    count is incremented on successful completion of this routine.
-    The name of the general data structure in the arrayfile to search for must
-    be pointed to by  arrayname  .If this is NULL, the routine searches for
-    the default name "Intelligent Array". If the arrayfile has only one
-    general data structure, then this parameter is ignored.
-    The routine searches for a n-dimensional array with a single atomic
-    element at each point in multi-dimensional space.
-    If  num_dim  is greater than 0, the routine will only return an array with
-    num_dim  dimensions. If  num_dim  is 0, then the routine will return an
-    n-dimensional array.
-    If  num_dim  is not 0, then if  dim_names  is NULL, the routine will search
-    for and return an array with the default dimension names (see iarray_create
-    for a list of these) if more than one n-dimensional, single element array
-    exists in the general data structure, or the only n-dimensional array with
-    the specified number of dimensions. If the routine can't find an adequate
-    default, it will not return an array.
-    If  num_dim  is not 0, and  dim_names  points to an array of strings, then
-    the routine will only return an array which matches the specified dimension
-    names. The first name in the array of strings must be the highest order
-    dimension.
-    If  elem_name  is NULL, the routine will ignore the element name of the
-    array which is located, else it will insist on the array element name
-    matching the name pointed to by  elem_name  .
-    The routine returns a dynamically allocated intelligent array on success,
-    else it prints an error message to the standard output and returns NULL.
+/*  [PURPOSE] This routine will yield an "Intelligent Array" from a multi array
+    Karma general data structure. The routine searches for a n-dimensional
+    array with a single atomic element at each point in multi-dimensional space
+    <multi_desc> The multi array header pointer. The attachment count is
+    incremented on successful completion of this routine.
+    <arrayname> The name of the general data structure in the arrayfile to
+    search for. If this is NULL, the routine searches for the default name
+    "Intelligent Array". If the arrayfile has only one general data structure,
+    then this parameter is ignored.
+    <num_dim> If greater than 0, the routine will only return an array with
+    this many dimensions. If 0, then the routine will return an n-dimensional
+    array.
+    <dim_names> If <<num_dim>> is not 0, then if this NULL, the routine will
+    search for and return an array with the default dimension names (see
+    <<iarray_create>> for a list of these) if more than one n-dimensional,
+    single element array exists in the general data structure, or the only
+    n-dimensional array with the specified number of dimensions. If the routine
+    can't find an adequate default, it will not return an array. If <<num_dim>>
+    is not 0, and this points to an array of strings, then the routine will
+    only return an array which matches the specified dimension names. The first
+    name in the array of strings must be the highest order dimension.
+    <elem_name> If NULL, the routine will ignore the element name of the array
+    which is located, else it will insist on the array element name matching
+    this name.
+    [RETURNS] A dynamically allocated intelligent array on success, else it
+    prints an error message to the standard output and returns NULL.
 */
 /*---------------------------------------------------------------------------*/
 
@@ -250,40 +248,6 @@ flag iarray_copy_data (iarray output, iarray input, flag magnitude)
 */
 /*---------------------------------------------------------------------------*/
 
-char *iarray_get_element_1D (iarray array, unsigned int type, int x)
-/*  This routine will get an element from a simple 1 dimensional array.
-    The array must be pointed to by  array  .
-    The type of the element in the array must be given by  type  (this is used
-    to enforce type checking).
-    The lower array index must be given by  x  .
-    The routine returns a pointer to the element.
-*/
-/*---------------------------------------------------------------------------*/
-
-char *iarray_get_element_2D (iarray array, unsigned int type, int y, int x)
-/*  This routine will get an element from a simple 2 dimensional array.
-    The array must be pointed to by  array  .
-    The type of the element in the array must be given by  type  (this is used
-    to enforce type checking).
-    The upper array index must be given by  y  .
-    The lower array index must be given by  x  .
-    The routine returns a pointer to the element.
-*/
-/*---------------------------------------------------------------------------*/
-
-char *iarray_get_element_3D (iarray array, unsigned int type, int z, int y,
-			     int x)
-/*  This routine will get an element from a simple 3 dimensional array.
-    The array must be pointed to by  array  .
-    The type of the element in the array must be given by  type  (this is used
-    to enforce type checking).
-    The upper array index must be given by  z  .
-    The middle array index must be given by  y  .
-    The lower array index must be given by  x  .
-    The routine returns a pointer to the element.
-*/
-/*---------------------------------------------------------------------------*/
-
 iarray iarray_get_sub_array_2D (iarray array, int starty, int startx,
 				unsigned int ylen, unsigned int xlen)
 /*  This function will create an "Intelligent Array" which is an alias or a
@@ -353,16 +317,17 @@ flag iarray_fill (iarray array, double *value)
 
 flag iarray_min_max (iarray array, unsigned int conv_type, double *min,
 		     double *max)
-/*  This routine will determine the minimum and maximum value of an
+/*  [PURPOSE] This routine will determine the minimum and maximum value of an
     "Intelligent Array".
-    The array must be given by  array  .
-    The conversion type to use for complex numbers must be given by  conv_type
-    Legal value for this include:
+    <array> The array.
+    <conv_type> The conversion type to use for complex numbers. Legal value for
+    this include:
         CONV1_REAL        CONV1_IMAG        CONV1_ABS        CONV1_SQUARE_ABS
 	CONV1_PHASE       CONV1_CONT_PHASE  CONV1_ENVELOPE
-    The routine will write the minimum value to the storage pointed to by  min
-    The routine will write the maximum value to the storage pointed to by  max
-    The routine returns TRUE on success, else it returns FALSE.
+    <min> The routine will write the minimum value here.
+    <max> The routine will write the maximum value here.
+    [MT-LEVEL] Unsafe.
+    [RETURNS] TRUE on success, else FALSE.
 */
 /*---------------------------------------------------------------------------*/
 
@@ -486,25 +451,25 @@ flag iarray_compute_histogram (iarray array, unsigned int conv_type,
 			       unsigned long *histogram_array,
 			       unsigned long *histogram_peak,
 			       unsigned long *histogram_mode)
-/*  This routine will compute a histogram of an "Intelligent Array".
-    The array must be given by  array  .
-    The conversion type to use for complex numbers must be given by  conv_type
-    Legal value for this include:
+/*  [PURPOSE] This routine will compute a histogram of an "Intelligent Array".
+    <array> The array.
+    <conv_type> The conversion type to use for complex numbers. Legal value for
+    this include:
         KIMAGE_COMPLEX_CONV_REAL        KIMAGE_COMPLEX_CONV_IMAG
         KIMAGE_COMPLEX_CONV_ABS         KIMAGE_COMPLEX_CONV_SQUARE_ABS
 	KIMAGE_COMPLEX_CONV_PHASE       KIMAGE_COMPLEX_CONV_CONT_PHASE
-    Data values below the value  min  will be ignored.
-    Data values above the value  max  will be ignored.
-    The number of histogram bins must be given by  num_bins  .
-    The histogram array must be pointed to by  histogram_array  .The values in
-    this array are updated, and hence must be initialised externally.
-    The peak of the histogram is written to the storage pointed to by
-    histogram_peak  .This value is updated, and hence must be externally
+    <min> Data values below this will be ignored.
+    <max> Data values above this will be ignored.
+    <num_bins> The number of histogram bins.
+    <histogram_array> A pointer to the histogram array. The values in this
+    array are updated, and hence must be initialised externally.
+    <histogram_peak> The peak of the histogram is written here. This value is
+    updated, and hence must be externally initialised to 0.
+    <histogram_mode> The mode of the histogram (index value of the peak) will
+    be written here. This value is updated, and hence must be externally
     initialised to 0.
-    The mode of the histogram (index value of the peak) will be written to the
-    storage pointed to by  histogram_mode  .This value is updated, and hence
-    must be externally initialised to 0.
-    The routine returns TRUE on success, else it returns FALSE.
+    [MT-LEVEL] Unsafe.
+    [RETURNS] TRUE on success, else FALSE.
 */
 /*---------------------------------------------------------------------------*/
 
@@ -583,63 +548,83 @@ double yend;
 /*---------------------------------------------------------------------------*/
 
 iarray iarray_create_1D (unsigned long xlen, unsigned int type)
-/*  This routine will create a 1-dimensional "Intelligent Array", using the
-    Karma general data structure format as the underlying data format.
-    The length of the dimension must be given by  xlen  .
-    The name of the dimension will be the default: "Axis 0".
-    The type of the data must be given by  type  .Legal values for this are:
+/*  [PURPOSE] This routine will create a 1-dimensional "Intelligent Array",
+    using the Karma general data structure format as the underlying data format
+    <xlen> The length of the dimension. The name of the dimension will be the
+    default: "Axis 0".
+    <type> The type of the data. Legal values for this are:
         K_FLOAT, K_DOUBLE, K_BYTE, K_INT, K_SHORT, K_COMPLEX, K_DCOMPLEX,
 	K_BCOMPLEX, K_ICOMPLEX,
         K_SCOMPLEX, K_LONG, K_LCOMPLEX, K_UBYTE, K_UINT, K_USHORT, K_ULONG,
 	K_UBCOMPLEX,
         K_UICOMPLEX, K_USCOMPLEX, K_ULCOMPLEX.
     The name of the element will be the default name: "Intensity".
-    The routine returns a dynamically allocated intelligent array on success,
-    else it prints an error message to the standard output and returns NULL.
+    [RETURNS] A dynamically allocated intelligent array on success, else NULL.
 */
 /*---------------------------------------------------------------------------*/
 
 iarray iarray_create_2D (unsigned long ylen, unsigned long xlen,
 			 unsigned int type)
-/*  This routine will create a 2-dimensional "Intelligent Array", using the
-    Karma general data structure format as the underlying data format.
-    The length of the most significant dimension (ie. the dimension with the
-    greates stride in memory) must be given by  ylen  .
-    The length of the least significant dimension must be given by  xlen  .
+/*  [PURPOSE] This routine will create a 2-dimensional "Intelligent Array",
+    using the Karma general data structure format as the underlying data format
+    <ylen> The length of the most significant dimension (ie. the dimension with
+    the greatest stride in memory.
+    <xlen> The length of the least significant dimension.
     The names of the dimensions will be the defaults: "Axis 0" and "Axis 1",
     respectively.
-    The type of the data must be given by  type  .Legal values for this are:
+    <type> The type of the data. Legal values for this are:
         K_FLOAT, K_DOUBLE, K_BYTE, K_INT, K_SHORT, K_COMPLEX, K_DCOMPLEX,
 	K_BCOMPLEX, K_ICOMPLEX,
         K_SCOMPLEX, K_LONG, K_LCOMPLEX, K_UBYTE, K_UINT, K_USHORT, K_ULONG,
 	K_UBCOMPLEX,
         K_UICOMPLEX, K_USCOMPLEX, K_ULCOMPLEX.
     The name of the element will be the default name: "Intensity".
-    The routine returns a dynamically allocated intelligent array on success,
-    else it prints an error message to the standard output and returns NULL.
+    [RETURNS] A dynamically allocated intelligent array on success, else NULL.
 */
 /*---------------------------------------------------------------------------*/
 
 iarray iarray_create_3D (unsigned long zlen, unsigned long ylen,
 			 unsigned long xlen, unsigned int type)
-/*  This routine will create a 3-dimensional "Intelligent Array", using the
-    Karma general data structure format as the underlying data format.
-    The length of the most significant dimension (ie. the dimension with the
-    greates stride in memory) must be given by  zlen  .
-    The length of the middle dimension must be given by  ylen  .
-    The length of the least significant dimension must be given by  xlen  .
+/*  [PURPOSE] This routine will create a 3-dimensional "Intelligent Array",
+    using the Karma general data structure format as the underlying data format
+    <zlen> The length of the most significant dimension (ie. the dimension with
+    the greatest stride in memory).
+    <ylen> The length of the middle dimension.
+    <xlen> The length of the least significant dimension.
     The names of the dimensions will be the defaults: "Axis 0", "Axis 1" and
     "Axis 2",
     respectively.
-    The type of the data must be given by  type  .Legal values for this are:
+    <type> The type of the data. Legal values for this are:
         K_FLOAT, K_DOUBLE, K_BYTE, K_INT, K_SHORT, K_COMPLEX, K_DCOMPLEX,
 	K_BCOMPLEX, K_ICOMPLEX,
         K_SCOMPLEX, K_LONG, K_LCOMPLEX, K_UBYTE, K_UINT, K_USHORT, K_ULONG,
 	K_UBCOMPLEX,
         K_UICOMPLEX, K_USCOMPLEX, K_ULCOMPLEX.
     The name of the element will be the default name: "Intensity".
-    The routine returns a dynamically allocated intelligent array on success,
-    else it prints an error message to the standard output and returns NULL.
+    [RETURNS] A dynamically allocated intelligent array on success, else NULL.
+*/
+/*---------------------------------------------------------------------------*/
+
+iarray iarray_create_4D (unsigned long zlen, unsigned long ylen,
+			 unsigned long xlen, unsigned int wlen,
+			 unsigned int type)
+/*  [PURPOSE] This routine will create a 4-dimensional "Intelligent Array",
+    using the Karma general data structure format as the underlying data format
+    <zlen> The length of the most significant dimension (ie. the dimension with
+    the greatest stride in memory).
+    <ylen> The length of the second most significant dimension.
+    <xlen> The length of the second least significant dimension.
+    <wlen> The length of the least significant dimension.
+    The names of the dimensions will be the defaults: "Axis 0", "Axis 1",
+    "Axis 2" and "Axis 3", respectively.
+    <type> The type of the data. Legal values for this are:
+        K_FLOAT, K_DOUBLE, K_BYTE, K_INT, K_SHORT, K_COMPLEX, K_DCOMPLEX,
+	K_BCOMPLEX, K_ICOMPLEX,
+        K_SCOMPLEX, K_LONG, K_LCOMPLEX, K_UBYTE, K_UINT, K_USHORT, K_ULONG,
+	K_UBCOMPLEX,
+        K_UICOMPLEX, K_USCOMPLEX, K_ULCOMPLEX.
+    The name of the element will be the default name: "Intensity".
+    [RETURNS] A dynamically allocated intelligent array on success, else NULL.
 */
 /*---------------------------------------------------------------------------*/
 

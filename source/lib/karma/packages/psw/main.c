@@ -3,7 +3,7 @@
 
     This code provides PostScript output routines.
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994-1996  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -47,8 +47,27 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/psw/main.c
 
-    Last updated by Richard Gooch   7-DEC-1994: Stripped declaration of  errno
+    Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
+
+    Updated by      Richard Gooch   15-APR-1995: Added library version number
+  printing.
+
+    Updated by      Richard Gooch   7-MAY-1995: Added  #include <karma_ch.h>
+  and  #include <karma_a.h>
+
+    Updated by      Richard Gooch   15-JUL-1995: Made linewidth setting code
+  more understandable, set linewidth to 0.1 mm and increased floats from
+  %6.3f to %7.4f
+
+    Updated by      Richard Gooch   23-SEP-1995: Remember colour between draw
+  operations: saves specifying colours every time.
+
+    Updated by      Richard Gooch   26-SEP-1995: Fixed bug in <write_header>
+  which printf'ed "0.0 0.0 0.0 setrgbcolor\t%Default Colour": one '%' missing
+
+    Last updated by Richard Gooch   4-JAN-1996: Added comments when writing
+  images and partially moved to <ch_printf> routine.
 
 
 */
@@ -60,9 +79,14 @@
 #include <errno.h>
 #include <karma.h>
 #include <karma_psw.h>
+#include <karma_ch.h>
 #include <karma_r.h>
 #include <karma_m.h>
+#include <karma_a.h>
 
+
+#define LINEWIDTH 0.1  /*  Measured in mm  */
+#define COLOUR_QUANTISATION 0.001  /*  Fraction of full-scale colour  */
 
 #if __STDC__ == 1
 #  define MAGIC_NUMBER 578942390U
@@ -73,9 +97,16 @@
 #define VERIFY_PSPAGE(pspage) if (pspage == NULL) \
 {(void) fprintf (stderr, "NULL PostScript page passed\n"); \
  a_prog_bug (function_name); } \
-if ( (*pspage).magic_number != MAGIC_NUMBER ) \
+if (pspage->magic_number != MAGIC_NUMBER) \
 {(void) fprintf (stderr, "Invalid PostScript page object\n"); \
  a_prog_bug (function_name); }
+
+typedef struct
+{
+    double red;
+    double green;
+    double blue;
+} PSColour;
 
 /*  Internal definition of PostScriptPage object structure type  */
 struct pspage_type
@@ -84,6 +115,7 @@ struct pspage_type
     unsigned int magic_number;
     Channel channel;
     flag portrait;
+    PSColour colour;
 };
 
 
@@ -95,6 +127,8 @@ STATIC_FUNCTION (flag write_mono_line,
 		 (Channel channel, CONST unsigned char *line,
 		  unsigned int length, CONST uaddr *offsets, uaddr stride,
 		  CONST unsigned char imap[256], flag reverse) );
+STATIC_FUNCTION (flag set_colour, (PostScriptPage pspage,
+				   double red, double green, double blue) );
 
 
 /*  Public functions follow  */
@@ -127,7 +161,7 @@ PostScriptPage psw_create (Channel channel, double hoffset, double voffset,
     static char function_name[] = "psw_create";
 
     FLAG_VERIFY (portrait);
-    if (write_header (channel, hoffset, voffset, hsize, vsize) != TRUE)
+    if ( !write_header (channel, hoffset, voffset, hsize, vsize) )
     {
 	(void) fprintf (stderr, "Error writing PostScript header\n");
 	return (NULL);
@@ -136,11 +170,14 @@ PostScriptPage psw_create (Channel channel, double hoffset, double voffset,
     {
 	m_error_notify (function_name, "PostScriptPage object");
     }
-    (*pspage).magic_number = MAGIC_NUMBER;
-    (*pspage).fsize = sqrt (hsize * hsize + vsize * vsize) / 1.41;
-    (*pspage).channel = channel;
-    (*pspage).portrait = portrait;
-    if (ch_puts (channel, "gsave", TRUE) != TRUE) return (FALSE);
+    pspage->magic_number = MAGIC_NUMBER;
+    pspage->fsize = sqrt (hsize * hsize + vsize * vsize) / 1.41;
+    pspage->channel = channel;
+    pspage->portrait = portrait;
+    pspage->colour.red = 0.0;
+    pspage->colour.green = 0.0;
+    pspage->colour.blue = 0.0;
+    if ( !ch_puts (channel, "gsave", TRUE) ) return (FALSE);
     return (pspage);
 }   /*  End Function psw_create  */
 
@@ -171,13 +208,12 @@ flag psw_mono_image (PostScriptPage pspage, CONST unsigned char *image,
     unsigned int vcount;
     unsigned int hlen, vlen;
     double hos, vos, hss, vss;
-    char txt[STRING_LENGTH];
     static char function_name[] = "psw_mono_image";
 
     VERIFY_PSPAGE (pspage);
-    channel = (*pspage).channel;
-    if (ch_puts (channel, "gsave", TRUE) != TRUE) return (FALSE);
-    if ( (*pspage).portrait )
+    channel = pspage->channel;
+    if ( !ch_puts (channel, "gsave", TRUE) ) return (FALSE);
+    if (pspage->portrait)
     {
 	hos = xstart;
 	vos = ystart;
@@ -195,21 +231,22 @@ flag psw_mono_image (PostScriptPage pspage, CONST unsigned char *image,
 	hlen = ylen;
 	vlen = xlen;
     }
-    (void) sprintf (txt, "%6.3f  %6.3f translate %6.3f  %6.3f scale",
-		    hos, vos, hss, vss);
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
-    (void) sprintf (txt,
-		    "/nx %5d def /ny %5d def /nbits %3d def /line %5d string def incimage",
-		    hlen, vlen, 8, hlen);	
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);	
+    if ( !ch_printf (channel,
+		     "%% Greyscale image follows at: %e %e to %e %e\n",
+		     xstart, ystart, xend, yend) ) return (FALSE);
+    if ( !ch_printf (channel, "%7.4f  %7.4f translate %7.4f  %7.4f scale\n",
+		     hos, vos, hss, vss) ) return (FALSE);
+    if ( !ch_printf (channel,
+		     "/nx %5d def /ny %5d def /nbits %3d def /line %5d string def incimage\n",
+		     hlen, vlen, 8, hlen) ) return (FALSE);	
     /*  Write the image  */
-    if ( (*pspage).portrait )
+    if (pspage->portrait)
     {
 	for (vcount = 0; vcount < ylen; ++vcount)
 	{
 	    voff = (yoffsets == NULL) ? xlen * vcount : yoffsets[vcount];
-	    if (write_mono_line (channel, image + voff, xlen, xoffsets, 1,
-				 imap, FALSE) != TRUE) return (FALSE);
+	    if ( !write_mono_line (channel, image + voff, xlen, xoffsets, 1,
+				   imap, FALSE) ) return (FALSE);
 	}
     }
     else
@@ -218,11 +255,11 @@ flag psw_mono_image (PostScriptPage pspage, CONST unsigned char *image,
 	{
 	    voff = (xoffsets ==
 		    NULL) ? xlen - vcount - 1 : xoffsets[xlen - vcount - 1];
-	    if (write_mono_line (channel, image + voff, ylen, yoffsets, xlen,
-				 imap, FALSE) != TRUE) return (FALSE);
+	    if ( !write_mono_line (channel, image + voff, ylen, yoffsets, xlen,
+				   imap, FALSE) ) return (FALSE);
 	}
     }
-    if (ch_puts (channel, "grestore", TRUE) != TRUE) return (FALSE);
+    if ( !ch_puts (channel, "grestore", TRUE) ) return (FALSE);
     return (TRUE);
 }   /*  End Function psw_mono_image  */
 
@@ -257,7 +294,6 @@ flag psw_pseudocolour_image (PostScriptPage pspage, CONST unsigned char *image,
     unsigned int vcount;
     unsigned int hlen, vlen;
     double hos, vos, hss, vss;
-    char txt[STRING_LENGTH];
     static char function_name[] = "psw_pseudocolour_image";
 
     VERIFY_PSPAGE (pspage);
@@ -266,9 +302,9 @@ flag psw_pseudocolour_image (PostScriptPage pspage, CONST unsigned char *image,
 	(void) fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
-    channel = (*pspage).channel;
-    if (ch_puts (channel, "gsave", TRUE) != TRUE) return (FALSE);
-    if ( (*pspage).portrait )
+    channel = pspage->channel;
+    if ( !ch_puts (channel, "gsave", TRUE) ) return (FALSE);
+    if (pspage->portrait)
     {
 	hos = xstart;
 	vos = ystart;
@@ -286,29 +322,29 @@ flag psw_pseudocolour_image (PostScriptPage pspage, CONST unsigned char *image,
 	hlen = ylen;
 	vlen = xlen;
     }
-    (void) sprintf (txt, "%6.3f  %6.3f translate %6.3f  %6.3f scale",
-		    hos, vos, hss, vss);
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
-    (void) sprintf (txt,
-		    "/nx %5d def /ny %5d def /nbits %3d def /rline %5d string def",
-		    hlen, vlen, 8, hlen);
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
-    (void) sprintf (txt,
-		    "/gline %5d string def /bline %5d string def incclrimage",
-		    hlen, hlen);
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);	
+    if ( !ch_printf (channel,
+		     "%% PseudoColour image follows at: %e %e to %e %e\n",
+		     xstart, ystart, xend, yend) ) return (FALSE);
+    if ( !ch_printf (channel, "%7.4f  %7.4f translate %7.4f  %7.4f scale\n",
+		    hos, vos, hss, vss) ) return (FALSE);
+    if ( !ch_printf (channel,
+		     "/nx %5d def /ny %5d def /nbits %3d def /rline %5d string def\n",
+		     hlen, vlen, 8, hlen) ) return (FALSE);
+    if ( !ch_printf (channel,
+		     "/gline %5d string def /bline %5d string def incclrimage\n",
+		     hlen, hlen) ) return (FALSE);	
     /*  Write the image  */
-    if ( (*pspage).portrait )
+    if (pspage->portrait)
     {
 	for (vcount = 0; vcount < ylen; ++vcount)
 	{
 	    voff = (yoffsets == NULL) ? xlen * vcount : yoffsets[vcount];
-	    if (write_mono_line (channel, image + voff, xlen, xoffsets, 1,
-				 imap_red, FALSE) != TRUE) return (FALSE);
-	    if (write_mono_line (channel, image + voff, xlen, xoffsets, 1,
-				 imap_green, FALSE) != TRUE) return (FALSE);
-	    if (write_mono_line (channel, image + voff, xlen, xoffsets, 1,
-				 imap_blue, FALSE) != TRUE) return (FALSE);
+	    if ( !write_mono_line (channel, image + voff, xlen, xoffsets, 1,
+				   imap_red, FALSE) ) return (FALSE);
+	    if ( !write_mono_line (channel, image + voff, xlen, xoffsets, 1,
+				   imap_green, FALSE) ) return (FALSE);
+	    if ( !write_mono_line (channel, image + voff, xlen, xoffsets, 1,
+				   imap_blue, FALSE) ) return (FALSE);
 	}
     }
     else
@@ -317,15 +353,15 @@ flag psw_pseudocolour_image (PostScriptPage pspage, CONST unsigned char *image,
 	{
 	    voff = (xoffsets ==
 		    NULL) ? xlen - vcount - 1 : xoffsets[xlen - vcount - 1];
-	    if (write_mono_line (channel, image + voff, ylen, yoffsets, xlen,
-				 imap_red, FALSE) != TRUE) return (FALSE);
-	    if (write_mono_line (channel, image + voff, ylen, yoffsets, xlen,
-				 imap_green, FALSE) != TRUE) return (FALSE);
-	    if (write_mono_line (channel, image + voff, ylen, yoffsets, xlen,
-				 imap_blue, FALSE) != TRUE) return (FALSE);
+	    if ( !write_mono_line (channel, image + voff, ylen, yoffsets, xlen,
+				   imap_red, FALSE) ) return (FALSE);
+	    if ( !write_mono_line (channel, image + voff, ylen, yoffsets, xlen,
+				   imap_green, FALSE) ) return (FALSE);
+	    if ( !write_mono_line (channel, image + voff, ylen, yoffsets, xlen,
+				   imap_blue, FALSE) ) return (FALSE);
 	}
     }
-    if (ch_puts (channel, "grestore", TRUE) != TRUE) return (FALSE);
+    if ( !ch_puts (channel, "grestore", TRUE) ) return (FALSE);
     return (TRUE);
 }   /*  End Function psw_pseudocolour_image  */
 
@@ -368,13 +404,12 @@ flag psw_rgb_image (PostScriptPage pspage, CONST unsigned char *image_reds,
     unsigned int vcount, tmp;
     unsigned int hlen, vlen;
     double hos, vos, hss, vss;
-    char txt[STRING_LENGTH];
     static char function_name[] = "psw_rgb_image";
 
     VERIFY_PSPAGE (pspage);
-    channel = (*pspage).channel;
-    if (ch_puts (channel, "gsave", TRUE) != TRUE) return (FALSE);
-    if ( (*pspage).portrait )
+    channel = pspage->channel;
+    if ( !ch_puts (channel, "gsave", TRUE) ) return (FALSE);
+    if (pspage->portrait)
     {
 	hos = xstart;
 	vos = ystart;
@@ -392,19 +427,19 @@ flag psw_rgb_image (PostScriptPage pspage, CONST unsigned char *image_reds,
 	hlen = ylen;
 	vlen = xlen;
     }
-    (void) sprintf (txt, "%6.3f  %6.3f translate %6.3f  %6.3f scale",
-		    hos, vos, hss, vss);
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
-    (void) sprintf (txt,
-		    "/nx %5d def /ny %5d def /nbits %3d def /rline %5d string def",
-		    hlen, vlen, 8, hlen);
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
-    (void) sprintf (txt,
-		    "/gline %5d string def /bline %5d string def incclrimage",
-		    hlen, hlen);
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
+    if ( !ch_printf (channel,
+		     "%% TrueColour image follows at: %e %e to %e %e\n",
+		     xstart, ystart, xend, yend) ) return (FALSE);
+    if ( !ch_printf (channel, "%7.4f  %7.4f translate %7.4f  %7.4f scale\n",
+		     hos, vos, hss, vss) ) return (FALSE);
+    if ( !ch_printf (channel,
+		     "/nx %5d def /ny %5d def /nbits %3d def /rline %5d string def\n",
+		     hlen, vlen, 8, hlen) ) return (FALSE);
+    if ( !ch_printf (channel,
+		     "/gline %5d string def /bline %5d string def incclrimage\n",
+		     hlen, hlen) ) return (FALSE);
     /*  Write the image  */
-    if ( (*pspage).portrait )
+    if (pspage->portrait)
     {
 	for (vcount = 0; vcount < ylen; ++vcount)
 	{
@@ -412,15 +447,15 @@ flag psw_rgb_image (PostScriptPage pspage, CONST unsigned char *image_reds,
 	    voff_red = (yoffsets_red == NULL) ? tmp : yoffsets_red[vcount];
 	    voff_green = (yoffsets_green==NULL) ? tmp : yoffsets_green[vcount];
 	    voff_blue = (yoffsets_blue == NULL) ? tmp : yoffsets_blue[vcount];
-	    if (write_mono_line (channel, image_reds + voff_red, xlen,
-				 xoffsets_red,
-				 stride, NULL, FALSE) != TRUE) return (FALSE);
-	    if (write_mono_line (channel, image_greens + voff_green, xlen,
-				 xoffsets_green,
-				 stride, NULL, FALSE) != TRUE) return (FALSE);
-	    if (write_mono_line (channel, image_blues + voff_blue, xlen,
-				 xoffsets_blue,
-				 stride, NULL, FALSE) != TRUE) return (FALSE);
+	    if ( !write_mono_line (channel, image_reds + voff_red, xlen,
+				   xoffsets_red,
+				   stride, NULL, FALSE) ) return (FALSE);
+	    if ( !write_mono_line (channel, image_greens + voff_green, xlen,
+				   xoffsets_green,
+				   stride, NULL, FALSE) ) return (FALSE);
+	    if ( !write_mono_line (channel, image_blues + voff_blue, xlen,
+				   xoffsets_blue,
+				   stride, NULL, FALSE) ) return (FALSE);
 	}
     }
     else
@@ -434,21 +469,18 @@ flag psw_rgb_image (PostScriptPage pspage, CONST unsigned char *image_reds,
 			  NULL) ? tmp : xoffsets_green[xlen - vcount - 1];
 	    voff_blue = (xoffsets_blue ==
 			 NULL) ? tmp : xoffsets_blue[xlen - vcount - 1];
-	    if (write_mono_line (channel, image_reds + voff_red, ylen,
-				 yoffsets_red,
-				 xlen * stride, NULL, FALSE)
-		!= TRUE) return (FALSE);
-	    if (write_mono_line (channel, image_greens + voff_green, ylen,
-				 yoffsets_green,
-				 xlen * stride, NULL, FALSE)
-		!= TRUE) return (FALSE);
-	    if (write_mono_line (channel, image_blues + voff_blue, ylen,
-				 yoffsets_blue,
-				 xlen * stride, NULL, FALSE)
-		!= TRUE) return (FALSE);
+	    if ( !write_mono_line (channel, image_reds + voff_red, ylen,
+				   yoffsets_red,
+				   xlen * stride, NULL, FALSE) ) return(FALSE);
+	    if ( !write_mono_line (channel, image_greens + voff_green, ylen,
+				   yoffsets_green,
+				   xlen * stride, NULL, FALSE) ) return(FALSE);
+	    if ( !write_mono_line (channel, image_blues + voff_blue, ylen,
+				   yoffsets_blue,
+				   xlen * stride, NULL, FALSE) ) return(FALSE);
 	}
     }
-    if (ch_puts (channel, "grestore", TRUE) != TRUE) return (FALSE);
+    if ( !ch_puts (channel, "grestore", TRUE) ) return (FALSE);
     return (TRUE);
 }   /*  End Function psw_rgb_image  */
 
@@ -470,17 +502,17 @@ flag psw_finish (PostScriptPage pspage, flag eps, flag flush, flag close)
 
     VERIFY_PSPAGE (pspage);
     FLAG_VERIFY (eps);
-    channel = (*pspage).channel;
-    (*pspage).magic_number = 0;
+    channel = pspage->channel;
+    pspage->magic_number = 0;
     m_free ( (char *) pspage );
-    if (ch_puts (channel, "grestore", TRUE) != TRUE)
+    if ( !ch_puts (channel, "grestore", TRUE) )
     {
 	if (close) (void) ch_close (channel);
 	return (FALSE);
     }
     if (!eps)
     {
-	if (ch_puts (channel, "showpage", TRUE) != TRUE)
+	if ( !ch_puts (channel, "showpage", TRUE) )
 	{
 	    if (close) (void) ch_close (channel);
 	    return (FALSE);
@@ -508,24 +540,18 @@ flag psw_rgb_line (PostScriptPage pspage, double red, double green,double blue,
 */
 {
     Channel channel;
-    char txt[STRING_LENGTH];
     static char function_name[] = "psw_rgb_line";
 
     VERIFY_PSPAGE (pspage);
-    channel = (*pspage).channel;
-    (void) sprintf (txt, "%6.3f  %6.3f  %6.3f  setrgbcolor", red, green, blue);
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
-    if ( (*pspage).portrait )
+    channel = pspage->channel;
+    if ( !set_colour (pspage, red, green, blue) ) return (FALSE);
+    if (pspage->portrait)
     {
-	(void) sprintf (txt, "%6.3f  %6.3f M %6.3f  %6.3f D str",
-			xstart, ystart, xend, yend);
+	return ( ch_printf (channel, "%7.4f  %7.4f M %7.4f  %7.4f D str\n",
+			    xstart, ystart, xend, yend) );
     }
-    else
-    {
-	(void) sprintf (txt, "%6.3f  %6.3f M %6.3f  %6.3f D str",
-			ystart, 1.0 - xstart, yend, 1.0 - xend);
-    }
-    return ( ch_puts (channel, txt, TRUE) );
+    return ( !ch_printf (channel, "%7.4f  %7.4f M %7.4f  %7.4f D str\n",
+			 ystart, 1.0 - xstart, yend, 1.0 - xend) );
 }   /*  End Function psw_rgb_line  */
 
 /*PUBLIC_FUNCTION*/
@@ -560,30 +586,29 @@ flag psw_rgb_polygon (PostScriptPage pspage,
     }
     FLAG_VERIFY (fill);
     if (num_points < 2) return (TRUE);
-    channel = (*pspage).channel;
-    (void) sprintf (txt, "%6.3f  %6.3f  %6.3f  setrgbcolor", red, green, blue);
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
-    if ( (*pspage).portrait )
+    channel = pspage->channel;
+    if ( !set_colour (pspage, red, green, blue) ) return (FALSE);
+    if (pspage->portrait)
     {
-	(void) sprintf (txt, "%6.3f  %6.3f M", x_arr[0], y_arr[0]);
+	(void) sprintf (txt, "%7.4f  %7.4f M", x_arr[0], y_arr[0]);
     }
     else
     {
-	(void) sprintf (txt, "%6.3f  %6.3f M", y_arr[0], 1.0 -x_arr[0]);
+	(void) sprintf (txt, "%7.4f  %7.4f M", y_arr[0], 1.0 -x_arr[0]);
     }
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
+    if ( !ch_puts (channel, txt, TRUE) ) return (FALSE);
     for (count = 1; count < num_points; ++count)
     {
-	if ( (*pspage).portrait )
+	if (pspage->portrait)
 	{
-	    (void) sprintf (txt, "%6.3f  %6.3f D", x_arr[count], y_arr[count]);
+	    (void) sprintf (txt, "%7.4f  %7.4f D", x_arr[count], y_arr[count]);
 	}
 	else
 	{
-	    (void) sprintf (txt, "%6.3f  %6.3f D",
+	    (void) sprintf (txt, "%7.4f  %7.4f D",
 			    y_arr[count], 1.0 - x_arr[count]);
 	}
-	if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
+	if ( !ch_puts (channel, txt, TRUE) ) return (FALSE);
     }
     if (fill) return ( ch_puts (channel, "  closepath  fill", TRUE) );
     return ( ch_puts (channel, "  closepath  stroke", TRUE) );
@@ -615,11 +640,10 @@ flag psw_rgb_ellipse (PostScriptPage pspage,
 
     VERIFY_PSPAGE (pspage);
     FLAG_VERIFY (fill);
-    channel = (*pspage).channel;
-    (void) sprintf (txt, "%6.3f  %6.3f  %6.3f  setrgbcolor", red, green, blue);
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "gsave", TRUE) != TRUE) return (FALSE);
-    if ( (*pspage).portrait )
+    channel = pspage->channel;
+    if ( !set_colour (pspage, red, green, blue) ) return (FALSE);
+    if ( !ch_puts (channel, "gsave", TRUE) ) return (FALSE);
+    if (pspage->portrait)
     {
 	ch = cx;
 	cv = cy;
@@ -636,9 +660,9 @@ flag psw_rgb_ellipse (PostScriptPage pspage,
     /*  Fiddle scale to make ellipse  */
     vscale = rv / rh;
     (void) sprintf (txt,
-		    "newpath  1.0 %6.3f scale  %6.3f %6.3f %6.3f 0 360 arc closepath %s",
+		    "newpath  1.0 %7.4f scale  %7.4f %7.4f %7.4f 0 360 arc closepath %s",
 		    vscale, ch, (cv) / vscale, rh, fill ? "fill" : "stroke");
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
+    if ( !ch_puts (channel, txt, TRUE) ) return (FALSE);
     return ( ch_puts (channel, "grestore", TRUE) );
 }   /*  End Function psw_rgb_ellipse  */
 
@@ -674,35 +698,34 @@ flag psw_rgb_text (PostScriptPage pspage, double red, double green,double blue,
 	(void) fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
-    channel = (*pspage).channel;
-    if (ch_puts (channel, "gsave", TRUE) != TRUE) return (FALSE);
-    (void) sprintf (txt, "%6.3f  %6.3f  %6.3f  setrgbcolor", red, green, blue);
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
+    channel = pspage->channel;
+    if ( !set_colour (pspage, red, green, blue) ) return (FALSE);
+    if ( !ch_puts (channel, "gsave", TRUE) ) return (FALSE);
     (void) sprintf (txt, "/%s findfont", fontname);
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
-    (void) sprintf (txt, "%6.3f scalefont  setfont",
-		    (double) fontsize / 10.0 / (*pspage).fsize);
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
-    if ( (*pspage).portrait )
+    if ( !ch_puts (channel, txt, TRUE) ) return (FALSE);
+    (void) sprintf (txt, "%7.4f scalefont  setfont",
+		    (double) fontsize / 10.0 / pspage->fsize);
+    if ( !ch_puts (channel, txt, TRUE) ) return (FALSE);
+    if (pspage->portrait)
     {
-	(void) sprintf (txt, "%6.3f  %6.3f  moveto", xstart, ystart);
+	(void) sprintf (txt, "%7.4f  %7.4f  moveto", xstart, ystart);
     }
     else
     {
-	(void) sprintf (txt, "%6.3f  %6.3f  moveto", ystart, 1.0 - xstart);
+	(void) sprintf (txt, "%7.4f  %7.4f  moveto", ystart, 1.0 - xstart);
     }
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
-    if ( (*pspage).portrait )
+    if ( !ch_puts (channel, txt, TRUE) ) return (FALSE);
+    if (pspage->portrait)
     {
-	(void) sprintf (txt, "%6.3f rotate", angle);
+	(void) sprintf (txt, "%7.4f rotate", angle);
     }
     else
     {
-	(void) sprintf (txt, "%6.3f rotate", angle + 90.0);
+	(void) sprintf (txt, "%7.4f rotate", angle + 90.0);
     }
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
+    if ( !ch_puts (channel, txt, TRUE) ) return (FALSE);
     (void) sprintf (txt, "(%s)  show", string);
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
+    if ( !ch_puts (channel, txt, TRUE) ) return (FALSE);
     return ( ch_puts (channel, "grestore", TRUE) );
 }   /*  End Function psw_rgb_text  */
 
@@ -725,27 +748,32 @@ static flag write_header (Channel channel, double hoffset, double voffset,
     The routine returns TRUE on success, else it returns FALSE.
 */
 {
-    int lxi, lyi;
+    int lx0, lx1, ly0, ly1;
     time_t clock;
     struct timeval date;
     double cm_to_points;
+    double size, linewidth_cm;
     struct tm *ltime;
     char txt[STRING_LENGTH];
     char hostname[STRING_LENGTH];
     extern char module_name[STRING_LENGTH + 1];
     extern char module_version_date[STRING_LENGTH + 1];
+    extern char module_lib_version[STRING_LENGTH + 1];
+    extern char karma_library_version[STRING_LENGTH + 1];
     extern char *sys_errlist[];
     static char function_name[] = "write_header";
 
     /*  Put the bounding box in pts.  */
     cm_to_points = 72.0 / 2.54;
-    lxi = (int) (cm_to_points * hsize + 0.5);
-    lyi = (int) (cm_to_points * vsize + 0.5);
+    lx0 = (int) (cm_to_points * hoffset + 0.5);
+    ly0 = (int) (cm_to_points * voffset + 0.5);
+    lx1 = (int) (cm_to_points * (hoffset + hsize) + 0.5);
+    ly1 = (int) (cm_to_points * (voffset + vsize) + 0.5);
 
     /*  Put header for encapsulated postscript */
-    if (ch_puts (channel, "%!PS", TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "%%Title: ", TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "%%Creator: ", FALSE) != TRUE) return (FALSE);
+    if ( !ch_puts (channel, "%!PS", TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "%%Title: ", TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "%%Creator: ", FALSE) ) return (FALSE);
     if (strcmp (module_name, "<<Unknown>>") == 0)
     {
 	(void) sprintf (txt, "Karma  psw_  package");
@@ -755,7 +783,7 @@ static flag write_header (Channel channel, double hoffset, double voffset,
 	if (strcmp (module_version_date, "Unknown") == 0)
 	{
 	    (void) sprintf (txt,
-			    "module: \"%s\" using Karma  psw_  package",
+			    "module: \"%s\" using Karma <psw_> package",
 			    module_name);
 	}
 	else
@@ -765,8 +793,12 @@ static flag write_header (Channel channel, double hoffset, double voffset,
 			    module_name, module_version_date);
 	}
     }
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "%%CreationDate: ", FALSE) != TRUE) return (FALSE);
+    if ( !ch_puts (channel, txt, TRUE) ) return (FALSE);
+    (void) sprintf (txt,
+		    "%%%%Karma library version: %s\n%%%%Module compiled with library version: %s",
+		    karma_library_version, module_lib_version);
+    if ( !ch_puts (channel, txt, TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "%%CreationDate: ", FALSE) ) return (FALSE);
     if (gettimeofday (&date, (struct timezone *) NULL) != 0)
     {
 	(void) fprintf (stderr, "Error getting system time\t%s\n",
@@ -780,61 +812,62 @@ static flag write_header (Channel channel, double hoffset, double voffset,
 	(void) fprintf (stderr, "Buffer too small for time string\n");
 	a_prog_bug (function_name);
     }
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
+    if ( !ch_puts (channel, txt, TRUE) ) return (FALSE);
     r_gethostname (hostname, STRING_LENGTH);
     (void) sprintf (txt, "%%%%For: %s@%s", r_getenv ("USER"), hostname);
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "%%Pages: 0", TRUE) != TRUE) return (FALSE);
-    (void) sprintf (txt, "%%%%BoundingBox: 0 0 %d %d", lxi, lyi);
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "%%EndComments", TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "%", TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel,
-		 "/lwid   0.0001 def  /slw {lwid mul setlinewidth} def",
-		 TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "1   slw 1 setlinejoin 1 setlinecap",
-		 TRUE) != TRUE) return (FALSE);
+    if ( !ch_puts (channel, txt, TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "%%Pages: 0", TRUE) ) return (FALSE);
+    (void) sprintf (txt, "%%%%BoundingBox: %d %d %d %d", lx0, ly0, lx1, ly1);
+    if ( !ch_puts (channel, txt, TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "%%EndComments", TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "%", TRUE) ) return (FALSE);
+    size = (hsize > vsize) ? hsize : vsize;
+    linewidth_cm = LINEWIDTH / 10.0;
+    (void) sprintf (txt, "%e setlinewidth %% %7.4f mm",
+		    linewidth_cm / size, LINEWIDTH);
+    if ( !ch_puts (channel, txt, TRUE) ) return (FALSE);
+    if ( !ch_puts (channel,"1 setlinejoin 1 setlinecap",TRUE) ) return (FALSE);
     /*  Compute translation and scale such that (0.0, 0.0) is the origin and
 	(1.0, 1.0) is the far end of the region  */
-    (void) sprintf (txt, "%6.3f %6.3f translate  %6.3f %6.3f scale",
+    (void) sprintf (txt, "%7.4f %7.4f translate  %7.4f %7.4f scale",
 		    hoffset * cm_to_points, voffset * cm_to_points,
 		    hsize * cm_to_points, vsize * cm_to_points);
-    if (ch_puts (channel, txt, TRUE) != TRUE) return (FALSE);
+    if ( !ch_puts (channel, txt, TRUE) ) return (FALSE);
     /*  Set up definitions.  */
-    if (ch_puts (channel, "/M {moveto} def /D {lineto} def ",
-		 TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "/m {rmoveto} def /d {rlineto} def",
-		 TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "/r {rotate} def /solid {[]0 setdash} def",
-		 TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "/sp {currentpoint /y exch def /x exch def} def",
-		 TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "/rp {x y M} def", TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "/str {sp stroke rp} def  /dot { 0 0 d} def",
-		 TRUE) != TRUE) return (FALSE);
-  
-    if (ch_puts (channel, "/cfont /Courier def ",TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "/sfont /Symbol def", TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "/CF {cfont findfont} def ",
-		 TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "/SF {sfont findfont} def ",
-		 TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "/HF {/Helvetica findfont} def ",
-		 TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "/HBF {/Helvetica-bold findfont} def ", TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "/TF {/Times-Roman findfont} def ",
-		 TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "/TBF {/Times-Bold findfont} def ",
-		 TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel, "/SS {scalefont setfont } def ",
-		 TRUE) != TRUE) return (FALSE);
+    if ( !ch_puts (channel, "/M {moveto} def /D {lineto} def ",
+		   TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "/m {rmoveto} def /d {rlineto} def",
+		   TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "/r {rotate} def /solid {[]0 setdash} def",
+		   TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "/sp {currentpoint /y exch def /x exch def} def",
+		   TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "/rp {x y M} def", TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "/str {sp stroke rp} def  /dot { 0 0 d} def",
+		   TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "/cfont /Courier def ",TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "/sfont /Symbol def", TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "/CF {cfont findfont} def ",TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "/SF {sfont findfont} def ",TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "/HF {/Helvetica findfont} def ",
+		   TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "/HBF {/Helvetica-bold findfont} def ",
+		   TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "/TF {/Times-Roman findfont} def ",
+		   TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "/TBF {/Times-Bold findfont} def ",
+		   TRUE) ) return (FALSE);
+    if ( !ch_puts (channel, "/SS {scalefont setfont } def ",
+		   TRUE) ) return (FALSE);
 
-    if (ch_puts (channel,
-		 "/incimage {nx ny nbits [nx 0 0 ny 0 0] {currentfile line readhexstring pop} image} def ",
-		 TRUE) != TRUE) return (FALSE);
-    if (ch_puts (channel,
-		 "/incclrimage {nx ny nbits [nx 0 0 ny 0 0] {currentfile rline readhexstring pop}  {currentfile gline readhexstring pop}  {currentfile bline readhexstring pop}  true 3 colorimage} def ",
-		 TRUE) != TRUE) return (FALSE);
+    if ( !ch_puts (channel,
+		   "/incimage {nx ny nbits [nx 0 0 ny 0 0] {currentfile line readhexstring pop} image} def ",
+		   TRUE) ) return (FALSE);
+    if ( !ch_puts (channel,
+		   "/incclrimage {nx ny nbits [nx 0 0 ny 0 0] {currentfile rline readhexstring pop}  {currentfile gline readhexstring pop}  {currentfile bline readhexstring pop}  true 3 colorimage} def ",
+		   TRUE) ) return (FALSE);
+    (void) sprintf (txt, "0.0 0.0 0.0  setrgbcolor\t%%Default Colour");
+    if ( !ch_puts (channel, txt, TRUE) ) return (FALSE);
     return (TRUE);
 }   /*  End Function write_header  */
 
@@ -872,3 +905,27 @@ static flag write_mono_line (Channel channel, CONST unsigned char *line,
     }
     return ( ch_puts (channel, "", TRUE) );
 }   /*  End Function write_mono_line  */
+
+static flag set_colour (PostScriptPage pspage,
+			double red, double green, double blue)
+/*  [PURPOSE] This routine will set the drawing colour for a PostScript page.
+    <pspage> The PostScript page.
+    <red> The red RGB component.
+    <green> The green RGB component.
+    <blue> The blue RGB component.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    if ( (fabs (red - pspage->colour.red) < COLOUR_QUANTISATION ) &&
+	(fabs (green - pspage->colour.green) < COLOUR_QUANTISATION ) &&
+	(fabs (blue - pspage->colour.blue) < COLOUR_QUANTISATION ) )
+    {
+	return (TRUE);
+    }
+    if ( !ch_printf (pspage->channel, "%7.4f  %7.4f  %7.4f  setrgbcolor\n",
+		     red, green, blue) ) return (FALSE);
+    pspage->colour.red = red;
+    pspage->colour.green = green;
+    pspage->colour.blue = blue;
+    return (TRUE);
+}   /*  End Function set_colour  */

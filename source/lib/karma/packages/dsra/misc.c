@@ -1,10 +1,9 @@
 /*LINTLIBRARY*/
-/*MISALIGNED*/
 /*  misc.c
 
     This code provides routines to read ASCII data structures from Channels.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -45,7 +44,9 @@
     Updated by      Richard Gooch   17-MAY-1993: Added support for string data
   types.
 
-    Last updated by Richard Gooch   26-NOV-1994: Moved to  packages/dsra/misc.c
+    Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/dsra/misc.c
+
+    Last updated by Richard Gooch   19-APR-1995: Cleaned some code.
 
 
 */
@@ -59,6 +60,8 @@
 #include <karma_st.h>
 #include <karma_m.h>
 #include <karma_a.h>
+#include <os.h>
+
 
 #define ARRAYP        6    /*  Backwards compatibility  */
 
@@ -80,7 +83,6 @@ Channel channel;
     char temp_line[STRING_LENGTH];
     multi_array *multi_desc;
     packet_desc *pack_desc;
-    extern char host_type_sizes[NUMTYPES];
     static char function_name[] = "dsra_multi_desc";
 
     /*  Read multi array descriptor */
@@ -115,14 +117,14 @@ Channel channel;
             ds_dealloc_multi (multi_desc);
             return (NULL);
         }
-        if ( ( (*multi_desc).array_names[array_count] =
+        if ( ( multi_desc->array_names[array_count] =
 	      m_alloc ( (int) strlen (temp_line) + 1 ) ) == NULL )
         {
 	    m_error_notify (function_name, "array name");
             ds_dealloc_multi (multi_desc);
             return (NULL);
         }
-        (void) strcpy ( (*multi_desc).array_names[array_count], temp_line );
+        (void) strcpy ( multi_desc->array_names[array_count], temp_line );
     }
     if (chs_get_line (channel, temp_line, STRING_LENGTH) == FALSE)
     {
@@ -146,7 +148,7 @@ Channel channel;
 	    ds_dealloc_multi (multi_desc);
             return (NULL);
         }
-        (*multi_desc).headers[array_count] = pack_desc;
+        multi_desc->headers[array_count] = pack_desc;
         ++array_count;
     }
     return (multi_desc);
@@ -212,11 +214,11 @@ Channel channel;
 	    ds_dealloc_packet (pack_desc, NULL);
             return (NULL);
         }
-        (*pack_desc).element_types[element_count] = elem_type;
+        pack_desc->element_types[element_count] = elem_type;
 	if ( ds_element_is_named (elem_type) )
 	{
 	    /*  Named data type  */
-	    if ( ( (*pack_desc).element_desc[element_count] =
+	    if ( ( pack_desc->element_desc[element_count] =
 		  st_dup (elem_name) ) == NULL )
 	    {
 		(void) fprintf (stderr,
@@ -231,7 +233,7 @@ Channel channel;
 	    switch (elem_type)
 	    {
 	      case ARRAYP:
-		(*pack_desc).element_types[element_count] = K_ARRAY;
+		pack_desc->element_types[element_count] = K_ARRAY;
 	      case K_ARRAY:
 		if ( ( arr_desc = dsra_array_desc (channel, elem_type) )
 		    == NULL )
@@ -239,7 +241,7 @@ Channel channel;
 		    ds_dealloc_packet (pack_desc, NULL);
 		    return (NULL);
 		}
-		(*pack_desc).element_desc[element_count] = (char *) arr_desc;
+		pack_desc->element_desc[element_count] = (char *) arr_desc;
 		break;
 	      case LISTP:
 		if ( ( list_desc = dsra_packet_desc (channel) ) == NULL )
@@ -247,7 +249,7 @@ Channel channel;
 		    ds_dealloc_packet (pack_desc, NULL);
 		    return (NULL);
 		}
-		(*pack_desc).element_desc[element_count] = (char *) list_desc;
+		pack_desc->element_desc[element_count] = (char *) list_desc;
 		break;
 	      default:
 		/*  This should NEVER happen!  */
@@ -407,7 +409,7 @@ unsigned int type;
 		ds_dealloc_array_desc (arr_desc);
 		return (NULL);
 	    }
-	    (*arr_desc).tile_lengths[dim_count][level_count] = data;
+	    arr_desc->tile_lengths[dim_count][level_count] = data;
 	}
     }
     /*  Get "END"  */
@@ -420,11 +422,11 @@ unsigned int type;
     }
     if (type == K_ARRAY)
     {
-	(*arr_desc).padded = TRUE;
+	arr_desc->padded = TRUE;
     }
     else
     {
-	(*arr_desc).padded = FALSE;
+	arr_desc->padded = FALSE;
     }
     /*  Get dimension descriptors  */
     for (dim_count = 0; dim_count < num_dim; ++dim_count)
@@ -434,24 +436,24 @@ unsigned int type;
 	    ds_dealloc_array_desc (arr_desc);
             return (NULL);
         }
-        (*arr_desc).dimensions[dim_count] = dimension;
+        arr_desc->dimensions[dim_count] = dimension;
 	/*  Compute tile product  */
 	for (level_count = 0, product = 1; level_count < num_levels;
 	     ++level_count)
 	{
-	    product *= (*arr_desc).tile_lengths[dim_count][level_count];
+	    product *= arr_desc->tile_lengths[dim_count][level_count];
 	}
 	/*  Check if tile lengths appropriate  */
-	if ( (*dimension).length % product != 0 )
+	if ( dimension->length % product != 0 )
 	{
 	    (void) fprintf (stderr,
-			    "Tile product: %u not a factor of length: %u\n",
-			    product, (*dimension).length);
+			    "Tile product: %u not a factor of length: %lu\n",
+			    product, dimension->length);
 	    a_func_abort (function_name, "bad data");
 	    ds_dealloc_array_desc (arr_desc);
 	    return (NULL);
 	}
-	(*arr_desc).lengths[dim_count] = (*dimension).length / product;
+	arr_desc->lengths[dim_count] = dimension->length / product;
     }
     /*  Get packet descriptor for array */
     if ( ( pack_desc = dsra_packet_desc (channel) ) == NULL )
@@ -459,7 +461,7 @@ unsigned int type;
 	ds_dealloc_array_desc (arr_desc);
         return (NULL);
     }
-    (*arr_desc).packet = pack_desc;
+    arr_desc->packet = pack_desc;
     return (arr_desc);
 }   /*  End Function dsra_array_desc */
 
@@ -562,12 +564,12 @@ Channel channel;
 		(void) fprintf (stderr,
 				"Error reading Co-ordinate number: %u\n",
 				coord_count);
-                m_free ( (*dimension).name );
-                m_free ( (char *) (*dimension).coordinates );
+                m_free ( dimension->name );
+                m_free ( (char *) dimension->coordinates );
                 m_free ( (char *) dimension );
                 return (NULL);
             }
-            (*dimension).coordinates[coord_count] = coordinate;
+            dimension->coordinates[coord_count] = coordinate;
             if (coordinate < minimum)
             {
 		minimum = coordinate;
@@ -578,14 +580,14 @@ Channel channel;
             }
             ++coord_count;
         }
-        (*dimension).minimum = minimum;
-        (*dimension).maximum = maximum;
+        dimension->minimum = minimum;
+        dimension->maximum = maximum;
         if ( (chs_get_line (channel, temp_line, STRING_LENGTH) == FALSE) ||
             (st_icmp (temp_line, "END") != 0) )
         {
 	    (void) fprintf (stderr, "\"END\" not found\n");
-            m_free ( (*dimension).name );
-            m_free ( (char *) (*dimension).coordinates );
+            m_free ( dimension->name );
+            m_free ( (char *) dimension->coordinates );
             m_free ( (char *) dimension );
             return (NULL);
         }
@@ -609,16 +611,14 @@ Channel channel;
 multi_array *multi_desc;
 {
     unsigned int array_count;
-    extern char host_type_sizes[NUMTYPES];
-    static char function_name[] = "dsra_multi_data";
 
     /*  Load the data  */
-    for (array_count = 0; array_count < (*multi_desc).num_arrays;
+    for (array_count = 0; array_count < multi_desc->num_arrays;
 	 ++array_count)
     {
 	/*  Load the data for one array */
-	if (dsra_packet (channel, (*multi_desc).headers[array_count],
-			 (*multi_desc).data[array_count]) == FALSE)
+	if (dsra_packet (channel, multi_desc->headers[array_count],
+			 multi_desc->data[array_count]) == FALSE)
 	{
 	    (void) fprintf (stderr, "Error reading array number %u\n",
 			    array_count);
@@ -657,11 +657,11 @@ char *packet;
 	(void) fprintf (stderr, "No packet to write to\n");
         return (FALSE);
     }
-    while (elem_count < (*descriptor).num_elements)
+    while (elem_count < descriptor->num_elements)
     {
-	type = (*descriptor).element_types[elem_count];
+	type = descriptor->element_types[elem_count];
         if (dsra_element (channel, type,
-			  (char *)(*descriptor).element_desc[elem_count],
+			  (char *)descriptor->element_desc[elem_count],
 			  packet)
             == FALSE)
         {
@@ -886,7 +886,7 @@ char *element;
 	break;
       case K_FSTRING:
 	fstring = (FString *) element;
-	if ( ( (*fstring).max_len > 0 ) || ( (*fstring).string != NULL ) )
+	if ( ( fstring->max_len > 0 ) || ( fstring->string != NULL ) )
 	{
 	    (void) fprintf (stderr, "Fixed string already allocated\n");
 	    a_prog_bug (function_name);
@@ -902,13 +902,13 @@ char *element;
 	    (void) fprintf (stderr, "Error reading fixed string\n");
             return (FALSE);
         }
-	if ( ( (*fstring).string = m_alloc (fstring_len) ) == NULL )
+	if ( ( fstring->string = m_alloc (fstring_len) ) == NULL )
 	{
 	    m_error_notify (function_name, "fixed string");
 	    return (FALSE);
 	}
-	(void) strcpy ( (*fstring).string, temp_line );
-	(*fstring).max_len = fstring_len;
+	(void) strcpy ( fstring->string, temp_line );
+	fstring->max_len = fstring_len;
 	break;
       case K_ARRAY:
 	if (dsra_array ( channel, (array_desc *) desc,
@@ -955,7 +955,7 @@ char *array;
 	(void) fprintf (stderr, "No array descriptor for array to be read\n");
         return (FALSE);
     }
-    if ( (*descriptor).packet == NULL )
+    if ( descriptor->packet == NULL )
     {
 	(void) fprintf (stderr, "No packet descriptor for array to be read\n");
         return (FALSE);
@@ -966,10 +966,10 @@ char *array;
         return (FALSE);
     }
     array_size = ds_get_array_size (descriptor);
-    packet_size = ds_get_packet_size ( (*descriptor).packet );
+    packet_size = ds_get_packet_size ( descriptor->packet );
     while (array_count++ < array_size)
     {
-	if (dsra_packet (channel, (*descriptor).packet, array) == FALSE)
+	if (dsra_packet (channel, descriptor->packet, array) == FALSE)
         {
 	    (void) fprintf (stderr, "Error reading array: packet number %u\n",
 			    array_count - 1);
@@ -1011,7 +1011,7 @@ list_header *header;
     {
 	(void) fprintf (stderr, "No header for list to be read\n");
     }
-    if ( (*header).magic != MAGIC_LIST_HEADER )
+    if ( header->magic != MAGIC_LIST_HEADER )
     {
 	(void) fprintf (stderr, "List header has bad magic number\n");
 	a_prog_bug (function_name);
@@ -1037,15 +1037,15 @@ list_header *header;
     }
     if (st_icmp (temp_line, "INCREASING") == 0)
     {
-	(*header).sort_type = SORT_INCREASING;
+	header->sort_type = SORT_INCREASING;
     }
     else if (st_icmp (temp_line, "DECREASING") == 0)
     {
-	(*header).sort_type = SORT_DECREASING;
+	header->sort_type = SORT_DECREASING;
     }
     else if (st_icmp (temp_line, "RANDOM") == 0)
     {
-	(*header).sort_type = SORT_RANDOM;
+	header->sort_type = SORT_RANDOM;
     }
     else
     {
@@ -1054,24 +1054,24 @@ list_header *header;
         return (FALSE);
     }
     /*  Get list sort element number  */
-    if (dsra_uint (channel, &(*header).sort_elem_num) == FALSE)
+    if (dsra_uint (channel, &header->sort_elem_num) == FALSE)
     {
 	(void) fprintf (stderr, "Error reading sort element number\n");
         ds_dealloc_list_entries (descriptor, header);
         return (FALSE);
     }
-    if ( (*header).sort_elem_num >= (*header).length )
+    if ( header->sort_elem_num >= header->length )
     {
 	(void) fprintf (stderr,
-			"List sort element number: %u is not less than length: %u\n",
-			(*header).sort_elem_num, (*header).length);
+			"List sort element number: %u is not less than length: %lu\n",
+			header->sort_elem_num, header->length);
         ds_dealloc_list_entries (descriptor, header);
         return (FALSE);
     }
     /*  Read data one packet at a time  */
     pack_size = ds_get_packet_size (descriptor);
-    for (count = 0, data = (*header).contiguous_data;
-	 count < (*header).contiguous_length; ++count, data += pack_size)
+    for (count = 0, data = header->contiguous_data;
+	 count < header->contiguous_length; ++count, data += pack_size)
     {
 	if (dsra_packet (channel, descriptor, data) != TRUE)
         {

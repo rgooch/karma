@@ -1,0 +1,483 @@
+Subject: BUG FIXES in  kwin_  package
+Date: Mon, 10 Apr 1995 00:42:17 +1000
+
+SUMMARY:
+  Various PostScript generation bugs in the  kwin_draw_image  routine
+have been fixed.
+
+DESCRIPTION:
+  The first bug caused accesses past array bounds when input image
+values lie outside the specified  z_min  and  z_max  values. This
+could cause a segmentation fault.
+
+  The second bug took the absolute value of input image values. This
+would give incorrect PostScript when images contained negative values.
+-------------------------------------------------------------------------------
+Subject: BUG FIXES in  dsrw_  package
+Date: Mon, 10 Apr 1995 00:50:26 +1000
+
+SUMMARY:
+  Bugs when transferring non-byte complex values on little endian
+machines have been fixed.
+
+DESCRIPTION:
+  When transferring data between host memory and a channel (i.e. disc
+file or network connection), non-byte complex values were incorrectly
+converted between the network data format and host data format. This
+bug only affected little endian machines (e.g. i386 and alpha). All
+data files written before this bug fix will contain erroneous complex
+data. Use the  kdump  module to write out the data in ASCII format
+prior to installing the bug fix and then  read the data in using the
+kgen  module.
+This bug was introduced after Karma v1.2 was released, hence this bug
+has not appeared in any public release of Karma.
+-------------------------------------------------------------------------------
+Subject: NEW PACKAGE for foreign data formats
+Date: Tue, 18 Apr 1995 02:07:25 +1000
+
+SUMMARY:
+  The  foreign_  package allows a module to import from and export to
+foreign data formats.
+
+HEADER CREATED:
+  karma_foreign.h
+
+DESCRIPTION:
+  The <foreign_ppm_read> routine will read a PPM image file and
+convert it to a Karma TrueColour image.
+
+  The <foreign_ppm_write> routine will write a Karma TrueColour image
+(or PseudoColour image with associated colourmap) in PPM image format.
+
+  The <foreign_fits_read_header> routine will read in the header
+component of a FITS data file and convert it to a Karma  multi_array
+structure.
+
+  The <foreign_fits_read_data> routine will read in the data
+component of a FITS data file and convert it to a Karma  multi_array
+structure.
+
+  Other data formats will be supported in the future. Examples of
+modules which use this package are:
+    fits2karma    ppm2karma    karma2ppm
+
+REASON:
+
+  The  foreign_  package makes it easier to bring data into Karma
+modules and export data from them.
+-------------------------------------------------------------------------------
+Subject: BUG FIX in <imw_> package
+Date: Thu, 20 Apr 1995 16:23:45 +1000
+
+SUMMARY:
+  The <imw_origsize> routine could produce incorrect images.
+
+DESCRIPTION:
+   The <imw_origsize> was prone to integer overflow errors when
+writing images of type K_INT. Overflow errors were likely to occurr
+when displaying images with large values.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION <foreign_guess_and_read>
+Date: Sun, 23 Apr 1995 17:37:44 +1000
+
+SUMMARY:
+  The <foreign_guess_and_read> routine reads files of many formats.
+
+HEADER CHANGED:
+  <karma_foreign.h>
+
+DESCRIPTION:
+  The <foreign_guess_and_read> routine will attempt to determine the
+format of a file (by inspecting it's filetype) and if the file is of a
+known type, it attempts to read the file and yields a Karma data
+structure. This may be used as a generic data read routine.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <foreign_> package to support Sun rasterfiles
+Date: 21-MAY-1995
+
+SUMMARY:
+  Support has been added to the <foreign_> package to allow Sun
+rasterfiles to be read by Karma programmes.
+
+HEADER CHANGED:
+  <karma_foreign.h>
+
+DESCRIPTION:
+  The <foreign_sunras_read> routine will read a Sun rasterfile image.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <foreign_> package to support Sun rasterfiles
+Date: 22-MAY-1995
+
+SUMMARY:
+  Support has been added to the <foreign_> package to allow Sun
+rasterfiles to be written by Karma programmes.
+
+HEADER CHANGED:
+  <karma_foreign.h>
+
+DESCRIPTION:
+  The <foreign_sunras_write> routine will convert a Karma image to a
+Sun rasterfile image.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <canvas_> package
+Date: Tue, 29 Aug 1995 12:23:54 +1000
+
+SUMMARY:
+  Routines to manipulate world canvas attributes have been created.
+Use of the <win_scale_type> structure is being phased out.
+
+HEADER CHANGED:
+  karma_canvas.h
+
+DESCRIPTION:
+  The <canvas_get_attributes> routine will get the attributes for a
+world canvas. The <canvas_get_size> routine will be removed in Karma
+version 2.0, as it uses the obsolete <win_scale_type> structure.
+
+  The <canvas_set_attributes> routine will set attributes for a
+world canvas. The <canvas_resize> routine will be removed in Karma
+version 2.0, as it uses the obsolete <win_scale_type> structure.
+
+REASON:
+  The <win_scale_type> structure is being phased out because of
+incompatibilities introduced when the structure has new fields added
+to introduce new functionality. The use of attribute lists provides a
+more stable and flexible interface.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <kcmap_> package
+Date: Fri, 1 Sep 1995 09:25:36 +1000
+
+SUMMARY:
+  The <kcmap_va_create> routine will replace the <kcmap_init> and
+<kcmap_create> routines, which will be removed in Karma version 2.0.
+
+HEADER CHANGED:
+  karma_kcmap.h
+
+DESCRIPTION:
+  The <kcmap_va_create> routine will create a Kcolourmap object in a
+similar fashion as the obsolete <kcmap_create> routine. However,
+rather than requiring the use of <kcmap_init> to register the lower
+graphics routines, <kcmap_va_create> takes these routines from the
+parameter list.
+
+  The <kcmap_init> and <kcmap_create> routines will be removed in
+Karma version 2.0.
+
+  It is intended that <kcmap_va_create> will be renamed to
+<kcmap_create> in Karma version 3.0.
+
+REASON:
+  The existing system is designed for small (typically 8 bit)
+PseudoColour colourmaps and only allows one colourmap type per module.
+The <kcmap_va_create> routine can be upgraded in a compatible way to
+support DirectColour colourmaps and software colourmaps for TrueColour
+visuals. In addition the <kcmap_> package can now support multiple
+colourmap types in the same module (i.e. PseudoColour and
+DirectColour).
+-------------------------------------------------------------------------------
+Subject: CHANGES to <kwin_> package
+Date: 5-SEP-1995
+
+SUMMARY:
+  The <kwin_draw_pc_image> routine will replace the <kwin_draw_image>
+routine.
+
+CODE AFFECTED:
+  All code which uses the <kwin_draw_image> should change to using the
+<kwin_draw_pc_image> routine prior to version 2.0 of Karma being
+released.
+
+HEADER CHANGED:
+  <karma_kwin.h>
+
+DESCRIPTION:
+  The <kwin_draw_image> routine is deprecated and will be removed in
+Karma version 2.0. The <kwin_draw_pc_image> routine provides the
+existing functionality and more.
+
+REASON:
+  The <kwin_draw_image> routine did not provide support for intensity
+scaling functions and did not have a convenient interface. The
+<kwin_draw_pc_image> provides this extra functionality and has a more
+logical interface.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <kwin_> package
+Date: 18-SEP-1995
+
+SUMMARY:
+  The <kwin_> package has undergone a major internal restructuring to
+facilitate support of different graphics systems. The incomplete
+support for the VX display has been removed.
+
+CODE AFFECTED:
+  All code which uses the <kwin_> package needs to be recompiled.
+
+HEADER CHANGED:
+  <karma_kwin.h>
+
+DESCRIPTION:
+  The <kwin_create_generic> routine provides the mechanism to create
+pixel canvas objects for different graphics systems (i.e. X11, XGL,
+OpenGL, etc.).
+
+REASON:
+  The planned support of XGL (for stereo display) requires a cleaner
+separation between the generic pixel canvas support and graphics
+system specific support.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <kwin_> package
+Date: 22-SEP-1995
+
+SUMMARY:
+  The <kwin_> package now supports Sun Microsystems XGL graphics
+library.
+
+HEADER CHANGED:
+  <karma_kwin.h>
+
+DESCRIPTION:
+  The <kwin_xgl_create_stereo> routine provides the mechanism to create
+stereo pixel canvas objects for XGL.
+
+REASON:
+  The Sun ZX video card can support stereo display, however, like
+other vendors, they have not supported the Multi-Buffering X extension
+but have opted to require one to use XGL. Similarly, to use stereo
+hardware on SGI machines requires the use of OpenGL (which I also plan
+to support at some point).
+Stereo display support is of great benefit to volume rendering
+applications, but one does not wish to programme with XGL directly!
+-------------------------------------------------------------------------------
+Subject: CHANGES to <foreign_> package to support Miriad data
+Date: 27-SEP-1995
+
+SUMMARY:
+  Support has been added to the <foreign_> package to allow Miriad
+image (n-dimensional arrays) data files to be read by Karma
+programmes.
+
+HEADER CHANGED:
+  <karma_foreign.h>
+
+DESCRIPTION:
+  The <foreign_miriad_read_header> routine will read the header of a
+Miriad Image file.
+  The <foreign_miriad_read> routine will read an entire Miriad Image
+file and convert to Karma format.
+  The <foreign_miriad_test> routine will determine if a directory is a
+Miriad Image file. This is required when adding support to directory
+browsers.
+  The <foreign_guess_and_read> routine has been modified to
+automatically detect and read Miriad Image files.
+
+REASON:
+  Miriad is an important package used in the processing of radio
+astronomy data. Adding Miriad Image file support allows visualisation
+tools developed with Karma to work with Miriad data without the need
+for any conversion to FITS format.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTIONS for <ch_> package
+Date: 27-SEP-1995
+
+SUMMARY:
+  The <ch_drain> and <ch_printf> routines have been created.
+
+HEADER CHANGED:
+  <karma_ch.h>
+
+DESCRIPTION:
+  The <ch_drain> routine will read and discard data from a channel.
+  The <ch_printf> routine will write formatted output to a channel.
+-------------------------------------------------------------------------------
+Subject NEW PACKAGE <dm_> for descriptor management
+Date: 3-OCT-1995
+
+SUMMARY:
+  The <dm_> package provides event management for descriptors.
+
+HEADER CREATED:
+  <karma_dm.h>
+
+DESCRIPTION:
+  The <dm_> package provides event management for descriptors in a
+similar fashion to the way the <chm_> package provides event
+management for channel objects.
+
+REASON:
+  This package has been created to allow the <chm_> packages (and
+similar packages for XT and XView environments) to be restructured,
+allowing greater code sharing.
+Currently this package is considered work in progress and may change
+without notice.
+-------------------------------------------------------------------------------
+Subject: NEW PACKAGE <aa_> for Associative Arrays
+Date: 14-OCT-1995
+
+SUMMARY:
+  The <aa_> package provides Associative Array support.
+
+HEADER CREATED:
+  <karma_aa.h>
+
+DESCRIPTION:
+  The <aa_> package simplifies the the management of lists of
+key-value pairs. In many cases a list of names and their corresponding
+objects needs to be maintained. The <aa_> package makes this task
+simple.
+
+REASON:
+  While generally useful, the immediate requirement is in the
+forthcoming volume rendering package.
+-------------------------------------------------------------------------------
+Subject: NEW PACKAGE <col_> for colourspace conversion
+Date: 29-DEC-1995
+
+SUMMARY:
+  The <col_> package provides routines to convert between different
+colour spaces.
+
+HEADER CREATED:
+  <karma_col.h>
+
+DESCRIPTION:
+  The <col_hsb_slice_to_rgb_array> routine will compute a
+2-dimensional array of RGB values from a slice in HSB (Hue, Saturation
+and Brightness) colour space.
+
+REASON:
+  Converting between HSB and RGB colour spaces is required for a
+hue-intensity display tool. Other conversions between different
+colour spaces will also become useful.
+-------------------------------------------------------------------------------
+Subject: NEW PACKAGE <wf_> for background processing
+Date: 30-DEC-1995
+
+SUMMARY:
+  The <wf_> package provides background processing support.
+
+HEADER CREATED:
+  <karma_wf.h>
+
+DESCRIPTION:
+  The <wf_> package allows an application (or the library) to perform
+background processing (by using work functions) while the application
+is otherwise idle. Unlike using a threaded solution, work functions do
+not compete with the main application for processing resources, and
+hence do not interfere with the responsiveness of the application.
+
+REASON:
+  The new volume rendering package <vrender_> requires background
+processing support.
+-------------------------------------------------------------------------------
+Subject: NEW PACKAGE <vrender_> for volume rendering
+Date: 3-JAN-1996
+
+SUMMARY:
+  The <vrender_> package provides support for volume rendering.
+
+HEADER CREATED:
+  <karma_vrender.h>
+
+DESCRIPTION:
+  The <vrender_> package provides most of the support required for
+volume rendering. This includes geometry management and automatic
+parallelisation for multiple processor platforms. The user interface
+and shading algorithms are left as an exercise for the reader.
+
+REASON:
+  This package will facilitate programmers to develop new volume
+rendering applications and shading algorithms.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <canvas_> package
+Date: 5-JAN-1996
+
+SUMMARY:
+  The <canvas_register_d_convert_func> routine will replace the
+<canvas_register_convert_func> routine.
+
+CODE AFFECTED:
+  All code which uses the <canvas_register_convert_func> should change
+to using the <canvas_register_d_convert_func> routine prior to version
+2.0 of Karma being released.
+
+HEADER CHANGED:
+  <karma_canvas.h>
+
+DESCRIPTION:
+  The <canvas_register_convert_func> routine is deprecated because it
+passes co-ordinates through integer pointers. The
+<canvas_register_d_convert_func> routine uses double precision
+floating point numbers instead.
+
+REASON:
+  Greater numerical accuracy is required when drawing onto PostScript
+Page objects.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <ds_> package
+Date: 24-JAN-1996
+
+SUMMARY:
+  The <ds_find_1D_extremes> and <ds_find_2D_extremes> routines replace
+the <ds_find_single_extremes> and <ds_find_plane_extremes> routines.
+
+CODE AFFECTED:
+  All code which makes use of the <ds_find_single_extremes> or
+<ds_find_plane_extremes> routines should change over prior to Karma
+version 2.0 being released.
+
+HEADER CHANGED:
+  <karma_ds.h>
+
+DESCRIPTION:
+  The <ds_find_single_extremes> and <ds_find_plane_extremes> routines
+are deprecated.
+The <ds_find_1D_extremes> and <ds_find_2D_extremes> routines provide
+similar functionality.
+
+REASON:
+  The old routines have an awkward interface, do not support
+non-contiguous data and are not MT-Safe. The new routines have a more
+convenient interface, support non-contiguous data and are MT-Safe.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <mt_> package
+Date: 24-JAN-1996
+
+SUMMARY:
+  The <mt_setlock> routine provides mutual exclusion locking support.
+  The <mt_new_thread_info> and <mt_get_thread_info> routines provide
+thread-private data.
+
+HEADER CHANGED:
+  <karma_mt.h>
+
+DESCRIPTION:
+  The <mt_setlock> routine allows threads (jobs) to exclusively lock
+resources. This provides for job synchronisation.
+  The <mt_new_thread_info> and <mt_get_thread_info> routines allow
+each thread to have a private working space (other than the stack)
+which may be externally initialised prior to launching jobs and may
+then be collated after all jobs have finished.
+
+REASON:
+  These routines increase the flexibility of the package, simplifing
+the threading of more algorithms.
+-------------------------------------------------------------------------------
+Subject: CHANGES to <iarray_> package
+Date: 24-JAN-1996
+
+SUMMARY:
+  The <iarray_min_max> and <iarray_compute_histogram> routines have
+been threaded.
+
+HEADER CHANGED:
+  <karma_iarray.h>
+
+DESCRIPTION:
+  The <iarray_min_max> and <iarray_compute_histogram> routines will
+now make use of multiple CPU platforms and hence run much faster
+(about 3.7 times with a 4 CPU machine).
+
+REASON:
+  Obvious.
+-------------------------------------------------------------------------------

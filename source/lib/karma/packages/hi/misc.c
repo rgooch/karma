@@ -55,8 +55,10 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/hi/misc.c
 
-    Last updated by Richard Gooch   7-DEC-1994: Stripped declaration of  errno
+    Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
+
+    Last updated by Richard Gooch   8-JUN-1995: Added #ifdef OS_UNICOS
 
 
 */
@@ -80,7 +82,12 @@ extern char *getcwd ();
 
 #ifdef OS_MSDOS
 #  ifndef MAXPATHLEN
-#  define MAXPATHLEN FILENAME_MAX
+#    define MAXPATHLEN FILENAME_MAX
+#  endif
+#endif
+#ifdef OS_UNICOS
+#  ifndef MAXPATHLEN
+#    define MAXPATHLEN 50
 #  endif
 #endif
 

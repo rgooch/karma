@@ -3,7 +3,7 @@
 
     This code provides simple colourmap generation routines.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -54,7 +54,9 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/cf/misc1.c
 
-    Last updated by Richard Gooch   7-DEC-1994: Stripped declaration of  errno
+    Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
+
+    Last updated by Richard Gooch   5-MAY-1995: Placate SGI compiler.
 
 
 */
@@ -321,12 +323,12 @@ double y;
 void *chart;
 {
     unsigned int pixel_count;
-    double pixel,table,denominator,x0,c,intensity,offset;
+    double pixel,table,denominator,x0,c,offset;
     double patnumf,divn,up_intensity,down_intensity;
-    double temp;
+    double temp = 0.0;  /*  Initialised to keep compiler happy  */
     int patnum,i,val;
-    static char function_name[] = "cf_stripchart";
     stripchart *schart=(stripchart *)chart;
+    static char function_name[] = "cf_stripchart";
 
     x0 = x;
     c = y * 12.;
@@ -356,8 +358,13 @@ void *chart;
 	    else if (val == -1) temp = down_intensity*MAX_INTENSITY;
 	    else if (val ==  2) temp = sin(up_intensity*PI_ON_2)*MAX_INTENSITY;
 	    else if (val == -2) temp = sin(down_intensity*PI_ON_2)*MAX_INTENSITY;
-	    else printf ("Invalid value in pattern[%d][%d] = %d\n",patnum,i,val);
-
+	    else
+	    {
+		(void) fprintf (stderr,
+				"Invalid value in pattern[%d][%d] = %d\n",
+				patnum, i, val);
+		a_prog_bug (function_name);
+	    }
 	    if(i==0) reds[pixel_count * stride]   = temp;
 	    if(i==1) greens[pixel_count * stride] = temp;
 	    if(i==2) blues[pixel_count * stride]  = temp;
@@ -390,7 +397,9 @@ void *var_param;
 {
     unsigned short intensity;
     unsigned int pixel_count;
+/*
     static char function_name[] = "cf_random_grey";
+*/
 
     for (pixel_count = 0; pixel_count < num_cells; ++pixel_count)
     {
@@ -426,7 +435,9 @@ double y;
 void *var_param;
 {
     unsigned int pixel_count;
+/*
     static char function_name[] = "cf_random_pseudocolour";
+*/
 
     /*  Now compute the colours  */
     for (pixel_count = 0; pixel_count < num_cells; ++pixel_count)

@@ -3,7 +3,7 @@
 
     This code provides portable data IO routines.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -54,8 +54,20 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/pio/misc.c
 
-    Last updated by Richard Gooch   7-DEC-1994: Stripped declaration of  errno
+    Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
+
+    Updated by      Richard Gooch   27-FEB-1995: Changed to HAS_IEEE macro.
+
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Updated by      Richard Gooch   8-JUN-1995: Updated support for crayPVP.
+
+    Updated by      Richard Gooch   31-JUL-1995: Created
+  <pio_read_float_nantrap> and <pio_read_double_nantrap>.
+
+    Last updated by Richard Gooch   22-AUG-1995: Extended NaN list to include
+  all 1s filled.
 
 
 */
@@ -69,6 +81,27 @@
 #include <karma_p.h>
 #include <karma_a.h>
 #include <os.h>
+
+#define NUM_NANS 3
+
+/*  float NaNs  */
+static unsigned char fnans[NUM_NANS][NET_FLOAT_SIZE] =
+{
+    {0x7f, 0x80, 0x0f, 0},    /*  Signal NaN  */
+    {0x7f, 0xc0, 0, 0},       /*  Quiet NaN. It is also indefinite(?)  */
+    {0xff, 0xff, 0xff, 0xff}
+};
+
+/*  double NaNs  */
+static unsigned char dnans[NUM_NANS][NET_DOUBLE_SIZE] =
+{
+    {0x7f, 0xf0, 0, 0, 0, 0x0f, 0, 0},  /*  Signal NaN  */
+    {0x7f, 0xf8, 0, 0, 0, 0, 0, 0}, /*  Quiet NaN, It is also indefinite(?)  */
+    {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
+};
+
+
+/*  Public routines follow  */
 
 /*PUBLIC_FUNCTION*/
 flag pio_write64 (Channel channel, unsigned long data)
@@ -211,184 +244,107 @@ flag pio_read16 (Channel channel, unsigned long *data)
     return ( p_read_buf16 (buffer, data) );
 }   /*  End Function pio_read16  */
 
-#undef CONVERSION_SUPPORTED
-
 /*PUBLIC_FUNCTION*/
 flag pio_write_float (Channel channel, float data)
-/*  This routine will write a floating point number to the channel object
-    given by  channel  .
-    The data must be given by  data  .This must be in host natural format.
-    The data will be converted to IEEE network format prior to writing.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [PURPOSE] This routine will write a floating point number to a channel
+    object.
+    <channel> The channel object.
+    <data> The data. This must be in host natural format. The data will be
+    converted to IEEE network format prior to writing.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
+    char buffer[NET_FLOAT_SIZE];
     extern char *sys_errlist[];
-    static char function_name[] = "pio_write_float";
 
-    /*  All machines which have the network data format
-	must be implemented here  */
-#ifdef BLOCK_TRANSFER
-#define CONVERSION_SUPPORTED
-    if (ch_write (channel, (char *) &data, NET_FLOAT_SIZE) < NET_FLOAT_SIZE)
+    if ( !p_write_buf_float (buffer, data) ) return (FALSE);
+    if (ch_write (channel, buffer, NET_FLOAT_SIZE) < NET_FLOAT_SIZE)
     {
 	(void) fprintf (stderr, "Error writing %d bytes of data\t%s\n",
 			NET_FLOAT_SIZE, sys_errlist[errno]);
 	return (FALSE);
     }
     return (TRUE);
-#endif
-
-    /*  Machines which only need byte swapping  */
-#if defined(BYTE_SWAPPER) || defined(MACHINE_alpha)
-#define CONVERSION_SUPPORTED
-    return ( pio_write_swap (channel, (char *) &data, (unsigned int) NET_FLOAT_SIZE) );
-#endif
-
-    /*  Machines which require conversion routines  */
-#ifdef machine_cray
-#define CONVERSION_SUPPORTED
-    char *data_ptr;
-    char *out_ptr;
-    char buffer[NET_FLOAT_SIZE];
-
-    if (CRAY2IEG (2, 1, buffer, 0, (char *) &data, 1) < 0)
-    {
-	(void) fprintf (stderr, "Error converting Cray float to IEEE float\n");
-	return (FALSE);
-    }
-    if (ch_write (channel, buffer, NET_FLOAT_SIZE) < NET_FLOAT_SIZE)
-    {
-	(void) fprintf (stderr, "Error writing: %d bytes of data\t%s\n",
-			NET_FLOAT_SIZE, sys_errlist[errno]);
-	return (FALSE);
-    }
-    return (TRUE);
-#endif
-
-#ifndef CONVERSION_SUPPORTED
-    (void) fprintf (stderr,
-		    "Error: conversion to IEEE network format not supported\n");
-    a_prog_bug (function_name);
-    return (FALSE);
-#endif
 }   /*  End Function pio_write_float  */
-
-#undef CONVERSION_SUPPORTED
 
 /*PUBLIC_FUNCTION*/
 flag pio_read_float (Channel channel, float *data)
-/*  This routine will read a floating point number from the channel object
-    given by  channel  .
-    The data will be written to the storage pointed to by  data  .This will be
-    in host natural format.
-    The data will be converted from IEEE network format after reading.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [PURPOSE] This routine will read a floating point number from a channel
+    object.
+    <channel> The channel object.
+    <data> The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
-    extern char *sys_errlist[];
-    static char function_name[] = "pio_read_float";
-
-    /*  All machines which have the network data format
-	must be implemented here  */
-#ifdef BLOCK_TRANSFER
-#define CONVERSION_SUPPORTED
-    if (ch_read (channel, (char *) data, NET_FLOAT_SIZE) < NET_FLOAT_SIZE)
-    {
-	(void) fprintf (stderr, "Error reading: %d bytes of data\t%s\n",
-			NET_FLOAT_SIZE, sys_errlist[errno]);
-	return (FALSE);
-    }
-    return (TRUE);
-#endif
-
-    /*  Machines which only need byte swapping  */
-#if defined(BYTE_SWAPPER) || defined(MACHINE_alpha)
-#define CONVERSION_SUPPORTED
-    return ( pio_read_swap (channel, (char *) data, (unsigned int) NET_FLOAT_SIZE) );
-#endif
-
-    /*  Machines which require conversion routines  */
-#ifdef machine_cray
-#define CONVERSION_SUPPORTED
     char buffer[NET_FLOAT_SIZE];
+    extern char *sys_errlist[];
 
-    /*  Read into buffer  */
     if (ch_read (channel, buffer, NET_FLOAT_SIZE) < NET_FLOAT_SIZE)
     {
 	(void) fprintf (stderr, "Error reading: %d bytes of data\t%s\n",
 			NET_FLOAT_SIZE, sys_errlist[errno]);
 	return (FALSE);
     }
-    if (IEG2CRAY (2, 1, buffer, 0, data_ptr, 1) < 0)
-    {
-	(void) fprintf (stderr, "Error converting IEEE float to Cray float\n");
-	return (FALSE);
-    }
-    return (TRUE);
-#endif
-
-#ifndef CONVERSION_SUPPORTED
-    (void) fprintf (stderr,
-		    "Error: conversion to IEEE network format not supported\n");
-    a_prog_bug (function_name);
-    return (FALSE);
-#endif
+    return ( p_read_buf_float (buffer, data) );
 }   /*  End Function pio_read_float  */
 
-#undef CONVERSION_SUPPORTED
+/*PUBLIC_FUNCTION*/
+flag pio_read_float_nantrap (Channel channel, float *data, flag *was_nan)
+/*  [PURPOSE] This routine will read a floating point number from a channel
+    object and will trap IEEE Not-A-Number (NaN) values.
+    <channel> The channel object.
+    <data> The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+    <was_nan> The value TRUE will be written here if the value was NaN, else
+    FALSE is written here.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    flag foundnan = FALSE;
+    flag equal;
+    int nan_count, byte_count;
+    char buffer[NET_FLOAT_SIZE];
+    unsigned char *ptr = (unsigned char *) buffer;
+    extern unsigned char fnans[NUM_NANS][NET_FLOAT_SIZE];
+    extern char *sys_errlist[];
+
+    if (ch_read (channel, buffer, NET_FLOAT_SIZE) < NET_FLOAT_SIZE)
+    {
+	(void) fprintf (stderr, "Error reading: %d bytes of data\t%s\n",
+			NET_FLOAT_SIZE, sys_errlist[errno]);
+	return (FALSE);
+    }
+    for (nan_count = 0; nan_count < NUM_NANS; ++nan_count)
+    {
+	for (byte_count = 0, equal = TRUE;
+	     equal && (byte_count < NET_FLOAT_SIZE);
+	     ++byte_count)
+	{
+	    if (ptr[byte_count] != fnans[nan_count][byte_count]) equal = FALSE;
+	}
+	if (equal) foundnan = TRUE;
+    }
+    *was_nan = foundnan;
+    return ( p_read_buf_float (buffer, data) );
+}   /*  End Function pio_read_float_nantrap  */
 
 /*PUBLIC_FUNCTION*/
 flag pio_write_double (Channel channel, double data)
-/*  This routine will write a double precision floating point number to the
-    channel object given by  channel  .
-    The data must be given by  data  .This must be in host natural format.
-    The data will be converted to IEEE network format prior to writing.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [PURPOSE] This routine will write a double precision floating point number
+    to a channel object.
+    <channel> The channel object.
+    <data> The data. This must be in host natural format. The data will be
+    converted to IEEE network format prior to writing.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
-    extern char *sys_errlist[];
-    static char function_name[] = "pio_write_double";
-
-#ifdef BLOCK_TRANSFER
-#define CONVERSION_SUPPORTED
-    if (ch_write (channel, (char *) &data, NET_DOUBLE_SIZE) < NET_DOUBLE_SIZE)
-    {
-	(void) fprintf (stderr, "Error writing %d bytes of data\t%s\n",
-			NET_DOUBLE_SIZE, sys_errlist[errno]);
-	return (FALSE);
-    }
-    return (TRUE);
-#endif
-
-    /*  Machines which only need byte swapping  */
-#if defined(BYTE_SWAPPER) || defined(MACHINE_alpha)
-#define CONVERSION_SUPPORTED
-    return ( pio_write_swap (channel, (char *) &data,(unsigned int) NET_DOUBLE_SIZE) );
-#endif
-
-    /*  Machines which require conversion routines  */
-#ifdef machine_cray
-#define CONVERSION_SUPPORTED
     char buffer[NET_DOUBLE_SIZE];
+    extern char *sys_errlist[];
 
-    if (sizeof data == 8)
-    {
-	if (CRAY2IEG (8, 1, buffer, 0, data_ptr, 1) < 0)
-	{
-	    (void) fprintf (stderr,
-			    "Error converting Cray double to IEEE double\n");
-	    return (FALSE);
-	}
-    }
-    else
-    {
-	if (CRAY2IEG (3, 1, buffer, 0, data_ptr, 1) < 0)
-	{
-	    (void) fprintf (stderr,
-			    "Error converting Cray double to IEEE double\n");
-	    return (FALSE);
-	}
-    }
+    if ( !p_write_buf_double (buffer, data) ) return (FALSE);
     if (ch_write (channel, buffer, NET_DOUBLE_SIZE) < NET_DOUBLE_SIZE)
     {
 	(void) fprintf (stderr, "Error writing %d bytes of data\t%s\n",
@@ -396,90 +352,71 @@ flag pio_write_double (Channel channel, double data)
 	return (FALSE);
     }
     return (TRUE);
-#endif
-
-#ifndef CONVERSION_SUPPORTED
-    (void) fprintf (stderr,
-		    "Error: conversion to IEEE network format not supported\n");
-    a_prog_bug (function_name);
-    return (FALSE);
-#endif
 }   /*  End Function pio_write_double  */
-
-#undef CONVERSION_SUPPORTED
 
 /*PUBLIC_FUNCTION*/
 flag pio_read_double (Channel channel, double *data)
-/*  This routine will read a double precision floating point number from the
-    channel object given by  channel  .
-    The data will be written to the storage pointed to by  data  .This will be
-    in host natural format.
-    The data will be converted from IEEE network format after reading.
-    The routine returns TRUE on success, else it returns FALSE.
+/*  [PURPOSE] This routine will read a double precision floating point number
+    from a channel object.
+    <channel> The channel object.
+    <data> The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+    [RETURNS] TRUE on success, else FALSE.
 */
 {
-    extern char *sys_errlist[];
-    static char function_name[] = "pio_read_double";
-
-    /*  All machines which have the network data format
-	must be implemented here  */
-#ifdef BLOCK_TRANSFER
-#define CONVERSION_SUPPORTED
-    if (ch_read (channel, (char *) data, NET_DOUBLE_SIZE) < NET_DOUBLE_SIZE)
-    {
-	(void) fprintf (stderr, "Error reading: %d bytes of data\t%s\n",
-			NET_DOUBLE_SIZE, sys_errlist[errno]);
-	return (FALSE);
-    }
-    return (TRUE);
-#endif
-
-    /*  Machines which only need byte swapping  */
-#if defined(BYTE_SWAPPER) || defined(MACHINE_alpha)
-#define CONVERSION_SUPPORTED
-    return ( pio_read_swap (channel, (char *) data, (unsigned int) NET_DOUBLE_SIZE) );
-#endif
-
-    /*  Machines which require conversion routines  */
-#ifdef machine_cray
-#define CONVERSION_SUPPORTED
     char buffer[NET_DOUBLE_SIZE];
+    extern char *sys_errlist[];
 
-    /*  Read into buffer  */
     if (ch_read (channel, buffer, NET_DOUBLE_SIZE) < NET_DOUBLE_SIZE)
     {
 	(void) fprintf (stderr, "Error reading: %d bytes of data\t%s\n",
 			NET_DOUBLE_SIZE, sys_errlist[errno]);
 	return (FALSE);
     }
-    if (sizeof *data == 8)
-    {
-	if (IEG2CRAY (8, 1, buffer, 0, data_ptr, 1) < 0)
-	{
-	    (void) fprintf (stderr,
-			    "Error converting IEEE double to Cray double\n");
-	    return (FALSE);
-	}
-    }
-    else
-    {
-	if (IEG2CRAY (3, 1, buffer, 0, data_ptr, 1) < 0)
-	{
-	    (void) fprintf (stderr,
-			    "Error converting IEEE double to Cray double\n");
-	    return (FALSE);
-	}
-    }
-    return (TRUE);
-#endif
-
-#ifndef CONVERSION_SUPPORTED
-    (void) fprintf (stderr,
-		    "Error: conversion to IEEE network format not supported\n");
-    a_prog_bug (function_name);
-    return (FALSE);
-#endif
+    return ( p_read_buf_double (buffer, data) );
 }   /*  End Function pio_read_double  */
+
+/*PUBLIC_FUNCTION*/
+flag pio_read_double_nantrap (Channel channel, double *data, flag *was_nan)
+/*  [PURPOSE] This routine will read a double precision floating point number
+    from a channel object and will trap IEEE Not-A-Number (NaN) values.
+    <channel> The channel object.
+    <data> The data will be written here. This will be written in host natural
+    format. The data will be converted from IEEE network format prior to
+    writing.
+    <was_nan> The value TRUE will be written here if the value was NaN, else
+    FALSE is written here.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+{
+    flag foundnan = FALSE;
+    flag equal;
+    int nan_count, byte_count;
+    char buffer[NET_DOUBLE_SIZE];
+    unsigned char *ptr = (unsigned char *) buffer;
+    extern unsigned char dnans[NUM_NANS][NET_DOUBLE_SIZE];
+    extern char *sys_errlist[];
+
+    if (ch_read (channel, buffer, NET_DOUBLE_SIZE) < NET_DOUBLE_SIZE)
+    {
+	(void) fprintf (stderr, "Error reading: %d bytes of data\t%s\n",
+			NET_DOUBLE_SIZE, sys_errlist[errno]);
+	return (FALSE);
+    }
+    for (nan_count = 0; nan_count < NUM_NANS; ++nan_count)
+    {
+	for (byte_count = 0, equal = TRUE;
+	     equal && (byte_count < NET_DOUBLE_SIZE);
+	     ++byte_count)
+	{
+	    if (ptr[byte_count] != dnans[nan_count][byte_count]) equal = FALSE;
+	}
+	if (equal) foundnan = TRUE;
+    }
+    *was_nan = foundnan;
+    return ( p_read_buf_double (buffer, data) );
+}   /*  End Function pio_read_double_nantrap  */
 
 /*PUBLIC_FUNCTION*/
 flag pio_write32s (Channel channel, long data)
@@ -492,7 +429,9 @@ flag pio_write32s (Channel channel, long data)
 {
     char buffer[4];
     extern char *sys_errlist[];
+/*
     static char function_name[] = "pio_write32s";
+*/
 
     if (p_write_buf32s (buffer, data) != TRUE)
     {
@@ -519,7 +458,9 @@ flag pio_read32s (Channel channel, long *data)
 {
     char buffer[4];
     extern char *sys_errlist[];
+/*
     static char function_name[] = "pio_read32s";
+*/
 
     if (ch_read (channel, buffer, 4) < 4)
     {
@@ -541,7 +482,9 @@ flag pio_write16s (Channel channel, long data)
 {
     char buffer[2];
     extern char *sys_errlist[];
+/*
     static char function_name[] = "pio_write16s";
+*/
 
     if (p_write_buf16s (buffer, data) != TRUE)
     {
@@ -568,7 +511,9 @@ flag pio_read16s (Channel channel, long *data)
 {
     char buffer[2];
     extern char *sys_errlist[];
+/*
     static char function_name[] = "pio_read16s";
+*/
 
     if (ch_read (channel, buffer, 2) < 2)
     {
@@ -682,7 +627,9 @@ flag pio_write_string (Channel channel, char *string)
 */
 {
     unsigned long length;
+/*
     static char function_name[] = "pio_write_string";
+*/
 
     if (string == NULL)
     {

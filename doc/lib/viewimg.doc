@@ -8,9 +8,9 @@
     package, hence the resulting code is device independent.
 
 
-    Written by		Richard Gooch	2-Jan-1995
+    Written by		Richard Gooch	22-Jan-1996
 
-    Last updated by	Richard Gooch	2-Jan-1995
+    Last updated by	Richard Gooch	22-Jan-1996
 
 
 */
@@ -309,46 +309,42 @@ flag viewimg_test_active (ViewableImage vimage)
 KCallbackFunc viewimg_register_position_event_func (KWorldCanvas canvas,
 						    flag (*func) (),
 						    void *f_info)
-/*  This routine will register a position event function for a world canvas
-    which has a number of ViewableImage objects associated with it.
+/*  [PURPOSE] This routine will register a position event function for a world
+    canvas which has a number of ViewableImage objects associated with it.
     The position event function will be called whenever a position event on the
     canvas has not been consumed. Many position event functions may be
     registered per canvas. The first function registered is the first function
     called upon a position event.
-    The canvas must be given by  canvas  .
-    The function that is called when a position event occurs must be pointed to
-    by  func  .
-    The interface to this routine is as follows:
-
-    flag func (vimage, x, y, value, event_code, e_info, f_info, x_lin, y_lin)
-    *   This routine is a position event consumer for a world canvas which has
-        a number of ViewableImage objects associated with it.
-        The active viewable image is given by  vimage  .
-	The horizontal world co-ordinate of the event will be given by  x  .
-	The vertical world co-ordinate of the event will be given by  y  .
+    <canvas> The world canvas.
+    <func> The function that is called when a position event occurs. The
+    interface to this routine is as follows:
+    [<pre>]
+    flag func (ViewableImage vimage, double x, double y, void *value,
+               unsigned int event_code, void *e_info, void **f_info,
+	       double x_lin, double y_lin, unsigned int value_type)
+    *   [PURPOSE] This routine is a position event consumer for a world canvas
+        which has a number of ViewableImage objects associated with it.
+	<viewimg> The active viewable image.
+	<x> The horizontal world co-ordinate of the event.
+	<y> The vertical world co-ordinate of the event.
 	These values will have been transformed by the registered transform
 	function (see  canvas_register_transform_func  ) for the associated
 	world canvas.
-	The data value in the viewable image corresponding to the event
-	co-ordinates will be written to the storage pointed to by  value  .
-	This must be of type  K_DOUBLE  .
-	The arbitrary event code is given by  event_code  .
-	The arbitrary event information is pointed to by  e_info  .
-	The arbitrary function information pointer is pointed to by  f_info  .
-	The linear world co-ordinates (the co-ordinates prior to the transform
-	function being called) will be given by  x_lin  and  y_lin  .
-	The routine returns TRUE if the event was consumed, else it returns
-	FALSE indicating that the event is still to be processed.
+	<value> A pointer to the data value in the viewable image corresponding
+	to the event co-ordinates.
+	<event_code> The arbitrary event code.
+	<e_info> The arbitrary event information.
+	<f_info> The arbitrary function information pointer.
+	<x_lin> The linear horizontal world co-ordinate (the co-ordinate prior
+	to the transform function being called).
+	<y_lin> The linear vertical world co-ordinate (the co-ordinate prior
+	to the transform function being called).
+	<value_type> The type of the data value. This may be K_DCOMPLEX or
+	K_UB_RGB.
+	[RETURNS] TRUE if the event was consumed, else FALSE indicating that
+	the event is still to be processed.
     *
-    ViewableImage vimage;
-    double x;
-    double y;
-    double value[2];
-    unsigned int event_code;
-    void *e_info;
-    void **f_info;
-    double x_lin;
-    double y_lin;
+    [</pre>]
 
     The initial arbitrary function information pointer must be given by  f_info
     The routine returns a handle to a KWorldCanvasPositionFunc object.
@@ -384,25 +380,23 @@ flag viewimg_fill_polygon (ViewableImage vimage, edit_coord *coords,
 */
 /*---------------------------------------------------------------------------*/
 
-void viewimg_get_canvas_attributes (canvas, va_alist)
-/*  This routine will get the attributes for a world canvas.
-    The world canvas must be given by  canvas  .
-    The list of parameter attribute-key attribute-value pairs must follow.
-    This list must be terminated with the value  VIEWIMG_ATT_END  .
-    See the documentation for the  viewimg_set_canvas_attributes  routine for
+void viewimg_get_canvas_attributes (KWorldCanvas canvas, ...)
+/*  [PURPOSE] This routine will get the attributes for a world canvas.
+    <canvas> The world canvas.
+    [VARARGS] The list of parameter attribute-key attribute-value pairs must
+    follow. This list must be terminated with the value  VIEWIMG_ATT_END  .
+    See the documentation for the <viewimg_set_canvas_attributes> routine for
     legal attributes.
-    The routine returns nothing.
+    [RETURNS] Nothing.
 */
-KWorldCanvas canvas;
-va_dcl
 /*---------------------------------------------------------------------------*/
 
-void viewimg_set_canvas_attributes (canvas, va_alist)
-/*  This routine will control the autoscaling options used when viewable images
-    are displayed on their associated world canvas.
-    The world canvas must be given by  canvas  .
-    The list of parameter attribute-key attribute-value pairs must follow.
-    This list must be terminated with the value  VIEWIMG_ATT_END  .
+void viewimg_set_canvas_attributes (KWorldCanvas canvas, ...)
+/*  [PURPOSE] This routine will control the autoscaling options used when
+    viewable images are displayed on their associated world canvas.
+    <canvas> The world canvas.
+    [VARARGS] The list of parameter attribute-key attribute-value pairs must
+    follow. This list must be terminated with the value  VIEWIMG_ATT_END  .
     Legal attributes are:
   VIEWIMG_ATT_AUTO_X           Enable automatic horizontal scaling
   VIEWIMG_ATT_AUTO_Y           Enable automatic vertical scaling
@@ -410,10 +404,28 @@ void viewimg_set_canvas_attributes (canvas, va_alist)
   VIEWIMG_ATT_INT_X            Force integer horizontal zoom-in/zoom-out factor
   VIEWIMG_ATT_INT_Y            Force integer vertical zoom-in/zoom-out factor
   VIEWIMG_ATT_MAINTAIN_ASPECT  Maintain data image aspect ratio
+  VIEWIMG_ATT_ALLOW_TRUNCATION Allow shrunken images to be truncated.
     See the include file  karma_viewimg.h  for matching attribute types.
-    The canvas is not refreshed by this operation.
-    The routine returns nothing.
+    [NOTE] The canvas is not refreshed by this operation.
+    [RETURNS] Nothing.
 */
-KWorldCanvas canvas;
-va_dcl
+/*---------------------------------------------------------------------------*/
+
+void viewimg_get_attributes (ViewableImage vimage, ...)
+/*  [PURPOSE] This routine will get the attributes for a viewable image.
+    <vimage> The ViewableImage.
+    [VARARGS] The list of parameter attribute-key attribute-value pairs must
+    follow. This list must be terminated with the value  VIEWIMG_VATT_END  .
+    Legal attributes are:
+  VIEWIMG_VATT_TRUECOLOUR                  Image is TrueColour
+  VIEWIMG_VATT_ARRAY_DESC                  The array descriptor for the image
+  VIEWIMG_VATT_SLICE                       Start of the image data
+  VIEWIMG_VATT_HDIM                        The horizontal dimension
+  VIEWIMG_VATT_VDIM                        The vertical dimension
+  VIEWIMG_VATT_PSEUDO_INDEX                The PseudoColour element index
+  VIEWIMG_VATT_RED_INDEX                   The TrueColour red element index
+  VIEWIMG_VATT_GREEN_INDEX                 The TrueColour green element index
+  VIEWIMG_VATT_BLUE_INDEX                  The TrueColour blue element index
+    [RETURNS] Nothing.
+*/
 /*---------------------------------------------------------------------------*/

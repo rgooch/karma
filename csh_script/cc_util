@@ -29,7 +29,7 @@
 
 # Written by		Richard Gooch	6-OCT-1992
 
-# Last updated by	Richard Gooch	12-OCT-1994
+# Last updated by	Richard Gooch	5-JUN-1995
 
 
 # Determine source filename
@@ -43,11 +43,12 @@ switch ("$OS")
 	    set CC = "cc -misalign -PIC"
 	else
 	    # No misaligned data access:can use GCC to have function prototypes
-	    set CC = "$KARMA_CC $KARMA_CPIC"
+	    set CC = "gcc -fpcc-struct-return -fPIC"
 	endif
 	breaksw
-    case "AIX":
-	set CC = "cc -bM\:SRE"
+    default:
+	echo "Operating System: $OS not supported"
+	exit 1
 	breaksw
 endsw
 

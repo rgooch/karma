@@ -2,7 +2,7 @@
 
     Header for  r_  package.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,17 +31,17 @@
 
     Written by      Richard Gooch   12-SEP-1992
 
-    Last updated by Richard Gooch   14-NOV-1994
+    Last updated by Richard Gooch   16-JUN-1995
 
 */
+
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
+#  include <karma.h>
+#endif
 
 #ifndef KARMA_R_H
 #define KARMA_R_H
 
-
-#ifndef KARMA_H
-#  include <karma.h>
-#endif
 
 #define CONN_MAX_INSTANCES 10
 #define KFTYPE_DISC (unsigned int) 0
@@ -73,6 +73,8 @@ EXTERN_FUNCTION (flag r_test_input_event, (int connection) );
 EXTERN_FUNCTION (int r_open_stdin, (flag *disc) );
 EXTERN_FUNCTION (char *r_getenv, (CONST char *name) );
 EXTERN_FUNCTION (int r_setenv, (CONST char *env_name, CONST char *env_value) );
+EXTERN_FUNCTION (void r_gethostname, (char *name, unsigned int namelen) );
+EXTERN_FUNCTION (flag r_get_fq_hostname, (char *name, unsigned int namelen) );
 EXTERN_FUNCTION (int r_getppid, () );
 EXTERN_FUNCTION (int r_open_file, (CONST char *filename, int flags, int mode,
 				   unsigned int *type,
@@ -88,7 +90,6 @@ EXTERN_FUNCTION (char *r_get_host_from_display, (char *display) );
 EXTERN_FUNCTION (int r_get_display_num_from_display, (char *display) );
 EXTERN_FUNCTION (int r_get_screen_num_from_display, (char *display) );
 EXTERN_FUNCTION (int r_get_def_port, (char *module_name, char *display) );
-EXTERN_FUNCTION (void r_gethostname, (char *name, unsigned int namelen) );
 
 
 #endif /*  KARMA_R_H  */

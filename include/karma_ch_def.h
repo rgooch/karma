@@ -2,7 +2,7 @@
 
     Header for  ch_  package. This file ONLY contains the object definitions
 
-    Copyright (C) 1994  Richard Gooch
+    Copyright (C) 1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   21-MAY-1994
 
-    Last updated by Richard Gooch   25-NOV-1994
+    Last updated by Richard Gooch   5-MAY-1995
 
 */
 
@@ -41,7 +41,6 @@
 
 typedef struct channel_type * Channel;
 typedef struct _converter_struct * ChConverter;
-typedef struct channel_tap_type * ChannelTap;
 
 
 /*  Control values for memory mapping disc files  */

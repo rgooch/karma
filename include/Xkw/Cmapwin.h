@@ -6,7 +6,7 @@
  ----		         -----                -------         -------------
  karmaColourmap          KarmaColourmap       Pointer         NULL
  colourCallback          Callback             Callback        NULL
- regenerateColourmap     RegenerateColourmap  Boolean         False
+ regenerateColourmap     RegenerateColourmap  Bool            False
 
 ------------------------------------------------------------------------*/
 

@@ -25,7 +25,7 @@ arrays as arrguments. iarray_dim_length() allows you to query an array
 for one of it's dimension lengths.
 
 	+ They can do run time bounds checking. If you compile with
-"-DDEBUG" all element accesses will be bounds checked. This is
+"-DDEBUG" all element accesses will be bounds and type checked. This is
 somewhat slower than normal, but the implementation is such that
 without bounds checking there is no performance penalty over C arrays.
 
@@ -34,7 +34,9 @@ and iarray_get_float(), named floating point values can be attached to
 and retrieved from an iarray. There are corresponding functions for
 attaching ints and strings, and a pair of generic functions for
 handling other data types. This is very useful when writing iarrays to
-disk or to a connection, as attachments are also transferred.
+disk or to a connection, as attachments are also
+transferred. Attachments are often thought of as "keyword-value" pairs
+in the "header" of a data file.
 
 	+ They can be written to a disk or connection very easily, and
 are written in the Karma data format, which ensures portability across
@@ -48,7 +50,7 @@ used to it) enhances the readability of the code, by always showing
 the type of the array being accessed. The syntax is described below.
 
 	- Currently, simple methods are in place for working with
-arrays of one two or three dimensions, comprised of floats, ints,
+arrays of one two, three or four dimensions, comprised of floats, ints,
 unsigned ints, bytes (chars) or unsigned bytes. Using other types is a
 fairly trivial matter, requiring only some new macros in
 karma_iarray.h, but using arrays of more dimensions also requires a
@@ -66,25 +68,48 @@ the work for performance reasons. Functions are used when -DDEBUG is
 used on the command line. The element access function names are based
 on the type of the elements in the array, and the number of
 dimensions.  Thus, given a two dimensional floating point array called
-"a", to access element [i][j], you use the notation F2(a,i,j).
+"a", to access element [i][j], you use the notation F2(a,i,j). A few
+of the macros are listed below to give you an idea of the format:
+
+Access macro		Type				Number of dimensions
+B1  (a, x)		signed byte			1
+F1  (a, x)		floating point			1
+UB2 (a, y, x)		unsigned byte			2
+US2 (a, y, x)		unsigned short			2
+D3  (a, z, y, x)	double precision floating point	3
+I4  (a, z, y, x, w)	signed integer			4
+UI4 (a, z, y, x, w)	unsigned integer		4
+
+where <a> is the Iarray, <z>, <y>, <x> and <w> are indicies along each
+dimension.
 
 	As mentioned above, this notation is currently available for
-arrays of one, two or three dimensions, with float, int, byte or
+arrays of one, two, three or four dimensions, with float, int, byte or
 unsigned byte elements. If other dimensions or types are required,
 macros should be written to handle these, and possibly function calls
 also. See karma_iarray.h for macros.
+
+	It is important to remember that the type "iarray" is a
+generic type: it has no size, dimensionality or type. However, once
+you create or get (read) an iarray and assign it to an instance of an
+"iarray" type, that instance is a pointer to an Intelligent Array
+which has a specific dimensionality, size and type. All the library
+routines can handle Iarrays of any type and size, and many can handle
+Iarrays of any dimensionality. However, when it comes to your own code
+which accesses Iarrays, the access macro you use *MUST* match the type
+and dimensionality of the Iarray you read/created.
 
 Allocating:
 -----------
 
 An iarray must be allocated before it can be used. The simplest method
-is to use iarray_create_2D() (or the corresponding 1D or 3D versions),
-which takes the lengths of the dimensions and the type of the elements
-as parameters, and returns an iarray. So for example, to make "a" an m
-by n floating point array, use:
+is to use iarray_create_2D() (or the corresponding 1D, 3D or 4D
+versions), which takes the lengths of the dimensions and the type of
+the elements as parameters, and returns an iarray. So for example, to
+make "a" an m by n floating point array, use:
 
 iarray a;
-a=iarray_create_2D(m,n,K_FLOAT);
+a = iarray_create_2D (m, n, K_FLOAT);
 
 The space allocated for an iarray remains allocated until specifically
 deallocated using iarray_dealloc(). Think of an array as a pointer,
@@ -95,9 +120,9 @@ Disks and Connections:
 
 	One of the main benefits of iarrays and the karma library is
 the simplicity with which they can be written to disk or connections.
-The karma data format is portable across a number of platforms, so the
-problems of endianness and size of types is removed from the
-application programmer. 
+The karma data format is portable across platforms, so the problems of
+endianness and size of types is removed from the application
+programmer.
 	
 	An iarray can be written to disk with the function
 iarray_write() which requires only the iarray to write, and the name
@@ -109,7 +134,7 @@ connections).
 	Iarrays are read using the iarray_read_nD() function, which
 takes a number of parameters, most of which can (fortunately) be
 ignored in most cases. I normally use the following:
-a=iarray_read_nD(fname,FALSE,NULL,n,NULL,NULL,K_CH_MAP_NEVER);
+a = iarray_read_nD (fname, FALSE, NULL, n, NULL, NULL, K_CH_MAP_NEVER);
 Using this as a model, you merely need to provide the filename (a
 string), and the expected number of dimensions (eg 2 for an image).
 
@@ -144,34 +169,34 @@ wise. It then writes the resulting array to disk.
 main()
 {
   /* Declare variables */
-  int i,j;
-  iarray a,b;
+  int i, j;
+  iarray a, b;
 
   /* Create a 10x10 integer 2D iarray */
-  a=iarray_create_2D(10,10,K_INT);
+  a = iarray_create_2D (10, 10, K_INT);
   
   /* Read in from disk a file called "input" which contains an iarray */
-  b=iarray_read_nD("input",FALSE,NULL,2,NULL,NULL,K_CH_MAP_NEVER);
+  b = iarray_read_nD ("input", FALSE, NULL, 2, NULL, NULL, K_CH_MAP_NEVER);
 
   /* Check that this is also a 10x10 array */
-  if( iarray_dim_length(b,0) != 10  ||
-      iarray_dim_length(b,1) != 10) {
-    fprintf(stderr,"Input array is not 10x10\n");
-    exit(1);
+  if ( (iarray_dim_length (b, 0) != 10) ||
+      (iarray_dim_length (b, 1) != 10) ) {
+    fprintf (stderr, "Input array is not 10x10\n");
+    exit (1);
   }
 
   /* Fill a with the multiplication table */
-  for(i=0;i<10;i++)
-    for(j=0;j<10;j++)
-      I2(a,i,j)=i*j;
+  for (i = 0; i < 10; i++)
+    for (j = 0; j < 10; j++)
+      I2 (a, i, j) = i * j;
 
   /* add a to b elementwise */
-  iarray_add_and_scale(b,a,b,1.0,FALSE);
+  iarray_add_and_scale (b, a, b, 1.0, FALSE);
 
   /* Write b to disk */
-  iarray_write(b,"output");
+  iarray_write (b, "output");
 
   /* Deallocate both arrays */
-  iarray_dealloc(a);
-  iarray_dealloc(b);
+  iarray_dealloc (a);
+  iarray_dealloc (b);
 }

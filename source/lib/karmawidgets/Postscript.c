@@ -3,7 +3,7 @@
 
     This code provides a postscript control widget for Xt.
 
-    PostScript code Copyright (C) 1994  Richard Gooch
+    PostScript code Copyright (C) 1994,1995  Richard Gooch
 
     Widget code Copyright (C) 1994  Patrick Jordan
     Incorporated into Karma by permission.
@@ -41,8 +41,20 @@
 
     Updated by      Richard Gooch   23-OCT-1994: Changed some resource names.
 
-    Last updated by Richard Gooch   7-DEC-1994: Stripped declaration of  errno
+    Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
+
+    Updated by      Richard Gooch   9-APR-1995: Initialised  arrayfile_name
+  field to NULL to avoid freeing a non-existant block.
+
+    Updated by      Richard Gooch   13-JUL-1995: Added resources to change
+  orientation, page offset and size.
+
+    Updated by      Richard Gooch   30-JUL-1995: Made use of XkwNvaluePtr
+  resource for ValueWidgetClass.
+
+    Last updated by Richard Gooch   23-SEP-1995: Coped with NULL name pointer
+  to <XkwPostscriptRegisterImageAndName>
 
 
 */
@@ -95,8 +107,18 @@ static Boolean SetValues(Widget current,Widget request,Widget new);
 
 static XtResource PostscriptResources[] = 
 {
-  {XtNcallback, XtCCallback, XtRCallback, sizeof(caddr_t),
-    TheOffset(callback), XtRCallback, (caddr_t)NULL},
+    {XkwNportraitOrientation, XkwCPortraitOrientation, XtRBool, sizeof (Bool),
+     TheOffset (portrait), XtRImmediate, (XtPointer) True},
+    {XkwNpageHorizontalOffset, XkwCPageHorizontalOffset, XtRInt, sizeof (int),
+     TheOffset (hoffset), XtRImmediate, (XtPointer) 10},
+    {XkwNpageVerticalOffset, XkwCPageVerticalOffset, XtRInt, sizeof (int),
+     TheOffset (voffset), XtRImmediate, (XtPointer) 10},
+    {XkwNpageHorizontalSize, XkwCPageHorizontalSize, XtRInt, sizeof (int),
+     TheOffset (hsize), XtRImmediate, (XtPointer) 180},
+    {XkwNpageVerticalSize, XkwCPageVerticalSize, XtRInt, sizeof (int),
+     TheOffset (vsize), XtRImmediate, (XtPointer) 180},
+    {XtNcallback, XtCCallback, XtRCallback, sizeof (caddr_t),
+     TheOffset (callback), XtRCallback, (caddr_t) NULL},
 };
 
 #undef TheOffset
@@ -167,15 +189,17 @@ WidgetClass postscriptWidgetClass = (WidgetClass) &postscriptClassRec;
 /* check that a widget is actually a PostscriptWidget                      */
 /*----------------------------------------------------------------------*/
 
-static int check_type(Widget w,char *function_name)
+static int check_type (Widget w,char *function_name)
 {
-  static char func_name[]="Postscript.check_type";
-  int fl;
-  fl=XtIsSubclass(w,postscriptWidgetClass);
-  if(!fl)
-    fprintf(stderr,
-    "ERROR: Widget passed to %s is not a PostscriptWidget\n",function_name);
-  return fl;
+    static char func_name[] = "Postscript.check_type";
+    int fl;
+
+    fl = XtIsSubclass (w, postscriptWidgetClass);
+    if (!fl)
+    (void) fprintf (stderr,
+		    "ERROR: Widget passed to %s is not a PostscriptWidget\n",
+		    function_name);
+    return fl;
 }
 
 /*----------------------------------------------------------------------*/
@@ -194,9 +218,10 @@ static flag write_ps (PostscriptWidget w, Channel channel,flag colour,flag eps)
 
   check_type((Widget)w,function_name);
   FLAG_VERIFY (colour);
-  pspage = psw_create (channel,w->postscript.hoffset/10.0,
-		       w->postscript.voffset/10.0,
-		       w->postscript.hsize/10.0,w->postscript.vsize/10.0,
+  pspage = psw_create (channel, (double) w->postscript.hoffset / 10.0,
+		       (double) w->postscript.voffset / 10.0,
+		       (double) w->postscript.hsize / 10.0,
+		       (double) w->postscript.vsize / 10.0,
 		       w->postscript.portrait);
   if(pspage == NULL ) return (FALSE);
   if(w->postscript.pixcanvas==NULL) {
@@ -218,7 +243,7 @@ static flag write_ps (PostscriptWidget w, Channel channel,flag colour,flag eps)
 /*  The routine returns nothing.                                        */
 /*----------------------------------------------------------------------*/
 
-static void send_to_queue (Widget w,XtPointer client_data,XtPointer call_data)
+static void send_to_queue (Widget w, XtPointer client_data,XtPointer call_data)
 {
   Channel read_ch, write_ch;
   int pid;
@@ -236,7 +261,7 @@ static void send_to_queue (Widget w,XtPointer client_data,XtPointer call_data)
     fprintf (stderr, "No PRINTER environment variable set\n");
     return;
   }
-  if (ch_create_pipe (&read_ch, &write_ch) != TRUE)  {
+  if ( !ch_create_pipe (&read_ch, &write_ch) )  {
     fprintf (stderr, "Error opening pipe\t%s\n",sys_errlist[errno]);
     return;
   }
@@ -290,7 +315,7 @@ static void send_to_queue (Widget w,XtPointer client_data,XtPointer call_data)
 /*  It is setup as a callback for the "write" buttons.                  */
 /*----------------------------------------------------------------------*/
 
-static void write_to_file(Widget w,XtPointer client_data,XtPointer call_data)
+static void write_to_file (Widget w, XtPointer client_data,XtPointer call_data)
 {
   Channel channel;
   char filename[STRING_LENGTH];
@@ -324,94 +349,79 @@ static void write_to_file(Widget w,XtPointer client_data,XtPointer call_data)
 }
 
 /*----------------------------------------------------------------------*/
-/* This is the callback for the value widgets. Each ValueWidget has a   */
-/* pointer associated with it when the callback is attached, and this   */
-/* is returned as client_data. It points to the variable to be changed  */
-/* by this widget. The new value of the widget is pointed to by         */
-/* call_data .                                                          */
-/*----------------------------------------------------------------------*/
-
-static void dial_cbk(Widget w,XtPointer client_data,XtPointer call_data)
-{
-  int newmin;
-  double *new_value=(double *)client_data;
-  int *fval=(int *)call_data;
-
-  *new_value=(double)(*fval);
-}
-
-/*----------------------------------------------------------------------*/
 /* Register image and filename                                          */
 /*----------------------------------------------------------------------*/
 
-void XkwPostscriptRegisterImageAndName(Widget w,KPixCanvas image,char *name)
+void XkwPostscriptRegisterImageAndName (Widget w, KPixCanvas image, char *name)
 {
-    static char fn_name[]="XkwPostscriptRegisterImageAndName";
-    PostscriptWidget pw=(PostscriptWidget) w;
-  
-    check_type(w,fn_name);
-    pw->postscript.pixcanvas=image;
-    if(pw->postscript.arrayfile_name!=NULL)
-    m_free(pw->postscript.arrayfile_name);
-    pw->postscript.arrayfile_name=st_dup(name);
+    PostscriptWidget pw = (PostscriptWidget) w;
+    static char *default_name = "fred";
+    static char fn_name[] = "XkwPostscriptRegisterImageAndName";
+
+    check_type (w, fn_name);
+    pw->postscript.pixcanvas = image;
+    if (pw->postscript.arrayfile_name != NULL)
+    {
+	m_free (pw->postscript.arrayfile_name);
+    }
+    if ( (name == NULL) || (*name == '\0') ) name = default_name;
+    pw->postscript.arrayfile_name = st_dup (name);
 }
 
 /*----------------------------------------------------------------------*/
 /* Callback for portrait/landscape button                               */
 /*----------------------------------------------------------------------*/
 
-static void portrait_cbk(Widget w,char *client_data,char *call_data)
+static void portrait_cbk (Widget w, char *client_data, char *call_data)
 {
-  flag *portrait = (flag *)client_data;
-  char label[20];
-  
-  if(*portrait==TRUE) {
-    sprintf(label,"Landscape");
-    *portrait=FALSE;
-  } else {
-    sprintf(label,"Portrait");
-    *portrait=TRUE;
-  } 
-  XtVaSetValues(w,XtNlabel,label,NULL);		
+    flag *portrait = (flag *) client_data;
+    char label[20];
+
+    if(*portrait==TRUE) {
+	sprintf(label,"Landscape");
+	*portrait=FALSE;
+    } else {
+	sprintf(label,"Portrait");
+	*portrait=TRUE;
+    } 
+    XtVaSetValues(w,XtNlabel,label,NULL);		
 }
 
 /*----------------------------------------------------------------------*/
 /* Callback for close button                                            */
 /*----------------------------------------------------------------------*/
 
-static void close_cbk(Widget w,XtPointer client_data,XtPointer call_data)
+static void close_cbk (Widget w, XtPointer client_data, XtPointer call_data)
 {
-  XtPopdown(XtParent(XtParent(w)));
+  XtPopdown (XtParent (XtParent (w) ) );
 }
 
 /*----------------------------------------------------------------------*/
 /* Create the Value widgets                                             */
 /*----------------------------------------------------------------------*/
 
-static Widget create_value(Widget parent,char *name,double *valuepointer)
+static Widget create_value (Widget parent, char *name, int *valuepointer)
 {
-  Widget w;
-  int initvalue=(int)*valuepointer;
+    Widget w;
 
-  w=XtVaCreateManagedWidget
-    (name,valueWidgetClass,parent,
-     XkwNmodifier,1,
-     XkwNminimum,0,
-     XkwNmaximum,200,
-     XtNvalue,initvalue,
-     XtNborderWidth,0,
-     XtNlabel,name,
-     NULL);
-  XtAddCallback(w,XkwNvalueChangeCallback,dial_cbk,valuepointer);
-  return w;
+    w = XtVaCreateManagedWidget (name, valueWidgetClass, parent,
+				 XkwNmodifier, 1,
+				 XkwNminimum, 0,
+				 XkwNmaximum, 200,
+				 XtNvalue, *valuepointer,
+				 XtNborderWidth, 0,
+				 XtNlabel, name,
+				 XkwNvaluePtr, valuepointer,
+				 NULL);
+    return w;
 }
 
 /*----------------------------------------------------------------------*/
 /* Create a text button                                                 */
 /*----------------------------------------------------------------------*/
 
-static void create_text_btn(Widget *btn,char *name,char *cbk_val,
-			    XtCallbackProc proc,Widget parent)
+static void create_text_btn (Widget *btn, char *name,char *cbk_val,
+			     XtCallbackProc proc, Widget parent)
 {
   *btn=XtVaCreateManagedWidget
     ("button",commandWidgetClass,parent,
@@ -426,60 +436,58 @@ static void create_text_btn(Widget *btn,char *name,char *cbk_val,
 /* Initialisation method                                                */
 /*----------------------------------------------------------------------*/
 
-static void Initialize(Widget Request,Widget New)
+static void Initialize (Widget Request, Widget New)
 {
-  PostscriptWidget request = (PostscriptWidget) Request;
-  PostscriptWidget new = (PostscriptWidget) New;
-  Widget form,box2,hoffsetdial,voffsetdial,hsizedial,vsizedial;
-  Widget psbtn,epsbtn,qcolourbtn,portraitbtn,closebtn;
+    PostscriptWidget request = (PostscriptWidget) Request;
+    PostscriptWidget new = (PostscriptWidget) New;
+    Widget form,box2,hoffsetdial,voffsetdial,hsizedial,vsizedial;
+    Widget psbtn,epsbtn,qcolourbtn,portraitbtn,closebtn;
+    char *def_orientation;
 
-  new->postscript.portrait = TRUE;
-  new->postscript.hoffset = 10;
-  new->postscript.voffset = 10;
-  new->postscript.hsize = 180;
-  new->postscript.vsize = 180;
-  
-  form=XtVaCreateManagedWidget
-      ("form",boxWidgetClass,(Widget)new,
-       XtNborderWidth,0,
-       NULL);
+    def_orientation = new->postscript.portrait ? "Portrait " : "Landscape";
+    new->postscript.arrayfile_name = NULL;
 
-  box2=XtVaCreateManagedWidget
-      ("box2",boxWidgetClass,(Widget)form,
-       XtNborderWidth,0,
-       XtNorientation,XtorientHorizontal,
-       NULL);
-
-  create_text_btn(&psbtn,"save .ps",(char *)FALSE,write_to_file,box2);
-  create_text_btn(&epsbtn,"save .eps",(char *)TRUE,write_to_file,box2);
-  create_text_btn(&qcolourbtn,"print",(char *)TRUE,send_to_queue,box2);
-
-  portraitbtn=XtVaCreateManagedWidget
-    ("toggle",commandWidgetClass,box2,
-     XtNlabel,"Portrait ",
+    form=XtVaCreateManagedWidget
+    ("form",boxWidgetClass,(Widget)new,
+     XtNborderWidth,0,
      NULL);
-  XtAddCallback(portraitbtn,XtNcallback,(XtCallbackProc)portrait_cbk,
-		(char *)&new->postscript.portrait);
 
-  hoffsetdial=create_value(form,"hoffset",&(new->postscript.hoffset));
-  voffsetdial=create_value(form,"voffset",&(new->postscript.voffset));
-  hsizedial=create_value(form,"hsize",&(new->postscript.hsize));
-  vsizedial=create_value(form,"vsize",&(new->postscript.vsize));
+    box2=XtVaCreateManagedWidget
+    ("box2",boxWidgetClass,(Widget)form,
+     XtNborderWidth,0,
+     XtNorientation,XtorientHorizontal,
+     NULL);
 
-  closebtn=XtVaCreateManagedWidget
+    create_text_btn(&psbtn,"save .ps",(char *)FALSE,write_to_file,box2);
+    create_text_btn(&epsbtn,"save .eps",(char *)TRUE,write_to_file,box2);
+    create_text_btn(&qcolourbtn,"print",(char *)TRUE,send_to_queue,box2);
+
+    portraitbtn=XtVaCreateManagedWidget
+    ("toggle",commandWidgetClass,box2,
+     XtNlabel, def_orientation,
+     NULL);
+    XtAddCallback(portraitbtn,XtNcallback,(XtCallbackProc)portrait_cbk,
+		  (char *)&new->postscript.portrait);
+
+    hoffsetdial = create_value (form, "hoffset", &(new->postscript.hoffset));
+    voffsetdial = create_value (form, "voffset", &(new->postscript.voffset));
+    hsizedial = create_value (form, "hsize", &(new->postscript.hsize));
+    vsizedial = create_value (form, "vsize", &(new->postscript.vsize));
+
+    closebtn=XtVaCreateManagedWidget
     ("closeButton",commandWidgetClass,form,
      XtNlabel,"close",
      XtNhorizDistance,5,
      XtNvertDistance,5,
      NULL);
-  XtAddCallback(closebtn,XtNcallback,close_cbk,NULL);
+    XtAddCallback(closebtn,XtNcallback,close_cbk,NULL);
 }
 
 /*----------------------------------------------------------------------*/
 /* Destroy method                                                       */
 /*----------------------------------------------------------------------*/
 
-static void Destroy(Widget W)
+static void Destroy (Widget W)
 {
   /* Nothing to destroy */
 }
@@ -488,7 +496,7 @@ static void Destroy(Widget W)
 /* SetValues method                                                     */
 /*----------------------------------------------------------------------*/
 
-static Boolean SetValues(Widget Current,Widget Request,Widget New)
+static Boolean SetValues (Widget Current, Widget Request, Widget New)
 {
   PostscriptWidget current = (PostscriptWidget) Current;
   PostscriptWidget request = (PostscriptWidget) Request;

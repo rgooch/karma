@@ -100,8 +100,15 @@
     Updated by      Richard Gooch   8-DEC-1994: Created
   ds_easy_alloc_array_desc  routine.
 
-    Last updated by Richard Gooch   17-JAN-1995: Changed to  destroy_callbacks
+    Updated by      Richard Gooch   17-JAN-1995: Changed to  destroy_callbacks
   field for  multi_array  structure.
+
+    Updated by      Richard Gooch   23-FEB-1995: Made use of CAN_ZERO_CLEAR.
+
+    Updated by      Richard Gooch   19-APR-1995: Cleaned some code.
+
+    Last updated by Richard Gooch   4-AUG-1995: Added more tests for misaligned
+  data.
 
 
 */
@@ -273,8 +280,8 @@ flag array_alloc;
 	m_error_notify (function_name, "packet");
         return (NULL);
     }
-    if (ds_alloc_packet_subdata (pack_desc, return_value, clear, array_alloc)
-	!= TRUE)
+    if ( !ds_alloc_packet_subdata (pack_desc, return_value, clear,
+				   array_alloc) )
     {
 	m_free (return_value);
 	m_error_notify (function_name, "packet subdata");
@@ -308,6 +315,8 @@ flag array_alloc;
 {
     unsigned int elem_count;
     unsigned int type;
+    char *element;
+    list_header *head;
     static char function_name[] = "ds_alloc_packet_subdata";
 
     FLAG_VERIFY (clear);
@@ -323,19 +332,17 @@ flag array_alloc;
     for (elem_count = 0; elem_count < pack_desc->num_elements; ++elem_count)
     {
 	type = pack_desc->element_types[elem_count];
-	if (ds_element_is_named (type) != TRUE)
+	if ( !ds_element_is_named (type) )
 	{
 	    /*  Recursive data type  */
+	    element = packet + ds_get_element_offset (pack_desc, elem_count);
 	    switch (type)
 	    {
 	      case K_ARRAY:
 		/*  Array of packets to allocate memory for  */
-		if (ds_alloc_array ( (array_desc *)
-				    pack_desc->element_desc[elem_count],
-				    packet +
-				    ds_get_element_offset (pack_desc,
-							   elem_count),
-				    clear, array_alloc ) != TRUE)
+		if ( !ds_alloc_array ( (array_desc *)
+				      pack_desc->element_desc[elem_count],
+				      element, clear, array_alloc ) )
 		{
 		    ds_dealloc_packet_subdata (pack_desc, packet);
 		    m_error_notify (function_name, "array of packets");
@@ -344,15 +351,21 @@ flag array_alloc;
 		break;
 	      case LISTP:
 		/*  Linked list: allocate header  */
-		if ( ( *( (list_header **)
-			 ( packet + ds_get_element_offset (pack_desc,
-							   elem_count) )
-			 ) = ds_alloc_list_head () ) == NULL )
+		if ( ( head = ds_alloc_list_head () ) == NULL )
 		{
 		    ds_dealloc_packet_subdata (pack_desc, packet);
 		    m_error_notify (function_name, "linked list header");
 		    return (FALSE);
 		}
+#ifdef NEED_ALIGNED_DATA
+		if ( IS_ALIGNED (element, sizeof head) )
+		{
+		    *(list_header **) element = head;
+		}
+		else m_copy (element, (char *) &head, sizeof head);
+#else
+		*(list_header **) element = head;
+#endif
 		break;
 	      default:
 		/*  Bad data type  */
@@ -378,14 +391,14 @@ char *ds_alloc_packet (pack_desc)
 */
 packet_desc *pack_desc;
 {
-    FString *fstring;
     unsigned int packet_size;
-#if !defined(BLOCK_TRANSFER) && !defined(BYTE_SWAPPER)
+#ifndef CAN_ZERO_CLEAR
+    FString *fstring;
     unsigned int element_count;
     char *element;
+    extern char host_type_sizes[NUMTYPES];
 #endif
     char *packet;
-    extern char host_type_sizes[NUMTYPES];
     static char function_name[] = "ds_alloc_packet";
 
     packet_size = ds_get_packet_size (pack_desc);
@@ -400,7 +413,7 @@ packet_desc *pack_desc;
         m_error_notify (function_name, "packet");
         return (NULL);
     }
-#if defined(BLOCK_TRANSFER) || defined(BYTE_SWAPPER)
+#ifdef CAN_ZERO_CLEAR
     m_clear (packet, packet_size);
 #else
     element = packet;
@@ -409,7 +422,7 @@ packet_desc *pack_desc;
 	 ++element_count)
     {
 	/*  Zero element  */
-        switch ( pack_desc->element_types[element_count] )
+        switch (pack_desc->element_types[element_count])
         {
 	  case K_FLOAT:
 	    *( (float *) element ) = 0.0;
@@ -534,7 +547,7 @@ unsigned int num_levels;
     }
     /*  Allocate descriptor  */
     if ( ( return_value =
-	  (array_desc *) m_alloc ( sizeof *return_value ) ) == NULL )
+	  (array_desc *) m_alloc (sizeof *return_value) ) == NULL )
     {
 	m_error_notify (function_name, "array descriptor");
         return (NULL);
@@ -594,7 +607,7 @@ unsigned int num_levels;
     unsigned int dim_count;
     static char function_name[] = "ds_alloc_tiling_info";
 
-    if ( arr_desc->num_levels > 0 )
+    if (arr_desc->num_levels > 0)
     {
 	(void) fprintf (stderr, "Existing tiling information\n");
 	a_prog_bug (function_name);
@@ -659,28 +672,27 @@ dim_desc *ds_alloc_dim_desc (CONST char *dim_name, uaddr length,
     }
     if (length < 1)
     {
-	(void) fprintf (stderr, "Illegal dimension length: %u passed\n",
+	(void) fprintf (stderr, "Illegal dimension length: %lu passed\n",
 			length);
 	a_prog_bug (function_name);
     }
     if ( ( return_value =
-	  (dim_desc *) m_alloc ( sizeof *return_value ) ) == NULL )
+	  (dim_desc *) m_alloc (sizeof *return_value) ) == NULL )
     {
 	m_error_notify (function_name, "dimension_descriptor");
         return (NULL);
     }
-    if ( ( return_value->name = m_alloc ( (unsigned int) strlen (dim_name)
-					   + (unsigned int) 1 ) ) == NULL )
+    if ( ( return_value->name = m_dup (dim_name, strlen (dim_name) + 1) )
+	== NULL )
     {
 	m_free ( (char *) return_value);
         m_error_notify (function_name, "dimension name");
         return (NULL);
     }
-    (void) strcpy ( return_value->name, dim_name );
     return_value->length = length;
     return_value->minimum = min;
     return_value->maximum = max;
-    if ( (regular == TRUE) || (length < 1) )
+    if ( regular || (length < 1) )
     {
 	return_value->coordinates = NULL;
         return (return_value);
@@ -688,7 +700,7 @@ dim_desc *ds_alloc_dim_desc (CONST char *dim_name, uaddr length,
     if ( ( return_value->coordinates =
 	  (double *) m_alloc (sizeof (double) * length) ) == NULL )
     {
-	m_free ( return_value->name );
+	m_free (return_value->name);
         m_free ( (char *) return_value);
         m_error_notify (function_name, "coordinate array");
         return (NULL);
@@ -718,7 +730,7 @@ list_header *ds_alloc_list_head ()
     static char function_name[] = "ds_alloc_list_head";
 
     if ( ( return_value =
-	  (list_header *) m_alloc ( sizeof *return_value ) ) == NULL )
+	  (list_header *) m_alloc (sizeof *return_value) ) == NULL )
     {
 	m_error_notify (function_name, "linked list header");
         return (NULL);
@@ -757,7 +769,7 @@ flag array_alloc;
 
     FLAG_VERIFY (array_alloc);
     if ( ( return_value =
-	  (list_entry *) m_alloc ( sizeof *return_value ) ) == NULL )
+	  (list_entry *) m_alloc (sizeof *return_value) ) == NULL )
     {
 	m_error_notify (function_name, "linked list entry");
         return (NULL);
@@ -770,7 +782,7 @@ flag array_alloc;
         return (return_value);
     }
     if ( ( return_value->data = ds_alloc_data (list_desc, TRUE,
-						 array_alloc) ) == NULL )
+					       array_alloc) ) == NULL )
     {
 	m_free ( (char *) return_value);
 	m_error_notify (function_name, "list data entry");
@@ -802,7 +814,7 @@ flag array_alloc;
     flag atomic;
     unsigned int data_bytes;
     unsigned int packet_size;
-    unsigned int array_size;
+    unsigned int array_size, alloc_val;
     unsigned int packet_count = 0;
     char *data;
     char *array;
@@ -815,34 +827,50 @@ flag array_alloc;
 	a_func_abort (function_name, "NULL array descriptor");
 	return (FALSE);
     }
-    if ( arr_desc->packet == NULL )
+    if (arr_desc->packet == NULL)
     {
 	a_func_abort (function_name, "NULL packet descriptor for array");
 	return (FALSE);
     }
-    packet_size = ds_get_packet_size ( arr_desc->packet );
+    packet_size = ds_get_packet_size (arr_desc->packet);
     array_size = ds_get_array_size (arr_desc);
     data_bytes = packet_size * array_size;
     if (data_bytes < 1)
     {
 	return (FALSE);
     }
-    atomic = ds_packet_all_data ( arr_desc->packet );
-    *(char **) element = NULL;
-    *( (unsigned int *) ( element + sizeof (char *) ) ) = K_ARRAY_UNALLOCATED;
+    atomic = ds_packet_all_data (arr_desc->packet);
     if (atomic && !array_alloc)
     {
 	/*  Array need not be allocated  */
-	return (TRUE);
+	array = NULL;
+	alloc_val = K_ARRAY_UNALLOCATED;
     }
-    /*  Array must be allocated  */
-    if ( ( array = m_alloc (data_bytes) ) == NULL )
+    else
     {
-	m_error_notify (function_name, "array");
-	return (FALSE);
+	/*  Array must be allocated  */
+	if ( ( array = m_alloc (data_bytes) ) == NULL )
+	{
+	    m_error_notify (function_name, "array");
+	    return (FALSE);
+	}
+	alloc_val = K_ARRAY_M_ALLOC;
     }
+#ifdef NEED_ALIGNED_DATA
+    if ( IS_ALIGNED (element, sizeof array) ) *(char **) element = array;
+    else m_copy (element, (char *) &array, sizeof array);
+    element += sizeof array;
+    if ( IS_ALIGNED (element, sizeof alloc_val) )
+    {
+	*(unsigned int *) element = alloc_val;
+    }
+    else m_copy (element, (char *) &alloc_val, sizeof alloc_val);
+#else
     *(char **) element = array;
-    *( (unsigned int *) ( element + sizeof (char *) ) ) = K_ARRAY_M_ALLOC;
+    element += sizeof array;
+    *(unsigned int *) element = alloc_val;
+#endif
+    if (atomic && !array_alloc) return (TRUE);
     if (atomic)
     {
 	/*  No sub-arrays or linked lists  */
@@ -862,8 +890,8 @@ flag array_alloc;
 	 ++packet_count, data += packet_size)
     {
 	/*  Allocate a packet  */
-        if (ds_alloc_packet_subdata ( arr_desc->packet, data,
-				     clear, array_alloc ) != TRUE)
+        if ( !ds_alloc_packet_subdata (arr_desc->packet, data, clear,
+				       array_alloc) )
         {
 	    m_error_notify (function_name, "packet subdata");
             return (FALSE);
@@ -1042,8 +1070,7 @@ multi_array *ds_wrap_preallocated_n_element_array (char *array,
 	m_error_notify (function_name, "multi_desc descriptor");
         return (NULL);
     }
-    if ( ( pack_desc = ds_alloc_packet_desc ( (unsigned) 1 ) )
-	== NULL )
+    if ( ( pack_desc = ds_alloc_packet_desc ( (unsigned) 1 ) ) == NULL )
     {
 	ds_dealloc_multi (multi_desc);
 	m_error_notify (function_name, "packet descriptor");
@@ -1064,8 +1091,8 @@ multi_array *ds_wrap_preallocated_n_element_array (char *array,
     pack_desc->element_types[0] = K_ARRAY;
     /*  Allocate the data space  */
     if ( ( multi_desc->data[0] =
-	  ds_alloc_data ( multi_desc->headers[0], TRUE,
-			 (array == NULL) ? TRUE : FALSE ) )
+	  ds_alloc_data (multi_desc->headers[0], TRUE,
+			 (array == NULL) ? TRUE : FALSE) )
         == NULL )
     {
 	ds_dealloc_multi (multi_desc);
@@ -1122,8 +1149,7 @@ array_desc *ds_easy_alloc_array_desc (unsigned int num_dim, uaddr *lengths,
     char tmp_name[129];
     static char function_name[] = "ds_easy_alloc_array_desc";
 
-    if ( (lengths == NULL) || (data_types == NULL) ||
-	(data_names == NULL) )
+    if ( (lengths == NULL) || (data_types == NULL) || (data_names == NULL) )
     {
 	(void) fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
@@ -1257,8 +1283,8 @@ array_desc *ds_easy_alloc_array_desc (unsigned int num_dim, uaddr *lengths,
 	    m_error_notify (function_name, "element name");
 	    return (NULL);
 	}
-	(void) strcpy ( pack_desc->element_desc[elem_count],
-		       data_names[elem_count] );
+	(void) strcpy (pack_desc->element_desc[elem_count],
+		       data_names[elem_count]);
     }
     return (arr_desc);
 }   /*  End Function ds_easy_alloc_array_desc  */
@@ -1300,21 +1326,18 @@ flag array_alloc;
     {
 	return (FALSE);
     }
-    if ( list_head->magic != MAGIC_LIST_HEADER )
+    if (list_head->magic != MAGIC_LIST_HEADER)
     {
 	(void) fprintf (stderr, "List header has bad magic number\n");
 	a_prog_bug (function_name);
     }
-    if ( list_head->length > 0 )
+    if (list_head->length > 0)
     {
-	(void) fprintf (stderr, "List has: %u entries: must be empty!\n",
+	(void) fprintf (stderr, "List has: %lu entries: must be empty!\n",
 			list_head->length);
 	a_prog_bug (function_name);
     }
-    if (length < 1)
-    {
-	return (TRUE);
-    }
+    if (length < 1) return (TRUE);
     pack_size = ds_get_packet_size (list_desc);
     /*  Allocate a contiguous block of list data packets  */
     if ( ( list_head->contiguous_data = m_alloc (pack_size * length) )
@@ -1324,11 +1347,11 @@ flag array_alloc;
         return (FALSE);
     }
     /*  Clear block of list data packets  */
-    m_clear ( list_head->contiguous_data, pack_size * length );
+    m_clear (list_head->contiguous_data, pack_size * length);
     /*  Write in data for length, etc. into header  */
     list_head->length = length;
     list_head->contiguous_length = length;
-    if (ds_packet_all_data (list_desc) == TRUE)
+    if ( ds_packet_all_data (list_desc) )
     {
 	/*  No sub-structure to allocate for: return OK here  */
 	return (TRUE);
@@ -1337,8 +1360,7 @@ flag array_alloc;
     for (count = 0, data = list_head->contiguous_data; count < length;
 	 ++count, data += pack_size)
     {
-	if (ds_alloc_packet_subdata (list_desc, data, clear, array_alloc)
-	    != TRUE)
+	if ( !ds_alloc_packet_subdata (list_desc, data, clear, array_alloc) )
 	{
 	    ds_dealloc_list_entries (list_desc, list_head);
             return (FALSE);

@@ -3,7 +3,7 @@
 
     This code provides a colour palette widget for Xt.
 
-    Copyright (C) 1993,1994  Patrick Jordan
+    Copyright (C) 1993,1994,1995  Patrick Jordan
     Incorporated into Karma by permission.
 
     This library is free software; you can redistribute it and/or
@@ -34,8 +34,14 @@
 
     Updated by      Richard Gooch   29-SEP-1993
 
-    Last updated by Richard Gooch   19-JUL-1994: Check if widget is realise
+    Updated by      Richard Gooch   19-JUL-1994: Check if widget is realise
   in  DrawColourBar  .
+
+    Updated by      Richard Gooch   26-JUL-1995: Fixed bugs pointed out by SGI
+  compiler.
+
+    Last updated by Richard Gooch   28-OCT-1995: Allow Kcolourmap to be
+  specified upon creation and multiple times.
 
 
 */
@@ -65,7 +71,7 @@ static void Drag(/* Widget w, XMotionEvent *xme */);
 
 /* Widget Internals  */
 
-static void Initialize(/* Widget request,Widget new */);
+static void Initialise(/* Widget request,Widget new */);
 static void Resize(/* Widget w */);
 static void Destroy(/* Widget w */);
 static void Redisplay(/* Widget w, XEvent *event, Region region */);
@@ -73,7 +79,7 @@ static Boolean SetValues(/* Widget current,Widget request,Widget new */);
 
 /* Other*/
 
-static void ClassInitialize();
+static void ClassInitialise();
 static void DrawSpot(/* Widget w, GC gc */);
 static void DrawColourBar(Widget W);
 
@@ -118,8 +124,8 @@ static XtResource PaletteResources[] =
     TheOffset(maximum), XtRFloat, (XtPointer)&one},
   {XtNvalue, XtCValue, XtRFloat, sizeof(float),
     TheOffset(value), XtRFloat, (XtPointer)&half},
-  {XkwNkarmaColourmap, XkwCKarmaColourmap, XtRPointer, sizeof(XtPointer),
-    TheOffset(dcm), XtRPointer, (XtPointer)NULL},
+  {XkwNkarmaColourmap, XkwCKarmaColourmap, XtRPointer, sizeof (XtPointer),
+    TheOffset (dcm), XtRImmediate, (XtPointer) NULL},
   {XkwNvalueChangeCallback, XtCCallback, XtRCallback, sizeof(caddr_t),
    TheOffset(valueChangeCallback), XtRCallback, (caddr_t)NULL},
   {XkwNorientation, XkwCOrientation, XkwROrientation, sizeof(XkwOrientation),
@@ -138,11 +144,11 @@ PaletteClassRec paletteClassRec =
     (WidgetClass)&widgetClassRec,  /* superclass */
     "Palette",                     /* class_name */
     sizeof(PaletteRec),            /* widget_size */
-    (XtProc)ClassInitialize,       /* class_initialize */
-    NULL,                          /* class_part_initialize */
+    (XtProc)ClassInitialise,       /* class_initialise */
+    NULL,                          /* class_part_initialise */
     FALSE,                         /* class_inited*/
-    (XtInitProc)Initialize,        /* initialize */
-    NULL,                          /* initialize_hook */
+    (XtInitProc)Initialise,        /* initialise */
+    NULL,                          /* initialise_hook */
     XtInheritRealize,              /* realize */
     PaletteActions,                /* actions */
     XtNumber(PaletteActions),      /* num_actions */
@@ -181,7 +187,7 @@ WidgetClass paletteWidgetClass = (WidgetClass) &paletteClassRec;
 /* resource string conversion routines.*/
 /*----------------------------------------------------------------------*/
 
-static void ToLower(char *source,char *dest)
+static void ToLower (char *source,char *dest)
 {
   char ch;
 
@@ -189,7 +195,7 @@ static void ToLower(char *source,char *dest)
     if ('A' <= ch && ch <= 'Z')  *dest = ch - 'A' + 'a';
     else  *dest = ch;
   }
-  *dest = (char)NULL;
+  *dest = (char) NULL;
 }
 
 /*----------------------------------------------------------------------*/
@@ -250,20 +256,20 @@ static void check_values(min,max,value)
 }
 
 /*----------------------------------------------------------------------*/
-/* This method initializes the Slider widget class. Specifically,*/
+/* This method initialises the Slider widget class. Specifically,*/
 /* it registers resource value converter functions with Xt.*/
 /*----------------------------------------------------------------------*/
 
-static void ClassInitialize()
+static void ClassInitialise()
 {
-   XtAddConverter(XtRString, XkwROrientation, CvtStringToOrient, NULL, 0);
+   XtAddConverter (XtRString, XkwROrientation, CvtStringToOrient, NULL, 0);
 }
 
 /*----------------------------------------------------------------------*/
 /* Resize cmap function. This function is called when the kcmap is resized */
 /*----------------------------------------------------------------------*/
 
-static void resize_kcmap(Kcolourmap cmp, void **info)
+static void resize_kcmap (Kcolourmap cmp, void **info)
 {
   Widget w=(Widget)*info;   /* w is the palette widget */
   DrawColourBar(w);
@@ -273,53 +279,57 @@ static void resize_kcmap(Kcolourmap cmp, void **info)
 /* Initialisation method*/
 /*----------------------------------------------------------------------*/
 
-static void Initialize(Widget Request,Widget New)
+static void Initialise (Widget Request, Widget New)
 {
-  PaletteWidget request = (PaletteWidget) Request;
-  PaletteWidget new = (PaletteWidget) New;
-  XGCValues gcValues;
-  XtGCMask value,dynamic,dontcare;
-  Display *display;
+    PaletteWidget request = (PaletteWidget) Request;
+    PaletteWidget new = (PaletteWidget) New;
+    XGCValues gcValues;
+    XtGCMask value, dynamic, dontcare;
+    Display *display;
+    XWindowAttributes window_attributes;
 
-  display = XtDisplay(new);
+    display = XtDisplay (new);
+    if (new->palette.dcm == NULL)
+    {
+	new->palette.cmap_resize_callback = NULL;
+    }
+    else
+    {
+	new->palette.cmap_resize_callback =
+	kcmap_register_resize_func (new->palette.dcm, resize_kcmap, new);
+    }
+    check_values (&new->palette.minimum, &new->palette.maximum,
+		  &new->palette.value);
+    if (request->core.width == 0) new->core.width = PALETTE_MINWIDTH;
+    if (request->core.height == 0) new->core.height = PALETTE_MINHEIGHT;
+    /*  GC for thumb  */
+    gcValues.foreground = new->palette.foreground;
+    gcValues.background = new->core.background_pixel;
+    gcValues.line_width = 3;
+    new->palette.gc=
+    XtGetGC (New, GCForeground | GCBackground | GCLineWidth, &gcValues);
 
-  check_values(&new->palette.minimum,&new->palette.maximum,
-	       &new->palette.value);
-
-  if (request->core.width == 0)
-    new->core.width = PALETTE_MINWIDTH;
-  if (request->core.height == 0)
-    new->core.height = PALETTE_MINHEIGHT;
-
-  /* Gc for thumb*/
-  gcValues.foreground = new->palette.foreground;
-  gcValues.background = new->core.background_pixel;
-  gcValues.line_width = 3;
-  new->palette.gc=
-    XtGetGC(New, GCForeground | GCBackground | GCLineWidth, &gcValues);
-
-  /* Gc for erasing thumb*/
-  gcValues.foreground = new->core.background_pixel;
-  gcValues.background = new->core.background_pixel;
-  gcValues.line_width = 3;
-  new->palette.eraseGC =
+    /* Gc for erasing thumb*/
+    gcValues.foreground = new->core.background_pixel;
+    gcValues.background = new->core.background_pixel;
+    gcValues.line_width = 3;
+    new->palette.eraseGC =
     XtGetGC(New,GCForeground | GCBackground | GCLineWidth, &gcValues);
 
-  /* GC for colourbar*/
-  dynamic = GCForeground;
-  dontcare = 0;
-  value = GCLineStyle | GCCapStyle | GCLineWidth;
-  gcValues.cap_style=CapRound;
-  gcValues.line_style=LineSolid;
-  gcValues.line_width=0;
-  gcValues.foreground=new->core.background_pixel;
-  new->palette.cbarGC=XtAllocateGC(New,0,value,&gcValues,
-				   dynamic,dontcare);
+    /* GC for colourbar*/
+    dynamic = GCForeground;
+    dontcare = 0;
+    value = GCLineStyle | GCCapStyle | GCLineWidth;
+    gcValues.cap_style=CapRound;
+    gcValues.line_style=LineSolid;
+    gcValues.line_width=0;
+    gcValues.foreground=new->core.background_pixel;
+    new->palette.cbarGC = XtAllocateGC (New, 0, value, &gcValues,
+					dynamic, dontcare);
 
-  new->palette.division=2*new->core.width/3;
+    new->palette.division=2*new->core.width/3;
 
-  new->palette.dcm=NULL;
-  Resize(New);
+    Resize (New);
 }
 
 /*----------------------------------------------------------------------*/
@@ -431,58 +441,67 @@ static void Redisplay(Widget W,XEvent *event,Region region)
 
 static Boolean SetValues(Widget Current,Widget Request,Widget New)
 {
-  PaletteWidget current = (PaletteWidget) Current;
-  PaletteWidget request = (PaletteWidget) Request;
-  PaletteWidget new = (PaletteWidget) New;
-  Boolean redisplay = FALSE;
-  Display *display = XtDisplay(new);
-  Boolean newErase = FALSE;
-  XGCValues eraseGCValues, gcVal;
-  int eraseMask = 0;
+    PaletteWidget current = (PaletteWidget) Current;
+    PaletteWidget request = (PaletteWidget) Request;
+    PaletteWidget new = (PaletteWidget) New;
+    Boolean redisplay = FALSE;
+    Display *display = XtDisplay(new);
+    Boolean newErase = FALSE;
+    XGCValues eraseGCValues, gcVal;
+    int eraseMask = 0;
 
-  check_values(&new->palette.minimum,&new->palette.maximum,
-	       &new->palette.value);
+    check_values(&new->palette.minimum,&new->palette.maximum,
+		 &new->palette.value);
 
-  if (new->palette.minimum != current->palette.minimum ||
-      new->palette.maximum != current->palette.maximum ||
-      new->core.height != current->core.height ||
-      new->core.width != current->core.width ||
-      new->palette.orientation != current->palette.orientation) {
-    Resize(New);
-  }
-  
-  if (new->palette.foreground != current->palette.foreground)  {
-    XtReleaseGC(New, new->palette.gc);
-    gcVal.foreground = new->palette.foreground;
-    new->palette.gc = XtGetGC(New, GCForeground, &gcVal);
-    redisplay = TRUE;
-  }
-
-  if (new->core.background_pixel != current->core.background_pixel)  {
-    eraseGCValues.foreground = new->core.background_pixel;
-    newErase = TRUE;
-    eraseMask |= GCForeground;
-    redisplay = TRUE;
-  }
-
-  if (newErase)  {
-    XtReleaseGC(New, new->palette.eraseGC);
-    new->palette.eraseGC = XtGetGC(New, eraseMask, &eraseGCValues);
-  }
-
-  if (new->palette.value != current->palette.value) {
-    if (!redisplay)  {
-      DrawSpot(Current, new->palette.eraseGC);
-      DrawSpot(New, new->palette.gc);
-      return FALSE;
+    if (new->palette.minimum != current->palette.minimum ||
+	new->palette.maximum != current->palette.maximum ||
+	new->core.height != current->core.height ||
+	new->core.width != current->core.width ||
+	new->palette.orientation != current->palette.orientation)
+    {
+	Resize(New);
     }
-  }
+    if (new->palette.foreground != current->palette.foreground)
+    {
+	XtReleaseGC(New, new->palette.gc);
+	gcVal.foreground = new->palette.foreground;
+	new->palette.gc = XtGetGC(New, GCForeground, &gcVal);
+	redisplay = TRUE;
+    }
 
-  if(new->palette.dcm != current->palette.dcm) {
-    kcmap_register_resize_func(new->palette.dcm,resize_kcmap,new);
-  }
-  
-  return redisplay;
+    if (new->core.background_pixel != current->core.background_pixel)
+    {
+	eraseGCValues.foreground = new->core.background_pixel;
+	newErase = TRUE;
+	eraseMask |= GCForeground;
+	redisplay = TRUE;
+    }
+
+    if (newErase)
+    {
+	XtReleaseGC(New, new->palette.eraseGC);
+	new->palette.eraseGC = XtGetGC(New, eraseMask, &eraseGCValues);
+    }
+
+    if (new->palette.value != current->palette.value)
+    {
+	if (!redisplay)  {
+	    DrawSpot(Current, new->palette.eraseGC);
+	    DrawSpot(New, new->palette.gc);
+	    return FALSE;
+	}
+    }
+
+    if (new->palette.dcm != current->palette.dcm)
+    {
+	if (new->palette.cmap_resize_callback != NULL)
+	{
+	    c_unregister_callback (new->palette.cmap_resize_callback);
+	}
+	new->palette.cmap_resize_callback =
+	kcmap_register_resize_func (new->palette.dcm, resize_kcmap, new);
+    }
+    return redisplay;
 }
 
 /*----------------------------------------------------------------------*/
@@ -507,7 +526,11 @@ static void Set(Widget W,XEvent *event,String *argv,int *argc)
       x = (float)((XKeyEvent *)event)->x;
       y = (float)((XKeyEvent *)event)->y;
       break;
-    default: return; break;
+    default:
+      return;
+/*
+      break;
+*/
   }
   DrawSpot(W,w->palette.eraseGC);
 
@@ -517,7 +540,7 @@ static void Set(Widget W,XEvent *event,String *argv,int *argc)
     w->palette.value=(float)x*w->palette.scale+w->palette.minimum;
   }
 
-  check_values(&w->palette.minimum,&w->palette.maximum,&w->palette.value,"");
+  check_values(&w->palette.minimum,&w->palette.maximum,&w->palette.value);
   
   DrawSpot(W,w->palette.gc);
 

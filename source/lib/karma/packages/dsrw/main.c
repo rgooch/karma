@@ -3,7 +3,7 @@
 
     This code provides data structure IO routines.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -106,8 +106,21 @@
 
     Updated by      Richard Gooch   26-NOV-1994: Moved to  packages/dsrw/main.c
 
-    Last updated by Richard Gooch   7-DEC-1994: Stripped declaration of  errno
+    Updated by      Richard Gooch   7-DEC-1994: Stripped declaration of  errno
   and added #include <errno.h>
+
+    Updated by      Richard Gooch   23-FEB-1995: Made use of
+  <ds_can_transfer_packet_as_block> routine.
+
+    Updated by      Richard Gooch   9-APR-1995: Fixed bug in transferring
+  non-byte complex values on little-endian machines: whole value was byte
+  swapped rather than separately byte-swapping the real and imaginary
+  components.
+
+    Updated by      Richard Gooch   5-MAY-1995: Placate SGI compiler.
+
+    Last updated by Richard Gooch   22-AUG-1995: Made <dsrw_write_element> and
+  <dsrw_read_element> more aware of alignment problems (hopefully fully aware)
 
 
 */
@@ -115,6 +128,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <karma.h>
 #include <karma_dsrw.h>
@@ -214,39 +228,39 @@ multi_array *multi_desc;
 	exit (RV_WRITE_ERROR);
     }
     /*  Write number of data structures  */
-    if (pio_write32 (channel, (unsigned long) (*multi_desc).num_arrays)
+    if (pio_write32 (channel, (unsigned long) multi_desc->num_arrays)
 	!= TRUE)
     {
 	exit (RV_WRITE_ERROR);
     }
-    if ( (*multi_desc).num_arrays < 1 )
+    if ( multi_desc->num_arrays < 1 )
     {
 	(void) fprintf (stderr, "No arrays in multi-array header\n");
 	a_prog_bug (function_name);
     }
     /*  Write packet descriptors and data for each data structure  */
-    for (array_count = 0; array_count < (*multi_desc).num_arrays; 
+    for (array_count = 0; array_count < multi_desc->num_arrays; 
 	 ++array_count)
     {
-	dsrw_write_packet_desc (channel, (*multi_desc).headers[array_count]);
-	dsrw_write_packet (channel, (*multi_desc).headers[array_count],
-			   (*multi_desc).data[array_count]);
+	dsrw_write_packet_desc (channel, multi_desc->headers[array_count]);
+	dsrw_write_packet (channel, multi_desc->headers[array_count],
+			   multi_desc->data[array_count]);
     
     }
     /*  May need to write arraynames  */
-    if ( (*multi_desc).num_arrays > 1 )
+    if ( multi_desc->num_arrays > 1 )
     {
-	if ( (*multi_desc).array_names == NULL )
+	if ( multi_desc->array_names == NULL )
         {
 	    (void) fprintf (stderr,
 			    "Multiple arrays and no array of array names\n");
             a_prog_bug (function_name);
         }
         /*  Write array names   */
-        for (array_count = 0; array_count < (*multi_desc).num_arrays;
+        for (array_count = 0; array_count < multi_desc->num_arrays;
 	     ++array_count)
         {
-	    array_name = (*multi_desc).array_names[array_count];
+	    array_name = multi_desc->array_names[array_count];
             if ( (array_name == NULL) || (*array_name == '\0') )
             {
 		(void) fprintf (stderr,
@@ -260,13 +274,13 @@ multi_array *multi_desc;
         }
     }
     /*  Write history  */
-    for (entry = (*multi_desc).first_hist; entry != NULL;
-	 entry = (*entry).next)
+    for (entry = multi_desc->first_hist; entry != NULL;
+	 entry = entry->next)
     {
-	if (pio_write_string (channel, (*entry).string) != TRUE)
+	if (pio_write_string (channel, entry->string) != TRUE)
 	{
 	    (void) fprintf (stderr, "Error writing history string: \"%s\"\n",
-			    (*entry).string);
+			    entry->string);
 	    exit (RV_WRITE_ERROR);
 	}
     }
@@ -301,35 +315,35 @@ packet_desc *pack_desc;
 	a_prog_bug (function_name);
     }
     /*  Write number of elements    */
-    if (pio_write32 (channel, (unsigned long) (*pack_desc).num_elements )
+    if (pio_write32 (channel, (unsigned long) pack_desc->num_elements )
 	!= TRUE)
     {
 	return;
     }
-    if ( (*pack_desc).num_elements < 1 )
+    if ( pack_desc->num_elements < 1 )
     {
 	(void) fprintf (stderr, "No elements in packet descriptor\n");
 	a_prog_bug (function_name);
     }
-    if ( (*pack_desc).element_types == NULL )
+    if ( pack_desc->element_types == NULL )
     {
 	(void) fprintf (stderr,
 			"Packet descriptor has no array of element types\n");
         a_prog_bug (function_name);
     }
-    if ( (*pack_desc).element_desc == NULL )
+    if ( pack_desc->element_desc == NULL )
     {
 	(void) fprintf (stderr,
 			"Packet descriptor has no array of element descriptor pointers\n");
         a_prog_bug (function_name);
     }
     /*  Write element descriptors   */
-    while (element_count < (*pack_desc).num_elements)
+    while (element_count < pack_desc->num_elements)
     {
 	/*  Write an element descriptor */
         dsrw_write_element_desc (channel,
-				 (*pack_desc).element_types[element_count],
-				 (*pack_desc).element_desc[element_count]);
+				 pack_desc->element_types[element_count],
+				 pack_desc->element_desc[element_count]);
         ++element_count;
     }
 }   /*  End Function dsrw_write_packet_desc  */
@@ -438,66 +452,66 @@ array_desc *arr_desc;
 	a_prog_bug (function_name);
     }
     /*  Write number of dimensions  */
-    if (pio_write32 (channel, (unsigned long) (*arr_desc).num_dimensions)
+    if (pio_write32 (channel, (unsigned long) arr_desc->num_dimensions)
 	!= TRUE)
     {
 	return;
     }
-    if ( (*arr_desc).num_dimensions < 1 )
+    if ( arr_desc->num_dimensions < 1 )
     {
 	(void) fprintf (stderr, "No dimensions in array descriptor\n");
 	a_prog_bug (function_name);
     }
     /*  Write tiling information  */
-    if ( (*arr_desc).num_levels > 0 )
+    if ( arr_desc->num_levels > 0 )
     {
 	(void) fprintf (stderr, "Writing tiled array\n");
     }
-    if (pio_write32 (channel, (unsigned long) (*arr_desc).num_levels)
+    if (pio_write32 (channel, (unsigned long) arr_desc->num_levels)
 	!= TRUE)
     {
 	(void) fprintf (stderr, "Error writing number of tiling levels\n");
 	return;
     }
-    if ( (*arr_desc).dimensions == NULL )
+    if ( arr_desc->dimensions == NULL )
     {
 	(void) fprintf (stderr,
 			"Array descriptor has no array of dimension descriptor pointers\n");
         a_prog_bug (function_name);
     }
     /*  Write dimension descriptors */
-    for (dim_count = 0; dim_count < (*arr_desc).num_dimensions; ++dim_count)
+    for (dim_count = 0; dim_count < arr_desc->num_dimensions; ++dim_count)
     {
-	dsrw_write_dim_desc (channel, (*arr_desc).dimensions[dim_count]);
+	dsrw_write_dim_desc (channel, arr_desc->dimensions[dim_count]);
 	/*  Write tile lengths if appropriate  */
 	for (level_count = 0, product = 1;
-	     level_count < (*arr_desc).num_levels;
+	     level_count < arr_desc->num_levels;
 	     ++level_count)
 	{
 	    if (pio_write32 (channel, (unsigned long)
-			     (*arr_desc).tile_lengths[dim_count][level_count])
+			     arr_desc->tile_lengths[dim_count][level_count])
 		!= TRUE)
 	    {
 		(void) fprintf (stderr, "Error writing tile length[%u][%u]\n",
 				dim_count, level_count);
 		return;
 	    }
-	    product *= (*arr_desc).tile_lengths[dim_count][level_count];
+	    product *= arr_desc->tile_lengths[dim_count][level_count];
 	}
 	/*  Check if tile lengths appropriate  */
-	if (product * (*arr_desc).lengths[dim_count] !=
-	    (* (*arr_desc).dimensions[dim_count] ).length)
+	if (product * arr_desc->lengths[dim_count] !=
+	    arr_desc->dimensions[dim_count]->length)
 	{
 	    (void) fprintf (stderr,
-			    "Tile product * bottom length (%u * %u): %u not equal to length: %u\n",
-			    product, (*arr_desc).lengths[dim_count],
-			    product * (*arr_desc).lengths[dim_count],
-			    (* (*arr_desc).dimensions[dim_count] ).length);
+			    "Tile product * bottom length (%u * %lu): %lu not equal to length: %lu\n",
+			    product, arr_desc->lengths[dim_count],
+			    product * arr_desc->lengths[dim_count],
+			    arr_desc->dimensions[dim_count]->length);
 	    a_prog_bug (function_name);
 	}
     }
     /*  Write array packet descriptor   */
-    dsrw_write_packet_desc (channel, (*arr_desc).packet);
+    dsrw_write_packet_desc (channel, arr_desc->packet);
 }   /*  End Function dsrw_write_array_desc   */
 
 /*PUBLIC_FUNCTION*/
@@ -522,47 +536,47 @@ dim_desc *dimension;
 	(void) fprintf (stderr, "NULL descriptor pointer passed\n");
 	a_prog_bug (function_name);
     }
-    if ( ( (*dimension).name == NULL ) || ( *( (*dimension).name ) == '\0' ) )
+    if ( ( dimension->name == NULL ) || ( *( dimension->name ) == '\0' ) )
     {
 	(void) fprintf (stderr, "Dimension name must not be a null string\n");
         a_prog_bug (function_name);
     }
     /*  Write dimension name    */
-    if (pio_write_string (channel, (*dimension).name) != TRUE)
+    if (pio_write_string (channel, dimension->name) != TRUE)
     {
 	exit (RV_WRITE_ERROR);
     }
-    if ( (*dimension).length < 1 )
+    if ( dimension->length < 1 )
     {
 	(void) fprintf (stderr, "Dimension: \"%s\" has zero length\n",
-			(*dimension).name);
+			dimension->name);
 	a_prog_bug (function_name);
     }
     /*  Write dimension length  */
-    if (pio_write64 (channel, (unsigned long) (*dimension).length) != TRUE)
+    if (pio_write64 (channel, (unsigned long) dimension->length) != TRUE)
     {
 	return;
     }
-    if ( (*dimension).minimum > (*dimension).maximum )
+    if ( dimension->minimum > dimension->maximum )
     {
 	(void) fprintf (stderr,
 			"Dimension: \"%s\" minimum: %e is greater than maximum: %e\n",
-			(*dimension).name,
-			(*dimension).minimum, (*dimension).maximum);
+			dimension->name,
+			dimension->minimum, dimension->maximum);
 	a_prog_bug (function_name);
     }
-    if ( ( (*dimension).minimum == (*dimension).maximum ) &&
-	( (*dimension).length != 1 ) )
+    if ( ( dimension->minimum == dimension->maximum ) &&
+	( dimension->length != 1 ) )
     {
 	(void) fprintf (stderr,
 			"Dimension: \"%s\" minimum is equal to maximum: %e\n",
-			(*dimension).name, (*dimension).maximum);
+			dimension->name, dimension->maximum);
 	(void) fprintf (stderr,
-			"and length: %u is not 1\n", (*dimension).length);
+			"and length: %lu is not 1\n", dimension->length);
 	a_prog_bug (function_name);
     }
     /*  Write REGULAR flag  */
-    if ( (*dimension).coordinates == NULL )
+    if ( dimension->coordinates == NULL )
     {
 	dsrw_write_flag (channel, (flag) TRUE);
     }
@@ -570,14 +584,14 @@ dim_desc *dimension;
     {
 	dsrw_write_flag (channel, (flag) FALSE);
     }
-    if ( (*dimension).coordinates == NULL )
+    if ( dimension->coordinates == NULL )
     {
 	/*  Write minimum and maximum   */
-	if (pio_write_double (channel, (*dimension).minimum) != TRUE)
+	if (pio_write_double (channel, dimension->minimum) != TRUE)
 	{
 	    return;
 	}
-	if (pio_write_double (channel, (*dimension).maximum) != TRUE)
+	if (pio_write_double (channel, dimension->maximum) != TRUE)
 	{
 	    return;
 	}
@@ -585,10 +599,10 @@ dim_desc *dimension;
     else
     {
 	/*  Write co-ordinates  */
-        while (coord_count < (*dimension).length)
+        while (coord_count < dimension->length)
         {
 	    if (pio_write_double (channel,
-				  (*dimension).coordinates[coord_count])
+				  dimension->coordinates[coord_count])
 		!= TRUE)
 	    {
 		return;
@@ -611,9 +625,7 @@ packet_desc *pack_desc;
 char *packet;
 {
     unsigned int element_count = 0;
-#ifdef BLOCK_TRANSFER
     unsigned int bytes_to_write;
-#endif
     unsigned int type;
     extern char host_type_sizes[NUMTYPES];
     extern char *sys_errlist[];
@@ -633,12 +645,10 @@ char *packet;
 	(void) fprintf (stderr, "NULL data pointer passed\n");
 	a_prog_bug (function_name);
     }
-#ifdef BLOCK_TRANSFER
-    /*  Can write packet as a block if it has only atomic elements  */
-    bytes_to_write = ds_get_packet_size (pack_desc);
-    if (ds_packet_all_data (pack_desc) == TRUE)
+    if ( ds_can_transfer_packet_as_block (pack_desc) )
     {
 	/*  Block write  */
+	bytes_to_write = ds_get_packet_size (pack_desc);
 	if (ch_write (channel, packet, bytes_to_write) < bytes_to_write)
 	{
 	    (void) fprintf (stderr, "Error writing packet\t%s\n",
@@ -647,14 +657,13 @@ char *packet;
 	}
 	return;
     }
-#endif
     /*  Write packet data   */
-    while (element_count < (*pack_desc).num_elements)
+    while (element_count < pack_desc->num_elements)
     {
 	/*  Write element   */
-        type = (*pack_desc).element_types[element_count];
+        type = pack_desc->element_types[element_count];
         dsrw_write_element (channel, type,
-			    (*pack_desc).element_desc[element_count],
+			    pack_desc->element_desc[element_count],
 			    packet);
         packet += host_type_sizes[type];
         ++element_count;
@@ -662,29 +671,28 @@ char *packet;
 }   /*  End Function dsrw_write_packet   */
 
 /*PUBLIC_FUNCTION*/
-void dsrw_write_element (channel, type, desc, element)
-/*  This routine will write the binary representation of the element of type
-    type  and pointed to by  element  to the channel object given by
-    channel  .
-    The descriptor for the element is pointed to by  desc  .
-    If the element is a pointer to an array or a linked list, then the array
-    or linked list is recursively written to the channel object.
-    The routine returns nothing.
+void dsrw_write_element (Channel channel, unsigned int type, char *desc,
+			 char *element)
+/*  [PURPOSE] This routine will write the binary representation of an element
+    to a channel object.
+    <channel> The channel object.
+    <type> The type of the element.
+    <desc> The descriptor for the element.
+    <element> A pointer to the element data.
+    [RETURNS] Nothing.
 */
-Channel channel;
-unsigned int type;
-char *desc;
-char *element;
 {
-    flag complex_data = FALSE;
-    flag signed_data = TRUE;
     FString *fstring;
     unsigned int size;
     unsigned int fstring_len;
+    char *st;
+#ifdef MACHINE_LITTLE_ENDIAN
     int byte_count;
-    long data_s[2];
-    unsigned long data_u[2];
+    extern char network_type_bytes[NUMTYPES];
+#endif
+#if defined(NEED_ALIGNED_DATA) || defined(MACHINE_LITTLE_ENDIAN)
     char buffer[64];
+#endif
     extern char *sys_errlist[];
     extern char host_type_sizes[NUMTYPES];
     static char function_name[] = "dsrw_write_element";
@@ -699,331 +707,156 @@ char *element;
         a_prog_bug (function_name);
     }
     size = host_type_sizes[type];
+    if ( ds_can_transfer_element_as_block (type) )
+    {
+	if (ch_write (channel, element, size) != size)
+	{
+	    (void) fprintf (stderr,
+			    "Error writing atomic element to channel\t%s\n",
+			    sys_errlist[errno]);
+	    exit (RV_WRITE_ERROR);
+	}
+	return;
+    }
+#if defined(NEED_ALIGNED_DATA) || defined(MACHINE_LITTLE_ENDIAN)
+    if (size > 64)
+    {
+	(void) fprintf (stderr, "Data type size: %u too large for buffer\n",
+			size);
+	a_prog_bug (function_name);
+    }
+#endif
+#ifdef MACHINE_LITTLE_ENDIAN
     switch (type)
     {
-      case K_BYTE:
-      case K_BCOMPLEX:
-      case K_UBYTE:
-      case K_UBCOMPLEX:
-	/*  Bytes never need conversions  */
-	if (ch_write (channel, element, size) != size)
-	{
-	    (void) fprintf (stderr,
-			    "Error writing atomic element to channel\t%s\n",
-			    sys_errlist[errno]);
-	    exit (RV_WRITE_ERROR);
-	}
-	return;
-/*
-	break;
-*/
-#ifdef BLOCK_TRANSFER
       case K_FLOAT:
       case K_DOUBLE:
       case K_INT:
       case K_SHORT:
-      case K_COMPLEX:
-      case K_DCOMPLEX:
-      case K_ICOMPLEX:
-      case K_SCOMPLEX:
       case K_LONG:
-      case K_LCOMPLEX:
       case K_UINT:
       case K_USHORT:
       case K_ULONG:
-      case K_UICOMPLEX:
-      case K_USCOMPLEX:
-      case K_ULCOMPLEX:
-	if (ch_write (channel, element, size) != size)
+	/*  Swap bytes (cannot do this for complex types)  */
+	if (host_type_sizes[type] == network_type_bytes[type])
 	{
-	    (void) fprintf (stderr,
-			    "Error writing atomic element to channel\t%s\n",
-			    sys_errlist[errno]);
-	    exit (RV_WRITE_ERROR);
+	    for (byte_count = 0; byte_count < (int) size; ++byte_count)
+	    {
+		buffer[byte_count] = element[size - byte_count - 1];
+	    }
+	    if (ch_write (channel, buffer, size) != size)
+	    {
+		(void) fprintf(stderr,
+			       "Error writing atomic element to channel\t%s\n",
+			       sys_errlist[errno]);
+		exit (RV_WRITE_ERROR);
+	    }
+	    return;
 	}
-	return;
-/*
         break;
-*/
+    }
 #endif
-#ifdef BYTE_SWAPPER
-      case K_FLOAT:
-      case K_DOUBLE:
-      case K_INT:
-      case K_SHORT:
-      case K_COMPLEX:
-      case K_DCOMPLEX:
-      case K_ICOMPLEX:
-      case K_SCOMPLEX:
-      case K_LONG:
-      case K_LCOMPLEX:
-      case K_UINT:
-      case K_USHORT:
-      case K_ULONG:
-      case K_UICOMPLEX:
-      case K_USCOMPLEX:
-      case K_ULCOMPLEX:
-	/*  Swap bytes  */
-	if (size > 64)
-	{
-	    (void) fprintf (stderr, "Cannot swap: %d bytes\n", (int) size);
-	    a_prog_bug (function_name);
-	}
-	for (byte_count = 0; byte_count < (int) size; ++byte_count)
-	{
-	    buffer[byte_count] = element[size - byte_count - 1];
-	}
-	if (ch_write (channel, buffer, size) != size)
-	{
-	    (void) fprintf (stderr,
-			    "Error writing atomic element to channel\t%s\n",
-			    sys_errlist[errno]);
-	    exit (RV_WRITE_ERROR);
-	}
-	return;
-/*
-        break;
-*/
+    /*  Now we read from the element using non-byte C types. We have to be
+	careful about data alignment.  */
+    /*  Data will need to be converted  */
+#ifdef NEED_ALIGNED_DATA
+    m_copy (buffer, element, size);
+    element = buffer;
 #endif
-#ifndef MATCHING_SIZES
-	/*  Data will need to be converted  */
+    switch (type)
+    {
       case K_FLOAT:
-	if (pio_write_float (channel, *(float *) element) != TRUE)
-	{
-	    return;
-	}
-	return;
-/*
+	(void) pio_write_float (channel, *(float *) element);
         break;
-*/
       case K_DOUBLE:
-	if (pio_write_double (channel, *(double *) element) != TRUE)
-	{
-	    return;
-	}
-	return;
-/*
+	(void) pio_write_double (channel, *(double *) element);
         break;
-*/
       case K_COMPLEX:
-	if (pio_write_float (channel, *(float *) element) != TRUE)
-	{
-	    return;
-	}
-	if (pio_write_float ( channel, *( (float *) element + 1 ) ) != TRUE)
-	{
-	    return;
-	}
-	return;
-/*
+	if ( !pio_write_float (channel, *(float *) element) ) return;
+	(void) pio_write_float ( channel, *( (float *) element + 1 ) );
         break;
-*/
       case K_DCOMPLEX:
-	if (pio_write_double (channel, *(double *) element) != TRUE)
-	{
-	    return;
-	}
-	if (pio_write_double ( channel, *( (double *) element + 1 ) ) != TRUE)
-	{
-	    return;
-	}
-	return;
-/*
+	if ( !pio_write_double (channel, *(double *) element) ) return;
+	(void) pio_write_double ( channel, *( (double *) element + 1 ) );
         break;
-*/
       case K_INT:
-	data_s[0] = *(int *) element;
+	(void) pio_write32s (channel, *(int *) element);
 	break;
       case K_SHORT:
-	data_s[0] = *(short *) element;
+	(void) pio_write16s (channel, *(short *) element);
 	break;
       case K_ICOMPLEX:
-	data_s[0] = *(int *) element;
-	data_s[1] = *( (int *) element + 1 );
-	type = K_INT;
-	complex_data = TRUE;
+	if ( !pio_write32s (channel, *(int *) element) ) return;
+	(void) pio_write32s ( channel, *( (int *) element + 1 ) );
 	break;
       case K_SCOMPLEX:
-	data_s[0] = *(short *) element;
-	data_s[1] = *( (short *) element + 1 );
-	type = K_SHORT;
-	complex_data = TRUE;
+	if ( !pio_write16s (channel, *(short *) element) ) return;
+	(void) pio_write16s ( channel, *( (short *) element + 1 ) );
 	break;
       case K_LONG:
-	data_s[0] = *(long *) element;
+	(void) fprintf (stderr, "64 bit quantity not yet supported\n");
+	a_prog_bug (function_name);
 	break;
       case K_LCOMPLEX:
-	data_s[0] = *(long *) element;
-	data_s[1] = *( (long *) element + 1 );
-	type = K_LONG;
-	complex_data = TRUE;
+	(void) fprintf (stderr, "64 bit quantity not yet supported\n");
+	a_prog_bug (function_name);
 	break;
       case K_UINT:
-	data_u[0] = *(unsigned int *) element;
-	signed_data = FALSE;
+	(void) pio_write32 (channel, *(unsigned int *) element);
 	break;
       case K_USHORT:
-	data_u[0] = *(unsigned short *) element;
-	signed_data = FALSE;
+	(void) pio_write16 (channel, *(unsigned short *) element);
 	break;
       case K_ULONG:
-	data_u[0] = *(unsigned long *) element;
-	signed_data = FALSE;
+	(void) pio_write64 (channel, *(unsigned long *) element);
 	break;
       case K_UICOMPLEX:
-	data_u[0] = *(unsigned int *) element;
-	data_u[1] = *( (unsigned int *) element + 1 );
-	type = K_UINT;
-	complex_data = TRUE;
-	signed_data = FALSE;
+	if ( !pio_write32 (channel, *(unsigned int *) element) ) return;
+	(void) pio_write32 ( channel, *( (unsigned int *) element + 1 ) );
 	break;
       case K_USCOMPLEX:
-	data_u[0] = *(unsigned short *) element;
-	data_u[1] = *( (unsigned short *) element + 1 );
-	type = K_USHORT;
-	complex_data = TRUE;
-	signed_data = FALSE;
+	if ( !pio_write16 (channel, *(unsigned short *) element) ) return;
+	(void) pio_write16 ( channel, *( (unsigned short *) element +1 ) );
 	break;
       case K_ULCOMPLEX:
-	data_u[0] = *(unsigned long *) element;
-	data_u[1] = *( (unsigned long *) element + 1 );
-	type = K_ULONG;
-	complex_data = TRUE;
-	signed_data = FALSE;
+	if ( !pio_write64 (channel, *(unsigned long *) element) ) return;
+	(void) pio_write64 ( channel, *( (unsigned long *) element + 1 ) );
 	break;
-#endif
-/*
-	break;
-*/
       case ARRAYP:
 	(void) fprintf (stderr, "Writing unpadded array\n");
 	dsrw_write_array (channel, (array_desc *) desc, element, FALSE);
-	return;
-/*
 	break;
-*/
       case K_ARRAY:
 	dsrw_write_array (channel, (array_desc *) desc, element, TRUE);
-	return;
-/*
 	break;
-*/
       case LISTP:
 	dsrw_write_list (channel, (packet_desc *) desc,
 			 *(list_header **) element);
-	return;
-/*
 	break;
-*/
       case K_VSTRING:
-	if (pio_write_string (channel, *(char **) element) != TRUE)
-	{
-	    return;
-	}
-	return;
-/*
-        break;
-*/
+	if ( !pio_write_string (channel, *(char **) element) ) return;
+	break;
       case K_FSTRING:
 	fstring = (FString *) element;
-	if (pio_write32 (channel, (*fstring).max_len) != TRUE)
-	{
-	    return;
-	}
-	/*  Clear trail end of string  */
-	fstring_len = strlen ( (*fstring).string );
-	m_clear (fstring_len + (*fstring).string,
-		 (*fstring).max_len - fstring_len);
-	if (ch_write (channel, (*fstring).string, (*fstring).max_len) <
-	    (*fstring).max_len)
+	if ( !pio_write32 (channel, fstring->max_len) ) return;
+	/*  Clear tail end of string  */
+	fstring_len = strlen (fstring->string);
+	m_clear (fstring_len + fstring->string,
+		 fstring->max_len - fstring_len);
+	if (ch_write (channel, fstring->string, fstring->max_len) <
+	    fstring->max_len)
 	{
 	    (void) fprintf (stderr,
 			    "Error writing string to channel\t%s\n",
 			    sys_errlist[errno]);
 	    exit (RV_WRITE_ERROR);
 	}
-	return;
-/*
         break;
-*/
       default:
 	(void) fprintf (stderr, "Bad element type: %u\n", type);
 	a_prog_bug (function_name);
 	break;
     }
-#ifndef MATCHING_SIZES
-    /*  At this point we are left with integer data which is to be written  */
-    switch (host_to_net_size[type])
-    {
-      case 2:
-	/*  Write net short  */
-	if (signed_data == TRUE)
-	{
-	    if (pio_write16s (channel, data_s[0]) != TRUE)
-	    {
-		return;
-	    }
-	    if (complex_data == TRUE)
-	    {
-		if (pio_write16s (channel, data_s[1]) != TRUE)
-		{
-		    return;
-		}
-	    }
-	}
-	else
-	{
-	    if (pio_write16 (channel, data_u[0]) != TRUE)
-	    {
-		return;
-	    }
-	    if (complex_data == TRUE)
-	    {
-		if (pio_write16 (channel, data_u[1]) != TRUE)
-		{
-		    return;
-		}
-	    }
-	}
-	break;
-      case 4:
-	/*  Write net int  */
-	if (signed_data == TRUE)
-	{
-	    if (pio_write32s (channel, data_s[0]) != TRUE)
-	    {
-		return;
-	    }
-	    if (complex_data == TRUE)
-	    {
-		if (pio_write32s (channel, data_s[1]) != TRUE)
-		{
-		    return;
-		}
-	    }
-	}
-	else
-	{
-	    if (pio_write32 (channel, data_u[0]) != TRUE)
-	    {
-		return;
-	    }
-	    if (complex_data == TRUE)
-	    {
-		if (pio_write32 (channel, data_u[1]) != TRUE)
-		{
-		    return;
-		}
-	    }
-	}
-	break;
-      default:
-	(void) fprintf (stderr, "Unknown net size to write: %d\n",
-			host_to_net_size[type]);
-	a_prog_bug (function_name);
-	break;
-    }
-#endif
 }   /*  End Function dsrw_write_element  */
 
 /*PUBLIC_FUNCTION*/
@@ -1046,7 +879,6 @@ flag pad;
     flag block_transfer;
     flag local;
     unsigned int bytes_to_write;
-    unsigned int elem_count;
     unsigned int bytes_written;
     unsigned int array_size;
     unsigned int array_count = 0;
@@ -1071,7 +903,7 @@ flag pad;
 	(void) fprintf (stderr, "NULL descriptor pointer passed\n");
 	a_prog_bug (function_name);
     }
-    if ( (pack_desc = (*arr_desc).packet) == NULL )
+    if ( (pack_desc = arr_desc->packet) == NULL )
     {
 	(void) fprintf (stderr,
 			"NULL pointer to packet in array descriptor\n");
@@ -1089,8 +921,8 @@ flag pad;
 	a_prog_bug (function_name);
     }
     array_size = ds_get_array_size (arr_desc);
-    packet_size = ds_get_packet_size ( (*arr_desc).packet );
-    block_transfer = ds_packet_all_data (pack_desc);
+    packet_size = ds_get_packet_size ( arr_desc->packet );
+    block_transfer = ds_can_transfer_packet_as_block (pack_desc);
     local = ch_test_for_local_connection (channel);
     bytes_to_write = packet_size * array_size;
     /*  Pad array if needed  */
@@ -1121,29 +953,6 @@ flag pad;
 	    }
 	}
     }
-#ifndef BLOCK_TRANSFER
-    if (block_transfer)
-    {
-	/*  Atomic data, but platform does not have network data format  */
-	/*  Can also write array as a block if all elements are byte types  */
-	for (elem_count = 0; elem_count < (*pack_desc).num_elements;
-	     ++elem_count)
-	{
-	    switch ( (*pack_desc).element_types[elem_count] )
-	    {
-	      case K_BYTE:
-	      case K_BCOMPLEX:
-	      case K_UBYTE:
-	      case K_UBCOMPLEX:
-		break;
-	      default:
-		/*  Not byte type  */
-		block_transfer = FALSE;
-		break;
-	    }
-	}
-    }
-#endif
     if (block_transfer && local)
     {
 	transmit_array_local (channel, array, bytes_to_write);
@@ -1169,7 +978,7 @@ flag pad;
     while (array_count++ < array_size)
     {
 	/*  Write a packet in the array */
-	dsrw_write_packet (channel, (*arr_desc).packet, data);
+	dsrw_write_packet (channel, arr_desc->packet, data);
 	data += packet_size;
     }
 }   /*  End Function dsrw_write_array  */
@@ -1191,7 +1000,6 @@ list_header *list_head;
     unsigned int bytes_written;
     unsigned int bytes_to_write;
     unsigned int count;
-    unsigned int pack_count;
     unsigned int pack_size;
     char *data;
     list_entry *curr_entry;
@@ -1212,17 +1020,17 @@ list_header *list_head;
 	(void) fprintf (stderr, "NULL list header pointer passed\n");
 	a_prog_bug (function_name);
     }
-    if ( (*list_head).magic != MAGIC_LIST_HEADER )
+    if ( list_head->magic != MAGIC_LIST_HEADER )
     {
 	(void) fprintf (stderr, "List header has bad magic number\n");
 	a_prog_bug (function_name);
     }
     /*  Write list length   */
-    if (pio_write64 (channel, (unsigned long) (*list_head).length) != TRUE)
+    if (pio_write64 (channel, (unsigned long) list_head->length) != TRUE)
     {
 	return;
     }
-    switch ( (*list_head).sort_type )
+    switch ( list_head->sort_type )
     {
       case SORT_INCREASING:
       case SORT_DECREASING:
@@ -1231,25 +1039,25 @@ list_header *list_head;
       default:
 	(void) fprintf (stderr,
 			"Sort type: %u not recognised\n",
-			(*list_head).sort_type);
+			list_head->sort_type);
 	a_prog_bug (function_name);
 	break;
     }
     /*  Write list sort type    */
-    if (pio_write32 (channel, (unsigned long) (*list_head).sort_type)
+    if (pio_write32 (channel, (unsigned long) list_head->sort_type)
 	!= TRUE)
     {
 	return;
     }
-    if ( (*list_head).sort_elem_num >= (*pack_desc).num_elements )
+    if ( list_head->sort_elem_num >= pack_desc->num_elements )
     {
 	(void) fprintf (stderr,
 			"List sort element number: %u is not less than num_elem: %u\n",
-			(*list_head).sort_elem_num, (*pack_desc).num_elements);
+			list_head->sort_elem_num, pack_desc->num_elements);
         a_prog_bug (function_name);
     }
     /*  Write list sort element number  */
-    if (pio_write32 (channel, (unsigned long) (*list_head).sort_elem_num)
+    if (pio_write32 (channel, (unsigned long) list_head->sort_elem_num)
 	!= TRUE)
     {
 	return;
@@ -1257,16 +1065,12 @@ list_header *list_head;
     /*  Write list packets  */
     /*  Write contiguous section of list  */
     pack_size = ds_get_packet_size (pack_desc);
-#ifdef BLOCK_TRANSFER
-    block_transfer = ds_packet_all_data (pack_desc);
-#else
-    block_transfer = FALSE;
-#endif
-    if (block_transfer && (*list_head).contiguous_length > 0)
+    block_transfer = ds_can_transfer_packet_as_block (pack_desc);
+    if (block_transfer && list_head->contiguous_length > 0)
     {
 	/*  Contiguous block of packet data: do a faster write  */
-	bytes_to_write = pack_size * (*list_head).contiguous_length;
-	if ( ( bytes_written = ch_write (channel, (*list_head).contiguous_data,
+	bytes_to_write = pack_size * list_head->contiguous_length;
+	if ( ( bytes_written = ch_write (channel, list_head->contiguous_data,
 					 bytes_to_write) )
 	    < bytes_to_write)
 	{
@@ -1282,18 +1086,18 @@ list_header *list_head;
     else
     {
 	/*  Must write out each packet  */
-	for (count = 0, data = (*list_head).contiguous_data;
-	     count < (*list_head).contiguous_length;
+	for (count = 0, data = list_head->contiguous_data;
+	     count < list_head->contiguous_length;
 	     ++count, data += pack_size)
 	{
 	    dsrw_write_packet (channel, pack_desc, data);
 	}
     }
     /*  Write out fragmented section of list  */
-    for (curr_entry = (*list_head).first_frag_entry; curr_entry != NULL;
-	 curr_entry = (*curr_entry).next)
+    for (curr_entry = list_head->first_frag_entry; curr_entry != NULL;
+	 curr_entry = curr_entry->next)
     {
-	dsrw_write_packet (channel, pack_desc, (*curr_entry).data);
+	dsrw_write_packet (channel, pack_desc, curr_entry->data);
     }
 }   /*  End Function dsrw_write_list */
 
@@ -1411,9 +1215,9 @@ Channel channel;
 	    ds_dealloc_multi (multi_desc);
             return (NULL);
         }
-        (*multi_desc).headers[array_count] = pack_desc;
+        multi_desc->headers[array_count] = pack_desc;
 	/*  Allocate the required data space   */
-	if ( ( data = ds_alloc_data ( (*multi_desc).headers[array_count],
+	if ( ( data = ds_alloc_data ( multi_desc->headers[array_count],
 				     FALSE, array_alloc ) )
 	    == NULL )
         {
@@ -1421,10 +1225,10 @@ Channel channel;
             ds_dealloc_multi (multi_desc);
             return (NULL);
         }
-        (*multi_desc).data[array_count] = data;
+        multi_desc->data[array_count] = data;
 	/*  Read the data   */
-        if (dsrw_read_packet (channel, (*multi_desc).headers[array_count],
-			      (*multi_desc).data[array_count]) == FALSE)
+        if (dsrw_read_packet (channel, multi_desc->headers[array_count],
+			      multi_desc->data[array_count]) == FALSE)
         {
 	    (void) fprintf (stderr, "Error reading array number %u\n",
 			    array_count);
@@ -1437,7 +1241,7 @@ Channel channel;
 	 ++array_count)
     {
 	/*  Load the names of the arrays    */
-	if ( ( (*multi_desc).array_names[array_count] =
+	if ( ( multi_desc->array_names[array_count] =
 	      pio_read_string (channel, &length) ) == NULL )
         {
 	    a_func_abort (function_name, "Error reading array name");
@@ -1466,19 +1270,19 @@ Channel channel;
 	{
 	    m_abort (function_name, "history entry");
 	}
-	(*entry).string = string;
-	(*entry).next = NULL;
-	if ( (*multi_desc).first_hist == NULL )
+	entry->string = string;
+	entry->next = NULL;
+	if ( multi_desc->first_hist == NULL )
 	{
 	    /*  First entry  */
-	    (*multi_desc).first_hist = entry;
-	    (*multi_desc).last_hist = entry;
+	    multi_desc->first_hist = entry;
+	    multi_desc->last_hist = entry;
 	}
 	else
 	{
 	    /*  Append  */
-	    (* (*multi_desc).last_hist ).next = entry;
-	    (*multi_desc).last_hist = entry;
+	    multi_desc->last_hist->next = entry;
+	    multi_desc->last_hist = entry;
 	}
 	if ( ( string = pio_read_string (channel, &length) )
 	    == NULL )
@@ -1542,11 +1346,11 @@ Channel channel;
 	    ds_dealloc_packet (pack_desc, (char *) NULL);
             return (NULL);
         }
-	(*pack_desc).element_types[element_count] = elem_type;
+	pack_desc->element_types[element_count] = elem_type;
 	if ( ds_element_is_named (elem_type) )
 	{
 	    /*  Atomic data type    */
-	    if ( ( (*pack_desc).element_desc[element_count] =
+	    if ( ( pack_desc->element_desc[element_count] =
 		  pio_read_string (channel, (unsigned int *) NULL) )
 		== NULL )
 	    {
@@ -1560,7 +1364,7 @@ Channel channel;
 	    switch (elem_type)
 	    {
 	      case ARRAYP:
-		(*pack_desc).element_types[element_count] = K_ARRAY;
+		pack_desc->element_types[element_count] = K_ARRAY;
 		/*  Fall through  */
 	      case K_ARRAY:
 		if ( ( arr_desc = dsrw_read_array_desc (channel, elem_type) )
@@ -1569,7 +1373,7 @@ Channel channel;
 		    ds_dealloc_packet (pack_desc, (char *) NULL);
 		    return (NULL);
 		}
-		(*pack_desc).element_desc[element_count] = (char *) arr_desc;
+		pack_desc->element_desc[element_count] = (char *) arr_desc;
 		break;
 	      case LISTP:
 		if ( ( list_desc = dsrw_read_packet_desc (channel) ) == NULL )
@@ -1577,7 +1381,7 @@ Channel channel;
 		    ds_dealloc_packet (pack_desc, (char *) NULL);
 		    return (NULL);
 		}
-		(*pack_desc).element_desc[element_count] = (char *) list_desc;
+		pack_desc->element_desc[element_count] = (char *) list_desc;
 		break;
 	      default:
 		/*  This should NEVER happen!   */
@@ -1665,11 +1469,11 @@ unsigned int type;
     }
     if (type == ARRAYP)
     {
-	(*arr_desc).padded = FALSE;
+	arr_desc->padded = FALSE;
     }
     else
     {
-	(*arr_desc).padded = TRUE;
+	arr_desc->padded = TRUE;
     }
     /*  Get dimension descriptors   */
     for (dim_count = 0; dim_count < num_dim; ++dim_count)
@@ -1679,7 +1483,7 @@ unsigned int type;
 	    ds_dealloc_array_desc (arr_desc);
             return (NULL);
         }
-        (*arr_desc).dimensions[dim_count] = dimension;
+        arr_desc->dimensions[dim_count] = dimension;
 	/*  Get tile lengths if appropriate  */
 	for (level_count = 0, product = 1; level_count < num_levels;
 	     ++level_count)
@@ -1691,20 +1495,20 @@ unsigned int type;
 		ds_dealloc_array_desc (arr_desc);
 		return (NULL);
 	    }
-	    (*arr_desc).tile_lengths[dim_count][level_count] = data;
+	    arr_desc->tile_lengths[dim_count][level_count] = data;
 	    product *= data;
 	}
 	/*  Check if tile lengths appropriate  */
-	if ( (*dimension).length % product != 0 )
+	if ( dimension->length % product != 0 )
 	{
 	    (void) fprintf (stderr,
-			    "Tile product: %u not a factor of length: %u\n",
-			    product, (*dimension).length);
+			    "Tile product: %u not a factor of length: %lu\n",
+			    product, dimension->length);
 	    a_func_abort (function_name, "bad data");
 	    ds_dealloc_array_desc (arr_desc);
 	    return (NULL);
 	}
-	(*arr_desc).lengths[dim_count] = (*dimension).length / product;
+	arr_desc->lengths[dim_count] = dimension->length / product;
     }
     /*  Get packet descriptor for array */
     if ( ( pack_desc = dsrw_read_packet_desc (channel) ) == NULL )
@@ -1712,7 +1516,7 @@ unsigned int type;
 	ds_dealloc_array_desc (arr_desc);
         return (NULL);
     }
-    (*arr_desc).packet = pack_desc;
+    arr_desc->packet = pack_desc;
     return (arr_desc);
 }   /*  End Function dsrw_read_array_desc    */
 
@@ -1837,8 +1641,8 @@ Channel channel;
         {
 	    (void) fprintf (stderr, "Error reading Co-ordinate number: %u\n",
 			    coord_count);
-            m_free ( (*dimension).name );
-            m_free ( (char *) (*dimension).coordinates );
+            m_free ( dimension->name );
+            m_free ( (char *) dimension->coordinates );
             m_free ( (char *) dimension );
             return (NULL);
         }
@@ -1848,17 +1652,17 @@ Channel channel;
 	    (void) fprintf (stderr,
 			    "Co-ordinates are not increasing: last: %e curr: %e\n",
 			    last_coord, coordinate);
-	    m_free ( (*dimension).name );
-            m_free ( (char *) (*dimension).coordinates );
+	    m_free ( dimension->name );
+            m_free ( (char *) dimension->coordinates );
             m_free ( (char *) dimension );
             return (NULL);
         }
-        (*dimension).coordinates[coord_count] = coordinate;
+        dimension->coordinates[coord_count] = coordinate;
 	last_coord = coordinate;
         ++coord_count;
     }
-    (*dimension).minimum = (*dimension).coordinates[0];
-    (*dimension).maximum = (*dimension).coordinates[dim_length - 1];
+    dimension->minimum = dimension->coordinates[0];
+    dimension->maximum = dimension->coordinates[dim_length - 1];
     return (dimension);
 }   /*  End Function dsrw_read_dim_desc  */
 
@@ -1881,7 +1685,9 @@ char *packet;
     unsigned int bytes_to_read;
     extern char host_type_sizes[NUMTYPES];
     extern char *sys_errlist[];
+/*
     static char function_name[] = "dsrw_read_packet";
+*/
 
     if (channel == NULL)
     {
@@ -1899,9 +1705,7 @@ char *packet;
 	(void) fprintf (stderr, "No packet to write to\n");
         return (FALSE);
     }
-#ifdef BLOCK_TRANSFER
-    /*  Can read packet as a block if it has only atomic elements  */
-    if (ds_packet_all_data (descriptor) == TRUE)
+    if ( ds_can_transfer_packet_as_block (descriptor) )
     {
 	/*  Block write  */
 	bytes_to_read = ds_get_packet_size (descriptor);
@@ -1913,12 +1717,11 @@ char *packet;
 	}
 	return (TRUE);
     }
-#endif
-    while (elem_count < (*descriptor).num_elements)
+    while (elem_count < descriptor->num_elements)
     {
-	type = (*descriptor).element_types[elem_count];
+	type = descriptor->element_types[elem_count];
         if (dsrw_read_element (channel, type,
-			       (char *) (*descriptor).element_desc[elem_count],
+			       (char *) descriptor->element_desc[elem_count],
 			       packet)
             == FALSE)
         {
@@ -1931,27 +1734,31 @@ char *packet;
 }   /*  End Function dsrw_read_packet    */
 
 /*PUBLIC_FUNCTION*/
-flag dsrw_read_element (channel, type, desc, element)
-/*  This routine will read the binary representation of an element from the
-    channel object given by  channel  and will write the value to the
-    storage pointed to by  element  .
-    The type of the element to read must be in  type  and the descriptor for
-    the element must be pointed to by  desc  .
-    If the element type is a pointer to an array or linked lists, the routine
-    will recursively read in the array or linked list of packets.
-    The routine returns TRUE on success, else it returns FALSE.
+flag dsrw_read_element (Channel channel, unsigned int type, char *desc,
+			char *element)
+/*  [PURPOSE] This routine will read the binary representation of an element
+    from a channel object. If the element type is a pointer to an array or
+    linked lists, the routine will recursively read in the array or linked
+    list of packets.
+    <channel> The channel object.
+    <type> The type of the element.
+    <desc> The element descriptor.
+    <element> A pointer to the element storage. This will be written to.
+    [RETURNS] TRUE on success, else FALSE.
 */
-Channel channel;
-unsigned int type;
-char *desc;
-char *element;
 {
     FString *fstring;
+#ifdef MACHINE_LITTLE_ENDIAN
     int byte_count;
+    extern char network_type_bytes[NUMTYPES];
+#endif
     unsigned int size;
     unsigned long fstring_len;
     array_desc *arr_desc;
+    char *ptr;
+#if defined(NEED_ALIGNED_DATA) || defined(MACHINE_LITTLE_ENDIAN)
     char buffer[64];
+#endif
     long data_s[2];
     unsigned long data_u[2];
     extern char host_type_sizes[NUMTYPES];
@@ -1969,127 +1776,100 @@ char *element;
         return (FALSE);
     }
     size = host_type_sizes[type];
+    if ( ds_can_transfer_element_as_block (type) )
+    {
+	if (ch_read (channel, element, size) != size)
+	{
+	    (void) fprintf (stderr, "%s: error reading atomic element\t%s\n",
+			    function_name, sys_errlist[errno]);
+	    return (FALSE);
+	}
+	return (TRUE);
+    }
+#if defined(NEED_ALIGNED_DATA) || defined(MACHINE_LITTLE_ENDIAN)
+    if (size > 64)
+    {
+	(void) fprintf (stderr, "Data type size: %u too large for buffer\n",
+			size);
+	a_prog_bug (function_name);
+    }
+#endif
+#ifdef MACHINE_LITTLE_ENDIAN
     switch (type)
     {
-      case K_BYTE:
-      case K_BCOMPLEX:
-      case K_UBYTE:
-      case K_UBCOMPLEX:
-	/*  Byte types   */
-	if (ch_read (channel, element, size) != size)
-	{
-	    (void) fprintf (stderr, "Error reading atomic element\t%s\n",
-			    sys_errlist[errno]);
-	    return (FALSE);
-	}
-	break;
-#ifdef BLOCK_TRANSFER
+#  ifdef HAS_IEEE
       case K_FLOAT:
       case K_DOUBLE:
+#  endif
       case K_INT:
       case K_SHORT:
-      case K_COMPLEX:
-      case K_DCOMPLEX:
-      case K_ICOMPLEX:
-      case K_SCOMPLEX:
       case K_LONG:
-      case K_LCOMPLEX:
       case K_UINT:
       case K_USHORT:
       case K_ULONG:
-      case K_UICOMPLEX:
-      case K_USCOMPLEX:
-      case K_ULCOMPLEX:
-	/*  Atomic data type: the buck stops here   */
-	if (ch_read (channel, element, size) != size)
+	/*  NOTE: cannot simply byte-swap a complex value!  */
+	if (size == network_type_bytes[type])
 	{
-	    (void) fprintf (stderr, "Error reading atomic element\n");
-	    return (FALSE);
+	    if (ch_read (channel, buffer, size) != size)
+	    {
+		(void) fprintf (stderr,
+				"%s: error reading atomic element from channel\t%s\n",
+				function_name, sys_errlist[errno]);
+		return (FALSE);
+	    }
+	    /*  Swap bytes  */
+	    for (byte_count = 0; byte_count < (int) size; ++byte_count)
+	    {
+		element[byte_count] = buffer[size - byte_count - 1];
+	    }
+	    return (TRUE);
 	}
 	break;
+    }
 #endif
-#ifdef BYTE_SWAPPER
-      case K_FLOAT:
-      case K_DOUBLE:
-      case K_INT:
-      case K_SHORT:
-      case K_COMPLEX:
-      case K_DCOMPLEX:
-      case K_ICOMPLEX:
-      case K_SCOMPLEX:
-      case K_LONG:
-      case K_LCOMPLEX:
-      case K_UINT:
-      case K_USHORT:
-      case K_ULONG:
-      case K_UICOMPLEX:
-      case K_USCOMPLEX:
-      case K_ULCOMPLEX:
-	if (size > 64)
-	{
-	    (void) fprintf (stderr, "Cannot swap: %d bytes\n", (int) size);
-	    a_prog_bug (function_name);
-	}
-	if (ch_read (channel, buffer, size) != size)
-	{
-	    (void) fprintf (stderr,
-			    "Error reading atomic element from channel\t%s\n",
-			    sys_errlist[errno]);
-	    return (FALSE);
-	}
-	/*  Swap bytes  */
-	for (byte_count = 0; byte_count < (int) size; ++byte_count)
-	{
-	    element[byte_count] = buffer[size - byte_count - 1];
-	}
-	break;
+    /*  Now we write into the element using non-byte C types. We have to be
+	careful about data alignment.  */
+#ifdef NEED_ALIGNED_DATA
+    ptr = buffer;
+    m_copy (buffer, element, size);
+#else
+    ptr = element;
 #endif
-#ifndef MATCHING_SIZES
+    switch (type)
+    {
       case K_FLOAT:
-	if (pio_read_float (channel, (float *) element) != TRUE) return(FALSE);
+	if ( !pio_read_float (channel, (float *) ptr) ) return (FALSE);
 	break;
       case K_DOUBLE:
-	if (pio_read_double (channel, (double *) element) != TRUE)
-	{
-	    return (FALSE);
-	}
+	if ( !pio_read_double (channel, (double *) ptr) ) return (FALSE);
 	break;
       case K_INT:
-	if (pio_read32s (channel, data_s) != TRUE) return (FALSE);
-	*(int *) element = data_s[0];
+	if ( !pio_read32s (channel, data_s) ) return (FALSE);
+	*(int *) ptr = data_s[0];
 	break;
       case K_SHORT:
-	if (pio_read16s (channel, data_s) != TRUE) return (FALSE);
-	*(short *) element = data_s[0];
+	if ( !pio_read16s (channel, data_s) ) return (FALSE);
+	*(short *) ptr = data_s[0];
 	break;
       case K_COMPLEX:
-	if (pio_read_float (channel, (float *) element) != TRUE) return(FALSE);
-	if (pio_read_float (channel, (float *) element + 1) != TRUE)
-	{
-	    return (FALSE);
-	}
+	if ( !pio_read_float (channel, (float *) ptr) ) return(FALSE);
+	if ( !pio_read_float (channel, (float *) ptr + 1) ) return (FALSE);
 	break;
       case K_DCOMPLEX:
-	if (pio_read_double (channel, (double *) element) != TRUE)
-	{
-	    return (FALSE);
-	}
-	if (pio_read_double (channel, (double *) element + 1) != TRUE)
-	{
-	    return (FALSE);
-	}
+	if ( !pio_read_double (channel, (double *) ptr) ) return (FALSE);
+	if ( !pio_read_double (channel, (double *) ptr + 1) ) return FALSE;
 	break;
       case K_ICOMPLEX:
-	if (pio_read32s (channel, data_s) != TRUE) return (FALSE);
-	if (pio_read32s (channel, data_s + 1) != TRUE) return (FALSE);
-	*(int *) element = data_s[0];
-	*( (int *) element + 1 ) = data_s[1];
+	if ( !pio_read32s (channel, data_s) ) return (FALSE);
+	if ( !pio_read32s (channel, data_s + 1) ) return (FALSE);
+	*(int *) ptr = data_s[0];
+	*( (int *) ptr + 1 ) = data_s[1];
 	break;
       case K_SCOMPLEX:
-	if (pio_read16s (channel, data_s) != TRUE) return (FALSE);
-	if (pio_read16s (channel, data_s + 1) != TRUE) return (FALSE);
-	*(short *) element = data_s[0];
-	*( (short *) element + 1 ) = data_s[1];
+	if ( !pio_read16s (channel, data_s) ) return (FALSE);
+	if ( !pio_read16s (channel, data_s + 1) ) return (FALSE);
+	*(short *) ptr = data_s[0];
+	*( (short *) ptr + 1 ) = data_s[1];
 	break;
       case K_LONG:
       case K_LCOMPLEX:
@@ -2099,12 +1879,12 @@ char *element;
 	a_prog_bug (function_name);
 	break;
       case K_UINT:
-	if (pio_read32 (channel, data_u) != TRUE) return (FALSE);
-	*(unsigned int *) element = data_u[0];
+	if ( !pio_read32 (channel, data_u) ) return (FALSE);
+	*(unsigned int *) ptr = data_u[0];
 	break;
       case K_USHORT:
-	if (pio_read16 (channel, data_u) != TRUE) return (FALSE);
-	*(unsigned short *) element = data_u[0];
+	if ( !pio_read16 (channel, data_u) ) return (FALSE);
+	*(unsigned short *) ptr = data_u[0];
 	break;
       case K_ULONG:
 	(void) fprintf (stderr,
@@ -2113,16 +1893,16 @@ char *element;
 	a_prog_bug (function_name);
 	break;
       case K_UICOMPLEX:
-	if (pio_read32 (channel, data_u) != TRUE) return (FALSE);
-	if (pio_read32 (channel, data_u + 1) != TRUE) return (FALSE);
-	*(unsigned int *) element = data_u[0];
-	*( (unsigned int *) element + 1 ) = data_u[1];
+	if ( !pio_read32 (channel, data_u) ) return (FALSE);
+	if ( !pio_read32 (channel, data_u + 1) ) return (FALSE);
+	*(unsigned int *) ptr = data_u[0];
+	*( (unsigned int *) ptr + 1 ) = data_u[1];
 	break;
       case K_USCOMPLEX:
-	if (pio_read16 (channel, data_u) != TRUE) return (FALSE);
-	if (pio_read16 (channel, data_u + 1) != TRUE) return (FALSE);
-	*(unsigned short *) element = data_u[0];
-	*( (unsigned short *) element + 1 ) = data_u[1];
+	if ( !pio_read16 (channel, data_u) ) return (FALSE);
+	if ( !pio_read16 (channel, data_u + 1) ) return (FALSE);
+	*(unsigned short *) ptr = data_u[0];
+	*( (unsigned short *) ptr + 1 ) = data_u[1];
 	break;
       case K_ULCOMPLEX:
 	(void) fprintf (stderr,
@@ -2130,30 +1910,24 @@ char *element;
 			type);
 	a_prog_bug (function_name);
 	break;
-#endif
       case K_ARRAY:
 	arr_desc = (array_desc *) desc;
-	if (dsrw_read_array (channel, arr_desc, element, (*arr_desc).padded)
-	    == FALSE)
+	if ( !dsrw_read_array (channel, arr_desc, ptr, arr_desc->padded) )
 	{
 	    return (FALSE);
 	}
 	break;
       case LISTP:
-	if (dsrw_read_list ( channel, (packet_desc *) desc,
-			    *( (list_header **) element ) ) ==
-	    FALSE)
-	{
-	    return (FALSE);
-	}
+	if ( !dsrw_read_list ( channel, (packet_desc *) desc,
+			      *( (list_header **) ptr ) ) ) return (FALSE);
 	break;
       case K_VSTRING:
-	if (*(char **) element != NULL)
+	if (*(char **) ptr != NULL)
 	{
 	    (void) fprintf (stderr, "Variable string already allocated\n");
 	    a_prog_bug (function_name);
 	}
-	if ( ( *(char **) element = pio_read_string (channel,
+	if ( ( *(char **) ptr = pio_read_string (channel,
 						     (unsigned int *) NULL) )
 	    == NULL )
 	{
@@ -2169,8 +1943,8 @@ char *element;
 	}
 	break;
       case K_FSTRING:
-	fstring = (FString *) element;
-	if ( ( (*fstring).max_len > 0 ) || ( (*fstring).string != NULL ) )
+	fstring = (FString *) ptr;
+	if ( (fstring->max_len > 0) || (fstring->string != NULL) )
 	{
 	    (void) fprintf (stderr, "Fixed string already allocated\n");
 	    a_prog_bug (function_name);
@@ -2180,25 +1954,28 @@ char *element;
 	    a_func_abort (function_name, "Error reading FSTRING length");
 	    return (FALSE);
 	}
-	if ( ( (*fstring).string = m_alloc (fstring_len) ) == NULL )
+	if ( ( fstring->string = m_alloc (fstring_len) ) == NULL )
 	{
 	    m_error_notify (function_name, "fixed string length");
 	    return (FALSE);
 	}
-	if (ch_read (channel, (*fstring).string, fstring_len) < fstring_len)
+	if (ch_read (channel, fstring->string, fstring_len) < fstring_len)
 	{
 	    (void) fprintf (stderr, "Error reading fixed string element\n");
-	    m_free ( (*fstring).string );
-	    (*fstring).string = NULL;
+	    m_free ( fstring->string );
+	    fstring->string = NULL;
 	    return (FALSE);
 	}
-	(*fstring).max_len = fstring_len;
+	fstring->max_len = fstring_len;
 	break;
       default:
 	(void) fprintf (stderr, "Bad data type: %u\n", type);
 	a_prog_bug (function_name);
 	break;
     }
+#ifdef NEED_ALIGNED_DATA
+    m_copy (element, buffer, size);
+#endif
     return (TRUE);
 }   /*  End Function dsrw_read_element   */
 
@@ -2221,7 +1998,6 @@ flag pad;
 {
     flag block_transfer;
     flag local;
-    unsigned int elem_count;
     unsigned int bytes_to_read;
     unsigned int array_count = 0;
     unsigned int array_size;
@@ -2234,7 +2010,6 @@ flag pad;
     char *array;
     packet_desc *pack_desc;
     extern char *sys_errlist[];
-    extern char host_type_sizes[NUMTYPES];
     static char function_name[] = "dsrw_read_array";
 
     FLAG_VERIFY (pad);
@@ -2248,7 +2023,7 @@ flag pad;
 	(void) fprintf (stderr, "No array descriptor for array to be read\n");
         return (FALSE);
     }
-    if ( (pack_desc = (*descriptor).packet) == NULL )
+    if ( (pack_desc = descriptor->packet) == NULL )
     {
 	(void) fprintf (stderr, "No packet descriptor for array to be read\n");
         return (FALSE);
@@ -2273,8 +2048,8 @@ flag pad;
 	break;
     }
     array_size = ds_get_array_size (descriptor);
-    packet_size = ds_get_packet_size ( (*descriptor).packet );
-    block_transfer = ds_packet_all_data (pack_desc);
+    packet_size = ds_get_packet_size ( descriptor->packet );
+    block_transfer = ds_can_transfer_packet_as_block (pack_desc);
     local = ch_test_for_local_connection (channel);
     bytes_to_read = packet_size * array_size;
     if (pad)
@@ -2285,29 +2060,6 @@ flag pad;
 	    return (FALSE);
 	}
     }
-#ifndef BLOCK_TRANSFER
-    if (block_transfer)
-    {
-	/*  Atomic data, but platform does not have network data format  */
-	/*  Can also read array as a block if all elements are byte types  */
-	for (elem_count = 0; elem_count < (*pack_desc).num_elements;
-	     ++elem_count)
-	{
-	    switch ( (*pack_desc).element_types[elem_count] )
-	    {
-	      case K_BYTE:
-	      case K_BCOMPLEX:
-	      case K_UBYTE:
-	      case K_UBCOMPLEX:
-		break;
-	      default:
-		/*  Not byte type  */
-		block_transfer = FALSE;
-		break;
-	    }
-	}
-    }
-#endif
     if (block_transfer && local)
     {
 	/*  Read from local connection  */
@@ -2324,7 +2076,7 @@ flag pad;
 		(void) fprintf (stderr,
 				"Memory mapped array already allocated\n");
 		(void) fprintf (stderr, "Top dimension of array: \"%s\"\n",
-				(* (*descriptor).dimensions[0] ).name);
+				descriptor->dimensions[0]->name);
 		a_prog_bug (function_name);
 	    }
 	    /*  Can memory map array  */
@@ -2383,7 +2135,7 @@ flag pad;
     /*  Do recursive read   */
     while (array_count++ < array_size)
     { 
-	if (dsrw_read_packet (channel, (*descriptor).packet, array) == FALSE)
+	if (dsrw_read_packet (channel, descriptor->packet, array) == FALSE)
 	{
 	    (void) fprintf (stderr, "Error reading array packet: %u\n",
 			    array_count);
@@ -2433,7 +2185,7 @@ list_header *header;
     {
 	(void) fprintf (stderr, "No header for list to be read\n");
     }
-    if ( (*header).magic != MAGIC_LIST_HEADER )
+    if ( header->magic != MAGIC_LIST_HEADER )
     {
 	(void) fprintf (stderr, "List header has bad magic number\n");
 	a_prog_bug (function_name);
@@ -2459,8 +2211,8 @@ list_header *header;
         ds_dealloc_list_entries (descriptor, header);
         return (FALSE);
     }
-    (*header).sort_type = data;
-    switch ( (*header).sort_type )
+    header->sort_type = data;
+    switch ( header->sort_type )
     {
       case SORT_INCREASING:
       case SORT_DECREASING:
@@ -2468,7 +2220,7 @@ list_header *header;
 	break;
       default:
 	(void) fprintf (stderr, "Bad sort type value: %u\n",
-			(*header).sort_type);
+			header->sort_type);
 	ds_dealloc_list_entries (descriptor, header);
 	return (FALSE);
 /*
@@ -2482,12 +2234,12 @@ list_header *header;
         ds_dealloc_list_entries (descriptor, header);
         return (FALSE);
     }
-    (*header).sort_elem_num = data;
-    if ( (*header).sort_elem_num >= (*descriptor).num_elements )
+    header->sort_elem_num = data;
+    if ( header->sort_elem_num >= descriptor->num_elements )
     {
 	(void) fprintf (stderr,
 			"List sort element number: %u is not less than num_elem: %u\n",
-			(*header).sort_elem_num, (*descriptor).num_elements);
+			header->sort_elem_num, descriptor->num_elements);
 	(void) fprintf (stderr, "Error detected in function: %s\n",
 			function_name);
         ds_dealloc_list_entries (descriptor, header);
@@ -2496,13 +2248,11 @@ list_header *header;
     if (length < 1) return (TRUE);
     /*  Get list  */
     pack_size = ds_get_packet_size (descriptor);
-#ifdef BLOCK_TRANSFER
-    /*  Can read list as a block if it has only atomic elements  */
-    if ( ds_packet_all_data (descriptor) )
+    if ( ds_can_transfer_packet_as_block (descriptor) )
     {
 	/*  Can read data in one block  */
 	bytes_to_read = pack_size * length;
-	if (ch_read (channel, (*header).contiguous_data, bytes_to_read)
+	if (ch_read (channel, header->contiguous_data, bytes_to_read)
 	    < bytes_to_read)
 	{
 	    (void) fprintf (stderr,
@@ -2512,10 +2262,9 @@ list_header *header;
 	}
 	return (TRUE);
     }
-#endif
     /*  Read data one packet at a time  */
-    for (count = 0, data_ptr = (*header).contiguous_data;
-	 count < (*header).contiguous_length; ++count, data_ptr += pack_size)
+    for (count = 0, data_ptr = header->contiguous_data;
+	 count < header->contiguous_length; ++count, data_ptr += pack_size)
     {
 	if (dsrw_read_packet (channel, descriptor, data_ptr)
 	    == FALSE)
@@ -2594,7 +2343,7 @@ unsigned int *type;
     }
     if (ds_element_is_legal (data) != TRUE)
     {
-	(void) fprintf (stderr, "Function: %s\tbad data type value: %u\n",
+	(void) fprintf (stderr, "Function: %s\tbad data type value: %lu\n",
 			function_name, data);
 	return (FALSE);
     }
@@ -2623,7 +2372,9 @@ Channel channel;
 char *array;
 unsigned int length;
 {
+#if FA_SUPPORTED == FA_VX
     flag ok;
+#endif
     unsigned int bytes_written;
     unsigned int control;
     extern char *sys_errlist[];
@@ -2700,7 +2451,6 @@ char *array;
 unsigned int length;
 {
     flag happy = FALSE;
-    int my_ppid;
     long sender_id;
     long sender_ppid;
     unsigned int bytes_read;
@@ -2759,7 +2509,7 @@ unsigned int length;
 #endif  /*  FA_SUPPORTED == FA_VX  */
 	break;
       default:
-	(void) fprintf (stderr, "Illegal control value: %u\n", control);
+	(void) fprintf (stderr, "Illegal control value: %lu\n", control);
 	return (FALSE);
 /*
         break;

@@ -2,7 +2,7 @@
 
     Header for  chs_  package.
 
-    Copyright (C) 1992,1993,1994  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   3-DEC-1992
 
-    Last updated by Richard Gooch   21-MAY-1994
+    Last updated by Richard Gooch   7-APR-1995
 
 */
 
@@ -39,11 +39,11 @@
 #define KARMA_CHS_H
 
 
-#ifndef KARMA_H
+#if !defined(KARMA_H) || defined(MAKEDEPEND)
 #  include <karma.h>
 #endif
 
-#ifndef KARMA_CH_DEF_H
+#if !defined(KARMA_CH_DEF_H) || defined(MAKEDEPEND)
 #  include <karma_ch_def.h>
 #endif
 

@@ -2,7 +2,7 @@
 
     Source file for  tx  (data structure transmitter module).
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1993-1996  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -52,26 +52,46 @@
 
     Updated by      Richard Gooch   6-OCT-1993: Moved  main  into this file.
 
-    Last updated by Richard Gooch   23-NOV-1993: Changed to use of
+    Updated by      Richard Gooch   23-NOV-1993: Changed to use of
   ex_word_skip  .
+
+    Updated by      Richard Gooch   10-MAR-1995: Added support for "spray"
+  protocol.
+
+    Updated by      Richard Gooch   14-JUN-1995: Made use of <ex_uint>.
+
+    Updated by      Richard Gooch   9-AUG-1995: Added support for "hog_request"
+  protocol.
+
+    Last updated by Richard Gooch   29-JAN-1996: Added call to
+  <im_register_lib_version>.
 
 
 */
 #include <stdio.h>
 #include <math.h>
+#include <unistd.h>
+#include <sys/time.h>
+#include <sys/times.h>
 #include <sys/file.h>
+#include <errno.h>
 #include <karma.h>
 #include <karma_module.h>
 #include <karma_panel.h>
 #include <karma_dsxfr.h>
+#include <karma_conn.h>
 #include <karma_ex.h>
+#include <karma_im.h>
 #include <karma_ch.h>
 #include <karma_a.h>
+
+#define BUF_SIZE 16384
 
 EXTERN_FUNCTION (flag tx, (char *command, FILE *fp) );
 
 flag transmit_arrayfile ();
 void run_animate_file ();
+STATIC_FUNCTION (void write_spray, (char *p) );
 
 static flag animate_flag = FALSE;
 static int num_iterations = 1;
@@ -85,15 +105,27 @@ char **argv;    /*  List of command line parameters     */
     KControlPanel panel;
     static char function_name[] = "main";
 
+    conn_register_client_protocol ("spray", 0, 0,
+				   ( flag (*) () ) NULL,
+				   ( flag (*) () ) NULL, ( flag (*) () ) NULL,
+				   ( void (*) () ) NULL);
+    conn_register_client_protocol ("hog_request", 0, 0,
+				   ( flag (*) () ) NULL,
+				   ( flag (*) () ) NULL, ( flag (*) () ) NULL,
+				   ( void (*) () ) NULL);
     if ( ( panel = panel_create (FALSE) ) == NULL )
     {
 	m_abort (function_name, "control panel");
     }
+    panel_add_item (panel, "spray", "spray specified number of bytes",
+		    PIT_FUNCTION, write_spray,
+		    PIA_END);
     panel_add_item (panel, "num_iterations", "number", K_INT, &num_iterations,
 		    PIA_END);
     panel_add_item (panel, "animate", "flag", PIT_FLAG, &animate_flag,
 		    PIA_END);
     panel_push_onto_stack (panel);
+    im_register_lib_version (KARMA_VERSION);
     module_run (argc, argv, "tx", VERSION, tx, -1, 0, FALSE);
     return (RV_OK);
 }   /*  End Function main   */
@@ -207,3 +239,101 @@ char *animate_file;
 	(void) ch_close (channel);
     }
 }   /*  End Function run_animate_file  */
+
+static void write_spray (char *p)
+/*  [PURPOSE] This routine will spray bytes to all "spray" servers.
+    <p> A string containing the number of bytes to spray.
+    [RETURNS] Nothing.
+*/
+{
+    Connection connection;
+    Channel channel;
+    flag wrote_all;
+    unsigned int num_bytes;
+    unsigned int byte_count, block_size, conn_count, num_conn;
+    float time_taken, usec, rate;
+    struct timeval start_time;
+    struct timeval stop_time;
+    char *name;
+    char buffer[BUF_SIZE];
+    extern char *sys_errlist[];
+    static struct timezone tz = {0, 0};
+    static char function_name[] = "write_spray";
+
+    if (p == NULL)
+    {
+	(void) fprintf (stderr, "Must specify number of bytes to spray\n");
+	return;
+    }
+    if ( ( num_bytes = ex_uint (p, &p) ) < 1 )
+    {
+	(void) (void) fprintf (stderr, "Must specify at least 1 byte\n");
+	return;
+    }
+    if ( ( num_conn = conn_get_num_client_connections ("spray") ) < 1 )
+    {
+	(void) fprintf (stderr, "No connections to spray servers\n");
+	return;
+    }
+    (void) fprintf (stderr, "Spraying: %d bytes to all spray servers...\n",
+		    num_bytes);
+    m_clear (buffer, BUF_SIZE);
+    for (conn_count = 0; conn_count < num_conn; ++conn_count)
+    {
+	if ( ( connection = conn_get_client_connection ("spray", conn_count) )
+	    == NULL )
+	{
+	    (void) fprintf (stderr, "Connection: %u does not exist!\n",
+			    conn_count);
+	    a_prog_bug (function_name);
+	}
+	if ( ( name = conn_get_connection_module_name (connection) ) == NULL )
+	{
+	    (void) fprintf (stderr, "NULL module name for connection: %u\n",
+			    conn_count);
+	    a_prog_bug (function_name);
+	}
+	channel = conn_get_channel (connection);
+	(void) fprintf (stderr,
+			"Spraying connection: %u (module: \"%s\")...   ",
+			conn_count, name);
+	if (gettimeofday (&start_time, &tz) != 0)
+	{
+	    (void) fprintf (stderr, "Error getting time of day\t%s%c\n",
+			    sys_errlist[errno], BEL);
+	    (void) exit (RV_SYS_ERROR);
+	}
+	byte_count = num_bytes;
+	wrote_all = TRUE;
+	while (byte_count > 0)
+	{
+	    block_size = (byte_count > BUF_SIZE) ? BUF_SIZE : byte_count;
+	    if (ch_write (channel, buffer, block_size) < block_size)
+	    {
+		(void) fprintf (stderr, "error writing\n");
+		byte_count = 0;
+		wrote_all = FALSE;
+		continue;
+	    }
+	    byte_count -= block_size;
+	}
+	if ( !ch_flush (channel) )
+	{
+	    (void) fprintf (stderr, "error flushing\n");
+	    wrote_all = FALSE;
+	}
+	if (wrote_all)
+	{
+	    if (gettimeofday (&stop_time, &tz) != 0)
+	    {
+		(void) fprintf (stderr, "Error getting time of day\t%s%c\n",
+				sys_errlist[errno], BEL);
+		(void) exit (RV_SYS_ERROR);
+	    }
+	    usec = (float) (stop_time.tv_usec - start_time.tv_usec) * 1e-6;
+	    time_taken = (float) (stop_time.tv_sec - start_time.tv_sec) + usec;
+	    rate = (float) num_bytes / time_taken;
+	    (void) fprintf (stderr, "%u bytes/second\n", (unsigned int) rate);
+	}
+    }
+}   /*  End Function write_spray  */

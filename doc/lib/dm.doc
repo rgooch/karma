@@ -1,0 +1,114 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the dm_ package of routines in the Karma library.
+
+    These routines are meant to provide a generic and simple to use descriptor
+    management facility (ie. event processing on pipes, connections and
+    terminals).
+    NOTE: THIS PACKAGE IS WORK IN PROGRESS. THE INTERFACE MAY CHANGE IN THE
+    NEXT RELEASE, POSSIBLY WITHOUT NOTICE.
+
+
+    Written by		Richard Gooch	27-Jan-1996
+
+    Last updated by	Richard Gooch	27-Jan-1996
+
+
+*/
+
+flag dm_manage ( int fd, void *info, flag (*input_func) (),
+		void (*close_func) (), flag (*output_func) (),
+		flag (*exception_func) () )
+/*  [PURPOSE] This routine will manage a file descriptor for activity by
+    registering callback routines. Only one set of callbacks may be registered
+    per file descriptor.
+    <fd> The file descriptor to manage.
+    <info> The initial value of the arbitrary pointer associated with the
+    managed descriptor. This pointer may be modified by the callback routines.
+    <input_func> The routine which is called when new input occurrs on the
+    descriptor. If this is NULL, no callback routine is installed. The
+    interface to this routine is as follows:
+    [<pre>]
+    flag input_func (int fd, void **info)
+    *   [PURPOSE] This routine is called when new input occurs on a descriptor.
+        <fd> The file descriptor.
+	<info> A pointer to the arbitrary information pointer. The pointer
+	written here will persist until the descriptor is unmanaged (or a
+	subsequent callback routine changes it).
+	[RETURNS] TRUE if the descriptor is to remain managed and open, else it
+	returns FALSE (indicating that the descriptor is to be unmanaged and
+	closed). This routine MUST NOT unmanage or close the descriptor.
+	[NOTE] The <<close_func>> will be called if this routine returns FALSE
+    *
+    [</pre>]
+    <close_func> The routine which is called when the descriptor closes. If
+    this is NULL, no callback routine is installed. The interface to this
+    routine is as follows:
+    [<pre>]
+    void close_func (int fd, void *info)
+    *   [PURPOSE] This routine is called when a descriptor closes.
+        <fd> The file descriptor. The descriptor MUST be capable of detecting
+	closure if this routine is supplied (ie. this routine cannot be
+	supplied for docks).
+	<info> The arbitrary pointer for the managed descriptor.
+	[NOTE] This routine MUST NOT unmanage the descriptor. The descriptor
+	will be automatically unmanaged and deleted upon closure (even if no
+	<<close_func>> is specified).
+	[NOTE] Any unread data in the descriptor will be lost upon closure. The
+	call to this function is the last chance to read this data.
+	[RETURNS] Nothing.
+    *
+    [</pre>]
+    <output_func> The routine which is called when the descriptor becomes ready
+    for output. If this is NULL, no callback routine is installed. The
+    interface to this routine is as follows:
+    [<pre>]
+    flag output_func (int fd, void **info)
+    *   [PURPOSE] This routine is called when a descriptor becomes ready for
+        writing.
+	<fd> The file descriptor.
+	<info> A pointer to the arbitrary information pointer. The pointer
+	written here will persist until the descriptor is unmanaged (or a
+	subsequent callback routine changes it).
+	[RETURNS] TRUE if the descriptor is to remain managed and open, else it
+	returns FALSE (indicating that the descriptor is to be unmanaged and
+	closed). This routine MUST NOT unmanage or close the descriptor.
+	[NOTE] The <<close_func>> will be called if this routine returns FALSE
+    *
+    [</pre>]
+    <exception_func> The routine which is called when exceptions occurr on the
+    descriptor. If this is NULL, no callback routine is installed. The
+    interface to this routine is as follows:
+    [<pre>]
+    flag exception_func (int fd, void **info)
+    *   This routine is called when an exception occurrs on a descriptor.
+	<fd> The file descriptor.
+	<info> A pointer to the arbitrary information pointer. The pointer
+	written here will persist until the descriptor is unmanaged (or a
+	subsequent callback routine changes it).
+	[RETURNS] TRUE if the descriptor is to remain managed and open, else it
+	returns FALSE (indicating that the descriptor is to be unmanaged and
+	closed). This routine MUST NOT unmanage or close the descriptor.
+	[NOTE] The <<close_func>> will be called if this routine returns FALSE
+    *
+    [</pre>]
+    [RETURNS] TRUE on success, else FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+void dm_unmanage (int fd)
+/*  [PURPOSE] This routine will terminate the management of a file descriptor
+    for activity. The routine will NOT close the descriptor (nor does it assume
+    the descriptor is open).
+    <fd> The descriptor to unmanage.
+    [RETURNS] Nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+void dm_poll (long timeout_ms)
+/*  [PURPOSE] This routine will poll all managed descriptors for any activity.
+    <timeout_ms> The time (in milliseconds) to poll. If this is less than 0
+    the routine will poll forever (until some activity occurs or a signal is
+    caught).
+    [RETURNS] Nothing.
+*/
+/*---------------------------------------------------------------------------*/
