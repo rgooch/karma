@@ -1,7 +1,7 @@
 #! /bin/csh -f
 
 # This C shell script will invoke the C compiler with
-#  -DMACHINE_ARCH=$MACHINE_ARCH  added to the command line.
+#  -DOS=$OS -DMACHINE=$MACHINE  added to the command line.
 # The C compiler will create code to cope with misaligned data (on those
 # architectures with this problem) if the sourcefile has a line with:
 # /*MISALIGNED*/ in it.
@@ -29,15 +29,15 @@
 
 # Written by		Richard Gooch	6-OCT-1992
 
-# Last updated by	Richard Gooch	3-AUG-1993
+# Last updated by	Richard Gooch	12-OCT-1994
 
 
 # Determine source filename
 set _sourcefile = "$argv[$#argv]"
 
 # Determine if misalign exemption is needed
-switch ("$MACHINE_ARCH")
-    case "SUNsparc"
+switch ("$OS")
+    case "SunOS":
 	if (`grep -c '^/\*MISALIGNED\*/$' $_sourcefile` > "0") then
 	    # Source file has code which generates misaligned data accesses
 	    set CC = "cc -misalign -PIC"
@@ -46,10 +46,10 @@ switch ("$MACHINE_ARCH")
 	    set CC = "$KARMA_CC $KARMA_CPIC"
 	endif
 	breaksw
-    case "rs6000"
+    case "AIX":
 	set CC = "cc -bM\:SRE"
 	breaksw
 endsw
 
-echo "$CC -DARCH_$MACHINE_ARCH $argv"
-exec $CC -DARCH_$MACHINE_ARCH $argv
+echo "$CC -DOS_$OS -DMACHINE_$MACHINE $argv"
+exec $CC -DOS_$OS -DMACHINE_$MACHINE $argv

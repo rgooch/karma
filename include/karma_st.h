@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   17-SEP-1992
 
-    Last updated by Richard Gooch   2-JUN-1993
+    Last updated by Richard Gooch   3-NOV-1994
 
 */
 
@@ -39,29 +39,32 @@
 #define KARMA_ST_H
 
 
-#ifndef EXTERN_FUNCTION
-#  include <c_varieties.h>
+#ifndef KARMA_H
+#  include <karma.h>
 #endif
 
 /*  File:   strings.c   */
-EXTERN_FUNCTION (unsigned int st_find, (char **string_list,
-					unsigned int list_length, char *string,
+EXTERN_FUNCTION (unsigned int st_find, (CONST char **string_list,
+					unsigned int list_length,
+					CONST char *string,
 					int (*function) () ) );
-EXTERN_FUNCTION (char *st_chr, (char *string, char c) );
-EXTERN_FUNCTION (int st_cmp_wild, (char *a, char *b) );
-EXTERN_FUNCTION (int st_cspn, (char *string, char *charset) );
-EXTERN_FUNCTION (int st_icmp, (char *string1, char *string2) );
+EXTERN_FUNCTION (CONST char *st_chr, (CONST char *string, char c) );
+EXTERN_FUNCTION (int st_cmp_wild, (CONST char *a, CONST char *b) );
+EXTERN_FUNCTION (int st_cspn, (CONST char *string, CONST char *charset) );
+EXTERN_FUNCTION (int st_icmp, (CONST char *string1, CONST char *string2) );
 EXTERN_FUNCTION (char *st_lwr, (char *string) );
-EXTERN_FUNCTION (int st_nicmp, (char *string1, char *string2, int str_len) );
+EXTERN_FUNCTION (int st_nicmp, (CONST char *string1, CONST char *string2,
+				int str_len) );
 EXTERN_FUNCTION (char *st_nupr, (char *string, int str_len) );
 EXTERN_FUNCTION (char *st_nlwr, (char *string, int str_len) );
-EXTERN_FUNCTION (char *st_pbrk, (char *string, char *brkset) );
-EXTERN_FUNCTION (char *st_rchr, (char *string, char c) );
-EXTERN_FUNCTION (int st_spn, (char *string, char *charset) );
-EXTERN_FUNCTION (char *st_tok, (char *string, char *sepset) );
-EXTERN_FUNCTION (long st_tol, (char *str, char **ptr, int base) );
+EXTERN_FUNCTION (char *st_pbrk, (CONST char *string,
+				       CONST char *brkset) );
+EXTERN_FUNCTION (CONST char *st_rchr, (CONST char *string, char c) );
+EXTERN_FUNCTION (int st_spn, (CONST char *string, CONST char *charset) );
+EXTERN_FUNCTION (char *st_tok, (char *string, CONST char *sepset) );
+EXTERN_FUNCTION (long st_tol, (CONST char *str, char **ptr, int base) );
 EXTERN_FUNCTION (char *st_upr, (char *string) );
-EXTERN_FUNCTION (char *st_dup, (char *input) );
+EXTERN_FUNCTION (char *st_dup, (CONST char *input) );
 EXTERN_FUNCTION (void st_qsort, (char **v, int left, int right) );
 
 

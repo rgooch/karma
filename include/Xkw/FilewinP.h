@@ -12,13 +12,16 @@
 
 typedef struct _FilewinPart
 {
-  Widget selector;
-  char **list;
-  char curdir[500];
-  int listcount;
-  int listmax;
-  flag (*accept_file)();
-  XtCallbackList fileSelectCallback;
+    /*  Public resources  */
+    XtCallbackList fileSelectCallback;
+    flag (*accept_file)();
+    Pixel foreground;
+    /*  Private resources  */
+    Widget listwidget;
+    char **list;
+    char curdir[500];
+    int listcount;
+    int listmax;
 } FilewinPart, *FilewinPartPtr;
 
 typedef struct _FilewinRec

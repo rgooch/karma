@@ -134,7 +134,7 @@ char *arrayfile;
     array_desc *arr_desc;
     packet_desc *top_pack_desc;
     char txt[STRING_LENGTH];
-    unsigned int dim_lengths[3];
+    unsigned long dim_lengths[3];
     char *dim_names[3];
     unsigned char *palette_reds[MAX_COLOURS];
     unsigned char *palette_greens[MAX_COLOURS];
@@ -182,9 +182,11 @@ char *arrayfile;
       case COMPRESSION_7BIT:
 	/*  Do the whole cube in in fell swoop  */
 	if (imc_24to8 (ds_get_array_size (arr_desc),
-		       (*cube24).data, (*cube24).data + 1, (*cube24).data + 2,
+		       (unsigned char *) (*cube24).data,
+		       (unsigned char *) (*cube24).data + 1,
+		       (unsigned char *) (*cube24).data + 2,
 		       ds_get_packet_size ( (*arr_desc).packet),
-		       (*cube8).data, 1, max_colours, 9,
+		       (unsigned char *) (*cube8).data, 1, max_colours, 9,
 		       &top_pack_desc, &top_packet) != TRUE)
 	{
 	    iarray_dealloc (cube24);
@@ -199,9 +201,11 @@ char *arrayfile;
       case COMPRESSION_WHOLE_CUBE:
 	/*  Do the whole cube in in fell swoop  */
 	if (imc_24to8 (ds_get_array_size (arr_desc),
-		       (*cube24).data, (*cube24).data + 1, (*cube24).data + 2,
+		       (unsigned char *) (*cube24).data,
+		       (unsigned char *) (*cube24).data + 1,
+		       (unsigned char *) (*cube24).data + 2,
 		       ds_get_packet_size ( (*arr_desc).packet ),
-		       (*cube8).data, 1, max_colours, 0,
+		       (unsigned char *) (*cube8).data, 1, max_colours, 0,
 		       &top_pack_desc, &top_packet) != TRUE)
 	{
 	    iarray_dealloc (cube24);

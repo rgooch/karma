@@ -1,54 +1,43 @@
-CC = $(KARMA_CC)
-# The  -O3  options causes problems, use  -O2  instead
-COPTIMISE = -O
-#CSINGLE = -fd
-CFLAGS = $(COPTIMISE) -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) $(CSINGLE) -DARCH_$(MACHINE_ARCH) -DX11
-FC = fc -fi
-FFLAGS = $(COPTIMISE)
+include ../GNUmakefile.head
 
-LDFLAGS = $(COPTIMISE)
+ifeq ($(OS),Solaris)
+LD = $(KARMA_LD) -R$(KARMALIBPATH):$(XLIBPATH)
+endif
 
-vpath %.o
-vpath %.o $(MACHINE_ARCH)
+ifeq ($(OS),IRIX5)
+LD = $(KARMA_LD) -rpath $(KARMALIBPATH):$(XLIBPATH)
+endif
 
-%.o : %.c
-	$(CC) $(CFLAGS) -c $*.c -o $(MACHINE_ARCH)/$*.o
+ifeq ($(OS),OSF1)
+LD = $(KARMA_LD) -Wl,-rpath,$(KARMALIBPATH):$(XLIBPATH)
+endif
 
-$(MACHINE_ARCH)/%.o : %.c
-	$(CC) $(CFLAGS) -c $*.c -o $(MACHINE_ARCH)/$*.o
-
-CLIBS =	$(LIBS) -lm
-FLIBS = $(LIBS) -lc
-
-LIBS =	-L$(KARMALIBPATH) -L$(XLIBPATH) \
-	-lkarmagraphics -lkarmaxview -lkarmaX11 -lkarma \
-	-lxview -lolgx -lXext -lX11 \
-	-ltermcap $(OS_LIBS)
+CFLAGS = $(COPTIMISE) -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) -DOS_$(OS) -DMACHINE_$(MACHINE) -DX11
+KARMALIBS = -L$(KARMALIBPATH)	-lkarmawidgets -lkarmagraphics -lkarmaXt \
+				-lkarmaX11 -lkarma
+XLIBS = -L$(XLIBPATH) -lXaw -lXmu -lXt -lXext -lX11
 
 
 TARGETS =	$(KARMABINPATH)/kview_2d
 
+
 all:	$(TARGETS)	clean
 
 
-KVIEW_2D =	kview_2d_main.c		kview_2d_xview.c \
-		kview_2d_colour.c \
-		kview_2d_track.c		kview_2d_event.c
+KVIEW_2D =	kview_2d_main.c kview_2d_generic.c
 
-KVIEW_2DO =	kview_2d_main.o		kview_2d_xview.o \
-		kview_2d_colour.o \
-		kview_2d_track.o		kview_2d_event.o
+KVIEW_2DO =	kview_2d_main.o kview_2d_generic.o
 
-$(KARMABINPATH)/kview_2d:	$(KVIEW_2DO) \
-			$(KDEPLIB_KARMAGRAPHICS) $(KDEPLIB_KARMAXVIEW) \
+$(KARMABINPATH)/kview_2d:	$(KVIEW_2DO) $(KDEPLIB_KARMAWIDGETS) \
+			$(KDEPLIB_KARMAGRAPHICS) \
 			$(KDEPLIB_KARMAX11) $(KDEPLIB_KARMA)
-	cd $(MACHINE_ARCH); $(KARMA_CC) $(LDFLAGS) -o tmpkview_2d $(KVIEW_2DO) $(CLIBS)
-	install -s $(MACHINE_ARCH)/tmpkview_2d $(KARMABINPATH)/kview_2d
+	cd $(machine_dir); $(LD) $(LDFLAGS) -o tmpkview_2d $(KVIEW_2DO) $(CLIBS)
+	install -s $(machine_dir)/tmpkview_2d $(KARMABINPATH)/kview_2d
 	chmod u=rwx,go=x $(KARMABINPATH)/kview_2d
 
 
 depend:
-	makedepend -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) -f$(MACHINE_ARCH)/depend $(KVIEW_2D)
+	makedepend -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) -f$(machine_dir)/depend $(KVIEW_2D)
 
 
 
@@ -59,4 +48,4 @@ clean:
 remove:
 	\rm -f $(TARGETS)
 
-include $(MACHINE_ARCH)/depend
+include $(machine_dir)/depend

@@ -2,7 +2,7 @@
 
     Header for  ds_  package. This file ONLY contains the structure definitions
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   13-SEP-1992
 
-    Last updated by Richard Gooch   5-AUG-1993
+    Last updated by Richard Gooch   17-JAN-1995
 
 */
 
@@ -43,6 +43,11 @@
 #  include <karma.h>
 #endif
 
+#ifndef KARMA_C_DEF_H
+#  include <karma_c_def.h>
+#endif
+
+#include <k_win_scale.h>
 
 /*  The following list defines the keyword constants for the various data types
   supported by the general data structure.
@@ -119,6 +124,7 @@
 
 
 /*  These constants are various magic numbers used for safety  */
+#define MAGIC_MULTI_ARRAY (unsigned int) 1348278593
 #define MAGIC_LIST_HEADER (unsigned int) 1578423466
 
 
@@ -154,9 +160,9 @@ typedef struct
     char **data;                    /*  An array of pointers to the data    */
     history *first_hist;            /*  Pointer to first history entry      */
     history *last_hist;             /*  Pointer to last history entry       */
-    void (*destroy_func) ();        /*  Function called upon deallocation   */
-    void *destroy_data;             /*  Arbitrary pointer passed to above   */
+    KCallbackList destroy_callbacks;/*  Callback list called upon dealloc   */
     unsigned int attachments;       /*Counter of attachments: 0 == deleteable*/
+    unsigned int magic_number;      /*  Magic number                        */
 } multi_array;
 
 
@@ -185,9 +191,9 @@ typedef struct
 					0 corresponds to a plain array       */
     unsigned int **tile_lengths;    /*  Pointer to array of tile length arrays,
 					one tile length array per dimension  */
-    unsigned int *lengths;          /*  Pointer to array of lengths of lowest
+    uaddr *lengths;                 /*  Pointer to array of lengths of lowest
 					array (tile)                         */
-    unsigned int **offsets;         /*  Pointer to array of offset arrays,
+    uaddr **offsets;                /*  Pointer to array of offset arrays,
 					one offset array per dimension       */
     packet_desc *packet;            /*  A pointer to a header to describe
                                         the data types to be stored          */

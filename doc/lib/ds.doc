@@ -9,9 +9,9 @@
     dsxfr_ routines.
 
 
-    Written by		Richard Gooch	1-OCT-1992
+    Written by		Richard Gooch	24-Jan-1995
 
-    Last updated by	Richard Gooch	1-OCT-1992
+    Last updated by	Richard Gooch	24-Jan-1995
 
 
 */
@@ -82,16 +82,16 @@ flag clear;
 flag array_alloc;
 /*---------------------------------------------------------------------------*/
 
-char *ds_alloc_packet (pack_descriptor)
+char *ds_alloc_packet (pack_desc)
 /*  This routine will allocate memory for a packet which has a descriptor
-    pointed to by  pack_descriptor  .
+    pointed to by  pack_desc  .
     The elements of the packet will be set to zero (for all types).
     This routine is NOT recursive (ie. sub arrays and linked lists are not
     allocated).
     The routine returns a pointer to the packet. If memory could not be
     allocated, NULL is returned.
 */
-packet_desc *pack_descriptor;
+packet_desc *pack_desc;
 /*---------------------------------------------------------------------------*/
 
 array_desc *ds_alloc_array_desc (num_dimensions, num_levels)
@@ -121,7 +121,8 @@ array_desc *arr_desc;
 unsigned int num_levels;
 /*---------------------------------------------------------------------------*/
 
-dim_desc *ds_alloc_dim_desc (dim_name, length, min, max, regular)
+dim_desc *ds_alloc_dim_desc (CONST char *dim_name, uaddr length,
+			     double min, double max, flag regular)
 /*  This routine will allocate a header for a single dimension.
     The name of the dimension must be pointed to by  dim_name  . The name is
     copied, thus the input character string may be subsequently deallocated.
@@ -136,11 +137,6 @@ dim_desc *ds_alloc_dim_desc (dim_name, length, min, max, regular)
     The routine returns a pointer to the descriptor. If memory could not be
     allocated, NULL is returned.
 */
-char *dim_name;
-unsigned int length;
-double min;
-double max;
-flag regular;
 /*---------------------------------------------------------------------------*/
 
 list_header *ds_alloc_list_head ()
@@ -158,7 +154,7 @@ list_header *ds_alloc_list_head ()
 
 list_entry *ds_alloc_list_entry (list_desc, array_alloc)
 /*  This routine will allocate an entry in a linked list (it will NOT insert
-    it in the list: see insert_list_entry).
+    it in the list: see ds_list_insert).
     The descriptor for the linked list must be pointed to by  list_desc  .
     The list pointers will be set to NULL.
     The routine will initialise (set to zero) the data in the entry.
@@ -194,8 +190,10 @@ flag clear;
 flag array_alloc;
 /*---------------------------------------------------------------------------*/
 
-char *ds_easy_alloc_array (multi_desc, num_dim, lengths, minima, maxima, names,
-			   data_type, data_name)
+char *ds_easy_alloc_array (multi_array **multi_desc, unsigned int num_dim,
+			   uaddr *lengths, double *minima, double *maxima,
+			   char **names, unsigned int data_type,
+			   CONST char *data_name)
 /*  This routine will allocate memory for a multi-dimensional, regular array,
     and the required headers and the multi-array header. The array is NOT tiled
     nor are any address offsets computed.
@@ -225,19 +223,14 @@ char *ds_easy_alloc_array (multi_desc, num_dim, lengths, minima, maxima, names,
     The routine returns a pointer to the start of the array. If memory could
     not be allocated, or any error occurs, NULL is returned.
 */
-multi_array **multi_desc;
-unsigned int num_dim;
-unsigned int *lengths;
-double *minima;
-double *maxima;
-char **names;
-unsigned int data_type;
-char *data_name;
 /*---------------------------------------------------------------------------*/
 
-char *ds_easy_alloc_n_element_array (multi_desc, num_dim, lengths,
-				     minima, maxima, names,
-				     num_elements, data_types, data_names)
+char *ds_easy_alloc_n_element_array (multi_array **multi_desc,
+				     unsigned int num_dim, uaddr *lengths,
+				     double *minima, double *maxima,
+				     char **names, unsigned int num_elements,
+				     unsigned int *data_types,
+				     char **data_names)
 /*  This routine will allocate memory for a multi-dimensional, regular array,
     and the required headers and the multi-array header. The array is NOT tiled
     nor are any address offsets computed.
@@ -269,15 +262,89 @@ char *ds_easy_alloc_n_element_array (multi_desc, num_dim, lengths,
     The routine returns a pointer to the start of the array. If memory could
     not be allocated, or any error occurs, NULL is returned.
 */
-multi_array **multi_desc;
-unsigned int num_dim;
-unsigned int *lengths;
-double *minima;
-double *maxima;
-char **names;
-unsigned int num_elements;
-unsigned int *data_types;
-char **data_names;
+/*---------------------------------------------------------------------------*/
+
+multi_array *ds_wrap_preallocated_n_element_array (char *array,
+						   unsigned int num_dim,
+						   uaddr *lengths,
+						   double *minima,
+						   double *maxima,
+						   double **coordinates,
+						   char **names,
+						   unsigned int num_elements,
+						   unsigned int *data_types,
+						   char **data_names)
+/*  This routine will "wrap" an externally allocated array by allocating memory
+    for a multi-dimensional, regular array, and the required headers and the
+    multi-array header. No address offsets are computed.
+    Note that this routine does NOT create a Karma arrayfile. This must be done
+    with a call to  dsxfr_put_multi  .
+    The externally allocated array data must be pointed to by  array  .This
+    data must be externally deallocated when no longer needed. If  array  is
+    NULL, then the array data is internally allocated (and should not be
+    externally deallocated).
+    The number of dimensions of the array must be in  num_dim  ,the lengths
+    of each dimension (axis) must be in the array pointed to by  lengths  .
+    The minimum and maximum co-ordinate values of each dimension must be in the
+    arrays pointed to by  minima  and maxima  ,respectively. If either of
+    these pointers is NULL, the range of the co-ordinates will be the lengths
+    of the dimensions minus 1. If one of the pointers is NULL, the other
+    array is used to tie one end of the range for each dimension. If both
+    pointers are NULL,the minima are 0.0 and the maxima are the lengths minus 1
+    The array of co-ordinate array pointers must be pointed to by  coordinates
+    If this is NULL, all dimensions are assumed to be regularly spaced. If any
+    co-ordinate array pointer is NULL, the corresponding dimension is assumed
+    to be regularly spaced.
+    The names of each dimension must be pointed to by the list of character
+    pointers  names  .If this is NULL, the names "Axis 0", "Axis 1", ...etc
+    will be used. Note: the character arrays are copied, so the arrays of
+    characters and the array of pointers may be subsequently deallocated.
+    The data packet that may be stored in the array may contain a number of
+    atomic elements. The number of elements in this packet must be given by
+    num_elements
+    The data types of the elements must be pointed to by  data_types  .
+    The following data types are not permitted:
+        NONE, K_ARRAY, LISTP, MULTI_ARRAY.
+    The names of the elements must be pointed to by  data_names  .The name
+    strings are copied, thus the memory used for the input strings may be
+    subsequently deallocated.
+    The routine returns a multi-array structure pointer on success,
+    else NULL is returned.
+*/
+/*---------------------------------------------------------------------------*/
+
+array_desc *ds_easy_alloc_array_desc (unsigned int num_dim, uaddr *lengths,
+				      double *minima, double *maxima,
+				      double **coordinates, char **names,
+				      unsigned int num_elements,
+				      unsigned int *data_types,
+				      char **data_names)
+/*  [PURPOSE] This routine will allocate an array descriptor and it's
+    associated packet descriptor.
+    <num_dim> The number of dimensions in the array.
+    <lengths> An array of lengths for each dimension (axis).
+    <minima> An array of minimum co-ordinate values for each dimension.
+    <maxima> An array of maximum co-ordinate values for each dimension.
+    If either of these pointers is NULL, the range of the co-ordinates will be
+    the lengths of the dimensions minus 1. If one of the pointers is NULL, the
+    other array is used to tie one end of the range for each dimension. If both
+    pointers are NULL,the minima are 0.0 and the maxima are the lengths minus 1
+    <coordinates> The array of co-ordinate array pointers. If this is NULL,
+    all dimensions are assumed to be regularly spaced. If any co-ordinate array
+    pointer is NULL, the corresponding dimension is assumed to be regularly
+    spaced.
+    <names> An array of string pointers to the names of each dimension. If this
+    is NULL, the names "Axis 0", "Axis 1", ...etc will be used. Note: the
+    character arrays are copied, so the arrays of characters and the array of
+    pointers may be subsequently deallocated.
+    <num_elements> The number of atomic elements in the array packet.
+    <data_types> The array of data types. The following data types are not
+    permitted:
+        NONE, K_ARRAY, LISTP, MULTI_ARRAY.
+    <data_names> The array of element names. The name strings are copied, thus
+    the memory used for the input strings may be subsequently deallocated.
+    [RETURNS] An array descriptor pointer on success, else NULL.
+*/
 /*---------------------------------------------------------------------------*/
 
 flag ds_alloc_contiguous_list (list_desc, list_head, length, clear,array_alloc)
@@ -306,8 +373,10 @@ flag clear;
 flag array_alloc;
 /*---------------------------------------------------------------------------*/
 
-flag ds_find_single_extremes (data, elem_type, conv_type, dimension, stride,
-			      scan_start, scan_end, min, max)
+flag ds_find_single_extremes (char *data, unsigned int elem_type,
+			      unsigned int conv_type, dim_desc *dimension,
+			      unsigned int stride, double scan_start,
+			      double scan_end, double *min, double *max)
 /*  This routine will find the extremes (minimum and maximum) of a single trace
     (element versus a dimension).
     The data must be pointed to by  data  .
@@ -325,23 +394,16 @@ flag ds_find_single_extremes (data, elem_type, conv_type, dimension, stride,
     to testing for the minimum and maximum.
     The routine returns TRUE on success, else it returns FALSE.
 */
-char *data;
-unsigned int elem_type;
-unsigned int conv_type;
-dim_desc *dimension;
-unsigned int stride;
-double scan_start;
-double scan_end;
-double *min;
-double *max;
 /*---------------------------------------------------------------------------*/
 
-flag ds_find_plane_extremes (data, elem_type, conv_type,
-			     abs_dim_desc, abs_dim_stride,
-			     ord_dim_desc, ord_dim_stride,
-			     abs_scan_start, abs_scan_end,
-			     ord_scan_start, ord_scan_end,
-			     min, max)
+flag ds_find_plane_extremes (char *data, unsigned int elem_type,
+			     unsigned int conv_type, dim_desc *abs_dim_desc,
+			     unsigned int abs_dim_stride,
+			     dim_desc *ord_dim_desc,
+			     unsigned int ord_dim_stride,
+			     double abs_scan_start, double abs_scan_end,
+			     double ord_scan_start, double ord_scan_end,
+			     double *min, double *max)
 /*  This routine will find the extremes (minimum and maximum) of a single plane
     (element versus two dimensions).
     The data must be pointed to by  data  .
@@ -365,19 +427,44 @@ flag ds_find_plane_extremes (data, elem_type, conv_type,
     to testing for the minimum and maximum.
     The routine returns TRUE on success, else it returns FALSE.
 */
-char *data;
-unsigned int elem_type;
-unsigned int conv_type;
-dim_desc *abs_dim_desc;
-unsigned int abs_dim_stride;
-dim_desc *ord_dim_desc;
-unsigned int ord_dim_stride;
-double abs_scan_start;
-double abs_scan_end;
-double ord_scan_start;
-double ord_scan_end;
-double *min;
-double *max;
+/*---------------------------------------------------------------------------*/
+
+flag ds_find_single_histogram (char *data, unsigned int elem_type,
+			       unsigned int conv_type, unsigned int num_values,
+			       uaddr *offsets, unsigned int stride,
+			       double min, double max, unsigned long num_bins,
+			       unsigned long *histogram_array,
+			       unsigned long *histogram_peak,
+			       unsigned long *histogram_mode)
+/*  This routine will find the histogram of a single trace (element versus a
+    dimension). This routine may be called repeatedly with multiple traces in
+    order to build an aggregate histogram of all traces.
+    The data must be pointed to by  data  .Misaligned data will cause bus
+    errors on some platforms.
+    The type of the element must be in  elem_type  .
+    The type of conversion to use for complex numbers must be in  conv_type  .
+    Legal value for this include:
+        KIMAGE_COMPLEX_CONV_REAL        KIMAGE_COMPLEX_CONV_IMAG
+        KIMAGE_COMPLEX_CONV_ABS         KIMAGE_COMPLEX_CONV_SQUARE_ABS
+	KIMAGE_COMPLEX_CONV_PHASE       KIMAGE_COMPLEX_CONV_CONT_PHASE
+    The length of the dimension must be given by  num_values  .
+    The address offsets for data along the dimension must be pointed to by
+    offsets  .
+    If the value of  offsets  is NULL, the stride (in bytes) between
+    consecutive values along the dimension must be given by  stride  .
+    Data values below the value  min  will be ignored.
+    Data values above the value  max  will be ignored.
+    The number of histogram bins must be given by  num_bins  .
+    The histogram array must be pointed to by  historgram_array  .The values in
+    this array are updated, and hence must be initialised externally.
+    The peak of the histogram is written to the storage pointed to by
+    histogram_peak  .This value is updated, and hence must be externally
+    initialised to 0.
+    The mode of the histogram (index value of the peak) will be written to the
+    storage pointed to by  histogram_mode  .This value is updated, and hence
+    must be externally initialised to 0.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
 /*---------------------------------------------------------------------------*/
 
 flag ds_put_unique_named_value (pack_desc, packet, name, type, value, update)
@@ -400,7 +487,7 @@ flag ds_put_unique_named_value (pack_desc, packet, name, type, value, update)
 */
 packet_desc *pack_desc;
 char **packet;
-char *name;
+CONST char *name;
 unsigned int type;
 double *value;
 flag update;
@@ -424,8 +511,8 @@ flag ds_put_unique_named_string (pack_desc, packet, name, string, update)
 */
 packet_desc *pack_desc;
 char **packet;
-char *name;
-char *string;
+CONST char *name;
+CONST char *string;
 flag update;
 /*---------------------------------------------------------------------------*/
 
@@ -443,7 +530,7 @@ flag ds_get_unique_named_value (pack_desc, packet, name, type, value)
 */
 packet_desc *pack_desc;
 char *packet;
-char *name;
+CONST char *name;
 unsigned int *type;
 double *value;
 /*---------------------------------------------------------------------------*/
@@ -460,7 +547,7 @@ char *ds_get_unique_named_string (pack_desc, packet, name)
 */
 packet_desc *pack_desc;
 char *packet;
-char *name;
+CONST char *name;
 /*---------------------------------------------------------------------------*/
 
 unsigned short *ds_cmap_alloc_colourmap (size, multi_desc, pack_desc, packet)
@@ -508,8 +595,8 @@ unsigned short *ds_cmap_find_colourmap (top_pack_desc, top_packet, size,
     The routine is tolerant of incorrect ordering of the intensity elements.
     If they are ordered incorrectly, the data will be re-ordered, and the
     value TRUE will be written to the storage pointed to by  reordering_done  .
-    If the data is not re-ordered, or if this is NULL, then nothing is written
-    here.
+    If the data is not re-ordered, the value FALSE is written here. If this is
+    NULL, then nothing is written here.
     The matched list of restrictions must be pointed to by  restr_names  and
     restr_values  .The length of these lists must be in  num_restr  .Note that
     NULL pointers may be passed for  restr_names  and restr_values  and
@@ -519,13 +606,13 @@ unsigned short *ds_cmap_find_colourmap (top_pack_desc, top_packet, size,
     The routine returns a pointer to a colourmap on success,
     else it returns NULL.
     Note that the returned colourmap will contain  *size  contiguous packets
-    which each contain first a red intensity, then a blue and then a green.
+    which each contain first a red intensity, then a green and then a blue.
 */
 packet_desc *top_pack_desc;
 char *top_packet;
 unsigned int *size;
 flag *reordering_done;
-char *restr_names[];
+CONST char *restr_names[];
 double *restr_values;
 unsigned int num_restr;
 /*---------------------------------------------------------------------------*/
@@ -556,7 +643,7 @@ unsigned int *ds_cmap_get_all_colourmaps (multi_desc, num_found,
 multi_array *multi_desc;
 unsigned int *num_found;
 flag *reordering_done;
-char *restr_names[];
+CONST char *restr_names[];
 double *restr_values;
 unsigned int num_restr;
 /*---------------------------------------------------------------------------*/
@@ -590,7 +677,7 @@ packet_desc *ds_copy_desc_until (inp_desc, name)
     and the descriptor pointer for that element will be NULL.
 */
 packet_desc *inp_desc;
-char *name;
+CONST char *name;
 /*---------------------------------------------------------------------------*/
 
 array_desc *ds_copy_array_desc_until (inp_desc, name)
@@ -607,7 +694,7 @@ array_desc *ds_copy_array_desc_until (inp_desc, name)
     descriptor in the array descriptor will be set to NULL.
 */
 array_desc *inp_desc;
-char *name;
+CONST char *name;
 /*---------------------------------------------------------------------------*/
 
 dim_desc *ds_copy_dim_desc (inp_desc)
@@ -891,7 +978,8 @@ unsigned int num_points;
 double *value;
 /*---------------------------------------------------------------------------*/
 
-double ds_convert_atomic (datum, datum_type, real_out, imag_out)
+double ds_convert_atomic (CONST char *datum, unsigned int datum_type,
+			  double *real_out, double *imag_out)
 /*  This routine will convert an atomic datum to a double precision value.
     The datum to be converted must be pointed to by  datum  and the data type
     value must be in  datum_type  .
@@ -905,20 +993,14 @@ double ds_convert_atomic (datum, datum_type, real_out, imag_out)
     These storages MUST lie on a  double  boundary.
     The routine returns the converted value on success, else it returns TOOBIG.
 */
-char *datum;
-unsigned int datum_type;
-double *real_out;
-double *imag_out;
 /*---------------------------------------------------------------------------*/
 
-double ds_get_coordinate (dimension, coord_num)
+double ds_get_coordinate (dim_desc *dimension, unsigned long coord_num)
 /*  This routine will calculate or extract from a list the co-ordinate number
     coord_num  in the dimension descriptor pointed to by  dimension  .
     The co-ordinate is returned. If the co-ordinate is not obtainable, for
     any reason, the value TOOBIG is returned.
 */
-dim_desc *dimension;
-unsigned int coord_num;
 /*---------------------------------------------------------------------------*/
 
 unsigned int ds_get_element_offset (pack_desc, elem_num)
@@ -941,12 +1023,11 @@ unsigned int ds_get_packet_size (pack_desc)
 packet_desc *pack_desc;
 /*---------------------------------------------------------------------------*/
 
-unsigned int ds_get_array_size (arr_desc)
+unsigned long ds_get_array_size (array_desc *arr_desc)
 /*  This routine will calculate the number of co-ordinate points in an array.
     The array descriptor must be pointed to by  arr_desc  .
     The routine returns the size of the array.
 */
-array_desc *arr_desc;
 /*---------------------------------------------------------------------------*/
 
 flag ds_packet_all_data (pack_desc)
@@ -1006,7 +1087,7 @@ unsigned int ds_identify_name (multi_desc, name, encls_desc, index)
     same name. These codes are defined in the file: general_struct.h
 */
 multi_array *multi_desc;
-char *name;
+CONST char *name;
 char **encls_desc;
 unsigned int *index;
 /*---------------------------------------------------------------------------*/
@@ -1026,7 +1107,7 @@ unsigned int ds_f_array_name (multi_desc, name, encls_desc, index)
     These codes are defined in the file: general_struct.h
 */
 multi_array *multi_desc;
-char *name;
+CONST char *name;
 char **encls_desc;
 unsigned int *index;
 /*---------------------------------------------------------------------------*/
@@ -1046,7 +1127,7 @@ unsigned int ds_f_name_in_packet (pack_desc, name, encls_desc, index)
     same name. These codes are defined in the file: general_struct.h
 */
 packet_desc *pack_desc;
-char *name;
+CONST char *name;
 char **encls_desc;
 unsigned int *index;
 /*---------------------------------------------------------------------------*/
@@ -1067,7 +1148,7 @@ unsigned int ds_f_name_in_array (arr_desc, name, encls_desc, index)
     same name. These codes are defined in the file: general_struct.h
 */
 array_desc *arr_desc;
-char *name;
+CONST char *name;
 char **encls_desc;
 unsigned int *index;
 /*---------------------------------------------------------------------------*/
@@ -1084,7 +1165,7 @@ unsigned int ds_f_elem_in_packet (pack_desc, name)
     If the specified name occurs twice, the program aborts.
 */
 packet_desc *pack_desc;
-char *name;
+CONST char *name;
 /*---------------------------------------------------------------------------*/
 
 unsigned int ds_find_hole (inp_desc, out_desc, elem_num)
@@ -1148,21 +1229,21 @@ unsigned int ds_f_dim_in_array (arr_desc, name)
     If the specified name occurs twice, the program aborts.
 */
 array_desc *arr_desc;
-char *name;
+CONST char *name;
 /*---------------------------------------------------------------------------*/
 
-unsigned int ds_get_array_offset (arr_desc, coordinates)
+unsigned long ds_get_array_offset (array_desc *arr_desc,
+				   unsigned long *coordinates)
 /*  This routine will calculate the offset in array co-odinates of a packet.
     The array descriptor must be pointed to by  arr_desc  .
     The array of dimension co-ordinates which specifies which packet must be
     pointed to by  coordinates  .
     The routine returns the offset of the packet.
 */
-array_desc *arr_desc;
-unsigned int *coordinates;
 /*---------------------------------------------------------------------------*/
 
-unsigned int ds_get_coord_num (dimension, coordinate, bias)
+unsigned long ds_get_coord_num (dim_desc *dimension, double coordinate,
+				unsigned int bias)
 /*  This routine will determine the co-ordinate number of a co-ordinate.
     The dimension descriptor must be pointed to by  dimension  .
     The co-ordinate to find the number of must be in  coordinate  .
@@ -1172,12 +1253,10 @@ unsigned int ds_get_coord_num (dimension, coordinate, bias)
         SEARCH_BIAS_LOWER, SEARCH_BIAS_CLOSEST, SEARCH_BIAS_UPPER.
     The routine returns the index number of the co-ordinate found.
 */
-dim_desc *dimension;
-double coordinate;
-unsigned int bias;
 /*---------------------------------------------------------------------------*/
 
-flag ds_get_element (datum, datum_type, value, complex)
+flag ds_get_element (CONST char *datum, unsigned int datum_type,
+		     double *value, flag *complex)
 /*  This routine will convert an atomic datum to a double precision complex
     value.
     The datum to be converted must be pointed to by  datum  and the data type
@@ -1190,13 +1269,11 @@ flag ds_get_element (datum, datum_type, value, complex)
     The routine returns TRUE if the data was successfully converted,
     else it returns FALSE.
 */
-char *datum;
-unsigned int datum_type;
-double *value;
-flag *complex;
 /*---------------------------------------------------------------------------*/
 
-flag ds_get_elements (data, data_type, data_stride, values, complex,num_values)
+flag ds_get_elements (CONST char *data, unsigned int data_type,
+		      unsigned int data_stride, double *values, flag *complex,
+		      unsigned int num_values)
 /*  This routine will convert many atomic data to an array of double precision
     complex values.
     The data to be converted must be pointed to by  data  and the data type
@@ -1212,12 +1289,6 @@ flag ds_get_elements (data, data_type, data_stride, values, complex,num_values)
     The routine returns TRUE if the data was successfully converted,
     else it returns FALSE.
 */
-char *data;
-unsigned int data_type;
-unsigned int data_stride;
-double *values;
-flag *complex;
-unsigned int num_values;
 /*---------------------------------------------------------------------------*/
 
 double *ds_get_coordinate_array (dimension)
@@ -1239,6 +1310,24 @@ flag ds_element_is_complex (element_type)
     it returns FALSE.
 */
 unsigned int element_type;
+/*---------------------------------------------------------------------------*/
+
+flag ds_get_scattered_elements (CONST char *data, unsigned int data_type,
+				CONST uaddr *offsets, double *values,
+				flag *complex, unsigned int num_values)
+/*  [PURPOSE] This routine will convert many atomic data to an array of double
+    precision complex values. The data values may be scattered randomly (an
+    offset array is used to index to the actual data).
+    <data> The data to be converted.
+    <data_type> The type of the data.
+    <offsets> The offset array (in bytes).
+    <values> The data values will be written here. Must be a  double  boundary.
+    <complex> If the data are a complex type, then the value of TRUE is
+    written here, else the value FALSE is written here. If this is NULL,
+    nothing is written here.
+    <num_values> The number of data values to convert.
+    [RETURNS] TRUE if the data was successfully converted, else FALSE.
+*/
 /*---------------------------------------------------------------------------*/
 
 unsigned int ds_get_handle_in_packet (pack_desc, packet, item_name,
@@ -1275,8 +1364,8 @@ unsigned int ds_get_handle_in_packet (pack_desc, packet, item_name,
 */
 packet_desc *pack_desc;
 char *packet;
-char *item_name;
-char *restr_names[];
+CONST char *item_name;
+CONST char *restr_names[];
 double *restr_values;
 unsigned int num_restr;
 char **parent_desc;
@@ -1319,8 +1408,8 @@ unsigned int ds_get_handle_in_array (arr_desc, array, item_name,
 */
 array_desc *arr_desc;
 char *array;
-char *item_name;
-char *restr_names[];
+CONST char *item_name;
+CONST char *restr_names[];
 double *restr_values;
 unsigned int num_restr;
 char **parent_desc;
@@ -1363,8 +1452,8 @@ unsigned int ds_get_handle_in_list (list_desc, list_head, item_name,
 */
 packet_desc *list_desc;
 list_header *list_head;
-char *item_name;
-char *restr_names[];
+CONST char *item_name;
+CONST char *restr_names[];
 double *restr_values;
 unsigned int num_restr;
 char **parent_desc;
@@ -1465,7 +1554,7 @@ flag ds_remove_dim_desc (arr_desc, dim_name)
     The routine returns TRUE on success, else it returns FALSE.
 */
 array_desc *arr_desc;
-char *dim_name;
+CONST char *dim_name;
 /*---------------------------------------------------------------------------*/
 
 flag ds_append_dim_desc (arr_desc, dimension)
@@ -1553,7 +1642,7 @@ unsigned int type;
 double *input;
 /*---------------------------------------------------------------------------*/
 
-flag ds_put_elements (data, data_type, data_stride, values, num_values)
+flag ds_put_elements (data,  data_type, data_stride, values, num_values)
 /*  This routine will convert an array of double precision complex values to
     an array of atomic data.
     The array of output data must be pointed to by  data  and the data type
@@ -1572,7 +1661,7 @@ double *values;
 unsigned int num_values;
 /*---------------------------------------------------------------------------*/
 
-flag ds_put_element_many_times (data, data_type, data_stride, value, num_elem)
+flag ds_put_element_many_times (data,  data_type, data_stride, value, num_elem)
 /*  This routine will convert and write a double precision complex value to
     an array of atomic data elements.
     The array of output data must be pointed to by  data  and the data type
@@ -1602,7 +1691,7 @@ flag ds_put_named_element (pack_desc, packet, name, value)
 */
 packet_desc *pack_desc;
 char *packet;
-char *name;
+CONST char *name;
 double *value;
 /*---------------------------------------------------------------------------*/
 
@@ -1680,7 +1769,7 @@ flag ds_foreach_occurrence (pack_desc, packet, item, as_whole, function)
 */
 packet_desc *pack_desc;
 char *packet;
-char *item;
+CONST char *item;
 flag as_whole;
 flag (*function) ();
 /*---------------------------------------------------------------------------*/
@@ -1738,7 +1827,7 @@ flag ds_foreach_in_array (arr_desc, array, item, as_whole, function)
 */
 array_desc *arr_desc;
 char *array;
-char *item;
+CONST char *item;
 flag as_whole;
 flag (*function) ();
 /*---------------------------------------------------------------------------*/
@@ -1796,7 +1885,7 @@ flag ds_foreach_in_list (list_desc, list_head, item, as_whole, function)
 */
 packet_desc *list_desc;
 list_header *list_head;
-char *item;
+CONST char *item;
 flag as_whole;
 flag (*function) ();
 /*---------------------------------------------------------------------------*/

@@ -1,0 +1,12 @@
+/*  Routines to provide encryption  */
+/*  This file describes the en_ package of routines in the Karma library.
+
+    These routines are meant to provide strong encryption.
+
+
+    Written by		Richard Gooch	<<DATE>>
+
+    Last updated by	Richard Gooch	<<DATE>>
+
+
+*/

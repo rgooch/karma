@@ -2,7 +2,7 @@
 
     Header for  ch_  package.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   12-SEP-1992
 
-    Last updated by Richard Gooch   20-AUG-1993
+    Last updated by Richard Gooch   28-NOV-1994
 
 */
 
@@ -39,30 +39,24 @@
 #define KARMA_CH_H
 
 
-#ifndef EXTERN_FUNCTION
-#  include <c_varieties.h>
-#endif
 #ifndef KARMA_H
 #  include <karma.h>
 #endif
 
-#ifndef CHANNEL_DEFINED
-#define CHANNEL_DEFINED
-typedef void * Channel;
+#ifndef KARMA_CH_DEF_H
+#  include <karma_ch_def.h>
 #endif
 
-/*  Control values for memory mapping disc files  */
-#define K_CH_MAP_NEVER        (unsigned int) 0  /*  Never map                */
-#define K_CH_MAP_LARGE_LOCAL  (unsigned int) 1  /*  Map if local FS and > 1MB*/
-#define K_CH_MAP_LOCAL        (unsigned int) 2  /*  Map if local filesystem  */
-#define K_CH_MAP_LARGE        (unsigned int) 3  /*  Map if file over 1 MByte */
-#define K_CH_MAP_IF_AVAILABLE (unsigned int) 4  /*  Map if OS supports it    */
-#define K_CH_MAP_ALWAYS       (unsigned int) 5  /*  Always map               */
+#ifndef KARMA_C_DEF_H
+#  include <karma_c_def.h>
+#endif
 
 
 /*  File:  channel.c  */
-EXTERN_FUNCTION (Channel ch_open_file, (char *filename, char *type) );
-EXTERN_FUNCTION (Channel ch_map_disc, (char *filename, unsigned int option,
+EXTERN_FUNCTION (Channel ch_open_file, (CONST char *filename,
+					CONST char *type) );
+EXTERN_FUNCTION (Channel ch_map_disc, (CONST char *filename,
+				       unsigned int option,
 				       flag writeable, flag update_on_write) );
 EXTERN_FUNCTION (Channel ch_open_connection, (unsigned long host_addr,
 					      unsigned int port_number) );
@@ -76,16 +70,10 @@ EXTERN_FUNCTION (flag ch_close, (Channel channel) );
 EXTERN_FUNCTION (flag ch_flush, (Channel channel) );
 EXTERN_FUNCTION (unsigned int ch_read, (Channel channel, char *buffer,
 					unsigned int length) );
-EXTERN_FUNCTION (unsigned int ch_write, (Channel channel, char *buffer,
+EXTERN_FUNCTION (unsigned int ch_write, (Channel channel, CONST char *buffer,
 					 unsigned int length) );
 EXTERN_FUNCTION (void ch_close_all_channels, () );
 EXTERN_FUNCTION (flag ch_seek, (Channel channel, unsigned long position) );
-EXTERN_FUNCTION (flag ch_gets, (Channel channel, char *buffer,
-				unsigned int length) );
-EXTERN_FUNCTION (flag ch_getl, (Channel channel, char *buffer,
-				unsigned int length) );
-EXTERN_FUNCTION (flag ch_puts, (Channel channel, char *string,
-				flag newline) );
 EXTERN_FUNCTION (int ch_get_bytes_readable, (Channel channel) );
 EXTERN_FUNCTION (int ch_get_descriptor, (Channel channel) );
 EXTERN_FUNCTION (void ch_open_stdin, () );
@@ -99,10 +87,25 @@ EXTERN_FUNCTION (flag ch_tell, (Channel channel, unsigned long *read_pos,
 				unsigned long *write_pos) );
 EXTERN_FUNCTION (char *ch_get_mmap_addr, (Channel channel) );
 EXTERN_FUNCTION (unsigned int ch_get_mmap_access_count, (Channel channel) );
+EXTERN_FUNCTION (ChConverter ch_register_converter,
+		 (Channel channel, unsigned int (*size_func) (),
+		  unsigned int (*read_func) (), unsigned int (*write_func) (),
+		  flag (*flush_func) (), void (*close_func) (), void *info) );
+EXTERN_FUNCTION (void ch_unregister_converter, (ChConverter converter) );
+EXTERN_FUNCTION (flag ch_create_pipe, (Channel *read_ch, Channel *write_ch) );
+EXTERN_FUNCTION (Channel ch_create_sink, () );
+EXTERN_FUNCTION (KCallbackFunc ch_tap_io_events,
+		 ( void (*tap_func) (), void *info ) );
 
 
 /*  File:  ch_misc.c  */
 EXTERN_FUNCTION (Channel ch_open_and_fill_memory, (char **strings) );
+EXTERN_FUNCTION (flag ch_gets, (Channel channel, char *buffer,
+				unsigned int length) );
+EXTERN_FUNCTION (flag ch_getl, (Channel channel, char *buffer,
+				unsigned int length) );
+EXTERN_FUNCTION (flag ch_puts, (Channel channel, CONST char *string,
+				flag newline) );
 
 
 /*  File:  ch_globals.h  */

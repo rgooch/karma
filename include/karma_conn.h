@@ -2,7 +2,7 @@
 
     Header for  conn_  package.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   18-SEP-1992
 
-    Last updated by Richard Gooch   26-SEP-1993
+    Last updated by Richard Gooch   26-AUG-1994
 
 */
 
@@ -39,15 +39,17 @@
 #define KARMA_CONN_H
 
 
-#ifndef EXTERN_FUNCTION
-#  include <c_varieties.h>
+#ifndef KARMA_H
+#  include <karma.h>
 #endif
-#include <karma_ch.h>
 
-#ifndef CONNECTION_DEFINED
-#define CONNECTION_DEFINED
-typedef void * Connection;
+#ifndef KARMA_CH_DEF_H
+#  include <karma_ch_def.h>
 #endif
+
+
+typedef struct connection_type * Connection;
+
 
 /*  File:   connections.c   */
 EXTERN_FUNCTION (void conn_register_managers,
@@ -83,6 +85,7 @@ EXTERN_FUNCTION (flag conn_controlled_by_cm_tool, () );
 EXTERN_FUNCTION (char *conn_get_connection_module_name,
 		 (Connection connection) );
 EXTERN_FUNCTION (void conn_register_cm_quiescent_func, (void (*func) () ) );
+EXTERN_FUNCTION (char **conn_extract_protocols, () );
 
 
 #endif /*  KARMA_CONN_H  */

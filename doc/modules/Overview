@@ -1,0 +1,56 @@
+            Overview of the modules (applications) available in Karma
+            ---------------------------------------------------------
+
+  This file gives an overview of the standard modules supplied in the
+Karma distribution.
+
+Below follows a brief list of modules:
+
+Module			Function
+===============================================================================
+add_zero		Append the integer value 0 in network format to a file
+c2doc			Extract function interface definitions from C files
+c2lint			Extract lint code from C files
+chlen			Change the length of a dimension
+cmshell			Connection Management Tool Shell
+collect_frames		Collect frames of a movie from a connection
+collect_struct		Collect Karma general data structures from a connection
+conv_24to8		Convert a 24bit TrueColour image to PseudoColour
+convert			Convert scalar data with scaling option
+dos_headers		Convert #include <karma_*> to #include <k_*> in C files
+extract_functions	Extract list of public functions from C files
+fits2karma		Convert FITS to Karma format
+get_prefix		Extract the package prefix from C files
+histogram		Compute the histogram of scalar data
+karma_cm_slave		Slave process for Connection Management
+kdump			Convert Karma file to ASCII-Karma
+kgen			Convert ASCII-Karma file to Karma
+kimage			Display 2-D slice of data as an image (hard to use)
+kmovie			Display a movie
+kview_2d		Display an image (easy to use)
+mandel			Compute the Mandlebrot set
+merge_planes		Combine multiple single-valued arrays into one array
+persp_3d		Volume render a cube with perspective projection
+raw_grey2karma		Convert raw binary arrays to Karma format
+raw_planes2karma	Convert multiple raw binary arrays to one Karma file
+raycast_3d		Volume render a cube with parallel projection
+rx			Receive data from a connection
+sort_packages		Sort packages in Karma
+tile1			Tile an n-dimensional array
+tx			Transmit data over a connection
+xpersp_3d		Graphical User Interface for  persp_3d
+xraycast_3d		Graphical User Interface for  raycast_3d
+xscale			Graphical User Interface for  xiscale
+
+
+Below follows a brief list of connection management scripts:
+
+Application			Function
+===============================================================================
+example				An example connection management script
+xiscale				Interactive scaling and conversion to K_UBYTE
+xray.local			Volume render with parallel projection
+xray.local.hist			As above but with extra histogram display
+xray.mvx			Volume render with parallel projection on MVX
+xray.mvx.hist			As above but with extra histogram display
+xrender				Volume render with perspective projection

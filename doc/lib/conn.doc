@@ -7,9 +7,9 @@
     security mechanisms.
 
 
-    Written by		Richard Gooch	1-OCT-1992
+    Written by		Richard Gooch	24-Jan-1995
 
-    Last updated by	Richard Gooch	1-OCT-1992
+    Last updated by	Richard Gooch	24-Jan-1995
 
 
 */
@@ -339,4 +339,13 @@ void conn_register_cm_quiescent_func (func)
     The routine returns nothing.
 */
 void (*func) ();
+/*---------------------------------------------------------------------------*/
+
+char **conn_extract_protocols ()
+/*  This routine will extract all the supported protocols and produces a
+    dynamically allocated array of strings which may be later displayed.
+    The routine returns a pointer to a dynamically allocated array of
+    dynamically allocated strings on success, else it returns NULL. The end
+    of the array is marked with a NULL string pointer.
+*/
 /*---------------------------------------------------------------------------*/

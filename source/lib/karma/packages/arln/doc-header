@@ -1,0 +1,16 @@
+/*  Routines to perform asynchronous reads from the standard input  */
+/*  This file describes the arln_ package of routines in the Karma library.
+
+    These routines are meant to provide a simple to use asynchronous line
+    reading facility. When reading from pipes, connections and terminals, the
+    routines continue polling for events (using the chm_poll and cm_poll
+    routines. Hence, they are not useable in a module which also uses the
+    XView notifier.).
+
+
+    Written by		Richard Gooch	<<DATE>>
+
+    Last updated by	Richard Gooch	<<DATE>>
+
+
+*/

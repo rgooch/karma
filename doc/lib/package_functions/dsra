@@ -1,0 +1,16 @@
+dsra_multi_desc
+dsra_packet_desc
+dsra_element_desc
+dsra_array_desc
+dsra_dim_desc
+dsra_multi_data
+dsra_packet
+dsra_element
+dsra_array
+dsra_list
+dsra_flag
+dsra_type
+dsra_uint
+dsra_int
+dsra_float
+dsra_double

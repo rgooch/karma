@@ -1,0 +1,17 @@
+/*  Routines to read and write a data structure from/ to an open channel  */
+/*  This file describes the dsrw_ package of routines in the Karma
+    library.
+
+    These routines are meant to provide a mechanism to read and write the
+    recursive, heirarchical data structure supported in Karma from and to
+    open channels.
+    The use of these routines is NOT recommended. The dsxfr_ routines are the
+    preferred means of transferring data structures.
+
+
+    Written by		Richard Gooch	<<DATE>>
+
+    Last updated by	Richard Gooch	<<DATE>>
+
+
+*/

@@ -1,0 +1,2 @@
+/*  Routines to manage cryptographically strong random pools of bytes  */
+/*  Link with:    -lkarma  */

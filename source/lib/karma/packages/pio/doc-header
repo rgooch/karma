@@ -1,0 +1,18 @@
+/*  Routines to convert and transfer host data to channel objects  */
+/*  This file describes the pio_ package of routines in the Karma
+    library.
+
+    These routines are meant to provide a high level means of converting C data
+    types to the "network" data format (ie. big endian, IEEE 754).
+    These routines transfer data between host memory and files/ connections.
+    These routines are NOT recommended as a means to transfer the recursive,
+    heirarchical data structure supported in Karma, use the dsxfr_ routines
+    instead.
+
+
+    Written by		Richard Gooch	<<DATE>>
+
+    Last updated by	Richard Gooch	<<DATE>>
+
+
+*/

@@ -1,0 +1,207 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the psw_ package of routines in the Karma library.
+
+    These routines provide PostScript generation facilities.
+
+
+    Written by		Richard Gooch	13-Dec-1994
+
+    Last updated by	Richard Gooch	13-Dec-1994
+
+
+*/
+
+PostScriptPage psw_create (Channel channel, double hoffset, double voffset,
+			   double hsize, double vsize, flag portrait)
+/*  This routine will create a PostScriptPage object ready for writing
+    PostScript commands to. The routine automatically writes the PostScript
+    header.
+    The channel to write to must be given by  channel  .
+    The horizontal offset (in centimeters) of the co-ordinate origin must be
+    given by  hoffset  .
+    The vertical offset (in centimeters) of the co-ordinate origin must be
+    given by  voffset  .
+    The desired horizontal size of the co-ordinate system (in centimeters) must
+    be given by  hsize  .
+    The desired vertical size of the co-ordinate system (in centimeters) must
+    be given by  vsize  .
+    If the value of  portrait  is TRUE, objects will be drawn in portrait
+    mode (ie. the x-axis will be horizontal), else they will be drawn in
+    landscape mode (ie. the x-axis will be vertical).
+    NOTE: all subsequent objects drawn must lie in the range (0.0, 0.0) to
+    (1.0, 1.0)
+    The routine returns a PostScriptPage object on success,
+    else it returns NULL
+*/
+/*---------------------------------------------------------------------------*/
+
+flag psw_mono_image (PostScriptPage pspage, CONST unsigned char *image,
+		     unsigned int xlen, unsigned int ylen,
+		     CONST uaddr *xoffsets, CONST uaddr *yoffsets,
+		     CONST unsigned char imap[256],
+		     double xstart, double ystart, double xend, double yend)
+/*  This routine will write a monochrome image to a PostScriptPage object.
+    The PostScriptPage object must be given by  pspage  .
+    The image must be pointed to by  image  .
+    The size of the image (in pixels) must be given by  xlen  and  ylen  .
+    The offsets for each axis (in bytes) must pointed by  xoffsets  and
+    yoffsets  .If these are NULL, the image data is assumed to be contiguous in
+    memory.
+    The intensity mapping to use must be pointed to by  imap  .If this is NULL,
+    a linear mapping is used (0 = black, 255 = white).
+    The x starting point (scaled from 0.0 to 1.0) must be given by  xstart  .
+    The y starting point (scaled from 0.0 to 1.0) must be given by  ystart  .
+    The x ending point (scaled from 0.0 to 1.0) must be given by  xend  .
+    The y ending point (scaled from 0.0 to 1.0) must be given by  yend  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag psw_pseudocolour_image (PostScriptPage pspage, CONST unsigned char *image,
+			     unsigned int xlen, unsigned int ylen,
+			     CONST uaddr *xoffsets, CONST uaddr *yoffsets,
+			     CONST unsigned char imap_red[256],
+			     CONST unsigned char imap_green[256],
+			     CONST unsigned char imap_blue[256],
+			     double xstart, double ystart,
+			     double xend, double yend)
+/*  This routine will write a pseudocolour image to a PostScriptPage object.
+    The PostScriptPage object must be given by  pspage  .
+    The image must be pointed to by  image  .
+    The size of the image (in pixels) must be given by  xlen  and  ylen  .
+    The offsets for each axis (in bytes) must pointed by  xoffsets  and
+    yoffsets  .If these are NULL, the image data is assumed to be contiguous in
+    memory.
+    The red component colourmap entries must be pointed to by  imap_red  .
+    The green component colourmap entries must be pointed to by  imap_green  .
+    The blue component colourmap entries must be pointed to by  imap_blue  .
+    The x starting point (scaled from 0.0 to 1.0) must be given by  xstart  .
+    The y starting point (scaled from 0.0 to 1.0) must be given by  ystart  .
+    The x ending point (scaled from 0.0 to 1.0) must be given by  xend  .
+    The y ending point (scaled from 0.0 to 1.0) must be given by  yend  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag psw_rgb_image (PostScriptPage pspage, CONST unsigned char *image_reds,
+		    CONST unsigned char *image_greens,
+		    CONST unsigned char *image_blues,
+		    unsigned int xlen, unsigned int ylen,
+		    CONST uaddr *xoffsets_red, CONST uaddr *yoffsets_red,
+		    CONST uaddr *xoffsets_green, CONST uaddr *yoffsets_green,
+		    CONST uaddr *xoffsets_blue, CONST uaddr *yoffsets_blue,
+		    uaddr stride,
+		    double xstart, double ystart, double xend, double yend)
+/*  This routine will write a colour image to a PostScriptPage object.
+    The PostScriptPage object must be given by  pspage  .
+    The red component image values must be pointed to by  image_reds  .
+    The green component image values must be pointed to by  image_greens  .
+    The blue component image values must be pointed to by  image_blues  .
+    The size of the image (in pixels) must be given by  xlen  and  ylen  .
+    The red component offsets for each axis (in bytes) must pointed by
+    xoffsets_red  and  yoffsets_red  .If these are NULL, the image stride must
+    be given.
+    The green component offsets for each axis (in bytes) must pointed by
+    xoffsets_green  and  yoffsets_green  .If these are NULL, the image stride
+    must be given.
+    The blue component offsets for each axis (in bytes) must pointed by
+    xoffsets_blue  and  yoffsets_blue  .If these are NULL, the image stride
+    must be given.
+    The stride of successive component values must be given by  stride  .This
+    is ignored if  xoffsets  and  yoffsets  are both supplied.
+    The x starting point (scaled from 0.0 to 1.0) must be given by  xstart  .
+    The y starting point (scaled from 0.0 to 1.0) must be given by  ystart  .
+    The x ending point (scaled from 0.0 to 1.0) must be given by  xend  .
+    The y ending point (scaled from 0.0 to 1.0) must be given by  yend  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag psw_finish (PostScriptPage pspage, flag eps, flag flush, flag close)
+/*  This routine will write a tail to a PostScriptPage object and will
+    deallocate the object.
+    The PostScriptPage object must be given by  pspage  .
+    If the file format should be Encapsulated PostScript, the value of  eps
+    should be TRUE, else regular PostScript is written.
+    If the value of  flush  is TRUE, the underlying channel obect is flushed.
+    If the value of  close  is TRUE, the underlying channel obect is closed  .
+    The routine returns TRUE on succes, else it returns FALSE. In either case,
+    the PostScriptPage object is deallocated (and closed if  close  is TRUE).
+*/
+/*---------------------------------------------------------------------------*/
+
+flag psw_rgb_line (PostScriptPage pspage, double red, double green,double blue,
+		   double xstart, double ystart, double xend, double yend)
+/*  This routine will write a colour line to a PostScriptPage object.
+    The PostScriptPage object must be given by  pspage  .
+    The red component value must be given by  image_red  .
+    The green component value must be given by  image_green  .
+    The blue component value must be given by  image_blue  .
+    NOTE: the colour component values are scaled from 0.0 (dark) to 1.0 (light)
+    The x starting point (scaled from 0.0 to 1.0) must be given by  xstart  .
+    The y starting point (scaled from 0.0 to 1.0) must be given by  ystart  .
+    The x ending point (scaled from 0.0 to 1.0) must be given by  xend  .
+    The y ending point (scaled from 0.0 to 1.0) must be given by  yend  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag psw_rgb_polygon (PostScriptPage pspage,
+		      double red, double green, double blue,
+		      CONST double *x_arr, CONST double *y_arr,
+		      unsigned int num_points, flag fill)
+/*  This routine will write a colour polygon to a PostScriptPage object.
+    The PostScriptPage object must be given by  pspage  .
+    The red component value must be given by  image_red  .
+    The green component value must be given by  image_green  .
+    The blue component value must be given by  image_blue  .
+    NOTE: the colour component values are scaled from 0.0 (dark) to 1.0 (light)
+    The array of x vertices must be pointed to by  x_arr  .
+    The array of y vertices must be pointed to by  y_arr  .
+    NOTE: the vertices are scaled from 0.0 to 1.0
+    The number of vertices must be given by  num_points  .
+    If the polygon is to be filled, the value of  fill  must be TRUE.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag psw_rgb_ellipse (PostScriptPage pspage,
+		      double red, double green, double blue,
+		      double cx, double cy, double rx, double ry, flag fill)
+/*  This routine will write a colour ellipse to a PostScriptPage object.
+    The PostScriptPage object must be given by  pspage  .
+    The red component value must be given by  image_red  .
+    The green component value must be given by  image_green  .
+    The blue component value must be given by  image_blue  .
+    NOTE: the colour component values are scaled from 0.0 (dark) to 1.0 (light)
+    The x centre must be given by  cx  .
+    The y centre must be given by  cy  .
+    The x radius must be given by  rx  .
+    The y radius must be given by  ry  .
+    NOTE: the centre and radius values are scaled from 0.0 to 1.0
+    If the ellipse is to be filled, the value of  fill  must be TRUE.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag psw_rgb_text (PostScriptPage pspage, double red, double green,double blue,
+		   CONST char *string, CONST char *fontname,
+		   unsigned int fontsize,
+		   double xstart, double ystart, double angle)
+/*  This routine will write a colour string to a PostScriptPage object.
+    The PostScriptPage object must be given by  pspage  .
+    The red component value must be given by  image_red  .
+    The green component value must be given by  image_green  .
+    The blue component value must be given by  image_blue  .
+    NOTE: the colour component values are scaled from 0.0 (dark) to 1.0 (light)
+    The string must be pointed to by  string  .
+    The fontname to use must be given by  fontname  .If this is NULL, the
+    default font will be used.
+    The size of the font (in millimeters) must be given by  fontsize  .
+    The x starting point (scaled from 0.0 to 1.0) must be given by  xstart  .
+    The y starting point (scaled from 0.0 to 1.0) must be given by  ystart  .
+    The angle to rotate the text through (in degrees) must be given by  angle
+    Positive angle rotate counter-clockwise from horizontal.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+/*---------------------------------------------------------------------------*/

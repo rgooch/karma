@@ -1,0 +1,14 @@
+/*  Routines to scan values from channel objects  */
+/*  This file describes the chs_ package of routines in the Karma library.
+
+    These routines are meant to provide a simple method of reading (scanning)
+    channel objects for ASCII representation of floating point and integer
+    values.
+
+
+    Written by		Richard Gooch	<<DATE>>
+
+    Last updated by	Richard Gooch	<<DATE>>
+
+
+*/

@@ -7,7 +7,7 @@
     manipulate colourmaps.
 
 
-    Written by		Richard Gooch	24-FEB-1993
+    Written by		Richard Gooch	13-Dec-1994
 
     Last updated by	Richard Gooch	26-FEB-1993
 
@@ -239,6 +239,17 @@ double y;
 void *var_param;
 /*---------------------------------------------------------------------------*/
 
+void cf_ronekers (num_cells, reds, greens, blues, stride, x, y, var_param)
+unsigned int          num_cells;
+unsigned short        *reds;
+unsigned short        *greens;
+unsigned short        *blues;
+unsigned int          stride;
+double                x;
+double                y;
+void                  *var_param;
+/*---------------------------------------------------------------------------*/
+
 void cf_background (num_cells, reds, greens, blues, stride, x, y, var_param)
 unsigned int          num_cells;
 unsigned short        *reds;
@@ -339,17 +350,6 @@ void                  *var_param;
 /*---------------------------------------------------------------------------*/
 
 void cf_staircase (num_cells, reds, greens, blues, stride, x, y, var_param)
-unsigned int          num_cells;
-unsigned short        *reds;
-unsigned short        *greens;
-unsigned short        *blues;
-unsigned int          stride;
-double                x;
-double                y;
-void                  *var_param;
-/*---------------------------------------------------------------------------*/
-
-void cf_ronekers (num_cells, reds, greens, blues, stride, x, y, var_param)
 unsigned int          num_cells;
 unsigned short        *reds;
 unsigned short        *greens;

@@ -1,7 +1,7 @@
 /*
     Various definitions for Karma.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -26,7 +26,7 @@
 /*-----------------------------------------------------------*
  *     This file contains some useful macros, definitions    *
  *     and functions that no program should be without       *
- *     (at least in my opinion)                              *
+ *     (at least in my opinion :-)                           *
  *-----------------------------------------------------------*/
 
 #ifndef KARMA_H
@@ -40,6 +40,13 @@ typedef int flag;
 
 #define TRUE 1
 #define FALSE 0
+
+/*-----------------------------------------------------------*
+ *     Integer types same size as pointers                   *
+ *-----------------------------------------------------------*/
+
+typedef long iaddr;
+typedef unsigned long uaddr;
 
 /*-----------------------------------------------------------*
  *     Definition of NULL                                    *
@@ -118,12 +125,12 @@ typedef int flag;
 
 
 /*-----------------------------------------------------------*
- *     Wait for keypress                                     *
+ *     Test macro for  flag  type                            *
  *-----------------------------------------------------------*/
 
-#define FLAG_VERIFY(flag) if ( (flag != TRUE) && (flag != FALSE) ) \
+#define FLAG_VERIFY(bool) if ( (bool != TRUE) && (bool != FALSE) ) \
                           {(void) fprintf (stderr, "%s: Bad flag value: %d\n",\
-					   function_name, flag); \
+					   function_name, bool); \
 			   (void) fprintf (stderr, "Aborting.%c\n", BEL);  \
 			   exit (RV_UNDEF_ERROR);  \
 		          }
@@ -141,6 +148,62 @@ typedef int flag;
 #define CR 13
 #define ESC 27
 #define DEL 127
+
+/*----------------------------------------------------------*
+ *   Define EXTERN_FUNCTION and CONST                       *
+ *----------------------------------------------------------*/
+#ifndef EXTERN_FUNCTION
+#  ifdef __cplusplus
+#    define EXTERN_FUNCTION( rtn, args ) extern "C" { rtn args; }
+#    define CONST const
+#  else
+#    ifdef c_plusplus
+#      define EXTERN_FUNCTION( rtn, args ) rtn args
+#      define CONST const
+#    else
+#      if defined(__STDC__) || defined(__stdc__)
+#        define EXTERN_FUNCTION( rtn, args ) extern rtn args
+#        define CONST const
+#      else
+#        define EXTERN_FUNCTION( rtn, args ) extern rtn()
+#        define CONST
+#      endif
+#    endif
+#  endif
+#endif
+
+/*---------------------------------------------------------*
+ *   Define STATIC_FUNTION (C only)                        *
+ *---------------------------------------------------------*/
+#ifndef STATIC_FUNCTION
+#  ifdef __cplusplus
+#    define STATIC_FUNCTION( rtn, args ) extern "C" { static rtn args; }
+#  else
+#    ifdef c_plusplus
+#      define STATIC_FUNCTION( rtn, args ) static rtn args
+#    else
+#      if defined(__STDC__) || defined(__stdc__)
+#        define STATIC_FUNCTION( rtn, args ) static rtn args
+#      else
+#        define STATIC_FUNCTION( rtn, args ) static rtn()
+#      endif
+#    endif
+#  endif
+#endif
+
+/*-----------------------------------------------------------*
+ *     Multi-threading macros                                *
+ *-----------------------------------------------------------*/
+#ifdef OS_Solaris
+#  ifndef _REENTRANT
+    !!!! ERROR !!! *** _REENTRANT not defined for Solaris 2 ****
+#  endif
+#endif
+#ifdef OS_IRIX5
+#  ifndef _SGI_MP_SOURCE
+    !!!! ERROR !!! *** _SGI_MP_SOURCE not defined for IRIX ****
+#  endif
+#endif
 
 /*-----------------------------------------------------------*/
 

@@ -1,0 +1,2 @@
+/*  Routines to read an ASCII data structure from an open channel  */
+/*  Link with:    -lkarma  */

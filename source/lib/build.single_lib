@@ -31,27 +31,24 @@ rm -f */*/*~ >& /dev/null
 
 set arches = (SUNsparc convex rs6000 dec VXMVX linux)
 
-foreach dir (level*)
-    set dir = `echo "$dir" | sed -e "s/level//"`
-    cd level$dir
+cd packages
+foreach package (*)
+    cd $package
     foreach file (*.c)
-	echo -n "level$dir/$file ..."
-	set prefix = `get_prefix $file`
-	if ("$status" == "0") then
-	    # See if file includes its prototypes
-	    if (`fgrep -c "karma_${prefix}.h" $file` < "1") then
-		echo -n "    WARNING: prototype file not included"
-	    endif
+	echo -n "$package/$file ..."
+	# See if file includes its prototypes
+	if (`fgrep -c "karma_${package}.h" $file` < "1") then
+	    echo -n "    WARNING: prototype file not included"
 	endif
-	ln -s ../level$dir/$file ../master/${dir}_$file
+	ln -s ../packages/$package/$file ../../master/${package}_$file
 	echo ""
     end
     foreach arch ($arches)
 	if (-d $arch) then
 	    cd $arch
 	    foreach file (*.s)
-		echo "level$dir/$arch/$file"
-		ln -s ../../level$dir/$arch/$file ../../master/$arch/${dir}_a_$file
+		echo "$package/$arch/$file"
+		ln -s ../../packages/$package/$arch/$file ../../../master/$arch/${package}_asm_$file
 	    end
 	    cd ..
 	endif

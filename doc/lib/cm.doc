@@ -8,14 +8,15 @@
     XView notifier.
 
 
-    Written by		Richard Gooch	10-OCT-1992
+    Written by		Richard Gooch	13-Dec-1994
 
-    Last updated by	Richard Gooch	10-OCT-1992
+    Last updated by	Richard Gooch	13-Dec-1994
 
 
 */
 
-flag cm_manage (pid, stop_func, term_func, exit_func)
+flag cm_manage ( int pid, void (*stop_func) (), void (*term_func) (),
+		void (*exit_func) () )
 /*  This routine will manage a child process for state changes by registering
     callback routines.
     The child process to manage must be given by  pid  .
@@ -70,22 +71,17 @@ flag cm_manage (pid, stop_func, term_func, exit_func)
     the child process given by  pid  .
     The routine returns TRUE on success, else it returns FALSE.
 */
-int pid;
-void (*stop_func) ();
-void (*term_func) ();
-void (*exit_func) ();
 /*---------------------------------------------------------------------------*/
 
-void cm_unmanage (pid)
+void cm_unmanage (int pid)
 /*  This routine will terminate the management of a child process for state
     changes.
     The child process to unmanage must be given by  pid  .
     The routine returns nothing.
 */
-int pid;
 /*---------------------------------------------------------------------------*/
 
-void cm_poll (block)
+void cm_poll (flag block)
 /*  This routine will poll for any change in status of child processes. If the
     operating system does not support forking, the routine displays an error
     message.
@@ -99,10 +95,9 @@ void cm_poll (block)
     immediately.
     The routine returns nothing.
 */
-flag block;
 /*---------------------------------------------------------------------------*/
 
-void cm_poll_silent (block)
+void cm_poll_silent (flag block)
 /*  This routine will poll for any change in status of child processes. This
     routine is similar to the  cm_poll  routine, except that if the operating
     system does not support forking, no error message is displayed.
@@ -116,5 +111,4 @@ void cm_poll_silent (block)
     immediately.
     The routine returns nothing.
 */
-flag block;
 /*---------------------------------------------------------------------------*/

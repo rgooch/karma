@@ -2,7 +2,7 @@
 
     Source file for  convert  (data type conversion module).
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1993,1994  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -43,8 +43,15 @@
     Updated by      Richard Gooch   15-NOV-1993: Changed over to  panel_
   package for command line user interface and moved  main  into this file.
 
-    Last updated by Richard Gooch   23-NOV-1993: Fixed bug in call to
+    Updated by      Richard Gooch   23-NOV-1993: Fixed bug in call to
   panel_add_item  for  array_names  parameter.
+
+    Updated by      Richard Gooch   29-JUN-1994: Explained precedence of
+  factor  and  offset  .
+
+    Last updated by Richard Gooch   7-AUG-1994: Removed  blank_value  parameter
+  since  panel_  package did not faithfully maintain the value (besides, the
+  parameter was not that useful anyway).
 
 
 */
@@ -120,7 +127,6 @@ static int save_unproc = TRUE;
 
 static char *array_names[NUMARRAYS];
 static unsigned int num_arrays = 0;
-static double blank_value = TOOBIG;
 static int type = K_FLOAT;
 
 static double factor = 1.0;
@@ -150,15 +156,13 @@ char **argv;    /*  List of command line parameters     */
 		    PIA_ARRAY_LENGTH, &num_arrays, PIA_ARRAY_MIN_LENGTH, 0,
 		    PIA_ARRAY_MAX_LENGTH, NUMARRAYS,
 		    PIA_END);
-    panel_add_item (panel, "blank_value", "absolute value", K_DOUBLE,
-		    &blank_value,
-		    PIA_END);
     panel_add_item (panel, "complex_option", "", PIT_CHOICE_INDEX,
 		    &complex_option,
 		    PIA_NUM_CHOICE_STRINGS, 5,
 		    PIA_CHOICE_STRINGS, complex_alternatives,
 		    PIA_END);
-    panel_add_item (panel, "factor", "multiplier", K_DOUBLE, &factor,
+    panel_add_item (panel, "factor", "multiplier applied to input", K_DOUBLE,
+		    &factor,
 		    PIA_END);
     panel_add_item (panel, "log_cycle_limit", "", K_INT, &log_cycle_limit,
 		    PIA_END);
@@ -167,7 +171,8 @@ char **argv;    /*  List of command line parameters     */
 		    PIA_END);
     panel_add_item (panel, "normalise", "absolute value", K_DOUBLE, &norm,
 		    PIA_END);
-    panel_add_item (panel, "offset", "absolute value", K_DOUBLE, &offset,
+    panel_add_item (panel, "offset", "absolute value applied after factor",
+		    K_DOUBLE, &offset,
 		    PIA_END);
     panel_add_item (panel, "saturate_max", "absolute value", K_DOUBLE,
 		    &saturate_max,
@@ -373,18 +378,18 @@ char **out_data;
 
     if ( (inp_desc == NULL) || (out_desc == NULL) )
     {
-	(void) fprintf (stderr, "\nNULL descriptor pointer(s)");
+	(void) fprintf (stderr, "NULL descriptor pointer(s)\n");
         a_prog_bug (function_name);
     }
     if ( (inp_data == NULL) || (out_data == NULL) )
     {
-	(void) fprintf (stderr, "\nNULL data pointer(s)");
+	(void) fprintf (stderr, "NULL data pointer(s)\n");
 	a_prog_bug (function_name);
     }
     if (element_name == NULL)
     {
 	(void) fprintf (stderr,
-			"\nNULL external variable element name pointer");
+			"NULL external variable element name pointer\n");
 	a_prog_bug (function_name);
     }
     toobig_count = 0;
@@ -414,7 +419,7 @@ char **out_data;
 				   find_scale) == FALSE)
 	{
 	    (void) fprintf (stderr,
-			    "\nError getting minimum and maximum of input");
+			    "Error getting minimum and maximum of input\n");
 	    a_prog_bug (function_name);
 	}
 	break;
@@ -426,12 +431,12 @@ char **out_data;
 	if (ds_foreach_occurrence (inp_desc, inp_data, element_name, FALSE,
 				   find_average) == FALSE)
 	{
-	    (void) fprintf (stderr, "\nError getting average of input");
+	    (void) fprintf (stderr, "Error getting average of input\n");
 	    a_prog_bug (function_name);
 	}
 	break;
       default:
-	(void) fprintf (stderr, "\nBad scale_option value: %d", scale_option);
+	(void) fprintf (stderr, "Bad scale_option value: %d\n", scale_option);
 	a_prog_bug (function_name);
 	break;
     }
@@ -444,7 +449,7 @@ char **out_data;
     if (toobig_count > 0)
     {
 	(void) fprintf (stderr,
-			"\nConverted: %u occurrences of TOOBIG values to 0",
+			"Converted: %u occurrences of TOOBIG values\n",
 			toobig_count);
     }
     return (TRUE);
@@ -481,32 +486,32 @@ packet_desc *inp_desc;
     {
       case IDENT_NOT_FOUND:
 	(void) fprintf (stderr,
-			"\nAtomic element: \"%s\" not found", element_name);
+			"Atomic element: \"%s\" not found\n", element_name);
 	return (NULL);
 	break;
       case IDENT_ELEMENT:
 	break;
       case IDENT_MULTIPLE:
 	(void) fprintf (stderr,
-			"\nItem \"%s\" found more than once", element_name);
+			"Item \"%s\" found more than once\n", element_name);
 	return (NULL);
 	break;
       case IDENT_DIMENSION:
 	(void) fprintf (stderr,
-			"\nItem: \"%s\" must be an element, not a dimension name",
+			"Item: \"%s\" must be an element, not a dimension name\n",
 			element_name);
 	return (NULL);
 	break;
       case IDENT_GEN_STRUCT:
       default:
 	(void) fprintf (stderr,
-			"\nBad return value from function: ds_f_name_in_packet");
+			"Bad return value from function: ds_f_name_in_packet\n");
 	a_prog_bug (function_name);
 	break;
     }
     if ( (*enclosing_packet).element_types[elem_index] == (unsigned int) type )
     {
-	(void) fprintf (stderr, "\nInput and output types are the same");
+	(void) fprintf (stderr, "Input and output types are the same\n");
 	return (NULL);
     }
     /*  Copy data structure descriptor  */
@@ -522,7 +527,7 @@ packet_desc *inp_desc;
     {
       case IDENT_NOT_FOUND:
 	(void) fprintf (stderr,
-			"\nOutput atomic element: \"%s\" not found",
+			"Output atomic element: \"%s\" not found\n",
 			element_name);
 	a_prog_bug (function_name);
 	break;
@@ -530,26 +535,26 @@ packet_desc *inp_desc;
 	break;
       case IDENT_MULTIPLE:
 	(void) fprintf (stderr,
-			"\nOutput item \"%s\" found more than once",
+			"Output item \"%s\" found more than once\n",
 			element_name);
 	a_prog_bug (function_name);
 	break;
       case IDENT_DIMENSION:
 	(void) fprintf (stderr,
-			"\nOutput item: \"%s\" must be an element, not a dimension name",
+			"Output item: \"%s\" must be an element, not a dimension name\n",
 			element_name);
 	a_prog_bug (function_name);
 	break;
       case IDENT_GEN_STRUCT:
       default:
 	(void) fprintf (stderr,
-			"\nBad return value from function: ds_f_name_in_packet");
+			"Bad return value from function: ds_f_name_in_packet\n");
 	a_prog_bug (function_name);
 	break;
     }
     if (elem_num != elem_index)
     {
-	(void) fprintf (stderr, "\nElement index has changed from: %u to: %u",
+	(void) fprintf (stderr, "Element index has changed from: %u to: %u\n",
 			elem_index, elem_num);
 	a_prog_bug (function_name);
     }
@@ -639,14 +644,14 @@ char *out_data;
     if ( (inp_desc == NULL) || (inp_data == NULL)
 	|| (out_desc == NULL) || (out_data == NULL) )
     {
-	(void) fprintf (stderr, "\nNULL descriptor(s) passed");
+	(void) fprintf (stderr, "NULL descriptor(s) passed\n");
 	a_prog_bug (function_name);
     }
     if (inp_type != out_type)
     {
 	/*  Descriptors are of the same type  */
 	(void) fprintf (stderr,
-			"\nDescriptors: input: %s output: %s are not of the same type",
+			"Descriptors: input: %s output: %s are not of the same type\n",
 			data_type_names[inp_type], data_type_names[out_type]);
 	a_prog_bug (function_name);
     }
@@ -659,7 +664,7 @@ char *out_data;
 	array_size = ds_get_array_size ( (array_desc *) inp_desc );
 	if ( array_size != ds_get_array_size ( (array_desc *) out_desc ) )
 	{
-	    (void) fprintf (stderr, "\nArray sizes have changed");
+	    (void) fprintf (stderr, "Array sizes have changed\n");
 	    a_prog_bug (function_name);
 	}
 	break;
@@ -680,7 +685,7 @@ char *out_data;
 	}
 	if ( (*list_head_inp).length != (*list_head_out).length )
 	{
-	    (void) fprintf (stderr, "\nList sizes have changed");
+	    (void) fprintf (stderr, "List sizes have changed\n");
 	    a_prog_bug (function_name);
 	}
       case NONE:
@@ -693,7 +698,7 @@ char *out_data;
     if ( (*pack_desc_inp).num_elements != (*pack_desc_out).num_elements )
     {
 	(void) fprintf (stderr,
-			"\nPacket descriptors have different num. of elements: %u %u",
+			"Packet descriptors have different num. of elements: %u %u\n",
 			(*pack_desc_inp).num_elements,
 			(*pack_desc_out).num_elements);
 	a_prog_bug (function_name);
@@ -701,7 +706,7 @@ char *out_data;
     if ( (*pack_desc_out).element_types[elem_index] != (unsigned int) type )
     {
 	(void) fprintf (stderr,
-			"\nOutput element descriptor type has changed to: \"%s\"",
+			"Output element descriptor type has changed to: \"%s\"\n",
 			data_type_names[ (*pack_desc_out).element_types[elem_index] ]);
 	a_prog_bug (function_name);
     }
@@ -788,18 +793,18 @@ unsigned int index;
 
     if ( (encls_desc == NULL) || (data == NULL) )
     {
-	(void) fprintf (stderr, "\nNULL pointer(s) passed");
+	(void) fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     if (type != NONE)
     {
 	(void) fprintf (stderr,
-			"\nEnclosing desciptor must be a packet descriptor");
+			"Enclosing desciptor must be a packet descriptor\n");
 	a_prog_bug (function_name);
     }
     if (index != elem_index)
     {
-	(void) fprintf (stderr, "\nElement index has changed from: %u to: %u",
+	(void) fprintf (stderr, "Element index has changed from: %u to: %u\n",
 			elem_index, index);
 	a_prog_bug (function_name);
     }
@@ -855,7 +860,7 @@ unsigned int operation;
 
     if (input == NULL)
     {
-	(void) fprintf (stderr, "\nNULL pointer passed");
+	(void) fprintf (stderr, "NULL pointer passed\n");
 	a_prog_bug (function_name);
     }
     switch (operation)
@@ -883,11 +888,11 @@ unsigned int operation;
 	return (input[0] * input[0] + input[1] * input[1]);
 	break;
       case K_COMPLEX_CONT_PHASE:
-	(void) fprintf (stderr, "\ncontinuous phase not implemented yet");
+	(void) fprintf (stderr, "Continuous phase not implemented yet\n");
 	return (TOOBIG);
 	break;
       default:
-	(void) fprintf (stderr, "\nBad operation value: %u", operation);
+	(void) fprintf (stderr, "Bad operation value: %u\n", operation);
 	a_prog_bug (function_name);
 	break;
     }
@@ -918,18 +923,18 @@ unsigned int index;
 
     if ( (encls_desc == NULL) || (data == NULL) )
     {
-	(void) fprintf (stderr, "\nNULL pointer(s) passed");
+	(void) fprintf (stderr, "NULL pointer(s) passed\n");
 	a_prog_bug (function_name);
     }
     if (type != NONE)
     {
 	(void) fprintf (stderr,
-			"\nEnclosing desciptor must be a packet descriptor");
+			"Enclosing desciptor must be a packet descriptor\n");
 	a_prog_bug (function_name);
     }
     if (index != elem_index)
     {
-	(void) fprintf (stderr, "\nElement index has changed from: %u to: %u",
+	(void) fprintf (stderr, "Element index has changed from: %u to: %u\n",
 			elem_index, index);
 	a_prog_bug (function_name);
     }
@@ -994,7 +999,6 @@ unsigned int num_values;
     extern double element_max;
     extern double saturate_min;
     extern double saturate_max;
-    extern double blank_value;
     extern double element_sum[2];
     static char function_name[] = "convert_values";
 
@@ -1095,11 +1099,12 @@ unsigned int num_values;
 		}
 		break;
 	      case K_COMPLEX_CONT_PHASE:
-		(void) fprintf (stderr, "\ncontinuous phase not implemented yet");
+		(void) fprintf (stderr,
+				"Continuous phase not implemented yet\n");
 		return (FALSE);
 		break;
 	      default:
-		(void) fprintf (stderr, "\nBad operation value: %u",
+		(void) fprintf (stderr, "Bad operation value: %u\n",
 				complex_option);
 		a_prog_bug (function_name);
 		break;
@@ -1119,8 +1124,9 @@ unsigned int num_values;
 		if ( (input[elem_count * 2] >= TOOBIG) ||
 		    (input[elem_count * 2 + 1] >= TOOBIG) )
 		{
-		    output[elem_count * 2] = blank_value;
-		    output[elem_count * 2 + 1] = blank_value;
+		    output[elem_count * 2] = TOOBIG;
+		    output[elem_count * 2 + 1] = TOOBIG;
+		    ++toobig_count;
 		}
 		else
 		{
@@ -1137,8 +1143,9 @@ unsigned int num_values;
 		if ( (input[elem_count * 2] >= TOOBIG) ||
 		    (input[elem_count * 2 + 1] >= TOOBIG) )
 		{
-		    output[elem_count * 2] = blank_value;
-		    output[elem_count * 2 + 1] = blank_value;
+		    output[elem_count * 2] = TOOBIG;
+		    output[elem_count * 2 + 1] = TOOBIG;
+		    ++toobig_count;
 		}
 		else
 		{
@@ -1158,8 +1165,9 @@ unsigned int num_values;
 		if ( (input[elem_count * 2] >= TOOBIG) ||
 		    (input[elem_count * 2 + 1] >= TOOBIG) )
 		{
-		    output[elem_count * 2] = blank_value;
-		    output[elem_count * 2 + 1] = blank_value;
+		    output[elem_count * 2] = TOOBIG;
+		    output[elem_count * 2 + 1] = TOOBIG;
+		    ++toobig_count;
 		}
 		else
 		{
@@ -1182,8 +1190,9 @@ unsigned int num_values;
 		if ( (input[elem_count * 2] >= TOOBIG) ||
 		    (input[elem_count * 2 + 1] >= TOOBIG) )
 		{
-		    output[elem_count * 2] = blank_value;
-		    output[elem_count * 2 + 1] = blank_value;
+		    output[elem_count * 2] = TOOBIG;
+		    output[elem_count * 2 + 1] = TOOBIG;
+		    ++toobig_count;
 		}
 		else
 		{
@@ -1208,8 +1217,9 @@ unsigned int num_values;
 		if ( (input[elem_count * 2] >= TOOBIG) ||
 		    (input[elem_count * 2 + 1] >= TOOBIG) )
 		{
-		    output[elem_count * 2] = blank_value;
-		    output[elem_count * 2 + 1] = blank_value;
+		    output[elem_count * 2] = TOOBIG;
+		    output[elem_count * 2 + 1] = TOOBIG;
+		    ++toobig_count;
 		}
 		else
 		{
@@ -1234,8 +1244,9 @@ unsigned int num_values;
 		if ( (input[elem_count * 2] >= TOOBIG) ||
 		    (input[elem_count * 2 + 1] >= TOOBIG) )
 		{
-		    output[elem_count * 2] = blank_value;
-		    output[elem_count * 2 + 1] = blank_value;
+		    output[elem_count * 2] = TOOBIG;
+		    output[elem_count * 2 + 1] = TOOBIG;
+		    ++toobig_count;
 		}
 		else
 		{
@@ -1254,8 +1265,9 @@ unsigned int num_values;
 		if ( (input[elem_count * 2] >= TOOBIG) ||
 		    (input[elem_count * 2 + 1] >= TOOBIG) )
 		{
-		    output[elem_count * 2] = blank_value;
-		    output[elem_count * 2 + 1] = blank_value;
+		    output[elem_count * 2] = TOOBIG;
+		    output[elem_count * 2 + 1] = TOOBIG;
+		    ++toobig_count;
 		}
 		else
 		{
@@ -1267,7 +1279,7 @@ unsigned int num_values;
 	    }
 	    break;
 	  default:
-	    (void) fprintf (stderr, "\nBad scale_option value: %d",
+	    (void) fprintf (stderr, "Bad scale_option value: %d\n",
 			    scale_option);
 	    a_prog_bug (function_name);
 	    break;

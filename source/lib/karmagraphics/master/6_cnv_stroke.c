@@ -1,1 +1,0 @@
-../level6/cnv_stroke.c

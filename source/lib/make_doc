@@ -2,7 +2,7 @@
 #
 #   This C-shell script will build the documentation for the libraries.
 #
-#   Copyright (C) 1992,1993  Richard Gooch
+#   Copyright (C) 1992,1993,1994,1995  Richard Gooch
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -26,48 +26,58 @@ rm -f *~ >& /dev/null
 
 set docdir = $KARMABASE/doc/lib
 set tmpfile = /tmp/$$
-rm -f $docdir/*~ $docdir/list_build/* $docdir/*.doc >& /dev/null
-cp -p $docdir/headers/README.header $docdir/README
+rm -f $docdir/*~ >& /dev/null
+cp -p $docdir/README.header $docdir/README
 rm -f $tmpfile
+set tmp = `date`
+set date = "${tmp[3]}-${tmp[2]}-${tmp[$#tmp]}"
+set unchanged = "TRUE"
 
 foreach lib (karma*)
     echo "Processing library: $lib"
-    cd $lib
-    foreach i (level*/*.c)
-	set prefix = `get_prefix $i`
-	if ("$status" == "0") then
+    if ( ! -d $lib/packages ) continue
+    cd $lib/packages
+    foreach package (`find_changed_packages`)
+	set docfile = $docdir/${package}.doc
+	set listfile = $docdir/package_functions/$package
+	set liblinefile = $docdir/liblines/${package}
+	rm -f $docfile $listfile
+	if ( ! -e ${package}/doc-header) then
+	    echo "Header file for  ${package}  package does not exist: WRITE IT"
+	    continue
+	endif
+	set unchanged = "FALSE"
+	foreach i ($package/*.c)
 	    echo $i
-	    set docfile = $docdir/${prefix}.doc
-	    set listfile = $docdir/list_build/$prefix
-	    set liblinefile = $docdir/headers/${prefix}.lib
-	    if ( ! -e $docdir/headers/${prefix}.head) then
-		echo "Header file for:    $docfile    does not exist: WRITE IT"
-		exit 1
-	    endif
 	    if ( ! -e $docfile ) then
 		# Create doc file
 		echo "/*  Link with:    -l$lib  */" > $docfile
-		tail +2 $docdir/headers/${prefix}.head >> $docfile
-		echo "/*  Link with:    -l$lib  */" > $liblinefile
+		tail +2 ${package}/doc-header | sed -e "s/<<DATE>>/${date}/" >> $docfile
+		head -1 ${package}/doc-header > $liblinefile
+		echo "/*  Link with:    -l$lib  */" >> $liblinefile
 	    endif
 	    c2doc $i >> $docfile
 	    extract_functions $i >> $listfile
-	endif
+	end
     end
-    cd ..
+    cd ../..
 end
 
-cd $docdir/list_build
-foreach prefix (`sort_packages`)
-    echo "" >> ../README
-    echo "-----------------------------------------------------------------------------" >> ../README
-    head -1 $docdir/headers/${prefix}.head >> ../README
-    cat $docdir/headers/${prefix}.lib >> ../README
-    echo "" >> ../README
-    set tmp = `cat $prefix`
+if ("$unchanged" == "TRUE") then
+    exit 0
+endif
+
+echo ""
+echo "Sorting packages..."
+cd $docdir/package_functions
+foreach package (`sort_packages`)
+    echo "$package"
+    echo "" >> $docdir/README
+    echo "-----------------------------------------------------------------------------" >> $docdir/README
+    cat $docdir/liblines/${package} >> $docdir/README
+    echo "" >> $docdir/README
+    set tmp = `cat $package`
     @ num_lines = $#tmp
     @ newlines = $num_lines / 2 + $num_lines % 2
-    pr -t -2 -l$newlines $prefix >> ../README
+    pr -t -2 -l$newlines $package >> $docdir/README
 end
-
-rm -f $docdir/headers/*.lib $docdir/list_build/* >& /dev/null

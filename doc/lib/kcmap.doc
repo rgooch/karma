@@ -7,7 +7,7 @@
     and event management.
 
 
-    Written by		Richard Gooch	24-FEB-1993
+    Written by		Richard Gooch	6-Jan-1995
 
     Last updated by	Richard Gooch	13-APR-1993
 
@@ -174,7 +174,8 @@ flag tolerant;
 Kdisplay dpy_handle;
 /*---------------------------------------------------------------------------*/
 
-void kcmap_register_resize_func (cmap, resize_func, info)
+KCallbackFunc kcmap_register_resize_func (Kcolourmap cmap,
+					  void (*resize_func) (), void *info)
 /*  This routine will register a resize function for a high level colourmap.
     The resize function will be called whenever the colourmap is resized.
     Many resize functions may be registered per colourmap. The first
@@ -194,11 +195,8 @@ void kcmap_register_resize_func (cmap, resize_func, info)
     void **info;
 
     The initial arbitrary colourmap information pointer must be given by  info
-    The routine returns nothing.
+    The routine returns a KCallbackFunc object.
 */
-Kcolourmap cmap;
-void (*resize_func) ();
-void *info;
 /*---------------------------------------------------------------------------*/
 
 flag kcmap_change (cmap, new_name, num_cells, tolerant)
@@ -220,18 +218,16 @@ unsigned int num_cells;
 flag tolerant;
 /*---------------------------------------------------------------------------*/
 
-void kcmap_modify (cmap, x, y, var_param)
+void kcmap_modify (Kcolourmap cmap, double x, double y, void *var_param)
 /*  This routine will call the active colour compute function to change the
     colourmap colours in a colourmap.
     The colourmap must be given by  cmap  .
     The parameters used to compute the colour values must be given by
     x  ,  y  and  var_param  .
+    If the REVERSE attribute for the colourmap is set, the colourmap is
+    reversed.
     The routine returns nothing.
 */
-Kcolourmap cmap;
-double x;
-double y;
-void *var_param;
 /*---------------------------------------------------------------------------*/
 
 char **kcmap_list_funcs ()
@@ -314,4 +310,41 @@ flag kcmap_copy_from_struct (cmap, top_pack_desc, top_packet)
 Kcolourmap cmap;
 packet_desc *top_pack_desc;
 char *top_packet;
+/*---------------------------------------------------------------------------*/
+
+unsigned short *kcmap_get_rgb_values (cmap, size)
+/*  This routine will return the RGB values in a colourmap. The colour values
+    are arranged in packets of Red, Green and Blue values.
+    The colourmap must be given by  cmap  .
+    The routine will write the size of the colourmap to the storage pointed to
+    by  size  .
+    The routine returns a pointer to a dynamically allocated array. This must
+    be freed with  m_free  .
+    On failure it returns NULL.
+*/
+Kcolourmap cmap;
+unsigned int *size;
+/*---------------------------------------------------------------------------*/
+
+void kcmap_get_attributes (cmap, va_alist)
+/*  This routine will get the attributes for a colourmap.
+    The colourmap must be given by  cmap  .
+    The list of parameter attribute-key attribute-value pairs must follow.
+    This list must be terminated with the value  KCMAP_ATT_END  .
+    The routine returns nothing.
+*/
+Kcolourmap cmap;
+va_dcl
+/*---------------------------------------------------------------------------*/
+
+void kcmap_set_attributes (cmap, va_alist)
+/*  [PURPOSE] This routine will set the attributes for a colourmap.
+    <cmap> The colourmap.
+    [NOTE] The list of parameter attribute-key attribute-value pairs must
+    follow. This list must be terminated with the value  KCMAP_ATT_END  .
+    [NOTE] The colourmap is not recomputed: the effect is delayed.
+    [RETURNS] Nothing.
+*/
+Kcolourmap cmap;
+va_dcl
 /*---------------------------------------------------------------------------*/

@@ -6,17 +6,68 @@
     data is to be represented.
 
 
-    Written by		Richard Gooch	17-NOV-1992
+    Written by		Richard Gooch	24-Jan-1995
 
-    Last updated by	Richard Gooch	17-NOV-1992
+    Last updated by	Richard Gooch	24-Jan-1995
 
 
 */
 
-iarray iarray_read_nD (object, cache, arrayname, num_dim, dim_names, elem_name,
-		       mmap_option)
-/*  This routine will read in a Karma arrayfile and will extract information
-    relevent to Patrick Jordan's "Intelligent Arrays".
+flag iarray_get_image_from_multi (multi_array *multi_desc, iarray *pseudo,
+				  iarray *red, iarray *green, iarray *blue,
+				  unsigned int *cmap_index)
+/*  [PURPOSE] This routine will find an image embedded in a Karma data
+    structure. The image may be single-channel (PseudoColour) or it may be a
+    TrueColour image (red, green and blue components).
+    <multi_desc> The Karma data structure.
+    <pseudo> If a single-channel image is found, the corresponding Intelligent
+    Array is written here. If no single-channel image is found, NULL is written
+    here.
+    <red> If a TrueColour image is found, the red component Intelligent Array
+    is written here. If no TrueColour image is found, NULL is written here.
+    <green> If a TrueColour image is found, the green component Intelligent
+    Array is written here. If no TrueColour image is found, NULL is written
+    here.
+    <blue> If a TrueColour image is found, the blue component Intelligent Array
+    is written here. If no TrueColour image is found, NULL is written here.
+    <cmap_index> If the image found is a single-channel image and the data
+    structure has an associated RGBcolourmap, the index to the colourmap
+    structure is written here. If no colourmap is found, the value written here
+    is set to the number of general data structures in multi_desc.
+    [RETURNS] TRUE on succes, else FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag iarray_get_movie_from_multi (multi_array *multi_desc, iarray *pseudo,
+				  iarray *red, iarray *green, iarray *blue,
+				  unsigned int *cmap_index)
+/*  [PURPOSE] This routine will find a movie embedded in a Karma data
+    structure. The movie may be single-channel (PseudoColour) or it may be a
+    TrueColour movie (red, green and blue components).
+    <multi_desc> The Karma data structure.
+    <pseudo> If a single-channel movie is found, the corresponding Intelligent
+    Array is written here. If no single-channel movie is found, NULL is written
+    here.
+    <red> If a TrueColour movie is found, the red component Intelligent Array
+    is written here. If no TrueColour movie is found, NULL is written here.
+    <green> If a TrueColour movie is found, the green component Intelligent
+    Array is written here. If no TrueColour movie is found, NULL is written
+    here.
+    <blue> If a TrueColour movie is found, the blue component Intelligent Array
+    is written here. If no TrueColour movie is found, NULL is written here.
+    <cmap_index> If the movie found is a single-channel movie and the data
+    structure has an associated RGBcolourmap, the index to the colourmap
+    structure is written here. If no colourmap is found, the value written here
+    is set to the number of general data structures in multi_desc.
+    [RETURNS] TRUE on succes, else FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+iarray iarray_read_nD (CONST char *object, flag cache, CONST char *arrayname,
+		       unsigned int num_dim, char **dim_names, char *elem_name,
+		       unsigned int mmap_option)
+/*  This routine will read in a Karma arrayfile and will yield an "Intelligent
+    Array".
     The name of the arrayfile to read must be pointed to by  object  .This
     parameter is passed directly to the  dsxfr_get_multi  routine. In order to
     understand the operation of the  iarray_read_nD  routine, the operation of
@@ -53,16 +104,9 @@ iarray iarray_read_nD (object, cache, arrayname, num_dim, dim_names, elem_name,
     The routine returns a dynamically allocated intelligent array on success,
     else it prints an error message to the standard output and returns NULL.
 */
-char *object;
-flag cache;
-char *arrayname;
-unsigned int num_dim;
-char **dim_names;
-char *elem_name;
-unsigned int mmap_option;
 /*---------------------------------------------------------------------------*/
 
-flag iarray_write (array, arrayfile)
+flag iarray_write (iarray array, CONST char *arrayfile)
 /*  This routine will write an "Intelligent Array" in the Karma data format.
     The "Intelligent Array" must be given by  array  .
     The name of the arrayfile to write must be pointed to by  arrayfile  .
@@ -70,12 +114,11 @@ flag iarray_write (array, arrayfile)
     The routine returns TRUE on success, else it prints an error message to the
     standard output and returns FALSE.
 */
-iarray array;
-char *arrayfile;
 /*---------------------------------------------------------------------------*/
 
-iarray iarray_create (type, num_dim, dim_names, dim_lengths, elem_name,
-		      old_array)
+iarray iarray_create (unsigned int type, unsigned int num_dim,
+		      char **dim_names, unsigned long *dim_lengths,
+		      char *elem_name, iarray old_array)
 /*  This routine will create an "Intelligent Array", using the Karma general
     data structure format as the underlying data format.
     If the environment variable "IARRAY_ALLOC_DEBUG" is set to "TRUE" then the
@@ -101,25 +144,21 @@ iarray iarray_create (type, num_dim, dim_names, dim_lengths, elem_name,
     The routine returns a dynamically allocated intelligent array on success,
     else it prints an error message to the standard output and returns NULL.
 */
-unsigned int type;
-unsigned int num_dim;
-char **dim_names;
-unsigned int *dim_lengths;
-char *elem_name;
-iarray old_array;
 /*---------------------------------------------------------------------------*/
 
-iarray iarray_get_from_multi_array (multi_desc, arrayname, num_dim, dim_names,
-				    elem_name)
-/*  This routine will extract information relevent to Patrick Jordan's
-    "Intelligent Arrays" from a multi array Karma general data structure.
+iarray iarray_get_from_multi_array (multi_array *multi_desc,
+				    CONST char *arrayname,
+				    unsigned int num_dim, char **dim_names,
+				    char *elem_name)
+/*  This routine will yield an "Intelligent Array" from a multi array Karma
+    general data structure.
     The multi array header must be pointed to by  multi_desc  .The attachment
     count is incremented on successful completion of this routine.
     The name of the general data structure in the arrayfile to search for must
     be pointed to by  arrayname  .If this is NULL, the routine searches for
     the default name "Intelligent Array". If the arrayfile has only one
     general data structure, then this parameter is ignored.
-    The routine searches for an n-dimensional array with a single atomic
+    The routine searches for a n-dimensional array with a single atomic
     element at each point in multi-dimensional space.
     If  num_dim  is greater than 0, the routine will only return an array with
     num_dim  dimensions. If  num_dim  is 0, then the routine will return an
@@ -140,24 +179,19 @@ iarray iarray_get_from_multi_array (multi_desc, arrayname, num_dim, dim_names,
     The routine returns a dynamically allocated intelligent array on success,
     else it prints an error message to the standard output and returns NULL.
 */
-multi_array *multi_desc;
-char *arrayname;
-unsigned int num_dim;
-char **dim_names;
-char *elem_name;
 /*---------------------------------------------------------------------------*/
 
-void iarray_dealloc (array)
+void iarray_dealloc (iarray array)
 /*  This routine will deallocate an "Intelligent Array".
     If the environment variable "IARRAY_ALLOC_DEBUG" is set to "TRUE" then the
     routine will print deallocation debugging information.
     The array  must be given by  array  .
     The routine returns nothing.
 */
-iarray array;
 /*---------------------------------------------------------------------------*/
 
-flag iarray_put_named_value (array, name, type, value)
+flag iarray_put_named_value (iarray array, char *name, unsigned int type,
+			     double *value)
 /*  This routine will add a unique named value to the underlying Karma general
     data structure of an "Intelligent Array".
     The array must be given by  array  .
@@ -166,13 +200,9 @@ flag iarray_put_named_value (array, name, type, value)
     The value of the data must be pointed to by  value  .
     The routine returns TRUE on success, else it returns FALSE.
 */
-iarray array;
-char *name;
-unsigned int type;
-double *value;
 /*---------------------------------------------------------------------------*/
 
-flag iarray_put_named_string (array, name, string)
+flag iarray_put_named_string (iarray array, char *name, char *string)
 /*  This routine will add a unique named string to the underlying Karma general
     data structure of an "Intelligent Array".
     The array must be given by  array  .
@@ -180,12 +210,10 @@ flag iarray_put_named_string (array, name, string)
     The string must be pointed to by  string  .
     The routine returns TRUE on success, else it returns FALSE.
 */
-iarray array;
-char *name;
-char *string;
 /*---------------------------------------------------------------------------*/
 
-flag iarray_get_named_value (array, name, type, value)
+flag iarray_get_named_value (iarray array, char *name, unsigned int *type,
+			     double *value)
 /*  This routine will get a unique named value from the underlying Karma
     general data structure of an "Intelligent Array".
     The array must be given by  array  .
@@ -195,13 +223,9 @@ flag iarray_get_named_value (array, name, type, value)
     The value of the data will be written to the storage pointed to by  value
     The routine returns TRUE on success, else it returns FALSE.
 */
-iarray array;
-char *name;
-unsigned int *type;
-double *value;
 /*---------------------------------------------------------------------------*/
 
-char *iarray_get_named_string (array, name)
+char *iarray_get_named_string (iarray array, char *name)
 /*  This routine will get a unique named string from the underlying Karma
     general data structure of an "Intelligent Array".
     The array must be given by  array  .
@@ -209,11 +233,9 @@ char *iarray_get_named_string (array, name)
     The routine returns a pointer to a dynamically allocated copy of the string
     on success, else it returns NULL.
 */
-iarray array;
-char *name;
 /*---------------------------------------------------------------------------*/
 
-flag iarray_copy_data (output, input, magnitude)
+flag iarray_copy_data (iarray output, iarray input, flag magnitude)
 /*  This routine will copy data from one "Intelligent Array" to another. The
     sizes of the two arrays must be identical.
     The output array must be given by  output  .
@@ -226,12 +248,9 @@ flag iarray_copy_data (output, input, magnitude)
     component is set to zero.
     The routine returns TRUE on success, else it returns FALSE.
 */
-iarray output;
-iarray input;
-flag magnitude;
 /*---------------------------------------------------------------------------*/
 
-char *iarray_get_element_1D (array, type, x)
+char *iarray_get_element_1D (iarray array, unsigned int type, int x)
 /*  This routine will get an element from a simple 1 dimensional array.
     The array must be pointed to by  array  .
     The type of the element in the array must be given by  type  (this is used
@@ -239,12 +258,9 @@ char *iarray_get_element_1D (array, type, x)
     The lower array index must be given by  x  .
     The routine returns a pointer to the element.
 */
-iarray array;
-unsigned int type;
-int x;
 /*---------------------------------------------------------------------------*/
 
-char *iarray_get_element_2D (array, type, y, x)
+char *iarray_get_element_2D (iarray array, unsigned int type, int y, int x)
 /*  This routine will get an element from a simple 2 dimensional array.
     The array must be pointed to by  array  .
     The type of the element in the array must be given by  type  (this is used
@@ -253,13 +269,10 @@ char *iarray_get_element_2D (array, type, y, x)
     The lower array index must be given by  x  .
     The routine returns a pointer to the element.
 */
-iarray array;
-unsigned int type;
-int y;
-int x;
 /*---------------------------------------------------------------------------*/
 
-char *iarray_get_element_3D (array, type, z, y, x)
+char *iarray_get_element_3D (iarray array, unsigned int type, int z, int y,
+			     int x)
 /*  This routine will get an element from a simple 3 dimensional array.
     The array must be pointed to by  array  .
     The type of the element in the array must be given by  type  (this is used
@@ -269,14 +282,10 @@ char *iarray_get_element_3D (array, type, z, y, x)
     The lower array index must be given by  x  .
     The routine returns a pointer to the element.
 */
-iarray array;
-unsigned int type;
-int z;
-int y;
-int x;
 /*---------------------------------------------------------------------------*/
 
-iarray iarray_get_sub_array_2D (array, starty, startx, ylen, xlen)
+iarray iarray_get_sub_array_2D (iarray array, int starty, int startx,
+				unsigned int ylen, unsigned int xlen)
 /*  This function will create an "Intelligent Array" which is an alias or a
     sub-array of another "Intelligent Array". Subsequent modification of the
     sub-array will modify the data of the original array. Sub-arrays may be
@@ -290,25 +299,49 @@ iarray iarray_get_sub_array_2D (array, starty, startx, ylen, xlen)
     else it returns NULL.
     NOTE: sub-arrays cannot be saved to disc.
 */
-iarray array;
-int starty;
-int startx;
-unsigned int ylen;
-unsigned int xlen;
 /*---------------------------------------------------------------------------*/
 
-unsigned int iarray_dim_length (array, index)
+iarray iarray_get_2D_slice_from_3D (iarray cube, unsigned int ydim,
+				    unsigned int xdim, unsigned int slice_pos)
+/*  This routine will create a 2-D "Intelligent Array" which is an alias of an
+    arbitrary slice of a 3-D array.
+    The 3-D array must be given by  cube  .
+    The dimension in the 3-D array which will become the y dimension (most
+    significant) must be given by  ydim  .
+    The dimension in the 3-D array which will become the x dimension (least
+    significant) must be given by  xdim  .
+    The position of the slice along the unspecified (remaining) dimension in
+    the 3-D array must be given by  slice_pos  .
+    The routine returns a dynamically allocated intelligent array on success,
+    else it returns NULL.
+    NOTE: alias arrays cannot be saved to disc.
+*/
+/*---------------------------------------------------------------------------*/
+
+unsigned long iarray_dim_length (iarray array, unsigned int index)
 /*  This routine will get the length of a specified dimension in a simple,
     n-dimensional array.
     The array must be given by  array  .
     The index of the dimension must be given by  index  .
     The routine returns the length of the specified dimension.
 */
-iarray array;
-unsigned int index;
 /*---------------------------------------------------------------------------*/
 
-flag iarray_fill (array, value)
+unsigned int iarray_get_restrictions (iarray array, char ***restr_names,
+				      double **restr_values)
+/*  This routine will get any associated restrictions for an Intelligent
+    Array. The routine will dynamically allocate space for the restriction
+    data, which must be externally freed.
+    The Intelligent Array must be given by  array  .
+    The pointer to the array of pointers to restrictions names will be written
+    to the storage pointed to by  restr_names  .
+    The pointer to the array of restriction values will be written to the
+    storage pointed to by  restr_values  .
+    The routine returns the number of restrictions. This may be 0.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag iarray_fill (iarray array, double *value)
 /*  This routine will fill an "Intelligent Array" with a single value.
     The array must be given by  array  .
     The fill value must be pointed to by  value  .
@@ -316,11 +349,10 @@ flag iarray_fill (array, value)
     be used.
     The routine returns TRUE on success, else it returns FALSE.
 */
-iarray array;
-double *value;
 /*---------------------------------------------------------------------------*/
 
-flag iarray_min_max (array, conv_type, min, max)
+flag iarray_min_max (iarray array, unsigned int conv_type, double *min,
+		     double *max)
 /*  This routine will determine the minimum and maximum value of an
     "Intelligent Array".
     The array must be given by  array  .
@@ -332,15 +364,12 @@ flag iarray_min_max (array, conv_type, min, max)
     The routine will write the maximum value to the storage pointed to by  max
     The routine returns TRUE on success, else it returns FALSE.
 */
-iarray array;
-unsigned int conv_type;
-double *min;
-double *max;
 /*---------------------------------------------------------------------------*/
 
-flag iarray_scale_and_offset (out, inp, scale, offset, magnitude)
+flag iarray_scale_and_offset (iarray out, iarray inp, double *scale,
+			      double *offset, flag magnitude)
 /*  This routine will perform a scale and offset on every element in an
-    "Intelligent Array".
+    "Intelligent Array" (output = input * scale + offset).
     The output array must be given by  out  .
     The input array must be given by  inp  .
     NOTE: the input and output arrays MUST be the same size (though not
@@ -355,14 +384,10 @@ flag iarray_scale_and_offset (out, inp, scale, offset, magnitude)
     the output array is unaffected (NOTE: it is NOT set to 0).
     The routine returns TRUE on success, else it returns FALSE.
 */
-iarray out;
-iarray inp;
-double *scale;
-double *offset;
-flag magnitude;
 /*---------------------------------------------------------------------------*/
 
-flag iarray_add_and_scale (out, inp1, inp2, scale, magnitude)
+flag iarray_add_and_scale (iarray out, iarray inp1, iarray inp2, double *scale,
+			   flag magnitude)
 /*  This routine will add two "Intelligent Array" to each other and scales the
     result. The sizes of the two input arrays and the output must be identical.
     The output array must be given by  out  .
@@ -379,14 +404,10 @@ flag iarray_add_and_scale (out, inp1, inp2, scale, magnitude)
     component is set to zero.
     The routine returns TRUE on success, else it returns FALSE.
 */
-iarray out;
-iarray inp1;
-iarray inp2;
-double *scale;
-flag magnitude;
 /*---------------------------------------------------------------------------*/
 
-flag iarray_sub_and_scale (out, inp1, inp2, scale, magnitude)
+flag iarray_sub_and_scale (iarray out, iarray inp1, iarray inp2, double *scale,
+			   flag magnitude)
 /*  This routine will subtract two "Intelligent Array" from each other and
     scales the result. The sizes of the two input arrays and the output must be
     identical.
@@ -404,25 +425,18 @@ flag iarray_sub_and_scale (out, inp1, inp2, scale, magnitude)
     component is set to zero.
     The routine returns TRUE on success, else it returns FALSE.
 */
-iarray out;
-iarray inp1;
-iarray inp2;
-double *scale;
-flag magnitude;
 /*---------------------------------------------------------------------------*/
 
-char *iarray_dim_name (array, index)
+char *iarray_dim_name (iarray array, unsigned int index)
 /*  This routine will get the name of a specified dimension in a simple,
     n-dimensional array.
     The array must be given by  array  .
     The index of the dimension must be given by  index  .
     The routine returns a pointer to the name of the specified dimension.
 */
-iarray array;
-unsigned int index;
 /*---------------------------------------------------------------------------*/
 
-void iarray_remap_torus (array, boundary_width)
+void iarray_remap_torus (iarray array, unsigned int boundary_width)
 /*  This routine will remap an N-dimensional "Intelligent Array" to a pseudo
     toroidal array.
     The array must be given by  array  .
@@ -430,11 +444,10 @@ void iarray_remap_torus (array, boundary_width)
     toroidal must be given by  boundary_width  .
     The routine returns nothing.
 */
-iarray array;
-unsigned int boundary_width;
 /*---------------------------------------------------------------------------*/
 
-void iarray_set_world_coords (array, index, minimum, maximum)
+void iarray_set_world_coords (iarray array, unsigned int index, double minimum,
+			      double maximum)
 /*  This routine will set the world co-ordinates of a specified dimension in a
     simple, n-dimensional array.
     The array must be given by  array  .
@@ -443,13 +456,10 @@ void iarray_set_world_coords (array, index, minimum, maximum)
     The maximum real world co-ordinate must be given by  maximum  .
     The routine returns nothing.
 */
-iarray array;
-unsigned int index;
-double minimum;
-double maximum;
 /*---------------------------------------------------------------------------*/
 
-void iarray_get_world_coords (array, index, minimum, maximum)
+void iarray_get_world_coords (iarray array, unsigned int index,
+			      double *minimum, double *maximum)
 /*  This routine will get the world co-ordinates of a specified dimension in a
     simple, n-dimensional array.
     The array must be given by  array  .
@@ -460,13 +470,119 @@ void iarray_get_world_coords (array, index, minimum, maximum)
     to by  maximum  .
     The routine returns nothing.
 */
-iarray array;
-unsigned int index;
-double *minimum;
-double *maximum;
 /*---------------------------------------------------------------------------*/
 
-iarray iarray_create_1D (xlen, type)
+dim_desc *iarray_get_dim_desc (iarray array, unsigned int index)
+/*  This routine will get the dimension descriptor of a specified dimension in
+    a simple, n-dimensional array.
+    The array must be given by  array  .
+    The index of the dimension must be given by  index  .
+    The routine returns nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag iarray_compute_histogram (iarray array, unsigned int conv_type,
+			       double min, double max, unsigned long num_bins,
+			       unsigned long *histogram_array,
+			       unsigned long *histogram_peak,
+			       unsigned long *histogram_mode)
+/*  This routine will compute a histogram of an "Intelligent Array".
+    The array must be given by  array  .
+    The conversion type to use for complex numbers must be given by  conv_type
+    Legal value for this include:
+        KIMAGE_COMPLEX_CONV_REAL        KIMAGE_COMPLEX_CONV_IMAG
+        KIMAGE_COMPLEX_CONV_ABS         KIMAGE_COMPLEX_CONV_SQUARE_ABS
+	KIMAGE_COMPLEX_CONV_PHASE       KIMAGE_COMPLEX_CONV_CONT_PHASE
+    Data values below the value  min  will be ignored.
+    Data values above the value  max  will be ignored.
+    The number of histogram bins must be given by  num_bins  .
+    The histogram array must be pointed to by  histogram_array  .The values in
+    this array are updated, and hence must be initialised externally.
+    The peak of the histogram is written to the storage pointed to by
+    histogram_peak  .This value is updated, and hence must be externally
+    initialised to 0.
+    The mode of the histogram (index value of the peak) will be written to the
+    storage pointed to by  histogram_mode  .This value is updated, and hence
+    must be externally initialised to 0.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag iarray_write_mono_ps (image, pspage, xstart, ystart, xend, yend, iscale)
+/*  This routine will convert a 2-dimensional Intelligent Array to monochrome
+    PostScript. The routine does NOT write PostScript headers or tails.
+    The Intelligent Array must be given by  image  .
+    The PostScriptPage object must be given by  pspage  .
+    The x starting point (scaled from 0.0 to 1.0) must be given by  xstart  .
+    The y starting point (scaled from 0.0 to 1.0) must be given by  ystart  .
+    The x ending point (scaled from 0.0 to 1.0) must be given by  xend  .
+    The y ending point (scaled from 0.0 to 1.0) must be given by  yend  .
+    If the input Intelligent Array is of type K_UBYTE and the value of  iscale
+    is  FALSE, the images values will be unscaled prior to PostScript
+    conversion (0 = black, 255 = white), otherwise (min = black, max = white).
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray image;
+PostScriptPage pspage;
+double xstart;
+double ystart;
+double xend;
+double yend;
+flag iscale;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_write_pseudocolour_ps (image, pspage, xstart, ystart, xend, yend,
+				   cmap, cmap_size)
+/*  This routine will convert a 2-dimensional Intelligent Array to colour
+    PostScript. The routine does NOT write PostScript headers or tails.
+    The Intelligent Array must be given by  image  .
+    The PostScriptPage object must be given by  pspage  .
+    The x starting point (scaled from 0.0 to 1.0) must be given by  xstart  .
+    The y starting point (scaled from 0.0 to 1.0) must be given by  ystart  .
+    The x ending point (scaled from 0.0 to 1.0) must be given by  xend  .
+    The y ending point (scaled from 0.0 to 1.0) must be given by  yend  .
+    The colourmap must be pointed to by  cmap  .This must be the same format as
+    returned by  ds_cmap_find_colourmap  .
+    The size of the colourmap must be given by  cmap_size  .The maximum size is
+    256.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray image;
+PostScriptPage pspage;
+double xstart;
+double ystart;
+double xend;
+double yend;
+unsigned short *cmap;
+unsigned int cmap_size;
+/*---------------------------------------------------------------------------*/
+
+flag iarray_write_rgb_ps (image_red, image_green, image_blue, pspage,
+			  xstart, ystart, xend, yend)
+/*  This routine will convert a 2-dimensional Intelligent Array to colour
+    PostScript. The routine does NOT write PostScript headers or tails.
+    The red component Intelligent Array must be given by  image_red  .
+    The green component Intelligent Array must be given by  image_green  .
+    The blue component Intelligent Array must be given by  image_blue  .
+    Each of these Intelligent Arrays must be of type K_UBYTE.
+    The PostScriptPage object must be given by  pspage  .
+    The x starting point (scaled from 0.0 to 1.0) must be given by  xstart  .
+    The y starting point (scaled from 0.0 to 1.0) must be given by  ystart  .
+    The x ending point (scaled from 0.0 to 1.0) must be given by  xend  .
+    The y ending point (scaled from 0.0 to 1.0) must be given by  yend  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+iarray image_red;
+iarray image_green;
+iarray image_blue;
+PostScriptPage pspage;
+double xstart;
+double ystart;
+double xend;
+double yend;
+/*---------------------------------------------------------------------------*/
+
+iarray iarray_create_1D (unsigned long xlen, unsigned int type)
 /*  This routine will create a 1-dimensional "Intelligent Array", using the
     Karma general data structure format as the underlying data format.
     The length of the dimension must be given by  xlen  .
@@ -481,11 +597,10 @@ iarray iarray_create_1D (xlen, type)
     The routine returns a dynamically allocated intelligent array on success,
     else it prints an error message to the standard output and returns NULL.
 */
-unsigned int xlen;
-unsigned int type;
 /*---------------------------------------------------------------------------*/
 
-iarray iarray_create_2D (ylen, xlen, type)
+iarray iarray_create_2D (unsigned long ylen, unsigned long xlen,
+			 unsigned int type)
 /*  This routine will create a 2-dimensional "Intelligent Array", using the
     Karma general data structure format as the underlying data format.
     The length of the most significant dimension (ie. the dimension with the
@@ -503,12 +618,10 @@ iarray iarray_create_2D (ylen, xlen, type)
     The routine returns a dynamically allocated intelligent array on success,
     else it prints an error message to the standard output and returns NULL.
 */
-unsigned int ylen;
-unsigned int xlen;
-unsigned int type;
 /*---------------------------------------------------------------------------*/
 
-iarray iarray_create_3D (zlen, ylen, xlen, type)
+iarray iarray_create_3D (unsigned long zlen, unsigned long ylen,
+			 unsigned long xlen, unsigned int type)
 /*  This routine will create a 3-dimensional "Intelligent Array", using the
     Karma general data structure format as the underlying data format.
     The length of the most significant dimension (ie. the dimension with the
@@ -528,13 +641,9 @@ iarray iarray_create_3D (zlen, ylen, xlen, type)
     The routine returns a dynamically allocated intelligent array on success,
     else it prints an error message to the standard output and returns NULL.
 */
-unsigned int zlen;
-unsigned int ylen;
-unsigned int xlen;
-unsigned int type;
 /*---------------------------------------------------------------------------*/
 
-flag iarray_put_float (array, name, value)
+flag iarray_put_float (iarray array, char *name, float value)
 /*  This routine will put a unique named float value into the underlying Karma
     general data structure of an "Intelligent Array".
     The array must be given by  array  .
@@ -542,12 +651,9 @@ flag iarray_put_float (array, name, value)
     The value of the data must be given by  value  .
     The routine returns TRUE on success, else it returns FALSE.
 */
-iarray array;
-char *name;
-float value;
 /*---------------------------------------------------------------------------*/
 
-flag iarray_put_int (array, name, value)
+flag iarray_put_int (iarray array, char *name, int value)
 /*  This routine will put a unique named integer value into the underlying
     Karma general data structure of an "Intelligent Array".
     The array must be given by  array  .
@@ -555,12 +661,9 @@ flag iarray_put_int (array, name, value)
     The value of the data must be given by  value  .
     The routine returns TRUE on success, else it returns FALSE.
 */
-iarray array;
-char *name;
-int value;
 /*---------------------------------------------------------------------------*/
 
-float iarray_get_float (array, name)
+float iarray_get_float (iarray array, char *name)
 /*  This routine will get a unique named float value from the underlying Karma
     general data structure of an "Intelligent Array".
     The array must be given by  array  .
@@ -568,11 +671,9 @@ float iarray_get_float (array, name)
     The routine returns the value on success, else it aborts the process on
     error.
 */
-iarray array;
-char *name;
 /*---------------------------------------------------------------------------*/
 
-int iarray_get_int (array, name)
+int iarray_get_int (iarray array, char *name)
 /*  This routine will get a unique named integer value into the underlying
     Karma general data structure of an "Intelligent Array".
     The array must be given by  array  .
@@ -580,11 +681,9 @@ int iarray_get_int (array, name)
     The routine returns the value on success, else it aborts the process on
     error.
 */
-iarray array;
-char *name;
 /*---------------------------------------------------------------------------*/
 
-flag iarray_fill_float (array, value)
+flag iarray_fill_float (iarray array, float value)
 /*  This routine will fill an "Intelligent Array" with a single float value.
     The array must be given by  array  .
     The fill value must be given by  value  .
@@ -592,11 +691,9 @@ flag iarray_fill_float (array, value)
     filled with the fill value.
     The routine returns TRUE on success, else it returns FALSE.
 */
-iarray array;
-float value;
 /*---------------------------------------------------------------------------*/
 
-flag iarray_fill_int (array, value)
+flag iarray_fill_int (iarray array, int value)
 /*  This routine will fill an "Intelligent Array" with a single integer value.
     The array must be given by  array  .
     The fill value must be given by  array  .
@@ -604,11 +701,9 @@ flag iarray_fill_int (array, value)
     filled with the fill value.
     The routine returns TRUE on success, else it returns FALSE.
 */
-iarray array;
-int value;
 /*---------------------------------------------------------------------------*/
 
-flag iarray_min_max_float (array, min, max)
+flag iarray_min_max_float (iarray array, float *min, float *max)
 /*  This routine will determine the minimum and maximum value of an
     "Intelligent Array".
     The array must be given by  array  .
@@ -618,12 +713,9 @@ flag iarray_min_max_float (array, min, max)
     The routine will write the maximum value to the storage pointed to by  max
     The routine returns TRUE on success, else it returns FALSE.
 */
-iarray array;
-float *min;
-float *max;
 /*---------------------------------------------------------------------------*/
 
-flag iarray_min_max_int (array, min, max)
+flag iarray_min_max_int (iarray array, int *min, int *max)
 /*  This routine will determine the minimum and maximum value of an
     "Intelligent Array".
     The array must be given by  array  .
@@ -633,12 +725,10 @@ flag iarray_min_max_int (array, min, max)
     The routine will write the maximum value to the storage pointed to by  max
     The routine returns TRUE on success, else it returns FALSE.
 */
-iarray array;
-int *min;
-int *max;
 /*---------------------------------------------------------------------------*/
 
-flag iarray_scale_and_offset_float (out, inp, scale, offset)
+flag iarray_scale_and_offset_float (iarray out, iarray inp, float scale, 
+				    float offset)
 /*  This routine will perform a scale and offset on every element in an
     "Intelligent Array".
     The output array must be given by  out  .
@@ -653,13 +743,9 @@ flag iarray_scale_and_offset_float (out, inp, scale, offset)
     the output array is unaffected (NOTE: it is NOT set to 0).
     The routine returns TRUE on success, else it returns FALSE.
 */
-iarray out;
-iarray inp;
-float scale;
-float offset;
 /*---------------------------------------------------------------------------*/
 
-flag iarray_scale_and_offset_int (out, inp, scale, offset)
+flag iarray_scale_and_offset_int (iarray out, iarray inp, int scale,int offset)
 /*  This routine will perform a scale and offset on every element in an
     "Intelligent Array".
     The output array must be given by  out  .
@@ -674,8 +760,4 @@ flag iarray_scale_and_offset_int (out, inp, scale, offset)
     the output array is unaffected (NOTE: it is NOT set to 0).
     The routine returns TRUE on success, else it returns FALSE.
 */
-iarray out;
-iarray inp;
-int scale;
-int offset;
 /*---------------------------------------------------------------------------*/

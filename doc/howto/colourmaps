@@ -1,7 +1,7 @@
 This file is intended as a "getting-started" guide to dynamic pseudo
 colourmap control in Karma. It should be used in conjuction with the
 library reference documentation, which documents all the functions
-available for communicating.
+available for colourmap manipulation.
 
 
 
@@ -180,3 +180,35 @@ Kcolourmap setup_cmap ()
     cmap = kcmap_create (DEFAULT_COLOURMAP_NAME, MAX_COLOURS, TRUE,dpy_handle);
     return (cmap);
 }   /*  End Function setup_cmap  */
+
+  Example 3
+  =========
+
+This example shows how to save a colourmap to a file.
+
+
+/*----------------------------------------------------------*/
+/*  Colourmap save routine:                                 */
+/*----------------------------------------------------------*/
+
+#include <karma.h>
+#include <karma_kcmap.h>
+#include <karma_ds.h>
+
+
+flag write_cmap (cmap, file)
+/*  This routine will write a Kcolourmap object to a file.
+    The colourmap must be given by  cmap  .
+    The filename must be pointed to by  file  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+Kcolourmap cmap;
+char *file;
+{
+    multi_array *multi_desc;
+
+    multi_desc = ds_alloc_multi (1);
+    if (kcmap_copy_to_struct (cmap, (*multi_desc).headers, (*multi_desc).data)
+        != TRUE) return (FALSE);
+    return ( dsxfr_put_multi (multi_desc, file) );
+}   /*  End Function write_cmap  */

@@ -1,0 +1,49 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the imw_ package of routines in the Karma library.
+
+    These routines provide a means to convert from image data to raw images
+    suitable for low level graphics display. Although these routines are made
+    public, their use is NOT recommended. The viewimg_ package is the suggested
+    means to manage image display.
+
+
+    Written by		Richard Gooch	24-Jan-1995
+
+    Last updated by	Richard Gooch	24-Jan-1995
+
+
+*/
+
+flag imw_to8_o (unsigned char *out_image, iaddr out_hstride, iaddr out_vstride,
+		int width, int height, CONST char *inp_image,
+		CONST iaddr *inp_hoffsets, CONST iaddr *inp_voffsets,
+		unsigned int inp_type, unsigned int conv_type,
+		unsigned int num_pixels, CONST unsigned char *pixel_values,
+		unsigned char blank_pixel,
+		unsigned char min_sat_pixel, unsigned char max_sat_pixel,
+		double i_min, double i_max)
+/*  [PURPOSE] This routine will convert an image from one format to an 8 bit
+    image of pixels, maintaining the original image size.
+    <out_image> The output image will be written here.
+    <out_hstride> The stride between successive horizontal pixels (in bytes).
+    <out_vstride> The stride between successive vertical pixels (in bytes).
+    <width> The width of the image.
+    <height> The height of the image.
+    <inp_image> The input image data.
+    <inp_hoffsets> The array of horizontal byte offsets.
+    <inp_voffsets> The array of vertical byte offsets.
+    <inp_type> The type of the input data.
+    <conv_type> The input conversion type (when the input is complex).
+    <num_pixels> The number of pixels in the pixel array.
+    <pixel_values> The array of pixel values.
+    <blank_pixel> The pixel value to be used when the intensity value is an
+    undefined value.
+    <min_sat_pixel> The pixel value to be used when the intensity value is
+    below the minimum value.
+    <max_sat_pixel> The pixel value to be used when the intensity value is
+    above the maximum value.
+    <i_min> The minimum intensity value.
+    <i_max> The maximum intensity value.
+    [RETURNS] TRUE on success, else FALSE.
+*/
+/*---------------------------------------------------------------------------*/

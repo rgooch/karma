@@ -1,0 +1,24 @@
+all:
+	-remove_oldlibs
+	for i in karma* ;\
+	do \
+		(echo "Making in $$i"; cd $$i; gmake MKIMAGE_FLAGS=`cat ../mkimage_flags`); \
+	done
+	rm mkimage_flags
+
+static:
+	-remove_oldlibs
+	for i in karma* ;\
+	do \
+		(echo "Making in $$i"; cd $$i; gmake CEXTRAS= MKIMAGE_FLAGS=`cat ../mkimage_flags`); \
+	done
+	rm mkimage_flags
+
+depend:
+	for i in karma* ;\
+	do \
+		(echo "Depending in $$i"; cd $$i; gmake depend); \
+	done
+
+distclean:
+	rm -f */*.o libkarma*.*

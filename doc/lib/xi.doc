@@ -7,9 +7,9 @@
     data structures, as well as the transmission of these to the X server.
 
 
-    Written by		Richard Gooch	1-OCT-1992
+    Written by		Richard Gooch	2-Jan-1995
 
-    Last updated by	Richard Gooch	1-OCT-1992
+    Last updated by	Richard Gooch	2-Jan-1995
 
 
 */
@@ -23,7 +23,9 @@ flag xi_check_shared_images_available (display)
 Display *display;
 /*---------------------------------------------------------------------------*/
 
-XImage *xi_create_image (display, window, image_width, image_height, share)
+XImage *xi_create_image (Display *display, Window window,
+			 unsigned int image_width, unsigned int image_height,
+			 flag *share)
 /*  This routine will create an image structure for a window.
     The display must be given by  display  and the window must be given by
     window  .
@@ -34,16 +36,11 @@ XImage *xi_create_image (display, window, image_width, image_height, share)
     MIT-Shared Memory Extension to the X Protocol). If the routine did in fact
     allocate a shared memory segment, the value of TRUE will be written to the
     storage pointed to by  share  ,else FALSE will be written here.
-    Do NOT request a shared image if the routine  shared_images_available
+    Do NOT request a shared image if the routine  xi_shared_images_available
     did not return TRUE.
     The routine returns a pointer to the image structure on success,
     else it returns NULL.
 */
-Display *display;
-Window window;
-unsigned int image_width;
-unsigned int image_height;
-flag *share;
 /*---------------------------------------------------------------------------*/
 
 void xi_destroy_image (display, ximage, shared_memory)

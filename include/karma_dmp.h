@@ -2,7 +2,7 @@
 
     Header for  dmp_  package.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   3-OCT-1992
 
-    Last updated by Richard Gooch   28-MAY-1993
+    Last updated by Richard Gooch   3-NOV-1994
 
 */
 
@@ -39,9 +39,6 @@
 #define KARMA_DMP_H
 
 
-#ifndef EXTERN_FUNCTION
-#  include <c_varieties.h>
-#endif
 #include <stdio.h>
 #include <karma_ds_def.h>
 
@@ -69,7 +66,7 @@ EXTERN_FUNCTION (void dmp_element, (FILE *fp, unsigned int type, char *desc,
 EXTERN_FUNCTION (void dmp_array, (FILE *fp, array_desc *arr_desc,
 				  char *array, flag comments) );
 EXTERN_FUNCTION (void dmp_list, (FILE *fp, packet_desc *pack_desc,
-				 list_header *list_header,
+				 list_header *list_head,
 				 flag comments) );
 EXTERN_FUNCTION (void dmp_flag, (FILE *fp, flag logical, char comment_string[],
 				 flag comments) );

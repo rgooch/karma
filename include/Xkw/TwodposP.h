@@ -5,16 +5,18 @@
 #include <X11/IntrinsicP.h>
 #include <X11/CoreP.h>
 #include <Xkw/Twodpos.h>
+#include <karma.h>
 
 typedef struct _TwodposPart
 {
   Pixel foreground;
-  double minimum_x; 
-  double maximum_x;
-  double value_x;
-  double minimum_y; 
-  double maximum_y;
-  double value_y;
+  float minimum_x; 
+  float maximum_x;
+  float value_x;
+  float minimum_y; 
+  float maximum_y;
+  float value_y;
+  /*  Private section  */
   double scale_x;
   double scale_y;
   GC gc;

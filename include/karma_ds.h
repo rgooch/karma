@@ -2,7 +2,7 @@
 
     Header for  ds_  package.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   13-SEP-1992
 
-    Last updated by Richard Gooch   4-SEP-1993
+    Last updated by Richard Gooch   2-JAN-1995
 
 */
 
@@ -39,9 +39,6 @@
 #define KARMA_DS_H
 
 
-#ifndef EXTERN_FUNCTION
-#  include <c_varieties.h>
-#endif
 #ifndef KARMA_DS_DEF_H
 #  include <karma_ds_def.h>
 #endif
@@ -63,10 +60,10 @@ EXTERN_FUNCTION (array_desc *ds_alloc_array_desc,
 		 (unsigned int num_dimensions, unsigned int num_levels) );
 EXTERN_FUNCTION (flag ds_alloc_tiling_info, (array_desc *arr_desc,
 					     unsigned int num_levels) );
-EXTERN_FUNCTION (dim_desc *ds_alloc_dim_desc, (char *dim_name,
-						      unsigned int length,
-						      double min, double max,
-						      flag regular) );
+EXTERN_FUNCTION (dim_desc *ds_alloc_dim_desc, (CONST char *dim_name,
+					       unsigned long length,
+					       double min, double max,
+					       flag regular) );
 EXTERN_FUNCTION (list_header *ds_alloc_list_head, () );
 EXTERN_FUNCTION (list_entry *ds_alloc_list_entry,
 		 (packet_desc *list_desc, flag array_alloc) );
@@ -74,15 +71,26 @@ EXTERN_FUNCTION (flag ds_alloc_array, (array_desc *arr_desc, char *element,
 				       flag clear, flag array_alloc) );
 EXTERN_FUNCTION (char *ds_easy_alloc_array, (multi_array **multi_desc,
 					     unsigned int num_dim,
-					     unsigned int *lengths,
+					     unsigned long *lengths,
 					     double *minima, double *maxima,
 					     char **names,
 					     unsigned int data_type,
-					     char *data_name) );
+					     CONST char *data_name) );
 EXTERN_FUNCTION (char *ds_easy_alloc_n_element_array,
 		 (multi_array **multi_desc, unsigned int num_dim,
-		  unsigned int *lengths, double *minima, double *maxima,
+		  unsigned long *lengths, double *minima, double *maxima,
 		  char **names, unsigned int num_elements,
+		  unsigned int *data_types, char **data_names) );
+EXTERN_FUNCTION (multi_array *ds_wrap_preallocated_n_element_array,
+		 (char *array, unsigned int num_dim, uaddr *lengths,
+		  double *minima, double *maxima, double **coordinates,
+		  char **names, unsigned int num_elements,
+		  unsigned int *data_types, char **data_names) );
+EXTERN_FUNCTION (array_desc *ds_easy_alloc_array_desc,
+		 (unsigned int num_dim, uaddr *lengths,
+		  double *minima, double *maxima,
+		  double **coordinates, char **names,
+		  unsigned int num_elements,
 		  unsigned int *data_types, char **data_names) );
 EXTERN_FUNCTION (flag ds_alloc_contiguous_list, (packet_desc *list_desc,
 						 list_header *list_head,
@@ -110,36 +118,35 @@ EXTERN_FUNCTION (void ds_dealloc_array, (array_desc *arr_desc,
 
 
 /*  File:   ds_get.c   */
-EXTERN_FUNCTION (double ds_convert_atomic, (char *datum,
-					    unsigned int datum_type,
-					    double *real_out,
-					    double *imag_out) );
+EXTERN_FUNCTION (double ds_convert_atomic,
+		 (CONST char *datum, unsigned int datum_type,
+		  double *real_out, double *imag_out) );
 EXTERN_FUNCTION (double ds_get_coordinate, (dim_desc *dimension,
-					    unsigned int coord_num) );
+					    unsigned long coord_num) );
 EXTERN_FUNCTION (unsigned int ds_get_element_offset,
 		 (packet_desc *pack_desc, unsigned int elem_num) );
 EXTERN_FUNCTION (unsigned int ds_get_packet_size,
 		 (packet_desc *pack_desc) );
-EXTERN_FUNCTION (unsigned int ds_get_array_size,
-		 (array_desc *arr_desc) );
+EXTERN_FUNCTION (unsigned long ds_get_array_size, (array_desc *arr_desc) );
 EXTERN_FUNCTION (flag ds_packet_all_data, (packet_desc *pack_desc) );
 EXTERN_FUNCTION (flag ds_element_is_atomic, (unsigned int element_type) );
 EXTERN_FUNCTION (flag ds_element_is_named, (unsigned int element_type) );
 EXTERN_FUNCTION (flag ds_element_is_legal, (unsigned int element_type) );
 EXTERN_FUNCTION (unsigned int ds_identify_name,
-		 (multi_array *multi_desc, char *name,
+		 (multi_array *multi_desc, CONST char *name,
 		  char **encls_desc, unsigned int *index) );
 EXTERN_FUNCTION (unsigned int ds_f_array_name, (multi_array *multi_desc,
-						char *name, char **encls_desc,
+						CONST char *name,
+						char **encls_desc,
 						unsigned int *index) );
 EXTERN_FUNCTION (unsigned int ds_f_name_in_packet,
-		 (packet_desc *pack_desc, char *name,
+		 (packet_desc *pack_desc, CONST char *name,
 		  char **encls_desc, unsigned int *index) );
 EXTERN_FUNCTION (unsigned int ds_f_name_in_array,
-		 (array_desc *arr_desc, char *name, char **encls_desc,
+		 (array_desc *arr_desc, CONST char *name, char **encls_desc,
 		  unsigned int *index) );
 EXTERN_FUNCTION (unsigned int ds_f_elem_in_packet,
-		 (packet_desc *pack_desc, char *name) );
+		 (packet_desc *pack_desc, CONST char *name) );
 EXTERN_FUNCTION (unsigned int ds_find_hole, (packet_desc *inp_desc,
 					     packet_desc **out_desc,
 					     unsigned int *elem_num) );
@@ -152,21 +159,26 @@ EXTERN_FUNCTION (flag ds_compare_array_desc, (array_desc *desc1,
 EXTERN_FUNCTION (flag ds_compare_dim_desc, (dim_desc *desc1,
 					    dim_desc *desc2) );
 EXTERN_FUNCTION (unsigned int ds_f_dim_in_array,
-		 (array_desc *arr_desc, char *name) );
-EXTERN_FUNCTION (unsigned int ds_get_array_offset,
-		 (array_desc *arr_desc, unsigned int *coordinates) );
-EXTERN_FUNCTION (unsigned int ds_get_coord_num, (dim_desc *dimension,
-						 double coordinate,
-						 unsigned int bias) );
-EXTERN_FUNCTION (flag ds_get_element, (char *datum, unsigned int datum_type,
-				       double *value, flag *complex) );
-EXTERN_FUNCTION (flag ds_get_elements, (char *data, unsigned int data_type,
+		 (array_desc *arr_desc, CONST char *name) );
+EXTERN_FUNCTION (unsigned long ds_get_array_offset,
+		 (array_desc *arr_desc, unsigned long *coordinates) );
+EXTERN_FUNCTION (unsigned long ds_get_coord_num,
+		 (dim_desc *dimension, double coordinate, unsigned int bias) );
+EXTERN_FUNCTION (flag ds_get_element,
+		 (CONST char *datum, unsigned int datum_type,
+		  double *value, flag *complex) );
+EXTERN_FUNCTION (flag ds_get_elements, (CONST char *data,
+					unsigned int data_type,
 					unsigned int data_stride,
 					double *values, flag *complex,
 					unsigned int num_values) );
 EXTERN_FUNCTION (double *ds_get_coordinate_array,
 		 (dim_desc *dimension) );
 EXTERN_FUNCTION (flag ds_element_is_complex, (unsigned int element_type) );
+EXTERN_FUNCTION (flag ds_get_scattered_elements,
+		 (CONST char *data, unsigned int data_type,
+		  CONST uaddr *offsets, double *values, flag *complex,
+		  unsigned int num_values) );
 
 
 /*  File:   ds_put.c  */
@@ -182,7 +194,7 @@ EXTERN_FUNCTION (flag ds_put_element_many_times, (char *data,
 						  double *value,
 						  unsigned int num_elem) );
 EXTERN_FUNCTION (flag ds_put_named_element, (packet_desc *pack_desc,
-					     char *packet, char *name,
+					     char *packet, CONST char *name,
 					     double *value) );
 
 
@@ -191,9 +203,9 @@ EXTERN_FUNCTION (flag ds_copy_packet, (packet_desc *pack_desc,
 				       char *dest_packet,
 				       char *source_packet) );
 EXTERN_FUNCTION (packet_desc *ds_copy_desc_until,
-		 (packet_desc *inp_desc, char *name) );
+		 (packet_desc *inp_desc, CONST char *name) );
 EXTERN_FUNCTION (array_desc *ds_copy_array_desc_until,
-		 (array_desc *inp_desc, char *name) );
+		 (array_desc *inp_desc, CONST char *name) );
 EXTERN_FUNCTION (dim_desc *ds_copy_dim_desc,
 		 (dim_desc *inp_desc) );
 EXTERN_FUNCTION (flag ds_copy_data, (packet_desc *inp_desc,
@@ -216,18 +228,19 @@ EXTERN_FUNCTION (multi_array *ds_select_arrays,
 
 /*  File:   ds_handle.c  */
 EXTERN_FUNCTION (unsigned int ds_get_handle_in_packet,
-		 (packet_desc *pack_desc, char *packet, char *item_name,
-		  char *restr_names[], double *restr_values,
+		 (packet_desc *pack_desc, char *packet, CONST char *item_name,
+		  CONST char *restr_names[], double *restr_values,
 		  unsigned int num_restr, char **parent_desc, char **parent,
 		  unsigned int *parent_type, unsigned int *index) );
 EXTERN_FUNCTION (unsigned int ds_get_handle_in_array,
-		 (array_desc *arr_desc, char *array, char *item_name,
-		  char *restr_names[], double *restr_values,
+		 (array_desc *arr_desc, char *array, CONST char *item_name,
+		  CONST char *restr_names[], double *restr_values,
 		  unsigned int num_restr, char **parent_desc, char **parent,
 		  unsigned int *parent_type, unsigned int *index) );
 EXTERN_FUNCTION (unsigned int ds_get_handle_in_list,
 		 (packet_desc *list_desc, list_header *list_head,
-		  char *item_name, char *restr_names[], double *restr_values,
+		  CONST char *item_name, CONST char *restr_names[],
+		  double *restr_values,
 		  unsigned int num_restr, char **parent_desc, char **parent,
 		  unsigned int *parent_type, unsigned int *index) );
 
@@ -253,20 +266,30 @@ EXTERN_FUNCTION (flag ds_find_plane_extremes, (char *data,
 					       double ord_scan_start,
 					       double ord_scan_end,
 					       double *min, double *max) );
+EXTERN_FUNCTION (flag ds_find_single_histogram,
+		 (char *data, unsigned int elem_type, unsigned int conv_type,
+		  unsigned int num_values, uaddr *offsets, unsigned int stride,
+		  double min, double max, unsigned long num_bins,
+		  unsigned long *histogram_array,
+		  unsigned long *histogram_peak,
+		  unsigned long *histogram_mode) );
 
 
 /*  File:  ds_attach.c  */
 EXTERN_FUNCTION (flag ds_put_unique_named_value,
-		 (packet_desc *pack_desc, char **packet, char *name,
+		 (packet_desc *pack_desc, char **packet, CONST char *name,
 		  unsigned int type, double *value, flag update) );
 EXTERN_FUNCTION (flag ds_put_unique_named_string, (packet_desc *pack_desc,
-						   char **packet, char *name,
-						   char *string,flag update) );
+						   char **packet,
+						   CONST char *name,
+						   CONST char *string,
+						   flag update) );
 EXTERN_FUNCTION (flag ds_get_unique_named_value,
-		 (packet_desc *pack_desc, char *packet, char *name,
+		 (packet_desc *pack_desc, char *packet, CONST char *name,
 		  unsigned int *type, double *value) );
 EXTERN_FUNCTION (char *ds_get_unique_named_string, (packet_desc *pack_desc,
-						    char *packet,char *name) );
+						    char *packet,
+						    CONST char *name) );
 
 
 /*  File:   ds_traverse.c  */
@@ -274,16 +297,16 @@ EXTERN_FUNCTION (flag ds_reorder_array, (array_desc *arr_desc,
 					 unsigned int order_list[],
 					 char *array, flag mod_desc) );
 EXTERN_FUNCTION (flag ds_foreach_occurrence, (packet_desc *pack_desc,
-					      char *packet, char *item,
+					      char *packet, CONST char *item,
 					      flag as_whole,
 					      flag (*function) ()) );
 EXTERN_FUNCTION (flag ds_foreach_in_array, (array_desc *arr_desc,
-					    char *array, char *item,
+					    char *array, CONST char *item,
 					    flag as_whole,
 					    flag (*function) ()) );
 EXTERN_FUNCTION (flag ds_foreach_in_list, (packet_desc *list_desc,
 					   list_header *list_head,
-					   char *item, flag as_whole,
+					   CONST char *item, flag as_whole,
 					   flag (*function) ()) );
 EXTERN_FUNCTION (flag ds_traverse_and_process, (packet_desc *inp_desc,
 						char *inp_data,
@@ -303,7 +326,7 @@ EXTERN_FUNCTION (flag ds_traverse_list, (packet_desc *inp_desc,
 
 
 /*  File:   ds_draw.c  */
-EXTERN_FUNCTION (flag ds_draw_ellipse, (char *array,unsigned int elem_type,
+EXTERN_FUNCTION (flag ds_draw_ellipse, (char *array, unsigned int elem_type,
 					dim_desc *abs_dim_desc,
 					unsigned int abs_stride,
 					dim_desc *ord_dim_desc,
@@ -323,7 +346,7 @@ EXTERN_FUNCTION (flag ds_draw_polygon, (char *array, unsigned int elem_type,
 
 /*  File:   ds_mod_desc.c  */
 EXTERN_FUNCTION (flag ds_remove_dim_desc, (array_desc *arr_desc,
-					   char *dim_name) );
+					   CONST char *dim_name) );
 EXTERN_FUNCTION (flag ds_append_dim_desc, (array_desc *arr_desc,
 					   dim_desc *dimension) );
 EXTERN_FUNCTION (flag ds_prepend_dim_desc, (array_desc *arr_desc,
@@ -354,11 +377,11 @@ EXTERN_FUNCTION (unsigned short *ds_cmap_alloc_colourmap,
 EXTERN_FUNCTION (unsigned short *ds_cmap_find_colourmap,
 		 (packet_desc *top_pack_desc, char *top_packet,
 		  unsigned int *size, flag *reordering_done,
-		  char *restr_names[], double *restr_values,
+		  CONST char *restr_names[], double *restr_values,
 		  unsigned int num_restr) );
 EXTERN_FUNCTION (unsigned int *ds_cmap_get_all_colourmaps,
 		 (multi_array *multi_desc, unsigned int *num_found,
-		  flag *reordering_done, char *restr_names[],
+		  flag *reordering_done, CONST char *restr_names[],
 		  double *restr_values, unsigned int num_restr) );
 
 

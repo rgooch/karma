@@ -37,4 +37,5 @@ setenv KARMAINCLUDEPATH ${KARMABASE}/include
 
 set path = (${KARMABASE}/cm_script ${KARMABASE}/csh_script $KARMABINPATH $path)
 
-exec karma_cm_slave $argv
+#exec karma_cm_slave $argv
+karma_cm_slave $argv

@@ -32,13 +32,19 @@ setenv KARMABINPATH $KARMAVXMVXBINPATH
 setenv KARMALIBPATH $KARMAVXMVXLIBPATH
 setenv KARMAINCLUDEPATH $KARMABASE/include
 setenv KDEPLIB_KARMA $KARMALIBPATH/libkarma.a
+setenv KDEPLIB_KARMAX11 $KARMALIBPATH/libkarmaX11.a
+setenv KDEPLIB_KARMAXT $KARMALIBPATH/libkarmaXt.a
+setenv KDEPLIB_KARMAXVIEW $KARMALIBPATH/libkarmaxview.a
+setenv KDEPLIB_KARMAGRAPHICS $KARMALIBPATH/libkarmagraphics.a
+setenv KDEPLIB_KARMAVX $KARMALIBPATH/libkarmavx.a
 
 setenv KARMA_CC "vxcc"
 setenv CC "vxcc"
 
 setenv OS_LIBS "-ltask"
 setenv TARGET_ARCH vx
-setenv MACHINE_ARCH VXMVX
+setenv OS VXMVX
+setenv MACHINE i860
 
 if (-r GNUmakefile.vxmvx) then
     gmake -f GNUmakefile.vxmvx $argv

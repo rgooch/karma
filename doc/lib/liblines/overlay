@@ -1,0 +1,2 @@
+/*  Routines to manipulate 2-dimensional (image) overlay objects  */
+/*  Link with:    -lkarmagraphics  */

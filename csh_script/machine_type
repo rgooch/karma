@@ -2,7 +2,7 @@
 # and will set the following environmental variables accordingly:
 # MACHINE_ARCH          MACHINE_NETGROUP	MACHINE_SITE
 #
-#   Copyright (C) 1991,1992,1993  Richard Gooch
+#   Copyright (C) 1991,1992,1993,1994  Richard Gooch
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -24,11 +24,25 @@
 
 # Written by            Richard Gooch   18-JUN-1991
 
-# Last updated by       Richard Gooch   20-MAY-1993
+# Last updated by       Richard Gooch   17-NOV-1994
 
 
 # Determine full hostname
-if ("$?HOSTNAME" == "0") setenv HOSTNAME `hostname`
+if ("$?HOSTNAME" == "0") then
+    # Find out hostname: so many ways...
+    if (-x /bin/uname) then
+	setenv HOSTNAME `/bin/uname -n`
+    else if (-x /usr/bin/uname) then
+	setenv HOSTNAME `/usr/bin/uname -n`
+    else if (-x /bin/hostname) then
+	setenv HOSTNAME `/bin/hostname`
+    else if (-x /usr/bin/hostname) then
+	setenv HOSTNAME `/usr/bin/hostname`
+    else
+	echo "I don't know how to find out your hostname. Not another way!"
+	exit 1
+    endif
+endif
 if ("$?DOMAINNAME" == "0") setenv DOMAINNAME `domainname`
 set _fullname = ${HOSTNAME}.${DOMAINNAME}
 
@@ -80,20 +94,24 @@ endif
 # Found a match
 unset _fullname
 unset _database_file
-setenv MACHINE_ARCH ${_database_line[2]}
+setenv MACHINE_OS ${_database_line[2]}
 setenv MACHINE_NETGROUP ${_database_line[3]}
 setenv MACHINE_SITE ${_database_line[4]}
 unset _database_line
+# Split into MACHINE and OS components
+set tmp = `echo "$MACHINE_OS"|sed -e "s/_/ /"`
+setenv MACHINE "$tmp[1]"
+setenv OS "$tmp[2]"
+
 exit
 
 
 # Hostname			Architecture	Owner		Site
 
 # Machines owned by ... (sample list only)
-ateles.rp.csiro.au		convex		AT_RP		EPPING
-crux.rp.csiro.au		SUNsparc	AT_RP		EPPING
-ampere.rp.csiro.au		rs6000		SIGPROC		EPPING
-achilles.rp.csiro.au		dec		SIGPROC		EPPING
-linux.rp.csiro.au		linux		ATRP_PRIVATE	EPPING
-cherax.jsf.csiro.au		cray		JSF		JSF
-okeefe.relx			SGImips		NCSA		NCSA
+ateles.rp.csiro.au		c2_ConvexOS	AT_RP		EPPING
+crux.rp.csiro.au		sparc_SunOS	AT_RP		EPPING
+ampere.rp.csiro.au		rs6000_AIX	SIGPROC		EPPING
+achilles.rp.csiro.au		mips1_ULTRIX	SIGPROC		EPPING
+linux.rp.csiro.au		i386_Linux	ATRP_PRIVATE	EPPING
+okeefe.relx			mips1_IRIX5	NCSA		NCSA

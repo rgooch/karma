@@ -1,0 +1,4 @@
+xi_check_shared_images_available
+xi_create_image
+xi_destroy_image
+xi_put_image

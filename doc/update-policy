@@ -5,7 +5,8 @@
 not modify the function interface definitions of routines in the
 existing public release, a new public release is placed on anonymous
 ftp. The release number is incremented. Hence, moving from one release
-to the next should not break any source code.
+to the next should not break any source code (with a few exceptions:
+see note below).
 A release may make incompatible changes to headers files which would
 require the recompilation of all code which references those header
 files. If such recompilation is required, there should be an item in
@@ -17,12 +18,17 @@ package undergoes a major overhaul), a transition period will be
 entered where the old functions are unchanged and the new functions
 are created. A new public release will be made available (with the
 release number being incremented) and notice will be given in the
-release notes that the old routines are being phased out. The new
-public release will be the last release of that version. The next
-public release will have it's version number incremented, and the
-routines that were due to be phased out will be removed.
+release notes that the old routines are being phased out. The routines
+will not be included in the next version. There may be several
+releases prior to the next version of Karma.
 The last release of the previous version will be moved to an archive
 directory.
+
+NOTE: This strict update policy does not apply to the Karma widgets
+library nor the <storage_> package in the core Karma library, which
+are more volatile at time of writing than the rest of the
+library. There may be incompatible changes between releases, however
+notice will still be given in the release notes.
 
 Notices of a new public release are made to people who have mailed to:
 karma-request@atnf.csiro.au  asking to be placed on the mailing list.

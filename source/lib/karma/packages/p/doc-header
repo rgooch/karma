@@ -1,0 +1,17 @@
+/*  Low level routines to convert data  */
+/*  This file describes the p_ package of routines in the Karma library.
+
+    These routines are meant to provide a low level means of converting C data
+    types to the "network" data format (ie. big endian, IEEE 754).
+    These are memory to memory routines only. Although they are made public,
+    their use is NOT recommended.
+    When reading or writing raw data from and to files or connections, the pio_
+    routines are suggested.
+
+
+    Written by		Richard Gooch	<<DATE>>
+
+    Last updated by	Richard Gooch	<<DATE>>
+
+
+*/

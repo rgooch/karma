@@ -1,0 +1,64 @@
+LIB = karma
+version = $(KARMA_VERSION)
+
+library = ../lib$(LIB).a
+shared_lib = ../lib$(LIB).so.$(version)
+shared_archive = ../lib$(LIB).sa.$(version)
+lintlib = ../llib-l$(LIB).ln
+
+.PRECIOUS: $(library)
+
+libdir = $(KARMAROOT)/source/lib/$(LIB)
+sourcedir = $(libdir)/master
+lintdir = $(libdir)/lint
+
+vpath %.c $(sourcedir)
+
+vpath %.h $(KARMAINCLUDEPATH)
+
+CFLAGS = -O -I$(KARMAINCLUDEPATH)
+
+.c.o :
+	@cc_util $(CFLAGS) -c $(sourcedir)/$*.c
+
+cs = $(wildcard $(sourcedir)/*.c)
+csource = $(notdir $(wildcard $(sourcedir)/*.c))
+cobjects = $(subst .c,.o,$(csource))
+objects =  $(cobjects)
+members = ${addprefix ${library}(,${addsuffix ),${objects}}}
+globfiles = $(notdir $(wildcard $(sourcedir)/*_globals.c))
+globobjs = $(subst .c,.o,$(globfiles))
+samembers = ${addprefix ${shared_archive}(,${addsuffix ),${globobjs}}}
+
+.PHONY: all
+#all:	$(library) $(shared_lib) $(shared_archive) clean
+all:	$(shared_lib) $(shared_archive) clean
+
+
+$(library):	$(members)
+	ranlib $(library)
+
+
+$(shared_lib):	$(objects) $(csource)
+	ld -o $(shared_lib) -assert pure-text $(objects)
+
+
+$(shared_archive):	$(samembers)
+	ranlib $(shared_archive)
+
+
+lint:	$(lintlib)
+
+$(lintlib):	$(csource)
+	(cd $(libdir) ; make_lint)
+	(cd .. ; lint -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) -C$(LIB) $(lintdir)/*.c)
+
+
+clean:
+	\rm -f *~ *.bak
+
+
+depend:
+	makedepend -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) -fGNUmakefile $(cs)
+
+# DO NOT DELETE THIS LINE -- make depend depends on it.

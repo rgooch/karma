@@ -150,7 +150,7 @@ char *out_filename;
     multi_array *multi_desc;
     iarray planes[MAX_FILES];
     unsigned int types[MAX_FILES];
-    unsigned int lengths[2];
+    unsigned long lengths[2];
     extern char module_name[STRING_LENGTH + 1];
     static char function_name[] = "process_files";
 

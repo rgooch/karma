@@ -6,7 +6,7 @@
     command lines.
 
 
-    Written by		Richard Gooch	4-OCT-1993
+    Written by		Richard Gooch	30-Nov-1994
 
     Last updated by	Richard Gooch	5-OCT-1993
 
@@ -21,6 +21,16 @@ KControlPanel panel_create (blank)
     else it returns NULL.
 */
 flag blank;
+/*---------------------------------------------------------------------------*/
+
+KControlPanel panel_create_group ()
+/*  This routine will create a control panel object which is a container for a
+    group of items. Panel items may be added to this panel object, and the
+    panel object itself may be later added as panel item to another panel
+    object (of type  PIT_GROUP  ).
+    The routine returns a KControlPanel object on success,
+    else it returns NULL.
+*/
 /*---------------------------------------------------------------------------*/
 
 void panel_add_item (panel, name, comment, type, value_ptr, va_alist)

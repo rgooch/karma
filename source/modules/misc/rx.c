@@ -37,15 +37,18 @@
     Updated by      Richard Gooch   24-MAY-1993: Changed from  CAN_FORK  to
   HAS_GETRUSAGE  .
 
-    Last updated by Richard Gooch   6-OCT-1993: Changed over to  panel_
+    Updated by      Richard Gooch   6-OCT-1993: Changed over to  panel_
   package for command line user interface.
+
+    Last updated by Richard Gooch   3-NOV-1994: Switched to OS_ and MACHINE_
+  macros for machine determination.
 
 
 */
 #include <stdio.h>
 #include <math.h>
 #include <sys/time.h>
-#ifdef ARCH_VXMVX
+#ifdef OS_VXMVX
 #  include <vxsignal.h>
 #else
 #  include <signal.h>

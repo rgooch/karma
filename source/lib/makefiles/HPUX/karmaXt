@@ -1,0 +1,53 @@
+LIB = karmaXt
+
+library = ../lib$(LIB).a
+shared_lib = ../lib$(LIB).sl
+lintlib = ../llib-l$(LIB).ln
+
+.PRECIOUS: $(library)
+
+libdir = $(KARMAROOT)/source/lib/$(LIB)
+sourcedir = $(libdir)/master
+lintdir = $(libdir)/lint
+
+vpath %.c $(sourcedir)
+
+vpath %.h $(KARMAINCLUDEPATH)
+
+CFLAGS = -O -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) +Z
+
+.c.o :
+	$(KARMA_CC) -DOS_$(OS) -DMACHINE_$(MACHINE) $(CFLAGS) -c $(sourcedir)/$*.c
+
+cs = $(wildcard $(sourcedir)/*.c)
+csource = $(notdir $(wildcard $(sourcedir)/*.c))
+cobjects = $(subst .c,.o,$(csource))
+objects =  $(cobjects)
+
+.PHONY: all
+all:	$(shared_lib) clean
+
+
+$(library):	$(members)
+	ranlib $(library)
+
+
+$(shared_lib):	$(objects) $(csource)
+	ld -o $(shared_lib) -b $(objects)
+
+
+lint:	$(lintlib)
+
+$(lintlib):	$(csource)
+	(cd $(libdir) ; make_lint)
+	(cd .. ; lint -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) -C$(LIB) $(lintdir)/*.c)
+
+
+clean:
+	\rm -f *~ *.bak
+
+
+depend:
+	makedepend -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) -fGNUmakefile $(cs)
+
+# DO NOT DELETE THIS LINE -- make depend depends on it.

@@ -7,81 +7,24 @@
     especially when transferring data over connections.
 
 
-    Written by		Richard Gooch	1-OCT-1992
+    Written by		Richard Gooch	24-Jan-1995
 
-    Last updated by	Richard Gooch	1-OCT-1992
+    Last updated by	Richard Gooch	24-Jan-1995
 
 
 */
-
-Channel ch_open_and_fill_memory (strings)
-/*  This routine will open a memory channel with sufficient space to contain
-    a list of strings.
-    The NULL terminated array of string pointers must be pointed to by  strings
-    The strings are written with a NEWLINE character to terminate the string.
-    The NULL terminator character is not written.
-    The routine returns a channel object on success, else it returns NULL.
-*/
-char **strings;
-/*---------------------------------------------------------------------------*/
-
-flag ch_gets (channel, buffer, length)
-/*  This routine will read a character string from a channel into a buffer.
-    The channel object must be given by  channel  .
-    The buffer to write the data to must be pointed to by  buffer  .
-    The routine will write a NULL terminator character at the end of the
-    string.
-    NOTE: the newline chanacter '\n' is NOT copied into the buffer.
-    The length of the buffer must be given by  length  .If the buffer is not
-    large enough to contain the string, then the remainder of the string is NOT
-    read. See also the  ch_getl  routine.
-    The routine returns TRUE on success,
-    else it returns FALSE (indicating end-of-file was encountered).
-*/
-Channel channel;
-char *buffer;
-unsigned int length;
-/*---------------------------------------------------------------------------*/
-
-flag ch_getl (channel, buffer, length)
-/*  This routine will read a character string from a channel into a buffer.
-    The channel object must be given by  channel  .
-    The buffer to write the data to must be pointed to by  buffer  .
-    The routine will write a NULL terminator character at the end of the
-    string.
-    NOTE: the newline chanacter '\n' is NOT copied into the buffer.
-    The length of the buffer must be given by  length  .If the buffer is not
-    large enough to contain the string, then the remainder of the string
-    (including the newline character) is read in and discarded and a warning
-    message is displayed. See also the ch_gets  routine.
-    The routine returns TRUE on success,
-    else it returns FALSE (indicating end-of-file was encountered).
-*/
-Channel channel;
-char *buffer;
-unsigned int length;
-/*---------------------------------------------------------------------------*/
-
-flag ch_puts (channel, string, newline)
-/*  This routine will write a character stream to a channel.
-    The channel object must be given by  channel  .
-    The strings must be pointed to by  string  .
-    The routine will write a NEWLINE character after writing the string if the
-    value of  newline  is TRUE.
-    The routine will not write the NULL terminator character.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-Channel channel;
-char *string;
-flag newline;
-/*---------------------------------------------------------------------------*/
 
 Channel ch_open_file (filename, type)
 /*  This routine will open a file channel. The file may be a regular disc file,
-    a named FIFO or a character special device. The channel may be later tested
+    a named FIFO, a character special device, a Unix domain connection or a
+    TCP/IP connection. The channel may be later tested
     to determine what the true channel type is by calling routines such as:
     ch_test_for_asynchronous  and  ch_test_for_io  .
-    The pathname of the file to open must be given by  filename  .
+    The pathname of the file to open must be given by  filename  .This
+    parameter has the same meaning as the first parameter to  open(2).
+    Filenames of the form: "//tcpIP/<hostname>:<port>" indicate a connection to
+    a TCP/IP port on host  <hostname>  with raw port number  <port>  is
+    requested.
     The mode of the file must be pointed to by  type  .The following modes are
     allowed:
         "r"         open for reading
@@ -90,12 +33,13 @@ Channel ch_open_file (filename, type)
 	"r+"        open for update (reading and writing)
 	"w+"        open for reading and writing after truncation
 	"a+"        open or create for update (reading and writing) at EOF
+	"W"         open for writing
     Note that for character special files and named FIFOs, these modes
     degenerate into read-write, read-only and write-only.
     The routine returns a channel object on success, else it returns NULL.
 */
-char *filename;
-char *type;
+CONST char *filename;
+CONST char *type;
 /*---------------------------------------------------------------------------*/
 
 Channel ch_map_disc (filename, option, writeable, update_on_write)
@@ -130,13 +74,13 @@ Channel ch_map_disc (filename, option, writeable, update_on_write)
     the call:  ch_test_for_mmap
     The routine returns a channel object on success, else it returns NULL.
 */
-char *filename;
+CONST char *filename;
 unsigned int option;
 flag writeable;
 flag update_on_write;
 /*---------------------------------------------------------------------------*/
 
-Channel ch_open_connection (host_addr, port_number)
+Channel ch_open_connection (unsigned long host_addr, unsigned int port_number)
 /*  This routine will open a full-duplex connection channel to a server running
     on another host machine.
     The Internet address of the host machine must be given by  host_addr  .
@@ -148,8 +92,6 @@ Channel ch_open_connection (host_addr, port_number)
     more powerful functionality.
     The routine returns a channel object on success, else it returns NULL.
 */
-unsigned long host_addr;
-unsigned int port_number;
 /*---------------------------------------------------------------------------*/
 
 Channel ch_open_memory (buffer, size)
@@ -225,7 +167,7 @@ unsigned int ch_read (channel, buffer, length)
     into a buffer.
     The channel object must be given by  channel  .
     The buffer to write the data into must be pointed to by  buffer  .
-    The number of bytes to read into the buffer must be pointed to by  length
+    The number of bytes to write into the buffer must be pointed to by  length
     If the channel is a connection and the number of bytes readable from the
     connection is equal to or more than  length  the routine will NOT block.
     The routine returns the number of bytes read.
@@ -239,11 +181,11 @@ unsigned int ch_write (channel, buffer, length)
 /*  This routine will write a number of bytes from a buffer to a channel.
     The channel object must be given by  channel  .
     The buffer to read the data from must be pointed to by  buffer  .
-    The number of bytes to write from the buffer must be pointed to by  length
+    The number of bytes to read from the buffer must be given by  length
     The routine returns the number of bytes written.
 */
 Channel channel;
-char *buffer;
+CONST char *buffer;
 unsigned int length;
 /*---------------------------------------------------------------------------*/
 
@@ -254,7 +196,7 @@ void ch_close_all_channels ()
 */
 /*---------------------------------------------------------------------------*/
 
-flag ch_seek (channel, position)
+flag ch_seek (Channel channel, unsigned long position)
 /*  This routine will position the read and write pointers for a channel.
     The channel object must be given by  channel  .
     The position (relative to the start of the channel data) must be given
@@ -263,8 +205,6 @@ flag ch_seek (channel, position)
     The routine returns TRUE on success,
     else it returns FALSE (indicating a seek request beyond the channel limits)
 */
-Channel channel;
-unsigned long position;
 /*---------------------------------------------------------------------------*/
 
 int ch_get_bytes_readable (channel)
@@ -290,7 +230,7 @@ Channel channel;
 
 void ch_open_stdin ()
 /*  This routine will create a channel object for the standard input descriptor
-    0
+    (typically 0 on Unix systems).
     The standard input channel will be written to the external variable
     ch_stdin  .
     The routine returns nothing.
@@ -312,7 +252,8 @@ Channel channel;
 flag ch_test_for_asynchronous (channel)
 /*  This routine will test if a channel object is an asynchronous channel,
     ie. a character special file, named FIFO, connection, a dock channel or one
-    created by a call to  ch_attach_to_asynchronous_descriptor  .
+    created by a call to  ch_attach_to_asynchronous_descriptor  or
+    ch_create_pipe  .
     The channel object must be given by  channel  .
     The routine returns TRUE if the channel is asynchronous,
     else it returns FALSE.
@@ -383,8 +324,259 @@ Channel channel;
 unsigned int ch_get_mmap_access_count (channel)
 /*  This routine will get the number of times a memory mapped disc channel has
     been queried for the mapping address (using  ch_get_mmap_addr  ).
+    The channel object must be given by  channel  .
     The channel MUST be a memory mapped disc channel.
     The routine returns the number of address queries.
 */
 Channel channel;
+/*---------------------------------------------------------------------------*/
+
+ChConverter ch_register_converter (channel, size_func, read_func, write_func,
+				   flush_func, close_func, info)
+/*  This routine will register a set of converter functions which will be
+    called when channel data is read or written. The operation of these
+    routines is transparent. Converter functions are useful for automatic
+    compression and encryption of data streams.
+    NOTE: converters may only be registered for disc, connection, character
+    special and FIFO channels (ie. those opened with  ch_open_file  ), and
+    impose restrictions on channel operations (ie.  ch_seek  cannot be called).
+    Converter functions are expected to provide their own buffering as needed.
+    The channel object must be given by  channel  .
+    The function which will determine (approximately) how many bytes would be
+    returned by the  read_func  must be pointed to by  size_func  .This routine
+    is called when  ch_get_bytes_readable  is called for the channel.
+    The interface to this function is given below:
+
+    unsigned int size_func (channel, info)
+    *   This routine will determine the approximate number of bytes that the
+        read_func  will return.
+	The channel object will be given by  channel  .
+	The arbitrary information pointer will be pointed to by  info  .The
+	information pointer may be modified.
+	The routine returns the number of bytes the  read_func  will return.
+    *
+    Channel channel;
+    void **info;
+
+    The function which will convert data when reading must be pointed to by
+    read_func  .
+    The interface to this function is given below:
+
+    unsigned int read_func (channel, buffer, length, info)
+    *   This routine will convert bytes being read from a channel object.
+        The channel object will be given by  channel  .It is permissable for
+	the routine to call  ch_read  with this channel. If this is done,
+	this  read_func  will be bypassed.
+	The buffer to write the data into will be pointed to by  buffer  .
+	The number of bytes to write into the buffer will be pointed to by
+	length  .
+	The arbitrary information pointer will be pointed to by  info  .The
+	information pointer may be modified.
+	The routine returns the number of bytes actually written to the buffer.
+    *
+    Channel channel;
+    char *buffer;
+    unsigned int length;
+    void **info;
+
+    The function which will convert data when writing must be pointed to by
+    write_func  .If this is NULL, no write conversion is performed.
+    The interface to this function is given below:
+
+    unsigned int write_func (channel, buffer, length, info)
+    *   This routine will convert bytes being written to a channel object.
+        The channel object will be given by  channel  .It is permissable for
+	the routine to call  ch_write  with this channel. If this is done,
+	this  write_func  will be bypassed.
+	The buffer to read the data from will be pointed to by  buffer  .The
+	contents of this buffer may be modified if needed.
+	The number of bytes to read from the buffer will be given by  length
+	The arbitrary information pointer will be pointed to by  info  .The
+	information pointer may be modified.
+	The routine returns the number of bytes read from the buffer.
+    *
+    Channel channel;
+    char *buffer;
+    unsigned int length;
+    void **info;
+
+    The function which is called when the channel is to be flushed must be
+    pointed to by  flush_func  .
+    The interface to this function is given below:
+
+    flag flush_func (channel, info)
+    *   This routine will process a flush request for a channel object.
+        The channel object will be given by  channel  .It is permissable for
+	the routine to call  ch_write  with this channel. If this is done,
+	this  write_func  will be bypassed.
+	The arbitrary information pointer will be pointed to by  info  .The
+	information pointer may be modified.
+	The routine returns TRUE on success, else it returns FALSE.
+    *
+    Channel channel;
+    void **info;
+
+    The function which is called when the channel is closed must be pointed to
+    by  close_func  .If this is NULL, no special action is taken upon channel
+    closure. Note that the  flush_func  will be called prior to the  close_func
+    upon channel closure.
+    The interface to this function is given below:
+
+    void close_func (info)
+    *   This routine is called when a channel is closed.
+	The arbitrary information pointer will be given by  info  .
+	The routine returns nothing.
+    *
+    void *info;
+
+    It is permissable to register multiple converter functions with a channel.
+    Converter functions are pushed down from the top (application) level. In
+    other words, the last converter functions registered are called first.
+    The sequence of events when the application level calls  ch_write  is:
+      The last registered write converter is popped from the stack and called.
+      This write converter may buffer some or all of the data. It may call
+        ch_write  with some converted data.
+      When  ch_write  is called from a write converter, the next last
+        registered write converter is popped from the stack and called.
+      This sequence is continued until data is actually transferred into the
+      channel write buffer.
+    A similar sequence of events occurs when  ch_read  is called.
+    The sequence of events when the application level calls  ch_flush  is:
+      The last registered flush converter is popped from the stack and called.
+      This flush converter MUST write all data in it's buffer using  ch_write
+      When  ch_write  is called from a flush converter, the next last
+        registered write converter is popped from the stack and called.
+      When the last registered flush converter returns, the sequence is
+      repeated with the next last flush converter, and so on, until all data
+      in all write buffers is flushed, including the channel write buffer.
+    The routine returns a ChConverter object on success (which may be used in a
+    call to  ch_unregister_converter), else it returns NULL.
+*/
+Channel channel;
+unsigned int (*size_func) ();
+unsigned int (*read_func) ();
+unsigned int (*write_func) ();
+flag (*flush_func) ();
+void (*close_func) ();
+void *info;
+/*---------------------------------------------------------------------------*/
+
+void ch_unregister_converter (converter)
+/*  This routine will unregister a set of converter functions previously
+    registered with  ch_register_converter  .This will cause the registered
+    flush and close functions to be called.
+    The ChConverter object must be given by  converter  .
+    The routine returns nothing.
+*/
+ChConverter converter;
+/*---------------------------------------------------------------------------*/
+
+flag ch_create_pipe (read_ch, write_ch)
+/*  This routine will create an un-named pipe (see  pipe(2)  for details on
+    un-named pipes).
+    The channel corresponding to the read end of the pipe will be written to
+    the storage pointed to by  read_ch  .
+    The channel corresponding to the write end of the pipe will be written to
+    the storage pointed to by  write_ch  .
+    The routine returns TRUE on success, else it returns FALSE and sets  errno
+    with the error code.
+*/
+Channel *read_ch;
+Channel *write_ch;
+/*---------------------------------------------------------------------------*/
+
+Channel ch_create_sink ()
+/*  This routine will create a data sink channel. All writes to the channel are
+    discarded (and reported as having succeeded) and all reads return an
+    End-Of-File condition. Read and write operations modify the absolute read
+    and write pointers (obtainable with  ch_tell  ) as expected.
+    The routine returns the channel object on succes, else it returns NULL.
+*/
+/*---------------------------------------------------------------------------*/
+
+KCallbackFunc ch_tap_io_events ( void (*tap_func) (), void *info )
+/*  This routine will tap I/O events by calling a registered function whenever
+    data is transferred to/from a disc, connection or FIFO channel. Reading and
+    writing memory mapped or memory channels does *not* constitute an I/O event
+
+    The function which is called when I/O occurs must be pointed to by
+    tap_func  .
+    The interface to this function is given below:
+
+    void tap_func (info)
+    *   This routine is called when I/O occurs.
+	The arbitrary information pointer will be given by  info  .
+	The routine returns nothing.
+    *
+    void *info;
+
+    Multiple tap functions may be registered, with the first one registered
+    being the first one called upon a channel I/O event.
+
+    The arbitrary information passed to the tap function must be pointed to
+    by  info  .This may be NULL.
+    The routine returns a KCallbackFunc. On failure, the process aborts.
+*/
+/*---------------------------------------------------------------------------*/
+
+Channel ch_open_and_fill_memory (strings)
+/*  This routine will open a memory channel with sufficient space to contain
+    a list of strings.
+    The NULL terminated array of string pointers must be pointed to by  strings
+    The strings are written with a NEWLINE character to terminate the string.
+    The NULL terminator character is not written.
+    The routine returns a channel object on success, else it returns NULL.
+*/
+char **strings;
+/*---------------------------------------------------------------------------*/
+
+flag ch_gets (channel, buffer, length)
+/*  This routine will read a character string from a channel into a buffer.
+    The channel object must be given by  channel  .
+    The buffer to write the data to must be pointed to by  buffer  .
+    The routine will write a NULL terminator character at the end of the
+    string.
+    NOTE: the newline chanacter '\n' is NOT copied into the buffer.
+    The length of the buffer must be given by  length  .If the buffer is not
+    large enough to contain the string, then the remainder of the string is NOT
+    read. See also the  ch_getl  routine.
+    The routine returns TRUE on success,
+    else it returns FALSE (indicating end-of-file was encountered).
+*/
+Channel channel;
+char *buffer;
+unsigned int length;
+/*---------------------------------------------------------------------------*/
+
+flag ch_getl (channel, buffer, length)
+/*  This routine will read a character string from a channel into a buffer.
+    The channel object must be given by  channel  .
+    The buffer to write the data to must be pointed to by  buffer  .
+    The routine will write a NULL terminator character at the end of the
+    string.
+    NOTE: the newline chanacter '\n' is NOT copied into the buffer.
+    The length of the buffer must be given by  length  .If the buffer is not
+    large enough to contain the string, then the remainder of the string
+    (including the newline character) is read in and discarded and a warning
+    message is displayed. See also the ch_gets  routine.
+    The routine returns TRUE on success,
+    else it returns FALSE (indicating end-of-file was encountered).
+*/
+Channel channel;
+char *buffer;
+unsigned int length;
+/*---------------------------------------------------------------------------*/
+
+flag ch_puts (channel, string, newline)
+/*  This routine will write a character stream to a channel.
+    The channel object must be given by  channel  .
+    The strings must be pointed to by  string  .
+    The routine will write a NEWLINE character after writing the string if the
+    value of  newline  is TRUE.
+    The routine will not write the NULL terminator character.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+Channel channel;
+CONST char *string;
+flag newline;
 /*---------------------------------------------------------------------------*/

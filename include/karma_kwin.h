@@ -2,7 +2,7 @@
 
     Header for  kwin_  package.
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1993,1994,1995  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   16-APR-1993
 
-    Last updated by Richard Gooch   21-NOV-1993
+    Last updated by Richard Gooch   2-JAN-1995
 
 */
 
@@ -39,26 +39,54 @@
 #define KARMA_KWIN_H
 
 
-#ifndef EXTERN_FUNCTION
-#  include <c_varieties.h>
-#endif
 #include <k_win_scale.h>
-#include <karma_ds_def.h>
+
+#ifndef KARMA_DS_DEF_H
+#  include <karma_ds_def.h>
+#endif
+
+#ifndef KARMA_PSW_DEF_H
+#  include <karma_psw_def.h>
+#endif
+
 #ifndef KWIN_GENERIC_ONLY
 #  ifdef X11
 #    include <X11/Xlib.h>
 #  endif
 #endif
-
-#ifndef KPIXCANVAS_DEFINED
-#define KPIXCANVAS_DEFINED
-typedef void * KPixCanvas;
+#ifdef OS_VXMVX
+#  include <karma_vc.h>
 #endif
 
-#ifndef KPIXCANVASIMAGECACHE_DEFINED
-#define KPIXCANVASIMAGECACHE_DEFINED
-typedef void * KPixCanvasImageCache;
+#ifndef KARMA_C_DEF_H
+#  include <karma_c_def.h>
 #endif
+
+
+#define KWIN_VISUAL_PSEUDOCOLOUR (unsigned int) 0
+#define KWIN_VISUAL_DIRECTCOLOUR (unsigned int) 1
+#define KWIN_VISUAL_TRUECOLOUR   (unsigned int) 2
+#define KWIN_VISUAL_GRAYSCALE    (unsigned int) 3
+#define KWIN_VISUAL_STATICCOLOUR (unsigned int) 4
+#define KWIN_VISUAL_STATICGRAY   (unsigned int) 5
+
+#define KWIN_ATT_END     0  /*  End of varargs list                       */
+#define KWIN_ATT_VISUAL  1  /*  G:(unsigned int *)                        */
+#define KWIN_ATT_DEPTH   2  /*  G:(unsigned int *)                        */
+#define KWIN_ATT_VISIBLE 3  /*  G:(flag *)            S:(flag)            */
+#define KWIN_ATT_FONT    4  /*  G:(KPixCanvasFont *)  S:(KPixCanvasFont)  */
+
+#define KWIN_STRING_END       0  /*  End of varargs list                     */
+#define KWIN_STRING_WIDTH     1  /*  (int *)                                 */
+#define KWIN_STRING_HEIGHT    2  /*  (int *)                                 */
+#define KWIN_STRING_ASCENT    3  /*  (int *)                                 */
+#define KWIN_STRING_DESCENT   4  /*  (int *)                                 */
+
+
+
+typedef struct pixcanvas_type * KPixCanvas;
+typedef struct cache_data_type * KPixCanvasImageCache;
+typedef struct pixfont_type * KPixCanvasFont;
 
 
 /*  File:   kwin.c   */
@@ -72,21 +100,25 @@ EXTERN_FUNCTION (KPixCanvas kwin_create_x, (Display *display, Window window,
 					    int xoff, int yoff,
 					    int width, int height) );
 EXTERN_FUNCTION (void kwin_set_gc_x, (KPixCanvas canvas, GC gc) );
+EXTERN_FUNCTION (GC kwin_get_gc_x, (KPixCanvas canvas) );
 #  endif  /*  X11  */
 
 /*  VX specific routines  */
-#  ifdef ARCH_VXMVX
+#  ifdef OS_VXMVX
 EXTERN_FUNCTION (KPixCanvas kwin_create_vx,
-		 (flag pseudo_colour, int xoff, int yoff,
-		  int width, int height) );
-#  endif  /*  ARCH_VXMVX  */
+		 (unsigned int visual, flag right_buf, int xoff, int yoff,
+		  int width, int height, unsigned long background) );
+#  endif  /*  OS_VXMVX  */
 
 #endif  /*  !KWIN_GENERIC_ONLY  */
 
 /*  Generic routines  */
-EXTERN_FUNCTION (void kwin_register_refresh_func,
+EXTERN_FUNCTION (KPixCanvas kwin_create_child,
+		 (KPixCanvas parent, int xoff, int yoff, int width, int height,
+		  flag absorb_events) );
+EXTERN_FUNCTION (KCallbackFunc kwin_register_refresh_func,
 		 (KPixCanvas canvas, void (*refresh_func) (), void *info) );
-EXTERN_FUNCTION (void kwin_register_position_event_func,
+EXTERN_FUNCTION (KCallbackFunc kwin_register_position_event_func,
 		 (KPixCanvas canvas, flag (*position_func) (), void *f_info) );
 EXTERN_FUNCTION (flag kwin_resize, (KPixCanvas canvas, flag clear,
 				    int xoff, int yoff,
@@ -95,8 +127,17 @@ EXTERN_FUNCTION (flag kwin_process_position_event, (KPixCanvas canvas,
 						    int x, int y, flag clip,
 						    unsigned int event_code,
 						    void *event_info) );
+EXTERN_FUNCTION (flag kwin_write_ps, (KPixCanvas canvas,
+				      PostScriptPage pspage) );
+#ifndef KWIN_INTERNAL
+EXTERN_FUNCTION (void kwin_get_attributes, (KPixCanvas canvas, ...) );
+EXTERN_FUNCTION (void kwin_set_attributes, (KPixCanvas canvas, ...) );
+#endif
+
 
 /*  Drawing routines  */
+EXTERN_FUNCTION (void kwin_clear,
+		 (KPixCanvas canvas, int x, int y, int width, int height) );
 EXTERN_FUNCTION (flag kwin_draw_image, (KPixCanvas canvas,
 					array_desc *arr_desc, char *slice,
 					unsigned int hdim, unsigned int vdim,
@@ -105,6 +146,15 @@ EXTERN_FUNCTION (flag kwin_draw_image, (KPixCanvas canvas,
 					unsigned long *pixel_values,
 					struct win_scale_type *win_scale,
 					KPixCanvasImageCache *cache_ptr) );
+EXTERN_FUNCTION (flag kwin_draw_rgb_image,
+		 (KPixCanvas canvas, int x_off, int y_off,
+		  int x_pixels, int y_pixels,
+		  CONST unsigned char *red_slice,
+		  CONST unsigned char *green_slice,
+		  CONST unsigned char *blue_slice,
+		  CONST uaddr *hoffsets, CONST uaddr *voffset,
+		  unsigned int width, unsigned int height,
+		  KPixCanvasImageCache *cache_ptr) );
 EXTERN_FUNCTION (flag kwin_draw_cached_image, (KPixCanvasImageCache cache,
 					       int x_off, int y_off) );
 EXTERN_FUNCTION (void kwin_draw_point, (KPixCanvas canvas,
@@ -131,6 +181,24 @@ EXTERN_FUNCTION (void kwin_draw_rectangle, (KPixCanvas canvas, int x, int y,
 EXTERN_FUNCTION (void kwin_fill_rectangle, (KPixCanvas canvas, int x, int y,
 					    int width, int height,
 					    unsigned long pixel_value) );
+EXTERN_FUNCTION (void kwin_draw_lines, (KPixCanvas canvas,
+					int *x_array, int *y_array,
+					int num_points,
+					unsigned long pixel_value) );
+EXTERN_FUNCTION (void kwin_draw_ellipse, (KPixCanvas canvas,
+					  int cx, int cy, int rx, int ry,
+					  unsigned long pixel_value) );
+EXTERN_FUNCTION (void kwin_draw_ellipses, (KPixCanvas canvas, int *cx, int *cy,
+					   int *rx, int *ry, int num_ellipses,
+					   unsigned long pixel_value) );
+EXTERN_FUNCTION (void kwin_fill_ellipses, (KPixCanvas canvas, int *cx, int *cy,
+					   int *rx, int *ry, int num_ellipses,
+					   unsigned long pixel_value) );
+EXTERN_FUNCTION (void kwin_draw_segments, (KPixCanvas canvas,
+					   int *x0, int *y0, int *x1, int *y1,
+					   int num_segments,
+					   unsigned long pixel_value) );
+
 
 /*  Other routines  */
 EXTERN_FUNCTION (void kwin_get_size, (KPixCanvas canvas, int *width,
@@ -142,6 +210,12 @@ EXTERN_FUNCTION (flag kwin_convert_to_canvas_coord, (KPixCanvas canvas,
 EXTERN_FUNCTION (flag kwin_convert_from_canvas_coord, (KPixCanvas canvas,
 						       int xin, int yin,
 						       int *xout, int *yout) );
+EXTERN_FUNCTION (flag kwin_get_colour,
+		 (KPixCanvas canvas, char *colourname,
+		  unsigned long *pixel_value, unsigned short *red,
+		  unsigned short *green, unsigned short *blue) );
+EXTERN_FUNCTION (KPixCanvasFont kwin_load_font,
+		 (KPixCanvas canvas, char *fontname) );
 
 
 #endif /*  KARMA_KWIN_H  */

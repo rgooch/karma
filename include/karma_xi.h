@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   21-SEP-1992
 
-    Last updated by Richard Gooch   8-OCT-1992
+    Last updated by Richard Gooch   29-NOV-1993
 
 */
 
@@ -39,13 +39,10 @@
 #define KARMA_XI_H
 
 
-#ifndef EXTERN_FUNCTION
-#  include <c_varieties.h>
-#endif
-#include <X11/Xlib.h>
 #ifndef KARMA_H
 #  include <karma.h>
 #endif
+#include <X11/Xlib.h>
 
 /*  File:   xi.c   */
 EXTERN_FUNCTION (flag xi_check_shared_images_available, (Display *display) );

@@ -1,0 +1,15 @@
+/*  Routines to write raw images  */
+/*  This file describes the imw_ package of routines in the Karma library.
+
+    These routines provide a means to convert from image data to raw images
+    suitable for low level graphics display. Although these routines are made
+    public, their use is NOT recommended. The viewimg_ package is the suggested
+    means to manage image display.
+
+
+    Written by		Richard Gooch	<<DATE>>
+
+    Last updated by	Richard Gooch	<<DATE>>
+
+
+*/

@@ -1,0 +1,4 @@
+c_register_callback
+c_unregister_callback
+c_call_callbacks
+c_destroy_list

@@ -1,0 +1,9 @@
+vc_get_dpy_handle
+vc_alloc_colours
+vc_free_colours
+vc_store_colours
+vc_store_colours_24bit
+vc_get_location
+vc_set_visual
+vc_set_visualtype
+vc_get_visualtype

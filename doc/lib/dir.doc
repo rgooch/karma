@@ -6,19 +6,18 @@
     scanning directories and automatically obtaining file status information.
 
 
-    Written by		Richard Gooch	2-JUN-1993
+    Written by		Richard Gooch	13-Dec-1994
 
-    Last updated by	Richard Gooch	2-JUN-1993
+    Last updated by	Richard Gooch	13-Dec-1994
 
 
 */
 
-KDir dir_open (dirname)
+KDir dir_open (CONST char *dirname)
 /*  This routine will open a directory for reading (scanning).
     The directory name must be pointed to by  dirname  .
     The routine routines returns a KDir object on success, else it returns NULL
 */
-char *dirname;
 /*---------------------------------------------------------------------------*/
 
 KFileInfo *dir_read (dir, skip_control)

@@ -1,0 +1,13 @@
+/*  Routines to produce message digests (secure hash functions)  */
+/*  This file describes the md_ package of routines in the Karma library.
+
+    These routines are meant to provide message digests (secure hash functions)
+    These have application in message authentication/verification.
+
+
+    Written by		Richard Gooch	<<DATE>>
+
+    Last updated by	Richard Gooch	<<DATE>>
+
+
+*/

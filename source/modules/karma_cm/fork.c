@@ -2,7 +2,7 @@
 
     Execute file for Connection Management tool and shell.
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1992,1993,1994  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,44 +31,36 @@
 
     Updated by      Richard Gooch   25-DEC-1992
 
-    Updated by      Richard Gooch   29-DEC-1992: Added special device support
-  (eg. VX/MVX).
+    Updated by      Richard Gooch   15-APR-1994: Added support for passing of
+  arguments to modules.
 
-    Updated by      Richard Gooch   1-JAN-1993: Changed  rean_line  to use
-  chs_get_line  instead of  ch_gets  .
+    Last updated by Richard Gooch   10-OCT-1994: Added prototype declaration
+  for  fork_cm_client_module  routine.
 
-    Updated by      Richard Gooch   1-APR-1993: Changed to execution of script
-  when running slave and added option to specify KARMABASE for hosts.
-
-    Updated by      Richard Gooch   4-APR-1993: Took account of change to
-  conn_register_server_protocol  .
-
-    Updated by      Richard Gooch   4-JUL-1993: Added shell escape commands.
-
-    Updated by      Richard Gooch   24-JUL-1993: Changed to  ch_open_file  .
-
-    Updated by      Richard Gooch   23-AUG-1993: Added more diagnostics to
-  startup_modules  .
-
-    Updated by      Richard Gooch   7-SEP-1993: Added test for modules loss
-  prior to starting up connections.
-
-    Last updated by Richard Gooch   27-SEP-1993: Added quiescent notification
-  to modules.
-
-
-    Usage:   cm_shell path
 
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <karma.h>
+#include <karma_ex.h>
 #include <karma_r.h>
+
+#define MAX_ARGS 1024
+
+
+/*  Private data  */
+static char *argv[MAX_ARGS];
 
 
 /*  Local functions  */
+EXTERN_FUNCTION (int fork_cm_client_module,
+		 (char *module_name, unsigned long cm_host_addr,
+		  unsigned int cm_port, int x, int y, char *args) );
 
-void execute_new_module (module_name, cm_host_addr, cm_port, x, y)
+
+static void execute_new_module (module_name, cm_host_addr, cm_port, x, y, args)
 /*  This routine will replace the current process program with another
     executable such that the new process will connect to the Connection
     Management Tool.
@@ -78,6 +70,8 @@ void execute_new_module (module_name, cm_host_addr, cm_port, x, y)
     The Karma port number to connect to must be given by  cm_port  .
     The window co-ordinates of the icon for the Connection Management Tool must
     be given by  x  and  y  .
+    The optional arguments to pass to the new process must be pointed to by
+    args  .If this is NULL, no arguments are passed.
     The routine returns only on failure.
 */
 char *module_name;
@@ -85,9 +79,12 @@ unsigned long cm_host_addr;
 unsigned int cm_port;
 int x;
 int y;
+char *args;
 {
+    unsigned int count;
     char env_name[STRING_LENGTH];
     char env_value[STRING_LENGTH];
+    extern char *argv[MAX_ARGS];
     ERRNO_TYPE errno;
     extern char *sys_errlist[];
 
@@ -99,14 +96,31 @@ int y;
 	(void) fprintf (stderr, "Error expanding environment\n");
 	return;
     }
-    (void) execlp (module_name, module_name, NULL);
+    if ( (args == NULL) || (args[0] == '\0') )
+    {
+	(void) execlp (module_name, module_name, NULL);
+	/*  Failure  */
+	(void) fprintf (stderr, "Error executing image: \"%s\"\t%s\n",
+			module_name, sys_errlist[errno]);
+	return;
+    }
+    /*  Split up arguments  */
+    argv[0] = module_name;
+    for (count = 1; ( argv[count] = ex_str (args, &args) ) != NULL; ++count)
+    {
+	if (count > MAX_ARGS)
+	{
+	    (void) fprintf (stderr, "Too many arguments\n");
+	    return;
+	}
+    }
+    (void) execvp (module_name, argv);
     /*  Failure  */
     (void) fprintf (stderr, "Error executing image: \"%s\"\t%s\n",
 		    module_name, sys_errlist[errno]);
-    return;
 }   /*  End Function execute_new_module  */
 
-int fork_cm_client_module (module_name, cm_host_addr, cm_port, x, y)
+int fork_cm_client_module (module_name, cm_host_addr, cm_port, x, y, args)
 /*  This routine will fork a process and run another executable such that the
     new process will connect to the Connection Management Tool.
     The name of the module to run must be pointed to by  module_name  .
@@ -115,6 +129,8 @@ int fork_cm_client_module (module_name, cm_host_addr, cm_port, x, y)
     The Karma port number to connect to must be given by  cm_port  .
     The window co-ordinates of the icon for the Connection Management Tool must
     be given by  x  and  y  .
+    The optional arguments to pass to the new process must be pointed to by
+    args  .If this is NULL, no arguments are passed.
     The routine returns the process ID of the child on success,
     else it returns -1.
 */
@@ -123,6 +139,7 @@ unsigned long cm_host_addr;
 unsigned int cm_port;
 int x;
 int y;
+char *args;
 {
     int child_pid;
     ERRNO_TYPE errno;
@@ -132,7 +149,7 @@ int y;
     {
       case 0:
 	/*  Child  */
-	execute_new_module (module_name, cm_host_addr, cm_port, x, y);
+	execute_new_module (module_name, cm_host_addr, cm_port, x, y, args);
 	/*  Error  */
 	exit (RV_UNDEF_ERROR);
 	break;

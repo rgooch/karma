@@ -1,0 +1,84 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the c_ package of routines in the Karma library.
+
+    These routines are meant to provide a general purpose callback management
+    framework. Library packages and applications may use this package to
+    implement their own callback mechanisms. This package removes the need for
+    external code to maintain and traverse callback lists.
+
+
+    Written by		Richard Gooch	30-Nov-1994
+
+    Last updated by	Richard Gooch	30-Nov-1994
+
+
+*/
+
+KCallbackFunc c_register_callback (KCallbackList *list, flag (*callback) (),
+				   void *object,
+				   void *client1_data, flag client1_indirect,
+				   void *client2_data, flag client2_indirect,
+				   flag quenchable)
+/*  This routine will register a function which should be called when the
+    callbacks for an object should be called. When the object is destroyed a
+    call should be made to  c_destroy_list  .The first callback registered is
+    the first one called.
+    The callback list must be pointed to by  list  .The value pointed to by
+    list is changed. The initial value must be NULL.
+    The function to be called when the object callbacks are called must be
+    pointed to  by  callback  .
+    The interface to this function is given below:
+
+    flag callback (void *object, void *client1_data, void *call_data,
+                   void *client2_data)
+    *   This routine is called when object callbacks are called.
+        The object information pointer will be given by  object  .
+	The first client information pointer will be given by  client1_data  .
+	The call information pointer will be given by  call_data  .
+	The second client information pointer will be given by  client2_data  .
+	The routine returns TRUE if further callbacks should not be called.
+    *
+
+    Multiple callback functions may be registered per object.
+
+    The object pointer passed to the callback must be given by  object  .This
+    may be NULL.
+    The first client information passed to the callback must be pointed to
+    by  client1_data  .This may be NULL.
+    If the value of  client1_indirect  is TRUE the callback is passed a pointer
+    to the storage containing  client1_data  ,else  client1_data  is passed
+    directly to the callback.
+    The second client information passed to the callback must be pointed to
+    by  client2_data  .This may be NULL.
+    If the value of  client2_indirect  is TRUE the callback is passed a pointer
+    to the storage containing  client2_data  ,else  client2_data  is passed
+    directly to the callback.
+    If the value of  quenchable  is TRUE then the routine is permitted to
+    quench calls to the following callbacks in the list.
+    The routine returns a KCallbackFunc. On failure, the process aborts.
+*/
+/*---------------------------------------------------------------------------*/
+
+void c_unregister_callback (KCallbackFunc callback)
+/*  This routine will unregister a callback function.
+    The callback must be given by  callback  .
+    The routine returns nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag c_call_callbacks (KCallbackList list, void *call_data)
+/*  This routine will call all registered callbacks for an object.
+    The callback list must be given by  list  .
+    The arbitrary call information pointer must be given by  call_data  .
+    The routine returns TRUE if one of the callbacks quenched the further
+    delivery of callbacks, else it returns FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+void c_destroy_list (KCallbackList list)
+/*  This routine will unregister all callbacks for an object and then destroys
+    the callback list.
+    The callback list must be given by  list  .
+    The routine returns nothing.
+*/
+/*---------------------------------------------------------------------------*/

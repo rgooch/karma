@@ -1,0 +1,91 @@
+		Things I'm planning on putting into Karma
+		=========================================
+
+-------------------------------------------------------------------------------
+3-OCT-1992
+
+Add support for linear interpolation when zooming images.
+-------------------------------------------------------------------------------
+5-OCT-1992
+
+PostScript driver package. I want a package which will (at least)
+convert a 2-dimensional image (Monochrome, Greyscale, PseudoColour and
+TrueColour) into encapsulated PostScript. Maybe later I'll add the
+drawing of axes and graphics overlays as well.
+-------------------------------------------------------------------------------
+7-JAN-1993
+
+Volume rendering support package. The idea of this package is to tidy
+up the existing volume rendering tools I have written. I have already
+separated the ray casting (ray projection) from the ray processing
+(shaders) in my applications. I'd like to write a library package that
+performs the ray casting in a general way. You should be able to slot
+in different projection algorithms as well as different shaders,
+something akin to the way I allow different colourmap functions to be
+slotted into the  kcmap_  package.
+-------------------------------------------------------------------------------
+2-JUL-1993
+
+Axes display package. The current  ax_  package is built right onto X,
+and dates back some years, and is not at all compatible with the Karma
+graphics library.
+The new axes package will be integrated into the world canvas package
+(canvas_). The drawing of axes should just be automatic, easily turned
+on and off with a flag.
+-------------------------------------------------------------------------------
+21-AUG-1993
+
+Virtual Canvas package. It would be nice to be able to draw all kinds
+of things onto a canvas (with a world co-ordinate system, of course),
+such as images and various geometric figures, and simply pan and zoom
+this canvas. The virtual canvas would remember everything that was
+drawn onto it (hm: what about removing stuff?), and when a pan or zoom
+was requested, it would redraw the screen. Naturally, this would build
+onto the existing image display support in the Karma graphics library.
+However, I suspect that this will be *hard* to do properly. Is it
+worth it? Is the exising system good enough?
+-------------------------------------------------------------------------------
+20-NOV-1993
+
+Graphics Overlay package. This will work in a similar fashion to the
+iedit_  package (ie. lists of overlay instructions, adding
+instructions to lists, callback functions, network integration, etc).
+However, graphics overlays are not intended to modify data, they are
+intended to be drawn over images and  iedit_  instructions. They will
+be useful for putting annotations onto images, as well as being able
+to draw, say, contours over an image from a remote module.
+-------------------------------------------------------------------------------
+20-NOV-1993
+
+Put start and stop frame sliders on the animation control for the
+kmovie  module. Also a current frame number display and number of
+frames display (or perhaps start and stop sliders will give this
+anyway).
+-------------------------------------------------------------------------------
+3-DEC-1993
+
+Put in support for image zooming in the  drw_  package (or in a new
+generic package) using linear interpolation, smoothing kernels,
+smoothing functions, etc. Don't want to be limited to just pixel
+replication. Need some flexible way to specify smoothing operators so
+applications programmers can experiment.
+-------------------------------------------------------------------------------
+9-DEC-1993
+
+Move  iedit_  package over to a token passing system. This should
+prevent deadlocks (such as when slave sends to master, master sends
+first instruction back to slave, slave keeps sending and fills OS
+buffers of master (which is no longer receiving), slave hangs).
+-------------------------------------------------------------------------------
+11-DEC-1993
+
+Add support for encrypted communications over channels. Key management
+will probably be done by the  conn_  package. Have options for
+checking netmask, so as to optionally encrypt over a LAN (default is
+not to encrypt over a LAN, only encrypt when going off-site).
+-------------------------------------------------------------------------------
+7-JUL-1994
+
+Fixed routines in  conn_  package which transmit lower 32 bits of
+connection pointer to CM tool. Not quite correct for 64 bit machines.
+Should generate a proper ID.

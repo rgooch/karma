@@ -1,0 +1,2 @@
+/*  Routines to manipulate simple, n-dimensional data structures  */
+/*  Link with:    -lkarma  */

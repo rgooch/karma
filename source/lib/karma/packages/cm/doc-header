@@ -1,0 +1,16 @@
+/*  Routines to manage child processes  */
+/*  This file describes the cm_ package of routines in the Karma library.
+
+    These routines are meant to provide a generic and simple to use child
+    process management facility.
+    A similar set of routines: notify_cm_ provide identical functionality
+    (with the exception of the polling routine), except that they rely on the
+    XView notifier.
+
+
+    Written by		Richard Gooch	<<DATE>>
+
+    Last updated by	Richard Gooch	<<DATE>>
+
+
+*/

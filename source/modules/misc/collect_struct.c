@@ -2,7 +2,7 @@
 
     Source file for  collect_struct  (data structure collection module).
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1993,1994  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -39,8 +39,10 @@
     Updated by      Richard Gooch   24-MAY-1993: Changed from  CAN_FORK  to
   HAS_GETRUSAGE  .
 
-    Last updated by Richard Gooch   6-OCT-1993: Changed over to  panel_
+    Updated by      Richard Gooch   6-OCT-1993: Changed over to  panel_
   package for command line user interface.
+
+    Last updated by Richard Gooch   22-MAY-1994: Fixed bug in  flush_data  .
 
 
 */
@@ -302,7 +304,7 @@ void **info;
 static char *dump_arrays (p)
 /*  This routine will dump the accumulated arrays.
     The parameter  p  must point to the name of the arrayfile to create.
-    The remainder of  p  is returned to ez_decode.
+    The remainder of  p  is returned.
 */
 char *p;
 {
@@ -348,7 +350,7 @@ char *p;
 
 static char *flush_data (p)
 /*  This routine will flush the accumulated arrays.
-    The remainder of  p  is returned to ez_decode.
+    The remainder of  p  is returned.
 */
 char *p;
 {
@@ -363,7 +365,7 @@ char *p;
 	(void) fprintf (stderr, "No arrays accumulated yet\n");
 	return (NULL);
     }
-    for (array_count = 0; array_count < 0; ++array_count)
+    for (array_count = 0; array_count < array_num; ++array_count)
     {
 	ds_dealloc_packet (top_pack_desc[array_count],top_packet[array_count]);
     }

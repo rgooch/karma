@@ -1,0 +1,37 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the pgp_ package of routines in the Karma library.
+
+    These routines are meant to provide a simple interface to PGP.
+
+
+    Written by		Richard Gooch	24-Jan-1995
+
+    Last updated by	Richard Gooch	24-Jan-1995
+
+
+*/
+
+char *pgp_decrypt (CONST char *ciphertext, unsigned int ciphertext_length,
+		   unsigned int *plaintext_length)
+/*  [PURPOSE] Decrypt a block of data using PGP and PGPdaemon.
+    <ciphertext> The input ciphertext data.
+    <ciphertext_length> The length of the input ciphertext data.
+    <plaintext_length> The length of the decrypted data is written here.
+    [RETURNS] A pointer to the plaintext data on success, else NULL.
+*/
+/*---------------------------------------------------------------------------*/
+
+char *pgp_encrypt (CONST char *plaintext, unsigned int plaintext_length,
+		   CONST char **recipients, unsigned int num_recipients,
+		   unsigned int *ciphertext_length, flag ascii_armour)
+/*  [PURPOSE] Encrypt a block of data using PGP.
+    <plaintext> The input plaintext data.
+    <plaintext_length> The length of the input plaintext data.
+    <recipients> The list of recipients to encrypt for.
+    <num_recipients> The number of recipients in the recipient list.
+    <ciphertext_length> The length of the encrypted data is written here.
+    <ascii_armour> If TRUE, the ciphertext is ASCII armoured, suitable for
+    transmitting through Email.
+    [RETURNS] A pointer to the ciphertext data on success, else NULL.
+*/
+/*---------------------------------------------------------------------------*/

@@ -9,9 +9,9 @@
     portable.
 
 
-    Written by		Richard Gooch	17-APR-1993
+    Written by		Richard Gooch	24-Jan-1995
 
-    Last updated by	Richard Gooch	17-APR-1993
+    Last updated by	Richard Gooch	24-Jan-1995
 
 
 */
@@ -19,7 +19,7 @@
 KPixCanvas kwin_create_x (display, window, gc, xoff, yoff, width, height)
 /*  This routine will create a pixel canvas, ready for drawing, from an X
     window. Note that the origin of a KPixCanvas is the upper-left corner.
-    NOTE: this routine is only available with X windows.
+    NOTE: this routine is only available with the X window system.
     The X display must be pointed to by  display  .
     The window ID of must be given by  window  .
     The graphics context must be given by  gc  .
@@ -44,7 +44,7 @@ void kwin_set_gc_x (canvas, gc)
 /*  This routine will register a new Graphics Context to be used when drawing
     into the pixel canvas. Subsequent drawing operations will use the new
     Graphics Context.
-    NOTE: this routine is only available with X windows.
+    NOTE: this routine is only available with the X window system.
     The canvas must be given by  canvas  .
     The Graphics Context must be given by  gc  .
     The routine returns nothing.
@@ -53,30 +53,87 @@ KPixCanvas canvas;
 GC gc;
 /*---------------------------------------------------------------------------*/
 
-KPixCanvas kwin_create_vx (pseudo_colour, xoff, yoff, width, height)
+GC kwin_get_gc_x (canvas)
+/*  This routine will get the Graphics Context used when drawing into the
+    pixel canvas. If the Graphics Context is modified, it should be registered
+    prior to drawing on the canvas by calling  kwin_set_gc_x  .
+    NOTE: this routine is only available with the X window system.
+    The canvas must be given by  canvas  .
+    The routine returns the Graphics Context.
+*/
+KPixCanvas canvas;
+/*---------------------------------------------------------------------------*/
+
+KPixCanvas kwin_create_vx (visual, right_buf, xoff, yoff, width, height,
+			   background)
 /*  This routine will create a pixel canvas, ready for drawing, on a VX screen.
     Note that the origin of a KPixCanvas is the upper-left corner.
     NOTE: this routine is only available when running on a VX.
-    If the value of  pseudo_colour  is TRUE, then the canvas is an 8 bit
-    PseudoColour canvas, else it is a 24 bit DirectColour canvas.
+    The visual type for the canvas must be given by  visual  .Legal values are:
+        VC_VX_VISUAL_PSEUDOCOLOUR0    8  bits deep (alpha channel)
+        VC_VX_VISUAL_PSEUDOCOLOUR1    8  bits deep (blue channel)
+        VC_VX_VISUAL_PSEUDOCOLOUR2    8  bits deep (green channel)
+        VC_VX_VISUAL_PSEUDOCOLOUR3    8  bits deep (red channel)
+        VC_VX_VISUAL_DIRECTCOLOUR     24 bits deep
+    Note that PseudoColour channels 1, 2 and 3 occupy the same area of screen
+    memory as the DirectColour channel. When drawing to a PseudoColour canvas,
+    the upper 24 bits are discarded. When drawing to a DirectColour canvas,
+    the upper 8 bits are discarded, also, bits 0-7, 8-15 and 16-23 contain the
+    red, green and blue components, respectively.
     NOTE: when drawing onto the canvas, changes will not be visible unless
     vc_set_visual  has been called with the appropriate parameters.
+    If the VX display is operating in stereo mode, the canvas will be mapped to
+    the right-eye frame buffer if  right_buf  is TRUE.
     The horizontal offset of the canvas origin (upper-left corner) relative to
     the parent window must be given by  xoff  .
     The vertical offset of the canvas origin (upper-left corner) relative to
     the parent window must be given by  yoff  .
     The width (vertical extent) of the canvas must be given by  width  .
     The height (horizontal extent) of the canvas must be given by  height  .
+    The background colour must be given by  background  .
     The routine returns a pixel canvas on success, else it returns NULL.
 */
-flag pseudo_colour;
+unsigned int visual;
+flag right_buf;
 int xoff;
 int yoff;
 int width;
 int height;
+unsigned long background;
 /*---------------------------------------------------------------------------*/
 
-void kwin_register_refresh_func (canvas, refresh_func, info)
+KPixCanvas kwin_create_child (parent, xoff, yoff, width, height, absorb_events)
+/*  This routine will create a pixel canvas, ready for drawing, within an
+    existing pixel canvas. The new pixel canvas is a child of the parent pixel
+    canvas. The child *does not* receive refresh events from the parent, it
+    *does* receive position events from the parent, provided these events lie
+    within the child's boundaries. For X-based graphics, a copy of the
+    Graphics Context is made for the child.
+    Note that the origin of a KPixCanvas is the upper-left corner.
+    The parent pixel canvas must be given by  parent  .
+    The horizontal offset of the canvas origin (upper-left corner) relative to
+    the parent window must be given by  xoff  .
+    The vertical offset of the canvas origin (upper-left corner) relative to
+    the parent window must be given by  yoff  .
+    The width (vertical extent) of the canvas must be given by  width  .
+    The height (horizontal extent) of the canvas must be given by  height  .
+    If the value of  absorb_events  is TRUE, any events passed from the parent
+    canvas to the child canvas and consumed by the registered event functions
+    for the child canvas are consumed from the parent canvas. If the value of
+    absort_events  is FALSE, the child canvas does not consume events from the
+    parent. Note that the parent events are still *passed* to the child canvas.
+    The routine returns a pixel canvas on success, else it returns NULL.
+*/
+KPixCanvas parent;
+int xoff;
+int yoff;
+int width;
+int height;
+flag absorb_events;
+/*---------------------------------------------------------------------------*/
+
+KCallbackFunc kwin_register_refresh_func (KPixCanvas canvas,
+					  void (*refresh_func) (), void *info)
 /*  This routine will register a refresh function for a pixel canvas. The
     refresh function will be called whenever the contents of the canvas need to
     be redrawn. Many refresh functions may be registered per canvas. The first
@@ -86,28 +143,30 @@ void kwin_register_refresh_func (canvas, refresh_func, info)
     pointed to by  refresh_func  .
     The interface to this routine is as follows:
 
-    void refresh_func (canvas, width, height, info)
-    *   This routine will process a refresh event  for a pixel canvas.
+    void refresh_func (canvas, width, height, info, pspage)
+    *   This routine will process a refresh event for a pixel canvas.
         The canvas is given by  canvas  .
 	The width of the canvas in pixels is given by  width  .
 	The height of the canvas in pixels is given by  height  .
 	The arbitrary canvas information pointer is pointed to by  info  .
+	The PostScriptPage object will be given by  pspage  .If this is NULL,
+	the refresh is *not* destined for a PostScript page.
 	The routine returns nothing.
     *
     KPixCanvas canvas;
     int width;
     int height;
     void **info;
+    PostScriptPage pspage;
+    
 
     The initial arbitrary canvas information pointer must be given by  info  .
-    The routine returns nothing.
+    The routine returns a KCallbackFunc object.
 */
-KPixCanvas canvas;
-void (*refresh_func) ();
-void *info;
 /*---------------------------------------------------------------------------*/
 
-void kwin_register_position_event_func (canvas, position_func, f_info)
+KCallbackFunc kwin_register_position_event_func (KPixCanvas canvas,
+						 flag (*func) (), void *f_info)
 /*  This routine will register a position event function for a pixel canvas.
     The position event function will be called whenever a position event on the
     canvas has not been consumed. Many position event functions may be
@@ -115,10 +174,10 @@ void kwin_register_position_event_func (canvas, position_func, f_info)
     called upon a position event.
     The canvas must be given by  canvas  .
     The function that is called when a position event occurs must be pointed to
-    by  position_func  .
+    by  func  .
     The interface to this routine is as follows:
 
-    flag position_func (canvas, x, y, event_code, e_info, f_info)
+    flag func (canvas, x, y, event_code, e_info, f_info)
     *   This routine is a position event consumer for a pixel canvas.
         The canvas is given by  canvas  .
 	The horizontal position of the event, relative to the canvas origin,
@@ -139,11 +198,8 @@ void kwin_register_position_event_func (canvas, position_func, f_info)
     void **f_info;
 
     The initial arbitrary function information pointer must be given by  f_info
-    The routine returns nothing.
+    The routine returns a KCallbackFunc object.
 */
-KPixCanvas canvas;
-flag (*position_func) ();
-void *f_info;
 /*---------------------------------------------------------------------------*/
 
 flag kwin_resize (canvas, clear, xoff, yoff, width, height)
@@ -195,8 +251,60 @@ unsigned int event_code;
 void *event_info;
 /*---------------------------------------------------------------------------*/
 
-flag kwin_draw_image (canvas, arr_desc, slice, hdim, vdim, elem_index,
-		      num_pixels, pixel_values, win_scale, cache_ptr)
+flag kwin_write_ps (KPixCanvas canvas, PostScriptPage pspage)
+/*  This routine will refresh a pixel canvas, redirecting output to a
+    PostScriptPage object.
+    The pixel canvas must be given by  canvas  .
+    The PostScriptPage object must be given by  pspage  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+void kwin_get_attributes (canvas, va_alist)
+/*  This routine will get the attributes for a pixel canvas.
+    The pixel canvas must be given by  canvas  .
+    The list of parameter attribute-key attribute-value pairs must follow. See
+    the header file for details on defined attributes.
+    This list must be terminated with the value  KWIN_ATT_END  .
+    The routine returns nothing.
+*/
+KPixCanvas canvas;
+va_dcl
+/*---------------------------------------------------------------------------*/
+
+void kwin_set_attributes (canvas, va_alist)
+/*  This routine will set the attributes for a pixel canvas.
+    The pixel canvas must be given by  canvas  .
+    The list of parameter attribute-key attribute-value pairs must follow. See
+    the header file for details on defined attributes.
+    This list must be terminated with the value  KWIN_ATT_END  .
+    The routine returns nothing.
+*/
+KPixCanvas canvas;
+va_dcl
+/*---------------------------------------------------------------------------*/
+
+void kwin_clear (KPixCanvas canvas, int x, int y, int width, int height)
+/*  This routine will clear a rectangular portion of a pixel canvas.
+    The canvas must be given by  canvas  .
+    The horizontal offset of the rectangle must be given by  x  .
+    The vertical offset of the rectangle must be given by  y  .
+    The width of the rectangle must be given by  width  .If this is less than
+    0 the pixel canvas is cleared to its right edge.
+    The height of the rectangle must be given by  height  .If this is less than
+    0 the pixel canvas is cleared to its bottom edge.
+    NOTE: to clear the entire canvas, the following should be used:
+        kwin_clear (canvas, 0, 0, -1, -1);
+    The routine returns nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag kwin_draw_image (KPixCanvas canvas, array_desc *arr_desc, char *slice,
+		      unsigned int hdim, unsigned int vdim,
+		      unsigned int elem_index, unsigned int num_pixels,
+		      unsigned long *pixel_values,
+		      struct win_scale_type *win_scale,
+		      KPixCanvasImageCache *cache_ptr)
 /*  This routine will draw a 2-dimensional slice of a Karma array onto a pixel
     canvas. This slice may be tiled.
     The canvas must be given by  canvas  .
@@ -218,16 +326,44 @@ flag kwin_draw_image (canvas, arr_desc, slice, hdim, vdim, elem_index,
     memory segments could remain after the process exits.
     The routine returns TRUE on success, else it returns FALSE.
 */
-KPixCanvas canvas;
-array_desc *arr_desc;
-char *slice;
-unsigned int hdim;
-unsigned int vdim;
-unsigned int elem_index;
-unsigned int num_pixels;
-unsigned long *pixel_values;
-struct win_scale_type *win_scale;
-KPixCanvasImageCache *cache_ptr;
+/*---------------------------------------------------------------------------*/
+
+flag kwin_draw_rgb_image (KPixCanvas canvas, int x_off, int y_off,
+			  int x_pixels, int y_pixels,
+			  CONST unsigned char *red_slice,
+			  CONST unsigned char *green_slice,
+			  CONST unsigned char *blue_slice,
+			  CONST uaddr *hoffsets, CONST uaddr *voffsets,
+			  unsigned int width, unsigned int height,
+			  KPixCanvasImageCache *cache_ptr)
+/*  This routine will draw a 2-dimensional slice of a Karma array onto a pixel
+    canvas. This slice may be tiled. The slice is a RGB image.
+    The canvas must be given by  canvas  .
+    The horizontal offset, relative to the top-left corner of the canvas, must
+    be given by  x_off  .
+    The vertical offset, relative to the top-left corner of the canvas, must
+    be given by  y_off  .
+    The number of horizontal pixels to draw must be given by  x_pixels  .
+    The number of vertical pixels to draw must be given by  y_pixels  .
+    The start of the red slice data must be pointed to by  red_slice  .
+    The start of the green slice data must be pointed to by  green_slice  .
+    The start of the blue slice data must be pointed to by  blue_slice  .
+    NOTE: the 3 colour components must be of type  K_UBYTE  .
+    The array of horizontal byte offsets must be pointed to by  hoffsets  .
+    If this is NULL, the stride between successive horizontal values (in bytes)
+    must be given by  hstride  .
+    The array of vertical byte offsets must be pointed to by  voffsets  .
+    If this is NULL, the stride between successive vertical values (in bytes)
+    must be given by  vstride  .
+    The width of the input image (in values) must be given by  width  .
+    The height of the input image (in values) must be given by  height  .
+    The routine may produce cache data which will vastly increase the speed of
+    subsequent operations on this data. The routine will write a pointer to
+    this data to the storage pointed to by  cache_ptr  .Prior to process
+    exit, a call MUST be made to  kwin_free_cache_data  ,otherwise shared
+    memory segments could remain after the process exits.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
 /*---------------------------------------------------------------------------*/
 
 flag kwin_draw_cached_image (cache, x_off, y_off)
@@ -317,23 +453,19 @@ unsigned long pixel_value;
 flag convex;
 /*---------------------------------------------------------------------------*/
 
-void kwin_draw_string (canvas, x, y, string, pixel_value, clear_under)
-/*  This routine will draw a NULL terminated string onto a pixel canvas.
+void kwin_draw_string (KPixCanvas canvas, int x, int y, char *string,
+		       unsigned long pixel_value, flag clear_under)
+/*  This routine will draw a NULL terminated string onto a pixel canvas, using
+    the default font for the canvas.
     The canvas must be given by  canvas  .
     The horizontal offset of the point must be given by  x  .
     The vertical offset of the point must be given by  y  .
     The string must be pointed to by  string  .
     The pixel value to use must be given by  pixel_value  .
-    If the value of  clear_under  is TRUE, then the routine will both the
+    If the value of  clear_under  is TRUE, then the routine will draw both the
     foreground and background of the characters.
     The routine returns nothing.
 */
-KPixCanvas canvas;
-int x;
-int y;
-char *string;
-unsigned long pixel_value;
-flag clear_under;
 /*---------------------------------------------------------------------------*/
 
 void kwin_draw_rectangle (canvas, x, y, width, height, pixel_value)
@@ -369,6 +501,94 @@ int x;
 int y;
 int width;
 int height;
+unsigned long pixel_value;
+/*---------------------------------------------------------------------------*/
+
+void kwin_draw_lines (canvas, x_array, y_array, num_points, pixel_value)
+/*  This routine will draw multiple connected lines onto a pixel canvas.
+    The canvas must be given by  canvas  .
+    The horizontal co-ordinates of the points must be pointed to by  x_array  .
+    The vetical co-ordinates of the points must be pointed to by  y_array  .
+    The number of points must be given by  num_points  .The number of lines
+    draw is 1 less than this value.
+    The pixel value to use must be given by  pixel_value  .
+    The routine returns nothing.
+*/
+KPixCanvas canvas;
+int *x_array;
+int *y_array;
+int num_points;
+unsigned long pixel_value;
+/*---------------------------------------------------------------------------*/
+
+void kwin_draw_ellipse (canvas, cx, cy, rx, ry, pixel_value)
+/*  This routine will draw an ellipse onto a pixel canvas.
+    The canvas must be given by  canvas  .
+    The co-ordinates of the centre of the ellipse must be given by  cx  and  cy
+    The radii must be given by  rx  and  ry  .
+    The pixel value to use must be given by  pixel_value  .
+    The routine returns nothing.
+*/
+KPixCanvas canvas;
+int cx;
+int cy;
+int rx;
+int ry;
+unsigned long pixel_value;
+/*---------------------------------------------------------------------------*/
+
+void kwin_draw_ellipses (canvas, cx, cy, rx, ry, num_ellipses, pixel_value)
+/*  This routine will draw multiple ellipses onto a pixel canvas.
+    The canvas must be given by  canvas  .
+    The co-ordinates of the centres of the ellipses must be pointed to by  cx
+    and  cy  .
+    The radii must be pointed to by  rx  and  ry  .
+    The number of ellipses must be given by  num_ellipses  .
+    The pixel value to use must be given by  pixel_value  .
+    The routine returns nothing.
+*/
+KPixCanvas canvas;
+int *cx;
+int *cy;
+int *rx;
+int *ry;
+int num_ellipses;
+unsigned long pixel_value;
+/*---------------------------------------------------------------------------*/
+
+void kwin_fill_ellipses (canvas, cx, cy, rx, ry, num_ellipses, pixel_value)
+/*  This routine will draw multiple filled ellipses onto a pixel canvas.
+    The canvas must be given by  canvas  .
+    The co-ordinates of the centres of the ellipses must be pointed to by  cx
+    and  cy  .
+    The radii must be pointed to by  rx  and  ry  .
+    The number of ellipses must be given by  num_ellipses  .
+    The pixel value to use must be given by  pixel_value  .
+    The routine returns nothing.
+*/
+KPixCanvas canvas;
+int *cx;
+int *cy;
+int *rx;
+int *ry;
+int num_ellipses;
+unsigned long pixel_value;
+/*---------------------------------------------------------------------------*/
+
+void kwin_draw_segments (canvas, x0, y0, x1, y1, num_segments, pixel_value)
+/*  This routine will draw multiple disjoint lines onto a pixel canvas.
+    The canvas must be given by  canvas  .
+    The co-ordinates must be pointed to by  x0  ,  y0  ,  x1  and  y1  .
+    The number of lines must be given by  num_segments  .
+    The pixel value to use must be given by  pixel_value  .
+    The routine returns nothing.
+*/
+KPixCanvas canvas;
+int *x0;
+int *y0;
+int *x1;
+int *y1;
+int num_segments;
 unsigned long pixel_value;
 /*---------------------------------------------------------------------------*/
 
@@ -433,4 +653,57 @@ int xin;
 int yin;
 int *xout;
 int *yout;
+/*---------------------------------------------------------------------------*/
+
+flag kwin_get_colour (canvas, colourname, pixel_value, red, green, blue)
+/*  This routine will get (possibly allocating) a colourcell for a canvas.
+    The canvas must be given by  canvas  .
+    The name of the colour to get must be pointed to by  colourname  .
+    The pixel value will be written to the storage pointed to by  pixel_value
+    NOTE: the pixel value is valid ONLY for this canvas. ALSO: the pixel value
+    becomes invalid EVERY time the canvas is refreshed/ resized. If the canvas
+    is refreshed/ resized, this routine MUST be called again.
+    The red intensity in the hardware colourmap for the pixel will be written
+    to the storage pointed to by  red  .If this is NULL, nothing is written
+    here.
+    The green intensity in the hardware colourmap for the pixel will be written
+    to the storage pointed to by  green  .If this is NULL, nothing is written
+    here.
+    The blue intensity in the hardware colourmap for the pixel will be written
+    to the storage pointed to by  blue  .If this is NULL, nothing is written
+    here.
+    The routine returns TRUE if the colourcell was allocated,
+    else it returns FALSE.
+*/
+KPixCanvas canvas;
+char *colourname;
+unsigned long *pixel_value;
+unsigned short *red;
+unsigned short *green;
+unsigned short *blue;
+/*---------------------------------------------------------------------------*/
+
+KPixCanvasFont kwin_load_font (KPixCanvas canvas, char *fontname)
+/*  This routine will load a font which may be then used to draw text onto a
+    pixel canvas.
+    The handle to the display system must be specified by the pixel canvas
+    given by  canvas  .Note that the font is valid for all canvases associated
+    with the same display system (in X parlance, the same server).
+    The name of the font must be given by  fontname  .
+    The routine returns a pixel font on success, else it returns NULL.
+*/
+/*---------------------------------------------------------------------------*/
+
+void kwin_get_string_size (font, string, va_alist)
+/*  This routine will determine the size of a string.
+    The font must be given by  font  .
+    The string must be pointed to by  string  .
+    The list of parameter attribute-key attribute-value pairs must follow. See
+    the header file for details on defined attributes.
+    This list must be terminated with the value  KWIN_STRING_END  .
+    The routine returns nothing.
+*/
+KPixCanvasFont font;
+char *string;
+va_dcl
 /*---------------------------------------------------------------------------*/

@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   18-SEP-1993
 
-    Last updated by Richard Gooch   18-SEP-1993
+    Last updated by Richard Gooch   29-NOV-1993
 
 */
 
@@ -39,9 +39,6 @@
 #define KARMA_IMC_H
 
 
-#ifndef EXTERN_FUNCTION
-#  include <c_varieties.h>
-#endif
 #include <karma_ds.h>
 
 /*  File:   image_conv.c   */

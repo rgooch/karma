@@ -2,7 +2,7 @@
 
     Header for  panel_  package.
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1993,1994  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   1-OCT-1993
 
-    Last updated by Richard Gooch   19-OCT-1993
+    Last updated by Richard Gooch   26-AUG-1994
 
 */
 
@@ -39,31 +39,47 @@
 #define KARMA_PANEL_H
 
 
-#ifndef EXTERN_FUNCTION
-#  include <c_varieties.h>
+#ifndef FILE
+#  include <stdio.h>
 #endif
 
-#ifndef KPANEL_INTERNAL
-typedef void * KControlPanel;
+#ifndef KARMA_H
+#  include <karma.h>
 #endif
+
+#ifndef KARMA_DS_DEF_H
+#  include <karma_ds_def.h>
+#endif
+
+
+typedef struct controlpanel_type * KControlPanel;
+typedef struct panelitem_type * KPanelItem;
+
 
 /*  Panel item attribute definitions  */
-#define PIA_END 0                /*  End of varargs list  */
-#define PIA_NUM_CHOICE_STRINGS 31001
-#define PIA_CHOICE_STRINGS 31002
-#define PIA_ARRAY_LENGTH 31003
-#define PIA_ARRAY_MIN_LENGTH 31004
-#define PIA_ARRAY_MAX_LENGTH 31005
+#define PIA_END                0      /*  End of varargs list   */
+#define PIA_NUM_CHOICE_STRINGS 31001  /*  (unsigned int)        */
+#define PIA_CHOICE_STRINGS     31002  /*  (char **)             */
+#define PIA_ARRAY_LENGTH       31003  /*  (unsigned int *)      */
+#define PIA_ARRAY_MIN_LENGTH   31004  /*  (unsigned int)        */
+#define PIA_ARRAY_MAX_LENGTH   31005  /*  (unsigned int)        */
+#define PIA_CHOICE_COMMENTS    31006  /*  (char **)             */
+#define PIA_MIN_VALUE          31007  /*  (double)              */
+#define PIA_MAX_VALUE          31008  /*  (double)              */
 
 /*  Extra panel item type definitions  */
-#define PIT_FUNCTION 30000
-#define PIT_EXIT_FORM 30001
-#define PIT_FLAG 30002
-#define PIT_CHOICE_INDEX 30003
+#define PIT_FUNCTION     30000  /*  value_ptr: ( void (*) (char *) )  */
+#define PIT_EXIT_FORM    30001  /*  value_ptr: unused                 */
+#define PIT_FLAG         30002  /*  value_ptr: (flag *)               */
+#define PIT_CHOICE_INDEX 30003  /*  value_ptr: (unsigned int *)       */
+/*                                  required: PIA_NUM_CHOICE_STRINGS  */
+/*                                            PIA_CHOICE_STRINGS      */
+#define PIT_GROUP        30004  /*  value_ptr: KControlPanel          */
 
 
 /*  File:   panel.c   */
 EXTERN_FUNCTION (KControlPanel panel_create, (flag blank) );
+EXTERN_FUNCTION (KControlPanel panel_create_group, () );
 EXTERN_FUNCTION (void panel_push_onto_stack, (KControlPanel panel) );
 EXTERN_FUNCTION (void panel_pop_from_stack, () );
 EXTERN_FUNCTION (flag panel_process_command_with_stack,

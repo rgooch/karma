@@ -1,0 +1,17 @@
+/*  Routines to manipulate the general data structure  */
+/*  This file describes the ds_ package of routines in the Karma library.
+
+    These routines provide the base functionality for the recursive,
+    heirarchical data structure supported in Karma.
+    This package both defines the (transparent) data structure and the various
+    allocation, deallocation and manipulation routines.
+    Transfer of data structures to/ from disc/ connections is supplied by the
+    dsxfr_ routines.
+
+
+    Written by		Richard Gooch	<<DATE>>
+
+    Last updated by	Richard Gooch	<<DATE>>
+
+
+*/

@@ -9,16 +9,16 @@
     preferred means of transferring data structures.
 
 
-    Written by		Richard Gooch	1-OCT-1992
+    Written by		Richard Gooch	13-Dec-1994
 
-    Last updated by	Richard Gooch	1-OCT-1992
+    Last updated by	Richard Gooch	13-Dec-1994
 
 
 */
 
 void dsrw_write_multi (channel, multi_desc)
 /*  This routine will write a binary multi_array descriptor to the channel
-    object given by  channel  .All descriptors and data, as well has history
+    object given by  channel  .All descriptors and data, as well as history
     strings are written.
     The descriptor that will be sent to the channel object must be pointed to
     by  multi_desc  .

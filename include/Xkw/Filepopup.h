@@ -2,7 +2,11 @@
 /*----------------------------------------------------------------------*/
 /* This widget implements a file selector */
 /**/
-/* Resources:               Type:                Defaults:*/
+/*
+ Name		       Class		   RepType         Default Value
+ ----		       -----		   -------         -------------
+ autoPopdown           AutoPopdown         Boolean         False
+*/    
 /*----------------------------------------------------------------------*/
 
 #ifndef FILEPOPUP__H
@@ -14,8 +18,11 @@ typedef struct _FilepopupRec *FilepopupWidget;
 
 #define XtIsFilepopup(w) XtIsSubclass((w), filepopupWidgetClass)
 
+#define XkwNautoPopdown "autoPopdown"
 #define XkwNfileSelectCallback "fileSelectCallback"
 #define XkwNfilenameTester "filenameTester"
+
+#define XkwCAutoPopdown "AutoPopdown"
 
 /*----------------------------------------------------------------------*/
 /* Functions

@@ -1,0 +1,5 @@
+arln_read_float
+arln_read_int
+arln_read_flag
+arln_read_line
+arln_read_from_stdin

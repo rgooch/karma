@@ -1,7 +1,7 @@
-This file is intended as a "getting-started" guide to image display
-in Karma. It should be used in conjuction with the library reference
-documentation, which documents all the functions available for
-communicating.
+This file is intended as a "getting-started" guide to graphics and
+image display in Karma. It should be used in conjuction with the
+library reference documentation, which documents all the functions
+available for display manipulation.
 
 
 
@@ -45,9 +45,9 @@ support are listed below, grouped by layer.
 The starting point for image display support in Karma is based on
 direct conversion from 2-D array to image display. Any simple, 2-D
 array using the Karma data format may be easily displayed.
-This is provided by the  ds_  package.
+The data structure support is provided by the <ds_> package.
 
-X11 XImage structure manipulation support is provided by the  xi_
+X11 XImage structure manipulation support is provided by the <xi_>
 package. This package is not meant to be used by the application
 programmer: it provides support for higher levels in the Karma
 library. It is mentioned here only for reference.
@@ -56,16 +56,17 @@ library. It is mentioned here only for reference.
   Level 3
   =======
 
-X11 image display support is provided by the  drw_  package. This code
+X11 image display support is provided by the <drw_> package. This code
 is not meant to be used by the application programmer: it provides
 support for higher levels in the Karma library. It is mentioned here
-only for reference.
+only for reference. This package will be removed in Karma version 2.0.
+It is being superceeded by the <imw_> package.
 
 
   Level 4
   =======
 
-The lowest level display canvas is provided by the  kwin_  package. It
+The lowest level display canvas is provided by the <kwin_> package. It
 provides a pixel canvas class.
 Routines are provided to create a pixel canvas from an X window. Many
 pixel canvases may be created per X window (though typically only one)
@@ -92,11 +93,11 @@ window) may be "pushed" up into the pixel canvas, where they will be
 redistributed to application or library code which has registered an
 interest in these events.
 When the underlying window (ie. X window) needs to be redisplayed or
-has resized, the  kwin_resize  routine should be called. This will
+has resized, the <kwin_resize> routine should be called. This will
 send refresh/ resize events to higher levels in the image display
 system.
 Other events, such as cursor events on the X window are inserted using
-the  kwin_process_position_event  routine. The pixel canvas will
+the <kwin_process_position_event> routine. The pixel canvas will
 automatically forward these events to all routines previously
 registered to handle these events. The process stops when the event is
 consumed by a routine.
@@ -109,25 +110,26 @@ modest application.
   Level 5
   =======
 
-The support for dynamic colourmaps is provided by the  kcmap_
+The support for dynamic colourmaps is provided by the <kcmap_>
 package. This is another generic package, portable to non-X
 environments. It allows colourmaps to be resized, changed, dynamically
 shared across a network as well as reading and writing to disc. See
 the document on colourmaps for more details.
 
-Image editing support is based on the  iedit_  package. This allows
+Image editing support is based on the <iedit_> package. This allows
 2-D image edit instructions to be processed and shared among modules.
+See the image-edit guide for more details.
 
 
   Level 6
   =======
 
 The simplified Karma data structure interface is provided by the
-iarray_  package, which defines "Intelligent Arrays". Using this
+<iarray_> package, which defines "Intelligent Arrays". Using this
 package, it is trivial to create and fill 2-D arrays, prior to
-display.
+display. See the iarray guide for more details.
 
-The next level up in the image display system is the  canvas_
+The next level up in the image display system is the <canvas_>
 package. It defines a world canvas class. A world canvas is similar to
 a pixel canvas, however, drawing operations are specified in world
 co-ordinates, rather than pixel co-ordinates. For example, a pixel
@@ -136,16 +138,22 @@ simple unit canvas from (0.0, 0.0) to (1.0, 1.0).
 A world canvas is created from a pixel canvas.
 The origin of a world canvas is the bottom-left corner of the canvas.
 Note how this differs with the pixel canvas. The pixel canvas is a
-nearly a direct mapping onto the underlying graphics system. The world
-canvas is modelled on a standard cartesian co-ordinate system.
-If a different co-ordinate system is required, the
-canvas_register_convert_func  routine may be used to register
-co-ordinate conversion routines.
+nearly direct mapping onto the underlying graphics system. The world
+canvas is modelled on a standard cartesian co-ordinate system. A
+linear transformation is applied when converting between pixel and
+world co-ordinates. If a non-linear world co-ordinate system is
+required, the <canvas_register_transform_func> routine may be used to
+register co-ordinate conversion routines. Note, however, that when
+drawing into a world canvas, the co-ordinates (or offsets: radii)
+specified in the function call are transformed into pixel co-ordinates
+and a similarly shaped object is drawn into the underlying pixel
+canvas. Thus, an ellipse draw in a world canvas appears as an ellipse,
+irrespective of the co-ordinate transformation specified.
 The world canvas package also provides a drawing routine allowing one
-to draw an image. However, these routines are not intended for general
-use: they merely provide the interface for higher library packages.
-The  canvas_  package allows 2-D image edit instructions to be drawn
-onto a window, and interfaces directly onto the  iedit_  package. This
+to draw an image. However, this routine is not intended for general
+use: it merely provides the interface for higher library packages.
+The <canvas_> package allows 2-D image edit instructions to be drawn
+onto a window, and interfaces directly onto the <iedit_> package. This
 makes the process of drawing objects (ie. filled ellipses, polygons)
 in world co-ordinates a trivial task.
 
@@ -154,14 +162,14 @@ in world co-ordinates a trivial task.
   =======
 
 The most important package (as far as the application programmer is
-concerned) is the  viewimg_  package. This defines a viewable image
+concerned) is the <viewimg_> package. This defines a viewable image
 class. A viewable image may be created from a plane of an n-D Karma
 array, or from a 2-D Intelligent Array. A viewable image is associated
 with one world canvas. Each world canvas may have many viewable images
 associated with it. A viewable image contains a reference to the 2-D
 data array. It is this data array which is easily filled by the
 application programmer. All the mechanics of determining how to
-refresh, resize, zoom the image display are handled by the  viewimg_
+refresh, resize, zoom the image display are handled by the <viewimg_>
 package. This greatly simplfies the implementation of panning and
 zooming. Window refresh and resize events for viewable images are
 handled *entirely* inside the library, leaving the programmer free to
@@ -170,7 +178,8 @@ with a cumbersome event driven system. This does not preclude the
 registration of other routines to process events on the underlying
 world and pixel canvases. An example of where a world canvas would
 have a refresh/ resize routine registered is when graphic overlays on
-an image are desired.
+an image are desired (however, there is also library support for
+maintaining overlay lists to make this simpler too).
 The application programmer may update the data array at will,
 and, using a single call, update the window display with the new
 image. Just as simply, another call may be used to select which
@@ -181,21 +190,32 @@ any penalty for using the layers of image display support in Karma:
 frame rates of over 10 frames per second (512*512*8bit) on
 conventional SUN IPCs, without graphics accelerators, have been
 attained.
-The  viewimg_  package allows 2-D image edit instructions to be drawn
+The <viewimg_> package allows 2-D image edit instructions to be drawn
 onto a viewable image. This means that the original 2-D data array is
 modified and the viewable image is redisplayed. Thus writing a
 painting and image editing application becomes far simpler.
-These features interface directly onto the  iedit_  package. Because
-of this integration, the networking support built into the  iedit_
+These features interface directly onto the <iedit_> package. Because
+of this integration, the networking support built into the <iedit_>
 package allows one to easily implement a "shared whiteboard"
 application, a research topic in collaboration technology.
 
+Another important package is the <overlay_> package. This manages
+overlay lists (lists of geometric objects). Each overlay object is
+defined in world co-ordinates, and may be selectively moved or
+removed. Overlay lists may be shared between modules (using the
+"2D_overlay" connection protocol) and each overlay list may be
+associated with multiple world canvases. When the canvas is refreshed,
+any associated overlay lists will be automatically redrawn. By using
+the restriction specification mechanisms, a single overlay list can
+have objects which apply to all frames of a movie (when using the
+<viewimg_> package) or to a single frame. Hence, from frame to frame,
+a different set of overlay objects is automatically drawn.
 
 
 Tutorial:
 ---------
 
-A quite powerful image display tool is  kview_2d  .The power user is
+A quite powerful image display tool is <kview_2d>. The power user is
 urged to use this module and then read the source code to see how much
 functionality may be packed into so few lines of code, using the image
 display support in the Karma library.
@@ -209,6 +229,11 @@ A code extract is given below which shows how the image display system
 is initialised, and X refresh/ resize events are handled. See the
 documentation on "Intelligent Arrays" on how you would create and fill
 a 2-D iarray.
+If you are using the Xt toolkit, the creation, geometry management and
+event translation is all done within the CanvasWidget, hence the code
+below may not be relevant to you. The more powerful MultiCanvasWidget
+supports multiple visual types and the ImageDisplayWidget provides a
+very featureful and flexible user interface.
 
 
 /*----------------------------------------------------------*/
@@ -266,12 +291,15 @@ iarray array;
     pixcanvas = kwin_create_x (display, window, gc,
 			       0, 0, win_width, win_height);
     /*  Create the world canvas  */
+    /*  Initialise the  win_scale  structure  */
+    canvas_init_win_scale (&win_scale, K_WIN_SCALE_MAGIC_NUMBER);
     /*  Specify colour to use for out of bounds values  */
     win_scale.min_sat_pixel = BlackPixel (display, DefaultScreen (display));
     win_scale.max_sat_pixel = WhitePixel (display, DefaultScreen (display));
     win_scale.blank_pixel = BlackPixel (display, DefaultScreen (display));
     worldcanvas = canvas_create (pixcanvas, cmap, &win_scale);
     /*  Create the viewable image from the Intelligent Array  */
+    viewimg_init (image_worldcanvas);
     vimage = viewimg_create_from_iarray (worldcanvas, array, FALSE);
     /*  Make this viewable image active (or else we see nothing)  */
     viewimg_make_active (vimage);
@@ -319,7 +347,7 @@ value of the image data at that point) and dynamic colourmap control.
 #define DEFAULT_COLOURMAP_NAME "Greyscale1"
 #define MAX_COLOURS (unsigned int) 200
 
-flag track_canvas_event (/* canvas, x, y, event_code, e_info,f_info */);
+flag track_canvas_event (/* vimage, x, y, value, event_code, e_info,f_info */);
 flag unit_canvas_position_func (/* canvas, x, y, event_code, e_info,f_info */);
 
 void setup_window (dpy, window, gc, win_width, win_height, array)
@@ -359,10 +387,8 @@ iarray array;
     /*  Create the pixel canvas  */
     pixcanvas = kwin_create_x (display, window, gc, 0, 0,win_width,win_height);
     /*  Create the unit world canvas (for colourmap change events)  */
-    win_scale.x_min = 0.0;
-    win_scale.x_max = 1.0;
-    win_scale.y_min = 0.0;
-    win_scale.y_max = 1.0;
+    /*  Initialise the  win_scale  structure  */
+    canvas_init_win_scale (&win_scale, K_WIN_SCALE_MAGIC_NUMBER);
     unit_worldcanvas = canvas_create (image_pixcanvas, image_cmap, &win_scale);
     canvas_register_position_event_func (unit_worldcanvas,
 					 unit_canvas_position_func,
@@ -374,6 +400,7 @@ iarray array;
     win_scale.blank_pixel = BlackPixel (display, DefaultScreen (display));
     image_worldcanvas = canvas_create (pixcanvas, cmap, &win_scale);
     /*  Create the viewable image from the Intelligent Array  */
+    viewimg_init (image_worldcanvas);
     vimage = viewimg_create_from_iarray (worldcanvas, array, FALSE);
     viewimg_register_position_event_func (image_worldcanvas,
 					  track_canvas_event,
@@ -477,7 +504,7 @@ flag track_canvas_event (vimage, x, y, value, event_code, e_info,f_info)
     The arbitrary event code is given by  event_code  .
     The arbitrary event information is pointed to by  e_info  .
     The arbitrary function information pointer is pointed to by  f_info  .
-    The routine returns TRUE if the event was consumed, else it return
+    The routine returns TRUE if the event was consumed, else it returns
     FALSE indicating that the event is still to be processed.
 */
 ViewableImage vimage;
@@ -489,7 +516,6 @@ void *e_info;
 void **f_info;
 {
     if (event_code != K_CANVAS_EVENT_POINTER_MOVE) return (FALSE);
-    (void) fprintf (stderr, "abs: %e    ord: %e        value: %e",
-		    x, y, value[0]);
+    (void) fprintf (stderr, "abs: %e  ord: %e    value: %e\n", x, y, value[0]);
     return (TRUE);
 }   /*  End Function track_canvas_event  */

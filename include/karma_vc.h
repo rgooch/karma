@@ -2,7 +2,7 @@
 
     Header for  vc_  package.
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1993,1994  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   5-MAR-1993
 
-    Last updated by Richard Gooch   7-MAR-1993
+    Last updated by Richard Gooch   22-NOV-1994
 
 */
 
@@ -39,17 +39,22 @@
 #define KARMA_VC_H
 
 
-#ifndef EXTERN_FUNCTION
-#  include <c_varieties.h>
-#endif
 #ifndef KARMA_H
 #  include <karma.h>
 #endif
 
 #ifndef KDISPLAY_DEFINED
 #define KDISPLAY_DEFINED
-typedef void * Kdisplay;
+typedef struct kdisplay_handle_type * Kdisplay;
 #endif
+
+
+#define VC_VX_VISUAL_PSEUDOCOLOUR0 (unsigned int) 0
+#define VC_VX_VISUAL_PSEUDOCOLOUR1 (unsigned int) 1
+#define VC_VX_VISUAL_PSEUDOCOLOUR2 (unsigned int) 2
+#define VC_VX_VISUAL_PSEUDOCOLOUR3 (unsigned int) 3
+#define VC_VX_VISUAL_DIRECTCOLOUR (unsigned int) 4
+#define VC_VX_VISUAL_UNDEFINED (unsigned int) 5
 
 
 /*  File:   vc.c   */
@@ -73,6 +78,11 @@ EXTERN_FUNCTION (void vc_get_location, (Kdisplay dpy_handle,
 					unsigned long *serv_display_num) );
 EXTERN_FUNCTION (void vc_set_visual, (Kdisplay dpy_handle,
 				      flag pseudo_colour) );
+EXTERN_FUNCTION (void vc_set_visualtype, (Kdisplay dpy_handle,
+					  unsigned int visual, flag overlay) );
+EXTERN_FUNCTION (void vc_get_visualtype, (Kdisplay dpy_handle,
+					  unsigned int *visual,
+					  flag *overlay) );
 
 
 #endif /*  KARMA_VC_H  */

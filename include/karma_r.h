@@ -2,7 +2,7 @@
 
     Header for  r_  package.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   12-SEP-1992
 
-    Last updated by Richard Gooch   24-JUL-1993
+    Last updated by Richard Gooch   14-NOV-1994
 
 */
 
@@ -39,9 +39,6 @@
 #define KARMA_R_H
 
 
-#ifndef EXTERN_FUNCTION
-#  include <c_varieties.h>
-#endif
 #ifndef KARMA_H
 #  include <karma.h>
 #endif
@@ -50,6 +47,9 @@
 #define KFTYPE_DISC (unsigned int) 0
 #define KFTYPE_CHARACTER (unsigned int) 1
 #define KFTYPE_FIFO (unsigned int) 2
+#define KFTYPE_UNIX_CONNECTION (unsigned int) 3
+#define KFTYPE_LOCAL_tcpIP_CONNECTION (unsigned int) 4
+#define KFTYPE_REMOTE_tcpIP_CONNECTION (unsigned int) 5
 
 
 /*  For the file: connections.c  */
@@ -68,15 +68,17 @@ EXTERN_FUNCTION (int r_get_bytes_readable, (int connection) );
 EXTERN_FUNCTION (unsigned long r_get_inet_addr_from_host, (char *host,
 							   flag *local) );
 EXTERN_FUNCTION (int r_read, (int fd, char *buf, int nbytes) );
-EXTERN_FUNCTION (int r_write, (int fd, char *buf, int nbytes) );
+EXTERN_FUNCTION (int r_write, (int fd, CONST char *buf, int nbytes) );
 EXTERN_FUNCTION (flag r_test_input_event, (int connection) );
 EXTERN_FUNCTION (int r_open_stdin, (flag *disc) );
-EXTERN_FUNCTION (char *r_getenv, (char *name) );
-EXTERN_FUNCTION (int r_setenv, (char *env_name, char *env_value) );
+EXTERN_FUNCTION (char *r_getenv, (CONST char *name) );
+EXTERN_FUNCTION (int r_setenv, (CONST char *env_name, CONST char *env_value) );
 EXTERN_FUNCTION (int r_getppid, () );
-EXTERN_FUNCTION (int r_open_file, (char *filename, int flags, int mode,
+EXTERN_FUNCTION (int r_open_file, (CONST char *filename, int flags, int mode,
 				   unsigned int *type,
 				   unsigned int *blocksize) );
+EXTERN_FUNCTION (int r_create_pipe, (int *read_fd, int *write_fd) );
+
 
 
 /*  For the file: port_number.c  */

@@ -1,0 +1,2 @@
+/*  Routines to perform optimised arithmetic operations on vectors (arrays)  */
+/*  Link with:    -lkarma  */

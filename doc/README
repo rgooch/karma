@@ -1,11 +1,13 @@
 				Karma
 
-	A Structured Package for Signal and Image Processing
+		    A powerful programmers toolkit
 
 
-	Karma is a package for signal and image processing applications. It
-  contains KarmaLib (the structured libraries and API) and a large number of
-  modules (applications) to perform many standard tasks.
+	Karma is a toolkit for interprocess communications,
+  authentication, encryption, graphics display, user interface and
+  manipulating the Karma network data structure. It contains KarmaLib
+  (the structured libraries and API) and a large number of modules
+  (applications) to perform many standard tasks.
 
   When files and directories are referred to, they are given relative to the
   root Karma directory (environment variable KARMABASE if defined). This is
@@ -37,15 +39,18 @@
   karma-suggestions@atnf.csiro.au
 
 	Karma is available on anonymous ftp from:  ftp.atnf.csiro.au
-  under the  pub/karma  directory. Both the source code and binary
+  under the  pub/software/karma  directory. Both the source code and binary
   distributions are kept here. The source code is available free of charge.
+
+  The Karma World Wide Web page is:  http://www.atnf.csiro.au/karma/
+  This provides online access to the documentation and ftp site.
 
   You are urged to get the binary distribution if possible, as this will save
   you the effort of building from source.
   When connecting to the ftp server, check the modification dates on the source
-  distribution and the binary distribution. If the source distribution is newer
-  than the binary distribution you want, this means that the binary
-  distribution is out of date. Please send an Email a request to
+  distribution and the binary distribution. If the source distribution
+  is much newer than the binary distribution you want, this means that
+  the binary distribution is out of date. Please send an Email request to
   karma-suggestions@atnf.csiro.au  for a rebuilt version to be made available.
   I don't have local access to many machines, so I don't rebuild automatically
   for every platform.

@@ -1,0 +1,159 @@
+This file is intended as a "getting-started" guide to multi-threading
+(parallelism) support in the Karma library.
+
+Purpose:
+--------
+
+Broadly speaking, there are two main approaches to making use of
+parallelism:
+
+1)  Divide the application into a number of smaller "jobs" and run
+each job on a separate CPU
+
+2)  Let the compiler parallelise the code for you
+
+The former approach is the more traditional, since, until recently,
+compiler technology did not generally support parallelism. It is the
+approach of "hand tuning".
+There is an increasing push to use compilers to parallelise code.
+However, while appealing to the application programmer, current
+attempts at automated parallelisation of code generally fall far
+behind the performance of "hand tuned" parallel code.
+
+The Karma library attempts to solve the first approach so that the
+application programmer spends the least time necessary in "hand
+tuning" code. It does this in two ways:
+
+1)  Provides a simple, efficient and uniform interface to threading
+libraries by implementing a "job launching" facility
+
+2)  Internal parallelisation of CPU intensive routines in the library
+
+Clearly, if an application makes heavy use of CPU intensive routines
+in the Karma library, the benefits gained from a multi-CPU platform
+are automatically gained without the need for any intervention by the
+application programmer.
+
+Of greater interest is the support provided for the application
+programmer to parallelise code. This is all provided by the <mt_>
+package. The <mt_> package allows the application programmer to create
+a pool of threads onto which jobs may be launched. Even if a platform
+does not support multi-threading, the same interface may still be used
+(without any significant performance penalty).
+A simple example is given below:
+
+
+Example 1:
+----------
+
+The following is a simple example program showing how an operation may
+be easily parallelised. Note that while many modern parallelising
+compiliers are able to parallelise simple nested loops, their
+efficiency is usually far less than this simple "hand tuned" code.
+The example creates a 2D "Intelligent Array" (1000x1000 floats) and
+writes the value 3.0 in the entire array. Each line of the array is
+filled in a separate job.
+In real life one would actually use the <iarray_fill> routine instead,
+of course.
+
+/*------------------------------------------------------*/
+/* Multi-threading sample program                       */
+/*------------------------------------------------------*/
+
+#include <karma_iarray.h>
+#include <karma_mt.h>
+
+EXTERN_FUNCTION (void job_func, (void *pool_info,
+				 void *call_info1, void *call_info2,
+				 void *call_info3, void *call_info4) );
+
+static iarray a;
+
+main ()
+{
+    /* Declare variables */
+    int y;
+    static KThreadPool pool = NULL;
+
+    /*  Create a thread pool for the application  */
+    pool = mt_create_pool (NULL);
+    /*  Create a 1000x1000 float 2D iarray  */
+    a = iarray_create_2D (1000, 1000, K_FLOAT);
+
+    /*  Fill array  */
+    for (y = 0; y < 1000; ++y) mt_launch_job (pool, job_func,
+					      (void *) y, NULL, NULL, NULL);
+    mt_wait_for_all_jobs (pool);
+}
+
+void job_func (void *pool_info,
+	       void *call_info1, void *call_info2,
+	       void *call_info3, void *call_info4)
+{
+    int y = (int) call_info1;
+    int x;
+    float val = 3.0;
+
+    for (x = 0; x < 1000; ++x) F2 (a, y, x) = val;
+}
+
+Example 2:
+----------
+
+This example is similar to the one above, except that instead of
+dividing the array into lines and processing one line per job, the job
+is divided by the number of concurrent threads available (i.e. the
+number of CPUs). Hence each job processes a number of lines. The
+reason behind this is to reduce the (already small) overhead of
+launching jobs.
+
+/*------------------------------------------------------*/
+/* Multi-threading sample program: more efficient       */
+/*------------------------------------------------------*/
+
+#include <karma_iarray.h>
+#include <karma_mt.h>
+
+EXTERN_FUNCTION (void job_func, (void *pool_info,
+				 void *call_info1, void *call_info2,
+				 void *call_info3, void *call_info4) );
+
+static iarray a;
+
+main ()
+{
+    /* Declare variables */
+    int y, ystep;
+    int ylen = 1000;
+    static KThreadPool pool = NULL;
+
+    /*  Create a thread pool for the application  */
+    pool = mt_create_pool (NULL);
+    /*  Create a 1000x1000 float 2D iarray  */
+    a = iarray_create_2D (ylen, 1000, K_FLOAT);
+
+    /*  Fill array  */
+    ystep = ylen / mt_num_threads (pool);
+    for (y = 0; y < ylen; y += ystep)
+    {
+	if (y + ystep > ylen) ystep = ylen - y;
+	mt_launch_job (pool, job_func, (void *) y, (void *) ystep, NULL, NULL);
+    }
+    mt_wait_for_all_jobs (pool);
+}
+
+void job_func (void *pool_info,
+	       void *call_info1, void *call_info2,
+	       void *call_info3, void *call_info4)
+{
+    int y = (int) call_info1;
+    int ystep = (int) call_info2;
+    int ycount;
+    int x;
+    float val = 3.0;
+
+    for (ycount = 0; y_count < ystep; ++ycount, ++y)
+    {
+	for (x = 0; x < 1000; ++x) F2 (a, y, x) = val;
+    }
+}

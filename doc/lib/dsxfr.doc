@@ -7,14 +7,14 @@
     connections.
 
 
-    Written by		Richard Gooch	1-OCT-1992
+    Written by		Richard Gooch	24-Jan-1995
 
-    Last updated by	Richard Gooch	1-OCT-1992
+    Last updated by	Richard Gooch	24-Jan-1995
 
 
 */
 
-void dsxfr_register_connection_limits (max_incoming, max_outgoing)
+void dsxfr_register_connection_limits (int max_incoming, int max_outgoing)
 /*  This routine will register the maximum number of incoming (server) and
     outgoing (client) connections for the transfer of the general data
     structure. The protocol used is: "multi_array".
@@ -29,11 +29,9 @@ void dsxfr_register_connection_limits (max_incoming, max_outgoing)
     unlimited number of connections is permitted.
     The routine returns nothing.
 */
-int max_incoming;
-int max_outgoing;
 /*---------------------------------------------------------------------------*/
 
-flag dsxfr_put_multi (object, multi_desc)
+flag dsxfr_put_multi (CONST char *object, multi_array *multi_desc)
 /*  This routine will put (write to disc, transmit over connection) a
     multi_desc general data structure to a named object.
     The object name must be pointed to by  object  .
@@ -56,11 +54,10 @@ flag dsxfr_put_multi (object, multi_desc)
     The data structure must be pointed to by  multi_desc  .
     The routine returns TRUE on success, else it returns FALSE.
 */
-char *object;
-multi_array *multi_desc;
 /*---------------------------------------------------------------------------*/
 
-multi_array *dsxfr_get_multi (object, cache, mmap_option, writeable)
+multi_array *dsxfr_get_multi (CONST char *object, flag cache,
+			      unsigned int mmap_option, flag writeable)
 /*  This routine will get (read from disc, read from connection) a
     multi_desc general data structure from a named object.
     The object name must be pointed to by  object  .
@@ -100,13 +97,9 @@ multi_array *dsxfr_get_multi (object, cache, mmap_option, writeable)
     The routine returns a pointer to the data structure on success,
     else it returns NULL.
 */
-char *object;
-flag cache;
-unsigned int mmap_option;
-flag writeable;
 /*---------------------------------------------------------------------------*/
 
-void dsxfr_register_read_func (read_func)
+void dsxfr_register_read_func (void (*read_func) ())
 /*  This routine will register a function which is to be called when new data
     arrives on a "multi_array" connection.
     The interface to this function is given below:
@@ -123,10 +116,9 @@ void dsxfr_register_read_func (read_func)
 
     The routine returns nothing.
 */
-void (*read_func) ();
 /*---------------------------------------------------------------------------*/
 
-void dsxfr_register_close_func (close_func)
+void dsxfr_register_close_func (void (*close_func) ())
 /*  This routine will register a function which is to be called when a
     "multi_array" connection closes.
     The interface to this function is given below:
@@ -141,5 +133,4 @@ void dsxfr_register_close_func (close_func)
 
     The routine returns nothing.
 */
-void (*close_func) ();
 /*---------------------------------------------------------------------------*/

@@ -2,7 +2,7 @@
 
     Main file for  cmshell  (Connection Management Shell interpreter).
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1992,1993,1994  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -53,8 +53,25 @@
     Updated by      Richard Gooch   7-SEP-1993: Added test for modules loss
   prior to starting up connections.
 
-    Last updated by Richard Gooch   27-SEP-1993: Added quiescent notification
+    Updated by      Richard Gooch   27-SEP-1993: Added quiescent notification
   to modules.
+
+    Updated by      Richard Gooch   15-APR-1994: Added support for passing of
+  arguments to modules.
+
+    Updated by      Richard Gooch   19-APR-1994: Added support for shell escape
+  commands in the hostlist.
+
+    Updated by      Richard Gooch   19-APR-1994: Added support for passing of
+  arguments to CM Tool slaves.
+
+    Updated by      Richard Gooch   21-MAY-1994: Added  #include <karma_ch.h>
+
+    Updated by      Richard Gooch   2-AUG-1994: Added more diagnostic
+  information for child processes.
+
+    Last updated by Richard Gooch   10-OCT-1994: Prevent shell cleanup stage
+  if child process does not exit with 0 status code.
 
 
     Usage:   cm_shell path
@@ -70,6 +87,7 @@
 #include <karma_conn.h>
 #include <karma_chm.h>
 #include <karma_pio.h>
+#include <karma_ch.h>
 #include <karma_ex.h>
 #include <karma_a.h>
 #include <karma_r.h>
@@ -108,10 +126,17 @@ typedef struct _moduletype
     Connection control;
     Connection stdio;
     int port_number;
+    flag shut_down;
     connectiontype *first_connection;
     struct _moduletype *next;
     struct _moduletype *prev;
 } moduletype;
+
+
+/*  External functions  */
+EXTERN_FUNCTION (int fork_cm_client_module,
+		 (char *module_name, unsigned long cm_host_addr,
+		  unsigned int cm_port, int x, int y, char *args) );
 
 
 /*  Private functions  */
@@ -126,6 +151,7 @@ static void exit_func ();
 static void wait_for_slaves_to_disconnect (/* timeout */);
 static void disconnect_from_slaves ();
 static void notify_quiescent ();
+STATIC_FUNCTION (void shutdown_modules, () );
 
 
 /*  Public functions  */
@@ -149,6 +175,8 @@ static unsigned int my_port;
 static hosttype *hostlist = NULL;
 static moduletype *modulelist = NULL;
 static flag keep_going = TRUE;
+static unsigned int child_count = 0;
+static flag clean_child_exit = TRUE;
 
 
 void main (argc, argv)
@@ -157,6 +185,7 @@ char *argv[];
 {
     flag end;
     int exit_status;
+    unsigned int count;
     unsigned long addr;
     Channel channel;
     int def_port_number;
@@ -164,7 +193,9 @@ char *argv[];
     char buffer[STRING_LENGTH];
     char display[STRING_LENGTH];
     extern flag keep_going;
+    extern flag clean_child_exit;
     extern unsigned int my_port;
+    extern unsigned int child_count;
     extern hosttype *hostlist;
     extern char my_hostname[STRING_LENGTH + 1];
     extern char module_name[STRING_LENGTH + 1];
@@ -268,31 +299,51 @@ char *argv[];
 	}
     }
     notify_quiescent ();
-    (void) fprintf (stderr, "Waiting forever...\n");
+    (void) fprintf (stderr, "Entering event loop...\n");
     while (keep_going)
     {
 	cm_poll (FALSE);
 	chm_poll (-1);
-	(void) fprintf (stderr, "Event\n");
     }
     disconnect_from_slaves ();
+    shutdown_modules ();
+    for (count = 500; (count > 0) && (child_count > 0); --count)
+    {
+	cm_poll (FALSE);
+	chm_poll (10);
+    }
+    if (child_count > 0)
+    {
+	(void) fprintf (stderr,
+			"Not all children died: cleanup process aborted\n");
+	(void) ch_close (channel);
+	exit (RV_UNDEF_ERROR);
+    }
     if (strcmp (buffer, "SHELL_CLEANUP") == 0)
     {
-	/*  Run shell over remainder  */
-	while (read_line (channel, buffer, STRING_LENGTH, &end) == TRUE)
+	if (clean_child_exit)
 	{
-	    exit_status = system (buffer);
-	    if (exit_status == 0) continue;
-	    if (exit_status == 127)
+	    /*  Run shell over remainder  */
+	    while (read_line (channel, buffer, STRING_LENGTH, &end) == TRUE)
 	    {
+		exit_status = system (buffer);
+		if (exit_status == 0) continue;
+		if (exit_status == 127)
+		{
+		    (void) fprintf(stderr,
+				   "Could not execute shell command: \"%s\"\n",
+				    buffer);
+		    exit (RV_SYS_ERROR);
+		}
 		(void) fprintf (stderr,
-				"Could not execute shell command: \"%s\"\n",
-				buffer);
-		exit (RV_SYS_ERROR);
+				"Shell command: \"%s\" returned status: %d\n",
+				buffer, exit_status);
 	    }
-	    (void) fprintf (stderr,
-			    "Shell command: \"%s\" returned status: %d\n",
-			    buffer, exit_status);
+	}
+	else
+	{
+	    (void) fprintf (stderr, "Not all children exited cleanly.\n");
+	    (void) fprintf (stderr, "Shell cleanup stage skipped.\n");
 	}
     }
     (void) ch_close (channel);
@@ -368,6 +419,7 @@ Channel channel;
     flag local;
     int display_num;
     int screen_num;
+    int exit_status;
     unsigned int timeleft;
     unsigned int old_hostcount;
     char *env_display;
@@ -375,6 +427,7 @@ Channel channel;
     char *host_device;
     char *hostname;
     char *karmabase;
+    char *args;
     char display[STRING_LENGTH];
     char buffer[STRING_LENGTH];
     char command[STRING_LENGTH];
@@ -438,6 +491,38 @@ Channel channel;
     while ( read_line (channel, buffer, STRING_LENGTH, &end) )
     {
 	if (end) return;
+	/*  Start parsing line  */
+	if (buffer[0] == '!')
+	{
+	    /*  Shell escape  */
+	    exit_status = system (buffer + 1);
+	    if (exit_status == 0) continue;
+	    if (exit_status == 127)
+	    {
+		(void) fprintf (stderr,
+				"Could not execute shell command: \"%s\"\n",
+				buffer + 1);
+		exit (RV_SYS_ERROR);
+	    }
+	    (void) fprintf (stderr,
+			    "Shell command: \"%s\" returned status: %d\n",
+			    buffer + 1, exit_status);
+	    continue;
+	}
+	/*  First separate optional arguments  */
+	if ( ( args = strchr (buffer, '-') ) != NULL )
+	{
+	    if (args[1] == '-')
+	    {
+		args[0] = '\0';
+		args += 2;
+		while ( isspace (*args) ) ++args;
+	    }
+	    else
+	    {
+		args = NULL;
+	    }
+	}
 	if ( ( hostname = ex_str (buffer, &karmabase) ) == NULL )
 	{
 	    m_abort (function_name, "hostname copy");
@@ -462,6 +547,11 @@ Channel channel;
 			"rsh %s %s/csh_script/%skarma_cm_slave.setup %s %u %s",
 			hostname, karmabase, host_device,
 			my_hostname, my_port, display);
+	if (args != NULL)
+	{
+	    (void) strcat (command, " ");
+	    (void) strcat (command, args);
+	}
 	if (system (command) != 0)
 	{
 	    (void) fprintf (stderr, "Error executing command: \"%s\"\t%s\n",
@@ -510,9 +600,11 @@ Channel channel;
     char *p;
     char *hostname;
     char *module_name;
+    char *args;
     char buffer[STRING_LENGTH];
     char command[STRING_LENGTH];
     extern unsigned int my_port;
+    extern unsigned int child_count;
     extern moduletype *latest_module;
     extern char my_hostname[STRING_LENGTH + 1];
     ERRNO_TYPE errno;
@@ -574,6 +666,20 @@ Channel channel;
 	    continue;
 	}
 	/*  Start module  */
+	/*  First separate optional arguments  */
+	if ( ( args = strchr (buffer, '-') ) != NULL )
+	{
+	    if (args[1] == '-')
+	    {
+		args[0] = '\0';
+		args += 2;
+		while ( isspace (*args) ) ++args;
+	    }
+	    else
+	    {
+		args = NULL;
+	    }
+	}
 	p = buffer;
 	if ( ( hostname = ex_str (p, &p) ) == NULL )
 	{
@@ -591,7 +697,7 @@ Channel channel;
 	    /*  Local module  */
 	    m_free (hostname);
 	    if ( ( child_pid = fork_cm_client_module (module_name,
-						      0, my_port, x, y) )
+						      0, my_port, x, y, args) )
 		< 0 )
 	    {
 		(void) fprintf (stderr,
@@ -607,6 +713,7 @@ Channel channel;
 				child_pid);
 		exit (RV_UNDEF_ERROR);
 	    }
+	    ++child_count;
 	}
 	else
 	{
@@ -636,6 +743,12 @@ Channel channel;
 	    if (pio_write32s (slave, y) != TRUE)
 	    {
 		(void) fprintf (stderr, "Error writing y value\t%s\n",
+				sys_errlist[errno]);
+		exit (RV_SYS_ERROR);
+	    }
+	    if (pio_write_string (slave, args) != TRUE)
+	    {
+		(void) fprintf (stderr, "Error writing arguments\t%s\n",
 				sys_errlist[errno]);
 		exit (RV_SYS_ERROR);
 	    }
@@ -1131,7 +1244,7 @@ void **info;
 	m_free (hostname);
 	return (FALSE);
     }
-    (void) fprintf (stderr, "New module: \"%s\" on: \"%s\" PID: %d\n",
+    (void) fprintf (stderr, "New module: \"%s\" on: \"%s\" PID: %ld\n",
 		    module_name, hostname, pid);
     m_free (hostname);
     if ( ( new_module = (moduletype *) m_alloc (sizeof *new_module) )
@@ -1147,6 +1260,7 @@ void **info;
     (*new_module).control = connection;
     (*new_module).stdio = NULL;
     (*new_module).port_number = -1;
+    (*new_module).shut_down = FALSE;
     (*new_module).first_connection = NULL;
     (*new_module).next = NULL;
     /*  Add to list  */
@@ -1289,21 +1403,26 @@ void *info;
     extern char *sys_errlist[];
 
     module = (moduletype *) info;
-    (void) fprintf (stderr, "Module: \"%s\" on host: \"%s\" died\n",
-		    (*module).name, (* (*module).host ).alias);
+    if (!(*module).shut_down)
+    {
+	(void) fprintf (stderr,
+			"Module: \"%s\" on host: \"%s\" PID: %d  died\n",
+			(*module).name, (* (*module).host ).alias,
+			(*module).pid);
+    }
     keep_going = FALSE;
     /*  Remove module from list  */
     if ( (*module).next != NULL )
     {
 	(* (*module).next ).prev = (*module).prev;
     }
-    if ( (*module).prev != NULL )
+    if ( (*module).prev == NULL )
     {
-	(* (*module).prev ).next = (*module).next;
+	modulelist = (*module).next;
     }
     else
     {
-	modulelist = NULL;
+	(* (*module).prev ).next = (*module).next;
     }
     m_free ( (*module).name );
     m_free ( (char *) module );
@@ -1441,8 +1560,13 @@ void *info;
     extern char *sys_errlist[];
 
     module = (moduletype *) info;
-    (void) fprintf (stderr, "Module: \"%s\" on host: \"%s\" closed stdio\n",
-		    (*module).name, (* (*module).host ).alias);
+    if (!(*module).shut_down)
+    {
+	(void) fprintf (stderr,
+			"Module: \"%s\" on host: \"%s\" PID: %d closed stdio\n",
+			(*module).name, (* (*module).host ).alias,
+			(*module).pid);
+    }
     (*module).stdio = NULL;
 }   /*  End Function module_stdio_lost  */
 
@@ -1455,6 +1579,8 @@ static void stop_func (pid, sig)
 int pid;
 int sig;
 {
+    (void) fprintf (stderr, "WARNING: child: %d received stop signal: %d\n",
+		    pid, sig);
 }   /*  End Function stop_func  */
 
 static void term_func (pid, sig, rusage)
@@ -1468,6 +1594,20 @@ int pid;
 int sig;
 struct rusage *rusage;
 {
+    extern flag clean_child_exit;
+    extern unsigned int child_count;
+    static char function_name[] = "term_func";
+
+    clean_child_exit = FALSE;
+    (void) fprintf (stderr,
+		    "WARNING: child: %d received termination signal: %d\n",
+		    pid, sig);
+    if (child_count < 1)
+    {
+	(void) fprintf (stderr, "But  child_count  is zero!\n");
+	a_prog_bug (function_name);
+    }
+    --child_count;
 }   /*  End Function term_func  */
 
 static void exit_func (pid, value, rusage)
@@ -1481,6 +1621,31 @@ int pid;
 int value;
 struct rusage *rusage;
 {
+    extern flag clean_child_exit;
+    extern unsigned int child_count;
+    static char function_name[] = "exit_func";
+
+    if (value == 0)
+    {
+	if (child_count < 1)
+	{
+	    (void)fprintf(stderr,
+			  "Child exited cleanly but  child_count  is zero!\n");
+	    a_prog_bug (function_name);
+	}
+	--child_count;
+	return;
+    }
+    clean_child_exit = FALSE;
+    (void) fprintf (stderr,
+		    "WARNING: child: %d exited with status: %d\n",
+		    pid, value);
+    if (child_count < 1)
+    {
+	(void) fprintf (stderr, "But  child_count  is zero!\n");
+	a_prog_bug (function_name);
+    }
+    --child_count;
 }   /*  End Function exit_func  */
 
 /*  The following code is redundant because the slave connections are all
@@ -1572,3 +1737,25 @@ static void notify_quiescent ()
 	}
     }
 }   /*  End Function notify_quiescent  */
+
+static void shutdown_modules ()
+/*  This routine will close all connections to modules.
+    The routine returns nothing.
+*/
+{
+    moduletype *module, *next;
+    extern moduletype *modulelist;
+
+    for (module = modulelist; module != NULL; module = next)
+    {
+	next = (*module).next;
+	if ( (*module).control != NULL )
+	{
+	    (*module).shut_down = TRUE;
+	    if (conn_close ( (*module).control ) != TRUE)
+	    {
+		(void) fprintf (stderr, "Error closing control connection\n");
+	    }
+	}
+    }
+}   /*  End Function shutdown_modules  */

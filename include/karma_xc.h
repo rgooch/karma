@@ -2,7 +2,7 @@
 
     Header for  xc_  package.
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1993,1994  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   25-FEB-1993
 
-    Last updated by Richard Gooch   5-MAR-1993
+    Last updated by Richard Gooch   22-NOV-1994
 
 */
 
@@ -39,17 +39,14 @@
 #define KARMA_XC_H
 
 
-#ifndef EXTERN_FUNCTION
-#  include <c_varieties.h>
-#endif
-#include <X11/Xlib.h>
 #ifndef KARMA_H
 #  include <karma.h>
 #endif
+#include <X11/Xlib.h>
 
 #ifndef KDISPLAY_DEFINED
 #define KDISPLAY_DEFINED
-typedef void * Kdisplay;
+typedef struct kdisplay_handle_type * Kdisplay;
 #endif
 
 

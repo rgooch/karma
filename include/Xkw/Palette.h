@@ -20,7 +20,9 @@
 #ifndef PALETTE__H
 #define PALETTE__H
 
-#include <c_varieties.h>
+#ifndef KARMA_H
+#  include <karma.h>
+#endif
 
 extern WidgetClass paletteWidgetClass;
 typedef struct _PaletteClassRec *PaletteWidgetClass;

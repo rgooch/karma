@@ -2,7 +2,7 @@
 
     Slave process setup file for Connection Management tool and shell.
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1993,1994  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,16 +35,21 @@
     Updated by      Richard Gooch   4-APR-1993: Took account of change to
   conn_register_server_protocol  .
 
-    Last updated by Richard Gooch   29-SEP-1993
+    Updated by      Richard Gooch   29-SEP-1993
+
+    Last updated by Richard Gooch   19-APR-1994: Made specification of host,
+  port and display mandatory, and return position of unprocessed (optional)
+  arguments.
 
 
-    Usage:   karma_cm_slave [host port display]
+    Usage:   *karma_cm_slave host port display [args...]
 
 */
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #include <karma.h>
 #include <karma_conn.h>
 #include <karma_chm.h>
@@ -53,8 +58,18 @@
 
 #define PROTOCOL_VERSION (unsigned int) 0
 
-void slave_setup (argc, argv, cm_port_number, cm_host_addr,
-		  open_func, read_func, close_func)
+int slave_setup (argc, argv, cm_port_number, cm_host_addr,
+		 open_func, read_func, close_func)
+/*  This routine will set up a CM Tool slave.
+    Command line argument information must be given by  argc  and  argv  .
+    The port number of the CM Tool will be written to the storage pointed to by
+    cm_port_number  .
+    The Internet address of the CM Tool will be written to the storage pointed
+    to by  cm_host_addr  .
+    The functions to handle the "conn_mngr_slave" protocol must be given by
+    open_func  ,  read_func  and  close_func  .
+    The routine returns the position of the first remaining (optional) argument
+*/
 int argc;
 char *argv[];
 unsigned int *cm_port_number;
@@ -66,8 +81,9 @@ void (*close_func) ();
     flag local;
     int display_num;
     int screen_num;
-    int out_fd;
+    int out_fd, tmp_fd;
     int port_number;
+    pid_t sid;
     char *display;
     char *host;
     char *path;
@@ -75,13 +91,13 @@ void (*close_func) ();
     char txt[STRING_LENGTH];
     ERRNO_TYPE errno;
     extern char *sys_errlist[];
-    static char usage_string[] = "Usage:\tkarma_cm_slave [host port display]";
+    static char usage_string[] = "Usage:\tkarma_cm_slave host port display";
     static char function_name[] = "slave_setup";
 
-    if (argc > 4)
+    if (argc < 3)
     {
 	(void) fprintf (stderr, "%s\n", usage_string);
-	exit (RV_TOO_MANY_PARAM);
+	exit (RV_MISSING_PARAM);
     }
     /*  Become a background process  */
     switch ( fork () )
@@ -112,11 +128,8 @@ void (*close_func) ();
 	exit (RV_SYS_ERROR);
     }
     (void) sprintf ( txt, "/tmp/karma_cm_slave.log.%d", getuid () );
-/*
-    (void) sprintf (txt, "/dev/ttyp1");
-*/
     if ( ( out_fd = open (txt, O_CREAT | O_TRUNC | O_WRONLY,
-			  S_IRUSR | S_IWUSR) ) < 0 )
+			  S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH) ) < 0 )
     {
 	(void) fprintf (stderr,
 			"Error opening: \"%s\" for output\t%s\n",
@@ -147,11 +160,18 @@ void (*close_func) ();
 			sys_errlist[errno]);
 	exit (RV_SYS_ERROR);
     }
+    /*  Disconnect from session  */
+    if ( ( sid = setsid () ) == -1 )
+    {
+	(void) fprintf (stderr, "Error disconnecting from session\t%s\n",
+			sys_errlist[errno]);
+	exit (RV_SYS_ERROR);
+    }
     if (chdir ("/tmp") != 0)
     {
 	(void) fprintf (stderr, "Error changing directory to: \"/tmp\"\t%s\n",
 			sys_errlist[errno]);
-	return;
+	exit (RV_SYS_ERROR);
     }
     /*  Initialise path  */
     if ( ( path = r_getenv ("PATH") ) == NULL )
@@ -176,81 +196,49 @@ void (*close_func) ();
     conn_register_client_protocol ("conn_mngr_slave", PROTOCOL_VERSION, 1,
 				   ( flag (*) () ) NULL,
 				   open_func, read_func, close_func);
-    if (argc > 1)
+    /*  Need to get info from command line  */
+    host = argv[1];
+    if ( ( port_number = atoi (argv[2]) ) < 0 )
     {
-	if (argc < 3)
+	(void) fprintf (stderr, "SLAVE: bad port parameter: \"%s\"\n",
+			argv[2]);
+	(void) fprintf (stderr, "SLAVE: %s\n", usage_string);
+	exit (RV_BAD_PARAM);
+    }
+    /*  Get display info  */
+    if ( ( display_host = r_get_host_from_display (argv[3]) ) == NULL )
+    {
+	exit (RV_UNDEF_ERROR);
+    }
+    if ( ( display_num = r_get_display_num_from_display (argv[3]) )
+	< 0 )
+    {
+	exit (RV_UNDEF_ERROR);
+    }
+    if ( ( screen_num = r_get_screen_num_from_display (argv[3]) )
+	< 0 )
+    {
+	exit (RV_UNDEF_ERROR);
+    }
+    /*  Determine if local X server  */
+    if (r_get_inet_addr_from_host (display_host, &local) == 0)
+    {
+	(void) fprintf (stderr, "Error getting Internet address\n");
+	exit (RV_UNDEF_ERROR);
+    }
+    if (local)
+    {
+	(void) sprintf (txt, ":%d.%d", display_num, screen_num);
+	if (r_setenv ("DISPLAY", txt) != 0)
 	{
-	    (void) fprintf (stderr, "%s\n", usage_string);
-	    exit (RV_MISSING_PARAM);
-	}
-	/*  Need to get info from command line  */
-	host = argv[1];
-	if ( ( port_number = atoi (argv[2]) ) < 0 )
-	{
-	    (void) fprintf (stderr, "SLAVE: bad port parameter: \"%s\"\n",
-			    argv[2]);
-	    (void) fprintf (stderr, "SLAVE: %s\n", usage_string);
-	    exit (RV_BAD_PARAM);
-	}
-	/*  Get display info  */
-	if ( ( display_host = r_get_host_from_display (argv[3]) ) == NULL )
-	{
-	    exit (RV_UNDEF_ERROR);
-	}
-	if ( ( display_num = r_get_display_num_from_display (argv[3]) )
-	    < 0 )
-	{
-	    exit (RV_UNDEF_ERROR);
-	}
-	if ( ( screen_num = r_get_screen_num_from_display (argv[3]) )
-	    < 0 )
-	{
-	    exit (RV_UNDEF_ERROR);
-	}
-	/*  Determine if local X server  */
-	if (r_get_inet_addr_from_host (display_host, &local) == 0)
-	{
-	    (void) fprintf (stderr, "Error getting Internet address\n");
-	    exit (RV_UNDEF_ERROR);
-	}
-	if (local)
-	{
-	    (void) sprintf (txt, ":%d.%d", display_num, screen_num);
-	    if (r_setenv ("DISPLAY", txt) != 0)
-	    {
-		m_abort (function_name, "DISPLAY environment");
-	    }
-	}
-	else
-	{
-	    if (r_setenv ("DISPLAY", argv[3]) != 0)
-	    {
-		m_abort (function_name, "DISPLAY environment");
-	    }
+	    m_abort (function_name, "DISPLAY environment");
 	}
     }
     else
     {
-	/*  Need to get info from DISPLAY environmental variable  */
-	if ( ( display = r_getenv ("DISPLAY") ) == NULL )
+	if (r_setenv ("DISPLAY", argv[3]) != 0)
 	{
-	    (void) fprintf (stderr,
-			    "SLAVE: No host and port given and no DISPLAY environmental variable set\n");
-	    (void) fprintf (stderr, "SLAVE: %s\n", usage_string);
-	    exit (RV_UNDEF_ERROR);
-	}
-	if ( ( host = r_get_host_from_display (display) ) == NULL )
-	{
-	    (void) fprintf (stderr,
-			    "SLAVE: Error reading DISPLAY environmental variable\n");
-	    (void) fprintf (stderr, "SLAVE: %s\n", usage_string);
-	    exit (RV_UNDEF_ERROR);
-	}
-	if ( ( port_number = r_get_def_port ("karma_cm", display) ) < 0 )
-	{
-	    (void) fprintf (stderr,
-			    "SLAVE: Error getting default karma_cm port\n");
-	    exit (RV_UNDEF_ERROR);
+	    m_abort (function_name, "DISPLAY environment");
 	}
     }
     if ( ( *cm_host_addr = r_get_inet_addr_from_host (host, (flag *) NULL) )
@@ -264,7 +252,7 @@ void (*close_func) ();
     *cm_port_number = port_number;
     /*  Now have host and port number  */
     /*  Try to connect  */
-    (void) fprintf (stderr, "SLAVE: connect to: %s %u\n",
+    (void) fprintf (stderr, "SLAVE: attempting connect to: %s %u\n",
 		    host, *cm_port_number);
     if (conn_attempt_connection (host, *cm_port_number, "conn_mngr_slave")
 	!= TRUE)
@@ -273,4 +261,6 @@ void (*close_func) ();
 			"SLAVE: Error connecting to Connection Management tool\n");
 	exit (RV_UNDEF_ERROR);
     }
-}   /*  End Function slave_setup  */
+    (void) fprintf (stderr, "SLAVE: connected\n");
+    return (4);
+} /*  End Function slave_setup  */

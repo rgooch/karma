@@ -7,9 +7,9 @@
     accept connections.
 
 
-    Written by		Richard Gooch	1-OCT-1992
+    Written by		Richard Gooch	7-Jan-1995
 
-    Last updated by	Richard Gooch	1-OCT-1992
+    Last updated by	Richard Gooch	7-Jan-1995
 
 
 */
@@ -67,7 +67,7 @@ unsigned int port_number;
 flag *local;
 /*---------------------------------------------------------------------------*/
 
-int r_accept_connection_on_dock (dock, addr, local)
+int r_accept_connection_on_dock (int dock, unsigned long *addr, flag *local)
 /*  This routine will accept a connection on a dock.
     The dock must be given by  dock  .
     The address of the host connecting to the dock will be written to the
@@ -77,30 +77,25 @@ int r_accept_connection_on_dock (dock, addr, local)
     the value FALSE.
     The routine returns a connection on success, else it returns -1
 */
-int dock;
-unsigned long *addr;
-flag *local;
 /*---------------------------------------------------------------------------*/
 
-flag r_close_connection (connection)
+flag r_close_connection (int connection)
 /*  This routine will close a connection.
     The connection to close must be given by  connection  .
     The routine returns TRUE on success, else it returns FALSE.
 */
-int connection;
 /*---------------------------------------------------------------------------*/
 
-int r_get_bytes_readable (connection)
+int r_get_bytes_readable (int connection)
 /*  This routine will determine the minimum number of bytes readable on a
     connection. There may be more bytes readable than indicated.
     The connection should be given by  connection  .
     The routine returns the number of bytes readable on success,
     else it returns -1
 */
-int connection;
 /*---------------------------------------------------------------------------*/
 
-unsigned long r_get_inet_addr_from_host (host, local)
+unsigned long r_get_inet_addr_from_host (char *host, flag *local)
 /*  This routine will get the first listed Internet address from the hostname
     string pointed to by  host  .
     If the specified host is the local machine, then the routine will write
@@ -109,11 +104,9 @@ unsigned long r_get_inet_addr_from_host (host, local)
     The routine returns the Internet address on success (in host byte order),
     else it returns 0.
 */
-char *host;
-flag *local;
 /*---------------------------------------------------------------------------*/
 
-int r_read (fd, buf, nbytes)
+int r_read (int fd, char *buf, int nbytes)
 /*  This routine is similar to the system  read(2)  call, except that the
     number of bytes requested is always returned (except on error or closure).
     Hence, if the descriptor references a socket, the routine will read as much
@@ -126,12 +119,9 @@ int r_read (fd, buf, nbytes)
     The routine returns the number of bytes requested on success,
     the number of bytes read on end of file (or closure) and -1 on error.
 */
-int fd;
-char *buf;
-int nbytes;
 /*---------------------------------------------------------------------------*/
 
-int r_write (fd, buf, nbytes)
+int r_write (int fd, CONST char *buf, int nbytes)
 /*  This routine is similar to the system  write(2)  call, except that the
     number of bytes requested is always returned (except on error). Hence, if
     the descriptor references a socket, the routine will write as much data as
@@ -145,9 +135,6 @@ int r_write (fd, buf, nbytes)
     The routine returns the number of bytes requested on success,
     else it returns -1 indicating error.
 */
-int fd;
-char *buf;
-int nbytes;
 /*---------------------------------------------------------------------------*/
 
 flag r_test_input_event (connection)
@@ -178,19 +165,20 @@ char *r_getenv (name)
     The routine returns a pointer to the value string if present,
     else it returns NULL.
 */
-char *name;
+CONST char *name;
 /*---------------------------------------------------------------------------*/
 
 int r_setenv (env_name, env_value)
-/*  This routine will interface to the "standard" C library routines:
+/*  This routine will provide a consistent interface to set environment
+    variables. This is necessary because the "standard" C library routines:
     putenv  or  setenv  (depending on the particular standard C library
-    supplied with the operating system).
+    supplied with the operating system) are in fact not standard.
     The environment variable to create or change must be named by  env_name  .
     The string value to set the variable to must be pointed to by  env_value  .
     The routine returns 0 on success, else it returns -1.
 */
-char *env_name;
-char *env_value;
+CONST char *env_name;
+CONST char *env_value;
 /*---------------------------------------------------------------------------*/
 
 void r_gethostname (name, namelen)
@@ -208,6 +196,45 @@ int r_getppid ()
 /*  This routine will determine the parent process ID.
     The routine returns the parent process ID.
 */
+/*---------------------------------------------------------------------------*/
+
+int r_open_file (CONST char *filename, int flags, int mode,
+		 unsigned int *filetype, unsigned int *blocksize)
+/*  [PURPOSE] This routine will open a file. The file may be a regular disc
+    file, a named FIFO, a character special device, a Unix domain socket or a
+    TCP/IP connection (where supported). This routine provides an enhanced
+    interface to the <<open(2)>>, <<socket(2)>> and <<connect(2)>> routines.
+    <filename> The pathname of the file to open. This parameter has the same
+    meaning as the first parameter to <<open(2)>>.
+    Filenames of the form: "//tcpIP/{hostname}:{port}" indicate a connection to
+    a TCP/IP port on host {hostname} with raw port number {port} is
+    requested.
+    <flags> The access flags. This parameter has the same meaning as the second
+    parameter to <<open(2)>>.
+    <mode> If the file is created, the file protection modes will be determined
+    by the combination of the process  umask  and this value. This parameter
+    has the same meaning as the third parameter to <<open(2)>>.
+    <filetype> The type of the file will be written here.
+    <blocksize> The blocksize (in bytes) of the file will be written here (this
+    is only valid for a disc file). If the blocksize cannot be determined, the
+    value 0 will be written here.
+    [RETURNS] The file descriptor on success, else -1 and sets <<errno>> with
+    the error code.
+*/
+/*---------------------------------------------------------------------------*/
+
+int r_create_pipe (read_fd, write_fd)
+/*  This routine will create an un-named pipe.
+    This routine provides an enhanced interface to the  pipe(2)  routine.
+    The file descriptor corresponding to the read end of the pipe will be
+    written to the storage pointed to by  read_fd  .
+    The file descriptor corresponding to the write end of the pipe will be
+    written to the storage pointed to by  write_fd  .
+    The routine returns 0 on success, else it returns -1 and sets  errno  with
+    the error code.
+*/
+int *read_fd;
+int *write_fd;
 /*---------------------------------------------------------------------------*/
 
 char *r_get_karmabase ()

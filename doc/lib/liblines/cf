@@ -1,0 +1,2 @@
+/*  Routines to compute and write RGB colour values into arrays  */
+/*  Link with:    -lkarma  */

@@ -32,8 +32,11 @@
 
     Updated by      Richard Gooch   14-SEP-1993
 
-    Last updated by Richard Gooch   6-OCT-1993: Changed over to  panel_
+    Updated by      Richard Gooch   6-OCT-1993: Changed over to  panel_
   package for command line user interface.
+
+    Last updated by Richard Gooch   19-FEB-1994: Added informative messages
+  when saving arrays.
 
 
 */
@@ -402,6 +405,7 @@ char *p;
     extern packet_desc *frame_top_pack_desc[MAX_ARRAYS];
     static char function_name[] = "dump_arrays";
 
+    (void) fprintf (stderr, "Saving arrays...\n");
     if ( ( arrayfile = ex_str (p, &p) ) == NULL )
     {
 	(void) fprintf (stderr, "Must specify arrayfile to create\n");
@@ -472,6 +476,7 @@ char *p;
     dsxfr_put_multi (arrayfile, out_multi_desc);
     ds_dealloc_multi (out_multi_desc);
     m_free (arrayfile);
+    (void) fprintf (stderr, "Saved arrays.\n");
 }   /*  End Function dump_arrays  */
 
 static void flush_data (p)

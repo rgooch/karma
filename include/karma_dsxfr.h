@@ -2,7 +2,7 @@
 
     Header for  dsxfr_  package.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   19-SEP-1992
 
-    Last updated by Richard Gooch   28-MAY-1993
+    Last updated by Richard Gooch   21-MAY-1994
 
 */
 
@@ -39,19 +39,25 @@
 #define KARMA_DSXFR_H
 
 
-#ifndef EXTERN_FUNCTION
-#  include <c_varieties.h>
+#ifndef KARMA_H
+#  include <karma.h>
 #endif
-#include <karma_ds_def.h>
-#include <karma_ch.h>
+
+#ifndef KARMA_DS_DEF_H
+#  include <karma_ds_def.h>
+#endif
+
+#ifndef KARMA_CH_DEF_H
+#  include <karma_ch_def.h>
+#endif
 
 
 /*  File:   dsxfr.c   */
 EXTERN_FUNCTION (void dsxfr_register_connection_limits,
 		 (int max_incoming, int max_outgoing) );
-EXTERN_FUNCTION (flag dsxfr_put_multi, (char *object,
+EXTERN_FUNCTION (flag dsxfr_put_multi, (CONST char *object,
 					multi_array *multi_desc) );
-EXTERN_FUNCTION (multi_array *dsxfr_get_multi, (char *object, flag cache,
+EXTERN_FUNCTION (multi_array *dsxfr_get_multi, (CONST char *object, flag cache,
 						unsigned int mmap_option,
 						flag writeable) );
 EXTERN_FUNCTION (void dsxfr_register_read_func,

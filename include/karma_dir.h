@@ -2,7 +2,7 @@
 
     Header for  dir_  package.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   1-JUN-1993
 
-    Last updated by Richard Gooch   2-JUN-1993
+    Last updated by Richard Gooch   4-OCT-1994
 
 */
 
@@ -40,18 +40,12 @@
 
 
 #include <sys/types.h>
-#ifndef EXTERN_FUNCTION
-#  include <c_varieties.h>
-#endif
 #ifndef KARMA_H
 #  include <karma.h>
 #endif
 
+typedef struct dir_type * KDir;
 
-#ifndef KDIR_DEFINED
-#define KDIR_DEFINED
-typedef void * KDir;
-#endif
 
 #define KDIR_DOT (unsigned int) 0
 #define KDIR_DOTDOT (unsigned int) 1
@@ -72,7 +66,7 @@ typedef struct
     char *sym_path;         /*  Translated symbolic link pathname            */
     unsigned int type;      /*  File type (eg. KFILETYPE_REGULAR)            */
     flag is_symlink;        /*  TRUE if file is a translated symlink         */
-    uid_t uid;              /*  Used ID of owner                             */
+    uid_t uid;              /*  User ID of owner                             */
     gid_t gid;              /*  Group ID of owner                            */
     mode_t mode;            /*  Access mode- see stat(2)                     */
     nlink_t num_links;      /*  Number of hard links to file                 */
@@ -103,7 +97,7 @@ typedef struct
 } KDirInfo;
 
 /*  File:   dir_scan.c   */
-EXTERN_FUNCTION (KDir dir_open, (char *dirname) );
+EXTERN_FUNCTION (KDir dir_open, (CONST char *dirname) );
 EXTERN_FUNCTION (KFileInfo *dir_read, (KDir dir, unsigned int skip_control) );
 EXTERN_FUNCTION (void dir_rewind, (KDir dir) );
 EXTERN_FUNCTION (void dir_close, (KDir dir) );

@@ -2,7 +2,7 @@
 
     Source file for  histogram  (histogram generation module).
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1993,1994  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -42,8 +42,11 @@
     Updated by      Richard Gooch   16-NOV-1993: Changed over to  panel_
   package for command line user interface and moved  main  into this file.
 
-    Last updated by Richard Gooch   23-NOV-1993: Fixed bug in call to
+    Updated by      Richard Gooch   23-NOV-1993: Fixed bug in call to
   panel_add_item  for  array_names  parameter.
+
+    Last updated by Richard Gooch   29-NOV-1993: Fixed bug in
+  compute_histogram  .
 
 
 */
@@ -80,7 +83,7 @@ static double element_max = -TOOBIG;
 
 /*  Put globals here to force functions to be explicit  */
 char *array_names[NUMARRAYS];
-int num_arrays = 0;
+unsigned int num_arrays = 0;
 
 int num_bins = 256;
 
@@ -121,7 +124,7 @@ char *p;
 FILE *fp;
 {
     char *arrayfile;
-    extern int num_arrays;
+    extern unsigned int num_arrays;
     extern int save_unproc;
     extern char *element_name;
     extern char *array_names[NUMARRAYS];
@@ -148,7 +151,7 @@ FILE *fp;
 	m_free (element_name);
     }
     return (TRUE);
-}   /*  End Function convert  */
+}   /*  End Function histogram  */
 
 flag pre_process (multi_desc)
 /*  This routine will pre process the multi array general data structure
@@ -683,7 +686,7 @@ unsigned int stride;
 	(void) fprintf (stderr, "NULL pointer passed\n");
 	a_prog_bug (function_name);
     }
-    bin_size = (element_max - element_min) / num_bins;
+    bin_size = (element_max - element_min) / (num_bins - 1);
     num_blocks = length / BLOCK_LENGTH;
     for (block_count = 0; block_count < num_blocks;
 	 ++block_count, data += BLOCK_LENGTH * stride)

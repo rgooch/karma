@@ -1,29 +1,21 @@
-CC = $(KARMA_CC)
-# The  -O3  options causes problems, use  -O2  instead
-COPTIMISE = -O
-#CSINGLE = -fd
-CFLAGS = $(COPTIMISE) -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) $(CSINGLE) -DARCH_$(MACHINE_ARCH) -DX11
-FC = fc -fi
-FFLAGS = $(COPTIMISE)
+include ../GNUmakefile.head
 
-LDFLAGS = $(COPTIMISE)
+ifeq ($(OS),Solaris)
+LD = $(KARMA_LD) -R$(KARMALIBPATH):$(XLIBPATH)
+endif
 
-vpath %.o
-vpath %.o $(MACHINE_ARCH)
+ifeq ($(OS),IRIX5)
+LD = $(KARMA_LD) -rpath $(KARMALIBPATH):$(XLIBPATH)
+endif
 
-%.o : %.c
-	$(CC) $(CFLAGS) -c $*.c -o $(MACHINE_ARCH)/$*.o
+ifeq ($(OS),OSF1)
+LD = $(KARMA_LD) -Wl,-rpath,$(KARMALIBPATH):$(XLIBPATH)
+endif
 
-$(MACHINE_ARCH)/%.o : %.c
-	$(CC) $(CFLAGS) -c $*.c -o $(MACHINE_ARCH)/$*.o
-	
-CLIBS =	$(LIBS) -lm
-FLIBS = $(LIBS) -lc
-
-LIBS =	-L$(KARMALIBPATH) -L$(XLIBPATH) \
-	-lkarmagraphics -lkarmaxview -lkarmaX11 -lkarma \
-	-lxview -lolgx -lXext -lX11 \
-	-ltermcap $(OS_LIBS)
+CFLAGS = $(COPTIMISE) -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) -DOS_$(OS) -DMACHINE_$(MACHINE) -DX11
+KARMALIBS = -L$(KARMALIBPATH)	-lkarmawidgets -lkarmagraphics -lkarmaXt \
+				-lkarmaX11 -lkarma
+XLIBS = -L$(XLIBPATH) -lXaw -lXmu -lXt -lXext -lX11
 
 
 TARGETS =	$(KARMABINPATH)/kmovie
@@ -31,32 +23,28 @@ TARGETS =	$(KARMABINPATH)/kmovie
 all:	$(TARGETS)	clean
 
 
-KMOVIE =	kmovie_main.c		kmovie_xview.c \
-		kmovie_colour.c \
-		kmovie_track.c		kmovie_event.c
+KMOVIE =	kmovie_main.c kmovie_generic.c
 
-KMOVIEO =	kmovie_main.o		kmovie_xview.o \
-		kmovie_colour.o \
-		kmovie_track.o		kmovie_event.o
+KMOVIEO =	kmovie_main.o kmovie_generic.o
 
-$(KARMABINPATH)/kmovie:	$(KMOVIE) $(KMOVIEO) $(KDEPLIB_KARMAGRAPHICS) \
-			$(KDEPLIB_KARMAXVIEW) \
+$(KARMABINPATH)/kmovie:	$(KMOVIEO) $(KDEPLIB_KARMAWIDGETS) \
+			$(KDEPLIB_KARMAGRAPHICS) \
 			$(KDEPLIB_KARMAX11) $(KDEPLIB_KARMA)
-	cd $(MACHINE_ARCH); $(KARMA_CC) $(LDFLAGS) -o tmpkmovie $(KMOVIEO) $(CLIBS)
-	install -s $(MACHINE_ARCH)/tmpkmovie $(KARMABINPATH)/kmovie
+	cd $(machine_dir); $(LD) $(LDFLAGS) -o tmpkmovie $(KMOVIEO) $(CLIBS)
+	install -s $(machine_dir)/tmpkmovie $(KARMABINPATH)/kmovie
 	chmod u=rwx,go=x $(KARMABINPATH)/kmovie
 
 
 depend:
-	makedepend -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) -f$(MACHINE_ARCH)/depend $(KMOVIE) 
+	makedepend -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) -f$(machine_dir)/depend $(KMOVIE)
 
 
 
 clean:
-	rm -f *.BAK *.log *.sed .#* *~ *.bak */*.bak */tmp* .*defaults
+	rm -f *.BAK *.log *.sed date.h .#* *~ *.bak */*.bak */tmp* .*defaults
 
 
 remove:
 	\rm -f $(TARGETS)
 
-include $(MACHINE_ARCH)/depend
+include $(machine_dir)/depend

@@ -2,7 +2,7 @@
 
     Slave process file for Connection Management tool and shell.
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1992,1993,1994  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,10 +31,16 @@
 
     Updated by      Richard Gooch   26-DEC-1992
 
-    Last updated by Richard Gooch   29-SEP-1993
+    Updated by      Richard Gooch   29-SEP-1993
+
+    Updated by      Richard Gooch   15-APR-1994: Added support for passing of
+  arguments to modules.
+
+    Last updated by Richard Gooch   19-APR-1994: Took account of change to
+  interface to  slave_setup  .
 
 
-    Usage:   karma_cm_slave [host port display]
+    Usage:   karma_cm_slave host port display [args...]
 
 */
 #include <stdio.h>
@@ -59,7 +65,11 @@ static void exit_func ();
 
 
 /*  External functions  */
-void slave_setup ();
+EXTERN_FUNCTION (int slave_setup, (int argc, char *argv[],
+				   unsigned int *cm_port_number,
+				   unsigned long *cm_host_addr,
+				   flag (*open_func) (), flag (*read_func) (),
+				   void (*close_func) () ) );
 
 
 static unsigned long cm_host_addr = 0;
@@ -72,8 +82,8 @@ char *argv[];
     extern unsigned int cm_port_number;
     extern unsigned long cm_host_addr;
 
-    slave_setup (argc, argv, &cm_port_number, &cm_host_addr,
-		 open_func, read_func, close_func);
+    (void) slave_setup (argc, argv, &cm_port_number, &cm_host_addr,
+			open_func, read_func, close_func);
     /*  Primary event loop  */
     while (TRUE)
     {
@@ -100,6 +110,7 @@ void **info;
     ERRNO_TYPE errno;
     extern char *sys_errlist[];
 
+    (void) fprintf (stderr, "SLAVE: open_func...\n");
     /*  Get my host information  */
     if (gethostname (my_hostname, STRING_LENGTH) != 0)
     {
@@ -109,18 +120,21 @@ void **info;
     }
     my_hostname[STRING_LENGTH] = '\0';
     channel = conn_get_channel (connection);
+    (void) fprintf (stderr, "SLAVE: open_func writing my hostname...\n");
     if (pio_write_string (channel, my_hostname) != TRUE)
     {
 	(void) fprintf (stderr, "SLAVE: Error writing hostname\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_WRITE_ERROR);
     }
+    (void) fprintf (stderr, "SLAVE: open_func flushing...\n");
     if (ch_flush (channel) != TRUE)
     {
 	(void) fprintf (stderr, "SLAVE: Error flushing channel\t%s\n",
 			sys_errlist[errno]);
 	exit (RV_WRITE_ERROR);
     }
+    (void) fprintf (stderr, "SLAVE: open_func finished.\n");
     return (TRUE);
 }   /*  End Function open_func  */
 
@@ -142,6 +156,7 @@ void **info;
     int child_pid;
     Channel channel;
     char *module_name;
+    char *args;
     extern unsigned int cm_port_number;
     extern unsigned long cm_host_addr;
     ERRNO_TYPE errno;
@@ -167,9 +182,21 @@ void **info;
 			sys_errlist[errno]);
 	exit (RV_READ_ERROR);
     }
+    if ( ( args = pio_read_string (channel, (unsigned int *) NULL) )
+	== NULL )
+    {
+	(void) fprintf (stderr, "SLAVE: Error reading arguments\t%s\n",
+			sys_errlist[errno]);
+	exit (RV_READ_ERROR);
+    }
+    if (args[0] == '\0')
+    {
+	m_free (args);
+	args = NULL;
+    }
     if ( ( child_pid = fork_cm_client_module (module_name, cm_host_addr,
 					      cm_port_number,
-					      (int) x, (int) y) )
+					      (int) x, (int) y, args) )
 	< 0 )
     {
 	(void) fprintf (stderr, "SLAVE: Error starting module: \"%s\"\n",
@@ -184,6 +211,8 @@ void **info;
 			    child_pid);
 	}
     }
+    m_free (module_name);
+    if (args != NULL) m_free (args);
     return (TRUE);
 }   /*  End Function read_func  */
 

@@ -1,0 +1,69 @@
+/*  Link with:    -lkarma  */
+/*  This file describes the mt_ package of routines in the Karma library.
+
+    These routines are meant to provide management of a pool of threads which
+  may execute concurrently.
+
+
+    Written by		Richard Gooch	24-Jan-1995
+
+    Last updated by	Richard Gooch	24-Jan-1995
+
+
+*/
+
+KThreadPool mt_create_pool (void *pool_info)
+/*  [PURPOSE] This routine will create a pool of threads which may have jobs
+    launched onto it.
+    <pool_info> An arbitrary pointer passed to work functions.
+    [MT-LEVEL] Safe
+    [RETURNS] A KThreadPool object on success, else NULL.
+*/
+/*---------------------------------------------------------------------------*/
+
+void mt_destroy_pool (KThreadPool pool, flag interrupt)
+/*  [PURPOSE] The function will destroy a thread pool.
+    <pool) The thread pool.
+    <interrupt> If TRUE, any jobs not yet completed will be killed, else the
+    function will wait for uncompleted jobs to finish prior to destroying the
+    pool.
+    [MT-LEVEL] Safe
+    [RETURNS] Nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+unsigned int mt_num_threads (KThreadPool pool)
+/*  [PURPOSE] This function will determine the number of threads that may be
+    run concurrently in a thread pool.
+    <pool> The thread pool.
+    [MT-LEVEL] Safe
+    [RETURNS] The number of concurrent threads.
+*/
+/*---------------------------------------------------------------------------*/
+
+void mt_launch_job (KThreadPool pool,
+		    void (*func) (void *pool_info,
+				  void *call_info1, void *call_info2,
+				  void *call_info3, void *call_info4),
+		    void *call_info1, void *call_info2,
+		    void *call_info3, void *call_info4)
+/*  [PURPOSE] This function will launch a job to a pool of threads.
+    <pool> The thread pool.
+    <func> The function to execute.
+    <call_info1> An arbitrary argument to <<func>>.
+    <call_info2> An arbitrary argument to <<func>>.
+    <call_info3> An arbitrary argument to <<func>>.
+    <call_info4> An arbitrary argument to <<func>>.
+    [MT-LEVEL] Safe
+    [RETURNS] Nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+void mt_wait_for_all_jobs (KThreadPool pool)
+/*  [PURPOSE] This function will wait for all previously launched jobs to
+    complete.
+    <pool> The thread pool.
+    [MT-LEVEL] Safe
+    [RETURNS] Nothing.
+*/
+/*---------------------------------------------------------------------------*/

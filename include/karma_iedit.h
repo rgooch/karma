@@ -2,7 +2,7 @@
 
     Header for  iedit_  package.
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1993,1994  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   24-MAR-1993
 
-    Last updated by Richard Gooch   27-AUG-1993
+    Last updated by Richard Gooch   26-AUG-1994
 
 */
 
@@ -39,15 +39,7 @@
 #define KARMA_IEDIT_H
 
 
-#ifndef EXTERN_FUNCTION
-#  include <c_varieties.h>
-#endif
 #include <karma_ds_def.h>
-
-#ifndef KIMAGEEDITLIST_DEFINED
-#define KIMAGEEDITLIST_DEFINED
-typedef void * KImageEditList;
-#endif
 
 #define EDIT_INSTRUCTION_DAB (unsigned int) 0
 #define EDIT_INSTRUCTION_STROKE (unsigned int) 1
@@ -55,6 +47,9 @@ typedef void * KImageEditList;
 #define EDIT_APPLY_INSTRUCTIONS (unsigned int) 3
 #define EDIT_UNDO_INSTRUCTIONS (unsigned int) 4
 #define EDIT_SET_POINT (unsigned int) 5
+
+
+typedef struct instruction_list_type * KImageEditList;
 
 
 /*  File:   image_edit.c   */

@@ -1,0 +1,15 @@
+/*  Routines to manage callback lists  */
+/*  This file describes the c_ package of routines in the Karma library.
+
+    These routines are meant to provide a general purpose callback management
+    framework. Library packages and applications may use this package to
+    implement their own callback mechanisms. This package removes the need for
+    external code to maintain and traverse callback lists.
+
+
+    Written by		Richard Gooch	<<DATE>>
+
+    Last updated by	Richard Gooch	<<DATE>>
+
+
+*/

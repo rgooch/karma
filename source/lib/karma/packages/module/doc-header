@@ -1,0 +1,14 @@
+/*  Routines to initialise and sequence modules  */
+/*  This file describes the module_ package of routines in the Karma
+    library.
+
+    These routines are meant to provide high level routines to perform
+    initialisation and execution of generic modules.
+
+
+    Written by		Richard Gooch	<<DATE>>
+
+    Last updated by	Richard Gooch	<<DATE>>
+
+
+*/

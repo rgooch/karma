@@ -30,24 +30,24 @@ support are listed below, grouped by layer.
   =======
 
 The lowest level (most primitive) communications routines are in the
-r_  package in the Karma library. These routines provide a very low
+<r_> package in the Karma library. These routines provide a very low
 level interface to Unix sockets (on Unix systems). Routines exist for
 allocating ports and making connections to ports.
 These routines are *not* recommended for use, as they are inherently
 non-portable (outside of Unix, say) in their interactions, and too
 primitive.
-The  r_  package also provides other miscellaneous functions to
+The <r_> package also provides other miscellaneous functions to
 manipulate the process environment, determining the hostname of a
 machine, computing port numbers, etc. These routines provide some OS
 independent functions, and hence are preferred over the vendor
 supplied routines.
-The  r_  package is a key package in providing OS abstraction.
+The <r_> package is a key package in providing OS abstraction.
 
   Level 2
   =======
 
 The basic Input/Output class in Karma is the "channel". This is
-provided by the  ch_  package. A channel is a (possibly) full duplex
+provided by the <ch_> package. A channel is a (possibly) full duplex
 buffered stream of data. These are similar to the standard C library
 FILE * streams, but fix a number of deficiencies in FILE streams, such
 as:
@@ -58,8 +58,13 @@ as:
 
 A channel may be associated with a file (disc file, named FIFO, tty,
 etc.), a connection to another process, a memory object, and others.
-A single interface for reading and writing is presented by the  ch_
+A single interface for reading and writing is presented by the <ch_>
 package.
+A powerful extension for Channels is the ability to push a stack of
+filter functions (termed "converters") onto a Channel. Examples of
+useful converters include encryption and compression filters. These
+converters do not change the interface to Channels, hence their effect
+is transparent to the application.
 
   Level 3
   =======
@@ -70,19 +75,19 @@ management". In Unix, there are two ways of doing this. One way is to
 install signal handlers. Unfortunately, becauses most code is not
 re-entrant, there are inherent dangers in using signals. The other
 alternative is to using a polling loop to watch for communication
-events. The  chm_  package provides the means (when running under a
+events. The <chm_> package provides the means (when running under a
 plain Unix environment) to register event callback functions to
-process communications events. The  chm_  package also provides the
+process communications events. The <chm_> package also provides the
 chm_poll routine which does the actual polling for events. On Unix
 systems, this can effectively place a process in hibernation until an
 event occurs.
 When running under a different environment, say using the Xt or XView
-toolkits, the  xt_chm_  and  notify_chm_  packages provide the
+toolkits, the <chx_> and <notify_chm_> packages provide the
 callback registration functions, respectively. These packages do not
 provide a polling routine, as the toolkit choosen supplies this
 function.
 
-The  pio_  package provides a simple means to transfer binary data
+The <pio_> package provides a simple means to transfer binary data
 between a unified "network" format and local (host) format. These
 routines write to/ read from channels. These routines are handy for
 simple communications.
@@ -91,13 +96,13 @@ simple communications.
   =======
 
 The real power in the communications support in Karma comes from the
-conn_  package. This is the recommended interface for all user-level
+<conn_> package. This is the recommended interface for all user-level
 communications (and most library communications too).
-The  conn_  package  is initialised with the  conn_register_managers
-routine. This tells the  conn_  package whether to use the plain Unix
+The <conn_> package is initialised with the <conn_register_managers>
+routine. This tells the <conn_> package whether to use the plain Unix
 channel management, or the Xt or XView based channel management.
-The  conn_  package provides support for modules (processes) to
-connect to each other, using agreed upon "protocols". The  conn_
+The <conn_> package provides support for modules (processes) to
+connect to each other, using agreed upon "protocols". The <conn_>
 package does not enforce the definition of a "protocol", it just
 provides a means for modules to differentiate between the various
 connections they may have. It is the responsibility of the code
@@ -119,15 +124,16 @@ it cannot accept connections with that protocol.
 Each module may have both client and server support for zero, one or
 more protocols. Also, each module may be operating both as a client
 and a server for different connections. The difference between a
-client and server (as far as the  conn_  package is concerned) is that
+client and server (as far as the <conn_> package is concerned) is that
 a client initiates a connection while the server accepts (or rejects)
-the connection.
+the connection. See the section on security below which details how
+access may be restricted.
 
 In order to transfer data over a Connection, one must call the
-conn_get_channel  routine to obtain the underlying Channel, since all
+<conn_get_channel> routine to obtain the underlying Channel, since all
 I/O is based on the Channel.
 
-The  conn_  package, in conjunction with the  ch_  package provides
+The <conn_> package, in conjunction with the <ch_> package provides
 complete abstraction of communications. Higher level library code and
 user code has no knowledge of the underlying transport mechanisms
 used. This allows the library to choose the most efficient transport
@@ -136,9 +142,9 @@ It is worth pointing out that the communications abstraction does not
 come at the cost of speed or efficiency, both in terms of raw
 throughput and turnaround times.
 
-The  arln_  package allows the reading (with blocking: waiting for
+The <arln_> package allows the reading (with blocking: waiting for
 input) from the standard input of lines, while still polling for other
-events. This package uses the  chm_  package for channel management,
+events. This package uses the <chm_> package for channel management,
 hence is not applicable to Xt or XView toolkit based modules.
 
   Level 5
@@ -146,25 +152,25 @@ hence is not applicable to Xt or XView toolkit based modules.
 
 Another fundamental part of the Karma library is the Karma Data
 Structure. This flexible, heirarchical data structure can be simply
-transferred between modules by using the  dsxfr_  package. This
+transferred between modules by using the <dsxfr_> package. This
 package defines the "multi_array" protocol, and provides simple
 routines to read or write an entire data structure from/ to another
 modules (or disc file).
 Part of the definition of the "multi_array" protocol is that data
 always flows from the client to the server, never the other way around.
 
-Another package in the Karma library is the  kcmap_  package. This
+Another package in the Karma library is the <kcmap_> package. This
 package defines an opaque dynamic pseudocolourmap class. This provides
 a graphics system independent means to modify colourmaps. In addition,
 it provides for dynamic changes to colourmaps to be shared between
-modules by using the  conn_  package to define the "colourmap_indices"
+modules by using the <conn_> package to define the "colourmap_indices"
 and "full_colourmap" protocols. This allows processes attached to the
 same graphics display and separate graphics displays (ie. separate X
 displays) to dynamically share colourmaps.
 
-The  iedit_  package defines an opaque image edit instruction class.
-This is designed for simple image painting operations. The  iedit_
-package also uses the  conn_  package to define the "2D_edit" protocol
+The <iedit_> package defines an opaque image edit instruction class.
+This is designed for simple image painting operations. The <iedit_>
+package also uses the <conn_> package to define the "2D_edit" protocol
 which allows changes to an edit list to be propagated to co-operating
 modules. Using this package, it is trivial to implement a "shared
 paintboard" application for several users, where each user sees what
@@ -174,9 +180,9 @@ every other user is painting, in real time.
   =======
 
 The Karma library provides a simplified interface to the general Karma
-Data Structure in the  iarray_  package. This package defines the
+Data Structure in the <iarray_> package. This package defines the
 "Intelligent Array" class.
-As with the  dsxfr_  package, the  iarray_  package provides similar
+As with the <dsxfr_> package, the <iarray_> package provides similar
 routines to transfer data between modules and to/from disc files.
 
 
@@ -463,7 +469,7 @@ Connection Management:
 When developing a complex application comprised of many communicating
 modules, the establishment of connections (and even the starting of
 modules) can become rather difficult to manage, with connection
-attempts (calls to  conn_attempt_connection  ) in many different
+attempts (calls to <conn_attempt_connection>) in many different
 modules. To streamline this, there exists the Connection Management
 shell, an interpreter which reads a script file. The script file
 specifies which hosts modules will run on, which modules should be
@@ -479,3 +485,101 @@ redirected to logfiles in  /tmp
 
 See the file: $KARMABASE/cm_script/example  for information on the
 syntax of the Connection Management Shell.
+
+
+Security (authentication and encryption):
+-----------------------------------------
+
+  Authentication
+  ==============
+In a networked environment, any client module is able to make a
+connection to a server module. On the Internet, this means every
+machine with Internet access can potentially connect to your server
+module. In many (most) cases, this is not a concern since your server
+module will only be running a short time. However, there may be
+circumstances which require a more prudent approach. The Karma
+communications infrastructure provides multiple levels of
+authentication verification to support your needs.
+
+  Encryption
+  ==========
+
+Distinct from authentication is the issue of privacy. Since the Karma
+communications infrastructure utilises the network transport
+facilities provided by the operating system, the level of privacy is
+the same as that provided by the network layer. On a local area
+network (LAN), you can expect that every machine on that network is
+capable of spying on your data as it passes over the network. For most
+people, this is probably not a serious concern since their data files
+are also transferred over this network. Of greater concern is the
+possibility of information to be captured as it passes between two
+machines, each on a different LAN. If you are transferring data
+between two machines across the Internet, you really have no idea of
+who might be spying on your data. Karma provides strong encryption to
+assure your privacy.
+
+  Purpose
+  =======
+
+The Karma communcations security support is aimed at:
+
+  - Individual users who want to secure their communications
+
+  - Application developers who want to write secure, network-aware
+    applications without worrying about the implemtation details
+
+  - Commercial service providers on the Internet who wish to ensure
+    their own security and that of their customers.
+
+  Details
+  =======
+
+All connections maintained by the <conn_> package may be both
+authenticated and encrypted. The configuration of this is centralised
+in your ~/.KARMAauthority file (this file should bar all access except
+for the owner). You may set a uniform authentication/encryption
+requirement for all Karma protocols, or you may selectively protect
+some protocols. If a protocol is not specified in your authority file,
+the default authentication/encryption is used.  The format of this
+file is a follows (one line per protocol):
+
+  protocol_name  security_type  [extra information]
+
+The <protocol_name> may be any protocol name (a specific module need
+not support a protocol). The name "RAW_PROTOCOL" designates the raw
+Karma protocol used by the <conn_> package prior to negotiating a
+specific application protocol.
+
+<security_type> may be any of the following:
+
+  key-only        IDEA used to verify authentication. Data unencrypted
+  IDEA            IDEA used to verify authentication and data encrypted
+  PGPuserID-IDEA  PGP used for session key transfer, then use IDEA mode
+  drop-encryption drop data encryption for a specific protocol
+
+For both the "key-only" and "IDEA" modes, the security type field must
+be followed by a 24 byte IDEA session key and CFB initialisation
+vector. This data must be in ASCII hexadecimal format. Both these
+modes require the secure transfer of the authority file.
+
+The "PGPuserID-IDEA" mode is the most secure: the server module uses
+PGP (Philip R. Zimmermann's Pretty Good Privacy) to encrypt a random
+IDEA session key which is sent the the client module. The client
+module uses PGPdaemon (part of the PGPsendmail/Unix Suite available
+from: ftp.atnf.csiro.au:pub/people/rgooch) to decode this session key.
+The security type field must be followed by the authorised PGP userID.
+You must have PGP and PGPsendmail/Unix 1.4 or later installed.
+
+The "drop-encryption" mode allows you to drop encryption for a
+specified protocol. This is useful when you have specified an
+encryption mode for all protocols (using "RAW_PROTOCOL") and you are
+concerned about the performance degradation of encrypting data.
+
+Note that in all cases, encryption is automatically dropped after
+protocol authentication if the connection is local (i.e. a connection
+to the same machine).
+
+  Restrictions
+  ============
+
+See the Karma security guide on information regarding restrictions.

@@ -1,0 +1,11 @@
+dmp_multi_desc
+dmp_packet_desc
+dmp_element_desc
+dmp_array_desc
+dmp_dim_desc
+dmp_multi_data
+dmp_packet
+dmp_element
+dmp_array
+dmp_list
+dmp_flag

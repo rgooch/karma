@@ -1,0 +1,2 @@
+/*  Routines to interface with PGP  */
+/*  Link with:    -lkarma  */

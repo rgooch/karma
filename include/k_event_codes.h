@@ -32,6 +32,9 @@
 #define K_CANVAS_EVENT_RIGHT_MOUSE_CLICK (unsigned int) 4
 #define K_CANVAS_EVENT_RIGHT_MOUSE_DRAG (unsigned int) 5
 #define K_CANVAS_EVENT_POINTER_MOVE (unsigned int) 6
+#define K_CANVAS_EVENT_LEFT_MOUSE_RELEASE (unsigned int) 7
+#define K_CANVAS_EVENT_MIDDLE_MOUSE_RELEASE (unsigned int) 8
+#define K_CANVAS_EVENT_RIGHT_MOUSE_RELEASE (unsigned int) 9
 
 #define K_CANVAS_EVENT_UNDEFINED (unsigned int) 29999
 

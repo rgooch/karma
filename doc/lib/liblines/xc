@@ -1,0 +1,2 @@
+/*  Routines to manipulate X displays and colourmaps  */
+/*  Link with:    -lkarmaX11  */

@@ -2,7 +2,7 @@
 
     Header for  chs_  package.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   3-DEC-1992
 
-    Last updated by Richard Gooch   30-DEC-1992
+    Last updated by Richard Gooch   21-MAY-1994
 
 */
 
@@ -39,10 +39,14 @@
 #define KARMA_CHS_H
 
 
-#ifndef EXTERN_FUNCTION
-#  include <c_varieties.h>
+#ifndef KARMA_H
+#  include <karma.h>
 #endif
-#include <karma_ch.h>
+
+#ifndef KARMA_CH_DEF_H
+#  include <karma_ch_def.h>
+#endif
+
 
 /*  File:   chs.c   */
 EXTERN_FUNCTION (unsigned int chs_get_value, (Channel channel, char *string,

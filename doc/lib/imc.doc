@@ -1,21 +1,24 @@
 /*  Link with:    -lkarma  */
 /*  This file describes the imc_ package of routines in the Karma library.
 
-    These routines are provide a number of image conversion routines.
+    These routines provide a number of image conversion routines.
 
 
-    Written by		Richard Gooch	19-SEP-1993
+    Written by		Richard Gooch	30-Nov-1994
 
-    Last updated by	Richard Gooch	19-SEP-1993
+    Last updated by	Richard Gooch	30-Nov-1994
 
 
 */
 
-flag imc_24to8 (image_size, image_reds, image_greens, image_blues, stride24,
-		out_image, stride8, max_colours, speed, pack_desc, packet)
+flag imc_24to8 (unsigned int image_size, unsigned char *image_reds,
+		unsigned char *image_greens, unsigned char *image_blues,
+		int stride24, unsigned char *out_image, int stride8,
+		unsigned int max_colours, unsigned int speed,
+		packet_desc **pack_desc, char **packet)
 /*  This routine will convert a 24 bit truecolour image to an 8 bit
     pseudocolour image.
-    The size image (in pixels) must be given by  image_size  .
+    The size of the image (in pixels) must be given by  image_size  .
     The red component data of the truecolour image must be pointed to by
     image_reds  .
     The green component data of the truecolour image must be pointed to by
@@ -40,17 +43,6 @@ flag imc_24to8 (image_size, image_reds, image_greens, image_blues, stride24,
     The pointer to the top level packet of the general data structure which
     contains the colourmap will be written to the storage pointed to by  
     packet  .
-    The routine returns the TRUE on success, else it returns FALSE.
+    The routine returns TRUE on success, else it returns FALSE.
 */
-unsigned int image_size;
-unsigned char *image_reds;
-unsigned char *image_greens;
-unsigned char *image_blues;
-int stride24;
-unsigned char *out_image;
-int stride8;
-unsigned int max_colours;
-unsigned int speed;
-packet_desc **pack_desc;
-char **packet;
 /*---------------------------------------------------------------------------*/

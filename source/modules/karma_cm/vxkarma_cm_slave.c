@@ -2,7 +2,7 @@
 
     VX slave process setup file for Connection Management tool and shell.
 
-    Copyright (C) 1993  Richard Gooch
+    Copyright (C) 1992,1993,1994  Richard Gooch
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,11 +31,20 @@
 
     Updated by      Richard Gooch   11-JAN-1993
 
-    Last updated by Richard Gooch   31-JUL-1993: Improved data transfer rate
+    Updated by      Richard Gooch   31-JUL-1993: Improved data transfer rate
   over Karma connections from Unix world to VX/MVX
 
+    Updated by      Richard Gooch   15-APR-1994: Added support for passing of
+  arguments to modules.
 
-    Usage:   vxkarma_cm_slave [host port display]
+    Updated by      Richard Gooch   19-APR-1994: Added support for specifying
+  VX video mode (none, mono video or stereo video).
+
+    Last updated by Richard Gooch   21-MAY-1994: Added  #include <karma_ch.h>
+
+
+    Usage:   vxkarma_cm_slave host port display
+               [-novideo | -mono1152x900 | -stereo1152x900]
 
 */
 #include <stdio.h>
@@ -58,6 +67,7 @@
 #include <karma_conn.h>
 #include <karma_chm.h>
 #include <karma_pio.h>
+#include <karma_ch.h>
 #include <karma_ex.h>
 #include <karma_a.h>
 #include <karma_r.h>
@@ -77,6 +87,14 @@
 #define INDEX_UNIX_DOCK 0
 #define INDEX_INTERNET_DOCK 1
 #define NUM_DOCKS 2
+
+/*  External functions  */
+EXTERN_FUNCTION (int slave_setup, (int argc, char *argv[],
+				   unsigned int *cm_port_number,
+				   unsigned long *cm_host_addr,
+				   flag (*open_func) (), flag (*read_func) (),
+				   void (*close_func) () ) );
+
 
 /*  Structure defining "child" process (VX process)  */
 typedef struct
@@ -155,14 +173,61 @@ void main (argc, argv)
 int argc;
 char *argv[];
 {
+    flag stereo = FALSE;
+    int argcount;
+    int video_mode = -1;
     extern vxchild children[MAX_VXNODES];
+    extern int task_fbcacheaddr;
     extern unsigned int cm_port_number;
     extern unsigned long cm_host_addr;
     static char function_name[] = "main";
 
-    slave_setup (argc, argv, &cm_port_number, &cm_host_addr,
-		 open_func, read_func, close_func);
-    attach_nodes (children);
+    argcount = slave_setup (argc, argv, &cm_port_number, &cm_host_addr,
+			    open_func, read_func, close_func);
+    task_fbcacheaddr = RESERVE_NONE;
+    while (argcount < argc)
+    {
+	if (strcmp (argv[argcount], "-novideo") == 0)
+	{
+	    task_fbcacheaddr = RESERVE_NONE;
+	    video_mode = -1;
+	}
+	else if (strcmp (argv[argcount], "-mono1152x900") == 0)
+	{
+	    task_fbcacheaddr = RESERVE_MONO;
+	    video_mode = VX_VIDEO_1152_66HZ;
+	}
+	else if (strcmp (argv[argcount], "-stereo1152x900") == 0)
+	{
+	    task_fbcacheaddr = RESERVE_STEREO;
+	    video_mode = VX_VIDEO_1152_66HZ_S;
+	    stereo = TRUE;
+	}
+	else
+	{
+	    (void) fprintf (stderr, "Bad parameter: \"%s\"\n", argv[argcount]);
+	    exit (RV_BAD_PARAM);
+	}
+	++argcount;
+    }
+    attach_nodes (children, video_mode, stereo);
+    /*  Set environement variable which a VX process may use to determine the
+	video mode it has been given.  */
+    if (video_mode < 0)
+    {
+	r_setenv ("VX_VIDEO_MODE", "NONE");
+    }
+    else
+    {
+	if (stereo)
+	{
+	    r_setenv ("VX_VIDEO_MODE", "STEREO");
+	}
+	else
+	{
+	    r_setenv ("VX_VIDEO_MODE", "MONO");
+	}
+    }
     /*  Primary event loop  */
     while (TRUE)
     {
@@ -204,15 +269,22 @@ int status;
     exit (status);
 }   /*  End Function myexit  */
 
-static void attach_nodes (children)
+static void attach_nodes (children, video_mode, stereo)
 /*  This routine will attach to as many VX nodes as possible.
     The routine will initialise the list of children pointed to by  children  .
+    The video mode to use must be given by  video_mode  .
+    If the value of  stereo  is TRUE, then the mode is a stereo video mode.
     The routine returns nothing.
 */
 vxchild children[MAX_VXNODES];
+int video_mode;
+flag stereo;
 {
     flag no_nodes = TRUE;
+    int screen_width, screen_height;
+    int right_offset;
     unsigned int count;
+    Vxh *vx;
     static char function_name[] = "attach_nodes";
 
     for (count = 0; count < MAX_VXNODES; ++count)
@@ -226,6 +298,8 @@ vxchild children[MAX_VXNODES];
 	    no_nodes = FALSE;
 	    (void) fprintf (stderr, "SLAVE: Attached: %s\n",
 			    children[count].name);
+
+    
 	}
 	else
 	{
@@ -238,6 +312,37 @@ vxchild children[MAX_VXNODES];
 	(void) fprintf (stderr,
 			"SLAVE: Failed attaching to any VX/MVX node\n");
 	myexit (RV_UNDEF_ERROR);
+    }
+    if ( (vx = children[0].handle) == NULL )
+    {
+	(void) fprintf (stderr,
+			"SLAVE: Failed attaching to VX node\n");
+	myexit (RV_UNDEF_ERROR);
+    }
+    /*  VX node: set video display mode  */
+    if (video_mode < 0)
+    {
+	/*  No video: set GX only  */
+	vx_win_mgr_init (vx, VX_VIDEO_DIRECT);
+	vx_direct_video_mode_set (vx, VX_DISPLAY_GX_ONLY);
+    }
+    else
+    {
+	vx_win_mgr_init (vx, VX_VIDEO_DIRECT);
+	vx_direct_video_mode_set (vx, VX_DISPLAY_VX_ONLY);
+	vx_direct_video_key_set (vx, 0,
+				 VX_DISPLAY_CHANNEL, VX_DISPLAY_TRUE_COLOR,
+				 VX_COLOR_MAP, 0,
+				 VX_SHOW_OVERLAY, FALSE,
+				 NULL);
+	vx_direct_video_control_set (vx,
+				     VX_VIDEO_FORMAT, video_mode,
+				     NULL);
+	vx_videoformat (vx, &screen_width, &screen_height);
+	right_offset = stereo ? screen_width * screen_height * 4 : 0;
+	vx_direct_video_control_set (vx,
+				     VX_VIEW, 0, right_offset,
+				     NULL);
     }
 }   /*  End Function attach_nodes  */
 
@@ -307,6 +412,7 @@ void **info;
     int child_pid;
     Channel channel;
     char *module_name;
+    char *args;
     extern unsigned int cm_port_number;
     extern unsigned long cm_host_addr;
     extern vxchild children[MAX_VXNODES];
@@ -333,12 +439,26 @@ void **info;
 			sys_errlist[errno]);
 	myexit (RV_READ_ERROR);
     }
+    if ( ( args = pio_read_string (channel, (unsigned int *) NULL) )
+	== NULL )
+    {
+	(void) fprintf (stderr, "SLAVE: Error reading arguments\t%s\n",
+			sys_errlist[errno]);
+	exit (RV_READ_ERROR);
+    }
+    if (args[0] == '\0')
+    {
+	m_free (args);
+	args = NULL;
+    }
     if ( ( child_pid = get_spare_node (children) ) < 0 )
     {
 	(void) fprintf (stderr, "SLAVE: No spare nodes left\n");
     }
     run_module (&children[child_pid], module_name, cm_host_addr,
-		cm_port_number, (int) x, (int) y);
+		cm_port_number, (int) x, (int) y, args);
+    m_free (module_name);
+    if (args != NULL) m_free (args);
     return (TRUE);
 }   /*  End Function read_func  */
 
@@ -555,7 +675,7 @@ unsigned int port_number;
 }   /*  End Function get_child_of_port  */
 
 
-static void run_module (child, module_name, cm_host_addr, cm_port, x, y)
+static void run_module (child, module_name, cm_host_addr, cm_port, x, y, args)
 /*  This routine will run a module on a VX node.
     The node information must be pointed to by  child  .
     The name of the module to run must be pointed to by  module_name  .
@@ -564,7 +684,9 @@ static void run_module (child, module_name, cm_host_addr, cm_port, x, y)
     The Karma port number to connect to must be given by  cm_port  .
     The window co-ordinates of the icon for the Connection Management Tool must
     be given by  x  and  y  .
-    The routine nothing.
+    The optional arguments to pass to the new process must be pointed to by
+    args  .If this is NULL, no arguments are passed.
+    The routine returns nothing.
 */
 vxchild *child;
 char *module_name;
@@ -572,6 +694,7 @@ unsigned long cm_host_addr;
 unsigned int cm_port;
 int x;
 int y;
+char *args;
 {
     int env_count;
     int env_size;
@@ -581,7 +704,6 @@ int y;
     char control_env[STRING_LENGTH];
     extern int vxhpc_trace;
     extern int pager_trace;
-    extern int task_fbcacheaddr;
     extern char **environ;
     static char function_name[] = "run_module";
 
@@ -602,7 +724,6 @@ int y;
 	return;
     }
     /*  Create the service task  */
-    task_fbcacheaddr = RESERVE_MONO;
     if ( ( (*child).service_task_id = task_create (service_routine, 0, 1,
 						   child) )
 	== 0 )
@@ -858,6 +979,7 @@ char *info;
 	*(int *) msg = ECONNREFUSED;
 	task_send_msg ( (*child).response_queue, msg );
 	m_free ( (char *) con );
+	(void) fprintf (stderr, "ECONNREFUSED\n");
 	return;
     }
     if (chm_manage ( (*con).channel, (void *) con,

@@ -1,0 +1,2 @@
+/*  Routines to initialise and sequence modules  */
+/*  Link with:    -lkarma  */

@@ -8,262 +8,18 @@
     package, hence the resulting code is device independent.
 
 
-    Written by		Richard Gooch	18-APR-1993
+    Written by		Richard Gooch	2-Jan-1995
 
-    Last updated by	Richard Gooch	18-APR-1993
+    Last updated by	Richard Gooch	2-Jan-1995
 
 
 */
-
-ViewableImage viewimg_create (canvas, multi_desc, arr_desc, slice,
-			      hdim, vdim, elem_index)
-/*  This routine will create a viewable image object from a 2-dimensional slice
-    of a Karma data structure. At a later time, this viewable image may be made
-    visible. This routine will not cause the canvas to be refreshed.
-    The world canvas onto which the viewable image may be drawn must be given
-    by  canvas  .Many viewable images may be associated with a single canvas.
-    The  multi_array  descriptor which contains the Karma data structure must
-    be pointed to by  multi_desc  .The routine increments the attachment count
-    on the descriptor on successful completion.
-    The array descriptor must be pointed to by  arr_desc  .
-    The start of the slice data must be pointed to by  slice  .
-    The dimension index of the horizontal dimension must be given by  hdim  .
-    The dimension index of the vertical dimension must be given by  vdim  .
-    The element index of the data packets must be given by  elem_index  .
-    The routine may produce cache data which will vastly increase the speed of
-    subsequent operations on this data. Prior to process exit, a call MUST be
-    made to  viewimg_destroy  ,otherwise shared memory segments could remain
-    after the process exits.
-    The routine returns a viewable image on success, else it returns NULL.
-*/
-KWorldCanvas canvas;
-multi_array *multi_desc;
-array_desc *arr_desc;
-char *slice;
-unsigned int hdim;
-unsigned int vdim;
-unsigned int elem_index;
-/*---------------------------------------------------------------------------*/
-
-ViewableImage viewimg_create_from_iarray (canvas, array, swap)
-/*  This function will create a viewable image object from a 2-dimensional
-    Intelligant Array. At a later time, this viewable image may be made
-    visible. This routine will not cause the canvas to be refreshed.
-    The world canvas onto which the viewable image may be drawn must be given
-    by  canvas  .Many viewable images may be associated with a single canvas.
-    The Intelligent Array must be given by  array  .The underlying  multi_array
-    data strucuture will have its attachment count incremented upon successful
-    completion.
-    If the y axis should be display horizontally, the value of  swap  must be
-    TRUE.
-    The routine may produce cache data which will vastly increase the speed of
-    subsequent operations on this data. Prior to process exit, a call MUST be
-    made to  viewimg_destroy  ,otherwise shared memory segments could remain
-    after the process exits.
-    The routine returns a viewable image on success, else it returns NULL.
-*/
-KWorldCanvas canvas;
-iarray array;
-flag swap;
-/*---------------------------------------------------------------------------*/
-
-ViewableImage *viewimg_create_sequence (canvas, multi_desc, arr_desc, cube,
-					hdim, vdim, fdim, elem_index)
-/*  This routine will create a sequence of viewable image objects from a
-    3-dimensional cube of a Karma data structure. At a later time, this
-    sequence of viewable images may be made visible in any order.
-    This routine will not cause the canvas to be refreshed.
-    The world canvas onto which the viewable image may be drawn must be given
-    by  canvas  .
-    The  multi_array  descriptor which contains the Karma data structure must
-    be pointed to by  multi_desc  .The routine increments the attachment count
-    on the descriptor on successful completion.
-    The array descriptor must be pointed to by  arr_desc  .
-    The start of the cube data must be pointed to by  cube  .
-    The dimension index of the horizontal dimension must be given by  hdim  .
-    The dimension index of the vertical dimension must be given by  vdim  .
-    The dimension index of the frame dimension (dimension containing the
-    sequence) must be given by  fdim  .The number of sequences is the same as
-    the length of this dimension.
-    The element index of the data packets must be given by  elem_index  .
-    The routine may produce cache data which will vastly increase the speed of
-    subsequent operations on this data. Prior to process exit, a call MUST be
-    made to  viewimg_destroy  ,otherwise shared memory segments could remain
-    after the process exits.
-    An arbitrary number of dimension restrictions
-    The routine returns a pointer to a dynamically allocated array of viewable
-    image objects on success, else it returns NULL.
-*/
-KWorldCanvas canvas;
-multi_array *multi_desc;
-array_desc *arr_desc;
-char *cube;
-unsigned int hdim;
-unsigned int vdim;
-unsigned int fdim;
-unsigned int elem_index;
-/*---------------------------------------------------------------------------*/
-
-flag viewimg_make_active (vimage)
-/*  This routine will make a viewable image the active image for its associated
-    world canvas. The canvas is then refreshed (possibly resized), provided
-    that the new viewable image was not already active.
-    The viewable image must be given by  vimage  .
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-ViewableImage vimage;
-/*---------------------------------------------------------------------------*/
-
-void viewimg_control_autoscaling (canvas, auto_x, auto_y, auto_v, int_x, int_y,
-				  maintain_aspect_ratio)
-/*  This routine will control the autoscaling options used when viewable images
-    are displayed on their associated world canvas.
-    The world canvas must be given by  canvas  .
-    If  auto_x  is TRUE, then the horizontal window scaling information for the
-    canvas is set to the horizontal range of the active viewable image. The
-    default is TRUE.
-    If  auto_y  is TRUE, then the vertical window scaling information for the
-    canvas is set to the vertical range of the active viewable image. The
-    default is TRUE.
-    If  auto_v  is TRUE, then the value/ colourmap window scaling information
-    for the canvas is set to the data range of the active viewable image. The
-    default is TRUE.
-    If  int_x  is TRUE, then when the number of horizontal data values in a
-    viewable image is greater than the number of horizontal pixels (zoom out),
-    as many pixels are used so that there are an integral number of data values
-    per pixel; if the number of data values is less than the number of pixels
-    (zoom in), as many pixels are used so that there are an integral number of
-    pixels per data value. The default is TRUE.
-    The  int_y  parameter is similar to the  int_x  parameter, except that it
-    applies to vertical pixels. The default is TRUE.
-    If  maintain_aspect_ratio  is TRUE, then any zoom in or out factors will be
-    the same (ie. the image aspect ratio is preserved). The default is FALSE.
-    The canvas is not refreshed by this operation.
-    The routine returns nothing.
-*/
-KWorldCanvas canvas;
-flag auto_x;
-flag auto_y;
-flag auto_v;
-flag int_x;
-flag int_y;
-flag maintain_aspect_ratio;
-/*---------------------------------------------------------------------------*/
-
-flag viewimg_register_data_change (vimage)
-/*  This routine will register a change in the Karma data structure associated
-    with a viewable image. If the viewable image is active, it will be
-    immediately redrawn on its canvas.
-    The viewable image must be given by  vimage  .
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-ViewableImage vimage;
-/*---------------------------------------------------------------------------*/
-
-void viewimg_destroy (vimage)
-/*  This routine will destroy a viewable image. If this is not called prior to
-    process exit, shared memory segments could remain after the process exits.
-    The viewable image must be given by  vimage  .
-    Note that the associated  multi_array  descriptor is also deallocated (or
-    at least, the attachment count is decreased).
-    The routine returns nothing.
-*/
-ViewableImage vimage;
-/*---------------------------------------------------------------------------*/
-
-ViewableImage viewimg_get_active (canvas)
-/*  This routine will get the active ViewableImage associated with a
-    KWorldCanvas object.
-    The canvas must be given by  canvas  .
-    The routine returns the active viewable image on success, else it returns
-    NULL (indicating no viewable image is active for the canvas).
-*/
-KWorldCanvas canvas;
-/*---------------------------------------------------------------------------*/
-
-void viewimg_register_position_event_func (canvas, position_func, f_info)
-/*  This routine will register a position event function for a world canvas
-    which has a number of ViewableImage objects associated with it.
-    The position event function will be called whenever a position event on the
-    canvas has not been consumed. Only one position event function may be
-    registered per canvas using this function.
-    The canvas must be given by  canvas  .
-    The function that is called when a position event occurs must be pointed to
-    by  position_func  .
-    The interface to this routine is as follows:
-
-    flag position_func (vimage, x, y, value, event_code, e_info, f_info)
-    *   This routine is a position event consumer for a world canvas which has
-        a number of ViewableImage objects associated with it.
-        The active viewable image is given by  vimage  .
-	The horizontal world co-ordinate of the event will be given by  x  .
-	The vertical world co-ordinate of the event will be given by  y  .
-	The data value in the viewable image corresponding to the event
-	co-ordinates will be written to the storage pointed to by  value  .
-	This must be of type  K_DOUBLE  .
-	The arbitrary event code is given by  event_code  .
-	The arbitrary event information is pointed to by  e_info  .
-	The arbitrary function information pointer is pointed to by  f_info  .
-	The routine returns TRUE if the event was consumed, else it returns
-	FALSE indicating that the event is still to be processed.
-    *
-    ViewableImage vimage;
-    double x;
-    double y;
-    double value[2];
-    unsigned int event_code;
-    void *e_info;
-    void **f_info;
-
-    The initial arbitrary function information pointer must be given by  f_info
-    The routine returns nothing.
-*/
-KWorldCanvas canvas;
-flag (*position_func) ();
-void *f_info;
-/*---------------------------------------------------------------------------*/
-
-flag viewimg_fill_ellipse (vimage, centre_x, centre_y, radius_x,radius_y,value)
-/*  This routine will draw a filled ellipse into a 2 dimensional slice of
-    data associated with a viewable image.
-    The viewable image must be given by  vimage  .
-    The world co-ordinates of the centre of the ellipse must be given by
-    centre_x  and centre_y  .
-    The radii must be given by  radius_x  and  radius_y  .
-    The complex value to fill the ellipse with must be pointed to be  value  .
-    This must be of type K_DCOMPLEX.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-ViewableImage vimage;
-double centre_x;
-double centre_y;
-double radius_x;
-double radius_y;
-double value[2];
-/*---------------------------------------------------------------------------*/
-
-flag viewimg_fill_polygon (vimage, coords, num_vertices, value)
-/*  This routine will draw a filled polygon into a 2 dimensional slice of data
-    associated with a viewable image.
-    The viewable image must be given by  vimage  .
-    The array of world co-ordinates of vertices of the polygon must be pointed
-    to by  coords  .
-    The number of vertices in the polygon must be given by  num_vertices  .
-    The complex value to fill the polygon with must be pointed to be  value  .
-    This must be of type K_DCOMPLEX.
-    The routine returns TRUE on success, else it returns FALSE.
-*/
-ViewableImage vimage;
-edit_coord *coords;
-unsigned int num_vertices;
-double value[2];
-/*---------------------------------------------------------------------------*/
 
 flag viewimg_draw_edit_list (vimage, ilist)
 /*  This routine will draw a list of edit objects to the 2-dimensional data
     associated with a viewable image object.
     The viewable image must be given by  vimage  .
-    The list of eidt objects must be given by  ilist  .
+    The list of edit objects must be given by  ilist  .
     The routine returns TRUE on success, else it returns FALSE.
 */
 ViewableImage vimage;
@@ -281,4 +37,383 @@ flag viewimg_draw_edit_object (vimage, object)
 */
 ViewableImage vimage;
 char *object;
+/*---------------------------------------------------------------------------*/
+
+void viewimg_init (KWorldCanvas canvas)
+/*  This routine will initialise the  viewimg_  package for a particular
+    world canvas. Calling this routine causes a number of callback routines
+    internal to the  viewimg_  package to be registered with the canvas (such
+    as refresh and position event callbacks). The use of this routine is
+    optional at the moment: the routines which create viewable images perform
+    this function automatically. In version 2.0 of Karma, this use of this
+    routine before creating viewable images will become mandatory.
+    The world canvas must be given by  canvas  .
+    The routine returns nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+ViewableImage viewimg_create_restr (KWorldCanvas canvas,
+				    multi_array *multi_desc,
+				    array_desc *arr_desc, char *slice,
+				    unsigned int hdim, unsigned int vdim,
+				    unsigned int elem_index,
+				    unsigned num_restr,
+				    char **restr_names, double *restr_values)
+/*  [PURPOSE] This routine will create a PseudoColour viewable image object
+    from a 2-dimensional slice of a Karma data structure. At a later time, this
+    viewable image may be made visible. This routine will not cause the canvas
+    to be refreshed.
+    <canvas> The world canvas onto which the viewable image may be drawn. Many
+    viewable images may be associated with a single canvas.
+    <multi_desc> The  multi_array  descriptor which contains the Karma data
+    structure. The routine increments the attachment count on the descriptor
+    on successful completion. This may be NULL.
+    <arr_desc> The array descriptor.
+    <slice> The start of the slice data.
+    <hdim> The dimension index of the horizontal dimension.
+    <vdim> The dimension index of the vertical dimension.
+    <elem_index> The element index in the data packets.
+    <num_restr> The number of matched restrictions. If this is 0, no
+    restrictions are recorded (this is the same as calling  viewimg_create  ).
+    <restr_names> The restriction names.
+    <restr_values> The restriction values.
+    [NOTES] Restriction information is automatically deallocated when
+    viewimg_destroy  is called.
+    [NOTES] The routine may produce cache data which will vastly increase the
+    speed of subsequent operations on this data. Prior to process exit, a call
+    MUST be made to  viewimg_destroy  ,otherwise shared memory segments could
+    remain after the process exits.
+    [RETURNS] A viewable image on success, NULL.
+*/
+/*---------------------------------------------------------------------------*/
+
+ViewableImage viewimg_create (KWorldCanvas canvas, multi_array *multi_desc,
+			      array_desc *arr_desc, char *slice,
+			      unsigned int hdim, unsigned int vdim,
+			      unsigned int elem_index)
+/*  This routine will create a viewable image object from a 2-dimensional slice
+    of a Karma data structure. At a later time, this viewable image may be made
+    visible. This routine will not cause the canvas to be refreshed.
+    The world canvas onto which the viewable image may be drawn must be given
+    by  canvas  .Many viewable images may be associated with a single canvas.
+    The  multi_array  descriptor which contains the Karma data structure must
+    be pointed to by  multi_desc  .The routine increments the attachment count
+    on the descriptor on successful completion.
+    The array descriptor must be pointed to by  arr_desc  .
+    The start of the slice data must be pointed to by  slice  .
+    The dimension index of the horizontal dimension must be given by  hdim  .
+    The dimension index of the vertical dimension must be given by  vdim  .
+    The element index in the data packets must be given by  elem_index  .
+    The routine may produce cache data which will vastly increase the speed of
+    subsequent operations on this data. Prior to process exit, a call MUST be
+    made to  viewimg_destroy  ,otherwise shared memory segments could remain
+    after the process exits.
+    The routine returns a viewable image on success, else it returns NULL.
+*/
+/*---------------------------------------------------------------------------*/
+
+ViewableImage viewimg_create_from_iarray (KWorldCanvas canvas, iarray array,
+					  flag swap)
+/*  This function will create a viewable image object from a 2-dimensional
+    Intelligant Array. At a later time, this viewable image may be made
+    visible. This routine will not cause the canvas to be refreshed.
+    The world canvas onto which the viewable image may be drawn must be given
+    by  canvas  .Many viewable images may be associated with a single canvas.
+    The Intelligent Array must be given by  array  .The underlying  multi_array
+    data strucuture will have its attachment count incremented upon successful
+    completion.
+    If the y axis should be displayed horizontally, the value of  swap  must be
+    TRUE.
+    The routine may produce cache data which will vastly increase the speed of
+    subsequent operations on this data. Prior to process exit, a call MUST be
+    made to  viewimg_destroy  ,otherwise shared memory segments could remain
+    after the process exits.
+    The routine returns a viewable image on success, else it returns NULL.
+*/
+/*---------------------------------------------------------------------------*/
+
+ViewableImage *viewimg_create_sequence (KWorldCanvas canvas,
+					multi_array *multi_desc,
+					array_desc *arr_desc, char *cube,
+					unsigned int hdim, unsigned int vdim,
+					unsigned int fdim,
+					unsigned int elem_index)
+/*  This routine will create a sequence of viewable image objects from a
+    3-dimensional cube of a Karma data structure. At a later time, this
+    sequence of viewable images may be made visible in any order.
+    This routine will not cause the canvas to be refreshed.
+    The world canvas onto which the viewable image may be drawn must be given
+    by  canvas  .
+    The  multi_array  descriptor which contains the Karma data structure must
+    be pointed to by  multi_desc  .The routine increments the attachment count
+    on the descriptor on successful completion.
+    The array descriptor must be pointed to by  arr_desc  .
+    The start of the cube data must be pointed to by  cube  .
+    The dimension index of the horizontal dimension must be given by  hdim  .
+    The dimension index of the vertical dimension must be given by  vdim  .
+    The dimension index of the frame dimension (dimension containing the
+    sequence) must be given by  fdim  .The number of frames is the same as the
+    length of this dimension.
+    The element index in the data packets must be given by  elem_index  .
+    The routine may produce cache data which will vastly increase the speed of
+    subsequent operations on this data. Prior to process exit, a call MUST be
+    made to  viewimg_destroy  ,otherwise shared memory segments could remain
+    after the process exits.
+    An arbitrary number of dimension restrictions
+    The routine returns a pointer to a dynamically allocated array of viewable
+    image objects on success, else it returns NULL.
+*/
+/*---------------------------------------------------------------------------*/
+
+ViewableImage viewimg_create_rgb (KWorldCanvas canvas, multi_array *multi_desc,
+				  array_desc *arr_desc, char *slice,
+				  unsigned int hdim, unsigned int vdim,
+				  unsigned int red_index,
+				  unsigned int green_index,
+				  unsigned int blue_index, unsigned num_restr,
+				  char **restr_names, double *restr_values)
+/*  [PURPOSE] This routine will create a TrueColour viewable image object from
+    a 2-dimensional slice of a Karma data structure. At a later time, this
+    viewable image may be made visible. This routine will not cause the canvas
+    to be refreshed.
+    <canvas> The world canvas onto which the viewable image may be drawn. Many
+    viewable images may be associated with a single canvas.
+    <multi_desc> The  multi_array  descriptor which contains the Karma data
+    structure. The routine increments the attachment count on the descriptor on
+    successful completion. This may be NULL.
+    <arr_desc> The array descriptor.
+    <slice> The start of the slice data.
+    <hdim> The dimension index of the horizontal dimension.
+    <vdim> The dimension index of the vertical dimension.
+    <red_index> The element index of the red component in the data packets.
+    <green_index> The element index of the green component in the data packets.
+    <blue_index> The element index of the blue component in the data packets.
+    [NOTES] The 3 colour components must be of type  K_UBYTE  .
+    <num_restr> The number of matched restrictions. If this is 0, no
+    restrictions are recorded.
+    <restr_names> The restriction names.
+    <restr_values> The restriction values.
+    [NOTES] Restriction information is automatically deallocated when
+    viewimg_destroy  is called.
+    [NOTES] The routine may produce cache data which will vastly increase the
+    speed of subsequent operations on this data. Prior to process exit, a call
+    MUST be made to  viewimg_destroy  ,otherwise shared memory segments could
+    remain after the process exits.
+    [RETURNS] A viewable image on success, else NULL.
+*/
+/*---------------------------------------------------------------------------*/
+
+ViewableImage *viewimg_create_rgb_sequence (KWorldCanvas canvas,
+					    multi_array *multi_desc,
+					    array_desc *arr_desc, char *cube,
+					    unsigned int hdim,
+					    unsigned int vdim,
+					    unsigned int fdim,
+					    unsigned int red_index,
+					    unsigned int green_index,
+					    unsigned int blue_index,
+					    unsigned num_restr,
+					    char **restr_names,
+					    double *restr_values)
+/*  [PURPOSE] This routine will create a sequence of TrueColour viewable image
+    objects from a 3-dimensional cube of a Karma data structure. At a later
+    time, this sequence of viewable images may be made visible in any order.
+    This routine will not cause the canvas to be refreshed.
+    <canvas> The world canvas onto which the viewable image may be drawn. Many
+    viewable images may be associated with a single canvas.
+    <multi_desc> The  multi_array  descriptor which contains the Karma data
+    structure must. The routine increments the attachment count on the
+    descriptor on successful completion. This may be NULL.
+    <arr_desc> The array descriptor.
+    <cube> The start of the cube data.
+    <hdim> The dimension index of the horizontal dimension.
+    <vdim> The dimension index of the vertical dimension.
+    <fdim> The dimension index of the frame dimension (dimension containing the
+    sequence). The number of frames is the same as the length of this dimension
+    <red_index> The element index of the red component in the data packets.
+    <green_index> The element index of the green component in the data packets.
+    <blue_index> The element index of the blue component in the data packets.
+    [NOTES] The 3 colour components must be of type  K_UBYTE  .
+    <num_restr> The number of matched restrictions. If this is 0, no
+    restrictions are recorded.
+    <restr_names> The restriction names.
+    <restr_values> The restriction values.
+    [NOTES] Restriction information is copied into internally allocated
+    storage.
+    [NOTES] The routine may produce cache data which will vastly increase the
+    speed of subsequent operations on this data. Prior to process exit, a call
+    MUST be made to  viewimg_destroy  ,otherwise shared memory segments could
+    remain after the process exits.
+    [RETURNS] A viewable image on success, else NULL.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag viewimg_make_active (ViewableImage vimage)
+/*  [PURPOSE] This routine will make a viewable image the active image for its
+    associated world canvas. The canvas is then refreshed (possibly resized),
+    provided that the new viewable image was not already active.
+    <vimage> The viewable image.
+    [RETURNS] TRUE on success, else FALSE.
+    [SEE ALSO] viewimg_set_active
+*/
+/*---------------------------------------------------------------------------*/
+
+flag viewimg_set_active (ViewableImage vimage, flag refresh)
+/*  [PURPOSE] This routine will make a viewable image the active image for its
+    associated world canvas.
+    <vimage> The viewable image.
+    <refresh> If TRUE, the canvas is always refreshed, if FALSE, the canvas is
+    not refreshed.
+    [RETURNS] TRUE on success, else FALSE.
+    [SEE ALSO] viewimg_make_active
+*/
+/*---------------------------------------------------------------------------*/
+
+flag viewimg_register_data_change (ViewableImage vimage)
+/*  This routine will register a change in the Karma data structure associated
+    with a viewable image. If the viewable image is active, it will be
+    immediately redrawn on its canvas.
+    The viewable image must be given by  vimage  .
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+void viewimg_destroy (ViewableImage vimage)
+/*  This routine will destroy a viewable image. If this is not called prior to
+    process exit, shared memory segments could remain after the process exits.
+    The viewable image must be given by  vimage  .
+    Note that the associated  multi_array  descriptor is also deallocated (or
+    at least, the attachment count is decreased).
+    The routine returns nothing.
+*/
+/*---------------------------------------------------------------------------*/
+
+ViewableImage viewimg_get_active (KWorldCanvas canvas)
+/*  This routine will get the active ViewableImage associated with a
+    KWorldCanvas object.
+    The canvas must be given by  canvas  .
+    The routine returns the active viewable image on success, else it returns
+    NULL (indicating no viewable image is active for the canvas).
+*/
+/*---------------------------------------------------------------------------*/
+
+flag viewimg_test_active (ViewableImage vimage)
+/*  This routine will test if a viewable image is the active image for its
+    associated world canvas.
+    The viewable image must be given by  vimage  .
+    The routine returns TRUE on if the viewable image is actice,
+    else it returns FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+KCallbackFunc viewimg_register_position_event_func (KWorldCanvas canvas,
+						    flag (*func) (),
+						    void *f_info)
+/*  This routine will register a position event function for a world canvas
+    which has a number of ViewableImage objects associated with it.
+    The position event function will be called whenever a position event on the
+    canvas has not been consumed. Many position event functions may be
+    registered per canvas. The first function registered is the first function
+    called upon a position event.
+    The canvas must be given by  canvas  .
+    The function that is called when a position event occurs must be pointed to
+    by  func  .
+    The interface to this routine is as follows:
+
+    flag func (vimage, x, y, value, event_code, e_info, f_info, x_lin, y_lin)
+    *   This routine is a position event consumer for a world canvas which has
+        a number of ViewableImage objects associated with it.
+        The active viewable image is given by  vimage  .
+	The horizontal world co-ordinate of the event will be given by  x  .
+	The vertical world co-ordinate of the event will be given by  y  .
+	These values will have been transformed by the registered transform
+	function (see  canvas_register_transform_func  ) for the associated
+	world canvas.
+	The data value in the viewable image corresponding to the event
+	co-ordinates will be written to the storage pointed to by  value  .
+	This must be of type  K_DOUBLE  .
+	The arbitrary event code is given by  event_code  .
+	The arbitrary event information is pointed to by  e_info  .
+	The arbitrary function information pointer is pointed to by  f_info  .
+	The linear world co-ordinates (the co-ordinates prior to the transform
+	function being called) will be given by  x_lin  and  y_lin  .
+	The routine returns TRUE if the event was consumed, else it returns
+	FALSE indicating that the event is still to be processed.
+    *
+    ViewableImage vimage;
+    double x;
+    double y;
+    double value[2];
+    unsigned int event_code;
+    void *e_info;
+    void **f_info;
+    double x_lin;
+    double y_lin;
+
+    The initial arbitrary function information pointer must be given by  f_info
+    The routine returns a handle to a KWorldCanvasPositionFunc object.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag viewimg_fill_ellipse (ViewableImage vimage,
+			   double centre_x, double centre_y,
+			   double radius_x, double radius_y, double value[2])
+/*  This routine will draw a filled ellipse into a 2 dimensional slice of
+    data associated with a viewable image.
+    The viewable image must be given by  vimage  .
+    The world co-ordinates of the centre of the ellipse must be given by
+    centre_x  and centre_y  .
+    The radii must be given by  radius_x  and  radius_y  .
+    The complex value to fill the ellipse with must be pointed to be  value  .
+    This must be of type K_DCOMPLEX.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+flag viewimg_fill_polygon (ViewableImage vimage, edit_coord *coords,
+			   unsigned int num_vertices, double value[2])
+/*  This routine will draw a filled polygon into a 2 dimensional slice of data
+    associated with a viewable image.
+    The viewable image must be given by  vimage  .
+    The array of world co-ordinates of vertices of the polygon must be pointed
+    to by  coords  .
+    The number of vertices in the polygon must be given by  num_vertices  .
+    The complex value to fill the polygon with must be pointed to be  value  .
+    This must be of type K_DCOMPLEX.
+    The routine returns TRUE on success, else it returns FALSE.
+*/
+/*---------------------------------------------------------------------------*/
+
+void viewimg_get_canvas_attributes (canvas, va_alist)
+/*  This routine will get the attributes for a world canvas.
+    The world canvas must be given by  canvas  .
+    The list of parameter attribute-key attribute-value pairs must follow.
+    This list must be terminated with the value  VIEWIMG_ATT_END  .
+    See the documentation for the  viewimg_set_canvas_attributes  routine for
+    legal attributes.
+    The routine returns nothing.
+*/
+KWorldCanvas canvas;
+va_dcl
+/*---------------------------------------------------------------------------*/
+
+void viewimg_set_canvas_attributes (canvas, va_alist)
+/*  This routine will control the autoscaling options used when viewable images
+    are displayed on their associated world canvas.
+    The world canvas must be given by  canvas  .
+    The list of parameter attribute-key attribute-value pairs must follow.
+    This list must be terminated with the value  VIEWIMG_ATT_END  .
+    Legal attributes are:
+  VIEWIMG_ATT_AUTO_X           Enable automatic horizontal scaling
+  VIEWIMG_ATT_AUTO_Y           Enable automatic vertical scaling
+  VIEWIMG_ATT_AUTO_V           Enable automatic intensity scaling
+  VIEWIMG_ATT_INT_X            Force integer horizontal zoom-in/zoom-out factor
+  VIEWIMG_ATT_INT_Y            Force integer vertical zoom-in/zoom-out factor
+  VIEWIMG_ATT_MAINTAIN_ASPECT  Maintain data image aspect ratio
+    See the include file  karma_viewimg.h  for matching attribute types.
+    The canvas is not refreshed by this operation.
+    The routine returns nothing.
+*/
+KWorldCanvas canvas;
+va_dcl
 /*---------------------------------------------------------------------------*/

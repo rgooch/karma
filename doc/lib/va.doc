@@ -10,14 +10,15 @@
     coding in assembler.
 
 
-    Written by		Richard Gooch	16-NOV-1992
+    Written by		Richard Gooch	30-Nov-1994
 
-    Last updated by	Richard Gooch	16-NOV-1992
+    Last updated by	Richard Gooch	30-Nov-1994
 
 
 */
 
-void va_scale_float (out, out_stride, inp, inp_stride, length, scale, offset)
+void va_scale_float (float *out, int out_stride, float *inp, int inp_stride,
+		     int length, float scale, float offset)
 /*  This routine will perform a scale and offset operation on an array of
     floating point numbers. The arithmetic form is as follows:
         out[i] = inp[i] * scale + offset
@@ -34,11 +35,4 @@ void va_scale_float (out, out_stride, inp, inp_stride, length, scale, offset)
     The offset value must be given by  offset  .
     The routine returns nothing.
 */
-float *out;
-int out_stride;
-float *inp;
-int inp_stride;
-int length;
-float scale;
-float offset;
 /*---------------------------------------------------------------------------*/

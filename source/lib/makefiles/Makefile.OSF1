@@ -1,0 +1,26 @@
+all:
+	-remove_oldlibs
+	@rm -f so_loc.save
+	@for i in karma* ;\
+	do \
+		(echo "Making in $$i"; \
+		cp -p so_locations so_loc.save; \
+		(cd $$i; gmake); \
+		if diff so_locations so_loc.save > /dev/null; \
+			then mv so_loc.save so_locations; \
+			else rm so_loc.save; \
+		fi); \
+	done
+	@if diff so_locations /usr/shlib/so_locations > /dev/null; \
+	    then :; \
+	    else echo "\n**  /usr/shlib/so_locations  needs updating **\n"; \
+	fi
+
+depend:
+	for i in karma* ;\
+	do \
+		(echo "Depending in $$i"; cd $$i; gmake depend); \
+	done
+
+distclean:
+	rm -f */*.o libkarma*.*

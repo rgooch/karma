@@ -2,7 +2,7 @@
 
     Header for  m_  package.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   12-SEP-1992
 
-    Last updated by Richard Gooch   25-MAY-1993
+    Last updated by Richard Gooch   26-NOV-1994
 
 */
 
@@ -39,36 +39,39 @@
 #define KARMA_M_H
 
 
-#ifndef EXTERN_FUNCTION
-#  include <c_varieties.h>
-#endif
 #ifndef KARMA_H
 #  include <karma.h>
 #endif
 #ifndef NULL
 #define NULL 0
 #endif
+#include <sys/types.h>
+
 
 /*  File:   mem_alloc.c   */
-EXTERN_FUNCTION (char *m_alloc, (unsigned int size) );
-EXTERN_FUNCTION (void m_free, (char * ptr) );
+EXTERN_FUNCTION (char *m_alloc, (uaddr size) );
+EXTERN_FUNCTION (void m_free, (char *ptr) );
 EXTERN_FUNCTION (void m_error_notify, (char *function_name, char *purpose) );
 EXTERN_FUNCTION (void m_abort, (char *name, char *reason) );
+EXTERN_FUNCTION (unsigned int m_verify_memory_integrity, (flag force) );
 
 /*  File:   memory.c   */
-EXTERN_FUNCTION (void m_clear, (char *memory, unsigned int length) );
-EXTERN_FUNCTION (void m_copy, (char *dest, char *source,
-			       unsigned int length) );
-EXTERN_FUNCTION (void m_copy_blocks, (char *dest, char *source,
+EXTERN_FUNCTION (void m_clear, (char *memory, uaddr length) );
+EXTERN_FUNCTION (void m_copy, (char *dest, CONST char *source,
+			       uaddr length) );
+EXTERN_FUNCTION (void m_copy_blocks, (char *dest, CONST char *source,
 				      unsigned int dest_stride,
 				      unsigned int source_stride,
 				      unsigned int block_size,
 				      unsigned int num_blocks) );
-EXTERN_FUNCTION (void m_fill, (char *dest, unsigned int stride,
-			       char *source, unsigned int size,
+EXTERN_FUNCTION (void m_fill, (char *dest, uaddr stride,
+			       CONST char *source, uaddr size,
 			       unsigned int num) );
-EXTERN_FUNCTION (flag m_cmp, (char *block1, char *block2,
-			      unsigned int length) );
+EXTERN_FUNCTION (flag m_cmp, (CONST char *block1, CONST char *block2,
+			      uaddr length) );
+EXTERN_FUNCTION (char *m_dup, (CONST char *original, uaddr size) );
+EXTERN_FUNCTION (char *m_alloc_scratch, (uaddr size, char *function_name) );
+EXTERN_FUNCTION (void m_free_scratch, () );
 
 
 #endif /*  KARMA_M_H  */

@@ -31,7 +31,7 @@
 
     Written by      Richard Gooch   29-SEP-1992
 
-    Last updated by Richard Gooch   4-FEB-1993
+    Last updated by Richard Gooch   29-NOV-1993
 
 */
 
@@ -39,8 +39,8 @@
 #define KARMA_IC_H
 
 
-#ifndef EXTERN_FUNCTION
-#  include <c_varieties.h>
+#ifndef KARMA_H
+#  include <karma.h>
 #endif
 #include <X11/Xlib.h>
 

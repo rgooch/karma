@@ -1,7 +1,7 @@
 /*
     Definition of  win_scale  structure.
 
-    Copyright (C) 1992,1993  Richard Gooch
+    Copyright (C) 1992,1993,1994  Richard Gooch
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -42,33 +42,33 @@
 #define KIMAGE_COMPLEX_CONV_CONT_PHASE (unsigned int) 5
 #define KIMAGE_NUM_COMPLEX_CONVERSIONS (unsigned int) 6
 
+#define K_WIN_SCALE_MAGIC_NUMBER (unsigned int) 238943488
+
+/*  This structure is rather, er, historic. I plan to slowly phase out this
+    structure.
+*/
 struct win_scale_type
 {
-    int x_offset;
-    int y_offset;
+    unsigned int magic_number;
+    int x_offset;                /* These fields should be seen as attibutes */
+    int y_offset;                /* for the KWorldCanvas class               */
     int x_pixels;
     int y_pixels;
-    unsigned long blank_pixel;
+    unsigned long blank_pixel;   /* These fields relate to intensity mapping */
     unsigned long min_sat_pixel;
     unsigned long max_sat_pixel;
-    double x_min;
+    double x_min;                /* And these relate to co-ordinate mapping  */
     double x_max;
     double y_min;
     double y_max;
-    flag x_log;
+    flag x_log;                  /* These 2 will be phased out               */
     flag y_log;
-    double ord_offset;
-    double ord_interval;
-    unsigned int trace_count;
-    double first_min;
-    double last_max;
-    flag compute_ordinate_interval;
-    double z_min;
+    double z_min;                /* Back to intensity mapping                */
     double z_max;
     unsigned int z_scale;
     unsigned int conv_type;
-    flag flip_horizontal;
-    flag flip_vertical;
+    flag flip_horizontal;       /* These fields are a convenience for the    */
+    flag flip_vertical;         /* ViewableImage class to flip the image     */
 };
 
 struct scale_type

@@ -1,0 +1,1 @@
+../packages/dir/main.c

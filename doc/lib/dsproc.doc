@@ -6,15 +6,17 @@
     objects (ie. disc and connection arrayfiles).
 
 
-    Written by		Richard Gooch	16-OCT-1992
+    Written by		Richard Gooch	30-Nov-1994
 
-    Last updated by	Richard Gooch	16-OCT-1992
+    Last updated by	Richard Gooch	30-Nov-1994
 
 
 */
 
-void dsproc_object (object, array_names, num_arrays, save_unproc_data,
-		    pre_process, process_array, post_process, mmap_option)
+void dsproc_object (char *object, char *array_names[], unsigned int num_arrays,
+		    flag save_unproc_data, flag (*pre_process) (),
+		    flag (*process_array) (), flag (*post_process) (),
+		    unsigned int mmap_option)
 /*  This routine will process the Karma array in the file which has a name
     pointed to by  object  .This parameter is passed directly to the
     dsxfr_get_multi  routine.
@@ -79,12 +81,4 @@ void dsproc_object (object, array_names, num_arrays, save_unproc_data,
     memory mapped and writing to it will cause a segmentation fault.
     The routine returns nothing.
 */
-char *object;
-char *array_names[];
-unsigned int num_arrays;
-flag save_unproc_data;
-flag (*pre_process) ();
-flag (*process_array) ();
-flag (*post_process) ();
-unsigned int mmap_option;
 /*---------------------------------------------------------------------------*/

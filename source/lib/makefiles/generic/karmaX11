@@ -16,7 +16,7 @@ vpath %.h $(KARMAINCLUDEPATH)
 CFLAGS = -O -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH)
 
 .c.o :
-	$(KARMA_CC) -DARCH_$(MACHINE_ARCH) $(CFLAGS) -c $(sourcedir)/$*.c
+	$(KARMA_CC) -DOS_$(OS) -DMACHINE_$(MACHINE) $(CFLAGS) -c $(sourcedir)/$*.c
 
 cs = $(wildcard $(sourcedir)/*.c)
 csource = $(notdir $(wildcard $(sourcedir)/*.c))
@@ -36,7 +36,7 @@ lint:	$(lintlib)
 
 $(lintlib):	$(csource)
 	(cd $(libdir) ; make_lint)
-	(cd .. ; lint -DARCH_$(MACHINE_ARCH) -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) -C$(LIB) $(lintdir)/*.c)
+	(cd .. ; lint -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) -C$(LIB) $(lintdir)/*.c)
 
 
 clean:
@@ -44,6 +44,6 @@ clean:
 
 
 depend:
-	makedepend -DARCH_$(MACHINE_ARCH) -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) -fGNUmakefile -p$(library)"(" -o'.o)' $(cs)
+	makedepend -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) -I$(XINCLUDEPATH) -fGNUmakefile -p$(library)"(" -o'.o)' $(cs)
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.

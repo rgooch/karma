@@ -1,0 +1,1 @@
+../packages/canvas/stroke.c

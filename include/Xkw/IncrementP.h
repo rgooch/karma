@@ -35,11 +35,13 @@ extern IncrementClassRec incrementClassRec;
 
 typedef struct _IncrementPart
 {
-  XtCallbackList valueChangeCallback;
-  char **list;
-  int index;
-  Widget valueWidget;
-  char *label;
+    /*  Public resources  */
+    XtCallbackList valueChangeCallback;
+    char **list;
+    int index;
+    char *label;
+    /*  Private resources  */
+    Widget valueWidget;
 } IncrementPart;
 
 typedef struct _IncrementRec {

@@ -2,7 +2,12 @@
 /*----------------------------------------------------------------------*/
 /* This widget implements a file selector */
 /**/
-/* Resources:               Type:                Defaults:*/
+/*
+   Resources:               Type:                Defaults:
+
+   fileSelectCallback       Callback             NULL
+   filenameTester           Callback             NULL
+*/    
 /*----------------------------------------------------------------------*/
 
 #ifndef FILEWIN__H

@@ -17,10 +17,13 @@ vpath %.h $(KARMAINCLUDEPATH)
 CFLAGS = -O -I$(KARMAINCLUDEPATH)
 
 .c.o :
-	vxcc -DARCH_VXMVX $(CFLAGS) -c $(sourcedir)/$*.c
+	vxcc -DOS_VXMVX -DMACHINE_i860 $(CFLAGS) -c $(sourcedir)/$*.c
 
 .s.o :
-	asm860 -be $(sourcedir)/VXMVX/$*.s -b
+	cc -E -Qoption cpp -B $(sourcedir)/VXMVX/$*.s | grep -v '^#' | grep -v '^[ 	]*$$' > $*.S
+	asm860 -be $*.S -o $*.o -b
+	rm $*.S
+#	asm860 -be $(sourcedir)/VXMVX/$*.s -b
 
 cs = $(wildcard $(sourcedir)/*.c)
 csource = $(notdir $(cs))
@@ -42,7 +45,7 @@ lint:	$(lintlib)
 
 $(lintlib):	$(csource)
 	(cd $(libdir) ; make_lint)
-	(cd .. ; lint -DARCH_$(MACHINE_ARCH) -I$(KARMAINCLUDEPATH) -I$(VXHOME)/include -C$(LIB) $(lintdir)/*.c)
+	(cd .. ; lint -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) -I$(VXHOME)/include -C$(LIB) $(lintdir)/*.c)
 
 
 clean:
@@ -50,6 +53,6 @@ clean:
 
 
 depend:
-	makedepend -DARCH_$(MACHINE_ARCH) -I$(KARMAINCLUDEPATH) -I$(VXHOME)/include -fGNUmakefile -p$(library)"(" -o'.o)' $(cs)
+	makedepend -DOS_$(OS) -DMACHINE_$(MACHINE) -I$(KARMAINCLUDEPATH) -I$(VXHOME)/include -fGNUmakefile -p$(library)"(" -o'.o)' $(cs)
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.

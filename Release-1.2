@@ -1,0 +1,1124 @@
+Subject: BUG FIXES in  drw_  package
+Date: Thu, 25 Nov 93 19:18:34 EST
+
+SUMMARY:
+  Bugs in drawing to XImage structures have been corrected.
+
+DESCRIPTION:
+  When drawing floating point data to an XImage structure, data which
+was marked as invalid (value >= TOOBIG) was drawn using the
+max_sat_pixel  field of the  win_scale_type  structure. This has been
+corrected to use the  blank_pixel  field instead.
+
+  When drawing unsigned byte data to an XImage structure, if the
+difference between the  z_min  and  z_max  fields of the
+win_scale_type structure was less than 1, a integer divide by zero
+occurred. This caused IOT traps. The  drw_single_plane  routine now
+traps for this condition cleanly, displaying a warning message.
+-------------------------------------------------------------------------------
+Subject: BUG FIX in  canvas_create
+Date: Thu, 25 Nov 93 19:22:26 EST
+
+SUMMARY:
+  A bug in the  canvas_create  routine has been fixed.
+
+DESCRIPTION:
+  Previously, the  canvas_create  routine did not check whether the
+x_log  and  y_log  fields of the  win_scale_type  structure were valid
+flag values. As test has now been included. Applications should ensure
+that the  win_scale_type  structure is properly initialised.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  kwin_draw_lines
+Date: Fri, 26 Nov 93 14:14:16 EST
+
+SUMMARY:
+  A new function for drawing multiple connected lines onto pixel
+canvases has been created.
+
+HEADER CHANGED:
+  karma_kwin.h
+
+DESCRIPTION:
+  The  kwin_draw_lines  routine will draw multiple connected lines
+onto a KPixCanvas object.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTIONS to draw connected lines in  canvas_  package
+Date: Fri, 26 Nov 93 14:59:13 EST
+
+SUMMARY:
+  New functions for drawing multiple connected lines onto world
+canvases have been created.
+
+HEADER CHANGED:
+  karma_canvas.h
+
+DESCRIPTION:
+  The  canvas_draw_lines  and  canvas_draw_lines_p  routines will draw
+multiple connected lines onto a KWorldCanvas object. Using either of
+these routines, it becomes trivial to draw a plot of 1-dimensional
+data onto a canvas.
+-------------------------------------------------------------------------------
+Subject: HEADER CHANGED
+Date: Tue, 30 Nov 93 00:58:15 EST
+
+SUMMARY:
+  The window scaling information structure has been modified.
+
+CODE AFFECTED:
+  All code which uses the  win_scale_type  structure will need to be
+recompiled.
+
+HEADER CHANGED:
+  k_win_scale.h
+
+DESCRIPTION:
+  The  win_scale_type  structure has had an extra field added. The new
+field is the  magic_number  field. Binaries linked to shared libraries
+will need to be recompiled and relinked.
+
+REASON:
+  In the next version of Karma (2.0), there will be a requirement that
+the  magic_number  field is correctly set, prior to passing window
+scaling information to library routines (such as the  canvas_
+package). This will enable new fields to be added to the
+win_scale_type  structure, merely requiring the recompilation of
+source code. Binaries linked to shared libraries will then break in a
+predictable way, rather than unpredictable failure.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  canvas_init_win_scale
+Date: Tue, 30 Nov 93 01:06:00 EST
+
+SUMMARY:
+  A new function for the initialisation of the  win_scale_type
+structure has been created.
+
+HEADER CHANGED:
+  karma_canvas.h
+
+DESCRIPTION:
+  The  canvas_init_win_scale  routine will initialise a
+win_scale_type  structure with sensible values. It also initialises
+the  magic_number  field of the structure. The next version of Karma
+(2.0) will require that this field be correctly set. The
+canvas_init_win_scale  routine should be called prior to calling the
+canvas_create  function.
+-------------------------------------------------------------------------------
+Subject: BUG FIX in  ds_cmap_find_colourmap
+Date: Wed, 1 Dec 93 11:11:45 EST
+
+SUMMARY:
+  A bug in the  ds_cmap_find_colourmap  has been removed.
+
+DESCRIPTION:
+  If  ds_cmap_find_colourmap  finds a colourmap with the colours in
+the wrong order, it will reorder the colours. The previous
+implementation had a bug which could cause the routine to enter an
+infinite loop. This bug has been removed.
+-------------------------------------------------------------------------------
+Subject: BUG FIX in  dsrw_read_array
+Date: Wed, 1 Dec 93 11:22:15 EST
+
+SUMMARY:
+  A bug in the  dsrw_read_array  routine has been fixed.
+
+DESCRIPTION:
+  When reading arrays from memory-mapped channels, if the array could
+not be mapped for some reason (such as K_FLOAT data on a byte swapper
+machine), the  dsrw_read_array  routine could fail due to a bug which
+did not allocate virtual memory correctly. This has been fixed.
+-------------------------------------------------------------------------------
+Subject: NEW SUPPORT for Linux mmap(2)
+Date: Wed, 1 Dec 93 11:27:23 EST
+
+SUMMARY:
+  Support has been added for memory mapping files with Linux.
+
+HEADER CHANGED:
+  os.h
+
+DESCRIPTION:
+  With Linux kernel 0.99pl13, sufficient support for memory mapping of
+files exists to make use of this when reading Karma data files. This
+can result in major savings in virtual memory requirements when
+reading large files (such as 8 bit movies).
+-------------------------------------------------------------------------------
+Subject: BUG FIX in  kmovie  module
+Date: Wed, 1 Dec 93 11:31:21 EST
+
+SUMMARY:
+  A bug in the  kmovie  module has been fixed.
+
+DESCRIPTION:
+  When reading a movie file with an attached colourmap, the module
+incorrectly set the range of the data to the previous colourmap,
+rather than the new colourmap. This could result in image displays
+with incorrect colours. Loading the movie a second time gave the
+correct display. This bug has been fixed.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  viewimg_init
+Date: Thu, 2 Dec 93 18:42:45 EST
+
+SUMMARY:
+  A new function to initialise the  viewimg_  package for a world
+canvas has been created.
+
+HEADER CHANGED:
+  karma_viewimg.h
+
+DESCRIPTION:
+  The  viewimg_init  routine will initialise the  viewimg_  package
+for a particular world canvas. Calling this routine causes a number of
+callback routines internal to the  viewimg_  package to be registered
+with the canvas (such as refresh and position event callbacks). The
+use of this routine is optional at the moment: the routines which
+create viewable images perform this function automatically. In version
+2.0 of Karma, this use of this routine before creating viewable images
+will become mandatory.
+-------------------------------------------------------------------------------
+Subject: NEW PACKAGE for graphics overlays
+Date: Fri, 3 Dec 93 12:18:47 EST
+
+SUMMARY:
+  The  overlay_  package simplifies the drawing and maintenence of
+graphics overlays.
+
+HEADER CREATED:
+  karma_overlay.h
+
+DESCRIPTION:
+  The  overlay_  package is designed to manage lists of overlay
+objects (lines, text, ellipses, etc.). These lists (of type
+KOverlayList) may be associated with a world canvas (see the  canvas_
+package). Simple routines are provided to allow the addition of
+objects to the list. The  overlay_  package handles the refresh of
+these lists when a canvas is refreshed/ resized.
+In addition, network support is integrated into the package, allowing
+many processes to share overlay lists. It becomes a simple matter for
+one module to generate a set of overlay objects, and have them appear
+on the world canvas (window) of another module. This facilitates the
+separation of work
+
+REASON:
+  This package continues the philosophy of the  iedit_  and related
+packages. A perceived need to be able to generate graphics overlays
+(such as contour maps) in one module and transmit them to a general
+purpose display tool is another motivation for this package.
+-------------------------------------------------------------------------------
+Subject: HEADER CHANGED
+Date: Sun, 5 Dec 93 17:46:38 EST
+
+SUMMARY:
+  The window scaling information structure has been modified.
+
+CODE AFFECTED:
+  All code which uses the  win_scale_type  structure will need to be
+recompiled.
+
+HEADER CHANGED:
+  k_win_scale.h
+
+DESCRIPTION:
+  The  win_scale_type  structure has had several fields removed.
+Binaries linked to shared libraries will need to be recompiled and
+relinked.
+
+REASON:
+  Many of the fields in the  win_scale_type  structure were specific
+to the  kplot  module. This module has been modified to define and
+use its own structure, so as to enable the removal of these fields
+which were overloading the  win_scale_type  structure.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  iarray_get_2D_slice_from_3D
+Date: Sun, 5 Dec 93 17:53:19 EST
+
+SUMMARY:
+  A new function to alias 2-D slices from a 3-D Intelligent Array has
+been created.
+
+HEADER CHANGED:
+  karma_iarray.h
+
+DESCRIPTION:
+  The  iarray_get_2D_slice_from_3D  routine will create a
+2-dimensional Intelligent Array which is an alias of a slice of a
+3-dimensional Intelligent Array. The use of this routine can simplify
+applications which process cubes of data one plane at a time.
+Furthermore, accessing a 2-dimensional array is faster than accessing
+a 3-dimensional array. The overheads involved in creating an alias
+slice in a cube are relatively minor.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  iarray_get_restrictions
+Date: Sun, 5 Dec 93 17:58:08 EST
+
+SUMMARY:
+  A new function to extract restriction information from an
+Intelligent Array has been created.
+
+HEADER CHANGED:
+  karma_iarray.h
+
+DESCRIPTION:
+  The  iarray_get_restrictions  routine will give information
+indicating the restrictions that define an Intelligent Array. For
+example, a 2-D array created with the  iarray_get_2D_slice_from_3D
+routine will have one more restriction associated with it than the
+original 3-D array. This restriction is the position of the slice
+along the dimension which is not represented in the 2-D array.
+This routine will be required for support of the  overlay_  package.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  viewimg_create_restr
+Date: Sun, 5 Dec 93 18:03:06 EST
+
+SUMMARY:
+  A new function for creating ViewableImage objects with restriction
+specifications has been created.
+
+HEADER CHANGED:
+  karma_viewimg.h
+
+DESCRIPTION:
+  The  viewimg_create_restr  routine is similar to the  viewimg_create
+routine except that it allows the registration of restriction
+information with the viewable image. An example of restriction
+information that may be registered is the depth in a cube of a plane
+from which the viewable image was created.
+This routine will be required for support of the  overlay_  package.
+-------------------------------------------------------------------------------
+Subject: HEADER CHANGED
+Date: Mon, 6 Dec 93 09:55:01 EST
+
+SUMMARY:
+  The structure for Intelligent Arrays has been modified.
+
+CODE AFFECTED:
+  All code which uses Intelligent Arrays should be recompiled.
+
+HEADER CHANGED:
+  karma_iarray.h
+
+DESCRIPTION:
+  Several new fields have been added to the Intelligent Array
+structure. While it is not expected that this will break any existing
+binaries (provided modules do not access the structure except through
+supplied functions and macros), it is prudent to recompile.
+
+REASON:
+  The new fields support the storage of restriction information. This
+is part of the support added for the implementation of the  overlay_
+package.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTIONS for  canvas_  package
+Date: Mon, 6 Dec 93 09:58:33 EST
+
+SUMMARY:
+  The  canvas_specify  and  canvas_get_specification  routines have
+been created.
+
+HEADER CHANGED:
+  karma_canvas.h
+
+DESCRIPTION:
+  The  canvas_specify  routine allows the attachment of specification
+information (ie. horizontal and vertical dimension labels and
+restriction information) to a world canvas object.
+The  canvas_get_specification  routine will extract any specification
+information from a world canvas.
+
+REASON:
+  These routines are required for support of the  overlay_  package.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  kwin_draw_string_font
+Date: Tue, 7 Dec 93 12:16:35 EST
+
+SUMMARY:
+  The  kwin_draw_string_font  routine has been created.
+
+HEADER CHANGED:
+  karma_kwin.h
+
+DESCRIPTION:
+  The  kwin_draw_string_font  routine is similar to the
+kwin_draw_string  routine, except that a fontname may be specified.
+This allows the drawing of text string onto a KPixCanvas object using
+any aritrary font (provided such a font is available). If the
+specified font is not available, the default font is used.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTIONS for  kwin_  package
+Date: Sun, 12 Dec 93 17:11:21 EST
+
+SUMMARY:
+  New routines for drawing onto pixel canvases have been created.
+
+HEADER CHANGED:
+  karma_kwin.h
+
+DESCRIPTION:
+  Several new routines for drawing onto KPixCanvas objects have been
+created. See the documentation for what's available now.
+-------------------------------------------------------------------------------
+Subject: CHANGES TO  overlay_  package
+Date: Sun, 12 Dec 93 17:37:55 EST
+
+SUMMARY:
+  New overlay objects have been created, and the communications
+support has been moved over to a token passing system
+
+HEADER CHANGED:
+  karma_overlay.h
+
+DESCRIPTION:
+  Several new overlay objects have been created. See the documentation
+for what's available now.
+The communications support has been changed from an asynchronous
+transfer mechanism to a token passing system.
+
+REASON:
+  Previously, when a slave overlay list wished to execute an overlay
+instruction, it would transmit the instruction to the master. The
+master would receive this instruction, process it locally, store it
+(if the instruction was an object) and forward it to all the slaves.
+When the slaves received an instruction, they would process it and
+store it (if the instruction was an object).
+A deadlock situation could easily occur if a slave sent many instructions
+to the master. Upon receipt of the first instruction, the master would
+transmit it to all slaves. However, the originating slave would still
+be sending instructions to the master. If the slave's incoming (OS) buffers
+were filled by the master while it was still sending, the master would
+lock up. If the slave kept sending instructions, soon the master's incoming
+buffers would fill up, locking up the slave. At this point, the
+processes need to be killed.
+  Now, the system is based on a token passing mechanism. If an overlay
+list does not have the token, and the application (process) tries to
+add an instruction, the overlay list issues a token request and the
+instruction is buffered locally until such time as the token is
+received. For the master, when it receives the token, it transmits all
+buffered instructions to the slaves, processes the instructions and
+moves the objects into the working list. For a slave, when it receives
+the token, it transmits all buffered instructions to the master,
+processes the instructions and moves the objects into the working
+list. The master will forward these instructions to all slaves except
+the originating slave. Deadlock should no longer occur. Furthermore,
+the amount of network traffic is reduced, since the master does not
+forward the instructions back to the originating slave.
+  At this time, the token remains with the list that last requested it
+(ie. it does not automatically bounce back after use). This yields
+greater throughput when only one list is usually transmitting.
+When a slave list makes a connection to a master, it loses the token.
+When a slave list loses its connection to the master, it gets a token.
+When a master loses its connection to a slave which has the token, it
+gets a token. The master need not have the token in order to accept a
+new connection from a slave.
+  The token passing mechanism should be quite robust.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTIONS for Channel conversion
+Date: Sun, 13 Apr 94 23:20:02 EST
+
+SUMMARY:
+  New functions to support conversion (ie. encryption and compression)
+of Channel data have been created.
+The  ch_register_converter  adds converter functions.
+The  ch_unregister_converter  removes previously registered converters.
+
+HEADER CHANGED:
+  karma_ch.h
+
+DESCRIPTION:
+  The  ch_register_converter  function allows registration of
+functions which will modify data read from and written to Channel
+objects. This function is essentially a "hook" to allow higher level
+packages in the Karma library and applications to enhance the
+operation of Channel objects. Advanced features such as on-the-fly
+compression and encryption may be transparently supported: routines
+transferring data using Channels are not aware of the conversions.
+-------------------------------------------------------------------------------
+Subject: NEW PACKAGE for security/encryption
+Date: Sun, 13 Apr 94 23:30:21 EST
+
+SUMMARY:
+  A new package (  key_  ) provides strong encryption support.
+
+HEADER CREATED:
+  karma_key.h
+
+DESCRIPTION:
+  The  key_  package contains code to implement the IDEA[tm]
+encryption algorithm. IDEA uses a 128 bit key (cf. 56 bits for DES)
+and is widely considered to be cryptographically "strong" (ie.
+impractical to break with current technology and cryptanalysis
+algorithms even with vast computing resources available).
+Only one access mode is supported by the  key_  package: CFB (Cipher
+FeedBack), which is much stronger than the simpler (and commonly used)
+ECB (Electronic Code Book) mode. CFB mode requires an extra 64 bit
+"initialisation key".
+
+  The  key_  package allows encryption/decryption of blocks of data as
+well as data passing through Channel objects. Support for encryption
+of data passing through Channel objects is completely transparent to
+routines transferring data through Channels.
+
+REASON:
+  The encryption of data (particularly through connection Channel
+objects) provides both privacy and authentication (security). Support
+for encryption of connection Channel objects will be added to the
+conn_  package in the near future.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  viewimg_test_active
+Date: Sun, 22 Apr 94 23:55:21 EST
+
+SUMMARY:
+  A new function to determine if a viewable image is active has been
+created.
+
+HEADER CHANGED:
+  karma_viewimg.h
+
+DESCRIPTION:
+  The  viewimg_test_active  determines whether or not a viewable image
+is active (typ. is currently visible). This is useful when calls to
+viewimg_make_active  are being used to fulfill two functions:
+
+1)  change to a different image
+2)  refresh the canvas
+
+  Since  viewimg_make_active  will not refresh the canvas if the
+specified viewable image is already active, an application should call
+viewimg_test_active  if it needs to determine if it should explicitely
+refresh the associated canvas (this would be needed if other graphics
+are being drawn over the image).
+The alternative of always calling  viewimg_make_active  and then
+always explicitely refreshing the canvas would cause the window to be
+refreshed twice: this is both a waste of (real) time and esthetically
+unpleasant.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  r_create_pipe
+Date: Sun, 15 May 94 23:32:44 +0200
+
+SUMMARY:
+  A new function to create an un-named, raw pipe has been created.
+
+HEADER CHANGED:
+  karma_r.h
+
+DESCRIPTION:
+  The  r_create_pipe  routine is similar to the  pipe(2)  system call
+which creates a pair of un-named sockets (file descriptors), one which
+may be used for reading and the other for writing. Typically used as
+an InterProcess Communication channel between a child process and its
+parent. This routine is intended to support the soon-to-be-announced
+ch_create_pipe  routine.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  ch_create_pipe
+Date: Sun, 15 May 94 23:35:37 +0200
+
+SUMMARY:
+  A new function to create an un-named, buffered pipe has been created.
+
+HEADER CHANGED:
+  karma_ch.h
+
+DESCRIPTION:
+  The  ch_create_pipe  routine is similar to the  pipe(2)  system call
+which creates a pair of un-named sockets (file descriptors), one which
+may be used for reading and the other for writing. Typically used as
+an InterProcess Communication channel between a child process and it's
+parent. This routine actually create a pair of Channel objects, rather
+than file descriptors, hence it is now possible to pass information
+through a pipe using all the standard routines in Karma which operate
+with Channel objects.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  ch_open_sink
+Date: Mon, 16 May 94 19:02:22 +0200
+
+SUMMARY:
+  A new function to create a data sink channel has been created.
+
+HEADER CHANGED:
+  karma_ch.h
+
+DESCRIPTION:
+  The  ch_create_sink  routine will create a data sink channel. This
+channel will always succeed when data is written to it and will always
+fail with an End-Of-File indication when an attempt to read data from
+it is made. Every byte written to the channel causes the appropriate
+increase in the channel write pointer (as obtained by  ch_tell  ).
+Writing to a data sink channel is extremely fast (it is NOT
+implemented by opening "/dev/null") and when combined with  ch_tell
+can serve as a simple and quick means to determine how much data is
+going to be written to a channel, prior to actually writing the data.
+
+  Note that when writing data to a data sink channel, the data is not
+actually referenced.
+-------------------------------------------------------------------------------
+Subject: CHANGES to  kwin_get_colour
+Date: Thu, 19 May 94 22:14:52 +0200
+
+SUMMARY:
+  Extra parameters have been added to the  kwin_get_colour  routine.
+
+CODE AFFECTED:
+  All code which uses the  kwin_get_colour  routine should be modified.
+
+HEADER CHANGED:
+  karma_kwin.h
+
+DESCRIPTION:
+  The  kwin_get_colour  routine now has 3 extra parameters to allow
+the routine to return the red, green and blue intensities of the
+allocated colour.
+
+REASON:
+  The extra functionality is required for the planned PostScript
+support for the  canvas_  package. Since  kwin_get_colour  returns a
+pixel value, which is meaningless for PostScript, a means to obtain
+the actual colour information is also required. Since the
+kwin_get_colour  routine has not yet been publically released, it can
+be modified without breaking (external) code.
+-------------------------------------------------------------------------------
+Subject: CHANGES to  canvas_get_colour
+Date: Thu, 19 May 94 22:39:11 +0200
+
+SUMMARY:
+  Extra parameters have been added to the  canvas_get_colour  routine.
+
+CODE AFFECTED:
+  All code which uses the  canvas_get_colour  routine should be modified.
+
+HEADER CHANGED:
+  karma_canvas.h
+
+DESCRIPTION:
+  The  canvas_get_colour  routine now has 3 extra parameters to allow
+the routine to return the red, green and blue intensities of the
+allocated colour.
+
+REASON:
+  The extra functionality is required for the planned PostScript
+support for the  canvas_  package. Since  canvas_get_colour  returns a
+pixel value, which is meaningless for PostScript, a means to obtain
+the actual colour information is also required. Since the
+canvas_get_colour  routine has not yet been publically released, it can
+be modified without breaking (external) code.
+-------------------------------------------------------------------------------
+Subject: NEW PACKAGE for PostScript support
+Date: Sat, 21 May 94 18:14:38 +0200
+
+SUMMARY:
+  The  psw_  package provides basic support for generating PostScript.
+
+HEADER CREATED:
+  karma_psw.h
+
+DESCRIPTION:
+  The  psw_  package provides a mechanism to set up a PostScript page,
+define it's size and orientation and proceed to draw objects onto it.
+The packages supports the drawing of simple geometric objects such as
+lines, as well as text and images. Both monochrome and colour images
+may be drawn.
+
+REASON:
+  This package provides the core PostScript support in Karma. It is
+intended that more powerful packages (such as in the Karma graphics
+library) will use the  psw_  package, although the interface is simple
+enough that an application may use this package if desired. The higher
+level packages in the Karma library will soon be able to provide far
+more advanced PostScript generation capabilities.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  conn_extract_protocols
+Date: Sat, 21 May 94 23:30:59 +0200
+
+SUMMARY:
+  The function  conn_extract_protocols  extracts the list of currently
+supported protocols.
+
+HEADER CHANGED:
+  karma_conn.h
+
+DESCRIPTION:
+  The  conn_extract_protocols  function will extract a formatted list
+of strings which represent the list of currently supported protocols
+for the module. The formatted strings may subsequently be displayed
+and deallocated. The first string indicates the format used, and looks
+like this:
+
+Protocol_name              serv_max  #serv     client_max #client
+
+  The <Protocol_name> field shows the name of the protocol
+  The <serv_max> field shows the maximum number of server connections
+allowed. If there is no limit, the "unlimited" string is displayed. If
+the module does not support the protocol as a server protocol, a '-'
+character is displayed.
+  The <#serv> field shows the number of server connections currently open.
+  The <client_max> field shows the maximum number of client connections
+allowed. If there is no limit, the "unlimited" string is displayed. If
+the module does not support the protocol as a client protocol, a '-'
+character is displayed.
+  The <#client> field shows the number of client connections currently open.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  panel_create_group
+Date: Sun, 22 May 94 16:55:53 +0200
+
+SUMMARY:
+  The function  panel_create_group  will create a KControlPanel object
+suitable for grouping panel items together.
+
+HEADER CHANGED:
+  karma_panel.h
+
+DESCRIPTION:
+  The  panel_create_group  function will create a KControlPanel object
+to which multiple panel items may be added (in the same way as panel
+items may be added to a KControlPanel object created by the
+panel_create  function). However, a KControlPanel object created with
+the  panel_create_group  function may itself be added as a panel item
+to another KControlPanel object, using the PIT_GROUP item type. Thus,
+a group of items may be added to a KControlPanel object.
+This is useful since the group item type may in fact be specified as
+an array of group items. When modifying a group item, all the
+sub-items in the group must be specified by the user. In other words,
+the group item is in some ways treated as an indivisible object.
+
+  This new function finally obsoletes the  ez_decode  routine
+temporarily borrowed from the SIP package. All the useful
+functionality of  ez_decode  is incorporated in the  panel_  package.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  kwin_write_ps
+Date: Mon, 23 May 94 00:58:23 +0200
+
+SUMMARY:
+  The  kwin_write_ps  routine allows all objects drawn to a pixel
+canvas to be written to a PostScript page.
+
+HEADER CHANGED:
+  karma_kwin.h
+
+DESCRIPTION:
+  The KPixCanvas objects provided by the  kwin_  package form the
+basis for all drawing in the Karma graphics library. The
+kwin_write_ps  routine provides a simple, universal interface to lower
+level PostScript drivers. This routine will effectively "refresh" a
+KPixCanvas object onto a PostScriptPage object (defined in the  psw_
+package). Thus, existing graphics applications can now support
+PostScript output by a trivially simple sequence of function calls,
+enormously increasing their utility at little programmer cost.
+-------------------------------------------------------------------------------
+Subject: CHANGES to  kwin_  package
+Date: 26-JUL-1994
+
+SUMMARY:
+  The  kwin_  package has been extended to support 24 bit displays and
+the querying of attributes.
+
+HEADER CHANGED:
+  karma_kwin.h
+
+DESCRIPTION:
+  The  kwin_  package now supports 24 bit TrueColour and DirectColour
+displays. The  kwin_get_attributes  routine allows the querying of
+various attributes, such as canvas depth and visual type.
+
+REASON:
+  24 bit display support is desirable when trying to display
+TrueColour images. The existing implementation required a costly
+compression of TrueColour images to PseudoColour. This is an
+unnecessary overhead when a 24 bit display is available and involves
+loss of image quality.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  canvas_get_cmap
+Date: 28-JUL-1994
+
+SUMMARY:
+  The  canvas_get_cmap  function returns the Kcolourmap associated
+with a world canvas.
+
+HEADER CHANGED:
+  karma_canvas.h
+
+DESCRIPTION:
+  The  canvas_get_cmap  function obtains the Kcolourmap object
+associated with a KWorldCanvas object.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  kwin_create_child
+Date: 31-JUL-1994
+
+SUMMARY:
+  The  kwin_create_child  routine creates a child pixel canvas from an
+existing pixel canvas.
+
+HEADER CHANGED:
+  karma_kwin.h
+
+DESCRIPTION:
+  The  kwin_create_child  allows the application to create a child
+KPixCanvas from an existing KPixCanvas (termed the parent canvas),
+which may be smaller than the parent canvas. The child canvas inherits
+position events, but *does not* receive resize events from the parent.
+The ability to create child pixel canvases simplifies many
+applications which need to manipulate several logically distinct
+regions in a single display window.
+-------------------------------------------------------------------------------
+Subject: CHANGES to  canvas_create
+Date: 2-AUG-1994
+
+SUMMARY:
+  The  canvas_create  routine now allows the passing of a NULL
+Kcolourmap object.
+
+DESCRIPTION:
+  The  canvas_create  routine now allows the passing of a NULL
+Kcolourmap object, to indicate that there is no colourmap associated
+with the world canvas. All drawing operations on the canvas must be
+performed in pixel values, and may not be specified in real-world
+values, since these are meaningless without a colourmap to index into.
+
+REASON:
+  Colourmaps are not appropriate for TrueColour canvases. By allowing
+the passing of NULL Kcolourmap objects to  canvas_create  the need to
+create a dummy Kcolourmap object prior to creating a KWorldCanvas
+object from a TrueColour KPixCanvas object is avoided. Since it may
+not be meaningful to draw onto a TrueColour display using real-world
+values (only pixel values are truly meaningful), this is not seen as a
+limitation.
+-------------------------------------------------------------------------------
+Subject: NEW PACKAGE for raw image display
+Date: 7-AUG-1994
+
+SUMMARY:
+  A new package for raw image display has been created.
+
+HEADER CREATED:
+  karma_imw.h
+
+DESCRIPTION:
+  The  imw_  package provides the necessary low-level image writing
+code needed to support the  kwin_  image drawing routines. It is not
+meant to be directly used by applications.
+
+REASON:
+  The low level image display support for Karma is being restructured
+and rationalised. This support is required to support display on non 8
+bit pseudocolour X displays. The  viewimg_  package remains the
+recommended interface for image display, however, it is planned to
+allow applications to choose between certain image display functions.
+In particular, the existing  drw_  package expands images by pixel
+replication. While this may be fast, it results in ugly images. The
+planned changes to the  kwin_  package will allow the application to
+specify a function which expands images using anti-aliasing (in
+effect, display a smooth, high quality image).
+The  imw_  package will contain a simple pixel replication function,
+as well as other more sophisticated anti-aliasing functions. These
+will be registerable with a KPixCanvas object.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  kwin_draw_rgb_image
+Date: 8-AUG-1994
+
+SUMMARY:
+  The  kwin_draw_rgb_image  routine allows the drawing of TrueColour
+images onto a 24 bit display
+
+HEADER CHANGED:
+  karma_kwin.h
+
+DESCRIPTION:
+  The  kwin_draw_rgb_image  provides support for drawing TrueColour
+(red, green and blue component) images onto a 24 bit TrueColour or
+DirectColour display. Previously, the only mechanism available for
+drawing TrueColour images involved external compression of the image
+to 8 bit PsdueoColour and then display on a regular PseudoColour
+canvas.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  canvas_draw_rgb_image
+Date: 8-AUG-1994
+
+SUMMARY:
+  The  canvas_draw_rgb_image  allows drawing of TrueColour images onto
+a 24 bit display.
+
+HEADER CHANGED:
+  karma_canvas.h
+
+DESCRIPTION:
+  The  canvas_draw_rgb_image  provides support for drawing TrueColour
+(red, green and blue component) images onto a 24 bit TrueColour or
+DirectColour display. Previously, the only mechanism available for
+drawing TrueColour images involved external compression of the image
+to 8 bit PsdueoColour and then display on a regular PseudoColour
+canvas.
+-------------------------------------------------------------------------------
+Subject: NEW FUNCTION  kwin_set_attributes
+Date: 9-AUG-1994
+
+SUMMARY:
+  The  kwin_set_attributes  function allows the setting of various
+attributes association with a KPixCanvas object.
+
+HEADER CHANGED:
+  karma_kwin.h
+
+DESCRIPTION:
+  The  kwin_set_attributes  provides for the setting of attributes
+such as visibility state of a pixel canvas. These may be queried by
+using the  kwin_get_attributes  routine.
+-------------------------------------------------------------------------------
+Subject: CHANGES to  r_open_file  routine
+Date: 14-AUG-1994
+
+SUMMARY:
+  The  r_open_file  routine now supports opening connections to
+processes.
+
+CODE AFFECTED:
+  No code needs to be modified or recompiled.
+
+HEADER CHANGED:
+  karma_r.h
+
+DESCRIPTION:
+  The  r_open_file  routine no longer fails if the specified file is a
+Unix domain socket. Rather, it will attempt to connect to a process
+bound to that socket.
+The routine also supports an extended filename syntax that allows the
+specification of TCP/IP connections to processes on remote machines.
+In this case, the routine will also attempt to open a connection to
+the remote process.
+
+REASON:
+  These changes are designed to allow the functionality of the
+ch_open_file  routine to be extended.
+-------------------------------------------------------------------------------
+Subject: CHANGES to  ch_open_file  routine
+Date: 14-AUG-1994
+
+SUMMARY:
+  The  ch_open_file  routine now supports opening connections to
+processes.
+
+CODE AFFECTED:
+  No code needs to be modified or recompiled.
+
+HEADER CHANGED:
+  karma_ch.h
+
+DESCRIPTION:
+  The  ch_open_file  routine no longer fails if the specified file is a
+Unix domain socket. Rather, it will attempt to connect to a process
+bound to that socket.
+The routine also supports an extended filename syntax that allows the
+specification of TCP/IP connections to processes on remote machines.
+In this case, the routine will also attempt to open a connection to
+the remote process.
+
+REASON:
+  These changes allow a Karma module to connect to non-Karma processes
+on the local machine, and on remote machines.
+-------------------------------------------------------------------------------
+Subject: CHANGES to  kcmap_  package
+Date: Fri, 19 Aug 94 02:13:05 +0200
+
+SUMMARY:
+  Two new routines for manipulating Kcolourmap object attributes have
+been created. The KCMAP_ATT_REVERSE attribute has been defined.
+
+HEADER CHANGED:
+  karma_kcmap.h
+
+DESCRIPTION:
+  The  kcmap_get_attributes  routine will extract various attributes
+of a Kcolourmap object.
+  The  kcmap_set_attributes  routine will set various attributes
+of a Kcolourmap object.
+
+  The attribute: KCMAP_ATT_REVERSE controls whether or not the
+colourmap object is reversed when a call to  kcmap_modify  is made.
+
+REASON:
+  The attribute manipulation routines are generally useful.
+
+  The attribute KCMAP_ATT_REVERSE allows a simple reversal of a
+colourmap to be implemented, without the need for doubling the number
+of colour transfer functions (typically found in the  cf_  package).
+-------------------------------------------------------------------------------
+Subject: CHANGES to  kcmap_  package
+Date: Mon, 22 Aug 94 00:47:56 +0200
+
+SUMMARY:
+  An attribute to control colour value inversion has been added to the
+kcmap_  package.
+
+HEADER CHANGED:
+  karma_kcmap.h
+
+DESCRIPTION:
+  The  KCMAP_ATT_INVERT  attribute controls whether or not colour
+values in a colourmap are inverted. If the attribute is set, the red,
+green and blue intensity values are inverted (light becomes dark and
+dark becomes light). The operation is carried out separately on the
+individual colour components.
+Note that this attribute only affects colours produced by a registered
+colour function: it does not apply to colour values received over a
+network connection.
+
+REASON:
+  This attribute allows greater flexibility in colourmap control
+whilst not requiring the addition of many more colour functions.
+-------------------------------------------------------------------------------
+Subject: CHANGES to  canvas_  package
+Date: Tue, 4 Oct 94 02:02:01 EDT
+
+SUMMARY:
+  A new mechanism for defining arbitrary co-ordinate systems for world
+canvases has been created. This also replaces the old faulty
+logarithmic co-ordinate system implememtation.
+
+CODE AFFECTED:
+  The  x_log  and  y_log  fields of the  win_scale_type  structure are
+now ignored by the  canvas_  package. That implementation was faulty.
+The  canvas_use_log_scale  routine should be used instead.
+
+HEADER CHANGED:
+  karma_canvas.h
+
+DESCRIPTION:
+  The default world co-ordinate system provided by a KWorldCanvas
+object is linear. If an alternative, non-linear co-ordinate system is
+desired, the  canvas_register_transform_func  routine may be used to
+register a co-ordinate transformation routine.
+
+REASON:
+  The previous use of the  x_log  and  y_log  fields for the
+win_scale_type  structure only allowed the application to choose
+between linear and logarithmic co-ordinate systems. This is too
+limiting. Furthermore, the implementation of the logarithmic
+co-ordinate system was in error (when a ViewableImage was associated
+with a KWorldCanvas). This new system is both correct and more
+flexible.
+-------------------------------------------------------------------------------
+Subject: CHANGES to  kwin_clear  routine
+Date: Fri, 7 Oct 94 16:27:40 EDT
+
+SUMMARY:
+  The  kwin_clear  routine now has 4 extra parameters to increase its
+flexibility.
+
+CODE AFFECTED:
+  All code which refers to  kwin_clear  should be modified along the
+following lines:
+	kwin_clear (canvas);
+TO:
+	kwin_clear (canvas, 0, 0, -1, -1);
+
+HEADER CHANGED:
+  karma_kwin.h
+
+DESCRIPTION:
+  The  kwin_clear  routine now allows the specification of a
+rectangular region in a pixel canvas to be cleared, rather than the
+entire pixel canvas being cleared. Naturally, the entire pixel canvas
+may still be cleared, but the call syntax is slightly different (see
+above).
+
+REASON:
+  This change will be used by the intended "damage propagation"
+enhancements to the Karma Graphics library. These enhancements will
+allow "damaged" sub-regions of a canvas to be cleared and redrawn,
+rather than clearing and drawing the entire canvas again. This will
+then permit the smooth dragging of objects (such as a marker box)
+across a canvas.
+
+  In addition, this change also allows a world canvas object to
+selectively clear its boundary to its parent pixel canvas, rather than
+clearing the entire pixel canvas. The  viewimg_  package has been
+modified to take advantage of this feature to prevent clearing the
+entire pixel canvas when a smaller or larger image is displayed.
+-------------------------------------------------------------------------------
+Subject: CHANGES to  kwin_  package
+Date: Tue, 22 Nov 94 17:27:19 EST
+
+SUMMARY:
+  The  kwin_draw_string_font  routine has been removed and the
+kwin_load_font  routine has been created. In addition the
+kwin_get_string_size  routine has been created.
+
+CODE AFFECTED:
+  All code which uses the  kwin_draw_string_font  routine must be
+modified.
+
+HEADER CHANGED:
+  karma_kwin.h
+
+DESCRIPTION:
+  The  kwin_draw_string_font  routine draws a string with a specified
+fontname. The new mechanism for drawing strings with a specified font
+is to first load the font and then when needed the
+kwin_set_attributes  routine may be used to set the current font for a
+pixel canvas.
+The  kwin_get_string_size  routine computes the size of a string given
+a specified font.
+
+REASON:
+  The  kwin_draw_string_font  routine may give the misleading
+impression that switching between fonts is an inexpensive
+operation. The new scheme supports a more flexible means of dealing
+with fonts which also reflects the penalties involved in switching
+between fonts.
+-------------------------------------------------------------------------------
+Subject: OBSOLETE package: notify_chm_
+Date: 1-DEC-1994
+
+SUMMARY:
+  The  notify_chm_  package will be removed in Karma version 2.0
+
+CODE AFFECTED:
+  All code which uses the  notify_chm_  package will cease to work.
+
+HEADER REMOVED:
+  karma_notify_chm.h
+
+REASON:
+  Support for the XView toolkit is being dropped. Application
+developers/maintainers should move to Xt instead.
+-------------------------------------------------------------------------------
+Subject: OBSOLETE package: xt_chm_
+Date: 1-DEC-1994
+
+SUMMARY:
+  The  xt_chm_  package will be removed in Karma version 2.0. The
+chx_  package replaces it.
+
+CODE AFFECTED:
+  All code which uses the  xt_chm_  package should be changed to use
+the  chx_  package.
+
+HEADER REMOVED:
+  karma_xt_chm.h
+
+HEADER CREATED:
+  karma_chx.h
+
+REASON:
+  The  xt_chm_  package was poorly named, and does not conform to the
+package naming scheme in Karma. The  chx_  package provides a
+functionally identical equivalent.
+-------------------------------------------------------------------------------
+Subject: NEW PACKAGE for multi-threading
+Data: 9-JAN-1995
+
+SUMMARY:
+  The <mt_> package simplifies the interface to thread libraries to
+make parallel programming easy.
+
+HEADER CREATED:
+  karma_mt.h
+
+DESCRIPTION:
+  The <mt_> package provides a simple, unified interface to
+multi-threading facilities available on many platforms. By adopting a
+simple job-launching model, the application programmer is freed from
+managing a collection of threads/CPUs. This interface is also
+supported on platforms without multi-threading capability so the same
+programming model may be used.
+
+REASON:
+  This package is designed to allow application programmers to
+multi-thread (parallelise) their code without needing to pay attention
+to the details of various thread libraries.
+-------------------------------------------------------------------------------

@@ -1,0 +1,17 @@
+/*  Routines to manipulate world canvases in a device independent way  */
+/*  This file describes the canvas_ package of routines in the Karma
+    library.
+
+    These routines are meant to provide a high level mechanism to create and
+    manipulate world canvases (canvases which have a co-ordinate system based
+    on real-world co-ordinates). These canvases utilise the pixel canvases
+    available in the  kwin_  package, hence the resulting code is device
+    independent.
+
+
+    Written by		Richard Gooch	<<DATE>>
+
+    Last updated by	Richard Gooch	<<DATE>>
+
+
+*/
